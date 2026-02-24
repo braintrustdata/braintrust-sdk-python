@@ -1,14 +1,14 @@
 # Braintrust SDK
 
-Python and JavaScript clients for Braintrust, plus wrapper libraries for OpenAI, Anthropic, and other AI providers.
+Python client for Braintrust, plus wrapper libraries for OpenAI, Anthropic, and other AI providers.
 
 ## Structure
 
 ```
-sdk/
-├── py/           # Python SDK (see py/CLAUDE.md)
-├── js/           # JavaScript SDK (see js/CLAUDE.md)
-└── core/         # Shared core library
+├── py/             # Python SDK (see py/CLAUDE.md)
+├── integrations/   # Python integrations (adk-py, langchain-py)
+├── internal/       # Golden tests
+└── scripts/        # Dev scripts
 ```
 
 ## Quick Reference

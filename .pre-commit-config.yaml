@@ -19,16 +19,9 @@ repos:
         exclude: >
           (?x)^(
               .*\.(json|prisma|svg)
-              |.*pnpm-lock.yaml
-              |.*deno.lock
               |.*.yaml
               |.*/cassettes/.*
           )$
         args:
           - "-L"
           - "rouge,coo,couldn,unsecure,ontext,afterall,als"
-  - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.3.2
-    hooks:
-      - id: prettier
-        exclude: ^(extension/|.*\.json|.*pnpm-lock.yaml|js/scripts/openapi_zod_client_output_template\.hbs|.*cassette.*\.ya?ml)$
