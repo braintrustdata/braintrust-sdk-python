@@ -35,6 +35,7 @@ def auto_instrument(
     agno: bool = True,
     claude_agent_sdk: bool = True,
     dspy: bool = True,
+    adk: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -54,6 +55,7 @@ def auto_instrument(
         agno: Enable Agno instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
+        adk: Enable Google ADK instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -81,6 +83,12 @@ def auto_instrument(
         import dspy
         lm = dspy.LM("openai/gpt-4o-mini")
         dspy.configure(lm=lm)
+
+        # Google ADK
+        from google.adk import Agent
+        from google.adk.runners import Runner
+        agent = Agent(name="my_agent", model="gemini-2.0-flash")
+        runner = Runner(agent=agent, app_name="my_app")
 
         # Pydantic AI
         from pydantic_ai import Agent
@@ -111,6 +119,8 @@ def auto_instrument(
         results["claude_agent_sdk"] = _instrument_claude_agent_sdk()
     if dspy:
         results["dspy"] = _instrument_dspy()
+    if adk:
+        results["adk"] = _instrument_adk()
 
     return results
 
@@ -176,4 +186,12 @@ def _instrument_dspy() -> bool:
         from braintrust.wrappers.dspy import patch_dspy
 
         return patch_dspy()
+    return False
+
+
+def _instrument_adk() -> bool:
+    with _try_patch():
+        from braintrust.wrappers.adk import setup_adk
+
+        return setup_adk()
     return False

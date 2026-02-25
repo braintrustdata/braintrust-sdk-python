@@ -3,8 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from braintrust_adk import setup_adk, wrap_mcp_tool
+from braintrust.wrappers.adk import setup_adk, wrap_mcp_tool
 
 
 @pytest.mark.asyncio
@@ -21,7 +20,7 @@ async def test_wrap_mcp_tool_marks_as_patched():
 
     # Verify it's marked as patched
     assert hasattr(wrapped_class, "_braintrust_patched")
-    assert wrapped_class._braintrust_patched is True
+    assert wrapped_class._braintrust_patched is True  # pylint: disable=no-member
 
 
 @pytest.mark.asyncio
@@ -154,7 +153,6 @@ async def test_mcp_tool_error_handling():
 @pytest.mark.asyncio
 async def test_setup_adk_patches_mcp_tool():
     """Test that setup_adk automatically patches McpTool."""
-    import importlib
     import sys
 
     # Mock google-adk imports
@@ -170,11 +168,7 @@ async def test_setup_adk_patches_mcp_tool():
     mock_google_adk_tools_mcp_tool.mcp_tool = mock_mcp_tool_module
 
     # Clear all google.adk modules from cache
-    modules_to_remove = [
-        key
-        for key in list(sys.modules.keys())
-        if key.startswith("google.adk.tools.mcp_tool")
-    ]
+    modules_to_remove = [key for key in list(sys.modules.keys()) if key.startswith("google.adk.tools.mcp_tool")]
     for module in modules_to_remove:
         del sys.modules[module]
 
@@ -227,7 +221,7 @@ async def test_mcp_tool_async_context_preservation():
     """
     import contextvars
 
-    from braintrust_adk import wrap_mcp_tool
+    from braintrust.wrappers.adk import wrap_mcp_tool
 
     # Track context switches
     context_var = contextvars.ContextVar("test_context", default=None)
@@ -285,7 +279,7 @@ async def test_mcp_tool_nested_async_generators():
     3. MCP tool execution happens deep in the stack
     4. All generators yield and resume, potentially in different contexts
     """
-    from braintrust_adk import wrap_mcp_tool
+    from braintrust.wrappers.adk import wrap_mcp_tool
 
     class MockMcpTool:
         def __init__(self):
@@ -344,7 +338,7 @@ async def test_real_context_loss_with_braintrust_spans():
     import asyncio
 
     from braintrust import init_logger
-    from braintrust_adk import aclosing
+    from braintrust.wrappers.adk import aclosing
 
     # Initialize a test logger
     logger = init_logger(project="test-context-loss")
