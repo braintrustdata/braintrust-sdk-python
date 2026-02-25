@@ -80,6 +80,8 @@ def wrap_agent(Agent: Any) -> Any:
             result = await wrapped(*args, **kwargs)
             end_time = time.time()
 
+            _create_tool_spans_from_messages(result)
+
             output = _serialize_result_output(result)
             metrics = _extract_usage_metrics(result, start_time, end_time)
 
@@ -103,6 +105,8 @@ def wrap_agent(Agent: Any) -> Any:
             start_time = time.time()
             result = wrapped(*args, **kwargs)
             end_time = time.time()
+
+            _create_tool_spans_from_messages(result)
 
             output = _serialize_result_output(result)
             metrics = _extract_usage_metrics(result, start_time, end_time)
@@ -183,6 +187,9 @@ def wrap_agent(Agent: Any) -> Any:
                 yield event
 
             end_time = time.time()
+
+            if final_result:
+                _create_tool_spans_from_messages(final_result)
 
             output = None
             metrics = {
@@ -487,6 +494,8 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
             if self.span_cm and self.start_time and self.stream_result:
                 end_time = time.time()
 
+                _create_tool_spans_from_messages(self.stream_result)
+
                 output = _serialize_stream_output(self.stream_result)
                 metrics = _extract_stream_usage_metrics(
                     self.stream_result, self.start_time, end_time, self._first_token_time
@@ -668,6 +677,9 @@ class _AgentStreamResultSyncProxy:
         if self._span and not self._logged and self._stream_result:
             try:
                 end_time = time.time()
+
+                _create_tool_spans_from_messages(self._stream_result)
+
                 output = _serialize_stream_output(self._stream_result)
                 metrics = _extract_stream_usage_metrics(
                     self._stream_result, self._start_time, end_time, self._first_token_time
@@ -769,6 +781,89 @@ class _DirectStreamIteratorSyncProxy:
         if self._wrapper._first_token_time is None:
             self._wrapper._first_token_time = time.time()
         return item
+
+
+def _create_tool_spans_from_messages(result: Any) -> None:
+    """
+    Create TOOL-type spans from tool call/return message parts in a completed agent result.
+
+    Uses message timestamps from PydanticAI to position spans correctly in the trace:
+    - start_time = ModelResponse.timestamp (when the model requested the tool call)
+    - end_time = ModelRequest.timestamp (when the tool result was sent back)
+    """
+    try:
+        _create_tool_spans_from_messages_impl(result)
+    except Exception:
+        pass
+
+
+def _create_tool_spans_from_messages_impl(result: Any) -> None:
+    from pydantic_ai.messages import ToolCallPart, ToolReturnPart
+
+    messages = result.new_messages()
+
+    returns_by_id: dict[str, tuple[Any, float | None]] = {}
+    for msg in messages:
+        if not hasattr(msg, "parts"):
+            continue
+        msg_ts = _msg_timestamp(msg)
+        for part in msg.parts:
+            if isinstance(part, ToolReturnPart) and hasattr(part, "tool_call_id"):
+                returns_by_id[part.tool_call_id] = (part, msg_ts)
+
+    for msg in messages:
+        if not hasattr(msg, "parts"):
+            continue
+        call_ts = _msg_timestamp(msg)
+        for part in msg.parts:
+            if not isinstance(part, ToolCallPart):
+                continue
+
+            tool_name = getattr(part, "tool_name", None) or "unknown_tool"
+            tool_call_id = getattr(part, "tool_call_id", None)
+
+            try:
+                input_data = part.args_as_dict()
+            except Exception:
+                input_data = bt_safe_deep_copy(getattr(part, "args", None))
+
+            output_data = None
+            return_ts: float | None = None
+            if tool_call_id and tool_call_id in returns_by_id:
+                return_part, return_ts = returns_by_id[tool_call_id]
+                output_data = bt_safe_deep_copy(getattr(return_part, "content", None))
+
+            metadata = {}
+            if tool_call_id:
+                metadata["tool_call_id"] = tool_call_id
+
+            with start_span(
+                name=tool_name,
+                type=SpanTypeAttribute.TOOL,
+                input=input_data,
+                start_time=call_ts,
+                metadata=metadata if metadata else None,
+            ) as tool_span:
+                metrics = {}
+                if call_ts is not None:
+                    metrics["start"] = call_ts
+                if return_ts is not None:
+                    metrics["end"] = return_ts
+                if call_ts is not None and return_ts is not None:
+                    metrics["duration"] = return_ts - call_ts
+                tool_span.log(output=output_data, metrics=metrics if metrics else None)
+                tool_span.end(end_time=return_ts)
+
+
+def _msg_timestamp(msg: Any) -> float | None:
+    """Extract epoch-seconds timestamp from a PydanticAI message, or None."""
+    ts = getattr(msg, "timestamp", None)
+    if ts is None:
+        return None
+    try:
+        return ts.timestamp()  # datetime → float
+    except Exception:
+        return None
 
 
 def _serialize_user_prompt(user_prompt: Any) -> Any:

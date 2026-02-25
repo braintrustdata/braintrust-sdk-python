@@ -431,6 +431,15 @@ async def test_agent_with_tools(memory_logger):
     assert "weather" in str(agent_span["input"]).lower() or "paris" in str(agent_span["input"]).lower()
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
+    tool_spans = [s for s in spans if s["span_attributes"].get("type") == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) >= 1, f"Expected at least 1 TOOL span, got {len(tool_spans)}"
+
+    weather_tool_span = next((s for s in tool_spans if s["span_attributes"]["name"] == "get_weather"), None)
+    assert weather_tool_span is not None, "get_weather TOOL span not found"
+    assert "Paris" in str(weather_tool_span["input"]) or "paris" in str(weather_tool_span["input"]).lower()
+    assert "sunny" in str(weather_tool_span["output"]).lower()
+    assert weather_tool_span["span_parents"] == [agent_span["span_id"]], "tool span should be nested under agent_run"
+
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
@@ -1796,17 +1805,19 @@ async def test_agent_with_tool_execution(memory_logger):
     # Verify toolsets are NOT in metadata (following the principle: agent.run() accepts it)
     assert "toolsets" not in agent_span["metadata"], "toolsets should NOT be in metadata"
 
+    tool_spans = [s for s in spans if s["span_attributes"].get("type") == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) >= 1, f"Expected at least 1 TOOL span, got {len(tool_spans)}"
+
+    calc_tool_span = next((s for s in tool_spans if s["span_attributes"]["name"] == "calculate"), None)
+    assert calc_tool_span is not None, "calculate TOOL span not found"
+    assert calc_tool_span["input"] is not None, "tool span should have input"
+    assert calc_tool_span["output"] is not None, "tool span should have output"
+    assert calc_tool_span["span_parents"] == [agent_span["span_id"]], "tool span should be nested under agent_run"
+
 
 @pytest.mark.vcr
 def test_tool_execution_creates_spans(memory_logger):
-    """Test that executing tools with agents works and creates traced spans.
-
-    Note: Tool-level span creation is not yet implemented in the wrapper.
-    This test verifies that agents with tools work correctly and produce agent/chat spans.
-
-    Future enhancement: Add automatic span creation for tool executions as children of
-    the chat span that requested them.
-    """
+    """Test that executing tools with agents works and creates traced spans."""
     assert not memory_logger.pop()
 
     start = time.time()
@@ -1853,9 +1864,16 @@ def test_tool_execution_creates_spans(memory_logger):
     tool_names = [t["name"] for t in tools if isinstance(t, dict)]
     assert "calculate" in tool_names, f"calculate tool should be in toolset, got: {tool_names}"
 
-    # TODO: Future enhancement - verify tool execution spans are created
-    # tool_spans = [s for s in spans if "calculate" in s["span_attributes"].get("name", "")]
-    # assert len(tool_spans) > 0, "Tool execution should create spans"
+    tool_spans = [s for s in spans if s["span_attributes"].get("type") == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) >= 1, f"Expected at least 1 TOOL span, got {len(tool_spans)}"
+
+    calc_tool_span = next((s for s in tool_spans if s["span_attributes"]["name"] == "calculate"), None)
+    assert calc_tool_span is not None, "calculate TOOL span not found"
+    assert calc_tool_span["input"] is not None, "tool span should have input"
+    assert calc_tool_span["output"] is not None, "tool span should have output"
+    # Verify tool span is nested within the agent span tree
+    all_span_ids = {s["span_id"] for s in spans}
+    assert calc_tool_span["span_parents"][0] in all_span_ids, "tool span should be nested under a span in the agent tree"
 
 
 def test_agent_tool_metadata_extraction(memory_logger):
