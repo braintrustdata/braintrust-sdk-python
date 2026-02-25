@@ -1639,6 +1639,7 @@ def init(
         if description is not None:
             args["description"] = description
 
+        merged_git_metadata_settings = None
         if repo_info:
             repo_info_arg = repo_info
         else:
