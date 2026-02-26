@@ -1,4 +1,5 @@
 import os
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,8 @@ from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.adk import setup_adk
 from google.adk import Agent
+
+ADK_VERSION = tuple(int(x) for x in pkg_version("google-adk").split(".")[:3])
 from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
@@ -910,7 +913,8 @@ async def test_adk_input_schema_serialization(memory_logger):
     assert "parts" in output["content"]
     assert "finish_reason" in output
     assert "usage_metadata" in output
-    assert "avg_logprobs" in output
+    if ADK_VERSION >= (1, 15, 0):
+        assert "avg_logprobs" in output
 
 
 @pytest.mark.vcr
@@ -1044,7 +1048,8 @@ async def test_adk_complex_nested_schema(memory_logger):
     assert "parts" in output["content"]
     assert "finish_reason" in output
     assert "usage_metadata" in output
-    assert "avg_logprobs" in output
+    if ADK_VERSION >= (1, 15, 0):
+        assert "avg_logprobs" in output
 
 
 @pytest.mark.asyncio
@@ -1284,7 +1289,8 @@ async def test_adk_response_json_schema_dict(memory_logger):
     assert "parts" in output["content"]
     assert "finish_reason" in output
     assert "usage_metadata" in output
-    assert "avg_logprobs" in output
+    if ADK_VERSION >= (1, 15, 0):
+        assert "avg_logprobs" in output
 
 
 @pytest.mark.asyncio
