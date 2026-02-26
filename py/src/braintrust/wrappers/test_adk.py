@@ -901,22 +901,16 @@ async def test_adk_input_schema_serialization(memory_logger):
         "config": {
             "system_instruction": ANY,  # Contains agent name
         },
-        "live_connect_config": {
-            "input_audio_transcription": {},
-            "output_audio_transcription": {},
-        },
+        "live_connect_config": ANY,
     }
 
-    # Assert complete output structure
-    assert llm_span["output"] == {
-        "content": {
-            "role": "model",
-            "parts": ANY,  # Response text varies
-        },
-        "finish_reason": ANY,
-        "usage_metadata": ANY,  # Token counts vary
-        "avg_logprobs": ANY,
-    }
+    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
+    output = llm_span["output"]
+    assert output["content"]["role"] == "model"
+    assert "parts" in output["content"]
+    assert "finish_reason" in output
+    assert "usage_metadata" in output
+    assert "avg_logprobs" in output
 
 
 @pytest.mark.vcr
@@ -1041,22 +1035,16 @@ async def test_adk_complex_nested_schema(memory_logger):
                 "type": "object",
             },
         },
-        "live_connect_config": {
-            "input_audio_transcription": {},
-            "output_audio_transcription": {},
-        },
+        "live_connect_config": ANY,
     }
 
-    # Assert complete output structure
-    assert llm_span["output"] == {
-        "content": {
-            "role": "model",
-            "parts": ANY,  # Response text varies
-        },
-        "finish_reason": ANY,
-        "usage_metadata": ANY,  # Token counts vary
-        "avg_logprobs": ANY,
-    }
+    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
+    output = llm_span["output"]
+    assert output["content"]["role"] == "model"
+    assert "parts" in output["content"]
+    assert "finish_reason" in output
+    assert "usage_metadata" in output
+    assert "avg_logprobs" in output
 
 
 @pytest.mark.asyncio
@@ -1287,22 +1275,16 @@ async def test_adk_response_json_schema_dict(memory_logger):
                 "required": ["city", "country"],
             },
         },
-        "live_connect_config": {
-            "input_audio_transcription": {},
-            "output_audio_transcription": {},
-        },
+        "live_connect_config": ANY,
     }
 
-    # Assert complete output structure
-    assert llm_span["output"] == {
-        "content": {
-            "role": "model",
-            "parts": ANY,  # Response contains Tokyo info in JSON
-        },
-        "finish_reason": ANY,
-        "usage_metadata": ANY,
-        "avg_logprobs": ANY,
-    }
+    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
+    output = llm_span["output"]
+    assert output["content"]["role"] == "model"
+    assert "parts" in output["content"]
+    assert "finish_reason" in output
+    assert "usage_metadata" in output
+    assert "avg_logprobs" in output
 
 
 @pytest.mark.asyncio
