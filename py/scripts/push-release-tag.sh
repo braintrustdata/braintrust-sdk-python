@@ -33,7 +33,7 @@ done
 # Fetch latest tags
 git fetch --tags --prune
 
-REPO_URL="https://github.com/braintrustdata/braintrust-sdk-python"
+REPO_URL="https://github.com/braintrustdata/braintrust-sdk-python-python"
 TAG_PREFIX="py-sdk-v"
 COMMIT=$(git rev-parse --short HEAD)
 VERSION=$(bash "$ROOT_DIR/py/scripts/get_version.sh")
@@ -98,5 +98,5 @@ fi
 
 echo ""
 echo "Tag ${TAG} has been created and pushed to origin. Check GitHub Actions for build progress:"
-echo "https://github.com/braintrustdata/braintrust-sdk/actions/workflows/publish-py-sdk.yaml"
+echo "https://github.com/braintrustdata/braintrust-sdk-python/actions/workflows/publish-py-sdk.yaml"
 echo ""

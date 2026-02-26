@@ -1,4 +1,4 @@
-# Development container for braintrust-sdk-ruby
+# Development container for braintrust-sdk-python
 FROM debian:trixie-slim
 
 # Set UTF-8 locale

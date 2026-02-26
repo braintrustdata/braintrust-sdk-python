@@ -44,8 +44,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://www.braintrust.dev",
     project_urls={
-        "Source Code": "https://github.com/braintrustdata/braintrust-sdk",
-        "Bug Tracker": "https://github.com/braintrustdata/braintrust-sdk/issues",
+        "Source Code": "https://github.com/braintrustdata/braintrust-sdk-python",
+        "Bug Tracker": "https://github.com/braintrustdata/braintrust-sdk-python/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
