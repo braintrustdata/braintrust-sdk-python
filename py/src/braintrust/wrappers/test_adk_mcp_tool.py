@@ -153,41 +153,14 @@ async def test_mcp_tool_error_handling():
 @pytest.mark.asyncio
 async def test_setup_adk_patches_mcp_tool():
     """Test that setup_adk automatically patches McpTool."""
-    import sys
-
-    # Mock google-adk imports
-    mock_mcp_tool_module = MagicMock()
     MockMcpTool = MagicMock()
-    mock_mcp_tool_module.McpTool = MockMcpTool
 
-    # Mock google.adk modules hierarchy
-    mock_google = MagicMock()
-    mock_google_adk = MagicMock()
-    mock_google_adk_tools = MagicMock()
-    mock_google_adk_tools_mcp_tool = MagicMock()
-    mock_google_adk_tools_mcp_tool.mcp_tool = mock_mcp_tool_module
-
-    # Clear all google.adk modules from cache
-    modules_to_remove = [key for key in list(sys.modules.keys()) if key.startswith("google.adk.tools.mcp_tool")]
-    for module in modules_to_remove:
-        del sys.modules[module]
-
-    # Critical: Also clear the mcp_tool submodule to force re-import with mock
-    sys.modules.pop("google.adk.tools.mcp_tool.mcp_tool", None)
-
-    with patch.dict(
-        "sys.modules",
-        {
-            "google.adk.tools.mcp_tool": mock_google_adk_tools_mcp_tool,
-            "google.adk.tools.mcp_tool.mcp_tool": mock_mcp_tool_module,
-        },
-        clear=False,
-    ):
-        with patch("braintrust.wrappers.adk.init_logger"):
-            with patch("braintrust.wrappers.adk.wrap_mcp_tool") as mock_wrap:
+    with patch("braintrust.wrappers.adk.init_logger"):
+        with patch("braintrust.wrappers.adk.wrap_mcp_tool") as mock_wrap:
+            with patch("google.adk.tools.mcp_tool.mcp_tool") as mock_mcp_module:
+                mock_mcp_module.McpTool = MockMcpTool
                 result = setup_adk(project_name="test")
 
-                # Verify wrap_mcp_tool was called
                 assert result is True
                 mock_wrap.assert_called_once_with(MockMcpTool)
 
