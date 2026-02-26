@@ -119,7 +119,7 @@ To contribute to this integration:
 
 ```bash
 # Clone the repository
-git clone https://github.com/braintrustdata/braintrust-sdk.git
+git clone https://github.com/braintrustdata/braintrust-sdk-python.git
 cd sdk/integrations/adk-py
 
 uv sync

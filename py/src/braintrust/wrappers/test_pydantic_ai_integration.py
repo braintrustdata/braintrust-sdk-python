@@ -2598,7 +2598,7 @@ async def test_attachment_in_result_data(memory_logger):
 async def test_no_model_agent_run(memory_logger):
     """Agent created without a model should work when model is passed at runtime.
 
-    Reproduces https://github.com/braintrustdata/braintrust-sdk/issues/1324:
+    Reproduces https://github.com/braintrustdata/braintrust-sdk-python/issues/1324:
     _ensure_model_wrapped() calls type(instance._model) without checking for None,
     crashing with: AttributeError: type object 'NoneType' has no attribute 'request'
     """

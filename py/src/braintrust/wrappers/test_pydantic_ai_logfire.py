@@ -1,6 +1,6 @@
 """Test that braintrust's pydantic_ai integration works alongside logfire.
 
-Reproduces https://github.com/braintrustdata/braintrust-sdk/issues/1324:
+Reproduces https://github.com/braintrustdata/braintrust-sdk-python/issues/1324:
 setup_pydantic_ai() conflicts with logfire's instrument_pydantic_ai() when
 an agent is created without a model parameter.
 """
