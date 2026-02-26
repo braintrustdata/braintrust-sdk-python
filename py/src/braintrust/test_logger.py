@@ -86,6 +86,34 @@ class TestInit(TestCase):
         assert dataset_dict["id"] == "dataset-id-123"
         assert dataset_dict["version"] == "v2"
 
+    def test_init_with_repo_info_does_not_raise(self):
+        """Test that passing repo_info to init() doesn't cause an UnboundLocalError.
+
+        Regression test for a bug where merged_git_metadata_settings was only
+        defined in the else branch (when repo_info is falsy), but referenced
+        unconditionally later in compute_metadata().
+        ref: https://github.com/braintrustdata/braintrust-sdk-python/issues/8
+        """
+        mock_conn = MagicMock()
+        mock_conn.post_json.return_value = {
+            "project": {"id": "test-project-id", "name": "test-project"},
+            "experiment": {"id": "test-exp-id", "name": "test-exp"},
+        }
+
+        from braintrust.git_fields import RepoInfo
+
+        repo_info = RepoInfo(commit="abc123", branch="main", dirty=False)
+
+        simulate_login()
+        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+            exp = braintrust.init(project="test-project", repo_info=repo_info)
+
+            # Force compute_metadata() to execute. This would raise
+            # UnboundLocalError before the fix.
+            metadata = exp._lazy_metadata.get()
+
+        assert metadata.project.id == "test-project-id"
+        assert metadata.experiment.name == "test-exp"
 
 class TestLogger(TestCase):
     def test_extract_attachments_no_op(self):
