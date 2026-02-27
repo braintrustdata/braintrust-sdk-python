@@ -34,6 +34,7 @@ def vcr_config():
 
     return {
         "record_mode": record_mode,
+        "cassette_library_dir": str(Path(__file__).parent.parent / "cassettes"),
         "filter_headers": [
             "authorization",
             "x-goog-api-key",
@@ -347,7 +348,7 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
     runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
 
     # Load test image from fixtures
-    fixtures_dir = Path(__file__).parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
+    fixtures_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
     image_path = fixtures_dir / "test-image.png"
     with open(image_path, "rb") as f:
         image_data = f.read()

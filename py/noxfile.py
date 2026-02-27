@@ -164,8 +164,8 @@ def test_google_adk(session, version):
     """Test Google ADK integration."""
     _install_test_deps(session)
     _install(session, "google-adk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_adk.py")
-    _run_tests(session, f"{WRAPPER_DIR}/test_adk_mcp_tool.py")
+    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk.py")
+    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk_mcp_tool.py")
     _run_core_tests(session)
 
 
