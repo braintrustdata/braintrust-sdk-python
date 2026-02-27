@@ -1,19 +1,21 @@
-import json
+import os
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 
 import pytest
+from braintrust import logger
+from braintrust.bt_json import bt_safe_deep_copy
+from braintrust.logger import Attachment
+from braintrust.test_helpers import init_test_logger
+from braintrust.wrappers.adk import setup_adk
 from google.adk import Agent
+
+ADK_VERSION = tuple(int(x) for x in pkg_version("google-adk").split(".")[:3])
 from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 from pydantic import BaseModel, Field
-
-from braintrust import logger
-from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.logger import Attachment
-from braintrust.test_helpers import init_test_logger
-from braintrust_adk import setup_adk
 
 PROJECT_NAME = "test_adk"
 
@@ -22,12 +24,22 @@ setup_adk(project_name=PROJECT_NAME)
 
 @pytest.fixture(scope="module")
 def vcr_config():
+    """Google ADK VCR config - needs to uppercase HTTP methods (same as google_genai)."""
+    record_mode = "none" if (os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS")) else "once"
+
+    def before_record_request(request):
+        # Normalize HTTP method to uppercase for consistency (Google API quirk)
+        request.method = request.method.upper()
+        return request
+
     return {
-        "record_mode": "once",
+        "record_mode": record_mode,
+        "cassette_library_dir": str(Path(__file__).parent.parent / "cassettes"),
         "filter_headers": [
             "authorization",
             "x-goog-api-key",
         ],
+        "before_record_request": before_record_request,
     }
 
 
@@ -199,7 +211,7 @@ async def test_adk_max_tokens_captures_content(memory_logger):
 def test_serialize_content_with_binary_data():
     """Test that _serialize_content converts binary data to Attachment references."""
     from braintrust.logger import Attachment
-    from braintrust_adk import _serialize_content, _serialize_part
+    from braintrust.wrappers.adk import _serialize_content, _serialize_part
 
     # Create a minimal PNG image (1x1 red pixel)
     minimal_png = (
@@ -272,7 +284,7 @@ def test_serialize_content_with_binary_data():
 
 def test_serialize_part_with_file_data():
     """Test that _serialize_part handles file_data (file references) correctly."""
-    from braintrust_adk import _serialize_part
+    from braintrust.wrappers.adk import _serialize_part
 
     class MockFileData:
         def __init__(self, file_uri, mime_type):
@@ -295,7 +307,7 @@ def test_serialize_part_with_file_data():
 
 def test_serialize_part_with_dict():
     """Test that _serialize_part handles dict input correctly."""
-    from braintrust_adk import _serialize_part
+    from braintrust.wrappers.adk import _serialize_part
 
     # Test that dicts pass through unchanged
     dict_part = {"text": "Hello", "custom": "field"}
@@ -305,7 +317,7 @@ def test_serialize_part_with_dict():
 
 def test_serialize_content_with_none():
     """Test that _serialize_content handles None correctly."""
-    from braintrust_adk import _serialize_content
+    from braintrust.wrappers.adk import _serialize_content
 
     result = _serialize_content(None)
     assert result is None, "None should serialize to None"
@@ -336,7 +348,7 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
     runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
 
     # Load test image from fixtures
-    fixtures_dir = Path(__file__).parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
+    fixtures_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
     image_path = fixtures_dir / "test-image.png"
     with open(image_path, "rb") as f:
         image_data = f.read()
@@ -482,7 +494,7 @@ async def test_adk_captures_metrics(memory_logger):
 
 def test_determine_llm_call_type_direct_response():
     """Test that _determine_llm_call_type returns 'direct_response' when tools are available but not used."""
-    from braintrust_adk import _determine_llm_call_type
+    from braintrust.wrappers.adk import _determine_llm_call_type
 
     # Request with tools available
     llm_request = {
@@ -511,7 +523,7 @@ def test_determine_llm_call_type_direct_response():
 
 def test_determine_llm_call_type_tool_selection():
     """Test that _determine_llm_call_type returns 'tool_selection' when LLM calls a tool."""
-    from braintrust_adk import _determine_llm_call_type
+    from braintrust.wrappers.adk import _determine_llm_call_type
 
     # Request with tools available
     llm_request = {
@@ -541,7 +553,7 @@ def test_determine_llm_call_type_tool_selection():
 
 def test_determine_llm_call_type_tool_selection_snake_case():
     """Test that _determine_llm_call_type handles snake_case function_call."""
-    from braintrust_adk import _determine_llm_call_type
+    from braintrust.wrappers.adk import _determine_llm_call_type
 
     llm_request = {
         "config": {"tools": [{"function_declarations": [{"name": "search"}]}]},
@@ -562,7 +574,7 @@ def test_determine_llm_call_type_tool_selection_snake_case():
 
 def test_determine_llm_call_type_response_generation():
     """Test that _determine_llm_call_type returns 'response_generation' after tool execution."""
-    from braintrust_adk import _determine_llm_call_type
+    from braintrust.wrappers.adk import _determine_llm_call_type
 
     # Request with function_response in history
     llm_request = {
@@ -588,7 +600,7 @@ def test_determine_llm_call_type_response_generation():
 
 def test_determine_llm_call_type_no_tools():
     """Test that _determine_llm_call_type returns 'direct_response' when no tools configured."""
-    from braintrust_adk import _determine_llm_call_type
+    from braintrust.wrappers.adk import _determine_llm_call_type
 
     llm_request = {
         "config": {},
@@ -605,7 +617,7 @@ def test_determine_llm_call_type_no_tools():
 
 def test_determine_llm_call_type_no_response():
     """Test that _determine_llm_call_type handles missing model_response gracefully."""
-    from braintrust_adk import _determine_llm_call_type
+    from braintrust.wrappers.adk import _determine_llm_call_type
 
     llm_request = {
         "config": {"tools": [{"function_declarations": [{"name": "tool1"}]}]},
@@ -630,10 +642,10 @@ async def test_llm_call_span_wraps_child_spans(memory_logger):
     2. Child spans (like mcp_tool) created during execution have proper parent
     3. Span is updated with correct call_type after response is received
     """
-    from unittest.mock import ANY, MagicMock
+    from unittest.mock import MagicMock
 
     from braintrust import current_span, start_span
-    from braintrust_adk import wrap_flow
+    from braintrust.wrappers.adk import wrap_flow
 
     # Clear any existing logs
     memory_logger.pop()
@@ -727,7 +739,7 @@ async def test_async_context_preservation_across_yields():
     import asyncio
 
     from braintrust import start_span
-    from braintrust_adk import aclosing
+    from braintrust.wrappers.adk import aclosing
 
     # Initialize logger
     init_test_logger("test-context")
@@ -893,22 +905,17 @@ async def test_adk_input_schema_serialization(memory_logger):
         "config": {
             "system_instruction": ANY,  # Contains agent name
         },
-        "live_connect_config": {
-            "input_audio_transcription": {},
-            "output_audio_transcription": {},
-        },
+        "live_connect_config": ANY,
     }
 
-    # Assert complete output structure
-    assert llm_span["output"] == {
-        "content": {
-            "role": "model",
-            "parts": ANY,  # Response text varies
-        },
-        "finish_reason": ANY,
-        "usage_metadata": ANY,  # Token counts vary
-        "avg_logprobs": ANY,
-    }
+    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
+    output = llm_span["output"]
+    assert output["content"]["role"] == "model"
+    assert "parts" in output["content"]
+    assert "finish_reason" in output
+    assert "usage_metadata" in output
+    if ADK_VERSION >= (1, 15, 0):
+        assert "avg_logprobs" in output
 
 
 @pytest.mark.vcr
@@ -1033,28 +1040,23 @@ async def test_adk_complex_nested_schema(memory_logger):
                 "type": "object",
             },
         },
-        "live_connect_config": {
-            "input_audio_transcription": {},
-            "output_audio_transcription": {},
-        },
+        "live_connect_config": ANY,
     }
 
-    # Assert complete output structure
-    assert llm_span["output"] == {
-        "content": {
-            "role": "model",
-            "parts": ANY,  # Response text varies
-        },
-        "finish_reason": ANY,
-        "usage_metadata": ANY,  # Token counts vary
-        "avg_logprobs": ANY,
-    }
+    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
+    output = llm_span["output"]
+    assert output["content"]["role"] == "model"
+    assert "parts" in output["content"]
+    assert "finish_reason" in output
+    assert "usage_metadata" in output
+    if ADK_VERSION >= (1, 15, 0):
+        assert "avg_logprobs" in output
 
 
 @pytest.mark.asyncio
 async def test_serialize_config_handles_all_schema_fields():
     """Test that _serialize_config handles all 4 schema fields."""
-    from braintrust_adk import _serialize_config
+    from braintrust.wrappers.adk import _serialize_config
 
     class TestSchema(BaseModel):
         value: str = Field(description="Test value")
@@ -1088,7 +1090,7 @@ async def test_serialize_config_handles_all_schema_fields():
 @pytest.mark.asyncio
 async def test_serialize_config_handles_non_pydantic():
     """Test that _serialize_config handles non-Pydantic values gracefully."""
-    from braintrust_adk import _serialize_config
+    from braintrust.wrappers.adk import _serialize_config
 
     # Test with non-Pydantic values
     config = {"response_schema": "not a pydantic model", "other_field": {"key": "value"}}
@@ -1104,7 +1106,7 @@ async def test_serialize_config_handles_non_pydantic():
 @pytest.mark.asyncio
 async def test_serialize_pydantic_schema_direct():
     """Test _serialize_pydantic_schema directly with various inputs."""
-    from braintrust_adk import _serialize_pydantic_schema
+    from braintrust.wrappers.adk import _serialize_pydantic_schema
 
     class SimpleSchema(BaseModel):
         name: str = Field(description="A name")
@@ -1137,7 +1139,7 @@ async def test_serialize_pydantic_schema_direct():
 @pytest.mark.asyncio
 async def test_bt_safe_deep_copy_never_raises():
     """Test that bt_safe_deep_copy never raises exceptions."""
-    from braintrust_adk import bt_safe_deep_copy
+    from braintrust.wrappers.adk import bt_safe_deep_copy
 
     class BrokenModel:
         def model_dump(self):
@@ -1279,28 +1281,23 @@ async def test_adk_response_json_schema_dict(memory_logger):
                 "required": ["city", "country"],
             },
         },
-        "live_connect_config": {
-            "input_audio_transcription": {},
-            "output_audio_transcription": {},
-        },
+        "live_connect_config": ANY,
     }
 
-    # Assert complete output structure
-    assert llm_span["output"] == {
-        "content": {
-            "role": "model",
-            "parts": ANY,  # Response contains Tokyo info in JSON
-        },
-        "finish_reason": ANY,
-        "usage_metadata": ANY,
-        "avg_logprobs": ANY,
-    }
+    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
+    output = llm_span["output"]
+    assert output["content"]["role"] == "model"
+    assert "parts" in output["content"]
+    assert "finish_reason" in output
+    assert "usage_metadata" in output
+    if ADK_VERSION >= (1, 15, 0):
+        assert "avg_logprobs" in output
 
 
 @pytest.mark.asyncio
 async def test_serialize_config_preserves_none():
     """Test that _serialize_config returns None when config is None (not empty dict)."""
-    from braintrust_adk import _serialize_config
+    from braintrust.wrappers.adk import _serialize_config
 
     # None should be preserved as None, not converted to {}
     result = _serialize_config(None)
