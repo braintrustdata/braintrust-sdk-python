@@ -33,7 +33,7 @@ done
 # Fetch latest tags
 git fetch --tags --prune
 
-REPO_URL="https://github.com/braintrustdata/braintrust-sdk-python-python"
+REPO_URL="https://github.com/braintrustdata/braintrust-sdk-python"
 TAG_PREFIX="py-sdk-v"
 COMMIT=$(git rev-parse --short HEAD)
 VERSION=$(bash "$ROOT_DIR/py/scripts/get_version.sh")
