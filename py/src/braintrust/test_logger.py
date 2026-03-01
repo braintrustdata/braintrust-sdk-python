@@ -10,6 +10,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import braintrust
+import exceptiongroup
 import pytest
 from braintrust import (
     Attachment,
@@ -27,6 +28,7 @@ from braintrust.logger import (
     parent_context,
     render_message,
     render_mustache,
+    stringify_exception,
 )
 from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
 from braintrust.test_helpers import (
@@ -3318,3 +3320,82 @@ def test_traced_decorator_span_name(with_memory_logger):
     my_traced_function()
 
     assert captured_name == "my_traced_function"
+
+
+def _raise_test_exception_group():
+    """Raise and return a standard ExceptionGroup with a traceback for testing."""
+    try:
+        raise exceptiongroup.ExceptionGroup(
+            "Multiple failures",
+            [
+                ConnectionRefusedError("[Errno 61] Connection refused"),
+                ValueError("Invalid configuration"),
+            ],
+        )
+    except exceptiongroup.ExceptionGroup as eg:
+        return eg
+
+
+def _assert_test_exception_group_contents(error_str):
+    """Assert that error_str contains the expected sub-exception details."""
+    assert "ExceptionGroup: Multiple failures" in error_str
+    assert "ConnectionRefusedError" in error_str
+    assert "[Errno 61] Connection refused" in error_str
+    assert "ValueError" in error_str
+    assert "Invalid configuration" in error_str
+
+
+def test_stringify_exception_with_exception_group():
+    eg = _raise_test_exception_group()
+    result = stringify_exception(type(eg), eg, eg.__traceback__)
+    _assert_test_exception_group_contents(result)
+    assert "(2 sub-exceptions)" in result
+
+
+def test_stringify_exception_with_nested_exception_group():
+    try:
+        inner = exceptiongroup.ExceptionGroup("inner", [TypeError("bad type")])
+        raise exceptiongroup.ExceptionGroup(
+            "outer",
+            [inner, RuntimeError("top-level error")],
+        )
+    except exceptiongroup.ExceptionGroup as eg:
+        result = stringify_exception(type(eg), eg, eg.__traceback__)
+    else:
+        raise AssertionError("ExceptionGroup was not raised")
+
+    assert "outer" in result
+    assert "inner" in result
+    assert "TypeError" in result
+    assert "bad type" in result
+    assert "RuntimeError" in result
+    assert "top-level error" in result
+
+
+def test_span_exit_logs_exception_group_sub_exceptions(with_memory_logger):
+    """Verify sub-exceptions are captured when an ExceptionGroup propagates through span.__exit__."""
+    init_test_logger(__name__)
+
+    with pytest.raises(exceptiongroup.ExceptionGroup):
+        with braintrust.current_logger().start_span(name="eg-span"):
+            raise _raise_test_exception_group()
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    _assert_test_exception_group_contents(logs[0].get("error", ""))
+
+
+def test_traced_logs_exception_group_sub_exceptions(with_memory_logger):
+    """Verify sub-exceptions are captured when an ExceptionGroup propagates through @traced."""
+    init_test_logger(__name__)
+
+    @logger.traced
+    def failing_function():
+        raise _raise_test_exception_group()
+
+    with pytest.raises(exceptiongroup.ExceptionGroup):
+        failing_function()
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    _assert_test_exception_group_contents(logs[0].get("error", ""))

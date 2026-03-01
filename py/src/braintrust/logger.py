@@ -4395,11 +4395,7 @@ def log_exc_info_to_span(
 
 
 def stringify_exception(exc_type: type[BaseException], exc_value: BaseException, tb: TracebackType | None) -> str:
-    return "".join(
-        traceback.format_exception_only(exc_type, exc_value)
-        + ["\nTraceback (most recent call last):\n"]
-        + traceback.format_tb(tb)
-    )
+    return "".join(traceback.format_exception(exc_type, exc_value, tb))
 
 
 def _strip_nones(d: T, deep: bool) -> T:
