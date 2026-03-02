@@ -3353,6 +3353,7 @@ def test_stringify_exception_with_exception_group():
 
 
 def test_stringify_exception_with_nested_exception_group():
+    result = ""
     try:
         inner = exceptiongroup.ExceptionGroup("inner", [TypeError("bad type")])
         raise exceptiongroup.ExceptionGroup(
@@ -3361,9 +3362,8 @@ def test_stringify_exception_with_nested_exception_group():
         )
     except exceptiongroup.ExceptionGroup as eg:
         result = stringify_exception(type(eg), eg, eg.__traceback__)
-    else:
-        raise AssertionError("ExceptionGroup was not raised")
 
+    assert result, "ExceptionGroup was not raised"
     assert "outer" in result
     assert "inner" in result
     assert "TypeError" in result
