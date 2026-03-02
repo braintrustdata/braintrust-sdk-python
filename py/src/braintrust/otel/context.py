@@ -49,9 +49,8 @@ class ContextManager:
 
     def set_current_span(self, span: Span) -> Any:
         """Set the current active span in OTEL context."""
-        from opentelemetry import context, trace
 
-        if hasattr(span, "get_span_context"):
+        if _is_otel_span(span):
             # This is an OTEL span - it will manage its own context
             return None
         else:
@@ -88,7 +87,6 @@ class ContextManager:
 
     def unset_current_span(self, context_token: Any = None) -> None:
         """Unset the current active span from OTEL context."""
-        from opentelemetry import context
 
         if context_token:
             # Detaching the token restores the previous context
