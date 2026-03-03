@@ -388,6 +388,11 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
         # Run the tests in the src directory
         test_args = [
             "pytest",
+            # Disable the braintrust pytest plugin (registered via pytest11 entry
+            # point) to avoid ImportPathMismatchError when the installed package
+            # and the source tree both contain braintrust/conftest.py.
+            "-p",
+            "no:braintrust",
             f"src/{test_path}",
         ]
         for path in paths_to_ignore:
