@@ -7,6 +7,8 @@ on:
       - "integrations/langchain-py/**"
       - "integrations/adk-py/**"
       - ".github/workflows/py.yaml"
+      - ".github/workflows/py-build-test.yaml"
+      - ".github/workflows/py-upload-wheel.yaml"
       - ".github/workflows/adk-py-test.yaml"
       - ".github/workflows/langchain-py-test.yaml"
   push:
@@ -16,42 +18,18 @@ jobs:
   build:
     # Skip on fork PRs — secrets are unavailable. See py-fork.yaml instead.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-
+    uses: ./.github/workflows/py-build-test.yaml
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
         os: [ubuntu-latest, windows-latest]
         shard: [0, 1]
-
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          cd py && make install-dev
-      - name: Test whether the Python SDK can be installed
-        run: |
-          # This is already done by make install-dev, but we're keeping this as a separate step
-          # to explicitly verify that installation works
-          python -m uv pip install -e ./py[all]
-      - name: Test whether the Python SDK can be imported
-        run: |
-          python -c 'import braintrust'
-      - name: Run nox tests (shard ${{ matrix.shard }}/2)
-        shell: bash
-        run: |
-          cd py && ./scripts/nox-matrix.sh ${{ matrix.shard }} 2
+    with:
+      python-version: ${{ matrix.python-version }}
+      os: ${{ matrix.os }}
+      shard: ${{ matrix.shard }}
+    secrets: inherit
 
   adk-py:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
@@ -82,20 +60,4 @@ jobs:
   upload-wheel:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - name: Install build dependencies and build wheel
-        run: |
-          cd py && make install-build-deps && make build
-      - name: Upload wheel as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-wheel
-          path: py/dist/*.whl
-          retention-days: 5
+    uses: ./.github/workflows/py-upload-wheel.yaml

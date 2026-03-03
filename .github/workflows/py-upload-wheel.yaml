@@ -1,0 +1,31 @@
+name: py-upload-wheel
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install build dependencies and build wheel
+        run: |
+          cd py && make install-build-deps && make build
+      - name: Upload wheel as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheel
+          path: py/dist/*.whl
+          retention-days: 5

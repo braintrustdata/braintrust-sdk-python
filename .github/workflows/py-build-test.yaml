@@ -1,0 +1,52 @@
+name: py-build-test
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+      shard:
+        required: true
+        type: number
+      ref:
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  test:
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 30
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Install dependencies
+        run: |
+          cd py && make install-dev
+      - name: Test whether the Python SDK can be installed
+        run: |
+          # This is already done by make install-dev, but we're keeping this as a separate step
+          # to explicitly verify that installation works
+          python -m uv pip install -e ./py[all]
+      - name: Test whether the Python SDK can be imported
+        run: |
+          python -c 'import braintrust'
+      - name: Run nox tests (shard ${{ inputs.shard }}/2)
+        shell: bash
+        run: |
+          cd py && ./scripts/nox-matrix.sh ${{ inputs.shard }} 2
