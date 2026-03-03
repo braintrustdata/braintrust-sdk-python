@@ -10,10 +10,12 @@ so it auto-loads when braintrust is installed.
 from __future__ import annotations
 
 import traceback
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from braintrust.logger import NOOP_SPAN, Span
+
+if TYPE_CHECKING:
+    from braintrust.logger import Span
 
 # ---------------------------------------------------------------------------
 # Marker registration & CLI options (always active)
@@ -86,6 +88,8 @@ def braintrust_span(request: pytest.FixtureRequest) -> Span:
     When ``--braintrust`` is not active the fixture returns a no-op span
     that silently discards all logged data.
     """
+    from braintrust.logger import NOOP_SPAN
+
     return getattr(request.node, "_braintrust_span", NOOP_SPAN)
 
 
