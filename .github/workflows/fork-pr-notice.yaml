@@ -1,0 +1,43 @@
+# Notify fork PR authors that a maintainer must label their PR to run CI.
+# This runs instead of the regular py.yaml jobs (which are skipped for forks).
+#
+# Uses pull_request_target (not pull_request) so we have write access to remove
+# the label on new pushes. This is safe because it never checks out or executes
+# fork code.
+name: "Fork PR Notice"
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "py/**"
+      - "integrations/langchain-py/**"
+      - "integrations/adk-py/**"
+      - ".github/workflows/py.yaml"
+      - ".github/workflows/py-fork.yaml"
+      - ".github/workflows/adk-py-test.yaml"
+      - ".github/workflows/langchain-py-test.yaml"
+
+jobs:
+  notice:
+    # Only run for fork PRs.
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Remove safe-to-run-ci label on new pushes
+        if: github.event.action == 'synchronize'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --remove-label "safe-to-run-ci" || true
+
+      - name: Label required
+        run: |
+          echo "::notice::This PR is from a fork. A maintainer must add the 'safe-to-run-ci' label to run CI with secrets."
+          echo ""
+          echo "Fork PRs cannot access repository secrets directly."
+          echo "A maintainer will review your changes and add the 'safe-to-run-ci' label to trigger the full test suite."

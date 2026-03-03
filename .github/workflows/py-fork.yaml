@@ -1,21 +1,33 @@
-name: py
+# Label-gated CI for fork PRs.
+#
+# Fork PRs cannot access repository secrets via the `pull_request` event, so
+# the regular `py.yaml` workflow fails for external contributions. This workflow
+# uses `pull_request_target` which grants secrets access because it runs the
+# workflow definition from the *base* branch (trusted), not the fork.
+#
+# A maintainer must add the `safe-to-run-ci` label after reviewing the PR code.
+# New pushes do NOT automatically re-trigger this workflow — a maintainer must
+# remove and re-add the label after reviewing the new changes.
+name: "py (fork)"
 
 on:
-  pull_request:
+  pull_request_target:
+    types: [labeled]
     paths:
       - "py/**"
       - "integrations/langchain-py/**"
       - "integrations/adk-py/**"
       - ".github/workflows/py.yaml"
+      - ".github/workflows/py-fork.yaml"
       - ".github/workflows/adk-py-test.yaml"
       - ".github/workflows/langchain-py-test.yaml"
-  push:
-    branches: [main]
 
 jobs:
   build:
-    # Skip on fork PRs — secrets are unavailable. See py-fork.yaml instead.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    # Only run for fork PRs that a maintainer has labeled `safe-to-run-ci`.
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'safe-to-run-ci')
+      && github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
@@ -33,6 +45,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -42,8 +56,6 @@ jobs:
           cd py && make install-dev
       - name: Test whether the Python SDK can be installed
         run: |
-          # This is already done by make install-dev, but we're keeping this as a separate step
-          # to explicitly verify that installation works
           python -m uv pip install -e ./py[all]
       - name: Test whether the Python SDK can be imported
         run: |
@@ -54,7 +66,9 @@ jobs:
           cd py && ./scripts/nox-matrix.sh ${{ matrix.shard }} 2
 
   adk-py:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'safe-to-run-ci')
+      && github.event.pull_request.head.repo.full_name != github.repository
     uses: ./.github/workflows/adk-py-test.yaml
     strategy:
       fail-fast: false
@@ -64,10 +78,13 @@ jobs:
     with:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
+      ref: ${{ github.event.pull_request.head.sha }}
     secrets: inherit
 
   langchain-py:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'safe-to-run-ci')
+      && github.event.pull_request.head.repo.full_name != github.repository
     uses: ./.github/workflows/langchain-py-test.yaml
     strategy:
       fail-fast: false
@@ -77,15 +94,17 @@ jobs:
     with:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
+      ref: ${{ github.event.pull_request.head.sha }}
     secrets: inherit
 
   upload-wheel:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
