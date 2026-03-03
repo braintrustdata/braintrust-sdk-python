@@ -75,6 +75,7 @@ DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
+PYTEST_VERSIONS = (LATEST, "8.4.2", "7.4.4")
 
 
 @nox.session()
@@ -243,6 +244,14 @@ def test_cli(session):
     session.install(".[cli]")
     session.install("httpx")  # Required for starlette.testclient
     _run_tests(session, "braintrust/devserver/test_server_integration.py")
+
+
+@nox.session()
+@nox.parametrize("version", PYTEST_VERSIONS, ids=PYTEST_VERSIONS)
+def test_pytest_plugin(session, version):
+    _install_test_deps(session)
+    _install(session, "pytest", version)
+    _run_tests(session, f"{WRAPPER_DIR}/pytest_plugin/test_plugin.py")
 
 
 @nox.session()

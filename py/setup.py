@@ -56,7 +56,10 @@ setuptools.setup(
     packages=setuptools.find_packages(where="src"),
     package_data={"braintrust": ["py.typed"]},
     python_requires=">=3.10.0",
-    entry_points={"console_scripts": ["braintrust = braintrust.cli.__main__:main"]},
+    entry_points={
+        "console_scripts": ["braintrust = braintrust.cli.__main__:main"],
+        "pytest11": ["braintrust = braintrust.wrappers.pytest_plugin.plugin"],
+    },
     install_requires=install_requires,
     extras_require=extras_require,
 )
