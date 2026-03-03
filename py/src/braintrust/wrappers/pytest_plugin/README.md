@@ -5,7 +5,7 @@ Automatically track pytest test results as [Braintrust](https://www.braintrust.d
 ## Requirements
 
 - Python >= 3.10
-- pytest >= 7
+- pytest >= 8
 
 ## Installation
 
