@@ -1,6 +1,6 @@
 import dataclasses
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, overload
 
 import slugify
@@ -53,6 +53,7 @@ class CodeFunction:
     returns: Any
     if_exists: IfExists | None
     metadata: dict[str, Any] | None = None
+    tags: Sequence[str] | None = None
 
 
 @dataclasses.dataclass
@@ -69,6 +70,7 @@ class CodePrompt:
     id: str | None
     if_exists: IfExists | None
     metadata: dict[str, Any] | None = None
+    tags: Sequence[str] | None = None
 
     def to_function_definition(self, if_exists: IfExists | None, project_ids: ProjectIdCache) -> dict[str, Any]:
         prompt_data = self.prompt
@@ -102,6 +104,8 @@ class CodePrompt:
             j["function_type"] = self.function_type
         if self.metadata is not None:
             j["metadata"] = self.metadata
+        if self.tags is not None:
+            j["tags"] = list(self.tags)
 
         return j
 
@@ -124,6 +128,7 @@ class ToolBuilder:
         returns: Any = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
     ) -> CodeFunction:
         """Creates a tool.
 
@@ -136,6 +141,7 @@ class ToolBuilder:
             returns: The tool's output schema, as a Pydantic model.
             if_exists: What to do if the tool already exists.
             metadata: Custom metadata to attach to the tool.
+            tags: A list of tags for the tool.
 
         Returns:
             A handle to the created tool, that can be used in a prompt.
@@ -160,6 +166,7 @@ class ToolBuilder:
             returns=returns,
             if_exists=if_exists,
             metadata=metadata,
+            tags=tags,
         )
         self.project.add_code_function(f)
         return f
@@ -186,6 +193,7 @@ class PromptBuilder:
         tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
     ) -> CodePrompt: ...
 
     @overload  # messages only, no prompt
@@ -202,6 +210,7 @@ class PromptBuilder:
         tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
     ) -> CodePrompt: ...
 
     def create(
@@ -218,6 +227,7 @@ class PromptBuilder:
         tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
     ):
         """Creates a prompt.
 
@@ -233,6 +243,7 @@ class PromptBuilder:
             tools: The tools to use for the prompt.
             if_exists: What to do if the prompt already exists.
             metadata: Custom metadata to attach to the prompt.
+            tags: A list of tags for the prompt.
         """
         self._task_counter += 1
         if not name:
@@ -282,6 +293,7 @@ class PromptBuilder:
             id=id,
             if_exists=if_exists,
             metadata=metadata,
+            tags=tags,
         )
         self.project.add_prompt(p)
         return p
@@ -304,6 +316,7 @@ class ScorerBuilder:
         description: str | None = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
         handler: Callable[..., Any],
         parameters: Any,
         returns: Any = None,
@@ -319,6 +332,7 @@ class ScorerBuilder:
         description: str | None = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
         prompt: str,
         model: str,
         params: ModelParams | None = None,
@@ -336,6 +350,7 @@ class ScorerBuilder:
         description: str | None = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
         messages: list[ChatCompletionMessageParam],
         model: str,
         params: ModelParams | None = None,
@@ -351,6 +366,7 @@ class ScorerBuilder:
         description: str | None = None,
         if_exists: IfExists | None = None,
         metadata: dict[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
         # Code scorer params.
         handler: Callable[..., Any] | None = None,
         parameters: Any = None,
@@ -371,6 +387,7 @@ class ScorerBuilder:
             description: The description of the scorer.
             if_exists: What to do if the scorer already exists.
             metadata: Custom metadata to attach to the scorer.
+            tags: A list of tags for the scorer.
 
             The remaining args are mutually exclusive; that is,
             the function will only accept args from one of the following overloads.
@@ -410,6 +427,7 @@ class ScorerBuilder:
                 returns=returns,
                 if_exists=if_exists,
                 metadata=metadata,
+                tags=tags,
             )
             self.project.add_code_function(f)
             return f
@@ -449,6 +467,7 @@ class ScorerBuilder:
                 id=None,
                 if_exists=if_exists,
                 metadata=metadata,
+                tags=tags,
             )
             self.project.add_prompt(p)
             return p

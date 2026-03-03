@@ -251,6 +251,8 @@ def _collect_function_function_defs(
         }
         if f.metadata is not None:
             j["metadata"] = f.metadata
+        if f.tags is not None:
+            j["tags"] = list(f.tags)
         if f.parameters is None:
             raise ValueError(f"Function {f.name} has no supplied parameters")
         j["function_schema"] = {

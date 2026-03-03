@@ -1,6 +1,8 @@
 import os
+from unittest.mock import MagicMock
 
 import pytest
+from braintrust.framework2 import ProjectIdCache
 
 
 def _patch_vcr_aiohttp_stubs():
@@ -65,6 +67,13 @@ def _patch_vcr_aiohttp_stubs():
 
 
 _patch_vcr_aiohttp_stubs()
+
+
+@pytest.fixture
+def mock_project_ids():
+    mock = MagicMock(spec=ProjectIdCache)
+    mock.get.return_value = "project-123"
+    return mock
 
 
 @pytest.fixture(autouse=True)
