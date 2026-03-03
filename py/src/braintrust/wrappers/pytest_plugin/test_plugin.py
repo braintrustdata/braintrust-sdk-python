@@ -10,79 +10,14 @@ from __future__ import annotations
 import json
 import os
 import textwrap
-from unittest.mock import MagicMock
 
 import pytest
-from braintrust.logger import NOOP_SPAN
-from braintrust.wrappers.pytest_plugin.plugin import (
-    BraintrustTestSpan,
-    _NoopBraintrustTestSpan,
-)
 
 # ---------------------------------------------------------------------------
 # Tell pytest we need the pytester plugin.
 # ---------------------------------------------------------------------------
 pytest_plugins = ["pytester"]
 
-# The plugin flag needed to load our plugin in the child pytest process.
-_PLUGIN_FLAG = "-p"
-_PLUGIN_MODULE = "braintrust.wrappers.pytest_plugin.plugin"
-
-
-# ---------------------------------------------------------------------------
-# Unit tests for BraintrustTestSpan
-# ---------------------------------------------------------------------------
-
-
-class TestBraintrustTestSpan:
-    def test_log_input(self):
-        span = MagicMock()
-        ts = BraintrustTestSpan(span)
-        ts.log_input({"x": 1})
-        span.log.assert_called_once_with(input={"x": 1})
-
-    def test_log_output(self):
-        span = MagicMock()
-        ts = BraintrustTestSpan(span)
-        ts.log_output({"y": 2})
-        span.log.assert_called_once_with(output={"y": 2})
-
-    def test_log_expected(self):
-        span = MagicMock()
-        ts = BraintrustTestSpan(span)
-        ts.log_expected({"z": 3})
-        span.log.assert_called_once_with(expected={"z": 3})
-
-    def test_log_score(self):
-        span = MagicMock()
-        ts = BraintrustTestSpan(span)
-        ts.log_score("accuracy", 0.95)
-        span.log.assert_called_once_with(scores={"accuracy": 0.95})
-
-    def test_log_metadata(self):
-        span = MagicMock()
-        ts = BraintrustTestSpan(span)
-        ts.log_metadata({"model": "gpt-4"})
-        span.log.assert_called_once_with(metadata={"model": "gpt-4"})
-
-    def test_span_property(self):
-        span = MagicMock()
-        ts = BraintrustTestSpan(span)
-        assert ts.span is span
-
-
-class TestNoopBraintrustTestSpan:
-    def test_backed_by_noop_span(self):
-        ts = _NoopBraintrustTestSpan()
-        assert ts.span is NOOP_SPAN
-
-    def test_log_calls_do_not_error(self):
-        ts = _NoopBraintrustTestSpan()
-        ts.log_input({"x": 1})
-        ts.log_output({"y": 2})
-        ts.log_expected({"z": 3})
-        ts.log_score("a", 0.5)
-        ts.log_metadata({"k": "v"})
 
 
 # ---------------------------------------------------------------------------
@@ -95,9 +30,6 @@ MOCK_CONFTEST = textwrap.dedent(
     '''\
     import json, os, pytest
     from unittest.mock import MagicMock
-
-    # Explicitly load the braintrust plugin in the child pytest process.
-    pytest_plugins = ["braintrust.wrappers.pytest_plugin.plugin"]
 
     _SPANS = []
 
@@ -165,8 +97,8 @@ MOCK_CONFTEST = textwrap.dedent(
 
 
 def _run_pytester(pytester: pytest.Pytester, *extra_args: str) -> pytest.RunResult:
-    """Run pytester with the braintrust plugin explicitly loaded."""
-    return pytester.runpytest_subprocess(_PLUGIN_FLAG, _PLUGIN_MODULE, *extra_args)
+    """Run pytester subprocess. The plugin auto-loads via the pytest11 entry point."""
+    return pytester.runpytest_subprocess(*extra_args)
 
 
 def _run_and_get_spans(
@@ -228,7 +160,7 @@ class TestPluginActivation:
 
                 @pytest.mark.braintrust
                 def test_example(braintrust_span):
-                    braintrust_span.log_input({"x": 1})
+                    braintrust_span.log(input={"x": 1})
                     assert True
                 """
             )
@@ -262,8 +194,7 @@ class TestSpanCreation:
 
             @pytest.mark.braintrust
             def test_example(braintrust_span):
-                braintrust_span.log_input({"query": "hello"})
-                braintrust_span.log_output({"result": "world"})
+                braintrust_span.log(input={"query": "hello"}, output={"result": "world"})
                 assert True
             """,
         )
@@ -324,7 +255,7 @@ class TestSpanCreation:
                 ("Capital of France?", "Paris"),
             ])
             def test_qa(braintrust_span, query, expected_answer):
-                braintrust_span.log_output(expected_answer)
+                braintrust_span.log(output=expected_answer)
                 assert True
             """,
         )
@@ -356,8 +287,7 @@ class TestSpanCreation:
 
             @pytest.mark.braintrust
             def test_scores(braintrust_span):
-                braintrust_span.log_score("relevance", 0.95)
-                braintrust_span.log_score("fluency", 0.8)
+                braintrust_span.log(scores={"relevance": 0.95, "fluency": 0.8})
                 assert True
             """,
         )
@@ -380,11 +310,11 @@ class TestClassLevelMarker:
             @pytest.mark.braintrust(project="my-project")
             class TestMyLLM:
                 def test_case_a(self, braintrust_span):
-                    braintrust_span.log_input({"from": "a"})
+                    braintrust_span.log(input={"from": "a"})
                     assert True
 
                 def test_case_b(self, braintrust_span):
-                    braintrust_span.log_input({"from": "b"})
+                    braintrust_span.log(input={"from": "b"})
                     assert True
             """,
         )
@@ -397,13 +327,6 @@ class TestNoopBehavior:
     """Tests that the noop span works when --braintrust is not passed."""
 
     def test_noop_fixture(self, pytester: pytest.Pytester):
-        pytester.makeconftest(
-            textwrap.dedent(
-                """\
-                pytest_plugins = ["braintrust.wrappers.pytest_plugin.plugin"]
-                """
-            )
-        )
         pytester.makepyfile(
             textwrap.dedent(
                 """\
@@ -412,11 +335,13 @@ class TestNoopBehavior:
                 @pytest.mark.braintrust
                 def test_noop(braintrust_span):
                     # All these calls should succeed without error.
-                    braintrust_span.log_input({"x": 1})
-                    braintrust_span.log_output({"y": 2})
-                    braintrust_span.log_expected({"z": 3})
-                    braintrust_span.log_score("a", 0.5)
-                    braintrust_span.log_metadata({"k": "v"})
+                    braintrust_span.log(
+                        input={"x": 1},
+                        output={"y": 2},
+                        expected={"z": 3},
+                        scores={"a": 0.5},
+                        metadata={"k": "v"},
+                    )
                     assert True
                 """
             )

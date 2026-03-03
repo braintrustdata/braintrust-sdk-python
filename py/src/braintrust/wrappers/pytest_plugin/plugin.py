@@ -16,57 +16,6 @@ import pytest
 from braintrust.logger import NOOP_SPAN, Span
 
 # ---------------------------------------------------------------------------
-# User-facing span wrapper
-# ---------------------------------------------------------------------------
-
-
-class BraintrustTestSpan:
-    """Pytest-friendly wrapper around a :class:`braintrust.logger.Span`.
-
-    Exposed to tests via the ``braintrust_span`` fixture.
-    """
-
-    _span: Span
-
-    def __init__(self, span: Span) -> None:
-        self._span = span
-
-    def log_input(self, input: Any) -> None:
-        """Log the test input."""
-        self._span.log(input=input)
-
-    def log_output(self, output: Any) -> None:
-        """Log the test output."""
-        self._span.log(output=output)
-
-    def log_expected(self, expected: Any) -> None:
-        """Log the expected output for the test."""
-        self._span.log(expected=expected)
-
-    def log_score(self, name: str, score: float) -> None:
-        """Log a named score for the test."""
-        self._span.log(scores={name: score})
-
-    def log_metadata(self, metadata: dict[str, Any]) -> None:
-        """Log metadata for the test."""
-        self._span.log(metadata=metadata)
-
-    @property
-    def span(self) -> Span:
-        """Escape hatch — the underlying :class:`~braintrust.logger.Span`."""
-        return self._span
-
-
-class _NoopBraintrustTestSpan(BraintrustTestSpan):
-    """No-op variant returned when ``--braintrust`` is not active."""
-
-    def __init__(self) -> None:
-        super().__init__(NOOP_SPAN)
-
-
-_NOOP_TEST_SPAN = _NoopBraintrustTestSpan()
-
-# ---------------------------------------------------------------------------
 # Marker registration & CLI options (always active)
 # ---------------------------------------------------------------------------
 
@@ -131,13 +80,13 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture
-def braintrust_span(request: pytest.FixtureRequest) -> BraintrustTestSpan:
-    """Return the :class:`BraintrustTestSpan` for the current test.
+def braintrust_span(request: pytest.FixtureRequest) -> Span:
+    """Return the :class:`~braintrust.logger.Span` for the current test.
 
-    When ``--braintrust`` is not active the fixture returns a no-op wrapper
+    When ``--braintrust`` is not active the fixture returns a no-op span
     that silently discards all logged data.
     """
-    return getattr(request.node, "_braintrust_test_span", _NOOP_TEST_SPAN)
+    return getattr(request.node, "_braintrust_span", NOOP_SPAN)
 
 
 # ---------------------------------------------------------------------------
@@ -203,28 +152,25 @@ class BraintrustPytestPlugin:
 
         span = exp.start_span(name=item.name, type=SpanTypeAttribute.EVAL)
 
-        # Static data from the marker.
-        marker_input = marker.kwargs.get("input")
-        marker_expected = marker.kwargs.get("expected")
-        marker_metadata = marker.kwargs.get("metadata")
-        marker_tags = marker.kwargs.get("tags")
+        # Collect all static marker data into a single log call.
+        marker_kwargs: dict[str, Any] = {}
 
-        # Auto-log parametrize args as input (marker input takes precedence).
+        marker_input = marker.kwargs.get("input")
         auto_input = self._collect_auto_input(item)
         if marker_input is not None:
-            span.log(input=marker_input)
+            marker_kwargs["input"] = marker_input
         elif auto_input is not None:
-            span.log(input=auto_input)
+            marker_kwargs["input"] = auto_input
 
-        if marker_expected is not None:
-            span.log(expected=marker_expected)
-        if marker_metadata is not None:
-            span.log(metadata=marker_metadata)
-        if marker_tags is not None:
-            span.log(tags=marker_tags)
+        for field in ("expected", "metadata", "tags"):
+            value = marker.kwargs.get(field)
+            if value is not None:
+                marker_kwargs[field] = value
 
-        test_span = BraintrustTestSpan(span)
-        item._braintrust_test_span = test_span  # type: ignore[attr-defined]
+        if marker_kwargs:
+            span.log(**marker_kwargs)
+
+        item._braintrust_span = span  # type: ignore[attr-defined]
         item._braintrust_experiment_key = key  # type: ignore[attr-defined]
 
         span.set_current()
@@ -238,21 +184,21 @@ class BraintrustPytestPlugin:
 
     @pytest.hookimpl(trylast=True)
     def pytest_runtest_teardown(self, item: pytest.Item) -> None:
-        test_span: BraintrustTestSpan | None = getattr(item, "_braintrust_test_span", None)
-        if test_span is None:
+        span: Span | None = getattr(item, "_braintrust_span", None)
+        if span is None:
             return
 
         report = getattr(item, "_braintrust_report", None)
         passed = report.passed if report else False
 
-        test_span.span.log(scores={"pass": 1.0 if passed else 0.0})
+        span.log(scores={"pass": 1.0 if passed else 0.0})
 
         if report and report.failed:
             error_str = report.longreprtext if hasattr(report, "longreprtext") else str(report.longrepr)
-            test_span.span.log(error=error_str)
+            span.log(error=error_str)
 
-        test_span.span.end()
-        test_span.span.unset_current()
+        span.end()
+        span.unset_current()
 
     def pytest_sessionfinish(self, session: pytest.Session) -> None:
         show_summary = not self._config.getoption("--braintrust-no-summary", default=False)

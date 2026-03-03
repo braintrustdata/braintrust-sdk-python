@@ -23,8 +23,7 @@ import pytest
 @pytest.mark.braintrust
 def test_my_llm(braintrust_span):
     result = my_llm("hello")
-    braintrust_span.log_input({"query": "hello"})
-    braintrust_span.log_output(result)
+    braintrust_span.log(input={"query": "hello"}, output=result)
     assert "greeting" in result
 ```
 
@@ -60,19 +59,20 @@ pytest --braintrust --braintrust-project="my-project"
 
 ## Logging Data
 
-The `braintrust_span` fixture provides these methods:
+The `braintrust_span` fixture is a standard [`Span`](https://www.braintrust.dev/docs/reference/python#span) object. Use `span.log()` to record data:
 
 ```python
 def test_example(braintrust_span):
-    braintrust_span.log_input({"query": "hello"})      # Log input
-    braintrust_span.log_output({"response": "world"})   # Log output
-    braintrust_span.log_expected({"response": "world"}) # Log expected output
-    braintrust_span.log_score("accuracy", 0.95)         # Log a named score
-    braintrust_span.log_metadata({"model": "gpt-4"})    # Log metadata
-    braintrust_span.span  # Access the underlying Span for advanced use
+    braintrust_span.log(
+        input={"query": "hello"},
+        output={"response": "world"},
+        expected={"response": "world"},
+        scores={"accuracy": 0.95},
+        metadata={"model": "gpt-4"},
+    )
 ```
 
-When `--braintrust` is not passed, the fixture returns a no-op wrapper that silently discards all logged data, so tests still pass normally.
+When `--braintrust` is not passed, the fixture returns a no-op span that silently discards all logged data, so tests still pass normally.
 
 ## Experiment Grouping
 
@@ -93,7 +93,7 @@ Parametrized test arguments are automatically logged as input:
 ])
 def test_qa(braintrust_span, query, expected_answer):
     result = my_llm(query)
-    braintrust_span.log_output(result)
+    braintrust_span.log(output=result)
 ```
 
 Each parametrized case becomes a separate span with `input: {"query": "2+2?", "expected_answer": "4"}`.
