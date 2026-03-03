@@ -73,22 +73,25 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
+          VERSION="${RELEASE_TAG#py-sdk-v}"
           RELEASE_NOTES=$(.github/scripts/generate-release-notes.sh "${{ env.RELEASE_TAG }}" "py/")
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          echo "release_name=Python SDK v${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: actions/github-script@v7
         env:
           RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
+          RELEASE_NAME: ${{ steps.release_notes.outputs.release_name }}
         with:
           script: |
             await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: process.env.RELEASE_TAG,
-              name: process.env.RELEASE_TAG,
+              name: process.env.RELEASE_NAME,
               body: process.env.RELEASE_NOTES,
               draft: false,
               prerelease: false
