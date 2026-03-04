@@ -86,6 +86,11 @@ class AISpanProcessor:
         """Forward span start events to the inner processor."""
         self._processor.on_start(span, parent_context)
 
+    def _on_ending(self, span):
+        """Called by the OTel SDK before on_end. Forward to inner processor if it supports it."""
+        if hasattr(self._processor, "_on_ending"):
+            self._processor._on_ending(span)
+
     def on_end(self, span):
         """Apply filtering logic and conditionally forward span end events."""
         if self._should_keep_filtered_span(span):
@@ -336,6 +341,11 @@ class BraintrustSpanProcessor:
 
         except Exception:
             return None
+
+    def _on_ending(self, span):
+        """Called by the OTel SDK before on_end. Forward to inner processor if it supports it."""
+        if hasattr(self._processor, "_on_ending"):
+            self._processor._on_ending(span)
 
     def on_end(self, span):
         """Forward span end events to the inner processor."""

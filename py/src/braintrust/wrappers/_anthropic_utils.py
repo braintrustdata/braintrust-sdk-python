@@ -85,6 +85,9 @@ def finalize_anthropic_tokens(metrics: dict[str, float]) -> dict[str, float]:
     Returns:
         Updated metrics with total prompt tokens and total tokens fields
     """
+    if not metrics:
+        return metrics
+
     total_prompt_tokens = (
         metrics.get("prompt_tokens", 0)
         + metrics.get("prompt_cached_tokens", 0)
