@@ -2322,6 +2322,46 @@ def test_parent_precedence_explicit_parent_overrides(with_memory_logger, with_si
     assert inner_log["span_id"] not in parents
 
 
+def test_parent_precedence_explicit_parent_with_project_override(with_memory_logger, with_simulate_login):
+    """Test that explicit parent supports overriding the project id."""
+    init_test_logger(__name__)
+
+    with logger.start_span(name="outer") as outer:
+        outer.log(input="outer")
+        outer_export = outer.export()
+        outer_span_id = outer.span_id
+        outer_root_span_id = outer.root_span_id
+
+    forced_project_id = "forced-project"
+    with braintrust.start_span(name="forced", parent=outer_export, parent_object_id=forced_project_id) as forced:
+        forced.log(input="forced")
+
+    logs = with_memory_logger.pop()
+    forced_log = next(l for l in logs if l.get("span_attributes", {}).get("name") == "forced")
+
+    assert forced_log["project_id"] == forced_project_id
+    assert forced_log["root_span_id"] == outer_root_span_id
+    assert outer_span_id in (forced_log.get("span_parents") or [])
+
+
+def test_parent_object_id_override_preserves_object_type_checks(with_memory_logger, with_simulate_login):
+    """Test that overriding project id does not bypass parent object type validation."""
+    test_logger = init_test_logger("test-logger")
+    experiment = init_test_exp("test-experiment", "test-project")
+
+    with experiment.start_span(name="exp-parent") as exp_parent:
+        exp_parent.log(input="parent")
+        exp_parent_export = exp_parent.export()
+
+    with pytest.raises(AssertionError, match="Mismatch between expected span parent object type"):
+        with test_logger.start_span(
+            name="forced",
+            parent=exp_parent_export,
+            parent_object_id="forced-project",
+        ):
+            pass
+
+
 @pytest.fixture
 def reset_id_generator_state():
     """Reset ID generator state and environment variables before each test"""
@@ -2588,6 +2628,39 @@ def test_span_start_span_with_exported_span_parent(with_memory_logger):
     child_log = next(l for l in logs if l.get("span_attributes", {}).get("name") == "child")
 
     # Child should inherit from exported_parent, not active_context
+    assert child_log["root_span_id"] == exported_parent_root_span_id
+    assert exported_parent_span_id in child_log.get("span_parents", []), (
+        "child should have exported_parent_span_id in span_parents"
+    )
+    assert active_context_span_id not in child_log.get("span_parents", []), (
+        "child should NOT have active_context_span_id in span_parents"
+    )
+
+
+def test_span_start_span_with_exported_span_parent_and_project_override(with_memory_logger):
+    """Test that span.start_span() supports overriding the project id with an exported parent."""
+    test_logger = init_test_logger("test-project-a")
+
+    with test_logger.start_span(name="exported_parent") as exported_parent:
+        exported_parent.log(input="parent")
+        exported_parent_export = exported_parent.export()
+        exported_parent_span_id = exported_parent.span_id
+        exported_parent_root_span_id = exported_parent.root_span_id
+
+    with test_logger.start_span(name="active_context") as active_context:
+        active_context_span_id = active_context.span_id
+
+        with active_context.start_span(
+            parent=exported_parent_export,
+            parent_object_id="test-project-b",
+            name="child",
+        ) as child:
+            child.log(input="test")
+
+    logs = with_memory_logger.pop()
+    child_log = next(l for l in logs if l.get("span_attributes", {}).get("name") == "child")
+
+    assert child_log["project_id"] == "test-project-b"
     assert child_log["root_span_id"] == exported_parent_root_span_id
     assert exported_parent_span_id in child_log.get("span_parents", []), (
         "child should have exported_parent_span_id in span_parents"

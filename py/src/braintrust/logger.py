@@ -188,6 +188,7 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | None = None,
+        parent_object_id: str | None = None,
         **event: Any,
     ) -> "Span":
         """Create a new span. This is useful if you want to log more detailed trace information beyond the scope of a single log event. Data logged over several calls to `Span.log` will be merged into one logical row.
@@ -322,6 +323,7 @@ class _NoopSpan(Span):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | None = None,
+        parent_object_id: str | None = None,
         **event: Any,
     ):
         return self
@@ -2438,6 +2440,7 @@ def start_span(
     start_time: float | None = None,
     set_current: bool | None = None,
     parent: str | None = None,
+    parent_object_id: str | None = None,
     propagated_event: dict[str, Any] | None = None,
     state: BraintrustState | None = None,
     **event: Any,
@@ -2461,7 +2464,11 @@ def start_span(
             parent_span_ids = None
         return SpanImpl(
             parent_object_type=parent_obj.object_type,
-            parent_object_id=LazyValue(_span_components_to_object_id_lambda(parent_obj), use_mutex=False),
+            parent_object_id=(
+                LazyValue(lambda: parent_object_id, use_mutex=False)
+                if parent_object_id is not None
+                else LazyValue(_span_components_to_object_id_lambda(parent_obj), use_mutex=False)
+            ),
             parent_compute_object_metadata_args=parent_obj.compute_object_metadata_args,
             parent_span_ids=parent_span_ids,
             name=name,
@@ -2482,6 +2489,7 @@ def start_span(
             start_time=start_time,
             set_current=set_current,
             parent=parent,
+            parent_object_id=parent_object_id,
             propagated_event=propagated_event,
             **event,
         )
@@ -3503,6 +3511,7 @@ def _start_span_parent_args(
     parent: str | None,
     parent_object_type: SpanObjectTypeV3,
     parent_object_id: LazyValue[str],
+    parent_object_id_override: str | None,
     parent_compute_object_metadata_args: dict[str, Any] | None,
     parent_span_ids: ParentSpanIds | None,
     propagated_event: dict[str, Any] | None,
@@ -3516,14 +3525,18 @@ def _start_span_parent_args(
 
         parent_components_object_id_lambda = _span_components_to_object_id_lambda(parent_components)
 
-        def compute_parent_object_id():
-            parent_components_object_id = parent_components_object_id_lambda()
-            assert (
-                parent_object_id.get() == parent_components_object_id
-            ), f"Mismatch between expected span parent object id {parent_object_id.get()} and provided id {parent_components_object_id}"
-            return parent_object_id.get()
+        if parent_object_id_override is None:
 
-        arg_parent_object_id = LazyValue(compute_parent_object_id, use_mutex=False)
+            def compute_parent_object_id():
+                parent_components_object_id = parent_components_object_id_lambda()
+                assert (
+                    parent_object_id.get() == parent_components_object_id
+                ), f"Mismatch between expected span parent object id {parent_object_id.get()} and provided id {parent_components_object_id}"
+                return parent_object_id.get()
+
+            arg_parent_object_id = LazyValue(compute_parent_object_id, use_mutex=False)
+        else:
+            arg_parent_object_id = LazyValue(lambda: parent_object_id_override, use_mutex=False)
         if parent_components.row_id:
             arg_parent_span_ids = ParentSpanIds(
                 span_id=parent_components.span_id, root_span_id=parent_components.root_span_id
@@ -3532,7 +3545,11 @@ def _start_span_parent_args(
             arg_parent_span_ids = None
         arg_propagated_event = coalesce(propagated_event, parent_components.propagated_event)
     else:
-        arg_parent_object_id = parent_object_id
+        arg_parent_object_id = (
+            LazyValue(lambda: parent_object_id_override, use_mutex=False)
+            if parent_object_id_override is not None
+            else parent_object_id
+        )
         arg_parent_span_ids = parent_span_ids
         arg_propagated_event = propagated_event
 
@@ -3751,6 +3768,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | None = None,
+        parent_object_id: str | None = None,
         propagated_event: dict[str, Any] | None = None,
         **event: Any,
     ) -> Span:
@@ -3766,6 +3784,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
             start_time=start_time,
             set_current=set_current,
             parent=parent,
+            parent_object_id=parent_object_id,
             propagated_event=propagated_event,
             **event,
         )
@@ -3898,6 +3917,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | None = None,
+        parent_object_id: str | None = None,
         propagated_event: dict[str, Any] | None = None,
         lookup_span_parent: bool = True,
         **event: Any,
@@ -3906,6 +3926,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
             parent=parent,
             parent_object_type=self._parent_object_type(),
             parent_object_id=self._lazy_id,
+            parent_object_id_override=parent_object_id,
             parent_compute_object_metadata_args=None,
             parent_span_ids=None,
             propagated_event=propagated_event,
@@ -4191,6 +4212,7 @@ class SpanImpl(Span):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | None = None,
+        parent_object_id: str | None = None,
         propagated_event: dict[str, Any] | None = None,
         **event: Any,
     ) -> Span:
@@ -4209,6 +4231,7 @@ class SpanImpl(Span):
                 parent=parent,
                 parent_object_type=self.parent_object_type,
                 parent_object_id=self.parent_object_id,
+                parent_object_id_override=parent_object_id,
                 parent_compute_object_metadata_args=self.parent_compute_object_metadata_args,
                 parent_span_ids=parent_span_ids,
                 propagated_event=coalesce(propagated_event, self.propagated_event),
@@ -5187,6 +5210,7 @@ class Logger(Exportable):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | None = None,
+        parent_object_id: str | None = None,
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
@@ -5204,6 +5228,7 @@ class Logger(Exportable):
             start_time=start_time,
             set_current=set_current,
             parent=parent,
+            parent_object_id=parent_object_id,
             propagated_event=propagated_event,
             span_id=span_id,
             root_span_id=root_span_id,
@@ -5237,6 +5262,7 @@ class Logger(Exportable):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | None = None,
+        parent_object_id: str | None = None,
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
@@ -5247,6 +5273,7 @@ class Logger(Exportable):
             parent=parent,
             parent_object_type=self._parent_object_type(),
             parent_object_id=self._lazy_id,
+            parent_object_id_override=parent_object_id,
             parent_compute_object_metadata_args=self._compute_metadata_args,
             parent_span_ids=None,
             propagated_event=propagated_event,
