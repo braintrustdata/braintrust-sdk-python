@@ -1337,6 +1337,7 @@ async def test_bt_safe_deep_copy_with_attachments(memory_logger):
     assert result["nested"]["also_file"] is attachment
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_adk_agent_metadata_with_attachment(memory_logger):
     """Test that attachments in ADK agent metadata are preserved and uploaded."""

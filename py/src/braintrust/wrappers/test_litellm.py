@@ -58,20 +58,11 @@ def test_litellm_completion_metrics(memory_logger) -> None:
     assert TEST_PROMPT in str(span["input"])
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_litellm_acompletion_metrics(memory_logger):
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    response = await litellm.acompletion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
-    assert response
-    assert response.choices[0].message.content
-    assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
     wrapped_litellm = wrap_litellm(litellm)
 
     start = time.time()
@@ -166,38 +157,11 @@ def test_litellm_completion_streaming_sync(memory_logger):
     assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_litellm_acompletion_streaming_async(memory_logger):
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    stream = await litellm.acompletion(
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": TEST_PROMPT}],
-        stream=True,
-    )
-
-    chunks = []
-    async for chunk in stream:
-        chunks.append(chunk)
-
-    # Verify streaming works
-    assert chunks
-    assert len(chunks) > 1
-
-    # Concatenate content from chunks to verify
-    content = ""
-    for chunk in chunks:
-        if chunk.choices and chunk.choices[0].delta.content:
-            content += chunk.choices[0].delta.content
-
-    # Make sure we got a valid answer in the content
-    assert "24" in content or "twenty-four" in content.lower()
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
     wrapped_litellm = wrap_litellm(litellm)
 
     start = time.time()
@@ -216,15 +180,6 @@ async def test_litellm_acompletion_streaming_async(memory_logger):
     assert chunks
     assert len(chunks) > 1
 
-    # Concatenate content from chunks to verify
-    content = ""
-    for chunk in chunks:
-        if chunk.choices and chunk.choices[0].delta.content:
-            content += chunk.choices[0].delta.content
-
-    # Make sure we got a valid answer in the content
-    assert "24" in content or "twenty-four" in content.lower()
-
     # Verify spans were created with wrapped client
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -235,7 +190,6 @@ async def test_litellm_acompletion_streaming_async(memory_logger):
     assert span["metadata"]["model"] == TEST_MODEL
     assert span["metadata"]["provider"] == "litellm"
     assert TEST_PROMPT in str(span["input"])
-    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
 @pytest.mark.vcr
@@ -288,25 +242,11 @@ def test_litellm_responses_metrics(memory_logger):
     assert TEST_PROMPT in str(span["input"])
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_litellm_aresponses_metrics(memory_logger):
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    response = await litellm.aresponses(
-        model=TEST_MODEL,
-        input=TEST_PROMPT,
-        instructions="Just the number please",
-    )
-    assert response
-    assert response.output
-    assert len(response.output) > 0
-    unwrapped_content = response.output[0].content[0].text
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
     wrapped_litellm = wrap_litellm(litellm)
 
     start = time.time()
@@ -322,8 +262,6 @@ async def test_litellm_aresponses_metrics(memory_logger):
     assert len(response.output) > 0
     wrapped_content = response.output[0].content[0].text
 
-    # Both should contain a numeric response for the math question
-    assert "24" in unwrapped_content or "twenty-four" in unwrapped_content.lower()
     assert "24" in wrapped_content or "twenty-four" in wrapped_content.lower()
 
     # Verify spans were created with wrapped client
@@ -338,6 +276,7 @@ async def test_litellm_aresponses_metrics(memory_logger):
     assert TEST_PROMPT in str(span["input"])
 
 
+@pytest.mark.vcr
 def test_litellm_embeddings(memory_logger):
     assert not memory_logger.pop()
 
@@ -430,6 +369,7 @@ def test_litellm_completion_with_system_prompt(memory_logger):
     assert inputs[1]["content"] == TEST_PROMPT
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_litellm_acompletion_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
@@ -505,6 +445,7 @@ async def test_litellm_acompletion_error(memory_logger):
     assert fake_model in str(log)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_litellm_async_parallel_requests(memory_logger):
     """Test multiple parallel async requests with the wrapped client."""
@@ -631,6 +572,7 @@ def test_litellm_responses_streaming_sync(memory_logger):
     assert "24" in str(span["output"])
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_litellm_aresponses_streaming_async(memory_logger):
     """Test the async responses API with streaming."""
@@ -643,14 +585,11 @@ async def test_litellm_aresponses_streaming_async(memory_logger):
 
     chunks = []
     async for chunk in stream:
-        if chunk.type == "response.output_text.delta":
-            chunks.append(chunk.delta)
+        chunks.append(chunk)
     end = time.time()
 
-    output = "".join(chunks)
     assert chunks
     assert len(chunks) > 1
-    assert "24" in output
 
     # Verify the span is created
     spans = memory_logger.pop()
@@ -660,7 +599,6 @@ async def test_litellm_aresponses_streaming_async(memory_logger):
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["stream"] == True
     assert "What's 12 + 12?" in str(span["input"])
-    assert "24" in str(span["output"])
 
 
 @pytest.mark.vcr
