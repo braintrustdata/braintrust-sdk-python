@@ -134,21 +134,7 @@ def extract_metrics(result: Any, messages: list | None = None) -> dict[str, Any]
 
     # For agent/team responses with metrics
     if hasattr(result, "metrics") and result.metrics:
-        agno_metrics = result.metrics
-        metrics = {}
-
-        # Direct field mapping for agent/team metrics
-        if hasattr(agno_metrics, "input_tokens") and agno_metrics.input_tokens:
-            metrics["prompt_tokens"] = agno_metrics.input_tokens
-        if hasattr(agno_metrics, "output_tokens") and agno_metrics.output_tokens:
-            metrics["completion_tokens"] = agno_metrics.output_tokens
-        if hasattr(agno_metrics, "total_tokens") and agno_metrics.total_tokens:
-            metrics["total_tokens"] = agno_metrics.total_tokens
-        if hasattr(agno_metrics, "duration") and agno_metrics.duration:
-            metrics["duration"] = agno_metrics.duration
-        if hasattr(agno_metrics, "time_to_first_token") and agno_metrics.time_to_first_token:
-            metrics["time_to_first_token"] = agno_metrics.time_to_first_token
-
+        metrics = parse_metrics_from_agno(result.metrics)
         return metrics if metrics else None
 
     # If no metrics found and we have messages, look for metrics in assistant messages (model-specific)
@@ -165,14 +151,16 @@ def extract_streaming_metrics(aggregated: dict[str, Any], start_time: float) -> 
     """Extract metrics from aggregated streaming response."""
     metrics = {}
 
-    # Add duration
-    metrics["duration"] = time.time() - start_time
-
     # Extract metrics from aggregated data
     # The metrics are already in Braintrust format from _aggregate_model_chunks
     if aggregated.get("metrics") and isinstance(aggregated["metrics"], dict):
         # Merge the aggregated metrics
         metrics.update(aggregated["metrics"])
+    # Handle object-like metrics payloads (e.g. RunCompletedEvent.metrics)
+    elif aggregated.get("metrics"):
+        parsed_metrics = parse_metrics_from_agno(aggregated["metrics"])
+        if parsed_metrics:
+            metrics.update(parsed_metrics)
     # Also check response_usage for backward compatibility
     elif aggregated.get("response_usage"):
         response_metrics = parse_metrics_from_agno(aggregated["response_usage"])
@@ -357,15 +345,15 @@ def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
     }
 
     for chunk in chunks:
-        # Handle RunStartedEvent
-        if hasattr(chunk, "event") and chunk.event == "RunStarted":
+        event = getattr(chunk, "event", None)
+
+        if event == "RunStarted":
             if hasattr(chunk, "model"):
                 aggregated["model"] = chunk.model
             if hasattr(chunk, "model_provider"):
                 aggregated["model_provider"] = chunk.model_provider
 
-        # Handle RunContentEvent
-        elif hasattr(chunk, "event") and chunk.event == "RunContent":
+        elif event == "RunContent":
             if hasattr(chunk, "content") and chunk.content:
                 aggregated["content"] += str(chunk.content)  # type: ignore
             if hasattr(chunk, "reasoning_content") and chunk.reasoning_content:
@@ -375,18 +363,16 @@ def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
             if hasattr(chunk, "references"):
                 aggregated["references"] = chunk.references
 
-        # Handle RunCompletedEvent
-        elif hasattr(chunk, "event") and chunk.event == "RunCompleted":
+        elif event == "RunCompleted":
             if hasattr(chunk, "metrics"):
-                aggregated["metrics"] = chunk.metrics
+                parsed_metrics = parse_metrics_from_agno(chunk.metrics)
+                aggregated["metrics"] = parsed_metrics if parsed_metrics else chunk.metrics
             aggregated["finish_reason"] = "stop"
 
-        # Handle RunError
-        elif hasattr(chunk, "event") and chunk.event == "RunError":
+        elif event == "RunError":
             aggregated["finish_reason"] = "error"
 
-        # Handle tool calls
-        elif hasattr(chunk, "event") and chunk.event == "ToolCallStarted":
+        elif event == "ToolCallStarted":
             if hasattr(chunk, "tool_call"):
                 aggregated["tool_calls"].append(  # type:ignore
                     {
@@ -400,6 +386,78 @@ def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
                 )
 
     return {k: v for k, v in aggregated.items() if v not in (None, "")}
+
+
+def is_sync_iterator(result: Any) -> bool:
+    return hasattr(result, "__iter__") and hasattr(result, "__next__")
+
+
+def is_async_iterator(result: Any) -> bool:
+    return hasattr(result, "__aiter__") and hasattr(result, "__anext__")
+
+
+def trace_sync_stream_result(result: Any, span: Any, start: float):
+    def _trace_stream():
+        should_unset = True
+        try:
+            first = True
+            all_chunks = []
+            for chunk in result:
+                if first:
+                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    first = False
+                all_chunks.append(chunk)
+                yield chunk
+
+            aggregated = _aggregate_agent_chunks(all_chunks)
+            span.log(
+                output=aggregated,
+                metrics=extract_streaming_metrics(aggregated, start),
+            )
+        except GeneratorExit:
+            should_unset = False
+            raise
+        except Exception as e:
+            span.log(error=str(e))
+            raise
+        finally:
+            if should_unset:
+                span.unset_current()
+            span.end()
+
+    return _trace_stream()
+
+
+def trace_async_stream_result(result: Any, span: Any, start: float):
+    async def _trace_astream():
+        should_unset = True
+        try:
+            first = True
+            all_chunks = []
+            async for chunk in result:
+                if first:
+                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    first = False
+                all_chunks.append(chunk)
+                yield chunk
+
+            aggregated = _aggregate_agent_chunks(all_chunks)
+            span.log(
+                output=aggregated,
+                metrics=extract_streaming_metrics(aggregated, start),
+            )
+        except GeneratorExit:
+            should_unset = False
+            raise
+        except Exception as e:
+            span.log(error=str(e))
+            raise
+        finally:
+            if should_unset:
+                span.unset_current()
+            span.end()
+
+    return _trace_astream()
 
 
 # Legacy aliases for backward compatibility

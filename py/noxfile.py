@@ -61,7 +61,9 @@ OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
 LITELLM_VERSIONS = (LATEST, "1.74.0")
 # CLI bundling started in 0.1.10 - older versions require external Claude Code installation
 CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
-AGNO_VERSIONS = (LATEST, "2.1.0")
+# Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
+# to internals we leverage for instrumentation.
+AGNO_VERSIONS = (LATEST, "2.4.0", "2.1.0")
 # pydantic_ai 1.x requires Python >= 3.10
 # Two test suites with different version requirements:
 # 1. wrap_openai approach: works with older versions (0.1.9+)
