@@ -24,11 +24,6 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         shard: [0, 1]
 
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -61,7 +56,6 @@ jobs:
     with:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
-    secrets: inherit
 
   langchain-py:
     uses: ./.github/workflows/langchain-py-test.yaml
@@ -73,7 +67,6 @@ jobs:
     with:
       python-version: ${{ matrix.python-version }}
       os: ${{ matrix.os }}
-    secrets: inherit
 
   upload-wheel:
     needs: build

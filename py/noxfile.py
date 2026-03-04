@@ -301,6 +301,8 @@ def pylint(session):
 @nox.session()
 def test_latest_wrappers_novcr(session):
     """Run the latest wrapper tests without vcrpy."""
+    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
+        session.skip("Skipping novcr tests in CI (no real API keys available)")
     # every test run we hit openai, anthropic,  at least once so we balance CI speed (with vcrpy)
     # with testing reality.
     args = session.posargs.copy()

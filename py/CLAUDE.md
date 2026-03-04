@@ -97,5 +97,5 @@ def test_something(memory_logger):
 **Auto-applied fixtures** (conftest.py):
 
 - `override_app_url_for_tests` - sets BRAINTRUST_APP_URL
-- `setup_braintrust` - sets API key env vars
+- `setup_braintrust` - sets dummy API key env vars (OpenAI, Google, Anthropic) for VCR tests
 - `reset_braintrust_state` - resets global state after each test
