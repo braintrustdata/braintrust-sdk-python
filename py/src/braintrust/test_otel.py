@@ -209,6 +209,8 @@ def test_braintrust_span_processor_class():
         pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
 
     from braintrust.otel import BraintrustSpanProcessor
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
     # Test basic processor without filtering
     with pytest.MonkeyPatch.context() as m:
@@ -242,6 +244,18 @@ def test_braintrust_span_processor_class():
         assert hasattr(processor_with_filtering, "_on_ending")
         assert hasattr(processor_with_filtering, "shutdown")
         assert hasattr(processor_with_filtering, "force_flush")
+
+    # Test processor with custom exporter injection
+    custom_exporter = InMemorySpanExporter()
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        m.delenv("BRAINTRUST_PARENT", raising=False)
+        processor_with_custom_exporter = BraintrustSpanProcessor(
+            exporter=custom_exporter,
+            SpanProcessor=SimpleSpanProcessor,
+        )
+
+        assert processor_with_custom_exporter.exporter is custom_exporter
 
     # Test processor with custom parameters
     with pytest.MonkeyPatch.context() as m:
