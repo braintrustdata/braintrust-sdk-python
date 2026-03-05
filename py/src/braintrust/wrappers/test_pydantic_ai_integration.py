@@ -2705,6 +2705,7 @@ class TestAutoInstrumentPydanticAI:
         verify_autoinstrument_script("test_auto_pydantic_ai.py")
 
 
+@pytest.mark.vcr
 def test_model_request_stream_sync_thread_context_propagation(memory_logger, direct):
     """Test that Braintrust context propagates into the background thread created by model_request_stream_sync.
 
@@ -2767,3 +2768,29 @@ def test_model_request_stream_sync_thread_context_propagation(memory_logger, dir
     finally:
         # Restore original class
         pydantic_direct.StreamedResponseSync = original_class
+
+
+def test_start_producer_wrapper_exception_does_not_double_invoke_producer():
+    """Regression test: producer exceptions must not trigger a second producer call."""
+    from braintrust.wrappers.pydantic_ai import _create_start_producer_wrapper
+
+    class StreamLike:
+        def __init__(self):
+            self.call_count = 0
+
+        def _async_producer(self):
+            self.call_count += 1
+            raise RuntimeError("boom")
+
+    instance = StreamLike()
+    original_async_producer = instance._async_producer
+    wrapper = _create_start_producer_wrapper()
+
+    def wrapped():
+        return instance._async_producer()
+
+    with pytest.raises(RuntimeError, match="boom"):
+        wrapper(wrapped, instance, (), {})
+
+    assert instance.call_count == 1
+    assert instance._async_producer == original_async_producer

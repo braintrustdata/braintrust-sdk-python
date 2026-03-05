@@ -93,11 +93,7 @@ def _wrap_create_thread(create_thread):
         ctx = contextvars.copy_context()
 
         def _run_in_context(*target_args: Any, **target_kwargs: Any):
-            try:
-                return ctx.run(target, *target_args, **target_kwargs)
-            except Exception as e:
-                logger.debug(f"Failed to run ADK thread in captured context: {e}")
-                return target(*target_args, **target_kwargs)
+            return ctx.run(target, *target_args, **target_kwargs)
 
         return create_thread(_run_in_context, *args, **kwargs)
 

@@ -7,7 +7,7 @@ from braintrust import logger
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.adk import setup_adk
+from braintrust.wrappers.adk import _wrap_create_thread, setup_adk
 from google.adk import Agent
 
 ADK_VERSION = tuple(int(x) for x in pkg_version("google-adk").split(".")[:3])
@@ -106,6 +106,26 @@ def test_adk_thread_context_propagation(memory_logger):
     thread_root = getattr(parent_seen[0], "root_span_id", None)
     assert thread_root is not None
     assert thread_root == parent_span.root_span_id
+
+
+def test_wrap_create_thread_exception_does_not_double_invoke_target():
+    """Regression test: target exceptions must not cause a second invocation."""
+    call_count = 0
+
+    def create_thread(target, *args, **kwargs):
+        return target(*args, **kwargs)
+
+    wrapped_create_thread = _wrap_create_thread(create_thread)
+
+    def target():
+        nonlocal call_count
+        call_count += 1
+        raise RuntimeError("boom")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        wrapped_create_thread(target)
+
+    assert call_count == 1
 
 
 @pytest.mark.vcr

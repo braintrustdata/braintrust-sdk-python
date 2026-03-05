@@ -1254,11 +1254,7 @@ def _create_start_producer_wrapper():
         original_async_producer = instance._async_producer
 
         def _context_wrapped_async_producer() -> None:
-            try:
-                ctx.run(original_async_producer)
-            except Exception as e:
-                logger.debug(f"Failed to run async producer in captured context: {e}")
-                original_async_producer()
+            ctx.run(original_async_producer)
 
         instance._async_producer = _context_wrapped_async_producer
         try:
