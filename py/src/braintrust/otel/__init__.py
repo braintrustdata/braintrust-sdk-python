@@ -210,6 +210,7 @@ def add_braintrust_span_processor(
     filter_ai_spans: bool = False,
     custom_filter=None,
     headers: dict[str, str] | None = None,
+    exporter=None,
 ):
     processor = BraintrustSpanProcessor(
         api_key=api_key,
@@ -218,6 +219,7 @@ def add_braintrust_span_processor(
         filter_ai_spans=filter_ai_spans,
         custom_filter=custom_filter,
         headers=headers,
+        exporter=exporter,
     )
     tracer_provider.add_span_processor(processor)
 
@@ -235,6 +237,10 @@ class BraintrustSpanProcessor:
 
         > processor = BraintrustSpanProcessor(filter_ai_spans=True)
         > provider.add_span_processor(processor)
+
+        > custom_exporter = OTLPSpanExporter(endpoint="http://localhost:4318/v1/traces")
+        > processor = BraintrustSpanProcessor(exporter=custom_exporter)
+        > provider.add_span_processor(processor)
     """
 
     def __init__(
@@ -245,6 +251,7 @@ class BraintrustSpanProcessor:
         filter_ai_spans: bool = False,
         custom_filter=None,
         headers: dict[str, str] | None = None,
+        exporter=None,
         SpanProcessor: type | None = None,
     ):
         """
@@ -257,22 +264,26 @@ class BraintrustSpanProcessor:
             filter_ai_spans: Whether to enable AI span filtering. Defaults to False.
             custom_filter: Optional custom filter function for filtering.
             headers: Additional headers to include in requests.
+            exporter: Optional pre-configured OpenTelemetry exporter instance.
+                     When provided, api_key/parent/api_url/headers are ignored.
             SpanProcessor: Optional span processor class (BatchSpanProcessor or SimpleSpanProcessor). Defaults to BatchSpanProcessor.
         """
-        # Create the exporter
-        # Convert api_url to the full endpoint URL that OtelExporter expects
-        exporter_url = None
-        if api_url:
-            exporter_url = f"{api_url.rstrip('/')}/otel/v1/traces"
-
-        self._exporter = OtelExporter(url=exporter_url, api_key=api_key, parent=parent, headers=headers)
-
-        # Create the processor chain
         if not OTEL_AVAILABLE:
             raise ImportError(
                 "OpenTelemetry packages are not installed. "
                 "Install optional OpenTelemetry dependencies with: pip install braintrust[otel]"
             )
+
+        if exporter is not None:
+            self._exporter = exporter
+        else:
+            # Create the default Braintrust exporter.
+            # Convert api_url to the full endpoint URL that OtelExporter expects.
+            exporter_url = None
+            if api_url:
+                exporter_url = f"{api_url.rstrip('/')}/otel/v1/traces"
+
+            self._exporter = OtelExporter(url=exporter_url, api_key=api_key, parent=parent, headers=headers)
 
         if SpanProcessor is None:
             SpanProcessor = BatchSpanProcessor
@@ -355,7 +366,7 @@ class BraintrustSpanProcessor:
 
     @property
     def exporter(self):
-        """Access to the underlying OtelExporter."""
+        """Access to the underlying span exporter."""
         return self._exporter
 
     @property
