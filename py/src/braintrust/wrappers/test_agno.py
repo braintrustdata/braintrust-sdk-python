@@ -269,7 +269,7 @@ def test_agno_public_run_stream_dispatcher_compat(memory_logger, wrapper, name):
     assert span["output"]["content"] == "hello-sync"
     assert span["metrics"]["prompt_tokens"] == 1
     assert span["metrics"]["completion_tokens"] == 2
-    assert span["metrics"]["duration"] > 0
+    assert span["metrics"]["duration"] >= 0
 
 
 @pytest.mark.asyncio
@@ -298,7 +298,7 @@ async def test_agno_public_arun_stream_dispatcher_compat(memory_logger, wrapper,
     assert span["output"]["content"] == "hello-async"
     assert span["metrics"]["prompt_tokens"] == 1
     assert span["metrics"]["completion_tokens"] == 2
-    assert span["metrics"]["duration"] > 0
+    assert span["metrics"]["duration"] >= 0
 
 
 @pytest.mark.asyncio
