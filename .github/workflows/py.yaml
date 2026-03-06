@@ -22,7 +22,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
-        shard: [0, 1]
+        shard: [0, 1, 2, 3]
 
     steps:
       - uses: actions/checkout@v4
@@ -41,10 +41,10 @@ jobs:
       - name: Test whether the Python SDK can be imported
         run: |
           python -c 'import braintrust'
-      - name: Run nox tests (shard ${{ matrix.shard }}/2)
+      - name: Run nox tests (shard ${{ matrix.shard }}/4)
         shell: bash
         run: |
-          cd py && ./scripts/nox-matrix.sh ${{ matrix.shard }} 2
+          cd py && ./scripts/nox-matrix.sh ${{ matrix.shard }} 4
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
