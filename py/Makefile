@@ -1,4 +1,8 @@
-.PHONY: lint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev _check-git-clean
+PYTHON ?= python
+UV := $(PYTHON) -m uv
+UV_VERSION := $(shell awk '$$1=="uv" { print $$2 }' ../.tool-versions)
+
+.PHONY: lint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean
 
 clean:
 	rm -rf build dist
@@ -29,7 +33,7 @@ _template-version:
 	@bash scripts/template-version.sh
 
 build: clean _template-version
-	python -m build
+	$(PYTHON) -m build
 	# Restore the original version file after the build
 	git checkout src/braintrust/version.py
 
@@ -44,16 +48,17 @@ verify-build: _check-git-clean build test-wheel
 verify: lint test
 
 install-build-deps:
-	python -m pip install uv==0.7.8
-	python -m uv pip install -e .
-	python -m uv pip install -r requirements-build.txt
+	$(if $(UV_VERSION),,$(error Failed to read uv version from ../.tool-versions))
+	$(PYTHON) -m pip install uv==$(UV_VERSION)
+	$(UV) pip install -e .
+	$(UV) pip install -r requirements-build.txt
 
 install-dev: install-build-deps
-	python -m uv pip install -r requirements-dev.txt
+	$(UV) pip install -r requirements-dev.txt
 
 install-optional: install-dev
-	python -m uv pip install anthropic openai pydantic_ai litellm agno google-genai google-adk dspy langsmith
-	python -m uv pip install -e .[temporal,otel]
+	$(UV) pip install anthropic openai pydantic_ai litellm agno google-genai google-adk dspy langsmith
+	$(UV) pip install -e .[temporal,otel]
 
 .DEFAULT_GOAL := help
 help:

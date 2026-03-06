@@ -1,59 +1,45 @@
 SHELL := /bin/bash
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-VENV_PRE_COMMIT := ${ROOT_DIR}/venv/.pre_commit
-VENV_DOCS_REBUILD := ${ROOT_DIR}/venv/.docs_rebuild
 
-.PHONY: all
-all: ${VENV_PRE_COMMIT}
+.PHONY: help develop install-dev install-deps fixup test test-core test-wheel lint pylint nox
 
-.PHONY: py
-py: ${VENV_PYTHON_PACKAGES}
-	bash -c 'source venv/bin/activate'
+develop: install-dev
+	mise exec -- pre-commit install
+	@echo "Use 'mise activate' in your shell for automatic tool and env activation."
 
-VENV_INITIALIZED := venv/.initialized
-
-${VENV_INITIALIZED}:
-	rm -rf venv && python -m venv venv
-	@touch ${VENV_INITIALIZED}
-
-VENV_PYTHON_PACKAGES := venv/.python_packages
-
-${VENV_PYTHON_PACKAGES}: ${VENV_INITIALIZED}
-	bash -c 'source venv/bin/activate && python -m pip install --upgrade pip setuptools'
-	bash -c 'source venv/bin/activate && python -m pip install -e py[all]'
-	@touch $@
-
-${VENV_PRE_COMMIT}: ${VENV_PYTHON_PACKAGES}
-	bash -c 'source venv/bin/activate && pre-commit install'
-	@touch $@
-
-develop: ${VENV_PRE_COMMIT}
-	@echo "--\nRun "source env.sh" to enter development mode!"
-
-.PHONY: install-dev
 install-dev:
 	mise install
 
-.PHONY: install-deps
 install-deps:
-	cd py && make install-dev
+	mise exec -- $(MAKE) -C py install-dev
 
 fixup:
-	source env.sh && pre-commit run --all-files
+	mise exec -- pre-commit run --all-files
 
-.PHONY: test test-py nox pylint
+test:
+	mise exec -- $(MAKE) -C py test
 
-test: test-py-core test-py-sdk
+test-core:
+	mise exec -- $(MAKE) -C py test-core
 
-test-py-core:
-	source env.sh && python -m unittest discover ./core/py/src
+test-wheel:
+	mise exec -- $(MAKE) -C py test-wheel
 
-test-py-sdk: nox
-	source env.sh && cd py && pytest
+lint pylint:
+	mise exec -- $(MAKE) -C py lint
 
+nox: test
 
-nox:
-	cd py && make test
+help:
+	@echo "Available targets:"
+	@echo "  develop      - Install tools with mise, install py/ deps, and install pre-commit hooks"
+	@echo "  fixup        - Run pre-commit hooks across the repo"
+	@echo "  install-deps - Install Python SDK dependencies via py/Makefile"
+	@echo "  install-dev  - Install pinned tools and create/update the repo env via mise"
+	@echo "  lint         - Run Python SDK lint checks via py/Makefile"
+	@echo "  pylint       - Alias for lint"
+	@echo "  nox          - Alias for test"
+	@echo "  test         - Run the Python SDK nox matrix via py/Makefile"
+	@echo "  test-core    - Run Python SDK core tests via py/Makefile"
+	@echo "  test-wheel   - Run Python SDK wheel sanity tests via py/Makefile (requires a built wheel)"
 
-pylint:
-	cd py && make lint
+.DEFAULT_GOAL := help

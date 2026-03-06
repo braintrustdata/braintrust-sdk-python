@@ -33,18 +33,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.ref }}
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          python-version: "3.13"
+          cache: true
+          experimental: true
+          install_args: python@3.13
       - name: Install build dependencies
-        working-directory: py
         run: |
-          make install-dev
+          mise exec python@3.13 -- make -C py install-dev
       - name: Build and verify
-        working-directory: py
         run: |
-          make verify-build
+          mise exec python@3.13 -- make -C py verify-build
       - name: Get version from built wheel
         id: get_version
         run: |

@@ -1,44 +1,33 @@
-# Variables
 PORT ?= 8888
-UV := uv run
+UV ?= uv
+RUN := $(UV) run
 
-# Phony targets
 .PHONY: dev help clean install test lint format check
-
-# Default target
 .DEFAULT_GOAL := help
 
-# Development server
 dev:
-	$(UV) adk web --port $(PORT)
+	$(RUN) adk web --port $(PORT)
 
-# Install dependencies
 install:
-	uv sync
+	$(UV) sync
 
-# Run tests
 test:
-	$(UV) pytest
+	$(RUN) pytest
 
-# Lint code
 lint:
-	$(UV) ruff check .
+	$(RUN) ruff check .
 
-# Format code
 format:
-	$(UV) ruff format .
+	$(RUN) ruff format .
 
-# Type check
 check:
-	$(UV) mypy .
+	$(RUN) mypy .
 
-# Clean up temporary files
 clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
 	find . -type d -name "*.egg-info" -exec rm -rf {} +
 
-# Show help
 help:
 	@echo "Available targets:"
 	@echo "  dev      - Start development server (default port: $(PORT))"

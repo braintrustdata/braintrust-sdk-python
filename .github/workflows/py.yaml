@@ -26,25 +26,27 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          cache: true
+          experimental: true
+          install_args: python@${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          cd py && make install-dev
+          mise exec python@${{ matrix.python-version }} -- make -C py install-dev
       - name: Test whether the Python SDK can be installed
         run: |
           # This is already done by make install-dev, but we're keeping this as a separate step
           # to explicitly verify that installation works
-          python -m uv pip install -e ./py[all]
+          mise exec python@${{ matrix.python-version }} -- python -m uv pip install -e ./py[all]
       - name: Test whether the Python SDK can be imported
         run: |
-          python -c 'import braintrust'
+          mise exec python@${{ matrix.python-version }} -- python -c 'import braintrust'
       - name: Run nox tests (shard ${{ matrix.shard }}/2)
         shell: bash
         run: |
-          cd py && ./scripts/nox-matrix.sh ${{ matrix.shard }} 2
+          mise exec python@${{ matrix.python-version }} -- ./py/scripts/nox-matrix.sh ${{ matrix.shard }} 2
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
@@ -68,13 +70,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          python-version: "3.13"
+          cache: true
+          experimental: true
+          install_args: python@3.13
       - name: Install build dependencies and build wheel
         run: |
-          cd py && make install-build-deps && make build
+          mise exec python@3.13 -- make -C py install-build-deps build
       - name: Upload wheel as artifact
         uses: actions/upload-artifact@v4
         with:

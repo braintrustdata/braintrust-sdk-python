@@ -22,29 +22,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v3
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          enable-cache: true
-          cache-dependency-glob: |
-            integrations/langchain-py/pyproject.toml
-            integrations/langchain-py/uv.lock
+          cache: true
+          experimental: true
+          install_args: python@${{ inputs.python-version }} uv
 
       - name: Install dependencies
         run: |
-          uv python install ${{ inputs.python-version }}
-          uv sync
+          mise exec python@${{ inputs.python-version }} -- uv sync
 
       - name: Lint with ruff
         if: ${{ inputs.os == 'ubuntu-latest' }}
         run: |
-          uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
+          mise exec python@${{ inputs.python-version }} -- uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
 
       - name: Run tests
         run: |
-          uv run pytest src
+          mise exec python@${{ inputs.python-version }} -- uv run pytest src
 
       - name: Test import
         run: |
-          uv run python -c "import braintrust_langchain; print('braintrust_langchain imported successfully')"
-          uv run python -c "from braintrust_langchain import BraintrustCallbackHandler; print('BraintrustCallbackHandler imported successfully')"
+          mise exec python@${{ inputs.python-version }} -- uv run python -c "import braintrust_langchain; print('braintrust_langchain imported successfully')"
+          mise exec python@${{ inputs.python-version }} -- uv run python -c "from braintrust_langchain import BraintrustCallbackHandler; print('BraintrustCallbackHandler imported successfully')"

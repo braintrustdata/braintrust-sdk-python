@@ -11,10 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch full history for proper diff
-      - uses: actions/setup-python@v3
-      - uses: pre-commit/action@v3.0.0
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          extra_args: --from-ref origin/${{ github.base_ref || 'main' }} --to-ref HEAD
+          cache: true
+          experimental: true
+      - name: Run pre-commit
+        run: |
+          mise exec -- pre-commit run --from-ref origin/${{ github.base_ref || 'main' }} --to-ref HEAD

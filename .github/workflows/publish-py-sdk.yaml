@@ -46,15 +46,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all history for changelog generation
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          python-version: "3.13"
+          cache: true
+          experimental: true
+          install_args: python@3.13
       - name: Build and verify
-        working-directory: py
         run: |
-          make install-dev
-          make verify-build
+          mise exec python@3.13 -- make -C py install-dev verify-build
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:

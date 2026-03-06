@@ -15,40 +15,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up mise
+        uses: jdx/mise-action@v3
         with:
-          python-version: ${{ inputs.python-version }}
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: |
-            py/requirements-build.txt
-            py/requirements-dev.txt
-            py/setup.py
-            py/noxfile.py
-            integrations/adk-py/pyproject.toml
-            integrations/adk-py/uv.lock
+          cache: true
+          experimental: true
+          install_args: python@${{ inputs.python-version }} uv
 
       - name: Install deprecated package compatibility dependencies
         working-directory: integrations/adk-py
         run: |
-          uv sync
+          mise exec python@${{ inputs.python-version }} -- uv sync
 
       - name: Lint deprecated compatibility package
         working-directory: integrations/adk-py
         run: |
-          uv run ruff check src
+          mise exec python@${{ inputs.python-version }} -- uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
 
       - name: Run deprecated compatibility tests
         working-directory: integrations/adk-py
         run: |
-          uv run pytest src/tests/test_reexports.py
+          mise exec python@${{ inputs.python-version }} -- uv run pytest src/tests/test_reexports.py
 
       - name: Test deprecated package import
         working-directory: integrations/adk-py
         run: |
-          uv run python -c "import braintrust_adk; print('braintrust_adk imported successfully')"
-          uv run python -c "from braintrust_adk import setup_braintrust; print('setup_braintrust imported successfully')"
+          mise exec python@${{ inputs.python-version }} -- uv run python -c "import braintrust_adk; print('braintrust_adk imported successfully')"
+          mise exec python@${{ inputs.python-version }} -- uv run python -c "from braintrust_adk import setup_braintrust; print('setup_braintrust imported successfully')"
