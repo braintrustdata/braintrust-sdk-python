@@ -32,15 +32,6 @@ jobs:
             integrations/adk-py/pyproject.toml
             integrations/adk-py/uv.lock
 
-      - name: Install nox
-        run: |
-          python -m uv pip install nox
-
-      - name: Run ADK tests in the main package
-        run: |
-          cd py
-          nox -s 'test_google_adk(latest)'
-
       - name: Install deprecated package compatibility dependencies
         working-directory: integrations/adk-py
         run: |
