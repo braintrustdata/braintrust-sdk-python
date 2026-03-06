@@ -6,7 +6,7 @@ from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
 
 from .utils import (
-    _aggregate_agent_chunks,
+    _aggregate_workflow_chunks,
     _try_to_dict,
     extract_metadata,
     extract_metrics,
@@ -16,16 +16,22 @@ from .utils import (
 )
 
 
-def _extract_workflow_input(args: Any, kwargs: Any) -> dict[str, Any]:
-    """Extract the input from _execute parameters.
-
-    _execute signature: (self, session, execution_input, workflow_run_response, run_context, ...)
-    - args[0]: session (WorkflowSession)
-    - args[1]: execution_input (WorkflowExecutionInput) - contains .input
-    - args[2]: workflow_run_response (WorkflowRunOutput) - contains .input, accumulates results
-    """
-    execution_input = args[1] if len(args) > 1 else kwargs.get("execution_input")
-    workflow_run_response = args[2] if len(args) > 2 else kwargs.get("workflow_run_response")
+def _extract_workflow_input(
+    args: Any,
+    kwargs: Any,
+    *,
+    execution_input_index: int,
+    workflow_run_response_index: int,
+) -> dict[str, Any]:
+    """Extract workflow input from execution method parameters."""
+    execution_input = (
+        args[execution_input_index] if len(args) > execution_input_index else kwargs.get("execution_input")
+    )
+    workflow_run_response = (
+        args[workflow_run_response_index]
+        if len(args) > workflow_run_response_index
+        else kwargs.get("workflow_run_response")
+    )
 
     result: dict[str, Any] = {}
 
@@ -48,13 +54,15 @@ def wrap_workflow(Workflow: Any) -> Any:
         workflow_name = getattr(instance, "name", None) or "Workflow"
         span_name = f"{workflow_name}.run"
 
-        input_data = _extract_workflow_input(args, kwargs)
+        input_data = _extract_workflow_input(args, kwargs, execution_input_index=1, workflow_run_response_index=2)
+        workflow_metadata = extract_metadata(instance, "workflow")
 
         with start_span(
             name=span_name,
             type=SpanTypeAttribute.TASK,
             input=input_data,
-            metadata=extract_metadata(instance, "workflow"),
+            metadata=workflow_metadata,
+            propagated_event={"metadata": workflow_metadata},
         ) as span:
             result = wrapped(*args, **kwargs)
             span.log(
@@ -70,7 +78,8 @@ def wrap_workflow(Workflow: Any) -> Any:
         workflow_name = getattr(instance, "name", None) or "Workflow"
         span_name = f"{workflow_name}.run_stream"
 
-        input_data = _extract_workflow_input(args, kwargs)
+        input_data = _extract_workflow_input(args, kwargs, execution_input_index=1, workflow_run_response_index=2)
+        workflow_metadata = extract_metadata(instance, "workflow")
 
         def _trace_stream():
             start = time.time()
@@ -78,7 +87,8 @@ def wrap_workflow(Workflow: Any) -> Any:
                 name=span_name,
                 type=SpanTypeAttribute.TASK,
                 input=input_data,
-                metadata=extract_metadata(instance, "workflow"),
+                metadata=workflow_metadata,
+                propagated_event={"metadata": workflow_metadata},
             )
             span.set_current()
 
@@ -98,7 +108,7 @@ def wrap_workflow(Workflow: Any) -> Any:
                     all_chunks.append(chunk)
                     yield chunk
 
-                aggregated = _aggregate_agent_chunks(all_chunks)
+                aggregated = _aggregate_workflow_chunks(all_chunks)
 
                 span.log(
                     output=aggregated,
@@ -126,13 +136,15 @@ def wrap_workflow(Workflow: Any) -> Any:
         workflow_name = getattr(instance, "name", None) or "Workflow"
         span_name = f"{workflow_name}.arun"
 
-        input_data = _extract_workflow_input(args, kwargs)
+        input_data = _extract_workflow_input(args, kwargs, execution_input_index=2, workflow_run_response_index=3)
+        workflow_metadata = extract_metadata(instance, "workflow")
 
         with start_span(
             name=span_name,
             type=SpanTypeAttribute.TASK,
             input=input_data,
-            metadata=extract_metadata(instance, "workflow"),
+            metadata=workflow_metadata,
+            propagated_event={"metadata": workflow_metadata},
         ) as span:
             result = await wrapped(*args, **kwargs)
             span.log(
@@ -148,7 +160,8 @@ def wrap_workflow(Workflow: Any) -> Any:
         workflow_name = getattr(instance, "name", None) or "Workflow"
         span_name = f"{workflow_name}.arun_stream"
 
-        input_data = _extract_workflow_input(args, kwargs)
+        input_data = _extract_workflow_input(args, kwargs, execution_input_index=2, workflow_run_response_index=3)
+        workflow_metadata = extract_metadata(instance, "workflow")
 
         async def _trace_stream():
             start = time.time()
@@ -156,7 +169,8 @@ def wrap_workflow(Workflow: Any) -> Any:
                 name=span_name,
                 type=SpanTypeAttribute.TASK,
                 input=input_data,
-                metadata=extract_metadata(instance, "workflow"),
+                metadata=workflow_metadata,
+                propagated_event={"metadata": workflow_metadata},
             )
             span.set_current()
 
@@ -176,7 +190,7 @@ def wrap_workflow(Workflow: Any) -> Any:
                     all_chunks.append(chunk)
                     yield chunk
 
-                aggregated = _aggregate_agent_chunks(all_chunks)
+                aggregated = _aggregate_workflow_chunks(all_chunks)
 
                 span.log(
                     output=aggregated,
