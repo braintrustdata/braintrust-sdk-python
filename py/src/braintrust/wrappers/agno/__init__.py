@@ -56,14 +56,22 @@ def setup_agno(
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 
     try:
-        from agno import agent, models, team, tools, workflow  # pyright: ignore
+        from agno import agent, models, team, tools  # pyright: ignore
 
         agent.Agent = wrap_agent(agent.Agent)  # pyright: ignore[reportUnknownMemberType]
         team.Team = wrap_team(team.Team)  # pyright: ignore[reportUnknownMemberType]
-        workflow.Workflow = wrap_workflow(workflow.Workflow)  # pyright: ignore[reportUnknownMemberType]
         models.base.Model = wrap_model(models.base.Model)  # pyright: ignore[reportUnknownMemberType]
         tools.function.FunctionCall = wrap_function_call(tools.function.FunctionCall)  # pyright: ignore[reportUnknownMemberType]
-        return True
     except ImportError:
         # Not installed - this is expected when using auto_instrument()
         return False
+
+    try:
+        from agno import workflow  # pyright: ignore
+
+        workflow.Workflow = wrap_workflow(workflow.Workflow)  # pyright: ignore[reportUnknownMemberType]
+    except ImportError:
+        # agno.workflow requires fastapi which may not be installed
+        pass
+
+    return True
