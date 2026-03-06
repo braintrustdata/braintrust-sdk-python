@@ -80,6 +80,23 @@ def make_fake_duplicate_content_workflow(name: str):
     return FakeWorkflow
 
 
+def make_fake_streaming_workflow_with_mutated_run_response(name: str):
+    class FakeWorkflow:
+        def __init__(self):
+            self.name = name
+            self.steps = ["first-step"]
+
+        def _execute_stream(self, session, execution_input, workflow_run_response, run_context=None):
+            yield FakeEvent("WorkflowStarted", content=None)
+            yield FakeEvent("StepCompleted", content="hello ")
+            workflow_run_response.content = "world"
+            workflow_run_response.status = "FAILED"
+            workflow_run_response.metrics = FakeMetrics()
+            yield FakeEvent("WorkflowCompleted", content="world")
+
+    return FakeWorkflow
+
+
 def make_fake_workflow_with_async_agent(name: str, agent_name: str):
     class FakeAgent:
         def __init__(self):
@@ -288,5 +305,4 @@ __all__ = [
     "make_fake_error_component",
     "make_fake_private_public_component",
     "make_fake_workflow",
-    "memory_logger",
 ]

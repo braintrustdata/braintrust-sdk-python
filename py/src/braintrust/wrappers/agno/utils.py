@@ -394,7 +394,7 @@ def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
     return {k: v for k, v in aggregated.items() if v not in (None, "")}
 
 
-def _aggregate_workflow_chunks(chunks: list[Any]) -> dict[str, Any]:
+def _aggregate_workflow_chunks(chunks: list[Any], workflow_run_response: Any | None = None) -> dict[str, Any]:
     """Aggregate workflow/step events into a final workflow-style response."""
     aggregated = {
         "content": "",
@@ -427,6 +427,17 @@ def _aggregate_workflow_chunks(chunks: list[Any]) -> dict[str, Any]:
             aggregated["content"] = accumulated_content
         else:
             aggregated["content"] = f"{accumulated_content}{final_workflow_content}"
+
+    if workflow_run_response is not None:
+        if not aggregated["content"] and hasattr(workflow_run_response, "content") and workflow_run_response.content:
+            aggregated["content"] = str(workflow_run_response.content)
+
+        if not aggregated["status"] and hasattr(workflow_run_response, "status") and workflow_run_response.status:
+            aggregated["status"] = workflow_run_response.status
+
+        if not aggregated["metrics"] and hasattr(workflow_run_response, "metrics") and workflow_run_response.metrics:
+            parsed_metrics = parse_metrics_from_agno(workflow_run_response.metrics)
+            aggregated["metrics"] = parsed_metrics if parsed_metrics else workflow_run_response.metrics
 
     return {k: v for k, v in aggregated.items() if v not in (None, "")}
 

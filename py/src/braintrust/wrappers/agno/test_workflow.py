@@ -17,6 +17,7 @@ from ._test_agno_helpers import (
     FakeExecutionInput,
     FakeWorkflowRunResponse,
     make_fake_duplicate_content_workflow,
+    make_fake_streaming_workflow_with_mutated_run_response,
     make_fake_workflow,
     make_fake_workflow_agent_path,
     make_fake_workflow_with_async_agent,
@@ -182,6 +183,26 @@ def test_agno_workflow_stream_prefers_final_workflow_output(memory_logger):
     assert span["span_attributes"]["name"] == "CompatWorkflowDuplicateContent.run_stream"
     assert span["output"]["content"] == "hello"
     assert span["output"]["status"] == "COMPLETED"
+
+
+def test_agno_workflow_stream_preserves_final_run_response_fields(memory_logger):
+    Workflow = wrap_workflow(make_fake_streaming_workflow_with_mutated_run_response("CompatWorkflowMutatedRunResponse"))
+    workflow = Workflow()
+
+    execution_input = FakeExecutionInput("hello world")
+    run_response = FakeWorkflowRunResponse(input="hello world")
+
+    chunks = list(workflow._execute_stream("session-1", execution_input, run_response))
+    assert len(chunks) == 3
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "CompatWorkflowMutatedRunResponse.run_stream"
+    assert span["output"]["content"] == "hello world"
+    assert span["output"]["status"] == "FAILED"
+    assert span["metrics"]["prompt_tokens"] == 1
+    assert span["metrics"]["completion_tokens"] == 2
 
 
 def test_agno_workflow_agent_path_sync_run_creates_workflow_span(memory_logger):

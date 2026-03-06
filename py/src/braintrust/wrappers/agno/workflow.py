@@ -95,6 +95,7 @@ def wrap_workflow(Workflow: Any) -> Any:
 
         input_data = _extract_workflow_input(args, kwargs, execution_input_index=1, workflow_run_response_index=2)
         workflow_metadata = extract_metadata(instance, "workflow")
+        workflow_run_response = args[2] if len(args) > 2 else kwargs.get("workflow_run_response")
 
         def _trace_stream():
             start = time.time()
@@ -123,7 +124,7 @@ def wrap_workflow(Workflow: Any) -> Any:
                     all_chunks.append(chunk)
                     yield chunk
 
-                aggregated = _aggregate_workflow_chunks(all_chunks)
+                aggregated = _aggregate_workflow_chunks(all_chunks, workflow_run_response)
 
                 span.log(
                     output=aggregated,
@@ -177,6 +178,7 @@ def wrap_workflow(Workflow: Any) -> Any:
 
         input_data = _extract_workflow_input(args, kwargs, execution_input_index=2, workflow_run_response_index=3)
         workflow_metadata = extract_metadata(instance, "workflow")
+        workflow_run_response = args[3] if len(args) > 3 else kwargs.get("workflow_run_response")
 
         async def _trace_stream():
             start = time.time()
@@ -205,7 +207,7 @@ def wrap_workflow(Workflow: Any) -> Any:
                     all_chunks.append(chunk)
                     yield chunk
 
-                aggregated = _aggregate_workflow_chunks(all_chunks)
+                aggregated = _aggregate_workflow_chunks(all_chunks, workflow_run_response)
 
                 span.log(
                     output=aggregated,
