@@ -113,6 +113,45 @@ def make_fake_workflow_with_async_agent(name: str, agent_name: str):
     return FakeWorkflow
 
 
+def make_fake_workflow_agent_path(name: str):
+    class FakeWorkflow:
+        def __init__(self):
+            self.name = name
+            self.id = "workflow-agent-123"
+            self.steps = ["agent-step"]
+
+        def _execute_workflow_agent(self, user_input, session, execution_input, run_context, stream=False, **kwargs):
+            if stream:
+                def _stream():
+                    yield FakeEvent("WorkflowStarted")
+                    yield FakeEvent(
+                        "WorkflowCompleted",
+                        content=f"{user_input}-sync-stream",
+                        metrics=FakeMetrics(),
+                        status="COMPLETED",
+                    )
+
+                return _stream()
+            return FakeRunOutput(f"{user_input}-sync")
+
+        async def _aexecute_workflow_agent(self, user_input, run_context, execution_input, stream=False, **kwargs):
+            if stream:
+
+                async def _astream():
+                    yield FakeEvent("WorkflowStarted")
+                    yield FakeEvent(
+                        "WorkflowCompleted",
+                        content=f"{user_input}-async-stream",
+                        metrics=FakeMetrics(),
+                        status="COMPLETED",
+                    )
+
+                return _astream()
+            return FakeRunOutput(f"{user_input}-async")
+
+    return FakeWorkflow
+
+
 def make_fake_component(name: str):
     class FakeComponent:
         def __init__(self):
@@ -253,6 +292,7 @@ __all__ = [
     "isawaitable",
     "make_fake_async_dispatch_component",
     "make_fake_component",
+    "make_fake_workflow_agent_path",
     "make_fake_workflow_with_async_agent",
     "make_fake_duplicate_content_workflow",
     "make_fake_error_component",

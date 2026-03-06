@@ -16,6 +16,7 @@ from ._test_agno_helpers import (
     FakeWorkflowRunResponse,
     make_fake_duplicate_content_workflow,
     make_fake_workflow,
+    make_fake_workflow_agent_path,
     make_fake_workflow_with_async_agent,
 )
 
@@ -168,3 +169,39 @@ def test_agno_workflow_stream_prefers_final_workflow_output(memory_logger):
     assert span["span_attributes"]["name"] == "CompatWorkflowDuplicateContent.run_stream"
     assert span["output"]["content"] == "hello"
     assert span["output"]["status"] == "COMPLETED"
+
+
+def test_agno_workflow_agent_path_sync_run_creates_workflow_span(memory_logger):
+    Workflow = wrap_workflow(make_fake_workflow_agent_path("CompatWorkflowAgentPath"))
+    workflow = Workflow()
+
+    execution_input = FakeExecutionInput("hello")
+    result = workflow._execute_workflow_agent("hello", "session-1", execution_input, "run-context")
+
+    assert result.content == "hello-sync"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "CompatWorkflowAgentPath.run"
+    assert span["input"]["input"] == "hello"
+    assert span["metadata"]["workflow_id"] == "workflow-agent-123"
+
+
+@pytest.mark.asyncio
+async def test_agno_workflow_agent_path_async_stream_creates_workflow_span(memory_logger):
+    Workflow = wrap_workflow(make_fake_workflow_agent_path("CompatWorkflowAgentPathAsync"))
+    workflow = Workflow()
+
+    execution_input = FakeExecutionInput("hello")
+    stream = await workflow._aexecute_workflow_agent("hello", "run-context", execution_input, stream=True)
+    chunks = [chunk async for chunk in stream]
+
+    assert len(chunks) == 2
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "CompatWorkflowAgentPathAsync.arun_stream"
+    assert span["output"]["content"] == "hello-async-stream"
+    assert span["metadata"]["workflow_id"] == "workflow-agent-123"
