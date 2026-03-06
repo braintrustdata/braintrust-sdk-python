@@ -4,8 +4,6 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportUnknownVariableType=false
 # pyright: reportUnknownArgumentType=false
-from pathlib import Path
-
 import pytest
 from braintrust.logger import start_span
 from braintrust.wrappers.agno import agent as agno_agent_module
@@ -25,13 +23,6 @@ from ._test_agno_helpers import (
     make_fake_error_component,
     make_fake_private_public_component,
 )
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {
-        "cassette_library_dir": str(Path(__file__).parent.parent / "cassettes"),
-    }
 
 
 @pytest.mark.vcr

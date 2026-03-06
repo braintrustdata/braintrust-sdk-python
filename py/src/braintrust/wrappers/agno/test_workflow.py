@@ -4,8 +4,6 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportUnknownVariableType=false
 # pyright: reportUnknownArgumentType=false
-from pathlib import Path
-
 import pytest
 from braintrust.wrappers.agno import setup_agno
 from braintrust.wrappers.agno.workflow import wrap_workflow
@@ -19,13 +17,6 @@ from ._test_agno_helpers import (
     make_fake_workflow_agent_path,
     make_fake_workflow_with_async_agent,
 )
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {
-        "cassette_library_dir": str(Path(__file__).parent.parent / "cassettes"),
-    }
 
 
 @pytest.mark.vcr

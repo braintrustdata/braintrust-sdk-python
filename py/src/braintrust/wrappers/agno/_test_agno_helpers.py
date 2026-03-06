@@ -5,19 +5,9 @@
 
 from inspect import isawaitable
 
-import pytest
-from braintrust import logger
-from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.agno.agent import wrap_agent
 
 PROJECT_NAME = "test-agno-app"
-
-
-@pytest.fixture
-def memory_logger():
-    init_test_logger(PROJECT_NAME)
-    with logger._internal_with_memory_background_logger() as bgl:
-        yield bgl
 
 
 class FakeMetrics:
