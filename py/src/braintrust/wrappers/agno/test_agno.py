@@ -43,14 +43,18 @@ def vcr_config():
     }
 
 
+@pytest.fixture(scope="module", autouse=True)
+def setup_wrapper():
+    setup_agno(project_name=PROJECT_NAME)
+    yield
+
+
 @pytest.mark.vcr
 def test_agno_simple_agent_execution(memory_logger):
     agent_module = pytest.importorskip("agno.agent")
     openai_module = pytest.importorskip("agno.models.openai")
     Agent = agent_module.Agent
     OpenAIChat = openai_module.OpenAIChat
-
-    setup_agno(project_name=PROJECT_NAME)
 
     assert not memory_logger.pop()
 
