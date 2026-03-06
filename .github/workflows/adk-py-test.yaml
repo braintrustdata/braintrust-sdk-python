@@ -6,45 +6,58 @@ on:
       python-version:
         required: true
         type: string
-      os:
-        required: true
-        type: string
 
 jobs:
   test:
-    runs-on: ${{ inputs.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
-
-    defaults:
-      run:
-        working-directory: integrations/adk-py
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
           cache-dependency-glob: |
+            py/requirements-build.txt
+            py/requirements-dev.txt
+            py/setup.py
+            py/noxfile.py
             integrations/adk-py/pyproject.toml
             integrations/adk-py/uv.lock
 
-      - name: Install dependencies
+      - name: Install nox
         run: |
-          uv python install ${{ inputs.python-version }}
+          python -m uv pip install nox
+
+      - name: Run ADK tests in the main package
+        run: |
+          cd py
+          nox -s 'test_google_adk(latest)'
+
+      - name: Install deprecated package compatibility dependencies
+        working-directory: integrations/adk-py
+        run: |
           uv sync
 
-      - name: Lint with ruff
-        if: ${{ inputs.os == 'ubuntu-latest' }}
+      - name: Lint deprecated compatibility package
+        working-directory: integrations/adk-py
         run: |
-          uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
+          uv run ruff check src
 
-      - name: Run tests
+      - name: Run deprecated compatibility tests
+        working-directory: integrations/adk-py
         run: |
-          uv run pytest
+          uv run pytest src/tests/test_reexports.py
 
-      - name: Test import
+      - name: Test deprecated package import
+        working-directory: integrations/adk-py
         run: |
           uv run python -c "import braintrust_adk; print('braintrust_adk imported successfully')"
           uv run python -c "from braintrust_adk import setup_braintrust; print('setup_braintrust imported successfully')"
