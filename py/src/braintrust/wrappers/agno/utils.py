@@ -94,6 +94,11 @@ def extract_metadata(instance: Any, component: str) -> dict[str, Any]:
         model = getattr(instance, "model", None)
         if model:
             metadata["model"] = getattr(model, "id", None) or model.__class__.__name__
+    elif component == "workflow":
+        metadata["workflow_name"] = getattr(instance, "name", None)
+        steps = getattr(instance, "steps", None)
+        if steps:
+            metadata["steps_count"] = len(steps)
 
     return metadata
 

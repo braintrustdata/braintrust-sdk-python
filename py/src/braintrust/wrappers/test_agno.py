@@ -105,6 +105,63 @@ def test_agno_simple_agent_execution(memory_logger):
     assert llm_span["metrics"]["tokens"] == 42
 
 
+@pytest.mark.vcr
+def test_agno_workflow_with_agent(memory_logger):
+    """Test that workflows create a parent span and agents nest under it."""
+    Agent = pytest.importorskip("agno.agent.Agent")
+    Workflow = pytest.importorskip("agno.workflow.Workflow")
+    OpenAIChat = pytest.importorskip("agno.models.openai.OpenAIChat")
+
+    setup_agno(project_name=PROJECT_NAME)
+
+    assert not memory_logger.pop()
+
+    author_agent = Agent(
+        name="Author Agent",
+        model=OpenAIChat(id="gpt-4o-mini"),
+        instructions="You are librarian. Answer the questions by only replying with the author that wrote the book.",
+    )
+
+    workflow = Workflow(
+        name="Book Lookup Workflow",
+        steps=[author_agent],
+    )
+
+    response = workflow.run("Charlotte's Web")
+
+    assert response
+    assert response.content
+    assert len(response.content) > 0
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 3, f"Expected at least 3 spans (workflow + agent + llm), got {len(spans)}"
+
+    workflow_span = spans[0]
+    assert workflow_span["span_attributes"]["name"] == "Book Lookup Workflow.run"
+    assert workflow_span["span_attributes"]["type"].value == "task"
+    assert workflow_span["metadata"]["component"] == "workflow"
+    assert workflow_span["metadata"]["workflow_name"] == "Book Lookup Workflow"
+    assert workflow_span["metadata"]["steps_count"] == 1
+
+    agent_span = None
+    for span in spans[1:]:
+        if "Agent" in span["span_attributes"]["name"] and ".run" in span["span_attributes"]["name"]:
+            agent_span = span
+            break
+
+    assert agent_span is not None, "Could not find agent span"
+    assert agent_span["span_parents"] == [workflow_span["span_id"]], "Agent span should be child of workflow span"
+
+    llm_span = None
+    for span in spans:
+        if span["span_attributes"]["type"].value == "llm":
+            llm_span = span
+            break
+
+    assert llm_span is not None, "Could not find LLM span"
+    assert llm_span["span_parents"] == [agent_span["span_id"]], "LLM span should be child of agent span"
+
+
 class TestAutoInstrumentAgno:
     """Tests for auto_instrument() with Agno."""
 
