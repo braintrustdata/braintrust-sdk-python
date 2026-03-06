@@ -1,5 +1,7 @@
 # braintrust-adk (DEPRECATED)
 
+[![PyPI version](https://img.shields.io/pypi/v/braintrust-adk.svg)](https://pypi.org/project/braintrust-adk/)
+
 SDK for integrating [Braintrust](https://braintrust.dev) with [Google ADK (Agent Development Kit)](https://github.com/google/adk-python). This package provides automatic tracing and logging of ADK agent executions to Braintrust.
 
 > **This package is deprecated.** The Google ADK integration is now included in the main [`braintrust`](https://pypi.org/project/braintrust/) package.
@@ -37,10 +39,10 @@ pip install braintrust-adk
 
 ## Requirements
 
-- Python >= 3.9
+- Python >= 3.10
 - Google ADK >= 1.14.1
 
-## Quick Start
+## Quickstart
 
 The `braintrust-adk` integration automatically traces your ADK agents' execution, including:
 
@@ -48,8 +50,6 @@ The `braintrust-adk` integration automatically traces your ADK agents' execution
 - Tool calls and their results
 - Parallel execution flows
 - Multi-step agent reasoning
-
-### Basic Usage
 
 ```python
 from google.adk.agents import LlmAgent
@@ -73,9 +73,9 @@ response = agent.send_message("What's the weather like in New York?")
 print(response.text)
 ```
 
-### Advanced Configuration
+## Advanced Configuration
 
-#### Using Project ID
+### Using Project ID
 
 If you know your Braintrust project ID, you can use it directly:
 
@@ -86,7 +86,7 @@ setup_adk(
 )
 ```
 
-#### Custom Tools with Tracing
+### Custom Tools with Tracing
 
 Other braintrust functions like `traced` work seamlessly with this integration.
 
@@ -118,15 +118,11 @@ response = agent.send_message(
 )
 ```
 
-### Manual Patching
+## Manual Patching
 
 The `setup_adk` will automatically patch Google ADK Runner, Agent, and Flow classes to automatically trace all agent interactions. If you prefer to manually patch classes, you can use the `wrap_agent`, `wrap_runner`, and `wrap_flow` functions. Take a look at the [manual example](./examples/manual.py).
 
 Note that, as of writing, `adk web` does not support [custom Runners](https://github.com/google/adk-web/issues/72) and you will need to use `setup_adk` if you would like LLM traces.
-
-## Examples
-
-The `examples/` directory contains complete working examples:
 
 ## Viewing Traces in Braintrust
 
@@ -140,28 +136,8 @@ Once you've set up the integration, you can view your traces in the Braintrust d
    - Token usage and latency metrics
    - Any errors or warnings
 
-## Development
-
-To contribute to this integration:
-
-```bash
-# Clone the repository
-git clone https://github.com/braintrustdata/braintrust-sdk-python.git
-cd sdk/integrations/adk-py
-
-uv sync
-
-# Run examples
-cd examples
-
-# simple programmatic agent call
-uv run manual.py
-
-# or use the adk web UI
-uv run adk web --port 8888
-```
-
-## Related Resources
+## Documentation
 
 - [Braintrust Documentation](https://www.braintrust.dev/docs)
+- [Braintrust Python SDK Documentation](https://www.braintrust.dev/docs/reference/sdks/python)
 - [Google ADK Documentation](https://github.com/google/genai-agent-dev-kit)

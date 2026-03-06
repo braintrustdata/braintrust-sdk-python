@@ -1,5 +1,7 @@
 # braintrust-langchain
 
+[![PyPI version](https://img.shields.io/pypi/v/braintrust-langchain.svg)](https://pypi.org/project/braintrust-langchain/)
+
 SDK for integrating [Braintrust](https://braintrust.dev) with [LangChain](https://langchain.com/). This package provides a callback handler to automatically log LangChain executions to Braintrust.
 
 ## Installation
@@ -10,18 +12,16 @@ pip install braintrust-langchain
 
 ## Requirements
 
-- Python >= 3.9
-- LangChain >= 0.1.0
+- Python >= 3.10
+- LangChain >= 0.3.27
 
-## Usage
+## Quickstart
 
 First, make sure you have your Braintrust API key set in your environment:
 
 ```bash
 export BRAINTRUST_API_KEY="your-api-key"
 ```
-
-### Basic Usage
 
 ```python
 import asyncio
@@ -54,6 +54,8 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
+## Passing Handlers Explicitly
+
 If you'd prefer to pass the callback handler to specific LangChain calls instead of setting it globally, you can do so using the `callbacks` config option:
 
 ```python
@@ -83,18 +85,8 @@ The callback handler supports logging for:
 
 Review the [LangChain documentation](https://python.langchain.com/docs/modules/callbacks/) for more information on how to use callbacks.
 
-## Development
+## Documentation
 
-Contributions are welcomed!
-
-```bash
-git clone https://github.com/braintrustdata/sdk.git
-
-cd sdk/integrations/langchain-py
-
-pip install -e ".[dev]"
-
-# work on the code
-
-pytest
-```
+- Braintrust docs: https://www.braintrust.dev/docs
+- Braintrust Python SDK docs: https://www.braintrust.dev/docs/reference/sdks/python
+- LangChain callback docs: https://python.langchain.com/docs/modules/callbacks/
