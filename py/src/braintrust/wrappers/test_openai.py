@@ -17,6 +17,45 @@ PROJECT_NAME = "test-project-openai-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
 TEST_PROMPT = "What's 12 + 12?"
 TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
+RAW_RESPONSE_TEST_CASES = [
+    pytest.param(
+        "responses",
+        TEST_MODEL,
+        TEST_PROMPT,
+        {
+            "id": "resp_test_123",
+            "output": [{"content": [{"text": "24"}]}],
+            "usage": {"input_tokens": 5, "output_tokens": 2, "total_tokens": 7},
+        },
+        lambda span: (
+            TEST_MODEL in span["metadata"]["model"]
+            and span["output"][0]["content"][0]["text"] == "24"
+            and span["metrics"]["tokens"] == 7
+            and span["metrics"]["prompt_tokens"] == 5
+            and span["metrics"]["completion_tokens"] == 2
+        ),
+        id="responses",
+    ),
+    pytest.param(
+        "embeddings",
+        "text-embedding-ada-002",
+        "This is a test",
+        {
+            "data": [{"embedding": [0.1, 0.2, 0.3]}],
+            "usage": {"prompt_tokens": 3, "total_tokens": 3},
+        },
+        lambda span: span["output"]["embedding_length"] == 3,
+        id="embeddings",
+    ),
+    pytest.param(
+        "moderations",
+        "omni-moderation-latest",
+        "This is a test",
+        {"results": [{"flagged": False, "categories": {"violence": False}}]},
+        lambda span: span["output"][0]["flagged"] is False,
+        id="moderations",
+    ),
+]
 
 
 @pytest.fixture
@@ -24,6 +63,23 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+class FakeRawResponse:
+    def __init__(self, headers, payload):
+        self.headers = headers
+        self.payload = payload
+        self.parse_calls = 0
+
+    def parse(self):
+        self.parse_calls += 1
+        return self.payload
+
+
+class AsyncFakeRawResponse(FakeRawResponse):
+    async def parse(self):
+        self.parse_calls += 1
+        return self.payload
 
 
 def test_tracing_processor_sets_current_span(memory_logger):
@@ -92,6 +148,77 @@ def test_openai_chat_metrics(memory_logger):
         assert TEST_MODEL in span["metadata"]["model"]
         assert span["metadata"]["provider"] == "openai"
         assert TEST_PROMPT in str(span["input"])
+
+
+def test_openai_chat_with_raw_response_traces_and_returns_raw_response(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    client = openai.OpenAI(api_key="test-key")
+    payload = {
+        "id": "chatcmpl_test_123",
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": "24"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+    }
+    fake_raw_response = FakeRawResponse({"x-request-id": "req_chat_test_123"}, payload)
+    monkeypatch.setattr(client.chat.completions.with_raw_response, "create", lambda *args, **kwargs: fake_raw_response)
+
+    wrapped_client = wrap_openai(client)
+    response = wrapped_client.chat.completions.with_raw_response.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+    )
+
+    assert response is fake_raw_response
+    assert response.headers["x-request-id"] == "req_chat_test_123"
+    assert response.parse_calls == 1
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["output"][0]["message"]["content"] == "24"
+    assert span["metrics"]["tokens"] == 7
+    assert span["metrics"]["prompt_tokens"] == 5
+    assert span["metrics"]["completion_tokens"] == 2
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_with_raw_response_async_traces_and_returns_raw_response(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    client = AsyncOpenAI(api_key="test-key")
+    payload = {
+        "id": "chatcmpl_test_async_123",
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": "24"}, "finish_reason": "stop"}],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+    }
+    fake_raw_response = AsyncFakeRawResponse({"x-request-id": "req_chat_async_test_123"}, payload)
+
+    async def fake_create(*args, **kwargs):
+        return fake_raw_response
+
+    monkeypatch.setattr(client.chat.completions.with_raw_response, "create", fake_create)
+
+    wrapped_client = wrap_openai(client)
+    response = await wrapped_client.chat.completions.with_raw_response.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+    )
+
+    assert response is fake_raw_response
+    assert response.headers["x-request-id"] == "req_chat_async_test_123"
+    assert response.parse_calls == 1
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["output"][0]["message"]["content"] == "24"
+    assert span["metrics"]["tokens"] == 7
+    assert span["metrics"]["prompt_tokens"] == 5
+    assert span["metrics"]["completion_tokens"] == 2
 
 
 @pytest.mark.vcr
@@ -272,6 +399,226 @@ def test_openai_responses_metadata_preservation(memory_logger):
     # Check metrics
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
+
+
+@pytest.mark.vcr
+def test_openai_responses_with_raw_response(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+
+    start = time.time()
+    response = client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    end = time.time()
+
+    assert response
+    assert response.headers["x-request-id"]
+
+    parsed = response.parse()
+    assert parsed.output
+    assert len(parsed.output) > 0
+    content = parsed.output[0].content[0].text
+    assert "24" in content or "twenty-four" in content.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert 0 <= metrics.get("prompt_cached_tokens", 0)
+    assert 0 <= metrics.get("completion_reasoning_tokens", 0)
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert len(span["output"]) > 0
+    assert span["output"][0]["content"][0]["text"]
+
+
+@pytest.mark.parametrize(
+    ("resource_name", "model", "input_value", "payload", "assert_span"),
+    RAW_RESPONSE_TEST_CASES,
+)
+def test_openai_with_raw_response_traces_and_returns_raw_response(
+    memory_logger, monkeypatch, resource_name, model, input_value, payload, assert_span
+):
+    """
+    Regression test for https://github.com/braintrustdata/braintrust-sdk-python/issues/36.
+    Traced `with_raw_response` calls must still return the raw response.
+    """
+    assert not memory_logger.pop()
+
+    client = openai.OpenAI(api_key="test-key")
+    request_id = f"req_test_{resource_name}"
+    fake_raw_response = FakeRawResponse({"x-request-id": request_id}, payload)
+    monkeypatch.setattr(
+        getattr(client, resource_name).with_raw_response,
+        "create",
+        lambda *args, **kwargs: fake_raw_response,
+    )
+
+    wrapped_client = wrap_openai(client)
+    response = getattr(wrapped_client, resource_name).with_raw_response.create(model=model, input=input_value)
+
+    assert response is fake_raw_response
+    assert response.headers["x-request-id"] == request_id
+    assert response.parse_calls == 1
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "openai"
+    assert span["input"] == input_value
+    assert assert_span(span)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("resource_name", "model", "input_value", "payload", "assert_span"),
+    RAW_RESPONSE_TEST_CASES,
+)
+async def test_openai_with_raw_response_async_traces_and_returns_raw_response(
+    memory_logger, monkeypatch, resource_name, model, input_value, payload, assert_span
+):
+    assert not memory_logger.pop()
+
+    client = AsyncOpenAI(api_key="test-key")
+    request_id = f"req_test_async_{resource_name}"
+    fake_raw_response = AsyncFakeRawResponse({"x-request-id": request_id}, payload)
+
+    async def fake_create(*args, **kwargs):
+        return fake_raw_response
+
+    monkeypatch.setattr(getattr(client, resource_name).with_raw_response, "create", fake_create)
+
+    wrapped_client = wrap_openai(client)
+    response = await getattr(wrapped_client, resource_name).with_raw_response.create(model=model, input=input_value)
+
+    assert response is fake_raw_response
+    assert response.headers["x-request-id"] == request_id
+    assert response.parse_calls == 1
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "openai"
+    assert span["input"] == input_value
+    assert assert_span(span)
+
+
+def test_openai_chat_with_raw_response_streaming_preserves_raw_response(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    client = openai.OpenAI(api_key="test-key")
+    expected_chunks = [
+        {"choices": [{"delta": {"role": "assistant", "content": "24"}}]},
+        {"choices": [{"delta": {}}], "usage": {"prompt_tokens": 5, "output_tokens": 2, "total_tokens": 7}},
+    ]
+
+    class FakeRawResponse:
+        def __init__(self):
+            self.headers = {"x-request-id": "req_streaming_test"}
+            self.parse_calls = 0
+
+        def parse(self):
+            self.parse_calls += 1
+            for chunk in expected_chunks:
+                yield chunk
+
+    fake_raw_response = FakeRawResponse()
+    monkeypatch.setattr(client.chat.completions.with_raw_response, "create", lambda *args, **kwargs: fake_raw_response)
+
+    wrapped_client = wrap_openai(client)
+    response = wrapped_client.chat.completions.with_raw_response.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream=True,
+    )
+
+    assert response is fake_raw_response
+    assert response.headers["x-request-id"] == "req_streaming_test"
+    assert response.parse_calls == 0
+    assert not memory_logger.pop()
+
+    chunks = list(response.parse())
+    assert response.parse_calls == 1
+    assert chunks == expected_chunks
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["stream"] is True
+    assert span["output"][0]["message"]["content"] == "24"
+    assert span["metrics"]["tokens"] == 7
+    assert span["metrics"]["prompt_tokens"] == 5
+    assert span["metrics"]["completion_tokens"] == 2
+
+
+@pytest.mark.asyncio
+async def test_openai_chat_with_raw_response_streaming_async_preserves_raw_response(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    client = AsyncOpenAI(api_key="test-key")
+    expected_chunks = [
+        {"choices": [{"delta": {"role": "assistant", "content": "24"}}]},
+        {"choices": [{"delta": {}}], "usage": {"prompt_tokens": 5, "output_tokens": 2, "total_tokens": 7}},
+    ]
+
+    class FakeRawResponse:
+        def __init__(self):
+            self.headers = {"x-request-id": "req_streaming_async_test"}
+            self.parse_calls = 0
+
+        async def parse(self):
+            self.parse_calls += 1
+
+            async def gen():
+                for chunk in expected_chunks:
+                    yield chunk
+
+            return gen()
+
+    fake_raw_response = FakeRawResponse()
+
+    async def fake_create(*args, **kwargs):
+        return fake_raw_response
+
+    monkeypatch.setattr(client.chat.completions.with_raw_response, "create", fake_create)
+
+    wrapped_client = wrap_openai(client)
+    response = await wrapped_client.chat.completions.with_raw_response.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream=True,
+    )
+
+    assert response is fake_raw_response
+    assert response.headers["x-request-id"] == "req_streaming_async_test"
+    assert response.parse_calls == 0
+    assert not memory_logger.pop()
+
+    stream = await response.parse()
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+
+    assert response.parse_calls == 1
+    assert chunks == expected_chunks
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["stream"] is True
+    assert span["output"][0]["message"]["content"] == "24"
+    assert span["metrics"]["tokens"] == 7
+    assert span["metrics"]["prompt_tokens"] == 5
+    assert span["metrics"]["completion_tokens"] == 2
 
 
 @pytest.mark.vcr
