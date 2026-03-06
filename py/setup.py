@@ -29,6 +29,8 @@ extras_require = {
     "doc": ["pydoc-markdown"],
     "openai-agents": ["openai-agents"],
     "otel": ["opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp-proto-http"],
+    # orjson is not compatible with PyPy, so we exclude it for that platform
+    "performance": ["orjson; platform_python_implementation != 'PyPy'"],
     "temporal": ["temporalio>=1.19.0; python_version>='3.10'"],
 }
 
