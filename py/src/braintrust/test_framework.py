@@ -372,6 +372,113 @@ async def test_eval_no_send_logs_with_none_score(with_memory_logger):
 
 
 @pytest.mark.asyncio
+async def test_run_evaluator_classifier_scorer_logs_classifications(with_memory_logger, with_simulate_login):
+    def identity_task(input_value):
+        return input_value
+
+    def classifier_scorer(input_value, output, expected):
+        return "animal"
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-classifier-scorer",
+        data=[EvalCase(input="cat", expected="animal")],
+        task=identity_task,
+        scores=[classifier_scorer],
+        experiment_name="test-classifier-scorer",
+        metadata=None,
+    )
+
+    exp = init_test_exp("test-classifier-scorer", "test-project")
+    result = await run_evaluator(experiment=exp, evaluator=evaluator, position=None, filters=[])
+
+    assert len(result.results) == 1
+    assert result.results[0].scores == {}
+    assert result.summary.scores == {}
+
+    logs = with_memory_logger.pop()
+    scorer_spans = [log for log in logs if log.get("span_attributes", {}).get("type") == "score"]
+    assert len(scorer_spans) == 1
+    assert scorer_spans[0].get("classifications") == {
+        "classifier_scorer": [{"id": "animal", "label": "animal"}]
+    }
+
+    root_spans = [log for log in logs if not log["span_parents"]]
+    assert len(root_spans) == 1
+    assert root_spans[0].get("classifications") == {
+        "classifier_scorer": [{"id": "animal", "label": "animal"}]
+    }
+
+
+@pytest.mark.asyncio
+async def test_eval_mixed_score_and_classifier_scorers(with_memory_logger, with_simulate_login):
+    def identity_task(input_value):
+        return input_value
+
+    def numeric_scorer(input_value, output, expected):
+        return 1.0 if output == expected else 0.0
+
+    def classifier_scorer(input_value, output, expected):
+        return ["animal", "pet"]
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-mixed-scorers",
+        data=[EvalCase(input="cat", expected="cat")],
+        task=identity_task,
+        scores=[numeric_scorer, classifier_scorer],
+        experiment_name="test-mixed-scorers",
+        metadata=None,
+    )
+
+    exp = init_test_exp("test-mixed-scorers", "test-project")
+    result = await run_evaluator(experiment=exp, evaluator=evaluator, position=None, filters=[])
+
+    assert len(result.results) == 1
+    assert result.results[0].scores == {"numeric_scorer": 1.0}
+
+    logs = with_memory_logger.pop()
+    scorer_spans = [log for log in logs if log.get("span_attributes", {}).get("type") == "score"]
+    assert len(scorer_spans) == 2
+
+    numeric_spans = [log for log in scorer_spans if log.get("scores", {}).get("numeric_scorer") == 1.0]
+    assert len(numeric_spans) == 1
+
+    root_spans = [log for log in logs if not log["span_parents"]]
+    assert len(root_spans) == 1
+    assert root_spans[0].get("classifications") == {
+        "classifier_scorer": [{"id": "animal", "label": "animal"}, {"id": "pet", "label": "pet"}]
+    }
+
+
+@pytest.mark.asyncio
+async def test_eval_invalid_classifier_payload_returns_scorer_error():
+    def identity_task(input_value):
+        return input_value
+
+    def invalid_classifier(input_value, output, expected):
+        return {"label": "missing-id"}
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-invalid-classifier",
+        data=[EvalCase(input="cat", expected="animal")],
+        task=identity_task,
+        scores=[invalid_classifier],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    assert len(result.results) == 1
+    assert result.results[0].scores == {}
+    assert "scorer_errors" in result.results[0].metadata
+    assert "invalid_classifier" in result.results[0].metadata["scorer_errors"]
+    assert "valid Score object or classification item" in result.results[0].metadata["scorer_errors"]["invalid_classifier"]
+
+
+@pytest.mark.asyncio
 async def test_hooks_tags_append(with_memory_logger, with_simulate_login, simple_scorer):
     """Test that hooks.tags can be appended to and logged."""
 

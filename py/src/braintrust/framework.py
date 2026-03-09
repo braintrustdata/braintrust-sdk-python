@@ -9,7 +9,7 @@ import sys
 import traceback
 import warnings
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Coroutine, Iterable, Iterator, Sequence
+from collections.abc import Awaitable, Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from multiprocessing import cpu_count
@@ -232,7 +232,64 @@ class EvalScorerArgs(SerializableDataClass, Generic[Input, Output]):
     metadata: Metadata | None = None
 
 
-OneOrMoreScores = Union[float, int, bool, None, Score, list[Score]]
+OneOrMoreScores = Union[
+    float,
+    int,
+    bool,
+    None,
+    Score,
+    list[Score],
+    str,
+    list[str],
+    Mapping[str, Any],
+    list[Mapping[str, Any]],
+]
+
+
+def _normalize_classification_item(item: Mapping[str, Any]) -> dict[str, Any]:
+    classification_id = item.get("id")
+    if not isinstance(classification_id, str):
+        raise ValueError(f"Classification item must include string id. Got: {item}")
+
+    label = item.get("label")
+    if label is not None and not isinstance(label, str):
+        raise ValueError(f"Classification item label must be a string when specified. Got: {item}")
+
+    confidence = item.get("confidence")
+    if confidence is not None and not isinstance(confidence, (int, float)):
+        raise ValueError(f"Classification item confidence must be a number when specified. Got: {item}")
+
+    metadata = item.get("metadata")
+    if metadata is not None and not isinstance(metadata, Mapping):
+        raise ValueError(f"Classification item metadata must be an object when specified. Got: {item}")
+
+    result = dict(item)
+    if result.get("label") is None:
+        result["label"] = classification_id
+    return result
+
+
+def _try_parse_classification_output(value: Any) -> list[dict[str, Any]] | None:
+    if isinstance(value, str):
+        return [{"id": value, "label": value}]
+
+    if isinstance(value, Mapping):
+        return [_normalize_classification_item(value)]
+
+    if not isinstance(value, Iterable):
+        return None
+
+    values = list(value)
+    if len(values) == 0:
+        return []
+
+    if all(isinstance(item, str) for item in values):
+        return [{"id": item, "label": item} for item in values]
+
+    if all(isinstance(item, Mapping) for item in values):
+        return [_normalize_classification_item(item) for item in values]
+
+    return None
 
 
 # Synchronous scorer interface - implements callable
@@ -1358,16 +1415,40 @@ async def _run_evaluator_internal_impl(
             if isinstance(result, dict):
                 try:
                     result = Score.from_dict(result)
-                except Exception as e:
-                    raise ValueError(f"When returning a dict, it must be a valid Score object. Got: {result}") from e
+                except Exception as score_parse_error:
+                    try:
+                        classification_items = _try_parse_classification_output(result)
+                    except Exception as classification_parse_error:
+                        raise ValueError(
+                            f"When returning a dict, it must be a valid Score object or classification item. Got: {result}"
+                        ) from classification_parse_error
+
+                    if classification_items is None:
+                        raise ValueError(
+                            f"When returning a dict, it must be a valid Score object or classification item. Got: {result}"
+                        ) from score_parse_error
+
+                    span.log(output=classification_items, classifications={name: classification_items})
+                    return {"scores": [], "classifications": {name: classification_items}}
+
+            if isinstance(result, str):
+                classification_items = _try_parse_classification_output(result)
+                span.log(output=classification_items, classifications={name: classification_items})
+                return {"scores": [], "classifications": {name: classification_items}}
 
             if isinstance(result, Iterable):
-                for s in result:
-                    if not is_score(s):
-                        raise ValueError(
-                            f"When returning an array of scores, each score must be a valid Score object. Got: {s}"
-                        )
                 result = list(result)
+                if all(is_score(s) for s in result):
+                    result = list(result)
+                else:
+                    classification_items = _try_parse_classification_output(result)
+                    if classification_items is None:
+                        raise ValueError(
+                            "When returning an array, each item must be a valid Score object "
+                            f"or classification item. Got: {result}"
+                        )
+                    span.log(output=classification_items, classifications={name: classification_items})
+                    return {"scores": [], "classifications": {name: classification_items}}
             elif is_score(result):
                 result = [result]
             else:
@@ -1383,7 +1464,7 @@ async def _run_evaluator_internal_impl(
 
             scores = {r.name: r.score for r in result}
             span.log(output=result_output, metadata=result_metadata, scores=scores)
-            return result
+            return {"scores": result, "classifications": {}}
 
     # First, resolve the scorers if they are classes
     scorers = [scorer() if inspect.isclass(scorer) and is_scorer(scorer) else scorer for scorer in evaluator.scores]
@@ -1399,6 +1480,7 @@ async def _run_evaluator_internal_impl(
         error = None
         exc_info = None
         scores = {}
+        classifications = {}
         tags = datum.tags
 
         event_dataset = (
@@ -1559,10 +1641,11 @@ async def _run_evaluator_internal_impl(
                 failing_scorers_and_exceptions = []
                 for name, p in zip(scorer_names, score_promises):
                     try:
-                        score_results = await p
-                        for score in score_results:
+                        scorer_result = await p
+                        for score in scorer_result["scores"]:
                             passing_scorers_and_results.append((score.name, score))
                             scores[score.name] = score.score
+                        classifications.update(scorer_result["classifications"])
                     except Exception as e:
                         exc_info = traceback.format_exc()
                         failing_scorers_and_exceptions.append((name, e, exc_info))
@@ -1582,6 +1665,8 @@ async def _run_evaluator_internal_impl(
                         f"Found exceptions for the following scorers: {names}",
                         exceptions,
                     )
+                if classifications:
+                    root_span.log(classifications=classifications)
             except Exception as e:
                 exc_type, exc_value, tb = sys.exc_info()
                 root_span.log(error=stringify_exception(exc_type, exc_value, tb))
