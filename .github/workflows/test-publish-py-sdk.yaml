@@ -38,13 +38,12 @@ jobs:
         with:
           cache: true
           experimental: true
-          install_args: python@3.13
       - name: Install build dependencies
         run: |
-          mise exec python@3.13 -- make -C py install-dev
+          mise exec -- make -C py install-dev
       - name: Build and verify
         run: |
-          mise exec python@3.13 -- make -C py verify-build
+          mise exec -- make -C py verify-build
       - name: Get version from built wheel
         id: get_version
         run: |

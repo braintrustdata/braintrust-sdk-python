@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       python-version:
-        required: true
+        required: false
         type: string
 
 jobs:
@@ -20,25 +20,25 @@ jobs:
         with:
           cache: true
           experimental: true
-          install_args: python@${{ inputs.python-version }} uv
+          install_args: uv
 
       - name: Install deprecated package compatibility dependencies
         working-directory: integrations/adk-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv sync
+          mise exec -- uv sync
 
       - name: Lint deprecated compatibility package
         working-directory: integrations/adk-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
+          mise exec -- uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
 
       - name: Run deprecated compatibility tests
         working-directory: integrations/adk-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv run pytest src/tests/test_reexports.py
+          mise exec -- uv run pytest src/tests/test_reexports.py
 
       - name: Test deprecated package import
         working-directory: integrations/adk-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv run python -c "import braintrust_adk; print('braintrust_adk imported successfully')"
-          mise exec python@${{ inputs.python-version }} -- uv run python -c "from braintrust_adk import setup_braintrust; print('setup_braintrust imported successfully')"
+          mise exec -- uv run python -c "import braintrust_adk; print('braintrust_adk imported successfully')"
+          mise exec -- uv run python -c "from braintrust_adk import setup_braintrust; print('setup_braintrust imported successfully')"

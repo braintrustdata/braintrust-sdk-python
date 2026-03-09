@@ -51,10 +51,9 @@ jobs:
         with:
           cache: true
           experimental: true
-          install_args: python@3.13
       - name: Build and verify
         run: |
-          mise exec python@3.13 -- make -C py install-dev verify-build
+          mise exec -- make -C py install-dev verify-build
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
