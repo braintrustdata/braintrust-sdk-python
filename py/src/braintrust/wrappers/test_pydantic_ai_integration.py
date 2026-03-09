@@ -13,6 +13,7 @@ from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from pydantic import BaseModel
 from pydantic_ai import Agent, ModelSettings
 from pydantic_ai.messages import ModelRequest, UserPromptPart
+from pydantic_ai.usage import UsageLimits
 
 PROJECT_NAME = "test-pydantic-ai-integration"
 MODEL = "openai:gpt-4o-mini"  # Use cheaper model for tests
@@ -166,6 +167,60 @@ def test_agent_run_sync(memory_logger):
     # Agent spans should have token metrics
     assert "prompt_tokens" in agent_sync_span["metrics"]
     assert "completion_tokens" in agent_sync_span["metrics"]
+
+
+def test_agent_to_cli_sync(memory_logger, monkeypatch):
+    """Test Agent.to_cli_sync() records a CLI session span."""
+    assert not memory_logger.pop()
+
+    message_history = [ModelRequest(parts=[UserPromptPart(content="Previous question")])]
+    usage_limits = UsageLimits(request_limit=3)
+    agent = Agent(MODEL, name="cli-agent", model_settings=ModelSettings(max_tokens=50))
+
+    async def fake_run_chat(
+        *,
+        stream,
+        agent,
+        deps,
+        console,
+        code_theme,
+        prog_name,
+        message_history,
+        model_settings,
+        usage_limits,
+    ):
+        assert stream is True
+        assert prog_name == "braintrust-cli"
+        assert message_history is not None
+        assert model_settings is not None
+        assert usage_limits is not None
+        return 0
+
+    monkeypatch.setattr("pydantic_ai._cli.run_chat", fake_run_chat)
+
+    start = time.time()
+    agent.to_cli_sync(
+        prog_name="braintrust-cli",
+        message_history=message_history,
+        model_settings=ModelSettings(max_tokens=20, temperature=0.2),
+        usage_limits=usage_limits,
+    )
+    end = time.time()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1, f"Expected 1 CLI span, got {len(spans)}"
+
+    cli_span = spans[0]
+    assert cli_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    assert cli_span["span_attributes"]["name"] == "agent_to_cli_sync [cli-agent]"
+    assert cli_span["metadata"]["model"] == "gpt-4o-mini"
+    assert cli_span["metadata"]["provider"] == "openai"
+    assert cli_span["input"]["prog_name"] == "braintrust-cli"
+    assert "message_history" in cli_span["input"]
+    assert cli_span["input"]["model_settings"]["max_tokens"] == 20
+    assert cli_span["input"]["model_settings"]["temperature"] == 0.2
+    assert cli_span["input"]["usage_limits"]["request_limit"] == 3
+    _assert_metrics_are_valid(cli_span["metrics"], start, end)
 
 
 @pytest.mark.vcr

@@ -127,6 +127,26 @@ def wrap_agent(Agent: Any) -> Any:
 
     wrap_function_wrapper(Agent, "run_sync", agent_run_sync_wrapper)
 
+    def agent_to_cli_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+        _ensure_model_wrapped(instance)
+        input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
+
+        with start_span(
+            name=f"agent_to_cli_sync [{instance.name}]"
+            if hasattr(instance, "name") and instance.name
+            else "agent_to_cli_sync",
+            type=SpanTypeAttribute.LLM,
+            input=input_data if input_data else None,
+            metadata=metadata,
+        ) as agent_span:
+            start_time = time.time()
+            result = wrapped(*args, **kwargs)
+            end_time = time.time()
+            agent_span.log(metrics={"start": start_time, "end": end_time, "duration": end_time - start_time})
+            return result
+
+    wrap_function_wrapper(Agent, "to_cli_sync", agent_to_cli_sync_wrapper)
+
     def agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         _ensure_model_wrapped(instance)
         input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
