@@ -22,11 +22,17 @@ from .util import eprint
 class ProjectIdCache:
     def __init__(self):
         self._cache: dict[Project, str] = {}
+        self._name_cache: dict[str, str] = {}
+
+    def get_by_name(self, project_name: str) -> str:
+        if project_name not in self._name_cache:
+            resp = app_conn().post_json("api/project/register", {"project_name": project_name})
+            self._name_cache[project_name] = resp["project"]["id"]
+        return self._name_cache[project_name]
 
     def get(self, project: "Project") -> str:
         if project not in self._cache:
-            resp = app_conn().post_json("api/project/register", {"project_name": project.name})
-            self._cache[project] = resp["project"]["id"]
+            self._cache[project] = self.get_by_name(project.name)
         return self._cache[project]
 
 
