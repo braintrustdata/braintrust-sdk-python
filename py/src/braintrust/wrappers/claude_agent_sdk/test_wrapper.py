@@ -5,6 +5,12 @@ These tests verify the wrapper creates the correct span hierarchy when used with
 the actual Claude Agent SDK.
 """
 
+import asyncio
+import gc
+import sys
+import types
+from typing import Type
+
 import pytest
 
 # Try to import the Claude Agent SDK - skip tests if not available
@@ -19,6 +25,7 @@ except ImportError:
 from braintrust import logger
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
+from braintrust.wrappers.claude_agent_sdk import setup_claude_agent_sdk
 from braintrust.wrappers.claude_agent_sdk._wrapper import (
     _create_client_wrapper_class,
     _create_tool_wrapper_class,
@@ -292,3 +299,110 @@ class TestAutoInstrumentClaudeAgentSDK:
     def test_auto_instrument_claude_agent_sdk(self):
         """Test auto_instrument patches Claude Agent SDK and creates spans."""
         verify_autoinstrument_script("test_auto_claude_agent_sdk.py")
+
+
+class _FakeClaudeAgentOptions:
+    def __init__(self, model, permission_mode=None):
+        self.model = model
+        self.permission_mode = permission_mode
+
+
+class _FakeMessage:
+    def __init__(self, content):
+        self.content = content
+
+
+class _FakeResultMessage:
+    def __init__(self):
+        self.usage = types.SimpleNamespace(input_tokens=1, output_tokens=1, cache_creation_input_tokens=0)
+        self.num_turns = 1
+        self.session_id = "session-123"
+
+
+class _FakeClaudeSDKClient:
+    def __init__(self, options):
+        self.options = options
+        self._prompt = None
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        return None
+
+    async def query(self, prompt):
+        self._prompt = prompt
+
+    async def receive_response(self):
+        yield _FakeMessage("Hello")
+        await asyncio.sleep(0)
+        yield _FakeResultMessage()
+
+
+class _FakeClaudeSdkModule(types.ModuleType):
+    ClaudeSDKClient: Type[_FakeClaudeSDKClient]
+    ClaudeAgentOptions: Type[_FakeClaudeAgentOptions]
+    SdkMcpTool = None
+    tool = None
+
+
+class _FakeConsumerModule(types.ModuleType):
+    ClaudeSDKClient: Type[_FakeClaudeSDKClient]
+    ClaudeAgentOptions: Type[_FakeClaudeAgentOptions]
+
+
+def _install_fake_claude_sdk(monkeypatch):
+    fake_module = _FakeClaudeSdkModule("claude_agent_sdk")
+    fake_module.ClaudeSDKClient = _FakeClaudeSDKClient
+    fake_module.ClaudeAgentOptions = _FakeClaudeAgentOptions
+    monkeypatch.setitem(sys.modules, "claude_agent_sdk", fake_module)
+    return fake_module
+
+
+@pytest.mark.asyncio
+async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, monkeypatch):
+    """Regression test for https://github.com/braintrustdata/braintrust-sdk-python/issues/7."""
+    assert not memory_logger.pop()
+
+    fake_sdk = _install_fake_claude_sdk(monkeypatch)
+    consumer_module_name = "test_issue7_repro_module"
+    consumer_module = _FakeConsumerModule(consumer_module_name)
+    consumer_module.ClaudeSDKClient = fake_sdk.ClaudeSDKClient
+    consumer_module.ClaudeAgentOptions = fake_sdk.ClaudeAgentOptions
+    monkeypatch.setitem(sys.modules, consumer_module_name, consumer_module)
+
+    # Mirror the reported import pattern:
+    # from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
+    assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+    assert consumer_module.ClaudeSDKClient is not _FakeClaudeSDKClient
+
+    loop_errors = []
+    received_types = []
+
+    async def main():
+        loop = asyncio.get_running_loop()
+        loop.set_exception_handler(lambda loop, ctx: loop_errors.append(ctx.get("exception") or ctx.get("message")))
+
+        options = consumer_module.ClaudeAgentOptions(
+            model="claude-sonnet-4-20250514",
+            permission_mode="bypassPermissions",
+        )
+        async with consumer_module.ClaudeSDKClient(options=options) as client:
+            await client.query("Hello")
+            async for message in client.receive_response():
+                received_types.append(type(message).__name__)
+
+        await asyncio.sleep(0)
+        gc.collect()
+        await asyncio.sleep(0.01)
+
+    await main()
+
+    assert loop_errors == []
+    assert received_types == ["_FakeMessage", "_FakeResultMessage"]
+
+    spans = memory_logger.pop()
+    task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
+    assert len(task_spans) == 1
+    assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
+    assert task_spans[0]["input"] == "Hello"
