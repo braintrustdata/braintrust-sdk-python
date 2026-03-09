@@ -29,6 +29,7 @@ DEVSERVER_DIR = "braintrust/devserver"
 SILENT_INSTALLS = True
 LATEST = "latest"
 ERROR_CODES = tuple(range(1, 256))
+INTERNAL_TEST_FLAGS = {"--wheel", "--disable-vcr"}
 
 
 # The minimal set of dependencies we need to run tests.
@@ -387,6 +388,7 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
     env = env.copy() if env else {}
     wheel_flag = "--wheel" in session.posargs
     common_args = ["--disable-vcr"] if "--disable-vcr" in session.posargs else []
+    pytest_posargs = [arg for arg in session.posargs if arg not in INTERNAL_TEST_FLAGS]
 
     # Support both ignore_path (for backward compatibility) and ignore_paths
     paths_to_ignore = []
@@ -408,7 +410,7 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
         ]
         for path in paths_to_ignore:
             test_args.append(f"--ignore=src/{path}")
-        session.run(*test_args, *common_args, env=env)
+        session.run(*test_args, *common_args, *pytest_posargs, env=env)
         return
 
     # Running the tests from the wheel involves a bit of gymnastics to ensure we don't import
@@ -431,7 +433,7 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
         # It proved very helpful because it's very easy
         # to accidentally import local modules from the source directory.
         env["BRAINTRUST_TESTING_WHEEL"] = "1"
-        session.run(pytest_path, abs_test_path, *ignore_args, *common_args, env=env)
+        session.run(pytest_path, abs_test_path, *ignore_args, *common_args, *pytest_posargs, env=env)
 
     # And a final note ... if it's not clear from above, we include test files in our wheel, which
     # is perhaps not ideal?
