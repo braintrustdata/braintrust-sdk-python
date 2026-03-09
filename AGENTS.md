@@ -58,6 +58,8 @@ make test-core
 nox -l
 ```
 
+For larger or cross-cutting changes, also run `make pylint` from `py/` before handing work off.
+
 Targeted wrapper/session runs:
 
 ```bash
@@ -77,6 +79,7 @@ Key facts:
 - `test_core` runs without optional vendor packages.
 - wrapper coverage is split across dedicated nox sessions by provider/version.
 - `pylint` installs the broad dependency surface before checking files.
+- `cd py && make pylint` runs only `pylint`; `cd py && make lint` runs pre-commit hooks first and then `pylint`.
 - `test-wheel` is a wheel sanity check and requires a built wheel first.
 
 When changing behavior, run the narrowest affected session first, then expand only if needed.

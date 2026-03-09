@@ -9,6 +9,7 @@ import asyncio
 import gc
 import sys
 import types
+from typing import Type
 
 import pytest
 
@@ -338,12 +339,22 @@ class _FakeClaudeSDKClient:
         yield _FakeResultMessage()
 
 
+class _FakeClaudeSdkModule(types.ModuleType):
+    ClaudeSDKClient: Type[_FakeClaudeSDKClient]
+    ClaudeAgentOptions: Type[_FakeClaudeAgentOptions]
+    SdkMcpTool = None
+    tool = None
+
+
+class _FakeConsumerModule(types.ModuleType):
+    ClaudeSDKClient: Type[_FakeClaudeSDKClient]
+    ClaudeAgentOptions: Type[_FakeClaudeAgentOptions]
+
+
 def _install_fake_claude_sdk(monkeypatch):
-    fake_module = types.ModuleType("claude_agent_sdk")
+    fake_module = _FakeClaudeSdkModule("claude_agent_sdk")
     fake_module.ClaudeSDKClient = _FakeClaudeSDKClient
     fake_module.ClaudeAgentOptions = _FakeClaudeAgentOptions
-    fake_module.__dict__["SdkMcpTool"] = None
-    fake_module.__dict__["tool"] = None
     monkeypatch.setitem(sys.modules, "claude_agent_sdk", fake_module)
     return fake_module
 
@@ -354,10 +365,11 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
     assert not memory_logger.pop()
 
     fake_sdk = _install_fake_claude_sdk(monkeypatch)
-    consumer_module = types.ModuleType("test_issue7_repro_module")
+    consumer_module_name = "test_issue7_repro_module"
+    consumer_module = _FakeConsumerModule(consumer_module_name)
     consumer_module.ClaudeSDKClient = fake_sdk.ClaudeSDKClient
     consumer_module.ClaudeAgentOptions = fake_sdk.ClaudeAgentOptions
-    monkeypatch.setitem(sys.modules, consumer_module.__name__, consumer_module)
+    monkeypatch.setitem(sys.modules, consumer_module_name, consumer_module)
 
     # Mirror the reported import pattern:
     # from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
