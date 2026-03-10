@@ -302,6 +302,7 @@ async def _multi_message_generator():
 class TestAutoInstrumentClaudeAgentSDK:
     """Tests for auto_instrument() with Claude Agent SDK."""
 
+    @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
     def test_auto_instrument_claude_agent_sdk(self):
         """Test auto_instrument patches Claude Agent SDK and creates spans."""
         verify_autoinstrument_script("test_auto_claude_agent_sdk.py")

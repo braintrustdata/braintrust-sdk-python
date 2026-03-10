@@ -17,38 +17,6 @@ log = logging.getLogger(__name__)
 _thread_local = threading.local()
 
 
-class ClaudeAgentSDKWrapper(Wrapper):
-    """Main wrapper for claude_agent_sdk module. Intercepts query and tool creation."""
-
-    def __init__(self, sdk: Any):
-        super().__init__(sdk)
-        self.__sdk = sdk
-
-    @property
-    def query(self) -> Any:
-        """Pass through query without wrapping - use ClaudeSDKClient for tracing."""
-        return self.__sdk.query
-
-    @property
-    def SdkMcpTool(self) -> Any:
-        """Intercept SdkMcpTool to wrap handlers."""
-        return _create_tool_wrapper_class(self.__sdk.SdkMcpTool)
-
-    @property
-    def tool(self) -> Any:
-        """Intercept tool() function if it exists."""
-        if hasattr(self.__sdk, "tool"):
-            return _wrap_tool_factory(self.__sdk.tool)
-        raise AttributeError("tool")
-
-    @property
-    def ClaudeSDKClient(self) -> Any:
-        """Intercept ClaudeSDKClient class to wrap its methods."""
-        if hasattr(self.__sdk, "ClaudeSDKClient"):
-            return _create_client_wrapper_class(self.__sdk.ClaudeSDKClient)
-        raise AttributeError("ClaudeSDKClient")
-
-
 def _create_tool_wrapper_class(original_tool_class: Any) -> Any:
     """Creates a wrapper class for SdkMcpTool that wraps handlers."""
 
