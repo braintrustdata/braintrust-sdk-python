@@ -27,8 +27,9 @@ from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.claude_agent_sdk import setup_claude_agent_sdk
 from braintrust.wrappers.claude_agent_sdk._wrapper import (
+    ToolSpanTracker,
     _create_client_wrapper_class,
-    _create_tool_wrapper_class,
+    _parse_tool_name,
 )
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
@@ -60,10 +61,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
 
     # Patch claude_agent_sdk for tracing (logger already initialized by fixture)
     original_client = claude_agent_sdk.ClaudeSDKClient
-    original_tool_class = claude_agent_sdk.SdkMcpTool
 
     claude_agent_sdk.ClaudeSDKClient = _create_client_wrapper_class(original_client)
-    claude_agent_sdk.SdkMcpTool = _create_tool_wrapper_class(original_tool_class)
 
     # Create calculator tool
     async def calculator_handler(args):
@@ -406,3 +405,177 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
     assert len(task_spans) == 1
     assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
     assert task_spans[0]["input"] == "Hello"
+
+
+def _make_type(type_name: str, **fields):
+    """Create a duck-typed mock object with the given class name and fields."""
+    obj = type(type_name, (), {})()
+    for k, v in fields.items():
+        setattr(obj, k, v)
+    return obj
+
+
+def test_parse_tool_name_regular():
+    """Plain tool name passes through unchanged."""
+    result = _parse_tool_name("calculator")
+    assert result["display_name"] == "calculator"
+    assert result["tool_name"] == "calculator"
+    assert result["raw_tool_name"] == "calculator"
+    assert "mcp_server" not in result
+
+
+def test_parse_tool_name_mcp():
+    """MCP-formatted tool name is parsed into components."""
+    result = _parse_tool_name("mcp__myserver__my_tool")
+    assert result["display_name"] == "tool: myserver/my_tool"
+    assert result["tool_name"] == "my_tool"
+    assert result["mcp_server"] == "myserver"
+    assert result["raw_tool_name"] == "mcp__myserver__my_tool"
+
+
+def test_tool_span_tracker_creates_spans(memory_logger):
+    """ToolSpanTracker creates a TOOL span from ToolUseBlock and ends it on ToolResultBlock."""
+    tracker = ToolSpanTracker()
+
+    assistant_msg = _make_type(
+        "AssistantMessage",
+        content=[
+            _make_type(
+                "ToolUseBlock",
+                id="call_123",
+                name="calculator",
+                input={"operation": "add", "a": 1, "b": 2},
+            )
+        ],
+    )
+    user_msg = _make_type(
+        "UserMessage",
+        content=[
+            _make_type(
+                "ToolResultBlock",
+                tool_use_id="call_123",
+                content="3",
+                is_error=None,
+            )
+        ],
+    )
+
+    tracker.on_assistant_message(assistant_msg, None)
+    assert "call_123" in tracker.active_spans
+
+    tracker.on_user_message(user_msg)
+    assert "call_123" not in tracker.active_spans
+
+    spans = memory_logger.pop()
+    tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) == 1
+    tool_span = tool_spans[0]
+    assert tool_span["span_attributes"]["name"] == "calculator"
+    assert tool_span["input"] == {"operation": "add", "a": 1, "b": 2}
+    assert tool_span["output"] == "3"
+    assert tool_span["metadata"]["gen_ai.tool.name"] == "calculator"
+    assert tool_span["metadata"]["gen_ai.tool.call.id"] == "call_123"
+
+
+def test_tool_span_tracker_mcp_tool(memory_logger):
+    """ToolSpanTracker correctly handles MCP-formatted tool names."""
+    tracker = ToolSpanTracker()
+
+    assistant_msg = _make_type(
+        "AssistantMessage",
+        content=[
+            _make_type(
+                "ToolUseBlock",
+                id="call_mcp",
+                name="mcp__fileserver__read_file",
+                input={"path": "/tmp/test.txt"},
+            )
+        ],
+    )
+    user_msg = _make_type(
+        "UserMessage",
+        content=[
+            _make_type(
+                "ToolResultBlock",
+                tool_use_id="call_mcp",
+                content="file contents",
+                is_error=None,
+            )
+        ],
+    )
+
+    tracker.on_assistant_message(assistant_msg, None)
+    tracker.on_user_message(user_msg)
+
+    spans = memory_logger.pop()
+    tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) == 1
+    tool_span = tool_spans[0]
+    assert tool_span["span_attributes"]["name"] == "tool: fileserver/read_file"
+    assert tool_span["metadata"]["gen_ai.tool.name"] == "read_file"
+    assert tool_span["metadata"]["mcp.server"] == "fileserver"
+
+
+def test_tool_span_tracker_error(memory_logger):
+    """ToolSpanTracker logs error when is_error=True."""
+    tracker = ToolSpanTracker()
+
+    assistant_msg = _make_type(
+        "AssistantMessage",
+        content=[
+            _make_type(
+                "ToolUseBlock",
+                id="call_err",
+                name="calculator",
+                input={"operation": "divide", "a": 1, "b": 0},
+            )
+        ],
+    )
+    user_msg = _make_type(
+        "UserMessage",
+        content=[
+            _make_type(
+                "ToolResultBlock",
+                tool_use_id="call_err",
+                content="Division by zero",
+                is_error=True,
+            )
+        ],
+    )
+
+    tracker.on_assistant_message(assistant_msg, None)
+    tracker.on_user_message(user_msg)
+
+    spans = memory_logger.pop()
+    tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) == 1
+    tool_span = tool_spans[0]
+    assert tool_span["output"] == "Division by zero"
+    assert tool_span["error"] == "Division by zero"
+
+
+def test_tool_span_tracker_cleanup(memory_logger):
+    """ToolSpanTracker ends unclosed spans on cleanup."""
+    tracker = ToolSpanTracker()
+
+    assistant_msg = _make_type(
+        "AssistantMessage",
+        content=[
+            _make_type(
+                "ToolUseBlock",
+                id="call_unclosed",
+                name="calculator",
+                input={},
+            )
+        ],
+    )
+
+    tracker.on_assistant_message(assistant_msg, None)
+    assert len(tracker.active_spans) == 1
+
+    tracker.cleanup()
+    assert len(tracker.active_spans) == 0
+
+    spans = memory_logger.pop()
+    tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) == 1

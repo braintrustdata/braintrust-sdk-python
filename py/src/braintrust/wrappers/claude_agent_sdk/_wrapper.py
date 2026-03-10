@@ -1,8 +1,8 @@
 import dataclasses
 import logging
-import threading
+import re
 import time
-from collections.abc import AsyncGenerator, AsyncIterable, Callable
+from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any
 
 from braintrust.logger import start_span
@@ -11,10 +11,23 @@ from braintrust.wrappers._anthropic_utils import Wrapper, extract_anthropic_usag
 
 log = logging.getLogger(__name__)
 
-# Thread-local storage to propagate parent span export to tool handlers
-# The Claude Agent SDK may execute tools in separate async contexts that don't
-# preserve contextvars, so we use threading.local()
-_thread_local = threading.local()
+
+def _parse_tool_name(raw_tool_name: str) -> dict[str, str]:
+    """Parse MCP tool names (mcp__<server>__<tool>) into components."""
+    match = re.match(r"^mcp__([^_]+)__(.+)$", raw_tool_name)
+    if match:
+        mcp_server, tool_name = match.group(1), match.group(2)
+        return {
+            "display_name": f"tool: {mcp_server}/{tool_name}",
+            "tool_name": tool_name,
+            "mcp_server": mcp_server,
+            "raw_tool_name": raw_tool_name,
+        }
+    return {
+        "display_name": raw_tool_name,
+        "tool_name": raw_tool_name,
+        "raw_tool_name": raw_tool_name,
+    }
 
 
 class ClaudeAgentSDKWrapper(Wrapper):
@@ -30,18 +43,6 @@ class ClaudeAgentSDKWrapper(Wrapper):
         return self.__sdk.query
 
     @property
-    def SdkMcpTool(self) -> Any:
-        """Intercept SdkMcpTool to wrap handlers."""
-        return _create_tool_wrapper_class(self.__sdk.SdkMcpTool)
-
-    @property
-    def tool(self) -> Any:
-        """Intercept tool() function if it exists."""
-        if hasattr(self.__sdk, "tool"):
-            return _wrap_tool_factory(self.__sdk.tool)
-        raise AttributeError("tool")
-
-    @property
     def ClaudeSDKClient(self) -> Any:
         """Intercept ClaudeSDKClient class to wrap its methods."""
         if hasattr(self.__sdk, "ClaudeSDKClient"):
@@ -49,86 +50,65 @@ class ClaudeAgentSDKWrapper(Wrapper):
         raise AttributeError("ClaudeSDKClient")
 
 
-def _create_tool_wrapper_class(original_tool_class: Any) -> Any:
-    """Creates a wrapper class for SdkMcpTool that wraps handlers."""
+class ToolSpanTracker:
+    """Manages TOOL span lifecycle by observing message stream content blocks.
 
-    class WrappedSdkMcpTool(original_tool_class):  # type: ignore[valid-type,misc]
-        def __init__(
-            self,
-            name: Any,
-            description: Any,
-            input_schema: Any,
-            handler: Any,
-            **kwargs: Any,
-        ):
-            wrapped_handler = _wrap_tool_handler(handler, name)
-            super().__init__(name, description, input_schema, wrapped_handler, **kwargs)  # type: ignore[call-arg]
-
-        # Preserve generic typing support
-        __class_getitem__ = classmethod(lambda cls, params: cls)  # type: ignore[assignment]
-
-    return WrappedSdkMcpTool
-
-
-def _wrap_tool_factory(tool_fn: Any) -> Callable[..., Any]:
-    """Wraps the tool() factory function to return wrapped tools."""
-
-    def wrapped_tool(*args: Any, **kwargs: Any) -> Any:
-        result = tool_fn(*args, **kwargs)
-
-        # The tool() function returns a decorator, not a tool definition
-        # We need to wrap the decorator to intercept the final tool definition
-        if not callable(result):
-            return result
-
-        def wrapped_decorator(handler_fn: Any) -> Any:
-            tool_def = result(handler_fn)
-
-            # Now we have the actual tool definition, wrap its handler
-            if tool_def and hasattr(tool_def, "handler"):
-                tool_name = getattr(tool_def, "name", "unknown")
-                original_handler = tool_def.handler
-                tool_def.handler = _wrap_tool_handler(original_handler, tool_name)
-
-            return tool_def
-
-        return wrapped_decorator
-
-    return wrapped_tool
-
-
-def _wrap_tool_handler(handler: Any, tool_name: Any) -> Callable[..., Any]:
-    """Wraps a tool handler to add tracing.
-
-    Uses start_span context manager which automatically:
-    - Handles exceptions and logs them to the span
-    - Sets the span as current for nested operations
-    - Nests under the parent span (TASK span) via the parent parameter
-
-    The Claude Agent SDK may execute tool handlers in a separate async context,
-    so we try the context variable first, then fall back to current_span export.
+    Flow: AssistantMessage(ToolUseBlock) -> start span, UserMessage(ToolResultBlock) -> end span.
+    Traces ALL tools including built-in SDK tools and remote MCP tools.
     """
-    # Check if already wrapped to prevent double-wrapping
-    if hasattr(handler, "_braintrust_wrapped"):
-        return handler
 
-    async def wrapped_handler(args: Any) -> Any:
-        # Get parent span export from thread-local storage
-        parent_export = getattr(_thread_local, "parent_span_export", None)
+    def __init__(self) -> None:
+        self.active_spans: dict[str, Any] = {}  # tool_use_id -> span
 
-        with start_span(
-            name=str(tool_name),
-            span_attributes={"type": SpanTypeAttribute.TOOL},
-            input=args,
-            parent=parent_export,
-        ) as span:
-            result = await handler(args)
-            span.log(output=result)
-            return result
+    def on_assistant_message(self, message: Any, parent_export: str | None) -> None:
+        """Extract ToolUseBlocks and start TOOL spans."""
+        if not hasattr(message, "content") or not isinstance(message.content, list):
+            return
+        for block in message.content:
+            if type(block).__name__ != "ToolUseBlock":
+                continue
+            tool_use_id = getattr(block, "id", None)
+            if not tool_use_id:
+                continue
+            parsed = _parse_tool_name(str(getattr(block, "name", "unknown")))
+            metadata: dict[str, Any] = {
+                "gen_ai.tool.name": parsed["tool_name"],
+                "gen_ai.tool.call.id": tool_use_id,
+            }
+            if "mcp_server" in parsed:
+                metadata["mcp.server"] = parsed["mcp_server"]
+            self.active_spans[tool_use_id] = start_span(
+                name=parsed["display_name"],
+                span_attributes={"type": SpanTypeAttribute.TOOL},
+                input=getattr(block, "input", None),
+                metadata=metadata,
+                parent=parent_export,
+                start_time=time.time(),
+            )
 
-    # Mark as wrapped to prevent double-wrapping
-    wrapped_handler._braintrust_wrapped = True  # type: ignore[attr-defined]
-    return wrapped_handler
+    def on_user_message(self, message: Any) -> None:
+        """Extract ToolResultBlocks and end matching TOOL spans."""
+        if not hasattr(message, "content") or not isinstance(message.content, list):
+            return
+        for block in message.content:
+            if type(block).__name__ != "ToolResultBlock":
+                continue
+            tool_use_id = getattr(block, "tool_use_id", None)
+            if not tool_use_id or tool_use_id not in self.active_spans:
+                continue
+            tool_span = self.active_spans.pop(tool_use_id)
+            result_content = getattr(block, "content", None)
+            is_error = getattr(block, "is_error", None)
+            if is_error:
+                tool_span.log(output=result_content, error=result_content)
+            else:
+                tool_span.log(output=result_content)
+            tool_span.end()
+
+    def cleanup(self) -> None:
+        for tool_span in self.active_spans.values():
+            tool_span.end()
+        self.active_spans.clear()
 
 
 def _create_client_wrapper_class(original_client_class: Any) -> Any:
@@ -246,11 +226,11 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             ) as span:
                 # If we're capturing async messages, we'll update input after they're consumed
                 input_needs_update = self.__captured_messages is not None
-                # Store the parent span export in thread-local storage for tool handlers
-                _thread_local.parent_span_export = span.export()
 
                 final_results: list[dict[str, Any]] = []
                 llm_tracker = LLMSpanTracker(query_start_time=self.__query_start_time)
+                tool_tracker = ToolSpanTracker()
+                parent_export = span.export()
 
                 try:
                     async for message in generator:
@@ -264,10 +244,12 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                         message_type = type(message).__name__
 
                         if message_type == "AssistantMessage":
+                            tool_tracker.on_assistant_message(message, parent_export)
                             final_content = llm_tracker.start_llm_span(message, self.__last_prompt, final_results)
                             if final_content:
                                 final_results.append(final_content)
                         elif message_type == "UserMessage":
+                            tool_tracker.on_user_message(message)
                             if hasattr(message, "content"):
                                 content = _serialize_content_blocks(message.content)
                                 final_results.append({"content": content, "role": "user"})
@@ -294,9 +276,8 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 except Exception as e:
                     log.warning("Error in tracing code", exc_info=e)
                 finally:
+                    tool_tracker.cleanup()
                     llm_tracker.cleanup()
-                    if hasattr(_thread_local, "parent_span_export"):
-                        delattr(_thread_local, "parent_span_export")
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
             await self.__client.__aenter__()
