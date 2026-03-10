@@ -202,8 +202,8 @@ def invoke(
     if org_name is not None:
         headers["x-bt-org-name"] = org_name
 
-    request = bt_dumps(request)
-    resp = proxy_conn().post("function/invoke", data=request, headers=headers, stream=stream)
+    request_json = bt_dumps(request)
+    resp = proxy_conn().post("function/invoke", data=request_json, headers=headers, stream=stream)
     if resp.status_code == 500:
         raise BraintrustInvokeError(resp.text)
 
