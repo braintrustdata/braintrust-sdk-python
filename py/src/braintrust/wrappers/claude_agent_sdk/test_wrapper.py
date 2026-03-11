@@ -1003,9 +1003,9 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
 
     try:
         assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
-        assert consumer_module.ClaudeSDKClient is not original_client
-        assert consumer_module.SdkMcpTool is not original_tool_class
-        assert consumer_module.tool is not original_tool_fn
+        assert getattr(consumer_module, "ClaudeSDKClient") is not original_client
+        assert getattr(consumer_module, "SdkMcpTool") is not original_tool_class
+        assert getattr(consumer_module, "tool") is not original_tool_fn
         assert claude_agent_sdk.SdkMcpTool is not original_tool_class
         assert claude_agent_sdk.tool is not original_tool_fn
 
@@ -1013,7 +1013,7 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
             loop = asyncio.get_running_loop()
             loop.set_exception_handler(lambda loop, ctx: loop_errors.append(ctx.get("exception") or ctx.get("message")))
 
-            options = consumer_module.ClaudeAgentOptions(
+            options = getattr(consumer_module, "ClaudeAgentOptions")(
                 model="claude-3-5-haiku-20241022",
                 permission_mode="bypassPermissions",
             )
@@ -1022,7 +1022,7 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
                 prompt="",
                 options=options,
             )
-            async with consumer_module.ClaudeSDKClient(options=options, transport=transport) as client:
+            async with getattr(consumer_module, "ClaudeSDKClient")(options=options, transport=transport) as client:
                 await client.query("Say hi")
                 async for message in client.receive_response():
                     received_types.append(type(message).__name__)
