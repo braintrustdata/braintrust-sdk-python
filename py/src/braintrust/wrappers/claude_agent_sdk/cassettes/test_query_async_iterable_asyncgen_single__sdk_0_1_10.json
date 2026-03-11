@@ -1,0 +1,257 @@
+{
+  "cassette_name": "test_query_async_iterable_asyncgen_single",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_457f90f4",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_457f90f4",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "available_output_styles": [
+              "default",
+              "Explanatory",
+              "Learning"
+            ],
+            "commands": [
+              {
+                "argumentHint": "<optional custom summarization instructions>",
+                "description": "Clear conversation history but keep a summary in context. Optional: /compact [instructions for summarization]",
+                "name": "compact"
+              },
+              {
+                "argumentHint": "",
+                "description": "Visualize current context usage as a colored grid",
+                "name": "context"
+              },
+              {
+                "argumentHint": "",
+                "description": "Show the total cost and duration of the current session",
+                "name": "cost"
+              },
+              {
+                "argumentHint": "",
+                "description": "Initialize a new CLAUDE.md file with codebase documentation",
+                "name": "init"
+              },
+              {
+                "argumentHint": "",
+                "description": "Get comments from a GitHub pull request",
+                "name": "pr-comments"
+              },
+              {
+                "argumentHint": "",
+                "description": "View release notes",
+                "name": "release-notes"
+              },
+              {
+                "argumentHint": "",
+                "description": "List current todo items",
+                "name": "todos"
+              },
+              {
+                "argumentHint": "",
+                "description": "Review a pull request",
+                "name": "review"
+              },
+              {
+                "argumentHint": "",
+                "description": "Complete a security review of the pending changes on the current branch",
+                "name": "security-review"
+              }
+            ],
+            "models": [
+              {
+                "description": "Use the default model (currently Sonnet 4.5) \u00b7 $3/$15 per Mtok",
+                "displayName": "Default (recommended)",
+                "value": "default"
+              },
+              {
+                "description": "Opus 4.5 \u00b7 Most capable for complex work \u00b7 $5/$25 per Mtok",
+                "displayName": "Opus",
+                "value": "opus"
+              },
+              {
+                "description": "Haiku 4.5 \u00b7 Fastest for quick answers \u00b7 $1/$5 per Mtok",
+                "displayName": "Haiku",
+                "value": "haiku"
+              },
+              {
+                "description": "Custom model",
+                "displayName": "claude-haiku-4-5-20251001",
+                "value": "claude-haiku-4-5-20251001"
+              }
+            ],
+            "output_style": "default"
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "What is 2 + 2?",
+            "role": "user"
+          },
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.0.53",
+        "cwd": "<REDACTED_CWD>",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "3b225142-68d3-4288-a51d-3ae170d30d38",
+        "skills": [],
+        "slash_commands": [
+          "compact",
+          "context",
+          "cost",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "todos",
+          "review",
+          "security-review"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "BashOutput",
+          "KillShell",
+          "Skill",
+          "SlashCommand",
+          "EnterPlanMode"
+        ],
+        "type": "system",
+        "uuid": "a9253a2e-aab7-4374-84a2-3580fe791d30"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "2 + 2 = 4\n\nThis is basic arithmetic: when you add 2 and 2 together, you get 4.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01S14VLS9fHC1hRMRULwVXdv",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 13883
+            },
+            "cache_creation_input_tokens": 13883,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "3b225142-68d3-4288-a51d-3ae170d30d38",
+        "type": "assistant",
+        "uuid": "6ac00cbc-1fee-4be2-834c-54a67b5da8a2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 3781,
+        "duration_ms": 1950,
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 13883,
+            "cacheReadInputTokens": 0,
+            "contextWindow": 200000,
+            "costUSD": 0.019255750000000002,
+            "inputTokens": 967,
+            "outputTokens": 187,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 1,
+        "permission_denials": [],
+        "result": "2 + 2 = 4\n\nThis is basic arithmetic: when you add 2 and 2 together, you get 4.",
+        "session_id": "3b225142-68d3-4288-a51d-3ae170d30d38",
+        "subtype": "success",
+        "total_cost_usd": 0.019255750000000002,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 13883
+          },
+          "cache_creation_input_tokens": 13883,
+          "cache_read_input_tokens": 0,
+          "input_tokens": 3,
+          "output_tokens": 36,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard"
+        },
+        "uuid": "99178824-6110-4d25-a4ab-5653e3701230"
+      }
+    }
+  ],
+  "sdk_version": "0.1.10"
+}

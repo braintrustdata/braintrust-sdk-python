@@ -1,21 +1,32 @@
-# VCR Testing
+# VCR And Cassette Testing
 
-This repo uses [VCR.py](https://github.com/kevin1024/vcrpy) to record and replay HTTP interactions in tests. This lets the test suite run without real API keys or network access in most cases.
+This repo uses two recording/replay mechanisms for provider-backed tests:
+
+- [VCR.py](https://github.com/kevin1024/vcrpy) for HTTP interactions
+- a Claude Agent SDK subprocess cassette transport for `claude_agent_sdk` tests
+
+Both approaches let CI replay committed request/response traffic without making live provider calls.
 
 ## How It Works
 
-Tests decorated with `@pytest.mark.vcr` record HTTP requests/responses into YAML "cassette" files on first run. Subsequent runs replay from the cassette instead of making real API calls.
+HTTP tests decorated with `@pytest.mark.vcr` record requests/responses into YAML cassette files. Subsequent runs replay from the cassette instead of making real API calls.
+
+Claude Agent SDK tests do not use VCR because the SDK communicates with the bundled `claude` subprocess over a JSON stdin/stdout protocol rather than direct HTTP from the test process. Those tests instead record the raw transport conversation into JSON cassette files and replay that transport stream in CI.
 
 ### Cassette Locations
 
 | Test suite | Cassette directory |
 |---|---|
 | Python SDK (wrappers) | `py/src/braintrust/wrappers/cassettes/` |
+| Claude Agent SDK subprocess tests | `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/` |
 | Langchain integration | `integrations/langchain-py/src/tests/cassettes/` |
 
 ## Local Development vs CI
 
-The key difference between local and CI is the VCR **record mode**, controlled by the `CI` / `GITHUB_ACTIONS` environment variables.
+The key difference between local and CI is the cassette record mode.
+
+- VCR uses `CI` / `GITHUB_ACTIONS` to choose `once` locally and `none` in CI.
+- Claude Agent SDK subprocess cassettes use `BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE`, defaulting to `once` locally and `none` in CI.
 
 ### Local Development
 
@@ -32,6 +43,20 @@ export OPENAI_API_KEY="sk-..."
 nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
 ```
 
+Claude Agent SDK subprocess cassette examples:
+
+```bash
+# Record or replay the real Claude subprocess transport
+nox -s "test_claude_agent_sdk(latest)"
+
+# Force re-recording of the subprocess cassette files
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)"
+
+# Re-record a focused Claude Agent SDK test
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all \
+  nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
+```
+
 ### CI (GitHub Actions)
 
 - **Record mode:** `none` -- only replays existing cassettes; fails if a cassette is missing.
@@ -39,6 +64,7 @@ nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
   - `OPENAI_API_KEY` -> `sk-test-dummy-api-key-for-vcr-tests`
   - `ANTHROPIC_API_KEY` -> `sk-ant-test-dummy-api-key-for-vcr-tests`
   - `GOOGLE_API_KEY` -> `your_google_api_key_here`
+- **Claude Agent SDK tests:** Replay committed subprocess cassettes from `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/`.
 - **`test_latest_wrappers_novcr` session:** Automatically skipped in CI since it disables VCR and would need real keys.
 - **No secrets needed:** CI workflows do not pass `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY` as secrets. This means forks and external contributors can run CI without configuring any API key secrets.
 
@@ -63,6 +89,13 @@ Or disable VCR entirely with `--disable-vcr` (requires real API keys):
 nox -s "test_openai(latest)" -- --disable-vcr
 ```
 
+For Claude Agent SDK subprocess cassettes, override with `BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE`:
+
+```bash
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)"
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=none nox -s "test_claude_agent_sdk(latest)"
+```
+
 ## Sensitive Data Filtering
 
 Cassettes automatically filter out sensitive headers so API keys are never stored:
@@ -72,6 +105,8 @@ Cassettes automatically filter out sensitive headers so API keys are never store
 - `openai-api-key`, `openai-organization`
 - `x-goog-api-key`
 - `x-bt-auth-token`
+
+Claude Agent SDK subprocess cassettes do not store HTTP headers. They store the JSON control protocol exchanged between the SDK and the `claude` subprocess. Re-record them only when the SDK/CLI behavior change is intentional.
 
 ## Adding Tests That Need VCR
 
@@ -92,6 +127,25 @@ def test_my_new_feature(memory_logger):
     assert len(spans) == 1
 ```
 
+## Claude Agent SDK Subprocess Cassettes
+
+Use the subprocess cassette transport for tests that exercise the real `claude_agent_sdk` without mocks.
+
+Guidelines:
+
+1. Keep using the real SDK and bundled CLI.
+2. Route the test through `make_cassette_transport(...)`.
+3. Record locally with a real Anthropic-capable environment.
+4. Commit the generated JSON cassette files under `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/`.
+
+Example workflow:
+
+```bash
+cd py
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all \
+  nox -s "test_claude_agent_sdk(latest)" -- -k "test_query_async_iterable"
+```
+
 ## For External Contributors
 
 **When do I need an API key?**
@@ -101,11 +155,13 @@ You need a real API key only when the HTTP interactions in a cassette need to ch
 - Write a new VCR test (new cassette needed)
 - Change a test's API call (different model, prompt, parameters, etc.)
 - Delete a cassette and need to re-record it
+- Re-record Claude Agent SDK subprocess cassette files
 
 You do **not** need an API key when you:
 
 - Add assertions to existing test responses
 - Refactor test logic without changing the API call
+- Refactor Claude Agent SDK assertions without changing the subprocess conversation
 - Work on non-VCR tests (core SDK, CLI, OTel, etc.)
 
 **Workflow for re-recording cassettes:**
@@ -121,4 +177,19 @@ nox -s "test_openai(latest)" -- --vcr-record=all -k "test_my_changed_test"
 git add py/src/braintrust/wrappers/cassettes/test_my_changed_test.yaml
 ```
 
-**CI will work without secrets.** Forks do not need to configure any API key secrets — CI replays from committed cassettes using dummy keys. Just make sure any new or modified cassettes are committed.
+For Claude Agent SDK subprocess cassettes:
+
+```bash
+# 1. Ensure your Anthropic credentials work with the bundled Claude CLI
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# 2. Re-record the subprocess cassette
+cd py
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all \
+  nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
+
+# 3. Commit the JSON cassette
+git add py/src/braintrust/wrappers/claude_agent_sdk/cassettes/
+```
+
+**CI will work without secrets.** Forks do not need to configure provider API secrets for replayed cassette runs. Just make sure any new or modified YAML/JSON cassette files are committed.

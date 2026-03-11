@@ -1,0 +1,434 @@
+{
+  "cassette_name": "test_query_async_iterable_asyncgen_multi",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_f2ff09b8",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_f2ff09b8",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "agents": [
+              {
+                "description": "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you.",
+                "name": "general-purpose"
+              },
+              {
+                "description": "Use this agent to configure the user's Claude Code status line setting.",
+                "model": "sonnet",
+                "name": "statusline-setup"
+              },
+              {
+                "description": "Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. \"src/components/**/*.tsx\"), search code for keywords (eg. \"API endpoints\"), or answer questions about the codebase (eg. \"how do API endpoints work?\"). When calling this agent, specify the desired thoroughness level: \"quick\" for basic searches, \"medium\" for moderate exploration, or \"very thorough\" for comprehensive analysis across multiple locations and naming conventions.",
+                "model": "haiku",
+                "name": "Explore"
+              },
+              {
+                "description": "Software architect agent for designing implementation plans. Use this when you need to plan the implementation strategy for a task. Returns step-by-step plans, identifies critical files, and considers architectural trade-offs.",
+                "name": "Plan"
+              }
+            ],
+            "available_output_styles": [
+              "default",
+              "Explanatory",
+              "Learning"
+            ],
+            "commands": [
+              {
+                "argumentHint": "",
+                "description": "Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: \"rebind ctrl+s\", \"add a chord shortcut\", \"change the submit key\", \"customize keybindings\". (bundled)",
+                "name": "keybindings-help"
+              },
+              {
+                "argumentHint": "[issue description]",
+                "description": "Enable debug logging for this session and help diagnose issues (bundled)",
+                "name": "debug"
+              },
+              {
+                "argumentHint": "",
+                "description": "Review changed code for reuse, quality, and efficiency, then fix any issues found. (bundled)",
+                "name": "simplify"
+              },
+              {
+                "argumentHint": "<instruction>",
+                "description": "Research and plan a large-scale change, then execute it in parallel across 5\u201330 isolated worktree agents that each open a PR. (bundled)",
+                "name": "batch"
+              },
+              {
+                "argumentHint": "[interval] <prompt>",
+                "description": "Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo, defaults to 10m) (bundled)",
+                "name": "loop"
+              },
+              {
+                "argumentHint": "",
+                "description": "Build apps with the Claude API or Anthropic SDK.\nTRIGGER when: code imports `anthropic`/`@anthropic-ai/sdk`/`claude_agent_sdk`, or user asks to use Claude API, Anthropic SDKs, or Agent SDK.\nDO NOT TRIGGER when: code imports `openai`/other AI SDK, general programming, or ML/data-science tasks. (bundled)",
+                "name": "claude-api"
+              },
+              {
+                "argumentHint": "<optional custom summarization instructions>",
+                "description": "Clear conversation history but keep a summary in context. Optional: /compact [instructions for summarization]",
+                "name": "compact"
+              },
+              {
+                "argumentHint": "",
+                "description": "Show current context usage",
+                "name": "context"
+              },
+              {
+                "argumentHint": "",
+                "description": "Show the total cost and duration of the current session",
+                "name": "cost"
+              },
+              {
+                "argumentHint": "",
+                "description": "Dump the JS heap to ~/Desktop",
+                "name": "heapdump"
+              },
+              {
+                "argumentHint": "",
+                "description": "Initialize a new CLAUDE.md file with codebase documentation",
+                "name": "init"
+              },
+              {
+                "argumentHint": "",
+                "description": "Get comments from a GitHub pull request",
+                "name": "pr-comments"
+              },
+              {
+                "argumentHint": "",
+                "description": "View release notes",
+                "name": "release-notes"
+              },
+              {
+                "argumentHint": "",
+                "description": "Review a pull request",
+                "name": "review"
+              },
+              {
+                "argumentHint": "",
+                "description": "Complete a security review of the pending changes on the current branch",
+                "name": "security-review"
+              },
+              {
+                "argumentHint": "",
+                "description": "Generate a report analyzing your Claude Code sessions",
+                "name": "insights"
+              }
+            ],
+            "models": [
+              {
+                "description": "Use the default model (currently Sonnet 4.6) \u00b7 $3/$15 per Mtok",
+                "displayName": "Default (recommended)",
+                "supportedEffortLevels": [
+                  "low",
+                  "medium",
+                  "high",
+                  "max"
+                ],
+                "supportsAdaptiveThinking": true,
+                "supportsEffort": true,
+                "value": "default"
+              },
+              {
+                "description": "Sonnet 4.6 for long sessions \u00b7 $6/$22.50 per Mtok",
+                "displayName": "Sonnet (1M context)",
+                "supportedEffortLevels": [
+                  "low",
+                  "medium",
+                  "high",
+                  "max"
+                ],
+                "supportsAdaptiveThinking": true,
+                "supportsEffort": true,
+                "value": "sonnet[1m]"
+              },
+              {
+                "description": "Opus 4.6 \u00b7 Most capable for complex work \u00b7 $5/$25 per Mtok",
+                "displayName": "Opus",
+                "supportedEffortLevels": [
+                  "low",
+                  "medium",
+                  "high",
+                  "max"
+                ],
+                "supportsAdaptiveThinking": true,
+                "supportsEffort": true,
+                "supportsFastMode": true,
+                "value": "opus"
+              },
+              {
+                "description": "Opus 4.6 for long sessions \u00b7 $10/$37.50 per Mtok",
+                "displayName": "Opus (1M context)",
+                "supportedEffortLevels": [
+                  "low",
+                  "medium",
+                  "high",
+                  "max"
+                ],
+                "supportsAdaptiveThinking": true,
+                "supportsEffort": true,
+                "supportsFastMode": true,
+                "value": "opus[1m]"
+              },
+              {
+                "description": "Haiku 4.5 \u00b7 Fastest for quick answers \u00b7 $1/$5 per Mtok",
+                "displayName": "Haiku",
+                "value": "haiku"
+              },
+              {
+                "description": "claude-haiku-4-5-20251001",
+                "displayName": "Haiku 4.5",
+                "value": "claude-haiku-4-5-20251001"
+              }
+            ],
+            "output_style": "default",
+            "pid": 171
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Part 1",
+            "role": "user"
+          },
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Part 2",
+            "role": "user"
+          },
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.71",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "982f3129-7544-418e-94cc-021a5c532975",
+        "skills": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "ToolSearch"
+        ],
+        "type": "system",
+        "uuid": "e414daeb-6b16-4ac6-91f6-b5be6b18765a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user has written \"Part 1\" which is quite vague. They haven't actually asked me to do anything specific. I should ask them what they'd like me to help with, as there's no clear task or request here.\n\nLet me wait for clarification on what \"Part 1\" refers to - it could be referring to:\n- A multi-part task they want to break down\n- A section of code or documentation\n- Something else entirely\n\nI should ask them to clarify what they need help with.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01VvB5o1ThNmrvZt4Uhzjvt2",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 874
+            },
+            "cache_creation_input_tokens": 874,
+            "cache_read_input_tokens": 17022,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "982f3129-7544-418e-94cc-021a5c532975",
+        "type": "assistant",
+        "uuid": "b45c44d7-0192-48cf-89c0-9512a6e0bfda"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "I see you've written \"Part 1\" - I'm ready to help! However, I need more information about what you'd like me to do. \n\nCould you please clarify:\n- What project or task are you working on?\n- What would you like me to help with for Part 1?\n- Do you have code you'd like me to review, create, debug, or modify?\n- Are there specific requirements or goals you're aiming for?\n\nOnce you provide more details, I'll be able to assist you effectively!",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01VvB5o1ThNmrvZt4Uhzjvt2",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 874
+            },
+            "cache_creation_input_tokens": 874,
+            "cache_read_input_tokens": 17022,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "982f3129-7544-418e-94cc-021a5c532975",
+        "type": "assistant",
+        "uuid": "49adc10c-3e47-4c4e-8e91-cf6521f9f8eb"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 2798,
+        "duration_ms": 2981,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 874,
+            "cacheReadInputTokens": 17022,
+            "contextWindow": 200000,
+            "costUSD": 0.0039947,
+            "inputTokens": 10,
+            "maxOutputTokens": 32000,
+            "outputTokens": 238,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 1,
+        "permission_denials": [],
+        "result": "I see you've written \"Part 1\" - I'm ready to help! However, I need more information about what you'd like me to do. \n\nCould you please clarify:\n- What project or task are you working on?\n- What would you like me to help with for Part 1?\n- Do you have code you'd like me to review, create, debug, or modify?\n- Are there specific requirements or goals you're aiming for?\n\nOnce you provide more details, I'll be able to assist you effectively!",
+        "session_id": "982f3129-7544-418e-94cc-021a5c532975",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "total_cost_usd": 0.0039947,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 874
+          },
+          "cache_creation_input_tokens": 874,
+          "cache_read_input_tokens": 17022,
+          "inference_geo": "",
+          "input_tokens": 10,
+          "iterations": [],
+          "output_tokens": 238,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "f8dc535d-643a-4d36-97e0-3adad711a9ad"
+      }
+    }
+  ],
+  "sdk_version": "0.1.48"
+}

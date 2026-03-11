@@ -113,6 +113,28 @@ cd py
 nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
 ```
 
+### Claude Agent SDK Subprocess Cassettes
+
+`claude_agent_sdk` tests use the real SDK and bundled `claude` CLI, but they do not use VCR. Instead they record and replay the SDK/CLI JSON transport under:
+
+- `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/`
+
+Behavior:
+
+- Locally, subprocess cassettes default to `once`.
+- In CI, subprocess cassettes default to `none`.
+- Override with `BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all` when you need to re-record.
+
+Useful examples:
+
+```bash
+cd py
+nox -s "test_claude_agent_sdk(latest)"
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)"
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all \
+  nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
+```
+
 ### Fixtures
 
 Shared test fixtures live in `py/src/braintrust/conftest.py`.
@@ -138,13 +160,13 @@ Main workflows:
 - `publish-py-sdk.yaml`: PyPI release
 - `test-publish-py-sdk.yaml`: TestPyPI release validation
 
-CI uses VCR cassettes and dummy credentials, so forks do not need provider API secrets for normal test runs.
+CI uses committed HTTP VCR cassettes and Claude Agent SDK subprocess cassettes, so forks do not need provider API secrets for normal replayed test runs.
 
 ## Submitting Changes
 
 1. Make your change in the narrowest relevant area.
 2. Add or update tests.
-3. Re-record cassettes if the HTTP behavior change is intentional.
+3. Re-record HTTP or Claude Agent SDK subprocess cassettes if the provider interaction change is intentional.
 4. Run the smallest relevant local checks first, then broader ones if needed.
 5. Run `make fixup` before opening a PR.
 6. Open a pull request against `main`.

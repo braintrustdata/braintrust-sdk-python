@@ -128,11 +128,8 @@ def test_pydantic_ai_logfire(session):
 @nox.parametrize("version", CLAUDE_AGENT_SDK_VERSIONS, ids=CLAUDE_AGENT_SDK_VERSIONS)
 def test_claude_agent_sdk(session, version):
     # claude_agent_sdk requires Python >= 3.10
-    # These tests use the Claude Code CLI subprocess transport and still require
-    # live API behavior; they are intentionally skipped in CI until we add a
-    # subprocess-safe recording/replay strategy.
-    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
-        session.skip("Skipping claude_agent_sdk tests in CI (requires live API/subprocess transport)")
+    # These tests use subprocess-transport cassettes, so they can replay in CI
+    # while still exercising the real Claude Agent SDK control protocol.
     _install_test_deps(session)
     _install(session, "claude_agent_sdk", version)
     _run_tests(session, f"{WRAPPER_DIR}/claude_agent_sdk/test_wrapper.py")

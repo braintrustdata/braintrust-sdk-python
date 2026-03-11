@@ -1,0 +1,271 @@
+{
+  "cassette_name": "test_query_async_iterable_custom_async_iterable",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_235d5d62",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_235d5d62",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "available_output_styles": [
+              "default",
+              "Explanatory",
+              "Learning"
+            ],
+            "commands": [
+              {
+                "argumentHint": "<optional custom summarization instructions>",
+                "description": "Clear conversation history but keep a summary in context. Optional: /compact [instructions for summarization]",
+                "name": "compact"
+              },
+              {
+                "argumentHint": "",
+                "description": "Visualize current context usage as a colored grid",
+                "name": "context"
+              },
+              {
+                "argumentHint": "",
+                "description": "Show the total cost and duration of the current session",
+                "name": "cost"
+              },
+              {
+                "argumentHint": "",
+                "description": "Initialize a new CLAUDE.md file with codebase documentation",
+                "name": "init"
+              },
+              {
+                "argumentHint": "",
+                "description": "Get comments from a GitHub pull request",
+                "name": "pr-comments"
+              },
+              {
+                "argumentHint": "",
+                "description": "View release notes",
+                "name": "release-notes"
+              },
+              {
+                "argumentHint": "",
+                "description": "List current todo items",
+                "name": "todos"
+              },
+              {
+                "argumentHint": "",
+                "description": "Review a pull request",
+                "name": "review"
+              },
+              {
+                "argumentHint": "",
+                "description": "Complete a security review of the pending changes on the current branch",
+                "name": "security-review"
+              }
+            ],
+            "models": [
+              {
+                "description": "Use the default model (currently Sonnet 4.5) \u00b7 $3/$15 per Mtok",
+                "displayName": "Default (recommended)",
+                "value": "default"
+              },
+              {
+                "description": "Opus 4.5 \u00b7 Most capable for complex work \u00b7 $5/$25 per Mtok",
+                "displayName": "Opus",
+                "value": "opus"
+              },
+              {
+                "description": "Haiku 4.5 \u00b7 Fastest for quick answers \u00b7 $1/$5 per Mtok",
+                "displayName": "Haiku",
+                "value": "haiku"
+              },
+              {
+                "description": "Custom model",
+                "displayName": "claude-haiku-4-5-20251001",
+                "value": "claude-haiku-4-5-20251001"
+              }
+            ],
+            "output_style": "default"
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Custom 1",
+            "role": "user"
+          },
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Custom 2",
+            "role": "user"
+          },
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.0.53",
+        "cwd": "<REDACTED_CWD>",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "36b62d67-cdd0-48d9-ad08-1ea9fa9a8e24",
+        "skills": [],
+        "slash_commands": [
+          "compact",
+          "context",
+          "cost",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "todos",
+          "review",
+          "security-review"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "BashOutput",
+          "KillShell",
+          "Skill",
+          "SlashCommand",
+          "EnterPlanMode"
+        ],
+        "type": "system",
+        "uuid": "d9078887-f8b5-4aff-9cdc-f78d7ff2cade"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "I'll help you with a custom task! However, I need more information about what you'd like me to do. Could you please provide:\n\n1. **What is the task?** (e.g., code changes, file operations, research, debugging, etc.)\n2. **What codebase or files are involved?** (if applicable)\n3. **Any specific requirements or constraints?**\n\nOnce you give me more details, I'll be able to assist you effectively!",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01UBBAVvUYXYu5P3heQ99Ew5",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 323
+            },
+            "cache_creation_input_tokens": 323,
+            "cache_read_input_tokens": 13554,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 5,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "36b62d67-cdd0-48d9-ad08-1ea9fa9a8e24",
+        "type": "assistant",
+        "uuid": "57af45bb-7949-4fab-87c0-a739043f20cb"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 3843,
+        "duration_ms": 2109,
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 323,
+            "cacheReadInputTokens": 13554,
+            "contextWindow": 200000,
+            "costUSD": 0.00376115,
+            "inputTokens": 967,
+            "outputTokens": 207,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 1,
+        "permission_denials": [],
+        "result": "I'll help you with a custom task! However, I need more information about what you'd like me to do. Could you please provide:\n\n1. **What is the task?** (e.g., code changes, file operations, research, debugging, etc.)\n2. **What codebase or files are involved?** (if applicable)\n3. **Any specific requirements or constraints?**\n\nOnce you give me more details, I'll be able to assist you effectively!",
+        "session_id": "36b62d67-cdd0-48d9-ad08-1ea9fa9a8e24",
+        "subtype": "success",
+        "total_cost_usd": 0.00376115,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 323
+          },
+          "cache_creation_input_tokens": 323,
+          "cache_read_input_tokens": 13554,
+          "input_tokens": 3,
+          "output_tokens": 105,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard"
+        },
+        "uuid": "67334230-d67e-448d-ae3f-806001c95a22"
+      }
+    }
+  ],
+  "sdk_version": "0.1.10"
+}

@@ -91,6 +91,7 @@ VCR cassette directories:
 - `py/src/braintrust/cassettes/`
 - `py/src/braintrust/wrappers/cassettes/`
 - `py/src/braintrust/devserver/cassettes/`
+- `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/` for Claude Agent SDK subprocess transport recordings
 
 Behavior from `py/src/braintrust/conftest.py`:
 
@@ -108,7 +109,18 @@ nox -s "test_openai(latest)" -- --disable-vcr
 nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
 ```
 
-Only re-record cassettes when the behavior change is intentional. If in doubt, ask the user.
+Claude Agent SDK does not use VCR because the SDK talks to the bundled `claude` subprocess over stdin/stdout. Those tests use a transport-level cassette helper instead.
+
+Common Claude Agent SDK cassette commands:
+
+```bash
+cd py
+nox -s "test_claude_agent_sdk(latest)"
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)"
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
+```
+
+Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If in doubt, ask the user.
 
 ## Build Notes
 
