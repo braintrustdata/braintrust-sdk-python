@@ -44,11 +44,6 @@ def get_record_mode() -> str:
     return "once"
 
 
-def _version_suffix() -> str:
-    version = getattr(claude_agent_sdk, "__version__", "unknown")
-    return version.replace(".", "_")
-
-
 def _require_sdk() -> None:
     if _CLAUDE_AGENT_SDK_IMPORT_ERROR is not None:
         raise ImportError(
@@ -57,7 +52,7 @@ def _require_sdk() -> None:
 
 
 def cassette_path(name: str) -> Path:
-    return CASSETTES_DIR / f"{name}__sdk_{_version_suffix()}.json"
+    return CASSETTES_DIR / f"{name}.json"
 
 
 def _normalize_write(data: str, *, sanitize: bool = False) -> dict[str, Any]:
@@ -91,10 +86,46 @@ def _sanitize_json_for_storage(value: Any) -> Any:
     if isinstance(value, list):
         return [_sanitize_json_for_storage(item) for item in value]
     if isinstance(value, dict):
+        value = _compact_initialize_message_for_storage(value)
         return {key: _sanitize_field_for_storage(key, item) for key, item in value.items()}
     if isinstance(value, str):
         return _sanitize_string_for_storage(value)
     return value
+
+
+def _compact_initialize_message_for_storage(value: dict[str, Any]) -> dict[str, Any]:
+    if value.get("type") != "control_response":
+        return value
+
+    response = value.get("response")
+    if not isinstance(response, dict) or response.get("subtype") != "success":
+        return value
+
+    result = response.get("response")
+    if not isinstance(result, dict) or not _looks_like_initialize_response(result):
+        return value
+
+    compact_result: dict[str, Any] = {}
+    if "account" in result:
+        compact_result["account"] = result["account"]
+
+    for key in ("available_output_styles", "commands", "models", "agents"):
+        if key in result:
+            compact_result[key] = []
+
+    return {
+        **value,
+        "response": {
+            **response,
+            "response": compact_result,
+        },
+    }
+
+
+def _looks_like_initialize_response(value: dict[str, Any]) -> bool:
+    return "account" in value and any(
+        key in value for key in ("available_output_styles", "commands", "models", "agents")
+    )
 
 
 def _sanitize_field_for_storage(key: str, value: Any) -> Any:

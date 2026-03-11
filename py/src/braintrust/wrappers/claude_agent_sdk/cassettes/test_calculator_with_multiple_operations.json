@@ -10,7 +10,7 @@
             "hooks": null,
             "subtype": "initialize"
           },
-          "request_id": "req_1_0c20d744",
+          "request_id": "req_1_7bac646b",
           "type": "control_request"
         }
       }
@@ -27,15 +27,15 @@
               "capabilities": {},
               "clientInfo": {
                 "name": "claude-code",
-                "version": "2.0.53"
+                "version": "2.1.71"
               },
-              "protocolVersion": "2025-06-18"
+              "protocolVersion": "2025-11-25"
             }
           },
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "9230a3c8-1b50-49d2-a49a-b7434a62deff",
+        "request_id": "2127d480-b055-4e3f-864b-d8a56d74bf39",
         "type": "control_request"
       }
     },
@@ -45,7 +45,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "9230a3c8-1b50-49d2-a49a-b7434a62deff",
+            "request_id": "2127d480-b055-4e3f-864b-d8a56d74bf39",
             "response": {
               "mcp_response": {
                 "id": 0,
@@ -72,87 +72,16 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_0c20d744",
+          "request_id": "req_1_7bac646b",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
               "tokenSource": "none"
             },
-            "available_output_styles": [
-              "default",
-              "Explanatory",
-              "Learning"
-            ],
-            "commands": [
-              {
-                "argumentHint": "<optional custom summarization instructions>",
-                "description": "Clear conversation history but keep a summary in context. Optional: /compact [instructions for summarization]",
-                "name": "compact"
-              },
-              {
-                "argumentHint": "",
-                "description": "Visualize current context usage as a colored grid",
-                "name": "context"
-              },
-              {
-                "argumentHint": "",
-                "description": "Show the total cost and duration of the current session",
-                "name": "cost"
-              },
-              {
-                "argumentHint": "",
-                "description": "Initialize a new CLAUDE.md file with codebase documentation",
-                "name": "init"
-              },
-              {
-                "argumentHint": "",
-                "description": "Get comments from a GitHub pull request",
-                "name": "pr-comments"
-              },
-              {
-                "argumentHint": "",
-                "description": "View release notes",
-                "name": "release-notes"
-              },
-              {
-                "argumentHint": "",
-                "description": "List current todo items",
-                "name": "todos"
-              },
-              {
-                "argumentHint": "",
-                "description": "Review a pull request",
-                "name": "review"
-              },
-              {
-                "argumentHint": "",
-                "description": "Complete a security review of the pending changes on the current branch",
-                "name": "security-review"
-              }
-            ],
-            "models": [
-              {
-                "description": "Use the default model (currently Sonnet 4.5) \u00b7 $3/$15 per Mtok",
-                "displayName": "Default (recommended)",
-                "value": "default"
-              },
-              {
-                "description": "Opus 4.5 \u00b7 Most capable for complex work \u00b7 $5/$25 per Mtok",
-                "displayName": "Opus",
-                "value": "opus"
-              },
-              {
-                "description": "Haiku 4.5 \u00b7 Fastest for quick answers \u00b7 $1/$5 per Mtok",
-                "displayName": "Haiku",
-                "value": "haiku"
-              },
-              {
-                "description": "Custom model",
-                "displayName": "claude-haiku-4-5-20251001",
-                "value": "claude-haiku-4-5-20251001"
-              }
-            ],
-            "output_style": "default"
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
           },
           "subtype": "success"
         },
@@ -185,8 +114,27 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "801e3b05-8152-4349-8d6d-af4bf91544ab",
+        "request_id": "283bbf65-3d77-4488-aa6d-5c50fea285bf",
         "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "283bbf65-3d77-4488-aa6d-5c50fea285bf",
+            "response": {
+              "mcp_response": {
+                "jsonrpc": "2.0",
+                "result": {}
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
       }
     },
     {
@@ -201,15 +149,15 @@
               "capabilities": {},
               "clientInfo": {
                 "name": "claude-code",
-                "version": "2.0.53"
+                "version": "2.1.71"
               },
-              "protocolVersion": "2025-06-18"
+              "protocolVersion": "2025-11-25"
             }
           },
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "946f085c-e65f-4e55-8b22-24449b0781d0",
+        "request_id": "7e196f9d-3a93-42aa-b4f8-cbc7bae54d8a",
         "type": "control_request"
       }
     },
@@ -219,26 +167,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "801e3b05-8152-4349-8d6d-af4bf91544ab",
-            "response": {
-              "mcp_response": {
-                "jsonrpc": "2.0",
-                "result": {}
-              }
-            },
-            "subtype": "success"
-          },
-          "type": "control_response"
-        }
-      }
-    },
-    {
-      "op": "write",
-      "payload": {
-        "kind": "json",
-        "value": {
-          "response": {
-            "request_id": "946f085c-e65f-4e55-8b22-24449b0781d0",
+            "request_id": "7e196f9d-3a93-42aa-b4f8-cbc7bae54d8a",
             "response": {
               "mcp_response": {
                 "id": 0,
@@ -273,7 +202,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "c6146719-2daa-4747-9ee6-11783868e8d0",
+        "request_id": "2cf91a70-c2e5-434c-93f3-a0f21019490e",
         "type": "control_request"
       }
     },
@@ -283,7 +212,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "c6146719-2daa-4747-9ee6-11783868e8d0",
+            "request_id": "2cf91a70-c2e5-434c-93f3-a0f21019490e",
             "response": {
               "mcp_response": {
                 "id": 1,
@@ -343,7 +272,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "d4daa9cc-4d34-4f43-b2f7-c525a7db2cc3",
+        "request_id": "c37d9442-dd36-4269-b59a-feeed63e7d61",
         "type": "control_request"
       }
     },
@@ -353,82 +282,11 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "d4daa9cc-4d34-4f43-b2f7-c525a7db2cc3",
+            "request_id": "c37d9442-dd36-4269-b59a-feeed63e7d61",
             "response": {
               "mcp_response": {
                 "jsonrpc": "2.0",
                 "result": {}
-              }
-            },
-            "subtype": "success"
-          },
-          "type": "control_response"
-        }
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
-        "request": {
-          "message": {
-            "id": 1,
-            "jsonrpc": "2.0",
-            "method": "tools/list"
-          },
-          "server_name": "calculator",
-          "subtype": "mcp_message"
-        },
-        "request_id": "1914635c-c1eb-43b5-b35e-ee3dc29fcd1d",
-        "type": "control_request"
-      }
-    },
-    {
-      "op": "write",
-      "payload": {
-        "kind": "json",
-        "value": {
-          "response": {
-            "request_id": "1914635c-c1eb-43b5-b35e-ee3dc29fcd1d",
-            "response": {
-              "mcp_response": {
-                "id": 1,
-                "jsonrpc": "2.0",
-                "result": {
-                  "tools": [
-                    {
-                      "description": "Performs basic arithmetic operations",
-                      "inputSchema": {
-                        "properties": {
-                          "a": {
-                            "description": "First number",
-                            "type": "number"
-                          },
-                          "b": {
-                            "description": "Second number",
-                            "type": "number"
-                          },
-                          "operation": {
-                            "description": "The arithmetic operation to perform",
-                            "enum": [
-                              "add",
-                              "subtract",
-                              "multiply",
-                              "divide"
-                            ],
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "operation",
-                          "a",
-                          "b"
-                        ],
-                        "type": "object"
-                      },
-                      "name": "calculator"
-                    }
-                  ]
-                }
               }
             },
             "subtype": "success"
@@ -447,8 +305,9 @@
           "Plan"
         ],
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.0.53",
+        "claude_code_version": "2.1.71",
         "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
         "mcp_servers": [
           {
             "name": "calculator",
@@ -459,22 +318,37 @@
         "output_style": "default",
         "permissionMode": "bypassPermissions",
         "plugins": [],
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
-        "skills": [],
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "skills": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api"
+        ],
         "slash_commands": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api",
           "compact",
           "context",
           "cost",
+          "heapdump",
           "init",
           "pr-comments",
           "release-notes",
-          "todos",
           "review",
-          "security-review"
+          "security-review",
+          "insights"
         ],
         "subtype": "init",
         "tools": [
           "Task",
+          "TaskOutput",
           "Bash",
           "Glob",
           "Grep",
@@ -486,15 +360,19 @@
           "WebFetch",
           "TodoWrite",
           "WebSearch",
-          "BashOutput",
-          "KillShell",
+          "TaskStop",
+          "AskUserQuestion",
           "Skill",
-          "SlashCommand",
           "EnterPlanMode",
+          "EnterWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "ToolSearch",
           "mcp__calculator__calculator"
         ],
         "type": "system",
-        "uuid": "e020a28d-7993-4e1e-a829-99a0d327d349"
+        "uuid": "9065a984-ce57-42b9-b22e-1f81a9daf0ed"
       }
     },
     {
@@ -503,12 +381,13 @@
         "message": {
           "content": [
             {
-              "text": "I'll help you with that calculation. Let me first multiply 15 by 7, then subtract 5 from the result.",
-              "type": "text"
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user is asking me to:\n1. Multiply 15 by 7\n2. Subtract 5 from the result\n\nI can use the calculator tool for this. Let me first multiply 15 by 7, then subtract 5 from that result.\n\nFirst call: 15 * 7 = 105\nSecond call: 105 - 5 = 100\n\nI'll need to make the first calculation, get the result, then make the second calculation. These are dependent operations, so I should do the first one first.",
+              "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_017F32N8ghRVakXtFJYxMRnZ",
+          "id": "msg_01SZLU92jt1i6LRNuaTfx7HD",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_reason": null,
@@ -517,20 +396,20 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 14015
+              "ephemeral_5m_input_tokens": 4311
             },
-            "cache_creation_input_tokens": 14015,
-            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 4311,
+            "cache_read_input_tokens": 13723,
             "inference_geo": "not_available",
-            "input_tokens": 3,
-            "output_tokens": 5,
+            "input_tokens": 10,
+            "output_tokens": 7,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
         "type": "assistant",
-        "uuid": "34bd1986-f756-439f-b792-f97ee641cdcf"
+        "uuid": "1a074bf6-f4fa-41c9-82f1-b14cbc463f93"
       }
     },
     {
@@ -542,7 +421,7 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01K6fcD1aZeYkN9AVAX8AU5M",
+              "id": "toolu_01GTvysuW8mhwmw8uR6trESb",
               "input": {
                 "a": 15,
                 "b": 7,
@@ -553,7 +432,7 @@
             }
           ],
           "context_management": null,
-          "id": "msg_017F32N8ghRVakXtFJYxMRnZ",
+          "id": "msg_01SZLU92jt1i6LRNuaTfx7HD",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_reason": null,
@@ -562,20 +441,20 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 14015
+              "ephemeral_5m_input_tokens": 4311
             },
-            "cache_creation_input_tokens": 14015,
-            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 4311,
+            "cache_read_input_tokens": 13723,
             "inference_geo": "not_available",
-            "input_tokens": 3,
-            "output_tokens": 119,
+            "input_tokens": 10,
+            "output_tokens": 7,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
         "type": "assistant",
-        "uuid": "821087f9-6b60-4e08-b780-cd74ccf51eba"
+        "uuid": "4fd4c99b-f8a4-4a63-9ca8-e0ee9b66d89f"
       }
     },
     {
@@ -588,7 +467,8 @@
             "method": "tools/call",
             "params": {
               "_meta": {
-                "claudecode/toolUseId": "toolu_01K6fcD1aZeYkN9AVAX8AU5M"
+                "claudecode/toolUseId": "toolu_01GTvysuW8mhwmw8uR6trESb",
+                "progressToken": 2
               },
               "arguments": {
                 "a": 15,
@@ -601,7 +481,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "15fa3d33-0028-44ff-9a64-fd9831fbc7cb",
+        "request_id": "5103eab1-ac9e-4773-a7f3-0d1896284ef0",
         "type": "control_request"
       }
     },
@@ -611,7 +491,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "15fa3d33-0028-44ff-9a64-fd9831fbc7cb",
+            "request_id": "5103eab1-ac9e-4773-a7f3-0d1896284ef0",
             "response": {
               "mcp_response": {
                 "id": 2,
@@ -644,14 +524,14 @@
                   "type": "text"
                 }
               ],
-              "tool_use_id": "toolu_01K6fcD1aZeYkN9AVAX8AU5M",
+              "tool_use_id": "toolu_01GTvysuW8mhwmw8uR6trESb",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
         "parent_tool_use_id": null,
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
         "tool_use_result": [
           {
             "text": "The result of multiply(15, 7) is 105",
@@ -659,7 +539,7 @@
           }
         ],
         "type": "user",
-        "uuid": "45f4901b-a992-409a-8974-61718f0bd709"
+        "uuid": "e1b4150c-44c8-43ba-ad21-193308652b17"
       }
     },
     {
@@ -668,12 +548,13 @@
         "message": {
           "content": [
             {
-              "text": "Now let me subtract 5 from that result:",
-              "type": "text"
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Great, 15 * 7 = 105. Now I need to subtract 5 from 105.",
+              "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_017YZdFndE8zj9aTno3Q8E5C",
+          "id": "msg_012L8xHqi8Qw2DMNPuxXhXk7",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_reason": null,
@@ -682,20 +563,20 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 141
+              "ephemeral_5m_input_tokens": 249
             },
-            "cache_creation_input_tokens": 141,
-            "cache_read_input_tokens": 14015,
+            "cache_creation_input_tokens": 249,
+            "cache_read_input_tokens": 18034,
             "inference_geo": "not_available",
-            "input_tokens": 6,
-            "output_tokens": 2,
+            "input_tokens": 8,
+            "output_tokens": 1,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
         "type": "assistant",
-        "uuid": "d2c7719f-0e47-484f-a0bb-0aaaa368032b"
+        "uuid": "220a27fe-9bb8-4787-9b70-398b37020369"
       }
     },
     {
@@ -707,7 +588,7 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01HkzvMnStwuQLnuhAefWfpa",
+              "id": "toolu_01PfSFqVXeF82k7N9oKrY7Ni",
               "input": {
                 "a": 105,
                 "b": 5,
@@ -718,7 +599,7 @@
             }
           ],
           "context_management": null,
-          "id": "msg_017YZdFndE8zj9aTno3Q8E5C",
+          "id": "msg_012L8xHqi8Qw2DMNPuxXhXk7",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_reason": null,
@@ -727,20 +608,20 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 141
+              "ephemeral_5m_input_tokens": 249
             },
-            "cache_creation_input_tokens": 141,
-            "cache_read_input_tokens": 14015,
+            "cache_creation_input_tokens": 249,
+            "cache_read_input_tokens": 18034,
             "inference_geo": "not_available",
-            "input_tokens": 6,
-            "output_tokens": 2,
+            "input_tokens": 8,
+            "output_tokens": 1,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
         "type": "assistant",
-        "uuid": "4847dde4-a017-4065-8de3-9f6656352a66"
+        "uuid": "15aa21b8-cbf2-4fa4-bd93-a5ec31626375"
       }
     },
     {
@@ -753,7 +634,8 @@
             "method": "tools/call",
             "params": {
               "_meta": {
-                "claudecode/toolUseId": "toolu_01HkzvMnStwuQLnuhAefWfpa"
+                "claudecode/toolUseId": "toolu_01PfSFqVXeF82k7N9oKrY7Ni",
+                "progressToken": 3
               },
               "arguments": {
                 "a": 105,
@@ -766,7 +648,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "8085b52c-99d9-4e78-9900-e07f0f8c46f6",
+        "request_id": "c261ffdf-d271-4522-ab21-b17c4db5c27d",
         "type": "control_request"
       }
     },
@@ -776,7 +658,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "8085b52c-99d9-4e78-9900-e07f0f8c46f6",
+            "request_id": "c261ffdf-d271-4522-ab21-b17c4db5c27d",
             "response": {
               "mcp_response": {
                 "id": 3,
@@ -809,14 +691,14 @@
                   "type": "text"
                 }
               ],
-              "tool_use_id": "toolu_01HkzvMnStwuQLnuhAefWfpa",
+              "tool_use_id": "toolu_01PfSFqVXeF82k7N9oKrY7Ni",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
         "parent_tool_use_id": null,
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
         "tool_use_result": [
           {
             "text": "The result of subtract(105, 5) is 100",
@@ -824,7 +706,7 @@
           }
         ],
         "type": "user",
-        "uuid": "bca777bc-06a9-4957-83ca-2b11700ab5fb"
+        "uuid": "c091d10a-3e93-4251-97fb-3ff4b0436391"
       }
     },
     {
@@ -833,12 +715,13 @@
         "message": {
           "content": [
             {
-              "text": "**The answer is 100.**\n\nHere's the breakdown:\n- 15 \u00d7 7 = 105\n- 105 - 5 = 100",
-              "type": "text"
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Perfect! So:\n- 15 \u00d7 7 = 105\n- 105 - 5 = 100\n\nThe final answer is 100.",
+              "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_018YckGW4fMsPGHS288TRaPf",
+          "id": "msg_0113WA3B1LfYfcAwGDYzsQK8",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_reason": null,
@@ -847,64 +730,106 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 127
+              "ephemeral_5m_input_tokens": 155
             },
-            "cache_creation_input_tokens": 127,
-            "cache_read_input_tokens": 14156,
+            "cache_creation_input_tokens": 155,
+            "cache_read_input_tokens": 18283,
             "inference_geo": "not_available",
-            "input_tokens": 6,
+            "input_tokens": 8,
             "output_tokens": 1,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
         "type": "assistant",
-        "uuid": "1d9e74aa-ace1-4a18-a9e2-1e64bb2ee6dc"
+        "uuid": "e1e7bf78-2285-4bb0-845e-b902e6965db0"
       }
     },
     {
       "op": "read",
       "payload": {
-        "duration_api_ms": 8137,
-        "duration_ms": 5529,
+        "message": {
+          "content": [
+            {
+              "text": "The answer is **100**.\n\nHere's the breakdown:\n- 15 \u00d7 7 = 105\n- 105 \u2212 5 = **100**",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_0113WA3B1LfYfcAwGDYzsQK8",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 155
+            },
+            "cache_creation_input_tokens": 155,
+            "cache_read_input_tokens": 18283,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "type": "assistant",
+        "uuid": "487dce71-f0fa-40c9-878a-84b146d11ffe"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 4772,
+        "duration_ms": 4944,
+        "fast_mode_state": "off",
         "is_error": false,
         "modelUsage": {
           "claude-haiku-4-5-20251001": {
-            "cacheCreationInputTokens": 14283,
-            "cacheReadInputTokens": 28171,
+            "cacheCreationInputTokens": 4715,
+            "cacheReadInputTokens": 50040,
             "contextWindow": 200000,
-            "costUSD": 0.02362985,
-            "inputTokens": 979,
-            "outputTokens": 396,
+            "costUSD": 0.013053750000000001,
+            "inputTokens": 26,
+            "maxOutputTokens": 32000,
+            "outputTokens": 426,
             "webSearchRequests": 0
           }
         },
         "num_turns": 3,
         "permission_denials": [],
-        "result": "**The answer is 100.**\n\nHere's the breakdown:\n- 15 \u00d7 7 = 105\n- 105 - 5 = 100",
-        "session_id": "7388c564-487e-451f-865d-757bf0122afe",
+        "result": "The answer is **100**.\n\nHere's the breakdown:\n- 15 \u00d7 7 = 105\n- 105 \u2212 5 = **100**",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "stop_reason": "end_turn",
         "subtype": "success",
-        "total_cost_usd": 0.02362985,
+        "total_cost_usd": 0.013053750000000001,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 14283
+            "ephemeral_5m_input_tokens": 4715
           },
-          "cache_creation_input_tokens": 14283,
-          "cache_read_input_tokens": 28171,
-          "input_tokens": 15,
-          "output_tokens": 261,
+          "cache_creation_input_tokens": 4715,
+          "cache_read_input_tokens": 50040,
+          "inference_geo": "",
+          "input_tokens": 26,
+          "iterations": [],
+          "output_tokens": 426,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
           },
-          "service_tier": "standard"
+          "service_tier": "standard",
+          "speed": "standard"
         },
-        "uuid": "552114b7-46af-4323-b4e3-07c8d71eaa38"
+        "uuid": "3ed72c05-f236-44cc-bcb7-dea85e825f7b"
       }
     }
   ],
-  "sdk_version": "0.1.10"
+  "sdk_version": "0.1.48"
 }

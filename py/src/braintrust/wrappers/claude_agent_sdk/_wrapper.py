@@ -293,8 +293,10 @@ class ToolSpanTracker:
 
             self._end_tool_span(str(tool_use_id), tool_result_block=block)
 
-    def cleanup(self, end_time: float | None = None) -> None:
+    def cleanup(self, end_time: float | None = None, exclude_tool_use_ids: frozenset[str] | None = None) -> None:
         for tool_use_id in list(self._active_spans):
+            if exclude_tool_use_ids and tool_use_id in exclude_tool_use_ids:
+                continue
             self._end_tool_span(tool_use_id, end_time=end_time)
 
     @property
@@ -387,6 +389,8 @@ class LLMSpanTracker:
     def __init__(self, query_start_time: float | None = None):
         self.current_span: Any | None = None
         self.current_span_export: str | None = None
+        self.current_parent_export: str | None = None
+        self.current_output: list[dict[str, Any]] | None = None
         self.next_start_time: float | None = query_start_time
 
     def get_next_start_time(self) -> float:
@@ -397,9 +401,27 @@ class LLMSpanTracker:
         message: Any,
         prompt: Any,
         conversation_history: list[dict[str, Any]],
+        parent_export: str | None = None,
         start_time: float | None = None,
-    ) -> dict[str, Any] | None:
+    ) -> tuple[dict[str, Any] | None, bool]:
         """Start a new LLM span, ending the previous one if it exists."""
+        current_message = _serialize_assistant_message(message)
+
+        if (
+            self.current_span
+            and self.next_start_time is None
+            and self.current_parent_export == parent_export
+            and current_message is not None
+        ):
+            merged_message = _merge_assistant_messages(
+                self.current_output[0] if self.current_output else None,
+                current_message,
+            )
+            if merged_message is not None:
+                self.current_output = [merged_message]
+                self.current_span.log(output=self.current_output)
+            return merged_message, True
+
         resolved_start_time = start_time if start_time is not None else self.get_next_start_time()
         first_token_time = time.time()
 
@@ -407,14 +429,20 @@ class LLMSpanTracker:
             self.current_span.end(end_time=resolved_start_time)
 
         final_content, span = _create_llm_span_for_messages(
-            [message], prompt, conversation_history, start_time=resolved_start_time
+            [message],
+            prompt,
+            conversation_history,
+            parent=parent_export,
+            start_time=resolved_start_time,
         )
         if span is not None:
             span.log(metrics={"time_to_first_token": max(0.0, first_token_time - resolved_start_time)})
         self.current_span = span
         self.current_span_export = span.export() if span else None
+        self.current_parent_export = parent_export
+        self.current_output = [final_content] if final_content is not None else None
         self.next_start_time = None
-        return final_content
+        return final_content, False
 
     def mark_next_llm_start(self) -> None:
         """Mark when the next LLM call will start (after tool results)."""
@@ -431,6 +459,8 @@ class LLMSpanTracker:
             self.current_span.end()
             self.current_span = None
             self.current_span_export = None
+            self.current_parent_export = None
+            self.current_output = None
 
 
 class TaskEventSpanTracker:
@@ -438,6 +468,8 @@ class TaskEventSpanTracker:
         self._root_span_export = root_span_export
         self._tool_tracker = tool_tracker
         self._active_spans: dict[str, Any] = {}
+        self._task_span_by_tool_use_id: dict[str, Any] = {}
+        self._active_task_order: list[str] = []
 
     def process(self, message: Any) -> None:
         task_id = getattr(message, "task_id", None)
@@ -456,6 +488,10 @@ class TaskEventSpanTracker:
                 parent=self._parent_export(message),
             )
             self._active_spans[task_id] = task_span
+            self._active_task_order.append(task_id)
+            tool_use_id = getattr(message, "tool_use_id", None)
+            if tool_use_id is not None:
+                self._task_span_by_tool_use_id[str(tool_use_id)] = task_span
         else:
             update: dict[str, Any] = {}
             metadata = self._metadata(message)
@@ -470,13 +506,46 @@ class TaskEventSpanTracker:
                 task_span.log(**update)
 
         if self._should_end(message_type):
+            tool_use_id = getattr(message, "tool_use_id", None)
+            if tool_use_id is not None:
+                self._task_span_by_tool_use_id.pop(str(tool_use_id), None)
             task_span.end()
             del self._active_spans[task_id]
+            self._active_task_order = [active_task_id for active_task_id in self._active_task_order if active_task_id != task_id]
+
+    @property
+    def active_tool_use_ids(self) -> frozenset[str]:
+        return frozenset(self._task_span_by_tool_use_id.keys())
 
     def cleanup(self) -> None:
         for task_id, span in list(self._active_spans.items()):
             span.end()
             del self._active_spans[task_id]
+        self._task_span_by_tool_use_id.clear()
+        self._active_task_order.clear()
+
+    def parent_export_for_message(self, message: Any, fallback_export: str) -> str:
+        parent_tool_use_id = getattr(message, "parent_tool_use_id", None)
+        if parent_tool_use_id is None:
+            if _message_starts_subagent_tool(message):
+                return fallback_export
+            active_task_export = self._latest_active_task_export()
+            return active_task_export or fallback_export
+
+        task_span = self._task_span_by_tool_use_id.get(str(parent_tool_use_id))
+        if task_span is not None:
+            return task_span.export()
+
+        active_task_export = self._latest_active_task_export()
+        return active_task_export or fallback_export
+
+    def _latest_active_task_export(self) -> str | None:
+        for task_id in reversed(self._active_task_order):
+            task_span = self._active_spans.get(task_id)
+            if task_span is not None:
+                return task_span.export()
+
+        return None
 
     def _parent_export(self, message: Any) -> str:
         return self._tool_tracker.get_span_export(getattr(message, "tool_use_id", None)) or self._root_span_export
@@ -522,6 +591,19 @@ class TaskEventSpanTracker:
 
     def _should_end(self, message_type: str) -> bool:
         return message_type == MessageClassName.TASK_NOTIFICATION
+
+
+def _message_starts_subagent_tool(message: Any) -> bool:
+    if not hasattr(message, "content"):
+        return False
+
+    for block in message.content:
+        if type(block).__name__ != BlockClassName.TOOL_USE:
+            continue
+        if getattr(block, "name", None) == "Agent":
+            return True
+
+    return False
 
 
 def _create_client_wrapper_class(original_client_class: Any) -> Any:
@@ -611,21 +693,38 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
 
                         if message_type == MessageClassName.ASSISTANT:
                             if llm_tracker.current_span and tool_tracker.has_active_spans:
-                                tool_tracker.cleanup(end_time=llm_tracker.get_next_start_time())
-                            final_content = llm_tracker.start_llm_span(
+                                tool_tracker.cleanup(
+                                    end_time=llm_tracker.get_next_start_time(),
+                                    exclude_tool_use_ids=task_event_span_tracker.active_tool_use_ids,
+                                )
+                            llm_parent_export = task_event_span_tracker.parent_export_for_message(
+                                message,
+                                span.export(),
+                            )
+                            final_content, extended_existing_span = llm_tracker.start_llm_span(
                                 message,
                                 self.__last_prompt,
                                 final_results,
+                                parent_export=llm_parent_export,
                             )
                             tool_tracker.start_tool_spans(message, llm_tracker.current_span_export)
                             if final_content:
-                                final_results.append(final_content)
+                                if extended_existing_span and final_results and final_results[-1].get("role") == "assistant":
+                                    final_results[-1] = final_content
+                                else:
+                                    final_results.append(final_content)
                         elif message_type == MessageClassName.USER:
                             tool_tracker.finish_tool_spans(message)
+                            has_tool_results = False
                             if hasattr(message, "content"):
+                                has_tool_results = any(
+                                    type(block).__name__ == BlockClassName.TOOL_RESULT
+                                    for block in message.content
+                                )
                                 content = _serialize_content_blocks(message.content)
                                 final_results.append({"content": content, "role": "user"})
-                            llm_tracker.mark_next_llm_start()
+                            if has_tool_results:
+                                llm_tracker.mark_next_llm_start()
                         elif message_type == MessageClassName.RESULT:
                             if hasattr(message, "usage"):
                                 usage_metrics = _extract_usage_from_result_message(message)
@@ -673,6 +772,7 @@ def _create_llm_span_for_messages(
     messages: list[Any],  # List of AssistantMessage objects
     prompt: Any,
     conversation_history: list[dict[str, Any]],
+    parent: str | None = None,
     start_time: float | None = None,
 ) -> tuple[dict[str, Any] | None, Any | None]:
     """Creates an LLM span for a group of AssistantMessage objects.
@@ -706,6 +806,7 @@ def _create_llm_span_for_messages(
         input=input_messages,
         output=outputs,
         metadata={"model": model} if model else None,
+        parent=parent,
         start_time=start_time,
     )
 
@@ -715,6 +816,28 @@ def _create_llm_span_for_messages(
         return {"content": content, "role": "assistant"}, llm_span
 
     return None, llm_span
+
+
+def _serialize_assistant_message(message: Any) -> dict[str, Any] | None:
+    if not hasattr(message, "content"):
+        return None
+
+    return {"content": _serialize_content_blocks(message.content), "role": "assistant"}
+
+
+def _merge_assistant_messages(existing_message: dict[str, Any] | None, new_message: dict[str, Any]) -> dict[str, Any]:
+    if existing_message is None:
+        return new_message
+
+    existing_content = existing_message.get("content")
+    new_content = new_message.get("content")
+    if isinstance(existing_content, list) and isinstance(new_content, list):
+        return {
+            "role": "assistant",
+            "content": [*existing_content, *new_content],
+        }
+
+    return new_message
 
 
 def _serialize_content_blocks(content: Any) -> Any:
