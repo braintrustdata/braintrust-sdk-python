@@ -1,6 +1,9 @@
 """Tests for the invoke module, particularly init_function."""
 
+import json
 
+import pytest
+from braintrust.bt_json import bt_dumps
 from braintrust.functions.invoke import init_function
 from braintrust.logger import _internal_get_global_state, _internal_reset_global_state
 
@@ -59,3 +62,51 @@ class TestInitFunction:
         # Try to start again - should still be disabled because of explicit disable
         state.span_cache.start()
         assert state.span_cache.disabled is True
+
+
+class TestInvokeSerializationRegression:
+    """Regression tests for JSON serialization in invoke (GitHub issue #38)."""
+
+    def test_llm_provider_messages_are_serializable(self):
+        provider_messages = []
+
+        try:
+            from openai.types.chat import ChatCompletionMessage
+
+            provider_messages.append(ChatCompletionMessage(role="assistant", content="The answer is X."))
+        except ImportError:
+            print("OpenAI not imported")
+
+        try:
+            from anthropic.types import Message, TextBlock, Usage
+
+            provider_messages.append(
+                Message(
+                    id="msg_123",
+                    type="message",
+                    role="assistant",
+                    content=[TextBlock(type="text", text="The answer is X.")],
+                    model="claude-3-5-sonnet-20241022",
+                    stop_reason="end_turn",
+                    stop_sequence=None,
+                    usage=Usage(input_tokens=10, output_tokens=20),
+                )
+            )
+        except ImportError:
+            print("Anthropic not imported")
+
+        try:
+            from google.genai.types import Content, Part
+
+            provider_messages.append(Content(role="model", parts=[Part(text="The answer is X.")]))
+        except ImportError:
+            print("Google GenAI not imported")
+
+        if not provider_messages:
+            pytest.skip("no supported LLM provider packages available")
+
+        for msg in provider_messages:
+            result = bt_dumps(msg)
+            assert isinstance(result, str)
+            # Verify the output is valid JSON and serialization didn't silently fail
+            json.loads(result)
