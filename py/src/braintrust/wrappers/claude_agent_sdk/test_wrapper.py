@@ -5,16 +5,18 @@ import dataclasses
 import sys
 import types
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
 # Try to import the Claude Agent SDK - skip tests if not available
 try:
-    import claude_agent_sdk
+    import claude_agent_sdk as _claude_agent_sdk
 
+    claude_agent_sdk = cast(Any, _claude_agent_sdk)
     CLAUDE_SDK_AVAILABLE = True
 except ImportError:
+    claude_agent_sdk = cast(Any, None)
     CLAUDE_SDK_AVAILABLE = False
     print("Claude Agent SDK not installed, skipping integration tests")
 
