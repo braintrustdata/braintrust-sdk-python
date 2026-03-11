@@ -2,11 +2,10 @@
 
 import asyncio
 import dataclasses
-import gc
 import sys
 import types
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 import pytest
 
@@ -980,119 +979,64 @@ class TestAutoInstrumentClaudeAgentSDK:
         """Test auto_instrument patches Claude Agent SDK and creates spans."""
         verify_autoinstrument_script("test_auto_claude_agent_sdk.py")
 
-
-class _FakeClaudeAgentOptions:
-    def __init__(self, model, permission_mode=None, response_events=None):
-        self.model = model
-        self.permission_mode = permission_mode
-        self.response_events = response_events
-
-
-class _FakeClaudeSDKClient:
-    def __init__(self, options):
-        self.options = options
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *args):
-        return None
-
-    async def query(self, prompt):
-        del prompt
-
-    async def receive_response(self):
-        response_events = self.options.response_events or [
-            AssistantMessage(content=[TextBlock("Hello")]),
-            ResultMessage(),
-        ]
-
-        for event in response_events:
-            if callable(event):
-                maybe_awaitable = event()
-                if hasattr(maybe_awaitable, "__await__"):
-                    await maybe_awaitable
-                continue
-            yield event
-            await asyncio.sleep(0)
-
-
-class _FakeClaudeSdkModule(types.ModuleType):
-    ClaudeSDKClient: Type[_FakeClaudeSDKClient]
-    ClaudeAgentOptions: Type[_FakeClaudeAgentOptions]
-    SdkMcpTool: Any
-    tool: Any
-
-
-class _FakeConsumerModule(types.ModuleType):
-    ClaudeSDKClient: Type[_FakeClaudeSDKClient]
-    ClaudeAgentOptions: Type[_FakeClaudeAgentOptions]
-
-
-def _install_fake_claude_sdk(monkeypatch):
-    fake_module = _FakeClaudeSdkModule("claude_agent_sdk")
-    fake_module.ClaudeSDKClient = _FakeClaudeSDKClient
-    fake_module.ClaudeAgentOptions = _FakeClaudeAgentOptions
-    fake_module.SdkMcpTool = _make_fake_sdk_mcp_tool_class()
-
-    def fake_tool(*args, **kwargs):
-        def decorator(handler_fn):
-            return types.SimpleNamespace(handler=handler_fn, name=kwargs.get("name", "unknown"), args=args)
-
-        return decorator
-
-    fake_module.tool = fake_tool
-    monkeypatch.setitem(sys.modules, "claude_agent_sdk", fake_module)
-    return fake_module
-
-
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
 async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, monkeypatch):
     """Regression test for https://github.com/braintrustdata/braintrust-sdk-python/issues/7."""
     assert not memory_logger.pop()
-
-    fake_sdk = _install_fake_claude_sdk(monkeypatch)
-    original_tool_class = fake_sdk.SdkMcpTool
-    original_tool_fn = fake_sdk.tool
+    original_client = claude_agent_sdk.ClaudeSDKClient
+    original_tool_class = claude_agent_sdk.SdkMcpTool
+    original_tool_fn = claude_agent_sdk.tool
 
     consumer_module_name = "test_issue7_repro_module"
-    consumer_module = _FakeConsumerModule(consumer_module_name)
-    consumer_module.ClaudeSDKClient = fake_sdk.ClaudeSDKClient
-    consumer_module.ClaudeAgentOptions = fake_sdk.ClaudeAgentOptions
+    consumer_module = types.ModuleType(consumer_module_name)
+    consumer_module.ClaudeSDKClient = original_client
+    consumer_module.ClaudeAgentOptions = claude_agent_sdk.ClaudeAgentOptions
+    consumer_module.SdkMcpTool = original_tool_class
+    consumer_module.tool = original_tool_fn
     monkeypatch.setitem(sys.modules, consumer_module_name, consumer_module)
-
-    assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
-    assert consumer_module.ClaudeSDKClient is not _FakeClaudeSDKClient
-    assert fake_sdk.SdkMcpTool is not original_tool_class
-    assert fake_sdk.tool is not original_tool_fn
 
     loop_errors = []
     received_types = []
 
-    async def main():
-        loop = asyncio.get_running_loop()
-        loop.set_exception_handler(lambda loop, ctx: loop_errors.append(ctx.get("exception") or ctx.get("message")))
+    try:
+        assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+        assert consumer_module.ClaudeSDKClient is not original_client
+        assert consumer_module.SdkMcpTool is not original_tool_class
+        assert consumer_module.tool is not original_tool_fn
+        assert claude_agent_sdk.SdkMcpTool is not original_tool_class
+        assert claude_agent_sdk.tool is not original_tool_fn
 
-        options = consumer_module.ClaudeAgentOptions(
-            model="claude-sonnet-4-20250514",
-            permission_mode="bypassPermissions",
-        )
-        async with consumer_module.ClaudeSDKClient(options=options) as client:
-            await client.query("Hello")
-            async for message in client.receive_response():
-                received_types.append(type(message).__name__)
+        async def main() -> None:
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(lambda loop, ctx: loop_errors.append(ctx.get("exception") or ctx.get("message")))
 
-        await asyncio.sleep(0)
-        gc.collect()
-        await asyncio.sleep(0.01)
+            options = consumer_module.ClaudeAgentOptions(
+                model="claude-3-5-haiku-20241022",
+                permission_mode="bypassPermissions",
+            )
+            transport = make_cassette_transport(
+                cassette_name="test_auto_claude_agent_sdk",
+                prompt="",
+                options=options,
+            )
+            async with consumer_module.ClaudeSDKClient(options=options, transport=transport) as client:
+                await client.query("Say hi")
+                async for message in client.receive_response():
+                    received_types.append(type(message).__name__)
 
-    await main()
+        await main()
+    finally:
+        claude_agent_sdk.ClaudeSDKClient = original_client
+        claude_agent_sdk.SdkMcpTool = original_tool_class
+        claude_agent_sdk.tool = original_tool_fn
 
     assert loop_errors == []
-    assert received_types == ["AssistantMessage", "ResultMessage"]
+    assert "AssistantMessage" in received_types
+    assert received_types[-1] == "ResultMessage"
 
     spans = memory_logger.pop()
     task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
     assert len(task_spans) == 1
     assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
-    assert task_spans[0]["input"] == "Hello"
+    assert task_spans[0]["input"] == "Say hi"
