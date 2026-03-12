@@ -91,7 +91,6 @@ jobs:
           packages-dir: py/dist/
 
       - name: Create local release tag
-        if: env.DRY_RUN != 'true'
         run: git tag "$RELEASE_TAG" "$COMMIT_SHA"
 
       # Create GitHub Release
