@@ -24,11 +24,8 @@ test-core:
 test-wheel:
 	mise exec -- $(MAKE) -C py test-wheel
 
-lint:
+lint pylint:
 	mise exec -- $(MAKE) -C py lint
-
-pylint:
-	mise exec -- $(MAKE) -C py pylint
 
 nox: test
 
@@ -38,8 +35,8 @@ help:
 	@echo "  fixup        - Run pre-commit hooks across the repo"
 	@echo "  install-deps - Install Python SDK dependencies via py/Makefile"
 	@echo "  install-dev  - Install pinned tools and create/update the repo env via mise"
-	@echo "  lint         - Run pre-commit hooks plus Python SDK pylint via py/Makefile"
-	@echo "  pylint       - Run Python SDK pylint only via py/Makefile"
+	@echo "  lint         - Run Python SDK lint checks via py/Makefile"
+	@echo "  pylint       - Alias for lint"
 	@echo "  nox          - Alias for test"
 	@echo "  test         - Run the Python SDK nox matrix via py/Makefile"
 	@echo "  test-core    - Run Python SDK core tests via py/Makefile"

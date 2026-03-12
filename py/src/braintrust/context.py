@@ -103,10 +103,7 @@ class BraintrustContextManager(ContextManager):
     def unset_current_span(self, context_token: Any = None) -> None:
         """Unset the current active span."""
         if context_token:
-            try:
-                self._current_span.reset(context_token)
-            except ValueError:
-                self._current_span.set(None)
+            self._current_span.reset(context_token)
         else:
             self._current_span.set(None)
 

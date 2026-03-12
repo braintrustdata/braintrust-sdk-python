@@ -2,7 +2,7 @@ PYTHON ?= python
 UV := $(PYTHON) -m uv
 UV_VERSION := $(shell awk '$$1=="uv" { print $$2 }' ../.tool-versions)
 
-.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean
+.PHONY: lint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean
 
 clean:
 	rm -rf build dist
@@ -12,9 +12,6 @@ fixup:
 	cd .. && make fixup
 
 lint: fixup
-	nox -s pylint
-
-pylint:
 	nox -s pylint
 
 test:
@@ -72,7 +69,6 @@ help:
 	@echo "  install-build-deps  - Install build dependencies for CI"
 	@echo "  install-dev         - Install package in development mode with all dependencies"
 	@echo "  lint                - Run pylint checks"
-	@echo "  pylint              - Run pylint without pre-commit hooks"
 	@echo "  test                - Run all tests"
 	@echo "  test-core           - Run core tests only"
 	@echo "  test-wheel          - Run tests against built wheel"
