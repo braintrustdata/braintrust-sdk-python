@@ -351,6 +351,8 @@ def run(args):
                 "(2) set up a proper Python package with an __init__.py file."
             ) from e
         raise
+    except Exception as e:
+        raise
     finally:
         _evals.clear()
 
