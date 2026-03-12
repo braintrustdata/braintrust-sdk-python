@@ -350,18 +350,23 @@ class ChatCompletionWrapper:
 
 
 class ResponseWrapper:
-    def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None, name: str = "openai.responses.create"):
+    def __init__(
+        self,
+        create_fn: Callable[..., Any] | None,
+        acreate_fn: Callable[..., Any] | None,
+        name: str = "openai.responses.create",
+        return_raw: bool = False,
+    ):
         self.create_fn = create_fn
         self.acreate_fn = acreate_fn
         self.name = name
+        self.return_raw = return_raw
 
     def create(self, *args: Any, **kwargs: Any) -> Any:
         params = self._parse_params(kwargs)
         stream = kwargs.get("stream", False)
 
-        span = start_span(
-            **merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params)
-        )
+        span = start_span(**merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params))
         should_end = True
 
         try:
@@ -373,6 +378,7 @@ class ResponseWrapper:
             else:
                 raw_response = create_response
             if stream:
+
                 def gen():
                     try:
                         first = True
@@ -401,7 +407,7 @@ class ResponseWrapper:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
                 span.log(**event_data)
-                return raw_response
+                return create_response if (self.return_raw and hasattr(create_response, "parse")) else raw_response
         finally:
             if should_end:
                 span.end()
@@ -410,9 +416,7 @@ class ResponseWrapper:
         params = self._parse_params(kwargs)
         stream = kwargs.get("stream", False)
 
-        span = start_span(
-            **merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params)
-        )
+        span = start_span(**merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params))
         should_end = True
 
         try:
@@ -424,6 +428,7 @@ class ResponseWrapper:
             else:
                 raw_response = create_response
             if stream:
+
                 async def gen():
                     try:
                         first = True
@@ -453,7 +458,7 @@ class ResponseWrapper:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
                 span.log(**event_data)
-                return raw_response
+                return create_response if (self.return_raw and hasattr(create_response, "parse")) else raw_response
         finally:
             if should_end:
                 span.end()
@@ -506,7 +511,12 @@ class ResponseWrapper:
 
         for result in all_results:
             usage = getattr(result, "usage", None)
-            if not usage and hasattr(result, "type") and result.type == "response.completed" and hasattr(result, "response"):
+            if (
+                not usage
+                and hasattr(result, "type")
+                and result.type == "response.completed"
+                and hasattr(result, "response")
+            ):
                 # Handle summaries from completed response if present
                 if hasattr(result.response, "output") and result.response.output:
                     for output_item in result.response.output:
@@ -787,29 +797,43 @@ class ChatV1Wrapper(NamedWrapper):
 
 
 class ResponsesV1Wrapper(NamedWrapper):
-    def __init__(self, responses: Any):
+    def __init__(self, responses: Any, return_raw: bool = False) -> None:
         self.__responses = responses
+        self.__return_raw = return_raw
+        if not return_raw:
+            self.with_raw_response = ResponsesV1Wrapper(responses, return_raw=True)
         super().__init__(responses)
 
     def create(self, *args: Any, **kwargs: Any) -> Any:
-        return ResponseWrapper(self.__responses.with_raw_response.create, None).create(*args, **kwargs)
+        return ResponseWrapper(self.__responses.with_raw_response.create, None, return_raw=self.__return_raw).create(
+            *args, **kwargs
+        )
 
     def parse(self, *args: Any, **kwargs: Any) -> Any:
-        return ResponseWrapper(self.__responses.with_raw_response.parse, None, "openai.responses.parse").create(*args, **kwargs)
+        return ResponseWrapper(
+            self.__responses.with_raw_response.parse, None, "openai.responses.parse", return_raw=self.__return_raw
+        ).create(*args, **kwargs)
 
 
 class AsyncResponsesV1Wrapper(NamedWrapper):
-    def __init__(self, responses: Any):
+    def __init__(self, responses: Any, return_raw: bool = False) -> None:
         self.__responses = responses
+        self.__return_raw = return_raw
+        if not return_raw:
+            self.with_raw_response = AsyncResponsesV1Wrapper(responses, return_raw=True)
         super().__init__(responses)
 
     async def create(self, *args: Any, **kwargs: Any) -> Any:
-        response = await ResponseWrapper(None, self.__responses.with_raw_response.create).acreate(*args, **kwargs)
-        return AsyncResponseWrapper(response)
+        response = await ResponseWrapper(
+            None, self.__responses.with_raw_response.create, return_raw=self.__return_raw
+        ).acreate(*args, **kwargs)
+        return response if self.__return_raw else AsyncResponseWrapper(response)
 
     async def parse(self, *args: Any, **kwargs: Any) -> Any:
-        response = await ResponseWrapper(None, self.__responses.with_raw_response.parse, "openai.responses.parse").acreate(*args, **kwargs)
-        return AsyncResponseWrapper(response)
+        response = await ResponseWrapper(
+            None, self.__responses.with_raw_response.parse, "openai.responses.parse", return_raw=self.__return_raw
+        ).acreate(*args, **kwargs)
+        return response if self.__return_raw else AsyncResponseWrapper(response)
 
 
 class BetaCompletionsV1Wrapper(NamedWrapper):
@@ -936,7 +960,6 @@ def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
             metrics[name] = value
 
     return metrics
-
 
 
 def prettify_params(params: dict[str, Any]) -> dict[str, Any]:
