@@ -66,6 +66,7 @@ Available extras:
 
 - Python SDK docs: https://www.braintrust.dev/docs/reference/sdks/python
 - Braintrust docs: https://www.braintrust.dev/docs
+- Repo publishing guide: https://github.com/braintrustdata/braintrust-sdk-python/blob/main/docs/publishing.md
 - Source code: https://github.com/braintrustdata/braintrust-sdk-python/tree/main/py
 
 ## License

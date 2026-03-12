@@ -1,8 +1,7 @@
 #
-# This workflow is used to publish the Python SDK to TestPyPI. You do not need to upgrade the
-# version number to use this. Only upgrade the version number when you are ready to publish to
-# PyPI. The script will automatically add an "rc" suffix to the version number for test.pypi.org
-# releases, so you can push a version number to test.pypi.org multiple times.
+# This workflow is used to publish the Python SDK to TestPyPI.
+# It mirrors the main release workflow where practical, but it does not create git tags
+# or GitHub Releases.
 #
 
 name: Publish Python SDK to TestPyPI
@@ -15,9 +14,37 @@ on:
         required: true
         type: string
         default: "main"
+      dry_run:
+        description: "Validate and build without publishing to TestPyPI"
+        required: true
+        type: boolean
+        default: false
 
 jobs:
-  build-and-publish-test:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      commit_sha: ${{ steps.validate.outputs.commit_sha }}
+      dry_run: ${{ steps.validate.outputs.dry_run }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event.inputs.ref }}
+          fetch-depth: 0
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        with:
+          cache: true
+          experimental: true
+      - name: Resolve commit
+        id: validate
+        run: |
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "dry_run=${{ github.event.inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+
+  build-and-publish:
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -27,23 +54,29 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
 
     env:
+      COMMIT_SHA: ${{ needs.validate.outputs.commit_sha }}
+      DRY_RUN: ${{ needs.validate.outputs.dry_run }}
       PYPI_REPO: testpypi
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          ref: ${{ github.event.inputs.ref }}
+          ref: ${{ env.COMMIT_SHA }}
+          fetch-depth: 0
       - name: Set up mise
         uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
         with:
           cache: true
           experimental: true
-      - name: Install build dependencies
-        run: |
-          mise exec -- make -C py install-dev
       - name: Build and verify
         run: |
-          mise exec -- make -C py verify-build
+          mise exec -- make -C py install-dev verify-build
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: python-sdk-testpypi-dist
+          path: py/dist/
+          retention-days: 5
       - name: Get version from built wheel
         id: get_version
         run: |
@@ -51,14 +84,19 @@ jobs:
           VERSION=$(echo "$WHEEL" | sed -n 's/.*braintrust-\([^-]*\)-.*/\1/p')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Publish to TestPyPI
+        if: env.DRY_RUN != 'true'
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: py/dist/
+      - name: Summarize dry run
+        if: env.DRY_RUN == 'true'
+        run: |
+          echo "Dry run completed for TestPyPI build from $COMMIT_SHA"
 
   notify-success:
-    needs: build-and-publish-test
-    if: success()
+    needs: [validate, build-and-publish]
+    if: always() && needs.build-and-publish.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -69,20 +107,20 @@ jobs:
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
             channel: C0ABHT0SWA2
-            text: "🧪 Python SDK pre-release v${{ needs.build-and-publish-test.outputs.version }} published to TestPyPI"
+            text: "${{ needs.validate.outputs.dry_run == 'true' && '🧪 Python SDK TestPyPI dry run succeeded' || format('🧪 Python SDK prerelease v{0} published to TestPyPI', needs.build-and-publish.outputs.version) }}"
             blocks:
               - type: "header"
                 text:
                   type: "plain_text"
-                  text: "🧪 Python SDK Pre-release Published"
+                  text: "${{ needs.validate.outputs.dry_run == 'true' && '🧪 Python SDK TestPyPI Dry Run Succeeded' || '🧪 Python SDK Pre-release Published' }}"
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*Version:* ${{ needs.build-and-publish-test.outputs.version }}\n*Ref:* ${{ github.event.inputs.ref }}\n*Install:* `pip install -i https://test.pypi.org/simple/ braintrust==${{ needs.build-and-publish-test.outputs.version }}`\n*Package:* <https://test.pypi.org/project/braintrust/|braintrust (TestPyPI)>\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  text: "${{ needs.validate.outputs.dry_run == 'true' && format('*Mode:* dry run\n*Ref:* {0}\n*Commit:* {1}\n\n<{2}/{3}/actions/runs/{4}|View Run>', github.event.inputs.ref, needs.validate.outputs.commit_sha, github.server_url, github.repository, github.run_id) || format('*Version:* {0}\n*Ref:* {1}\n*Install:* `pip install -i https://test.pypi.org/simple/ braintrust=={0}`\n*Package:* <https://test.pypi.org/project/braintrust/|braintrust (TestPyPI)>\n\n<{2}/{3}/actions/runs/{4}|View Run>', needs.build-and-publish.outputs.version, github.event.inputs.ref, github.server_url, github.repository, github.run_id) }}"
 
   notify-failure:
-    needs: build-and-publish-test
-    if: failure()
+    needs: [validate, build-and-publish]
+    if: always() && (needs.validate.result == 'failure' || needs.build-and-publish.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -102,4 +140,4 @@ jobs:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*Ref:* ${{ github.event.inputs.ref }}\n*Commit:* ${{ github.sha }}\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  text: "*Ref:* ${{ github.event.inputs.ref }}\n*Commit:* ${{ needs.validate.outputs.commit_sha || github.sha }}\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"

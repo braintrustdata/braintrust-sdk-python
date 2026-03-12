@@ -1,35 +1,54 @@
-#
-# This workflow is used to publish the Python SDK to PyPI.
-# It is triggered by a tag push, and will only publish if the tag is valid.
-# The tag must match the format py-sdk-v*.*.*
-#
-
 name: Publish Python SDK
 
 on:
-  push:
-    tags:
-      - "py-sdk-v*.*.*" # Trigger on version tags like py-sdk-v0.1.0, py-sdk-v1.2.3, etc.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to publish (branch, tag, or commit SHA)"
+        required: true
+        type: string
+        default: "main"
+      release_type:
+        description: "Release type to publish to PyPI"
+        required: true
+        type: choice
+        options:
+          - stable
+          - prerelease
+        default: stable
+      dry_run:
+        description: "Validate and build without publishing to PyPI or creating a GitHub Release"
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      release_tag: ${{ steps.set_release_tag.outputs.release_tag }}
+      commit_sha: ${{ steps.validate.outputs.commit_sha }}
+      dry_run: ${{ steps.validate.outputs.dry_run }}
+      release_tag: ${{ steps.validate.outputs.release_tag }}
+      release_type: ${{ steps.validate.outputs.release_type }}
+      version: ${{ steps.validate.outputs.version }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          fetch-depth: 0 # Fetch all history for checking branch
-      - name: Set release tag
-        id: set_release_tag
-        # ensure the tag is valid (matches code, is on main, etc)
+          ref: ${{ github.event.inputs.ref }}
+          fetch-depth: 0
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        with:
+          cache: true
+          experimental: true
+      - name: Validate release inputs
+        id: validate
         run: |
-          RELEASE_TAG=${GITHUB_REF#refs/tags/}
-          echo "Using tag: $RELEASE_TAG"
-          ./py/scripts/validate-release-tag.sh "$RELEASE_TAG"
-          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
-          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          mise exec -- python py/scripts/validate-release.py \
+            "${{ github.event.inputs.release_type }}" \
+            --github-output "$GITHUB_OUTPUT"
+          echo "dry_run=${{ github.event.inputs.dry_run }}" >> "$GITHUB_OUTPUT"
 
   build-and-publish:
     needs: validate
@@ -40,12 +59,17 @@ jobs:
       id-token: write # Required for PyPI trusted publishing
 
     env:
+      COMMIT_SHA: ${{ needs.validate.outputs.commit_sha }}
+      DRY_RUN: ${{ needs.validate.outputs.dry_run }}
       RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
+      RELEASE_TYPE: ${{ needs.validate.outputs.release_type }}
+      VERSION: ${{ needs.validate.outputs.version }}
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          fetch-depth: 0 # Fetch all history for changelog generation
+          ref: ${{ env.COMMIT_SHA }}
+          fetch-depth: 0
       - name: Set up mise
         uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
         with:
@@ -61,15 +85,19 @@ jobs:
           path: py/dist/
           retention-days: 5
       - name: Publish to PyPI
+        if: env.DRY_RUN != 'true'
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           packages-dir: py/dist/
+
+      - name: Create local release tag
+        if: env.DRY_RUN != 'true'
+        run: git tag "$RELEASE_TAG" "$COMMIT_SHA"
 
       # Create GitHub Release
       - name: Generate release notes
         id: release_notes
         run: |
-          VERSION="${RELEASE_TAG#py-sdk-v}"
           RELEASE_NOTES=$(.github/scripts/generate-release-notes.sh "${{ env.RELEASE_TAG }}" "py/")
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
@@ -77,6 +105,7 @@ jobs:
           echo "release_name=Python SDK v${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
+        if: env.DRY_RUN != 'true'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         env:
           RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
@@ -87,11 +116,17 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: process.env.RELEASE_TAG,
+              target_commitish: process.env.COMMIT_SHA,
               name: process.env.RELEASE_NAME,
               body: process.env.RELEASE_NOTES,
               draft: false,
-              prerelease: false
+              prerelease: process.env.RELEASE_TYPE === "prerelease"
             });
+
+      - name: Summarize dry run
+        if: env.DRY_RUN == 'true'
+        run: |
+          echo "Dry run completed for $RELEASE_TAG from $COMMIT_SHA"
 
   notify-success:
     needs: [validate, build-and-publish]
@@ -99,12 +134,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Extract version from tag
-        id: version
-        run: |
-          TAG="${{ github.ref_name }}"
-          VERSION="${TAG#py-sdk-v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Post to Slack on success
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
@@ -112,16 +141,16 @@ jobs:
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
             channel: C0ABHT0SWA2
-            text: "✅ Python SDK v${{ steps.version.outputs.version }} published"
+            text: "${{ needs.validate.outputs.dry_run == 'true' && '🧪 Python SDK dry run succeeded' || format('✅ Python SDK {0} v{1} published', needs.validate.outputs.release_type, needs.validate.outputs.version) }}"
             blocks:
               - type: "header"
                 text:
                   type: "plain_text"
-                  text: "✅ Python SDK Published"
+                  text: "${{ needs.validate.outputs.dry_run == 'true' && '🧪 Python SDK Dry Run Succeeded' || '✅ Python SDK Published' }}"
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*Version:* ${{ steps.version.outputs.version }}\n*Package:* <https://pypi.org/project/braintrust/|braintrust>\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  text: "${{ needs.validate.outputs.dry_run == 'true' && format('*Mode:* dry run\n*Release type:* {0}\n*Version:* {1}\n*Ref:* {2}\n\n<{3}/{4}/actions/runs/{5}|View Run>', needs.validate.outputs.release_type, needs.validate.outputs.version, github.event.inputs.ref, github.server_url, github.repository, github.run_id) || format('*Release type:* {0}\n*Version:* {1}\n*Package:* <https://pypi.org/project/braintrust/|braintrust>\n\n<{2}/{3}/actions/runs/{4}|View Run>', needs.validate.outputs.release_type, needs.validate.outputs.version, github.server_url, github.repository, github.run_id) }}"
 
   notify-failure:
     needs: [validate, build-and-publish]
@@ -145,4 +174,4 @@ jobs:
               - type: "section"
                 text:
                   type: "mrkdwn"
-                  text: "*Tag:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  text: "*Release type:* ${{ github.event.inputs.release_type }}\n*Ref:* ${{ github.event.inputs.ref }}\n*Commit:* ${{ needs.validate.outputs.commit_sha || github.sha }}\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
