@@ -275,7 +275,7 @@ def _collect_prompt_function_defs(
 def _collect_evaluator_defs(
     project_ids: ProjectIdCache,
     functions: list[dict[str, Any]],
-    bundle_id: str,
+    bundle_id: str | None,
     if_exists: IfExists,
     source_file: str,
     evaluators: dict[str, Any],

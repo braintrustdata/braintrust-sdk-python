@@ -95,9 +95,6 @@ def register_sandbox(
     )
     project_id = project_response["project"]["id"]
 
-    if state.org_name is None:
-        raise ValueError("Organization name is required to register sandbox evals")
-
     runtime_context = {
         "runtime": "python",
         "version": f"{sys.version_info.major}.{sys.version_info.minor}",
@@ -118,13 +115,16 @@ def register_sandbox(
     response_raise_for_status(list_response)
     evaluator_definitions = cast(dict[str, Any], list_response.json())
 
-    functions: list[RegisteredSandboxFunction] = []
+    function_defs: list[dict[str, Any]] = []
+    slug_to_eval_name: dict[str, str] = {}
     for eval_name, evaluator_definition in evaluator_definitions.items():
+        slug = slugify.slugify(eval_name)
+        slug_to_eval_name[slug] = eval_name
         function_def: dict[str, Any] = {
             "project_id": project_id,
             "org_name": state.org_name,
             "name": eval_name,
-            "slug": slugify.slugify(eval_name, lowercase=True),
+            "slug": slug,
             "function_type": "sandbox",
             "function_data": {
                 "type": "code",
@@ -153,14 +153,19 @@ def register_sandbox(
         }
         if description is not None:
             function_def["description"] = description
+        function_defs.append(function_def)
 
-        response = state.api_conn().post_json("v1/function", function_def)
+    response = state.api_conn().post_json("insert-functions", {"functions": function_defs})
+
+    functions: list[RegisteredSandboxFunction] = []
+    for fn in response["functions"]:
+        eval_name = slug_to_eval_name[fn["slug"]]
         functions.append(
             RegisteredSandboxFunction(
                 eval_name=eval_name,
-                id=response["id"],
-                name=response["name"],
-                slug=response["slug"],
+                id=fn["id"],
+                name=eval_name,
+                slug=fn["slug"],
             )
         )
 

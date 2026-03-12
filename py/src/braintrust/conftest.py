@@ -113,6 +113,7 @@ _patch_vcr_aiohttp_stubs()
 def mock_project_ids():
     mock = MagicMock(spec=ProjectIdCache)
     mock.get.return_value = "project-123"
+    mock.get_by_name.return_value = "project-123"
     return mock
 
 
