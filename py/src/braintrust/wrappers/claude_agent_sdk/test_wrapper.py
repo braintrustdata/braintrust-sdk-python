@@ -36,9 +36,11 @@ from braintrust.wrappers.claude_agent_sdk._wrapper import (
     _extract_usage_from_result_message,
     _parse_tool_name,
     _serialize_content_blocks,
+    _serialize_hook_context,
     _serialize_system_message,
     _serialize_tool_result_output,
     _thread_local,
+    _wrap_client_hooks,
     _wrap_query_function,
 )
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
@@ -79,6 +81,120 @@ def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = Fa
         claude_agent_sdk.query = original_query
         claude_agent_sdk.SdkMcpTool = original_tool_class
         claude_agent_sdk.tool = original_tool_fn
+
+
+def test_wrap_client_hooks_fast_exits_for_same_hooks_object():
+    class FakeOptions:
+        def __init__(self, hooks: dict[str, list[Any]]):
+            self.hooks = hooks
+
+    class FakeClient:
+        def __init__(self, options: FakeOptions):
+            self.options = options
+
+    def callback(value: Any) -> Any:
+        return value
+
+    matcher = types.SimpleNamespace(hooks=[callback], matcher="tool")
+    hooks = {"PreToolUse": [matcher]}
+    client = FakeClient(FakeOptions(hooks))
+
+    _wrap_client_hooks(client)
+    wrapped_callback = matcher.hooks[0]
+    wrapped_ref = client.options._braintrust_wrapped_claude_hooks_ref
+
+    _wrap_client_hooks(client)
+
+    assert matcher.hooks[0] is wrapped_callback
+    assert client.options._braintrust_wrapped_claude_hooks_ref is wrapped_ref
+
+
+def test_wrap_client_hooks_rewraps_when_hooks_container_is_replaced():
+    class FakeOptions:
+        def __init__(self, hooks: dict[str, list[Any]]):
+            self.hooks = hooks
+
+    class FakeClient:
+        def __init__(self, options: FakeOptions):
+            self.options = options
+
+    def first_callback(value: Any) -> Any:
+        return value
+
+    def second_callback(value: Any) -> Any:
+        return value
+
+    first_matcher = types.SimpleNamespace(hooks=[first_callback], matcher="tool")
+    client = FakeClient(FakeOptions({"PreToolUse": [first_matcher]}))
+
+    _wrap_client_hooks(client)
+    assert hasattr(first_matcher.hooks[0], "_braintrust_wrapped_claude_hook")
+
+    second_matcher = types.SimpleNamespace(hooks=[second_callback], matcher="tool")
+    client.options.hooks = {"PreToolUse": [second_matcher]}
+
+    _wrap_client_hooks(client)
+
+    assert hasattr(second_matcher.hooks[0], "_braintrust_wrapped_claude_hook")
+    assert client.options._braintrust_wrapped_claude_hooks_ref is client.options.hooks
+
+
+@pytest.mark.asyncio
+async def test_wrap_query_function_forwards_unknown_kwargs():
+    call_log: dict[str, Any] = {}
+
+    async def original_query(*args: Any, **kwargs: Any) -> AsyncIterable[str]:
+        del args, kwargs
+        if False:
+            yield ""
+
+    class FakeWrappedClient:
+        def __init__(self, *args: Any, **kwargs: Any):
+            call_log["client_init_kwargs"] = kwargs
+
+        async def __aenter__(self) -> "FakeWrappedClient":
+            return self
+
+        async def __aexit__(self, *args: Any) -> None:
+            del args
+            return None
+
+        async def query(self, *args: Any, **kwargs: Any) -> None:
+            call_log["query_args"] = args
+            call_log["query_kwargs"] = kwargs
+
+        async def receive_response(self) -> AsyncIterable[str]:
+            yield "ok"
+
+    wrapped_query = _wrap_query_function(original_query, FakeWrappedClient)
+
+    messages = [
+        message
+        async for message in wrapped_query(
+            "Say hi",
+            options="opts",
+            transport="transport",
+            session_id="session-123",
+            custom_flag=True,
+        )
+    ]
+
+    assert messages == ["ok"]
+    assert call_log["client_init_kwargs"] == {"options": "opts", "transport": "transport"}
+    assert call_log["query_args"] == ("Say hi",)
+    assert call_log["query_kwargs"] == {"session_id": "session-123", "custom_flag": True}
+
+
+def test_serialize_hook_context_handles_cyclic_containers():
+    data: dict[str, Any] = {"name": "root", "signal": "omit-me"}
+    data["child"] = {"parent": data}
+
+    serialized = _serialize_hook_context(data)
+
+    assert serialized is not None
+    assert serialized["name"] == "root"
+    assert serialized["child"]["parent"] == "<circular reference>"
+    assert "signal" not in serialized
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
@@ -532,7 +648,7 @@ async def test_query_async_iterable(memory_logger, cassette_name, input_factory,
 
     wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         AssistantMessage(content=[TextBlock("done")]),
         ResultMessage(),
     ]
@@ -772,7 +888,7 @@ async def test_delegated_subagent_llm_and_tool_spans_nest_under_task_span(memory
 
     wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         AssistantMessage(
             content=[
                 ToolUseBlock(
@@ -851,7 +967,7 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
 
     wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         AssistantMessage(
             content=[
                 TextBlock("Launching the first delegated agent."),
@@ -983,7 +1099,7 @@ async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm
 
     wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         # Orchestrator responds with thinking + text + first Agent call
         AssistantMessage(
             content=[
@@ -1117,7 +1233,7 @@ async def test_agent_tool_spans_encapsulate_child_task_spans(memory_logger):
 
     wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         # Orchestrator responds with text + first Agent call
         AssistantMessage(
             content=[
@@ -1438,7 +1554,7 @@ async def test_receive_response_suppresses_cancelled_error_after_messages(memory
 
     wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         AssistantMessage(content=[TextBlock("The answer is 42.")]),
         ResultMessage(),
     ]
@@ -1480,7 +1596,7 @@ async def test_receive_response_suppresses_cancelled_error_mid_stream(memory_log
 
     wrapped_client_class = _create_client_wrapper_class(FakeCancelledMidStreamClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         AssistantMessage(content=[TextBlock("Partial answer.")]),
         # Second message never arrives — CancelledError fires instead.
         AssistantMessage(content=[TextBlock("This should not be received.")]),
@@ -1518,7 +1634,7 @@ async def test_genuine_task_cancel_propagates_after_receive_response(memory_logg
 
     wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
     client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+    client._client.messages = [
         AssistantMessage(content=[TextBlock("Hello.")]),
         ResultMessage(),
     ]

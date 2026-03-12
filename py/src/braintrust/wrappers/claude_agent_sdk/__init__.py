@@ -71,10 +71,17 @@ def setup_claude_agent_sdk(
 
         import claude_agent_sdk
 
+        def _module_references_any(module: object, references: list[tuple[str, object | None]]) -> bool:
+            for attr_name, original_value in references:
+                if original_value is not None and getattr(module, attr_name, None) is original_value:
+                    return True
+            return False
+
         original_client = claude_agent_sdk.ClaudeSDKClient if hasattr(claude_agent_sdk, "ClaudeSDKClient") else None
         original_query_fn = claude_agent_sdk.query if hasattr(claude_agent_sdk, "query") else None
         original_tool_class = claude_agent_sdk.SdkMcpTool if hasattr(claude_agent_sdk, "SdkMcpTool") else None
         original_tool_fn = claude_agent_sdk.tool if hasattr(claude_agent_sdk, "tool") else None
+        original_options_class = claude_agent_sdk.ClaudeAgentOptions if hasattr(claude_agent_sdk, "ClaudeAgentOptions") else None
 
         wrapped_client = None
         if original_client:
@@ -90,9 +97,15 @@ def setup_claude_agent_sdk(
             wrapped_query_fn = _wrap_query_function(original_query_fn, wrapped_client)
             claude_agent_sdk.query = wrapped_query_fn
 
+            query_patch_anchors = [
+                ("ClaudeSDKClient", original_client),
+                ("ClaudeAgentOptions", original_options_class),
+                ("SdkMcpTool", original_tool_class),
+                ("tool", original_tool_fn),
+            ]
             for module in list(sys.modules.values()):
-                if module and hasattr(module, "query"):
-                    if getattr(module, "query", None) is original_query_fn:
+                if module and getattr(module, "query", None) is original_query_fn:
+                    if _module_references_any(module, query_patch_anchors):
                         setattr(module, "query", wrapped_query_fn)
 
         if original_tool_class:

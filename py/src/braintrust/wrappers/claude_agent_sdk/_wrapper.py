@@ -4,9 +4,10 @@ import inspect
 import logging
 import threading
 import time
-from collections.abc import AsyncGenerator, AsyncIterable, Mapping
+from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any
 
+from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.wrappers._anthropic_utils import Wrapper, extract_anthropic_usage, finalize_anthropic_tokens
@@ -166,32 +167,8 @@ def _serialize_system_message(message: Any) -> dict[str, Any]:
 
     return serialized
 
-
-def _serialize_hook_value(value: Any) -> Any:
-    if value is None or isinstance(value, (bool, int, float, str)):
-        return value
-
-    if dataclasses.is_dataclass(value):
-        return _serialize_hook_value(dataclasses.asdict(value))
-
-    if isinstance(value, Mapping):
-        return {str(key): _serialize_hook_value(item) for key, item in value.items()}
-
-    if isinstance(value, (list, tuple)):
-        return [_serialize_hook_value(item) for item in value]
-
-    if hasattr(value, "__dict__"):
-        return {
-            key: _serialize_hook_value(item)
-            for key, item in vars(value).items()
-            if not key.startswith("_") and not callable(item)
-        }
-
-    return str(value)
-
-
 def _serialize_hook_context(context: Any) -> dict[str, Any] | None:
-    serialized = _serialize_hook_value(context)
+    serialized = bt_safe_deep_copy(context)
     if not isinstance(serialized, dict):
         return None
 
@@ -225,7 +202,7 @@ def _wrap_hook_callback(callback: Any, *, event_name: str, matcher: Any) -> Any:
         tool_use_id = kwargs.get("tool_use_id") if "tool_use_id" in kwargs else (args[1] if len(args) > 1 else None)
         context = kwargs.get("context") if "context" in kwargs else (args[2] if len(args) > 2 else None)
 
-        span_input = {"input": _serialize_hook_value(hook_input)}
+        span_input = {"input": bt_safe_deep_copy(hook_input)}
         if tool_use_id is not None:
             span_input["tool_use_id"] = str(tool_use_id)
 
@@ -250,7 +227,7 @@ def _wrap_hook_callback(callback: Any, *, event_name: str, matcher: Any) -> Any:
             result = callback(*args, **kwargs)
             if inspect.isawaitable(result):
                 result = await result
-            span.log(output=_serialize_hook_value(result))
+            span.log(output=bt_safe_deep_copy(result))
             return result
 
     wrapped_hook._braintrust_wrapped_claude_hook = True  # type: ignore[attr-defined]
@@ -282,6 +259,8 @@ def _wrap_options_hooks(options: Any) -> None:
     hooks_by_event = getattr(options, "hooks", None)
     if not isinstance(hooks_by_event, dict):
         return
+    if getattr(options, "_braintrust_wrapped_claude_hooks_ref", None) is hooks_by_event:
+        return
 
     for event_name, matchers in list(hooks_by_event.items()):
         if not isinstance(matchers, list):
@@ -295,6 +274,11 @@ def _wrap_options_hooks(options: Any) -> None:
             hooks_by_event[event_name] = wrapped_matchers
         except Exception:
             continue
+
+    try:
+        setattr(options, "_braintrust_wrapped_claude_hooks_ref", hooks_by_event)
+    except Exception:
+        pass
 
 
 def _wrap_client_hooks(client: Any) -> None:
@@ -908,26 +892,27 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             client = original_client_class(*args, **kwargs)
             _wrap_client_hooks(client)
             super().__init__(client)
-            self.__client = client
-            self.__last_prompt: str | None = None
-            self.__query_start_time: float | None = None
-            self.__captured_messages: list[dict[str, Any]] | None = None
+            self._client = client
+            self._last_prompt: str | None = None
+            self._query_start_time: float | None = None
+            self._captured_messages: list[dict[str, Any]] | None = None
 
         async def query(self, *args: Any, **kwargs: Any) -> Any:
             """Wrap query to capture the prompt and start time for tracing."""
             # Capture the time when query is called (when LLM call starts)
-            self.__query_start_time = time.time()
-            _wrap_client_hooks(self.__client)
+            self._query_start_time = time.time()
+            # Re-wrap if client.options.hooks was replaced after client construction.
+            _wrap_client_hooks(self._client)
 
             # Capture the prompt for use in receive_response
             prompt = args[0] if args else kwargs.get("prompt")
-            traced_prompt, self.__last_prompt, self.__captured_messages = _prepare_prompt_for_tracing(prompt)
+            traced_prompt, self._last_prompt, self._captured_messages = _prepare_prompt_for_tracing(prompt)
             if args:
                 args = (traced_prompt,) + args[1:]
             elif prompt is not None:
                 kwargs["prompt"] = traced_prompt
 
-            return await self.__client.query(*args, **kwargs)
+            return await self._client.query(*args, **kwargs)
 
         async def receive_response(self) -> AsyncGenerator[Any, None]:
             """Wrap receive_response to add tracing.
@@ -938,19 +923,19 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             - Manages span lifecycle (start/end)
             """
             async for message in _trace_message_stream(
-                self.__client.receive_response(),
-                prompt=self.__last_prompt,
-                query_start_time=self.__query_start_time,
-                captured_messages=self.__captured_messages,
+                self._client.receive_response(),
+                prompt=self._last_prompt,
+                query_start_time=self._query_start_time,
+                captured_messages=self._captured_messages,
             ):
                 yield message
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
-            await self.__client.__aenter__()
+            await self._client.__aenter__()
             return self
 
         async def __aexit__(self, *args: Any) -> None:
-            await self.__client.__aexit__(*args)
+            await self._client.__aexit__(*args)
 
     WrappedClaudeSDKClient._braintrust_wrapped_claude_client_class = True  # type: ignore[attr-defined]
     return WrappedClaudeSDKClient
@@ -961,16 +946,13 @@ def _wrap_query_function(query_fn: Any, client_class: Any) -> Any:
         return query_fn
 
     def wrapped_query(*args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
-        prompt = kwargs.get("prompt")
-        if prompt is None and args:
-            prompt = args[0]
-
-        options = kwargs.get("options")
-        transport = kwargs.get("transport")
+        query_kwargs = dict(kwargs)
+        options = query_kwargs.pop("options", None)
+        transport = query_kwargs.pop("transport", None)
 
         async def traced_generator() -> AsyncGenerator[Any, None]:
             async with client_class(options=options, transport=transport) as client:
-                await client.query(prompt)
+                await client.query(*args, **query_kwargs)
                 async for message in client.receive_response():
                     yield message
 
