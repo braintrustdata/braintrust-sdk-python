@@ -1,0 +1,809 @@
+{
+  "cassette_name": "test_calculator_hooks_create_function_spans",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "PostToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_1"
+                  ],
+                  "matcher": "mcp__calculator__calculator"
+                }
+              ],
+              "PreToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": "mcp__calculator__calculator"
+                }
+              ],
+              "Stop": [
+                {
+                  "hookCallbackIds": [
+                    "hook_2"
+                  ],
+                  "matcher": null
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_6e54ad84",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "claude-code",
+                "version": "2.1.71"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "631bb66e-4b87-41a8-a3b4-2f743ffbc6dd",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "631bb66e-4b87-41a8-a3b4-2f743ffbc6dd",
+            "response": {
+              "mcp_response": {
+                "id": 0,
+                "jsonrpc": "2.0",
+                "result": {
+                  "capabilities": {
+                    "tools": {}
+                  },
+                  "protocolVersion": "2024-11-05",
+                  "serverInfo": {
+                    "name": "calculator",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_6e54ad84",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Use the calculator tool to multiply 9 by 11.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "b89b9b93-c908-4765-b072-95df36a2e90b",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "b89b9b93-c908-4765-b072-95df36a2e90b",
+            "response": {
+              "mcp_response": {
+                "jsonrpc": "2.0",
+                "result": {}
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "claude-code",
+                "version": "2.1.71"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "6cc015ec-313e-44ee-a5e0-44fd629bdcdf",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "6cc015ec-313e-44ee-a5e0-44fd629bdcdf",
+            "response": {
+              "mcp_response": {
+                "id": 0,
+                "jsonrpc": "2.0",
+                "result": {
+                  "capabilities": {
+                    "tools": {}
+                  },
+                  "protocolVersion": "2024-11-05",
+                  "serverInfo": {
+                    "name": "calculator",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "4efcdd88-8673-414b-9cbd-9f22b86364ac",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "1306a28b-3230-4f72-8acc-87f5a2d5fa71",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "4efcdd88-8673-414b-9cbd-9f22b86364ac",
+            "response": {
+              "mcp_response": {
+                "jsonrpc": "2.0",
+                "result": {}
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "1306a28b-3230-4f72-8acc-87f5a2d5fa71",
+            "response": {
+              "mcp_response": {
+                "id": 1,
+                "jsonrpc": "2.0",
+                "result": {
+                  "tools": [
+                    {
+                      "description": "Performs multiplication for hook tracing coverage",
+                      "inputSchema": {
+                        "properties": {
+                          "a": {
+                            "description": "First number",
+                            "type": "number"
+                          },
+                          "b": {
+                            "description": "Second number",
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "a",
+                          "b"
+                        ],
+                        "type": "object"
+                      },
+                      "name": "calculator"
+                    }
+                  ]
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.71",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [
+          {
+            "name": "calculator",
+            "status": "connected"
+          }
+        ],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+        "skills": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "ToolSearch",
+          "mcp__calculator__calculator"
+        ],
+        "type": "system",
+        "uuid": "72fcb0a0-e712-4ac4-a140-8a09ddbc32ff"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user wants me to multiply 9 by 11 using the calculator tool. I can see there's a tool called `mcp__calculator__calculator` that performs multiplication for hook tracing coverage. I'll use that tool with a=9 and b=11.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_012QPyMdXbi4x22Pf5LiK8yo",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 4269
+            },
+            "cache_creation_input_tokens": 4269,
+            "cache_read_input_tokens": 13723,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+        "type": "assistant",
+        "uuid": "5d0f69bf-41ed-4bcd-a210-54805a0bfc42"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01LmVj6zso7bAy5NsttS4Hsk",
+              "input": {
+                "a": 9,
+                "b": 11
+              },
+              "name": "mcp__calculator__calculator",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_012QPyMdXbi4x22Pf5LiK8yo",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 4269
+            },
+            "cache_creation_input_tokens": 4269,
+            "cache_read_input_tokens": 13723,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+        "type": "assistant",
+        "uuid": "83f4c3da-4440-49bb-beef-9d88d5c94db6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+            "tool_input": {
+              "a": 9,
+              "b": 11
+            },
+            "tool_name": "mcp__calculator__calculator",
+            "tool_use_id": "toolu_01LmVj6zso7bAy5NsttS4Hsk",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01LmVj6zso7bAy5NsttS4Hsk"
+        },
+        "request_id": "ec2f22e9-e3b7-4332-bb45-ac73b24a3188",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "ec2f22e9-e3b7-4332-bb45-ac73b24a3188",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "Validated calculator input before execution.",
+                "hookEventName": "PreToolUse"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "claudecode/toolUseId": "toolu_01LmVj6zso7bAy5NsttS4Hsk",
+                "progressToken": 2
+              },
+              "arguments": {
+                "a": 9,
+                "b": 11
+              },
+              "name": "calculator"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "4ed8aa9d-4f47-4abe-a3e9-653cf7f0124e",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "4ed8aa9d-4f47-4abe-a3e9-653cf7f0124e",
+            "response": {
+              "mcp_response": {
+                "id": 2,
+                "jsonrpc": "2.0",
+                "result": {
+                  "content": [
+                    {
+                      "text": "The result of multiply(9, 11) is 99",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+            "tool_input": {
+              "a": 9,
+              "b": 11
+            },
+            "tool_name": "mcp__calculator__calculator",
+            "tool_response": [
+              {
+                "text": "The result of multiply(9, 11) is 99",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_01LmVj6zso7bAy5NsttS4Hsk",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01LmVj6zso7bAy5NsttS4Hsk"
+        },
+        "request_id": "747fba3b-4b7f-4b88-bb2d-02386af377d6",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "747fba3b-4b7f-4b88-bb2d-02386af377d6",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "Observed calculator tool output after execution.",
+                "hookEventName": "PostToolUse"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "The result of multiply(9, 11) is 99",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01LmVj6zso7bAy5NsttS4Hsk",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+        "tool_use_result": [
+          {
+            "text": "The result of multiply(9, 11) is 99",
+            "type": "text"
+          }
+        ],
+        "type": "user",
+        "uuid": "6164ab26-b537-43d7-92b0-3553132dbcc9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user asked me to multiply 9 by 11 using the calculator tool, and I did so successfully. The result is 99, which is correct (9 \u00d7 11 = 99). The system reminders indicate that there were pre and post tool use hooks that validated the input and observed the output.\n\nI should confirm the result to the user.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01FubpzasTaKg3ZhW4jN7zTt",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 244
+            },
+            "cache_creation_input_tokens": 244,
+            "cache_read_input_tokens": 17992,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+        "type": "assistant",
+        "uuid": "9481634b-7b59-4253-aeac-160f27c1e803"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Perfect! Using the calculator tool, **9 \u00d7 11 = 99**.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01FubpzasTaKg3ZhW4jN7zTt",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 244
+            },
+            "cache_creation_input_tokens": 244,
+            "cache_read_input_tokens": 17992,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+        "type": "assistant",
+        "uuid": "a91e9b4f-8a52-4247-b8a9-0feff46f54c7"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_2",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "Stop",
+            "last_assistant_message": "Perfect! Using the calculator tool, **9 \u00d7 11 = 99**.",
+            "permission_mode": "bypassPermissions",
+            "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+            "stop_hook_active": false,
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "6ea22cf9-62ad-4c14-a587-b63762a53a79"
+        },
+        "request_id": "912c439b-3176-456d-8e6c-b85574218228",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "912c439b-3176-456d-8e6c-b85574218228",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 3806,
+        "duration_ms": 3952,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 4513,
+            "cacheReadInputTokens": 31715,
+            "contextWindow": 200000,
+            "costUSD": 0.01005775,
+            "inputTokens": 20,
+            "maxOutputTokens": 32000,
+            "outputTokens": 245,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 2,
+        "permission_denials": [],
+        "result": "Perfect! Using the calculator tool, **9 \u00d7 11 = 99**.",
+        "session_id": "4b3d8af2-700b-4f92-8ea9-e8011c5cc0a9",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "total_cost_usd": 0.01005775,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 4513
+          },
+          "cache_creation_input_tokens": 4513,
+          "cache_read_input_tokens": 31715,
+          "inference_geo": "",
+          "input_tokens": 20,
+          "iterations": [],
+          "output_tokens": 245,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "d98041c6-914c-4788-9211-7fce19db91e9"
+      }
+    }
+  ],
+  "sdk_version": "0.1.48"
+}

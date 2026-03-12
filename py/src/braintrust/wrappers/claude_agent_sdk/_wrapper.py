@@ -1,9 +1,10 @@
 import asyncio
 import dataclasses
+import inspect
 import logging
 import threading
 import time
-from collections.abc import AsyncGenerator, AsyncIterable
+from collections.abc import AsyncGenerator, AsyncIterable, Mapping
 from typing import Any
 
 from braintrust.logger import start_span
@@ -81,6 +82,7 @@ _NOOP_ACTIVE_TOOL_SPAN = _NoopActiveToolSpan()
 def _log_tracing_warning(exc: Exception) -> None:
     log.warning("Error in tracing code", exc_info=exc)
 
+
 def _parse_tool_name(tool_name: Any) -> ParsedToolName:
     raw_name = str(tool_name) if tool_name is not None else DEFAULT_TOOL_NAME
 
@@ -136,6 +138,7 @@ def _serialize_tool_result_output(tool_result_block: Any) -> dict[str, Any]:
 
     return output
 
+
 def _serialize_system_message(message: Any) -> dict[str, Any]:
     serialized = {"subtype": getattr(message, "subtype", None)}
 
@@ -162,6 +165,137 @@ def _serialize_system_message(message: Any) -> dict[str, Any]:
             serialized["data"] = data
 
     return serialized
+
+
+def _serialize_hook_value(value: Any) -> Any:
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+
+    if dataclasses.is_dataclass(value):
+        return _serialize_hook_value(dataclasses.asdict(value))
+
+    if isinstance(value, Mapping):
+        return {str(key): _serialize_hook_value(item) for key, item in value.items()}
+
+    if isinstance(value, (list, tuple)):
+        return [_serialize_hook_value(item) for item in value]
+
+    if hasattr(value, "__dict__"):
+        return {
+            key: _serialize_hook_value(item)
+            for key, item in vars(value).items()
+            if not key.startswith("_") and not callable(item)
+        }
+
+    return str(value)
+
+
+def _serialize_hook_context(context: Any) -> dict[str, Any] | None:
+    serialized = _serialize_hook_value(context)
+    if not isinstance(serialized, dict):
+        return None
+
+    serialized.pop("signal", None)
+    return serialized or None
+
+
+def _callback_name(callback: Any) -> str:
+    return getattr(callback, "__qualname__", None) or getattr(callback, "__name__", None) or type(callback).__name__
+
+
+def _resolve_hook_parent(tool_use_id: Any) -> str | None:
+    tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
+    if tool_span_tracker is not None:
+        tool_span_export = tool_span_tracker.get_span_export(tool_use_id)
+        if tool_span_export is not None:
+            return tool_span_export
+
+    return getattr(_thread_local, "claude_agent_task_span_export", None)
+
+
+def _wrap_hook_callback(callback: Any, *, event_name: str, matcher: Any) -> Any:
+    if not callable(callback) or hasattr(callback, "_braintrust_wrapped_claude_hook"):
+        return callback
+
+    callback_name = _callback_name(callback)
+    serialized_matcher = None if matcher is None else str(matcher)
+
+    async def wrapped_hook(*args: Any, **kwargs: Any) -> Any:
+        hook_input = args[0] if args else kwargs.get("input")
+        tool_use_id = kwargs.get("tool_use_id") if "tool_use_id" in kwargs else (args[1] if len(args) > 1 else None)
+        context = kwargs.get("context") if "context" in kwargs else (args[2] if len(args) > 2 else None)
+
+        span_input = {"input": _serialize_hook_value(hook_input)}
+        if tool_use_id is not None:
+            span_input["tool_use_id"] = str(tool_use_id)
+
+        context_payload = _serialize_hook_context(context)
+        if context_payload:
+            span_input["context"] = context_payload
+
+        metadata = {
+            "hook.event": event_name,
+            "hook.callback": callback_name,
+        }
+        if serialized_matcher:
+            metadata["hook.matcher"] = serialized_matcher
+
+        with start_span(
+            name=f"{event_name} hook: {callback_name}",
+            span_attributes={"type": SpanTypeAttribute.FUNCTION},
+            input=span_input,
+            metadata=metadata,
+            parent=_resolve_hook_parent(tool_use_id),
+        ) as span:
+            result = callback(*args, **kwargs)
+            if inspect.isawaitable(result):
+                result = await result
+            span.log(output=_serialize_hook_value(result))
+            return result
+
+    wrapped_hook._braintrust_wrapped_claude_hook = True  # type: ignore[attr-defined]
+    return wrapped_hook
+
+
+def _wrap_hook_matcher(matcher: Any, *, event_name: str) -> Any:
+    hooks = getattr(matcher, "hooks", None)
+    if not isinstance(hooks, list):
+        return _wrap_hook_callback(matcher, event_name=event_name, matcher=None)
+
+    wrapped_hooks = [
+        _wrap_hook_callback(callback, event_name=event_name, matcher=getattr(matcher, "matcher", None))
+        for callback in hooks
+    ]
+    if hooks == wrapped_hooks:
+        return matcher
+
+    try:
+        setattr(matcher, "hooks", wrapped_hooks)
+        return matcher
+    except Exception:
+        if dataclasses.is_dataclass(matcher):
+            return dataclasses.replace(matcher, hooks=wrapped_hooks)
+        return matcher
+
+
+def _wrap_client_hooks(client: Any) -> None:
+    options = getattr(client, "options", None)
+    hooks_by_event = getattr(options, "hooks", None)
+    if not isinstance(hooks_by_event, dict):
+        return
+
+    for event_name, matchers in list(hooks_by_event.items()):
+        if not isinstance(matchers, list):
+            continue
+
+        wrapped_matchers = [_wrap_hook_matcher(matcher, event_name=str(event_name)) for matcher in matchers]
+        if wrapped_matchers == matchers:
+            continue
+
+        try:
+            hooks_by_event[event_name] = wrapped_matchers
+        except Exception:
+            continue
 
 
 def _create_tool_wrapper_class(original_tool_class: Any) -> Any:
@@ -630,6 +764,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
         def __init__(self, *args: Any, **kwargs: Any):
             # Create the original client instance
             client = original_client_class(*args, **kwargs)
+            _wrap_client_hooks(client)
             super().__init__(client)
             self.__client = client
             self.__last_prompt: str | None = None
@@ -641,6 +776,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             # Capture the time when query is called (when LLM call starts)
             self.__query_start_time = time.time()
             self.__captured_messages = None
+            _wrap_client_hooks(self.__client)
 
             # Capture the prompt for use in receive_response
             prompt = args[0] if args else kwargs.get("prompt")
@@ -695,6 +831,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 llm_tracker = LLMSpanTracker(query_start_time=self.__query_start_time)
                 tool_tracker = ToolSpanTracker()
                 task_event_span_tracker = TaskEventSpanTracker(span.export(), tool_tracker)
+                _thread_local.claude_agent_task_span_export = span.export()
                 _thread_local.tool_span_tracker = tool_tracker
 
                 try:
@@ -784,6 +921,8 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                     llm_tracker.cleanup()
                     if hasattr(_thread_local, "tool_span_tracker"):
                         delattr(_thread_local, "tool_span_tracker")
+                    if hasattr(_thread_local, "claude_agent_task_span_export"):
+                        delattr(_thread_local, "claude_agent_task_span_export")
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
             await self.__client.__aenter__()

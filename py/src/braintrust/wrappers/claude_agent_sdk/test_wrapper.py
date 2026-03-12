@@ -201,6 +201,126 @@ async def test_calculator_with_multiple_operations(memory_logger):
         assert any(parent_id in llm_span_ids for parent_id in tool_span["span_parents"])
 
 
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_calculator_hooks_create_function_spans(memory_logger):
+    assert not memory_logger.pop()
+    if not _sdk_version_at_least("0.1.48"):
+        pytest.skip("Claude Agent SDK hooks are only covered in this test on 0.1.48+")
+    raw_tool_name = "mcp__calculator__calculator"
+
+    with _patched_claude_sdk(wrap_client=True, wrap_tool_class=True):
+        hook_calls: list[tuple[str, str | None]] = []
+
+        async def calculator_handler(args):
+            result = args["a"] * args["b"]
+            return {
+                "content": [{"type": "text", "text": f"The result of multiply({args['a']}, {args['b']}) is {result}"}],
+            }
+
+        async def pre_tool_hook(hook_input, tool_use_id, context):
+            hook_calls.append(("PreToolUse", tool_use_id))
+            assert hook_input["tool_name"] == raw_tool_name
+            assert hook_input["tool_use_id"] == tool_use_id
+            assert context["signal"] is None
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "additionalContext": "Validated calculator input before execution.",
+                }
+            }
+
+        async def post_tool_hook(hook_input, tool_use_id, context):
+            hook_calls.append(("PostToolUse", tool_use_id))
+            assert hook_input["tool_name"] == raw_tool_name
+            assert hook_input["tool_use_id"] == tool_use_id
+            assert context["signal"] is None
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "PostToolUse",
+                    "additionalContext": "Observed calculator tool output after execution.",
+                }
+            }
+
+        async def stop_hook(hook_input, tool_use_id, context):
+            hook_calls.append(("Stop", tool_use_id))
+            assert hook_input["hook_event_name"] == "Stop"
+            assert context["signal"] is None
+            return {}
+
+        calculator_tool = claude_agent_sdk.SdkMcpTool(
+            name="calculator",
+            description="Performs multiplication for hook tracing coverage",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "a": {"type": "number", "description": "First number"},
+                    "b": {"type": "number", "description": "Second number"},
+                },
+                "required": ["a", "b"],
+            },
+            handler=calculator_handler,
+        )
+
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model=TEST_MODEL,
+            permission_mode="bypassPermissions",
+            hooks={
+                "PreToolUse": [claude_agent_sdk.HookMatcher(matcher=raw_tool_name, hooks=[pre_tool_hook])],
+                "PostToolUse": [claude_agent_sdk.HookMatcher(matcher=raw_tool_name, hooks=[post_tool_hook])],
+                "Stop": [claude_agent_sdk.HookMatcher(hooks=[stop_hook])],
+            },
+            mcp_servers={
+                "calculator": claude_agent_sdk.create_sdk_mcp_server(
+                    name="calculator",
+                    version="1.0.0",
+                    tools=[calculator_tool],
+                )
+            },
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_calculator_hooks_create_function_spans",
+            prompt="",
+            options=options,
+        )
+
+        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+            await client.query("Use the calculator tool to multiply 9 by 11.")
+            async for message in client.receive_response():
+                if type(message).__name__ == "ResultMessage":
+                    break
+
+    assert hook_calls, "Expected Claude Agent SDK hook callbacks to run"
+    assert [event_name for event_name, _ in hook_calls] == ["PreToolUse", "PostToolUse", "Stop"]
+
+    spans = memory_logger.pop()
+    task_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    function_spans = _find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
+
+    _assert_llm_spans_have_time_to_first_token(llm_spans)
+
+    calculator_tool_span = _find_span_by_name(tool_spans, "calculator")
+    pre_hook_span = next(span for span in function_spans if span.get("metadata", {}).get("hook.event") == "PreToolUse")
+    post_hook_span = next(span for span in function_spans if span.get("metadata", {}).get("hook.event") == "PostToolUse")
+    stop_hook_span = next(span for span in function_spans if span.get("metadata", {}).get("hook.event") == "Stop")
+
+    assert pre_hook_span["root_span_id"] == task_span["span_id"]
+    assert post_hook_span["root_span_id"] == task_span["span_id"]
+    assert stop_hook_span["root_span_id"] == task_span["span_id"]
+    assert pre_hook_span["metadata"]["hook.matcher"] == raw_tool_name
+    assert post_hook_span["metadata"]["hook.matcher"] == raw_tool_name
+    assert pre_hook_span["input"]["input"]["tool_name"] == raw_tool_name
+    assert post_hook_span["input"]["input"]["tool_name"] == raw_tool_name
+    assert pre_hook_span["input"]["tool_use_id"] == post_hook_span["input"]["tool_use_id"]
+    assert pre_hook_span["output"]["hookSpecificOutput"]["hookEventName"] == "PreToolUse"
+    assert post_hook_span["output"]["hookSpecificOutput"]["hookEventName"] == "PostToolUse"
+    assert calculator_tool_span["span_id"] in pre_hook_span["span_parents"]
+    assert calculator_tool_span["span_id"] in post_hook_span["span_parents"]
+    assert task_span["span_id"] in stop_hook_span["span_parents"]
+
+
 def _make_message(content: str) -> dict:
     """Create a streaming format message dict."""
     return {"type": "user", "message": {"role": "user", "content": content}}
