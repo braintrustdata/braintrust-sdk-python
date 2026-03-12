@@ -235,6 +235,7 @@ def _wrap_tool_handler(handler: Any, tool_name: Any) -> Any:
 class ToolSpanTracker:
     def __init__(self):
         self._active_spans: dict[str, _ActiveToolSpan] = {}
+        self._pending_task_link_tool_use_ids: set[str] = set()
 
     def start_tool_spans(self, message: Any, llm_span_export: str | None) -> None:
         if llm_span_export is None or not hasattr(message, "content"):
@@ -278,6 +279,8 @@ class ToolSpanTracker:
                 display_name=parsed_tool_name.display_name,
                 input=getattr(block, "input", None),
             )
+            if parsed_tool_name.display_name == "Agent":
+                self._pending_task_link_tool_use_ids.add(tool_use_id)
 
     def finish_tool_spans(self, message: Any) -> None:
         if not hasattr(message, "content"):
@@ -303,6 +306,16 @@ class ToolSpanTracker:
     def has_active_spans(self) -> bool:
         return bool(self._active_spans)
 
+    @property
+    def pending_task_link_tool_use_ids(self) -> frozenset[str]:
+        return frozenset(self._pending_task_link_tool_use_ids)
+
+    def mark_task_started(self, tool_use_id: Any) -> None:
+        if tool_use_id is None:
+            return
+
+        self._pending_task_link_tool_use_ids.discard(str(tool_use_id))
+
     def acquire_span_for_handler(self, tool_name: Any, args: Any) -> _ActiveToolSpan | None:
         parsed_tool_name = _parse_tool_name(tool_name)
         candidate_names = list(dict.fromkeys((parsed_tool_name.raw_name, parsed_tool_name.display_name, str(tool_name))))
@@ -323,6 +336,7 @@ class ToolSpanTracker:
 
     def _end_tool_span(self, tool_use_id: str, tool_result_block: Any | None = None, end_time: float | None = None) -> None:
         active_tool_span = self._active_spans.pop(tool_use_id, None)
+        self._pending_task_link_tool_use_ids.discard(tool_use_id)
         if active_tool_span is None:
             return
 
@@ -491,7 +505,9 @@ class TaskEventSpanTracker:
             self._active_task_order.append(task_id)
             tool_use_id = getattr(message, "tool_use_id", None)
             if tool_use_id is not None:
-                self._task_span_by_tool_use_id[str(tool_use_id)] = task_span
+                tool_use_id = str(tool_use_id)
+                self._task_span_by_tool_use_id[tool_use_id] = task_span
+                self._tool_tracker.mark_task_started(tool_use_id)
         else:
             update: dict[str, Any] = {}
             metadata = self._metadata(message)
@@ -693,9 +709,12 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
 
                         if message_type == MessageClassName.ASSISTANT:
                             if llm_tracker.current_span and tool_tracker.has_active_spans:
+                                active_subagent_tool_use_ids = (
+                                    task_event_span_tracker.active_tool_use_ids | tool_tracker.pending_task_link_tool_use_ids
+                                )
                                 tool_tracker.cleanup(
                                     end_time=llm_tracker.get_next_start_time(),
-                                    exclude_tool_use_ids=task_event_span_tracker.active_tool_use_ids,
+                                    exclude_tool_use_ids=active_subagent_tool_use_ids,
                                 )
                             llm_parent_export = task_event_span_tracker.parent_export_for_message(
                                 message,

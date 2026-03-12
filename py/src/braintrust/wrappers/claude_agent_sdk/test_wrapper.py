@@ -460,6 +460,69 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
     ), "Expected delegated tool spans to nest under delegated LLM spans"
 
 
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_five_parallel_bundled_subagents_preserve_task_parenting(memory_logger, tmp_path):
+    assert not memory_logger.pop()
+    if not _sdk_version_at_least("0.1.48"):
+        pytest.skip("Bundled subagent task events were not observed on older Claude Agent SDK versions")
+
+    workspace = tmp_path / "subagent_parenting_workspace"
+    workspace.mkdir()
+    for i in range(5):
+        (workspace / f"note_{i}.txt").write_text(f"label={i}\nowner=owner_{i}\n", encoding="utf-8")
+
+    with _patched_claude_sdk(wrap_client=True):
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model=TEST_MODEL,
+            cwd=workspace,
+            permission_mode="bypassPermissions",
+            max_turns=20,
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_five_parallel_bundled_subagents_preserve_task_parenting",
+            prompt="",
+            options=options,
+        )
+
+        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+            await client.query(
+                "Use exactly five bundled general-purpose subagents, one for each file note_0.txt through note_4.txt. "
+                "In your first assistant response, emit all five Agent tool calls before waiting for any subagent result. "
+                "Do not emit explanatory text before or between the Agent tool calls if the tool API allows it. "
+                "Each delegated subagent must use Read on exactly its assigned file and return only label=<n> | owner=<owner>. "
+                "After all five finish, reply with exactly five lines in order 0 through 4. "
+                "Do not answer directly without using all five subagents."
+            )
+            async for message in client.receive_response():
+                if type(message).__name__ == "ResultMessage":
+                    break
+
+    spans = memory_logger.pop()
+    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    root_task_span = _find_span_by_name(task_spans, "Claude Agent")
+    subagent_spans = [span for span in task_spans if span["span_id"] != root_task_span["span_id"]]
+    assert len(subagent_spans) == 5, f"Expected 5 delegated task spans, got {len(subagent_spans)}"
+
+    agent_tool_spans_by_id = {
+        span.get("metadata", {}).get("gen_ai.tool.call.id"): span
+        for span in tool_spans
+        if span["span_attributes"]["name"] == "Agent"
+    }
+    assert len(agent_tool_spans_by_id) == 5, f"Expected 5 Agent tool spans, got {len(agent_tool_spans_by_id)}"
+
+    for subagent_span in subagent_spans:
+        tool_use_id = subagent_span.get("metadata", {}).get("tool_use_id")
+        assert tool_use_id, f"Expected task span metadata to include tool_use_id: {subagent_span}"
+        agent_tool_span = agent_tool_spans_by_id.get(tool_use_id)
+        assert agent_tool_span is not None, f"Missing Agent tool span for tool_use_id={tool_use_id}"
+        assert agent_tool_span["span_id"] in subagent_span["span_parents"]
+        assert root_task_span["span_id"] not in subagent_span["span_parents"]
+        assert agent_tool_span["metrics"]["end"] >= subagent_span["metrics"]["end"]
+
+
 @pytest.mark.asyncio
 async def test_delegated_subagent_llm_and_tool_spans_nest_under_task_span(memory_logger):
     assert not memory_logger.pop()
