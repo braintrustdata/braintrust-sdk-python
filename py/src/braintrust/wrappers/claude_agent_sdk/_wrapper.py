@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 import logging
 import threading
@@ -763,8 +764,12 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                             task_events.append(_serialize_system_message(message))
 
                         yield message
-                except Exception:
-                    raise
+                except asyncio.CancelledError:
+                    current_task = asyncio.current_task()
+                    if current_task is not None and current_task.cancelling():
+                        raise
+                    if final_results:
+                        span.log(output=final_results[-1])
                 else:
                     if final_results:
                         span.log(output=final_results[-1])

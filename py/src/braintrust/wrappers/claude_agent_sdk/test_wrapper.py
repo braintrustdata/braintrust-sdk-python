@@ -1120,6 +1120,21 @@ class FakeClaudeSDKClient:
         return None
 
 
+class FakeCancelledClaudeSDKClient(FakeClaudeSDKClient):
+    """Simulates the real error: messages are yielded, then CancelledError on stream close.
+
+    The real error comes from anyio's MemoryObjectReceiveStream when the Claude
+    subprocess connection closes — the internal ``await receive_event.wait()``
+    raises ``asyncio.CancelledError`` even though the asyncio Task itself is
+    *not* being cancelled.
+    """
+
+    async def receive_response(self):
+        for message in self.messages:
+            yield message
+        raise asyncio.CancelledError
+
+
 def _find_spans_by_type(spans: list[dict[str, Any]], span_type: str) -> list[dict[str, Any]]:
     return [span for span in spans if span.get("span_attributes", {}).get("type") == span_type]
 
@@ -1148,6 +1163,63 @@ def _find_span_by_name(spans: list[dict[str, Any]], name: str) -> dict[str, Any]
 def _clear_tool_span_tracker() -> None:
     if hasattr(_thread_local, "tool_span_tracker"):
         delattr(_thread_local, "tool_span_tracker")
+
+
+@pytest.mark.asyncio
+async def test_receive_response_suppresses_unexpected_cancelled_error_empty_stream(memory_logger):
+    """CancelledError on an empty stream is suppressed without error."""
+    assert not memory_logger.pop()
+
+    wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
+    client = wrapped_client_class()
+    # No messages — CancelledError fires immediately on iteration.
+
+    await client.query("Delegate this task.")
+    received = []
+    async for message in client.receive_response():
+        received.append(message)
+
+    assert received == []
+
+    spans = memory_logger.pop()
+    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    assert len(task_spans) == 1
+    assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
+    assert task_spans[0].get("error") is None
+
+
+@pytest.mark.asyncio
+async def test_receive_response_suppresses_cancelled_error_after_messages(memory_logger):
+    """CancelledError after real messages still logs output and doesn't propagate."""
+    assert not memory_logger.pop()
+
+    wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
+    client = wrapped_client_class()
+    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+        AssistantMessage(content=[TextBlock("The answer is 42.")]),
+        ResultMessage(),
+    ]
+
+    await client.query("What is the meaning of life?")
+    received = []
+    async for message in client.receive_response():
+        received.append(message)
+
+    # All messages yielded before the CancelledError should be received.
+    assert len(received) == 2
+
+    spans = memory_logger.pop()
+    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    assert len(task_spans) == 1
+    task_span = task_spans[0]
+    assert task_span["span_attributes"]["name"] == "Claude Agent"
+    assert task_span.get("error") is None
+    # Output should still be logged despite the CancelledError at stream close.
+    assert task_span.get("output") is not None
+    assert task_span["output"]["role"] == "assistant"
+
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    assert len(llm_spans) == 1
 
 
 @pytest.mark.parametrize(
