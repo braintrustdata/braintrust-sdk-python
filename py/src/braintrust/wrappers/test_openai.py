@@ -378,6 +378,7 @@ def test_openai_responses_sparse_indices(memory_logger):
     # No spans should be generated from this unit test
     assert not memory_logger.pop()
 
+
 @pytest.mark.vcr
 def test_openai_embeddings(memory_logger):
     assert not memory_logger.pop()
@@ -1211,6 +1212,241 @@ def test_openai_responses_not_given_filtering(memory_logger):
 
 
 @pytest.mark.vcr
+def test_openai_responses_with_raw_response_create(memory_logger):
+    """Test that with_raw_response.create returns HTTP response headers AND generates a tracing span."""
+    assert not memory_logger.pop()
+
+    # Unwrapped client: with_raw_response should work but produce no spans.
+    unwrapped_client = openai.OpenAI()
+    raw = unwrapped_client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    assert raw.headers  # HTTP response headers are accessible
+    response = raw.parse()
+    assert response.output
+    content = response.output[0].content[0].text
+    assert "24" in content or "twenty-four" in content.lower()
+    assert not memory_logger.pop()
+
+    # Wrapped client: with_raw_response should ALSO generate a span.
+    client = wrap_openai(openai.OpenAI())
+    start = time.time()
+    raw = client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    end = time.time()
+
+    # The raw HTTP response (with headers) must be returned to the caller.
+    assert raw.headers
+    response = raw.parse()
+    assert response.output
+    content = response.output[0].content[0].text
+    assert "24" in content or "twenty-four" in content.lower()
+
+    # A span must have been recorded with correct metrics and metadata.
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert len(span["output"]) > 0
+    span_content = span["output"][0]["content"][0]["text"]
+    assert "24" in span_content or "twenty-four" in span_content.lower()
+
+
+@pytest.mark.vcr
+def test_openai_responses_with_raw_response_create_stream(memory_logger):
+    """Test that with_raw_response.create with stream=True returns headers AND generates a tracing span."""
+    assert not memory_logger.pop()
+
+    # Unwrapped client: headers accessible, stream iterable via parse(), no spans.
+    unwrapped_client = openai.OpenAI()
+    raw = unwrapped_client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        stream=True,
+    )
+    assert raw.headers
+    chunks = []
+    for chunk in raw.parse():
+        if chunk.type == "response.output_text.delta":
+            chunks.append(chunk.delta)
+    assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
+    assert not memory_logger.pop()
+
+    # Wrapped client: headers still accessible, parse() yields traced stream, span generated.
+    client = wrap_openai(openai.OpenAI())
+    start = time.time()
+    raw = client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        stream=True,
+    )
+    assert raw.headers
+    stream = raw.parse()
+    assert stream.response  # SDK-specific attribute preserved
+    chunks = []
+    for chunk in stream:
+        if chunk.type == "response.output_text.delta":
+            chunks.append(chunk.delta)
+    end = time.time()
+    assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+
+
+@pytest.mark.vcr
+def test_openai_responses_with_raw_response_parse(memory_logger):
+    """Test that with_raw_response.parse returns HTTP response headers AND generates a tracing span."""
+    assert not memory_logger.pop()
+
+    class NumberAnswer(BaseModel):
+        value: int
+        reasoning: str
+
+    unwrapped_client = openai.OpenAI()
+    raw_parse = unwrapped_client.responses.with_raw_response.parse(
+        model=TEST_MODEL, input=TEST_PROMPT, text_format=NumberAnswer
+    )
+    assert raw_parse.headers
+    parse_response = raw_parse.parse()
+    assert parse_response.output_parsed
+    assert parse_response.output_parsed.value == 24
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    start = time.time()
+    raw_parse = client.responses.with_raw_response.parse(model=TEST_MODEL, input=TEST_PROMPT, text_format=NumberAnswer)
+    end = time.time()
+
+    assert raw_parse.headers
+    parse_response = raw_parse.parse()
+    assert parse_response.output_parsed
+    assert parse_response.output_parsed.value == 24
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert span["output"][0]["content"][0]["parsed"]["value"] == 24
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_responses_with_raw_response_async(memory_logger):
+    """Async version of test_openai_responses_with_raw_response."""
+    assert not memory_logger.pop()
+
+    unwrapped_client = AsyncOpenAI()
+    raw = await unwrapped_client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    assert raw.headers
+    response = raw.parse()
+    assert response.output
+    content = response.output[0].content[0].text
+    assert "24" in content or "twenty-four" in content.lower()
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+    start = time.time()
+    raw = await client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    end = time.time()
+
+    assert raw.headers
+    response = raw.parse()
+    assert response.output
+    content = response.output[0].content[0].text
+    assert "24" in content or "twenty-four" in content.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert TEST_PROMPT in str(span["input"])
+    assert len(span["output"]) > 0
+    span_content = span["output"][0]["content"][0]["text"]
+    assert "24" in span_content or "twenty-four" in span_content.lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_responses_with_raw_response_create_stream_async(memory_logger):
+    """Async version of test_openai_responses_with_raw_response_create_stream."""
+    assert not memory_logger.pop()
+
+    # Unwrapped client: headers accessible, stream iterable via parse(), no spans.
+    unwrapped_client = AsyncOpenAI()
+    raw = await unwrapped_client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        stream=True,
+    )
+    assert raw.headers
+    chunks = []
+    async for chunk in raw.parse():
+        if chunk.type == "response.output_text.delta":
+            chunks.append(chunk.delta)
+    assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
+    assert not memory_logger.pop()
+
+    # Wrapped client: headers still accessible, parse() yields traced stream, span generated.
+    client = wrap_openai(AsyncOpenAI())
+    start = time.time()
+    raw = await client.responses.with_raw_response.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        stream=True,
+    )
+    assert raw.headers
+    stream = raw.parse()
+    assert stream.response  # SDK-specific attribute preserved
+    chunks = []
+    async for chunk in stream:
+        if chunk.type == "response.output_text.delta":
+            chunks.append(chunk.delta)
+    end = time.time()
+    assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+
+
+@pytest.mark.vcr
 def test_openai_parallel_tool_calls(memory_logger):
     """Test parallel tool calls with both streaming and non-streaming modes."""
     assert not memory_logger.pop()
@@ -1934,6 +2170,7 @@ class TestAutoInstrumentOpenAI:
     def test_auto_instrument_openai(self):
         """Test auto_instrument patches OpenAI, creates spans, and uninstrument works."""
         verify_autoinstrument_script("test_auto_openai.py")
+
 
 class TestZAICompatibleOpenAI:
     """Tests for validating some ZAI compatibility with OpenAI wrapper."""
