@@ -39,6 +39,7 @@ from braintrust.wrappers.claude_agent_sdk._wrapper import (
     _serialize_system_message,
     _serialize_tool_result_output,
     _thread_local,
+    _wrap_query_function,
 )
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
@@ -56,13 +57,18 @@ def memory_logger():
 
 
 @contextmanager
-def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = False):
+def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = False, wrap_query: bool = False):
     original_client = claude_agent_sdk.ClaudeSDKClient
+    original_query = claude_agent_sdk.query
     original_tool_class = claude_agent_sdk.SdkMcpTool
     original_tool_fn = claude_agent_sdk.tool
 
+    wrapped_client_class = _create_client_wrapper_class(original_client) if (wrap_client or wrap_query) else original_client
+
     if wrap_client:
-        claude_agent_sdk.ClaudeSDKClient = _create_client_wrapper_class(original_client)
+        claude_agent_sdk.ClaudeSDKClient = wrapped_client_class
+    if wrap_query:
+        claude_agent_sdk.query = _wrap_query_function(original_query, wrapped_client_class)
     if wrap_tool_class:
         claude_agent_sdk.SdkMcpTool = _create_tool_wrapper_class(original_tool_class)
 
@@ -70,6 +76,7 @@ def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = Fa
         yield
     finally:
         claude_agent_sdk.ClaudeSDKClient = original_client
+        claude_agent_sdk.query = original_query
         claude_agent_sdk.SdkMcpTool = original_tool_class
         claude_agent_sdk.tool = original_tool_fn
 
@@ -321,6 +328,124 @@ async def test_calculator_hooks_create_function_spans(memory_logger):
     assert task_span["span_id"] in stop_hook_span["span_parents"]
 
 
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_module_level_query_hooks_create_function_spans(memory_logger):
+    assert not memory_logger.pop()
+    if not _sdk_version_at_least("0.1.48"):
+        pytest.skip("Claude Agent SDK hooks are only covered in this test on 0.1.48+")
+    raw_tool_name = "mcp__calculator__calculator"
+
+    with _patched_claude_sdk(wrap_query=True, wrap_tool_class=True):
+        hook_calls: list[tuple[str, str | None]] = []
+
+        async def calculator_handler(args):
+            result = args["a"] + args["b"]
+            return {
+                "content": [{"type": "text", "text": f"The result of add({args['a']}, {args['b']}) is {result}"}],
+            }
+
+        async def pre_tool_hook(hook_input, tool_use_id, context):
+            hook_calls.append(("PreToolUse", tool_use_id))
+            assert hook_input["tool_name"] == raw_tool_name
+            assert context["signal"] is None
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "additionalContext": "Module-level query pre hook ran.",
+                }
+            }
+
+        async def post_tool_hook(hook_input, tool_use_id, context):
+            hook_calls.append(("PostToolUse", tool_use_id))
+            assert hook_input["tool_name"] == raw_tool_name
+            assert context["signal"] is None
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "PostToolUse",
+                    "additionalContext": "Module-level query post hook ran.",
+                }
+            }
+
+        async def stop_hook(hook_input, tool_use_id, context):
+            hook_calls.append(("Stop", tool_use_id))
+            assert hook_input["hook_event_name"] == "Stop"
+            assert context["signal"] is None
+            return {}
+
+        calculator_tool = claude_agent_sdk.SdkMcpTool(
+            name="calculator",
+            description="Performs addition for module-level query hook tracing coverage",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "a": {"type": "number", "description": "First number"},
+                    "b": {"type": "number", "description": "Second number"},
+                },
+                "required": ["a", "b"],
+            },
+            handler=calculator_handler,
+        )
+
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model=TEST_MODEL,
+            permission_mode="bypassPermissions",
+            hooks={
+                "PreToolUse": [claude_agent_sdk.HookMatcher(matcher=raw_tool_name, hooks=[pre_tool_hook])],
+                "PostToolUse": [claude_agent_sdk.HookMatcher(matcher=raw_tool_name, hooks=[post_tool_hook])],
+                "Stop": [claude_agent_sdk.HookMatcher(hooks=[stop_hook])],
+            },
+            mcp_servers={
+                "calculator": claude_agent_sdk.create_sdk_mcp_server(
+                    name="calculator",
+                    version="1.0.0",
+                    tools=[calculator_tool],
+                )
+            },
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_module_level_query_hooks_create_function_spans",
+            prompt="",
+            options=options,
+        )
+
+        messages = [
+            message
+            async for message in claude_agent_sdk.query(
+                prompt="Use the calculator tool to add 9 and 11.",
+                options=options,
+                transport=transport,
+            )
+        ]
+
+    assert any(type(message).__name__ == "ResultMessage" for message in messages)
+    assert [event_name for event_name, _ in hook_calls] == ["PreToolUse", "PostToolUse", "Stop"]
+
+    spans = memory_logger.pop()
+    task_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    function_spans = _find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
+
+    _assert_llm_spans_have_time_to_first_token(llm_spans)
+
+    calculator_tool_span = _find_span_by_name(tool_spans, "calculator")
+    pre_hook_span = next(span for span in function_spans if span.get("metadata", {}).get("hook.event") == "PreToolUse")
+    post_hook_span = next(span for span in function_spans if span.get("metadata", {}).get("hook.event") == "PostToolUse")
+    stop_hook_span = next(span for span in function_spans if span.get("metadata", {}).get("hook.event") == "Stop")
+
+    assert pre_hook_span["root_span_id"] == task_span["span_id"]
+    assert post_hook_span["root_span_id"] == task_span["span_id"]
+    assert stop_hook_span["root_span_id"] == task_span["span_id"]
+    assert pre_hook_span["metadata"]["hook.matcher"] == raw_tool_name
+    assert post_hook_span["metadata"]["hook.matcher"] == raw_tool_name
+    assert pre_hook_span["input"]["input"]["tool_name"] == raw_tool_name
+    assert post_hook_span["input"]["input"]["tool_name"] == raw_tool_name
+    assert calculator_tool_span["span_id"] in pre_hook_span["span_parents"]
+    assert calculator_tool_span["span_id"] in post_hook_span["span_parents"]
+    assert task_span["span_id"] in stop_hook_span["span_parents"]
+
+
 def _make_message(content: str) -> dict:
     """Create a streaming format message dict."""
     return {"type": "user", "message": {"role": "user", "content": content}}
@@ -458,9 +583,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
                 "Have that agent inspect the current repository and reply with only the repository name. "
                 "Do not answer directly without using the subagent."
             )
-            async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
-                    break
+            _ = [message async for message in client.receive_response()]
 
     spans = memory_logger.pop()
 
@@ -1905,12 +2028,14 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
     """Regression test for https://github.com/braintrustdata/braintrust-sdk-python/issues/7."""
     assert not memory_logger.pop()
     original_client = claude_agent_sdk.ClaudeSDKClient
+    original_query = claude_agent_sdk.query
     original_tool_class = claude_agent_sdk.SdkMcpTool
     original_tool_fn = claude_agent_sdk.tool
 
     consumer_module_name = "test_issue7_repro_module"
     consumer_module = types.ModuleType(consumer_module_name)
     consumer_module.ClaudeSDKClient = original_client
+    consumer_module.query = original_query
     consumer_module.ClaudeAgentOptions = claude_agent_sdk.ClaudeAgentOptions
     consumer_module.SdkMcpTool = original_tool_class
     consumer_module.tool = original_tool_fn
@@ -1921,10 +2046,21 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
 
     with _patched_claude_sdk():
         assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+        wrapped_client = claude_agent_sdk.ClaudeSDKClient
+        wrapped_query = claude_agent_sdk.query
+        wrapped_tool_class = claude_agent_sdk.SdkMcpTool
+        wrapped_tool_fn = claude_agent_sdk.tool
+        assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+        assert claude_agent_sdk.ClaudeSDKClient is wrapped_client
+        assert claude_agent_sdk.query is wrapped_query
+        assert claude_agent_sdk.SdkMcpTool is wrapped_tool_class
+        assert claude_agent_sdk.tool is wrapped_tool_fn
         assert getattr(consumer_module, "ClaudeSDKClient") is not original_client
+        assert getattr(consumer_module, "query") is not original_query
         assert getattr(consumer_module, "SdkMcpTool") is not original_tool_class
         assert getattr(consumer_module, "tool") is not original_tool_fn
         assert claude_agent_sdk.SdkMcpTool is not original_tool_class
+        assert claude_agent_sdk.query is not original_query
         assert claude_agent_sdk.tool is not original_tool_fn
 
         async def main() -> None:
@@ -1945,6 +2081,20 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
                 async for message in client.receive_response():
                     received_types.append(type(message).__name__)
 
+            query_messages = [
+                type(message).__name__
+                async for message in getattr(consumer_module, "query")(
+                    prompt="Say hi",
+                    options=options,
+                    transport=make_cassette_transport(
+                        cassette_name="test_auto_claude_agent_sdk",
+                        prompt="",
+                        options=options,
+                    ),
+                )
+            ]
+            received_types.extend(query_messages)
+
         await main()
 
     assert loop_errors == []
@@ -1953,6 +2103,6 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
 
     spans = memory_logger.pop()
     task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
-    assert len(task_spans) == 1
+    assert len(task_spans) == 2
     assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
     assert task_spans[0]["input"] == "Say hi"

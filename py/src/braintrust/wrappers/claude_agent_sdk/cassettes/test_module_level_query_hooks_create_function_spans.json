@@ -1,0 +1,809 @@
+{
+  "cassette_name": "test_module_level_query_hooks_create_function_spans",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "PostToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_1"
+                  ],
+                  "matcher": "mcp__calculator__calculator"
+                }
+              ],
+              "PreToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": "mcp__calculator__calculator"
+                }
+              ],
+              "Stop": [
+                {
+                  "hookCallbackIds": [
+                    "hook_2"
+                  ],
+                  "matcher": null
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_894843ac",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "claude-code",
+                "version": "2.1.71"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "031b3874-b1ac-44f7-be10-11e47d95d37e",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "031b3874-b1ac-44f7-be10-11e47d95d37e",
+            "response": {
+              "mcp_response": {
+                "id": 0,
+                "jsonrpc": "2.0",
+                "result": {
+                  "capabilities": {
+                    "tools": {}
+                  },
+                  "protocolVersion": "2024-11-05",
+                  "serverInfo": {
+                    "name": "calculator",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_894843ac",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "568fc46b-9739-40ce-9b7e-43186b671ef4",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Use the calculator tool to add 9 and 11.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "568fc46b-9739-40ce-9b7e-43186b671ef4",
+            "response": {
+              "mcp_response": {
+                "jsonrpc": "2.0",
+                "result": {}
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "claude-code",
+                "version": "2.1.71"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "87c59faf-34e0-4c01-900f-957c7d200eae",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "87c59faf-34e0-4c01-900f-957c7d200eae",
+            "response": {
+              "mcp_response": {
+                "id": 0,
+                "jsonrpc": "2.0",
+                "result": {
+                  "capabilities": {
+                    "tools": {}
+                  },
+                  "protocolVersion": "2024-11-05",
+                  "serverInfo": {
+                    "name": "calculator",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "323c0375-ff52-43de-9ce5-8bdec4acee93",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "229c909b-4315-432a-883c-f4716072ef23",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "323c0375-ff52-43de-9ce5-8bdec4acee93",
+            "response": {
+              "mcp_response": {
+                "jsonrpc": "2.0",
+                "result": {}
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "229c909b-4315-432a-883c-f4716072ef23",
+            "response": {
+              "mcp_response": {
+                "id": 1,
+                "jsonrpc": "2.0",
+                "result": {
+                  "tools": [
+                    {
+                      "description": "Performs addition for module-level query hook tracing coverage",
+                      "inputSchema": {
+                        "properties": {
+                          "a": {
+                            "description": "First number",
+                            "type": "number"
+                          },
+                          "b": {
+                            "description": "Second number",
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "a",
+                          "b"
+                        ],
+                        "type": "object"
+                      },
+                      "name": "calculator"
+                    }
+                  ]
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.71",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [
+          {
+            "name": "calculator",
+            "status": "connected"
+          }
+        ],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+        "skills": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "ToolSearch",
+          "mcp__calculator__calculator"
+        ],
+        "type": "system",
+        "uuid": "4f2587bf-85ba-42d7-8190-4f8cc05f316b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user wants me to add 9 and 11. I should use the calculator tool that's available. Looking at the available tools, I see:\n\n`mcp__calculator__calculator` - \"Performs addition for module-level query hook tracing coverage\" with parameters `a` (First number) and `b` (Second number).\n\nLet me call this tool with a=9 and b=11.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01Qw3DiLcfVRapP2enFCAeQR",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 17996,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+        "type": "assistant",
+        "uuid": "589aaa68-eb31-4268-ad68-dfc985be3bb6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01M4T9fDCNdLGKxU283Hmrqd",
+              "input": {
+                "a": 9,
+                "b": 11
+              },
+              "name": "mcp__calculator__calculator",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01Qw3DiLcfVRapP2enFCAeQR",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 17996,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+        "type": "assistant",
+        "uuid": "f2a4a7ef-420b-45c6-86d3-ac4ed46955f2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+            "tool_input": {
+              "a": 9,
+              "b": 11
+            },
+            "tool_name": "mcp__calculator__calculator",
+            "tool_use_id": "toolu_01M4T9fDCNdLGKxU283Hmrqd",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01M4T9fDCNdLGKxU283Hmrqd"
+        },
+        "request_id": "8522f766-1d9d-47ae-92fe-3cf5dc636f15",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "8522f766-1d9d-47ae-92fe-3cf5dc636f15",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "Module-level query pre hook ran.",
+                "hookEventName": "PreToolUse"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "claudecode/toolUseId": "toolu_01M4T9fDCNdLGKxU283Hmrqd",
+                "progressToken": 2
+              },
+              "arguments": {
+                "a": 9,
+                "b": 11
+              },
+              "name": "calculator"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "c795ee84-1bf2-4e9b-8e5a-35bd4177ab3d",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "c795ee84-1bf2-4e9b-8e5a-35bd4177ab3d",
+            "response": {
+              "mcp_response": {
+                "id": 2,
+                "jsonrpc": "2.0",
+                "result": {
+                  "content": [
+                    {
+                      "text": "The result of add(9, 11) is 20",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+            "tool_input": {
+              "a": 9,
+              "b": 11
+            },
+            "tool_name": "mcp__calculator__calculator",
+            "tool_response": [
+              {
+                "text": "The result of add(9, 11) is 20",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_01M4T9fDCNdLGKxU283Hmrqd",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01M4T9fDCNdLGKxU283Hmrqd"
+        },
+        "request_id": "88e168b7-dc9b-4a20-9325-10488b34f9ac",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "88e168b7-dc9b-4a20-9325-10488b34f9ac",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "Module-level query post hook ran.",
+                "hookEventName": "PostToolUse"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "The result of add(9, 11) is 20",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01M4T9fDCNdLGKxU283Hmrqd",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+        "tool_use_result": [
+          {
+            "text": "The result of add(9, 11) is 20",
+            "type": "text"
+          }
+        ],
+        "type": "user",
+        "uuid": "cbae9da8-0876-4c44-9d2e-648c4bca9707"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The calculator has successfully computed the result. 9 + 11 = 20. The system reminders are indicating that the module-level query hooks ran before and after the calculator tool was used. I should provide the answer to the user clearly.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01My238Hqy18vNb8pduY7pm9",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 274
+            },
+            "cache_creation_input_tokens": 274,
+            "cache_read_input_tokens": 17996,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 2,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+        "type": "assistant",
+        "uuid": "72da1415-4852-430f-b1d4-9e63197e6309"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "The result of adding 9 and 11 is **20**.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01My238Hqy18vNb8pduY7pm9",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 274
+            },
+            "cache_creation_input_tokens": 274,
+            "cache_read_input_tokens": 17996,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 2,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+        "type": "assistant",
+        "uuid": "e0f17e68-60db-48cc-a981-5a76db950bcc"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_2",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "Stop",
+            "last_assistant_message": "The result of adding 9 and 11 is **20**.",
+            "permission_mode": "bypassPermissions",
+            "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+            "stop_hook_active": false,
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "9918cb25-d1e4-4252-b9fa-5c3cd8fdc20b"
+        },
+        "request_id": "3dc974e3-7e37-48ec-bf03-f16c728595ed",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "3dc974e3-7e37-48ec-bf03-f16c728595ed",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 2778,
+        "duration_ms": 2909,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 274,
+            "cacheReadInputTokens": 35992,
+            "contextWindow": 200000,
+            "costUSD": 0.0052017,
+            "inputTokens": 20,
+            "maxOutputTokens": 32000,
+            "outputTokens": 248,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 2,
+        "permission_denials": [],
+        "result": "The result of adding 9 and 11 is **20**.",
+        "session_id": "203a5363-075a-4076-803d-05dc23b65746",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "total_cost_usd": 0.0052017,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 274
+          },
+          "cache_creation_input_tokens": 274,
+          "cache_read_input_tokens": 35992,
+          "inference_geo": "",
+          "input_tokens": 20,
+          "iterations": [],
+          "output_tokens": 248,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "dc470e66-2788-45bd-942a-68e080503174"
+      }
+    }
+  ],
+  "sdk_version": "0.1.48"
+}

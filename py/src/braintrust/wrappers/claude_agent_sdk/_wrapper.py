@@ -278,8 +278,7 @@ def _wrap_hook_matcher(matcher: Any, *, event_name: str) -> Any:
         return matcher
 
 
-def _wrap_client_hooks(client: Any) -> None:
-    options = getattr(client, "options", None)
+def _wrap_options_hooks(options: Any) -> None:
     hooks_by_event = getattr(options, "hooks", None)
     if not isinstance(hooks_by_event, dict):
         return
@@ -298,8 +297,145 @@ def _wrap_client_hooks(client: Any) -> None:
             continue
 
 
+def _wrap_client_hooks(client: Any) -> None:
+    _wrap_options_hooks(getattr(client, "options", None))
+
+
+def _prepare_prompt_for_tracing(prompt: Any) -> tuple[Any, str | None, list[dict[str, Any]] | None]:
+    if prompt is None:
+        return prompt, None, None
+
+    if isinstance(prompt, str):
+        return prompt, prompt, None
+
+    if isinstance(prompt, AsyncIterable):
+        captured: list[dict[str, Any]] = []
+
+        async def capturing_wrapper() -> AsyncGenerator[dict[str, Any], None]:
+            async for msg in prompt:
+                captured.append(msg)
+                yield msg
+
+        return capturing_wrapper(), None, captured
+
+    return prompt, str(prompt), None
+
+
+async def _trace_message_stream(
+    generator: AsyncIterable[Any],
+    *,
+    prompt: Any,
+    query_start_time: float | None,
+    captured_messages: list[dict[str, Any]] | None = None,
+) -> AsyncGenerator[Any, None]:
+    initial_input = prompt if isinstance(prompt, str) and prompt else None
+
+    with start_span(
+        name=CLAUDE_AGENT_TASK_SPAN_NAME,
+        span_attributes={"type": SpanTypeAttribute.TASK},
+        input=initial_input,
+    ) as span:
+        input_needs_update = captured_messages is not None
+
+        final_results: list[dict[str, Any]] = []
+        task_events: list[dict[str, Any]] = []
+        llm_tracker = LLMSpanTracker(query_start_time=query_start_time)
+        tool_tracker = ToolSpanTracker()
+        task_event_span_tracker = TaskEventSpanTracker(span.export(), tool_tracker)
+        _thread_local.claude_agent_task_span_export = span.export()
+        _thread_local.tool_span_tracker = tool_tracker
+
+        try:
+            async for message in generator:
+                if input_needs_update:
+                    captured_input = captured_messages if captured_messages else []
+                    if captured_input:
+                        span.log(input=captured_input)
+                    input_needs_update = False
+
+                message_type = type(message).__name__
+
+                if message_type == MessageClassName.ASSISTANT:
+                    if llm_tracker.current_span and tool_tracker.has_active_spans:
+                        active_subagent_tool_use_ids = (
+                            task_event_span_tracker.active_tool_use_ids | tool_tracker.pending_task_link_tool_use_ids
+                        )
+                        tool_tracker.cleanup(
+                            end_time=llm_tracker.get_next_start_time(),
+                            exclude_tool_use_ids=active_subagent_tool_use_ids,
+                        )
+                    llm_parent_export = task_event_span_tracker.parent_export_for_message(
+                        message,
+                        span.export(),
+                    )
+                    final_content, extended_existing_span = llm_tracker.start_llm_span(
+                        message,
+                        prompt,
+                        final_results,
+                        parent_export=llm_parent_export,
+                    )
+                    tool_tracker.start_tool_spans(message, llm_tracker.current_span_export)
+                    if final_content:
+                        if extended_existing_span and final_results and final_results[-1].get("role") == "assistant":
+                            final_results[-1] = final_content
+                        else:
+                            final_results.append(final_content)
+                elif message_type == MessageClassName.USER:
+                    tool_tracker.finish_tool_spans(message)
+                    has_tool_results = False
+                    if hasattr(message, "content"):
+                        has_tool_results = any(
+                            type(block).__name__ == BlockClassName.TOOL_RESULT for block in message.content
+                        )
+                        content = _serialize_content_blocks(message.content)
+                        final_results.append({"content": content, "role": "user"})
+                    if has_tool_results:
+                        llm_tracker.mark_next_llm_start()
+                elif message_type == MessageClassName.RESULT:
+                    if hasattr(message, "usage"):
+                        usage_metrics = _extract_usage_from_result_message(message)
+                        llm_tracker.log_usage(usage_metrics)
+
+                    result_metadata = {
+                        k: v
+                        for k, v in {
+                            "num_turns": getattr(message, "num_turns", None),
+                            "session_id": getattr(message, "session_id", None),
+                        }.items()
+                        if v is not None
+                    }
+                    span.log(metadata=result_metadata)
+                elif message_type in SYSTEM_MESSAGE_TYPES:
+                    task_event_span_tracker.process(message)
+                    task_events.append(_serialize_system_message(message))
+
+                yield message
+        except asyncio.CancelledError:
+            # The CancelledError may come from the subprocess transport
+            # (e.g., anyio internal cleanup when subagents complete) rather
+            # than a genuine external cancellation. We suppress it here so
+            # the response stream ends cleanly.
+            if final_results:
+                span.log(output=final_results[-1])
+        else:
+            if final_results:
+                span.log(output=final_results[-1])
+        finally:
+            if task_events:
+                span.log(metadata={"task_events": task_events})
+            task_event_span_tracker.cleanup()
+            tool_tracker.cleanup()
+            llm_tracker.cleanup()
+            if hasattr(_thread_local, "tool_span_tracker"):
+                delattr(_thread_local, "tool_span_tracker")
+            if hasattr(_thread_local, "claude_agent_task_span_export"):
+                delattr(_thread_local, "claude_agent_task_span_export")
+
+
 def _create_tool_wrapper_class(original_tool_class: Any) -> Any:
     """Creates a wrapper class for SdkMcpTool that re-enters active TOOL spans."""
+    if getattr(original_tool_class, "_braintrust_wrapped_claude_tool_class", False):
+        return original_tool_class
 
     class WrappedSdkMcpTool(original_tool_class):  # type: ignore[valid-type,misc]
         def __init__(
@@ -315,11 +451,14 @@ def _create_tool_wrapper_class(original_tool_class: Any) -> Any:
 
         __class_getitem__ = classmethod(lambda cls, params: cls)  # type: ignore[assignment]
 
+    WrappedSdkMcpTool._braintrust_wrapped_claude_tool_class = True  # type: ignore[attr-defined]
     return WrappedSdkMcpTool
 
 
 def _wrap_tool_factory(tool_fn: Any) -> Any:
     """Wrap the tool() factory so decorated handlers inherit the active TOOL span."""
+    if getattr(tool_fn, "_braintrust_wrapped_claude_tool_factory", False):
+        return tool_fn
 
     def wrapped_tool(*args: Any, **kwargs: Any) -> Any:
         result = tool_fn(*args, **kwargs)
@@ -335,6 +474,7 @@ def _wrap_tool_factory(tool_fn: Any) -> Any:
 
         return wrapped_decorator
 
+    wrapped_tool._braintrust_wrapped_claude_tool_factory = True  # type: ignore[attr-defined]
     return wrapped_tool
 
 
@@ -759,6 +899,8 @@ def _message_starts_subagent_tool(message: Any) -> bool:
 
 def _create_client_wrapper_class(original_client_class: Any) -> Any:
     """Creates a wrapper class for ClaudeSDKClient that wraps query and receive_response."""
+    if getattr(original_client_class, "_braintrust_wrapped_claude_client_class", False):
+        return original_client_class
 
     class WrappedClaudeSDKClient(Wrapper):
         def __init__(self, *args: Any, **kwargs: Any):
@@ -775,33 +917,15 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             """Wrap query to capture the prompt and start time for tracing."""
             # Capture the time when query is called (when LLM call starts)
             self.__query_start_time = time.time()
-            self.__captured_messages = None
             _wrap_client_hooks(self.__client)
 
             # Capture the prompt for use in receive_response
             prompt = args[0] if args else kwargs.get("prompt")
-
-            if prompt is not None:
-                if isinstance(prompt, str):
-                    self.__last_prompt = prompt
-                elif isinstance(prompt, AsyncIterable):
-                    # AsyncIterable[dict] - wrap it to capture messages as they're yielded
-                    captured: list[dict[str, Any]] = []
-                    self.__captured_messages = captured
-                    self.__last_prompt = None  # Will be set after messages are captured
-
-                    async def capturing_wrapper() -> AsyncGenerator[dict[str, Any], None]:
-                        async for msg in prompt:
-                            captured.append(msg)
-                            yield msg
-
-                    # Replace the prompt with our capturing wrapper
-                    if args:
-                        args = (capturing_wrapper(),) + args[1:]
-                    else:
-                        kwargs["prompt"] = capturing_wrapper()
-                else:
-                    self.__last_prompt = str(prompt)
+            traced_prompt, self.__last_prompt, self.__captured_messages = _prepare_prompt_for_tracing(prompt)
+            if args:
+                args = (traced_prompt,) + args[1:]
+            elif prompt is not None:
+                kwargs["prompt"] = traced_prompt
 
             return await self.__client.query(*args, **kwargs)
 
@@ -813,116 +937,13 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             - Sets the span as current so tool calls automatically nest under it
             - Manages span lifecycle (start/end)
             """
-            generator = self.__client.receive_response()
-
-            # Determine the initial input - may be updated later if using async generator
-            initial_input = self.__last_prompt if self.__last_prompt else None
-
-            with start_span(
-                name=CLAUDE_AGENT_TASK_SPAN_NAME,
-                span_attributes={"type": SpanTypeAttribute.TASK},
-                input=initial_input,
-            ) as span:
-                # If we're capturing async messages, we'll update input after they're consumed
-                input_needs_update = self.__captured_messages is not None
-
-                final_results: list[dict[str, Any]] = []
-                task_events: list[dict[str, Any]] = []
-                llm_tracker = LLMSpanTracker(query_start_time=self.__query_start_time)
-                tool_tracker = ToolSpanTracker()
-                task_event_span_tracker = TaskEventSpanTracker(span.export(), tool_tracker)
-                _thread_local.claude_agent_task_span_export = span.export()
-                _thread_local.tool_span_tracker = tool_tracker
-
-                try:
-                    async for message in generator:
-                        # Update input from captured async messages (once, after they're consumed)
-                        if input_needs_update:
-                            captured_input = self.__captured_messages if self.__captured_messages else []
-                            if captured_input:
-                                span.log(input=captured_input)
-                            input_needs_update = False
-
-                        message_type = type(message).__name__
-
-                        if message_type == MessageClassName.ASSISTANT:
-                            if llm_tracker.current_span and tool_tracker.has_active_spans:
-                                active_subagent_tool_use_ids = (
-                                    task_event_span_tracker.active_tool_use_ids | tool_tracker.pending_task_link_tool_use_ids
-                                )
-                                tool_tracker.cleanup(
-                                    end_time=llm_tracker.get_next_start_time(),
-                                    exclude_tool_use_ids=active_subagent_tool_use_ids,
-                                )
-                            llm_parent_export = task_event_span_tracker.parent_export_for_message(
-                                message,
-                                span.export(),
-                            )
-                            final_content, extended_existing_span = llm_tracker.start_llm_span(
-                                message,
-                                self.__last_prompt,
-                                final_results,
-                                parent_export=llm_parent_export,
-                            )
-                            tool_tracker.start_tool_spans(message, llm_tracker.current_span_export)
-                            if final_content:
-                                if extended_existing_span and final_results and final_results[-1].get("role") == "assistant":
-                                    final_results[-1] = final_content
-                                else:
-                                    final_results.append(final_content)
-                        elif message_type == MessageClassName.USER:
-                            tool_tracker.finish_tool_spans(message)
-                            has_tool_results = False
-                            if hasattr(message, "content"):
-                                has_tool_results = any(
-                                    type(block).__name__ == BlockClassName.TOOL_RESULT
-                                    for block in message.content
-                                )
-                                content = _serialize_content_blocks(message.content)
-                                final_results.append({"content": content, "role": "user"})
-                            if has_tool_results:
-                                llm_tracker.mark_next_llm_start()
-                        elif message_type == MessageClassName.RESULT:
-                            if hasattr(message, "usage"):
-                                usage_metrics = _extract_usage_from_result_message(message)
-                                llm_tracker.log_usage(usage_metrics)
-
-                            result_metadata = {
-                                k: v
-                                for k, v in {
-                                    "num_turns": getattr(message, "num_turns", None),
-                                    "session_id": getattr(message, "session_id", None),
-                                }.items()
-                                if v is not None
-                            }
-                            span.log(metadata=result_metadata)
-                        elif message_type in SYSTEM_MESSAGE_TYPES:
-                            task_event_span_tracker.process(message)
-                            task_events.append(_serialize_system_message(message))
-
-                        yield message
-                except asyncio.CancelledError:
-                    # The CancelledError may come from the subprocess transport
-                    # (e.g., anyio internal cleanup when subagents complete) rather
-                    # than a genuine external cancellation. We suppress it here so
-                    # the response stream ends cleanly. If the caller genuinely
-                    # cancelled the task, they still have pending cancellation
-                    # requests that will fire at their next await point.
-                    if final_results:
-                        span.log(output=final_results[-1])
-                else:
-                    if final_results:
-                        span.log(output=final_results[-1])
-                finally:
-                    if task_events:
-                        span.log(metadata={"task_events": task_events})
-                    task_event_span_tracker.cleanup()
-                    tool_tracker.cleanup()
-                    llm_tracker.cleanup()
-                    if hasattr(_thread_local, "tool_span_tracker"):
-                        delattr(_thread_local, "tool_span_tracker")
-                    if hasattr(_thread_local, "claude_agent_task_span_export"):
-                        delattr(_thread_local, "claude_agent_task_span_export")
+            async for message in _trace_message_stream(
+                self.__client.receive_response(),
+                prompt=self.__last_prompt,
+                query_start_time=self.__query_start_time,
+                captured_messages=self.__captured_messages,
+            ):
+                yield message
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
             await self.__client.__aenter__()
@@ -931,7 +952,32 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
         async def __aexit__(self, *args: Any) -> None:
             await self.__client.__aexit__(*args)
 
+    WrappedClaudeSDKClient._braintrust_wrapped_claude_client_class = True  # type: ignore[attr-defined]
     return WrappedClaudeSDKClient
+
+
+def _wrap_query_function(query_fn: Any, client_class: Any) -> Any:
+    if getattr(query_fn, "_braintrust_wrapped_claude_query", False):
+        return query_fn
+
+    def wrapped_query(*args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
+        prompt = kwargs.get("prompt")
+        if prompt is None and args:
+            prompt = args[0]
+
+        options = kwargs.get("options")
+        transport = kwargs.get("transport")
+
+        async def traced_generator() -> AsyncGenerator[Any, None]:
+            async with client_class(options=options, transport=transport) as client:
+                await client.query(prompt)
+                async for message in client.receive_response():
+                    yield message
+
+        return traced_generator()
+
+    wrapped_query._braintrust_wrapped_claude_query = True  # type: ignore[attr-defined]
+    return wrapped_query
 
 
 def _create_llm_span_for_messages(

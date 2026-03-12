@@ -19,7 +19,12 @@ import logging
 
 from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
-from ._wrapper import _create_client_wrapper_class, _create_tool_wrapper_class, _wrap_tool_factory
+from ._wrapper import (
+    _create_client_wrapper_class,
+    _create_tool_wrapper_class,
+    _wrap_query_function,
+    _wrap_tool_factory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +72,11 @@ def setup_claude_agent_sdk(
         import claude_agent_sdk
 
         original_client = claude_agent_sdk.ClaudeSDKClient if hasattr(claude_agent_sdk, "ClaudeSDKClient") else None
+        original_query_fn = claude_agent_sdk.query if hasattr(claude_agent_sdk, "query") else None
         original_tool_class = claude_agent_sdk.SdkMcpTool if hasattr(claude_agent_sdk, "SdkMcpTool") else None
         original_tool_fn = claude_agent_sdk.tool if hasattr(claude_agent_sdk, "tool") else None
 
+        wrapped_client = None
         if original_client:
             wrapped_client = _create_client_wrapper_class(original_client)
             claude_agent_sdk.ClaudeSDKClient = wrapped_client
@@ -78,6 +85,15 @@ def setup_claude_agent_sdk(
                 if module and hasattr(module, "ClaudeSDKClient"):
                     if getattr(module, "ClaudeSDKClient", None) is original_client:
                         setattr(module, "ClaudeSDKClient", wrapped_client)
+
+        if original_query_fn and wrapped_client:
+            wrapped_query_fn = _wrap_query_function(original_query_fn, wrapped_client)
+            claude_agent_sdk.query = wrapped_query_fn
+
+            for module in list(sys.modules.values()):
+                if module and hasattr(module, "query"):
+                    if getattr(module, "query", None) is original_query_fn:
+                        setattr(module, "query", wrapped_query_fn)
 
         if original_tool_class:
             wrapped_tool_class = _create_tool_wrapper_class(original_tool_class)
