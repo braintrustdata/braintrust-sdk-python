@@ -1222,6 +1222,83 @@ async def test_receive_response_suppresses_cancelled_error_after_messages(memory
     assert len(llm_spans) == 1
 
 
+class FakeCancelledMidStreamClaudeSDKClient(FakeClaudeSDKClient):
+    """CancelledError fires *between* messages, simulating cancellation mid-stream."""
+
+    async def receive_response(self):
+        yield self.messages[0]
+        raise asyncio.CancelledError
+
+
+@pytest.mark.asyncio
+async def test_receive_response_suppresses_cancelled_error_mid_stream(memory_logger):
+    """CancelledError between messages still yields partial results and logs output."""
+    assert not memory_logger.pop()
+
+    wrapped_client_class = _create_client_wrapper_class(FakeCancelledMidStreamClaudeSDKClient)
+    client = wrapped_client_class()
+    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+        AssistantMessage(content=[TextBlock("Partial answer.")]),
+        # Second message never arrives — CancelledError fires instead.
+        AssistantMessage(content=[TextBlock("This should not be received.")]),
+    ]
+
+    await client.query("Tell me something.")
+    received = []
+    async for message in client.receive_response():
+        received.append(message)
+
+    # Only the first message should be received.
+    assert len(received) == 1
+
+    spans = memory_logger.pop()
+    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    assert len(task_spans) == 1
+    task_span = task_spans[0]
+    assert task_span.get("error") is None
+    assert task_span.get("output") is not None
+    assert task_span["output"]["role"] == "assistant"
+
+
+@pytest.mark.asyncio
+async def test_genuine_task_cancel_propagates_after_receive_response(memory_logger):
+    """When the asyncio Task is genuinely cancelled, CancelledError propagates
+    at the caller's next await — not swallowed forever.
+
+    This verifies that suppressing CancelledError inside the generator does not
+    permanently disarm a real ``task.cancel()`` on Python 3.12+ (where the
+    cancellation counter is decremented when the exception is caught).  On
+    Python < 3.12 the behaviour is the same because the task cancel flag is
+    sticky until the CancelledError propagates.
+    """
+    assert not memory_logger.pop()
+
+    wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
+    client = wrapped_client_class()
+    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
+        AssistantMessage(content=[TextBlock("Hello.")]),
+        ResultMessage(),
+    ]
+
+    await client.query("Hi")
+
+    async def _drain_and_sleep():
+        """Consume the stream, then await something else."""
+        async for _ in client.receive_response():
+            pass
+        # This is the "next await" after the generator ends.
+        await asyncio.sleep(0)
+
+    task = asyncio.ensure_future(_drain_and_sleep())
+    # Let the task start and begin iterating.
+    await asyncio.sleep(0)
+    # Genuinely cancel the task from outside.
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+
 @pytest.mark.parametrize(
     "tool_name,expected",
     [

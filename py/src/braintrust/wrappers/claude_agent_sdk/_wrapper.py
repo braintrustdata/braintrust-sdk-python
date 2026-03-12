@@ -765,9 +765,12 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
 
                         yield message
                 except asyncio.CancelledError:
-                    current_task = asyncio.current_task()
-                    if current_task is not None and current_task.cancelling():
-                        raise
+                    # The CancelledError may come from the subprocess transport
+                    # (e.g., anyio internal cleanup when subagents complete) rather
+                    # than a genuine external cancellation. We suppress it here so
+                    # the response stream ends cleanly. If the caller genuinely
+                    # cancelled the task, they still have pending cancellation
+                    # requests that will fire at their next await point.
                     if final_results:
                         span.log(output=final_results[-1])
                 else:
