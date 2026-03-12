@@ -12,12 +12,32 @@ works with and without different dependencies. A few commands to check out:
 
 import glob
 import os
+import pathlib
+import re
 import sys
 import tempfile
 
 import nox
 
 
+<<<<<<< HEAD
+=======
+def _pinned_python_version():
+    """Return the (major, minor) Python version pinned in ../.tool-versions, or None."""
+    tool_versions = pathlib.Path(__file__).parent.parent / ".tool-versions"
+    try:
+        for line in tool_versions.read_text().splitlines():
+            m = re.match(r"^python\s+(\d+)\.(\d+)", line)
+            if m:
+                return (int(m.group(1)), int(m.group(2)))
+    except OSError:
+        pass
+    return None
+
+
+_PINNED_PYTHON = _pinned_python_version()
+
+>>>>>>> f9cedc0c (handle when pylint is called)
 # much faster than pip
 nox.options.default_venv_backend = "uv"
 
@@ -294,9 +314,6 @@ def test_otel_not_installed(session):
 @nox.session()
 def pylint(session):
     # pylint needs everything so we don't trigger missing import errors
-    # Skip on Python < 3.10 because some deps (like temporalio 1.19+) require 3.10+
-    if sys.version_info < (3, 10):
-        session.skip("pylint requires Python >= 3.10 for full dependency support")
     session.install(".[all]")
     session.install("-r", "requirements-dev.txt")
     session.install(*VENDOR_PACKAGES)
@@ -312,6 +329,10 @@ def pylint(session):
     files = result.strip().splitlines()
     if not files:
         return
+    # scripts/ may use APIs only available in the latest pinned Python version
+    # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
+    if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
+        files = [f for f in files if not f.startswith("scripts/")]
     session.run("pylint", "--errors-only", *files)
 
 
