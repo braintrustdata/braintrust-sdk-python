@@ -33,7 +33,7 @@ test-core:
 	nox -s test_core
 
 _template-version:
-	@bash scripts/template-version.sh
+	@$(PYTHON) scripts/template-version.py
 
 build: clean _template-version
 	$(PYTHON) -m build

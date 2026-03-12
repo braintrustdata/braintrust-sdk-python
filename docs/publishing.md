@@ -61,12 +61,35 @@ This is useful for:
 - validating a release candidate before the real PyPI publish
 - sharing prerelease artifacts for testing without consuming the final PyPI version number
 
-The workflow reads the version from `py/src/braintrust/version.py`, then appends `rc<GITHUB_RUN_NUMBER>` during the build when publishing to TestPyPI. For example, `0.8.0` becomes something like `0.8.0rc1234`.
+The workflow reads the version from `py/src/braintrust/version.py` and applies a workflow-controlled version override during the build so TestPyPI uploads stay unique without modifying the checked-in file. The packaged `version.py` is also templated with the exact git commit and a release channel marker.
+
+It supports two release types:
+
+- `prerelease`: keeps the existing TestPyPI prerelease behavior and publishes a version such as `0.8.0rc1234`
+- `canary`: publishes a nightly-style development release to TestPyPI only
 
 Run `Publish Python SDK to TestPyPI` with:
 
 - `ref=main` or the exact branch / commit you want to test
+- `release_type=prerelease` or `release_type=canary`
 - `dry_run=true` if you only want to validate/build without publishing
+
+### Canary releases
+
+- Can be triggered manually by running `Publish Python SDK to TestPyPI` with `release_type=canary`
+- Publish a PEP 440 development release in the form `<version>.dev<YYYYMMDD><run_number>`
+- Only publish to TestPyPI; there is no matching canary mode in the real PyPI workflow
+- Do not create a git tag or GitHub Release
+- Skip publishing if the current `HEAD` commit matches the latest published TestPyPI artifact marked with release channel `canary`
+- Skip publishing unless the latest completed `py.yaml` run on the target branch succeeded
+
+install canaries like so:
+
+```bash
+pip install -i https://test.pypi.org/simple/ braintrust==<canary-version>
+```
+
+Nightly scheduling lives in `Schedule Python SDK Canary Publish`, which only dispatches `Publish Python SDK to TestPyPI` with `release_type=canary`. The actual publish remains in `test-publish-py-sdk.yaml` so trusted publishing stays configured against a single workflow.
 
 Install from TestPyPI with:
 
@@ -74,7 +97,7 @@ Install from TestPyPI with:
 pip install -i https://test.pypi.org/simple/ braintrust==<version>
 ```
 
-> The build will fail if you upload a package with a duplicate version number. If this happens, DO NOT update version.py. Instead, rebase your branch onto origin/main  and try again. The workflow will add an incrementing suffix rc<GITHUB_RUN_NUMBER>. So as long as you are up to date, this should just work.
+> The build will fail if you upload a package with a duplicate version number. If this happens, DO NOT update version.py. Instead, rebase your branch onto origin/main and try again. The workflow-generated prerelease or canary suffix should normally keep TestPyPI versions unique.
 
 Just like the main PyPI workflow, the TestPyPI workflow also supports `dry_run=true`. In that mode it builds, verifies, and uploads artifacts, but it does not publish to TestPyPI.
 

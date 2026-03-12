@@ -133,7 +133,7 @@ make build
 
 Important caveat:
 
-- `py/scripts/template-version.sh` rewrites `py/src/braintrust/version.py` during build.
+- `py/scripts/template-version.py` rewrites `py/src/braintrust/version.py` during build.
 - `py/Makefile` restores that file afterward with `git checkout`.
 
 Avoid editing `py/src/braintrust/version.py` while also running build commands.
