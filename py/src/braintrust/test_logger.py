@@ -124,6 +124,41 @@ class TestInit(TestCase):
         assert metadata.project.id == "test-project-id"
         assert metadata.experiment.name == "test-exp"
 
+    def test_init_enable_atexit_flush(self):
+        from braintrust.logger import _HTTPBackgroundLogger
+
+        api_con_response = lambda: {
+            "project": {"id": "test-project-id", "name": "test-project"},
+            "experiment": {"id": "test-exp-id", "name": "test-exp"},
+        }
+
+        with patch("atexit.register") as mock_register:
+            _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
+            mock_register.assert_called()
+
+    def test_init_disable_atexit_flush(self):
+        from braintrust.logger import _HTTPBackgroundLogger
+
+        api_con_response = lambda: {
+            "project": {"id": "test-project-id", "name": "test-project"},
+            "experiment": {"id": "test-exp-id", "name": "test-exp"},
+        }
+
+        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "True"}):
+            with patch("atexit.register") as mock_register:
+                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
+                mock_register.assert_not_called()
+
+        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "1"}):
+            with patch("atexit.register") as mock_register:
+                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
+                mock_register.assert_not_called()
+
+        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "yes"}):
+            with patch("atexit.register") as mock_register:
+                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
+                mock_register.assert_not_called()
+
 
 class TestLogger(TestCase):
     def test_extract_attachments_no_op(self):
