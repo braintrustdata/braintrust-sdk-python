@@ -3532,6 +3532,16 @@
                 "type": "string",
                 "description": "The inline code to execute"
               },
+              "function_type": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/FunctionTypeEnum"
+                  },
+                  {
+                    "description": "The function type for inline code. Required when invoking inline preprocessors."
+                  }
+                ]
+              },
               "name": {
                 "type": [
                   "string",
@@ -7680,6 +7690,32 @@
               "null"
             ],
             "description": "Optional BTQL filter applied before topic automation."
+          },
+          "backfill_time_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional default time range for backfill operations."
           }
         },
         "required": [
@@ -8455,7 +8491,7 @@
     "license": {
       "name": "Apache 2.0"
     },
-    "x-internal-git-sha": "7cc4507a2a809d3d0bcaea7cb53cb89c1bde1a91"
+    "x-internal-git-sha": "f461ffe3b4488dc9e8b7ff5a441d75cab0c822ff"
   },
   "paths": {},
   "webhooks": {}
