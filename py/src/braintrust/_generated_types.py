@@ -849,18 +849,6 @@ class FunctionIdFunctionId4InlineContext(TypedDict):
     version: str
 
 
-class FunctionIdFunctionId4(TypedDict):
-    inline_context: FunctionIdFunctionId4InlineContext
-    code: str
-    """
-    The inline code to execute
-    """
-    name: NotRequired[str | None]
-    """
-    The name of the inline code function
-    """
-
-
 FunctionIdRef: TypeAlias = Mapping[str, Any]
 
 
@@ -1274,6 +1262,7 @@ class InvokeFunctionInvokeFunction4(TypedDict):
     """
     The inline code to execute
     """
+    function_type: NotRequired[FunctionTypeEnum | None]
     name: NotRequired[str | None]
     """
     The name of the inline code function
@@ -2108,6 +2097,7 @@ class TaskTask4(TypedDict):
     """
     The inline code to execute
     """
+    function_type: NotRequired[FunctionTypeEnum | None]
     name: NotRequired[str | None]
     """
     The name of the inline code function
@@ -2323,6 +2313,15 @@ class ToolFunctionDefinitionFunction(TypedDict):
 class ToolFunctionDefinition(TypedDict):
     type: Literal['function']
     function: ToolFunctionDefinitionFunction
+
+
+TopicAutomationConfigBackfillTimeRange = TypedDict(
+    'TopicAutomationConfigBackfillTimeRange',
+    {
+        'from': str,
+        'to': str,
+    },
+)
 
 
 class TopicAutomationDataScopeTopicAutomationDataScope(TypedDict):
@@ -2988,6 +2987,19 @@ class FunctionIdFunctionId2(TypedDict):
     function_type: NotRequired[FunctionTypeEnum | None]
 
 
+class FunctionIdFunctionId4(TypedDict):
+    inline_context: FunctionIdFunctionId4InlineContext
+    code: str
+    """
+    The inline code to execute
+    """
+    function_type: NotRequired[FunctionTypeEnum | None]
+    name: NotRequired[str | None]
+    """
+    The name of the inline code function
+    """
+
+
 class InvokeFunctionInvokeFunction7(TypedDict):
     input: NotRequired[Any | None]
     """
@@ -3241,6 +3253,10 @@ class TopicAutomationConfig(TypedDict):
     btql_filter: NotRequired[str | None]
     """
     Optional BTQL filter applied before topic automation.
+    """
+    backfill_time_range: NotRequired[str | TopicAutomationConfigBackfillTimeRange | None]
+    """
+    Optional default time range for backfill operations.
     """
 
 
