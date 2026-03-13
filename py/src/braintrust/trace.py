@@ -210,7 +210,8 @@ class CachedSpanFetcher:
         # If no filter requested, fetch everything
         if not span_type or len(span_type) == 0:
             await self._fetch_spans(None)
-            self._all_fetched = True
+            if self._span_cache:  # Only cache if we got results
+                self._all_fetched = True
             return self._get_from_cache(None)
 
         # Find which spanTypes we don't have in cache yet
