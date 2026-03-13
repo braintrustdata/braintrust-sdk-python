@@ -2904,6 +2904,14 @@ class Experiment(TypedDict):
     """
     Version number of the linked dataset the experiment was run against. This can be used to reproduce the experiment after the dataset has been modified.
     """
+    parameters_id: NotRequired[str | None]
+    """
+    Identifier of the linked saved parameters object, or null if the experiment is not linked to saved parameters
+    """
+    parameters_version: NotRequired[str | None]
+    """
+    Version number of the linked saved parameters object the experiment was run against.
+    """
     public: bool
     """
     Whether or not the experiment is public. Public experiments can be viewed by anybody inside or outside the organization
