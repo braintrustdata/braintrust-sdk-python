@@ -44,12 +44,8 @@ members = [
 
 [dependency-groups]
 dev = [
-    "black",
     "build",
-    "flake8",
-    "flake8-isort",
     "httpx",
-    "isort==5.12.0",
     "langchain-anthropic>=0.3.20",
     "langchain-openai",
     "langgraph>=0.2.1,<0.4.0",
@@ -61,16 +57,6 @@ dev = [
     "tenacity",
     "twine",
 ]
-
-[tool.black]
-line-length = 120
-target-version = ['py310']
-
-[tool.isort]
-profile = "black"
-line_length = 120
-known_first_party = ["braintrust_langchain"]
-known_third_party = ["braintrust", "langchain"]
 
 [tool.ruff]
 line-length = 120
