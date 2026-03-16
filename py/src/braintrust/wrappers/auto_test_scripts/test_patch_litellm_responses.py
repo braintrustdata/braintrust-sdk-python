@@ -4,6 +4,7 @@ import litellm
 from braintrust.wrappers.litellm import patch_litellm
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
+
 patch_litellm()
 
 with autoinstrument_test_context("test_patch_litellm_responses") as memory_logger:

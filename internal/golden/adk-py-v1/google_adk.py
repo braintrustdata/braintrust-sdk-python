@@ -13,6 +13,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
+
 setup_adk(project_name="golden-py-adk")
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"

@@ -17,6 +17,7 @@ import tempfile
 
 import nox
 
+
 # much faster than pip
 nox.options.default_venv_backend = "uv"
 

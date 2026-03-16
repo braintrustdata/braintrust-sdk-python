@@ -29,6 +29,7 @@ def parse_env_var_float(name: str, default: float) -> float:
     except (ValueError, TypeError):
         return default
 
+
 GLOBAL_PROJECT = "Global"
 BT_IS_ASYNC_ATTRIBUTE = "_BT_IS_ASYNC"
 

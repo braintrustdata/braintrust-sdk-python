@@ -11,6 +11,7 @@ from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.anthropic import wrap_anthropic
 from braintrust.wrappers.test_utils import run_in_subprocess, verify_autoinstrument_script
 
+
 TEST_ORG_ID = "test-org-123"
 PROJECT_NAME = "test-anthropic-app"
 MODEL = "claude-3-haiku-20240307"  # use the cheapest model since answers dont matter
@@ -448,7 +449,9 @@ async def test_anthropic_beta_messages_create_async(memory_logger):
     assert "10" in span["output"]["content"][0]["text"]
 
 
-@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])  # exclude query - varies by SDK version
+@pytest.mark.vcr(
+    match_on=["method", "scheme", "host", "port", "path", "body"]
+)  # exclude query - varies by SDK version
 @pytest.mark.asyncio
 async def test_anthropic_beta_messages_streaming_async(memory_logger):
     assert not memory_logger.pop()

@@ -9,6 +9,7 @@ from ..util import response_raise_for_status
 from .constants import INVOKE_API_VERSION
 from .stream import BraintrustInvokeError, BraintrustStream
 
+
 T = TypeVar("T")
 ModeType = Literal["auto", "parallel", "json", "text"]
 ObjectType = Literal["project_logs", "experiment", "dataset", "playground_logs"]

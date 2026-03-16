@@ -7,6 +7,7 @@ from functools import lru_cache as _cache
 
 from .git_fields import GitMetadataSettings, RepoInfo
 
+
 # https://stackoverflow.com/questions/48399498/git-executable-not-found-in-python
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 try:

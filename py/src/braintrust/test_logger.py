@@ -68,7 +68,6 @@ class TestInit(TestCase):
 
         assert str(cm.exception) == f"duplicate tag: {tag}"
 
-
     def test_init_with_dataset_id_only(self):
         """Test that init accepts dataset={'id': '...'} parameter"""
         # Test the logic that extracts dataset_id from the dict
@@ -124,6 +123,7 @@ class TestInit(TestCase):
 
         assert metadata.project.id == "test-project-id"
         assert metadata.experiment.name == "test-exp"
+
 
 class TestLogger(TestCase):
     def test_extract_attachments_no_op(self):
@@ -241,8 +241,6 @@ class TestLogger(TestCase):
                 "empty": {},
             },
         )
-
-
 
     def test_prompt_build_with_structured_output_templating(self):
         self.maxDiff = None
@@ -3076,7 +3074,7 @@ def test_extract_attachments_collects_and_replaces():
     event = {
         "input": {"file": attachment1},
         "output": {"file": attachment2},
-        "metadata": {"files": [attachment1, ext_attachment]}
+        "metadata": {"files": [attachment1, ext_attachment]},
     }
 
     attachments = []
@@ -3106,7 +3104,7 @@ def test_extract_attachments_preserves_identity():
     event = {
         "input": attachment,
         "output": attachment,  # Same instance
-        "metadata": {"file": attachment}  # Same instance again
+        "metadata": {"file": attachment},  # Same instance again
     }
 
     attachments = []
@@ -3145,10 +3143,7 @@ def test_multiple_attachments_upload_tracked(with_memory_logger, with_simulate_l
 
     logger = init_test_logger(__name__)
     span = logger.start_span(name="test_span")
-    span.log(
-        input={"file1": attachment1},
-        output={"file2": attachment2}
-    )
+    span.log(input={"file1": attachment1}, output={"file2": attachment2})
     span.end()
     logger.flush()
 
@@ -3178,9 +3173,7 @@ def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_sim
 def test_external_attachment_upload_tracked(with_memory_logger, with_simulate_login):
     """Test that ExternalAttachment upload is also tracked."""
     ext_attachment = ExternalAttachment(
-        url="s3://bucket/key.pdf",
-        filename="external.pdf",
-        content_type="application/pdf"
+        url="s3://bucket/key.pdf", filename="external.pdf", content_type="application/pdf"
     )
 
     logger = init_test_logger(__name__)
@@ -3218,11 +3211,7 @@ def test_multiple_attachment_types_tracked(with_memory_logger, with_simulate_log
 
     logger = init_test_logger(__name__)
     span = logger.start_span(name="test_span")
-    span.log(
-        input=attachment,
-        output=json_attachment,
-        metadata={"file": ext_attachment}
-    )
+    span.log(input=attachment, output=json_attachment, metadata={"file": ext_attachment})
     span.end()
     logger.flush()
 

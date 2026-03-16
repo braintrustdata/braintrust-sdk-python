@@ -49,6 +49,7 @@ from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
 from .util import bt_iscoroutinefunction, eprint, merge_dicts
 
+
 Input = TypeVar("Input")
 Output = TypeVar("Output")
 
@@ -1276,7 +1277,8 @@ async def run_evaluator(
 ) -> EvalResultWithSummary[Input, Output]:
     """Wrapper on _run_evaluator_internal that times out execution after evaluator.timeout."""
     results = await asyncio.wait_for(
-        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache), evaluator.timeout
+        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache),
+        evaluator.timeout,
     )
 
     if experiment:
@@ -1473,9 +1475,7 @@ async def _run_evaluator_internal_impl(
                 async def ensure_spans_flushed():
                     # Flush native Braintrust spans
                     if experiment:
-                        await asyncio.get_event_loop().run_in_executor(
-                            None, lambda: experiment.state.flush()
-                        )
+                        await asyncio.get_event_loop().run_in_executor(None, lambda: experiment.state.flush())
                     elif state:
                         await asyncio.get_event_loop().run_in_executor(None, lambda: state.flush())
                     else:

@@ -21,6 +21,7 @@ from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
 from ._wrapper import _create_client_wrapper_class, _create_tool_wrapper_class, _wrap_tool_factory
 
+
 logger = logging.getLogger(__name__)
 
 __all__ = ["setup_claude_agent_sdk"]

@@ -11,12 +11,14 @@ This example demonstrates:
 
 import os
 
+
 # Enable LangSmith tracing (required for traces to be sent to LangSmith)
 os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
 os.environ.setdefault("LANGCHAIN_PROJECT", "examples-wrappers-langsmith-eval")
 
 # IMPORTANT: Call setup_langsmith BEFORE importing from langsmith
 from braintrust.wrappers.langsmith_wrapper import setup_langsmith
+
 
 # Set BRAINTRUST_STANDALONE=1 to completely replace LangSmith with Braintrust
 standalone = os.environ.get("BRAINTRUST_STANDALONE", "").lower() in ("1", "true", "yes")

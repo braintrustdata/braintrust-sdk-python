@@ -24,7 +24,6 @@ def get_args_kwargs(args: list[str], kwargs: dict[str, Any], keys: list[str]):
     return {k: args[i] if args else kwargs.get(k) for i, k in enumerate(keys)}, omit(kwargs, keys)
 
 
-
 def _try_to_dict(obj: Any) -> Any:
     """Convert object to dict, handling different object types like OpenAI wrapper."""
     if isinstance(obj, dict):

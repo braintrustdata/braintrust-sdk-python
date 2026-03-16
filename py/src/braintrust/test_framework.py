@@ -531,6 +531,7 @@ async def test_hooks_without_setting_tags(with_memory_logger, with_simulate_logi
     assert len(root_span) == 1
     assert root_span[0].get("tags") == None
 
+
 @pytest.mark.asyncio
 async def test_eval_enable_cache():
     state = BraintrustState()

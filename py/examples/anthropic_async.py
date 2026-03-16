@@ -5,6 +5,7 @@ import asyncio
 import braintrust
 from anthropic import AsyncAnthropic
 
+
 # Initialize Anthropic client (needs ANTHROPIC_API_KEY)
 client = braintrust.wrap_anthropic(AsyncAnthropic())
 

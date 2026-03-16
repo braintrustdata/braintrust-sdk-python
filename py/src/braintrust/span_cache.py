@@ -15,6 +15,7 @@ from typing import Any, Optional
 
 from braintrust.util import merge_dicts
 
+
 # Global registry of active span caches for process exit cleanup
 _active_caches: set["SpanCache"] = set()
 _exit_handlers_registered = False

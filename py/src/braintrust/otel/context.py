@@ -8,6 +8,7 @@ from braintrust.logger import Span
 from opentelemetry import context, trace
 from opentelemetry.trace import SpanContext, TraceFlags
 
+
 log = logging.getLogger(__name__)
 
 

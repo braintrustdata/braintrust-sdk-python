@@ -7,6 +7,7 @@ import pytest
 from .logger import BraintrustState
 from .sandbox import RegisterSandboxResult, SandboxConfig, register_sandbox
 
+
 SNAPSHOT_REF = "im-icRxmsk1Sz9XPP2f8OblVU"
 PROJECT = "My Project"
 ENTRYPOINTS = ["./local/js/optimization/evals/btql-generation/btql-queries.eval.ts"]

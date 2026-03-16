@@ -3,6 +3,7 @@ import time
 import braintrust
 from braintrust import traced
 
+
 LOOPS = 2000
 
 braintrust.init_logger(project="perf_test")

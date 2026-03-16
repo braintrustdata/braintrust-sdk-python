@@ -149,6 +149,7 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
         ],
     )
 
+
 @pytest.mark.vcr
 def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
     logger, memory_logger = logger_memory_logger

@@ -46,6 +46,7 @@ from braintrust.framework import EvalCase
 from braintrust.logger import NOOP_SPAN, current_span, init_logger, traced
 from wrapt import wrap_function_wrapper
 
+
 logger = logging.getLogger(__name__)
 
 # Global list to store Braintrust eval results when running in tandem mode

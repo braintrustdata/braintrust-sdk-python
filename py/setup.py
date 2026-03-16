@@ -2,6 +2,7 @@ import os
 
 import setuptools
 
+
 dir_name = os.path.abspath(os.path.dirname(__file__))
 
 version_contents = {}

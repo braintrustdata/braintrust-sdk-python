@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 
+
 __all__ = ["auto_instrument"]
 
 logger = logging.getLogger(__name__)

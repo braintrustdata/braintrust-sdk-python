@@ -12,6 +12,7 @@ from openai import AsyncOpenAI
 from openai._types import NOT_GIVEN
 from pydantic import BaseModel
 
+
 TEST_ORG_ID = "test-org-openai-py-tracing"
 PROJECT_NAME = "test-project-openai-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests

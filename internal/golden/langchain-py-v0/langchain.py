@@ -11,6 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
+
 init_logger(project="golden-py-langchain-v0")
 
 handler = BraintrustCallbackHandler()

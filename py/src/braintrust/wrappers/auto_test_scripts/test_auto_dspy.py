@@ -9,6 +9,7 @@ import dspy
 from braintrust.auto import auto_instrument
 from braintrust.wrappers.dspy import BraintrustDSpyCallback
 
+
 # 1. Verify not patched initially
 assert not getattr(dspy, "__braintrust_wrapped__", False)
 
@@ -24,6 +25,7 @@ assert results2.get("dspy") == True
 # 4. Verify callback is added when configure() is called
 dspy.configure(lm=None)
 from dspy.dsp.utils.settings import settings
+
 
 has_bt_callback = any(isinstance(cb, BraintrustDSpyCallback) for cb in settings.callbacks)
 assert has_bt_callback, f"Expected BraintrustDSpyCallback in callbacks after configure()"

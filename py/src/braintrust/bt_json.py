@@ -3,6 +3,7 @@ import json
 import math
 from typing import Any, Callable, Mapping, NamedTuple, cast, overload
 
+
 # Try to import orjson for better performance
 # If not available, we'll use standard json
 try:
@@ -11,7 +12,6 @@ try:
     _HAS_ORJSON = True
 except ImportError:
     _HAS_ORJSON = False
-
 
 
 def _to_bt_safe(v: Any) -> Any:
@@ -87,11 +87,13 @@ def _to_bt_safe(v: Any) -> Any:
     # We pass `encoder=_str_encoder` since we've already tried converting rich objects to json safe objects.
     return bt_loads(bt_dumps(v, encoder=_str_encoder))
 
+
 @overload
 def bt_safe_deep_copy(
     obj: Mapping[str, Any],
     max_depth: int = ...,
 ) -> dict[str, Any]: ...
+
 
 @overload
 def bt_safe_deep_copy(
@@ -99,12 +101,13 @@ def bt_safe_deep_copy(
     max_depth: int = ...,
 ) -> list[Any]: ...
 
+
 @overload
 def bt_safe_deep_copy(
     obj: Any,
     max_depth: int = ...,
 ) -> Any: ...
-def bt_safe_deep_copy(obj: Any, max_depth: int=200):
+def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
     """
     Creates a deep copy of the given object and converts rich objects to Braintrust-safe representations. See `_to_bt_safe` for more details.
 
@@ -161,6 +164,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int=200):
 
     return _deep_copy_object(obj)
 
+
 def _safe_str(obj: Any) -> str:
     try:
         return str(obj)
@@ -211,10 +215,12 @@ class Encoder(NamedTuple):
     native: type[json.JSONEncoder]
     orjson: Callable[[Any], Any]
 
+
 _json_encoder = Encoder(native=BraintrustJSONEncoder, orjson=_to_json_safe)
 _str_encoder = Encoder(native=BraintrustStrEncoder, orjson=_safe_str)
 
-def bt_dumps(obj: Any, encoder: Encoder | None=_json_encoder, **kwargs: Any) -> str:
+
+def bt_dumps(obj: Any, encoder: Encoder | None = _json_encoder, **kwargs: Any) -> str:
     """
     Serialize obj to a JSON-formatted string.
 

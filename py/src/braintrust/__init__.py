@@ -52,6 +52,7 @@ BRAINTRUST_API_KEY=<YOUR_BRAINTRUST_API_KEY> braintrust eval eval_hello.py
 # Check env var at import time for auto-instrumentation
 import os
 
+
 if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"):
     try:
         from .wrappers.threads import setup_threads

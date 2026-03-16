@@ -6,6 +6,7 @@ import litellm
 from braintrust.wrappers.litellm import patch_litellm
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
+
 patch_litellm()
 
 

@@ -11,6 +11,7 @@ from .logger import Attachment, Span, start_span
 from .span_types import SpanTypeAttribute
 from .util import is_numeric, merge_dicts
 
+
 X_LEGACY_CACHED_HEADER = "x-cached"
 X_CACHED_HEADER = "x-bt-cached"
 

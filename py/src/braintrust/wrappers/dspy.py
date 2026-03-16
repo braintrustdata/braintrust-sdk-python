@@ -53,6 +53,7 @@ from braintrust.logger import current_span, start_span
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
 
+
 # Note: For detailed token and cost metrics, use patch_litellm() before importing DSPy.
 # The DSPy callback focuses on execution flow and span hierarchy.
 

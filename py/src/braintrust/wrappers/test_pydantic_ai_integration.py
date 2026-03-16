@@ -16,6 +16,7 @@ from pydantic_ai import Agent, ModelSettings
 from pydantic_ai.messages import ModelRequest, UserPromptPart
 from pydantic_ai.usage import UsageLimits
 
+
 PROJECT_NAME = "test-pydantic-ai-integration"
 MODEL = "openai:gpt-4o-mini"  # Use cheaper model for tests
 TEST_PROMPT = "What is 2+2? Answer with just the number."

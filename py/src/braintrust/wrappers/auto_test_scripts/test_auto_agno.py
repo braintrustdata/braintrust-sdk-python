@@ -3,6 +3,7 @@
 from braintrust.auto import auto_instrument
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
+
 # 1. Instrument
 results = auto_instrument()
 assert results.get("agno") == True, "auto_instrument should return True for agno"
@@ -48,28 +49,28 @@ check_wrapped(Team, "_arun_stream", None, required=False)
 # Model methods (all public, all required)
 assert hasattr(Model, "invoke") and hasattr(Model.invoke, "__wrapped__"), "Model.invoke should be wrapped"
 assert hasattr(Model, "ainvoke") and hasattr(Model.ainvoke, "__wrapped__"), "Model.ainvoke should be wrapped"
-assert hasattr(Model, "invoke_stream") and hasattr(
-    Model.invoke_stream, "__wrapped__"
-), "Model.invoke_stream should be wrapped"
-assert hasattr(Model, "ainvoke_stream") and hasattr(
-    Model.ainvoke_stream, "__wrapped__"
-), "Model.ainvoke_stream should be wrapped"
+assert hasattr(Model, "invoke_stream") and hasattr(Model.invoke_stream, "__wrapped__"), (
+    "Model.invoke_stream should be wrapped"
+)
+assert hasattr(Model, "ainvoke_stream") and hasattr(Model.ainvoke_stream, "__wrapped__"), (
+    "Model.ainvoke_stream should be wrapped"
+)
 assert hasattr(Model, "response") and hasattr(Model.response, "__wrapped__"), "Model.response should be wrapped"
 assert hasattr(Model, "aresponse") and hasattr(Model.aresponse, "__wrapped__"), "Model.aresponse should be wrapped"
-assert hasattr(Model, "response_stream") and hasattr(
-    Model.response_stream, "__wrapped__"
-), "Model.response_stream should be wrapped"
-assert hasattr(Model, "aresponse_stream") and hasattr(
-    Model.aresponse_stream, "__wrapped__"
-), "Model.aresponse_stream should be wrapped"
+assert hasattr(Model, "response_stream") and hasattr(Model.response_stream, "__wrapped__"), (
+    "Model.response_stream should be wrapped"
+)
+assert hasattr(Model, "aresponse_stream") and hasattr(Model.aresponse_stream, "__wrapped__"), (
+    "Model.aresponse_stream should be wrapped"
+)
 
 # FunctionCall methods (all public, all required)
-assert hasattr(FunctionCall, "execute") and hasattr(
-    FunctionCall.execute, "__wrapped__"
-), "FunctionCall.execute should be wrapped"
-assert hasattr(FunctionCall, "aexecute") and hasattr(
-    FunctionCall.aexecute, "__wrapped__"
-), "FunctionCall.aexecute should be wrapped"
+assert hasattr(FunctionCall, "execute") and hasattr(FunctionCall.execute, "__wrapped__"), (
+    "FunctionCall.execute should be wrapped"
+)
+assert hasattr(FunctionCall, "aexecute") and hasattr(FunctionCall.aexecute, "__wrapped__"), (
+    "FunctionCall.aexecute should be wrapped"
+)
 
 # 4. Make API call and verify spans
 with autoinstrument_test_context("test_auto_agno") as memory_logger:
@@ -108,7 +109,9 @@ with autoinstrument_test_context("test_auto_agno") as memory_logger:
     # Verify span hierarchy - LLM span should be child of agent span
     llm_parents = llm_span.get("span_parents", [])
     agent_span_id = agent_span.get("span_id")
-    assert agent_span_id in llm_parents, f"LLM span should be child of agent span. Agent ID: {agent_span_id}, LLM parents: {llm_parents}"
+    assert agent_span_id in llm_parents, (
+        f"LLM span should be child of agent span. Agent ID: {agent_span_id}, LLM parents: {llm_parents}"
+    )
 
     print("Agent span created (type: task)")
     print("Model span created (type: llm)")

@@ -9,7 +9,6 @@ This allows for efficient prompt retrieval while maintaining persistence across 
 The cache is keyed by project identifier (ID or name), prompt slug, and version.
 """
 
-
 from braintrust import prompt
 from braintrust.prompt_cache import disk_cache, lru_cache
 

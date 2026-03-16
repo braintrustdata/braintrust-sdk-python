@@ -7,6 +7,7 @@ from braintrust.logger import NOOP_SPAN, log_exc_info_to_span, start_span
 from braintrust.wrappers._anthropic_utils import Wrapper, extract_anthropic_usage, finalize_anthropic_tokens
 from wrapt import wrap_function_wrapper
 
+
 log = logging.getLogger(__name__)
 
 

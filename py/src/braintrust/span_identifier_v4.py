@@ -11,6 +11,7 @@ from .span_identifier_v3 import (
     SpanObjectTypeV3,
 )
 
+
 ENCODING_VERSION_NUMBER_V4 = 4
 
 

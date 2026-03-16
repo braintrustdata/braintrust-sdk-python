@@ -10,6 +10,7 @@ from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from google.genai import types
 from google.genai.client import Client
 
+
 PROJECT_NAME = "test-genai-app"
 MODEL = "gemini-2.0-flash-001"
 FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent / "internal/golden/fixtures"

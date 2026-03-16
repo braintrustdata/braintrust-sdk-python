@@ -1,10 +1,12 @@
 from braintrust.wrappers.agno import setup_agno
 
+
 setup_agno(project_name="simple-agent-project")
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools.yfinance import YFinanceTools
+
 
 # Create and configure the agent
 agent = Agent(

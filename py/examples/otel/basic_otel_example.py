@@ -9,6 +9,7 @@ without any filtering enabled. All spans will be sent to Braintrust.
 import os
 import time
 
+
 # Set environment variables
 os.environ.setdefault("BRAINTRUST_PARENT", "project_name:otel-examples")
 
@@ -17,6 +18,7 @@ from openai import OpenAI
 from opentelemetry import trace
 from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
+
 
 # Set up the tracer provider
 provider = TracerProvider()

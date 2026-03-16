@@ -7,6 +7,7 @@ from inspect import isawaitable
 
 from braintrust.wrappers.agno.agent import wrap_agent
 
+
 PROJECT_NAME = "test-agno-app"
 
 
@@ -129,6 +130,7 @@ def make_fake_workflow_agent_path(name: str):
 
         def _execute_workflow_agent(self, user_input, session, execution_input, run_context, stream=False, **kwargs):
             if stream:
+
                 def _stream():
                     yield FakeEvent("WorkflowStarted")
                     yield FakeEvent(

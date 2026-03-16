@@ -6,6 +6,7 @@ import pytest
 
 from .framework2 import projects
 
+
 # Check if pydantic is available
 HAS_PYDANTIC = importlib.util.find_spec("pydantic") is not None
 

@@ -9,6 +9,7 @@ from braintrust.logger import Span, start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import is_numeric, merge_dicts
 
+
 X_LEGACY_CACHED_HEADER = "x-cached"
 X_CACHED_HEADER = "x-bt-cached"
 
@@ -570,7 +571,6 @@ def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
             metrics[name] = value
 
     return metrics
-
 
 
 def prettify_params(params: dict[str, Any]) -> dict[str, Any]:

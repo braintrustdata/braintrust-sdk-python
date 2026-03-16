@@ -11,6 +11,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import anyio
 
+
 try:
     import claude_agent_sdk
     from claude_agent_sdk._internal.transport import Transport
@@ -230,9 +231,7 @@ class ClaudeAgentSdkCassetteTransport(Transport):
             return
 
         if self._record_mode not in {"once", "all"}:
-            raise FileNotFoundError(
-                f"Cassette missing for {self._cassette_name}: {self._cassette_path}"
-            )
+            raise FileNotFoundError(f"Cassette missing for {self._cassette_name}: {self._cassette_path}")
 
         self._cassette_path.parent.mkdir(parents=True, exist_ok=True)
         prompt = _empty_stream() if self._prompt == "" else self._prompt
@@ -255,9 +254,7 @@ class ClaudeAgentSdkCassetteTransport(Transport):
         expected = _normalize_for_match(recorded["payload"])
         self._maybe_remap_control_request_id(recorded["payload"], actual_raw)
         if expected != actual:
-            raise AssertionError(
-                f"Write mismatch for {self._cassette_name}\nexpected: {expected}\nactual: {actual}"
-            )
+            raise AssertionError(f"Write mismatch for {self._cassette_name}\nexpected: {expected}\nactual: {actual}")
 
     def read_messages(self):
         return self._read_messages_impl()
@@ -306,17 +303,13 @@ class ClaudeAgentSdkCassetteTransport(Transport):
             return True
         return False
 
-    async def _wait_for_event(
-        self, op: str, *, allow_eof: bool = False
-    ) -> dict[str, Any] | None:
+    async def _wait_for_event(self, op: str, *, allow_eof: bool = False) -> dict[str, Any] | None:
         while True:
             async with self._cursor_lock:
                 if self._cursor >= len(self._events):
                     if allow_eof:
                         return None
-                    raise AssertionError(
-                        f"Replay for {self._cassette_name} exhausted before expected {op}"
-                    )
+                    raise AssertionError(f"Replay for {self._cassette_name} exhausted before expected {op}")
 
                 event = self._events[self._cursor]
                 if event["op"] == op:

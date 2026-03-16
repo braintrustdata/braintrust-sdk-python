@@ -6,10 +6,6 @@ from collections.abc import Mapping, Sequence
 from re import Pattern
 from typing import (
     Any,
-    Dict,
-    List,
-    Optional,
-    Set,
     TypedDict,
     Union,
 )

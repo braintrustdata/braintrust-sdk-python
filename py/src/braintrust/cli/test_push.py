@@ -2,6 +2,7 @@
 
 import pytest
 
+
 pydantic = pytest.importorskip("pydantic")
 
 from ..framework2 import (

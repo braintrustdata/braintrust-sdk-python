@@ -24,6 +24,7 @@ from braintrust.wrappers.claude_agent_sdk._constants import (
     SerializedContentType,
 )
 
+
 log = logging.getLogger(__name__)
 _thread_local = threading.local()
 
@@ -81,6 +82,7 @@ _NOOP_ACTIVE_TOOL_SPAN = _NoopActiveToolSpan()
 def _log_tracing_warning(exc: Exception) -> None:
     log.warning("Error in tracing code", exc_info=exc)
 
+
 def _parse_tool_name(tool_name: Any) -> ParsedToolName:
     raw_name = str(tool_name) if tool_name is not None else DEFAULT_TOOL_NAME
 
@@ -135,6 +137,7 @@ def _serialize_tool_result_output(tool_result_block: Any) -> dict[str, Any]:
         output["is_error"] = True
 
     return output
+
 
 def _serialize_system_message(message: Any) -> dict[str, Any]:
     serialized = {"subtype": getattr(message, "subtype", None)}
@@ -319,7 +322,9 @@ class ToolSpanTracker:
 
     def acquire_span_for_handler(self, tool_name: Any, args: Any) -> _ActiveToolSpan | None:
         parsed_tool_name = _parse_tool_name(tool_name)
-        candidate_names = list(dict.fromkeys((parsed_tool_name.raw_name, parsed_tool_name.display_name, str(tool_name))))
+        candidate_names = list(
+            dict.fromkeys((parsed_tool_name.raw_name, parsed_tool_name.display_name, str(tool_name)))
+        )
 
         candidates = [
             active_tool_span
@@ -335,7 +340,9 @@ class ToolSpanTracker:
         matched_span.activate()
         return matched_span
 
-    def _end_tool_span(self, tool_use_id: str, tool_result_block: Any | None = None, end_time: float | None = None) -> None:
+    def _end_tool_span(
+        self, tool_use_id: str, tool_result_block: Any | None = None, end_time: float | None = None
+    ) -> None:
         active_tool_span = self._active_spans.pop(tool_use_id, None)
         self._pending_task_link_tool_use_ids.discard(tool_use_id)
         if active_tool_span is None:
@@ -528,7 +535,9 @@ class TaskEventSpanTracker:
                 self._task_span_by_tool_use_id.pop(str(tool_use_id), None)
             task_span.end()
             del self._active_spans[task_id]
-            self._active_task_order = [active_task_id for active_task_id in self._active_task_order if active_task_id != task_id]
+            self._active_task_order = [
+                active_task_id for active_task_id in self._active_task_order if active_task_id != task_id
+            ]
 
     @property
     def active_tool_use_ids(self) -> frozenset[str]:
@@ -568,11 +577,7 @@ class TaskEventSpanTracker:
         return self._tool_tracker.get_span_export(getattr(message, "tool_use_id", None)) or self._root_span_export
 
     def _span_name(self, message: Any, task_id: str) -> str:
-        return (
-            getattr(message, "description", None)
-            or getattr(message, "task_type", None)
-            or f"Task {task_id}"
-        )
+        return getattr(message, "description", None) or getattr(message, "task_type", None) or f"Task {task_id}"
 
     def _metadata(self, message: Any) -> dict[str, Any]:
         metadata = {
@@ -711,7 +716,8 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                         if message_type == MessageClassName.ASSISTANT:
                             if llm_tracker.current_span and tool_tracker.has_active_spans:
                                 active_subagent_tool_use_ids = (
-                                    task_event_span_tracker.active_tool_use_ids | tool_tracker.pending_task_link_tool_use_ids
+                                    task_event_span_tracker.active_tool_use_ids
+                                    | tool_tracker.pending_task_link_tool_use_ids
                                 )
                                 tool_tracker.cleanup(
                                     end_time=llm_tracker.get_next_start_time(),
@@ -729,7 +735,11 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                             )
                             tool_tracker.start_tool_spans(message, llm_tracker.current_span_export)
                             if final_content:
-                                if extended_existing_span and final_results and final_results[-1].get("role") == "assistant":
+                                if (
+                                    extended_existing_span
+                                    and final_results
+                                    and final_results[-1].get("role") == "assistant"
+                                ):
                                     final_results[-1] = final_content
                                 else:
                                     final_results.append(final_content)
@@ -738,8 +748,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                             has_tool_results = False
                             if hasattr(message, "content"):
                                 has_tool_results = any(
-                                    type(block).__name__ == BlockClassName.TOOL_RESULT
-                                    for block in message.content
+                                    type(block).__name__ == BlockClassName.TOOL_RESULT for block in message.content
                                 )
                                 content = _serialize_content_blocks(message.content)
                                 final_results.append({"content": content, "role": "user"})

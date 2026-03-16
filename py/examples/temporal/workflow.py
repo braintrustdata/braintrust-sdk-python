@@ -7,6 +7,7 @@ import braintrust
 from temporalio import activity, workflow
 from temporalio.common import RetryPolicy
 
+
 TASK_QUEUE_NAME = "braintrust-example-task-queue"
 
 

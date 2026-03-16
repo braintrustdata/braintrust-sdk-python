@@ -3,6 +3,7 @@
 from braintrust.auto import auto_instrument
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
+
 # 1. Instrument
 results = auto_instrument()
 assert results.get("google_genai") == True

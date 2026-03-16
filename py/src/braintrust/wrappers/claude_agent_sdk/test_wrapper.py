@@ -11,6 +11,7 @@ from typing import Any, cast
 
 import pytest
 
+
 # Try to import the Claude Agent SDK - skip tests if not available
 try:
     import claude_agent_sdk as _claude_agent_sdk
@@ -41,6 +42,7 @@ from braintrust.wrappers.claude_agent_sdk._wrapper import (
     _thread_local,
 )
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
+
 
 PROJECT_NAME = "test-claude-agent-sdk"
 TEST_MODEL = "claude-haiku-4-5-20251001"
@@ -369,10 +371,16 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
 
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     _assert_llm_spans_have_time_to_first_token(llm_spans)
-    assert any(subagent_span["span_id"] in llm_span["span_parents"] for subagent_span in subagent_spans for llm_span in llm_spans)
+    assert any(
+        subagent_span["span_id"] in llm_span["span_parents"]
+        for subagent_span in subagent_spans
+        for llm_span in llm_spans
+    )
 
     delegated_llm_spans = [
-        llm_span for llm_span in llm_spans if any(subagent_span["span_id"] in llm_span["span_parents"] for subagent_span in subagent_spans)
+        llm_span
+        for llm_span in llm_spans
+        if any(subagent_span["span_id"] in llm_span["span_parents"] for subagent_span in subagent_spans)
     ]
     assert delegated_llm_spans, "Expected at least one delegated LLM span nested under a subagent task span"
 
@@ -573,7 +581,9 @@ async def test_delegated_subagent_llm_and_tool_spans_nest_under_task_span(memory
             tool_use_id="call-agent",
             usage={"total_tokens": 42, "tool_uses": 1, "duration_ms": 250},
         ),
-        UserMessage(content=[ToolResultBlock(tool_use_id="call-agent", content=[TextBlock("2026.03.11 | sdk-platform")])]),
+        UserMessage(
+            content=[ToolResultBlock(tool_use_id="call-agent", content=[TextBlock("2026.03.11 | sdk-platform")])]
+        ),
         ResultMessage(),
     ]
 
@@ -684,8 +694,12 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
         ),
         UserMessage(
             content=[
-                ToolResultBlock(tool_use_id="call-alpha", content=[TextBlock("alpha:2026.03.11-alpha | sdk-platform-alpha")]),
-                ToolResultBlock(tool_use_id="call-beta", content=[TextBlock("beta:2026.03.11-beta | sdk-platform-beta")]),
+                ToolResultBlock(
+                    tool_use_id="call-alpha", content=[TextBlock("alpha:2026.03.11-alpha | sdk-platform-alpha")]
+                ),
+                ToolResultBlock(
+                    tool_use_id="call-beta", content=[TextBlock("beta:2026.03.11-beta | sdk-platform-beta")]
+                ),
             ]
         ),
         ResultMessage(),
@@ -708,9 +722,7 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
     agent_tool_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "Agent"]
     assert len(agent_tool_spans) == 2
 
-    outer_llm_spans = [
-        llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]
-    ]
+    outer_llm_spans = [llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]]
     assert len(outer_llm_spans) == 1, f"Expected a single outer orchestration LLM span, got {len(outer_llm_spans)}"
     outer_llm_span = outer_llm_spans[0]
 
@@ -722,9 +734,11 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
     delegated_llm_spans = [
         llm_span
         for llm_span in llm_spans
-        if alpha_task_span["span_id"] in llm_span["span_parents"] or beta_task_span["span_id"] in llm_span["span_parents"]
+        if alpha_task_span["span_id"] in llm_span["span_parents"]
+        or beta_task_span["span_id"] in llm_span["span_parents"]
     ]
     assert delegated_llm_spans, "Expected delegated LLM spans nested under delegated task spans"
+
 
 @pytest.mark.asyncio
 async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm_span(memory_logger):
@@ -815,8 +829,12 @@ async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm
         # Final tool results (real turn boundary — has ToolResultBlocks)
         UserMessage(
             content=[
-                ToolResultBlock(tool_use_id="call-alpha", content=[TextBlock("alpha:2026.03.11-alpha | sdk-platform-alpha")]),
-                ToolResultBlock(tool_use_id="call-beta", content=[TextBlock("beta:2026.03.11-beta | sdk-platform-beta")]),
+                ToolResultBlock(
+                    tool_use_id="call-alpha", content=[TextBlock("alpha:2026.03.11-alpha | sdk-platform-alpha")]
+                ),
+                ToolResultBlock(
+                    tool_use_id="call-beta", content=[TextBlock("beta:2026.03.11-beta | sdk-platform-beta")]
+                ),
             ]
         ),
         # Final answer
@@ -852,7 +870,8 @@ async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm
     # Exactly one outer LLM span should parent both Agent tool calls
     # (the final-answer LLM span is a separate, expected outer span)
     orchestration_llm_spans = [
-        llm_span for llm_span in llm_spans
+        llm_span
+        for llm_span in llm_spans
         if any(llm_span["span_id"] in agent_tool_span["span_parents"] for agent_tool_span in agent_tool_spans)
     ]
     assert len(orchestration_llm_spans) == 1, (
@@ -978,18 +997,13 @@ async def test_agent_tool_spans_encapsulate_child_task_spans(memory_logger):
     for agent_span in agent_tool_spans:
         agent_end = agent_span["metrics"]["end"]
         # Find child TASK span (parented under this Agent TOOL span)
-        children = [
-            ts for ts in child_task_spans
-            if agent_span["span_id"] in ts.get("span_parents", [])
-        ]
+        children = [ts for ts in child_task_spans if agent_span["span_id"] in ts.get("span_parents", [])]
         assert len(children) == 1, (
-            f"Agent span {agent_span['span_id']} should have exactly 1 child TASK span, "
-            f"got {len(children)}"
+            f"Agent span {agent_span['span_id']} should have exactly 1 child TASK span, got {len(children)}"
         )
         child_end = children[0]["metrics"]["end"]
         assert agent_end >= child_end, (
-            f"Agent TOOL span must encapsulate its child TASK span. "
-            f"Agent end={agent_end}, child TASK end={child_end}"
+            f"Agent TOOL span must encapsulate its child TASK span. Agent end={agent_end}, child TASK end={child_end}"
         )
 
 
@@ -1386,7 +1400,9 @@ def test_tool_span_tracker_logs_errors(memory_logger):
         )
         tracker.finish_tool_spans(
             UserMessage(
-                content=[ToolResultBlock(tool_use_id="call-err", content=[TextBlock("Division by zero")], is_error=True)]
+                content=[
+                    ToolResultBlock(tool_use_id="call-err", content=[TextBlock("Division by zero")], is_error=True)
+                ]
             )
         )
         llm_span.end()
@@ -1560,7 +1576,9 @@ def test_serialize_system_message_extracts_known_fields(message, expected):
 
 
 def test_extract_usage_from_result_message_normalizes_anthropic_tokens():
-    metrics = _extract_usage_from_result_message(ResultMessage(input_tokens=5, output_tokens=3, cache_creation_input_tokens=2))
+    metrics = _extract_usage_from_result_message(
+        ResultMessage(input_tokens=5, output_tokens=3, cache_creation_input_tokens=2)
+    )
 
     assert metrics == {
         "prompt_tokens": 7.0,
@@ -1715,7 +1733,7 @@ async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory
         nested_span = start_span(name=f"nested_tool_work_{args['a']}")
         nested_span.log(input=args)
         nested_span.end()
-        return {"content": [{"type": "text", "text": str(args['a'] + args['b'])}]}
+        return {"content": [{"type": "text", "text": str(args["a"] + args["b"])}]}
 
     calculator_tool = wrapped_tool_class(
         name="calculator",
@@ -1767,8 +1785,13 @@ async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory
     nested_span_first = _find_span_by_name(spans, "nested_tool_work_2")
     nested_span_second = _find_span_by_name(spans, "nested_tool_work_10")
 
-    assert tool_span_by_input[(("a", 2), ("b", 3), ("operation", "add"))]["span_id"] in nested_span_first["span_parents"]
-    assert tool_span_by_input[(("a", 10), ("b", 5), ("operation", "add"))]["span_id"] in nested_span_second["span_parents"]
+    assert (
+        tool_span_by_input[(("a", 2), ("b", 3), ("operation", "add"))]["span_id"] in nested_span_first["span_parents"]
+    )
+    assert (
+        tool_span_by_input[(("a", 10), ("b", 5), ("operation", "add"))]["span_id"]
+        in nested_span_second["span_parents"]
+    )
 
 
 class TestAutoInstrumentClaudeAgentSDK:
@@ -1778,6 +1801,7 @@ class TestAutoInstrumentClaudeAgentSDK:
     def test_auto_instrument_claude_agent_sdk(self):
         """Test auto_instrument patches Claude Agent SDK and creates spans."""
         verify_autoinstrument_script("test_auto_claude_agent_sdk.py")
+
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
@@ -1809,7 +1833,9 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
 
         async def main() -> None:
             loop = asyncio.get_running_loop()
-            loop.set_exception_handler(lambda loop, ctx: loop_errors.append(ctx.get("exception") or ctx.get("message")))
+            loop.set_exception_handler(
+                lambda loop, ctx: loop_errors.append(ctx.get("exception") or ctx.get("message"))
+            )
 
             options = getattr(consumer_module, "ClaudeAgentOptions")(
                 model="claude-3-5-haiku-20241022",

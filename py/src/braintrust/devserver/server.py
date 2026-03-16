@@ -4,6 +4,7 @@ import sys
 import textwrap
 from typing import Any
 
+
 try:
     import uvicorn
     from starlette.applications import Starlette
@@ -35,6 +36,7 @@ from .cors import create_cors_middleware
 from .dataset import get_dataset
 from .eval_hooks import SSEQueue
 from .schemas import ValidationError, parse_eval_body
+
 
 _all_evaluators: dict[str, Evaluator[Any, Any]] = {}
 

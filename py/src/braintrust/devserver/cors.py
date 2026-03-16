@@ -3,6 +3,7 @@ import re
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+
 # CORS configuration
 ALLOWED_ORIGINS: list[str | re.Pattern] = [
     "https://www.braintrust.dev",

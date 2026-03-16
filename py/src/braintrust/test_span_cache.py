@@ -1,6 +1,5 @@
 """Tests for SpanCache (disk-based cache)."""
 
-
 from braintrust.span_cache import CachedSpan, SpanCache
 
 

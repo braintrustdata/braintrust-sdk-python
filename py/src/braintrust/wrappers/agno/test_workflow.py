@@ -186,7 +186,9 @@ def test_agno_workflow_stream_prefers_final_workflow_output(memory_logger):
 
 
 def test_agno_workflow_stream_preserves_final_run_response_fields(memory_logger):
-    Workflow = wrap_workflow(make_fake_streaming_workflow_with_mutated_run_response("CompatWorkflowMutatedRunResponse"))
+    Workflow = wrap_workflow(
+        make_fake_streaming_workflow_with_mutated_run_response("CompatWorkflowMutatedRunResponse")
+    )
     workflow = Workflow()
 
     execution_input = FakeExecutionInput("hello world")

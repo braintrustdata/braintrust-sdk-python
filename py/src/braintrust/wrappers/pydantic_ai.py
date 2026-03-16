@@ -11,6 +11,7 @@ from braintrust.logger import NOOP_SPAN, Attachment, current_span, init_logger, 
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
 
+
 logger = logging.getLogger(__name__)
 
 __all__ = ["setup_pydantic_ai"]

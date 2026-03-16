@@ -3,6 +3,7 @@
 from braintrust.auto import auto_instrument
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
+
 # 1. Instrument
 results = auto_instrument()
 assert results.get("pydantic_ai") == True
@@ -23,6 +24,7 @@ with autoinstrument_test_context("test_auto_pydantic_ai") as memory_logger:
     )
 
     import asyncio
+
     result = asyncio.run(agent.run("Say hi"))
     assert result.output
 

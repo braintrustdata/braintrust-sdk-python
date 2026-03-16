@@ -2,6 +2,7 @@ import asyncio
 
 from braintrust.wrappers.agno import setup_agno
 
+
 # Set up Braintrust observability
 setup_agno(project_name="async-team-agent-project")
 

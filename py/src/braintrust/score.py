@@ -6,6 +6,7 @@ from typing import Any
 
 from .serializable_data_class import SerializableDataClass
 
+
 # =========================================================================
 #  !!!!!!!!!!!!!!!! READ THIS BEFORE CHANGING THIS FILE !!!!!!!!!!!!!!!!
 #

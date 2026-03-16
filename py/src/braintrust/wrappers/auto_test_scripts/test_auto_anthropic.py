@@ -4,6 +4,7 @@ import anthropic
 from braintrust.auto import auto_instrument
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
+
 # 1. Verify not patched initially
 assert not getattr(anthropic, "__braintrust_wrapped__", False)
 

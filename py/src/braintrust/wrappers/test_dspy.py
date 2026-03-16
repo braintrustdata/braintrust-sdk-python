@@ -9,6 +9,7 @@ from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.dspy import BraintrustDSpyCallback
 from braintrust.wrappers.test_utils import run_in_subprocess, verify_autoinstrument_script
 
+
 PROJECT_NAME = "test-dspy-app"
 MODEL = "openai/gpt-4o-mini"
 

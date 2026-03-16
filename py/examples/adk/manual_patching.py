@@ -10,6 +10,7 @@ import asyncio
 
 from braintrust.wrappers.adk import setup_adk
 
+
 # Setup ADK tracing with a specific project
 setup_adk(project_name="my-adk-project")
 
