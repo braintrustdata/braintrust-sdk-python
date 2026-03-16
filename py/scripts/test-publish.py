@@ -266,13 +266,19 @@ def parse_args() -> argparse.Namespace:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     prepare_parser = subparsers.add_parser("prepare")
-    prepare_parser.add_argument("release_type", choices=("prerelease", "canary"))
-    prepare_parser.add_argument("target_ref")
-    prepare_parser.add_argument("--run-number", type=int, required=True)
-    prepare_parser.add_argument("--github-output", type=pathlib.Path)
+    prepare_subparsers = prepare_parser.add_subparsers(dest="release_type", required=True)
 
-    canary_parser = subparsers.add_parser("check-canary")
+    prerelease_parser = prepare_subparsers.add_parser("prerelease")
+    prerelease_parser.add_argument("--run-number", type=int, required=True)
+    prerelease_parser.add_argument("--github-output", type=pathlib.Path)
+
+    canary_parser = prepare_subparsers.add_parser("canary")
+    canary_parser.add_argument("target_ref")
+    canary_parser.add_argument("--run-number", type=int, required=True)
     canary_parser.add_argument("--github-output", type=pathlib.Path)
+
+    check_canary_parser = subparsers.add_parser("check-canary")
+    check_canary_parser.add_argument("--github-output", type=pathlib.Path)
 
     return parser.parse_args()
 
@@ -281,17 +287,19 @@ def main() -> int:
     args = parse_args()
 
     if args.command == "prepare":
-        outputs = prepare_release(args.release_type, args.target_ref, args.run_number)
+        target_ref = getattr(args, "target_ref", "")
+        outputs = prepare_release(args.release_type, target_ref, args.run_number)
     elif args.command == "check-canary":
         outputs = check_canary_status()
     else:  # pragma: no cover
         raise ValueError(f"Unsupported command '{args.command}'")
 
-    if args.github_output is not None:
-        write_github_output(args.github_output, outputs)
+    github_output = getattr(args, "github_output", None)
+    if github_output is not None:
+        write_github_output(github_output, outputs)
     else:
         for key, value in outputs.items():
-            print(f"{key.upper()}={value}")
+            print(f"{key}={value}")
     return 0
 
 

@@ -49,11 +49,17 @@ jobs:
       - name: Resolve test release metadata
         id: validate
         run: |
-          mise exec -- python py/scripts/test-publish.py prepare \
-            "${{ github.event.inputs.release_type }}" \
-            "${{ github.event.inputs.ref }}" \
-            --run-number "${{ github.run_number }}" \
-            --github-output "$GITHUB_OUTPUT"
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+          if [ "$RELEASE_TYPE" = "canary" ]; then
+            mise exec -- python py/scripts/test-publish.py prepare canary \
+              "${{ github.event.inputs.ref }}" \
+              --run-number "${{ github.run_number }}" \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            mise exec -- python py/scripts/test-publish.py prepare prerelease \
+              --run-number "${{ github.run_number }}" \
+              --github-output "$GITHUB_OUTPUT"
+          fi
           echo "dry_run=${{ github.event.inputs.dry_run }}" >> "$GITHUB_OUTPUT"
 
   build-and-publish:

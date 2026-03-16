@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Template the package version module during build."""
 
-from __future__ import annotations
-
 import os
 import pathlib
 import re
