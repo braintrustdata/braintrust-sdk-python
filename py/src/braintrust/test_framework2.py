@@ -1,10 +1,11 @@
 """Tests for framework2 module, specifically metadata and tags support."""
 
 import importlib.util
+from unittest.mock import MagicMock
 
 import pytest
 
-from .framework2 import projects
+from .framework2 import ProjectIdCache, projects
 
 
 # Check if pydantic is available
@@ -268,3 +269,65 @@ class TestScorerTags:
         )
 
         assert scorer.tags == tags
+
+
+@pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
+def test_project_parameters_create_serializes_defaults():
+    from pydantic import BaseModel
+
+    class PrefixParam(BaseModel):
+        value: str = "hello"
+
+    class RequiredParam(BaseModel):
+        value: str
+
+    project = projects.create("test-project")
+    project.parameters.create(
+        name="test-parameters",
+        schema={
+            "prefix": PrefixParam,
+            "model": {
+                "type": "model",
+                "default": "gpt-5-mini",
+            },
+            "main": {
+                "type": "prompt",
+                "default": {
+                    "prompt": {
+                        "type": "chat",
+                        "messages": [{"role": "user", "content": "{{input}}"}],
+                    },
+                    "options": {
+                        "model": "gpt-5-mini",
+                    },
+                },
+            },
+            "required_text": RequiredParam,
+        },
+    )
+
+    mock_project_ids = MagicMock(spec=ProjectIdCache)
+    mock_project_ids.get.return_value = "project-123"
+
+    parameters = project._publishable_parameters
+    assert len(parameters) == 1
+
+    func_def = parameters[0].to_function_definition(None, mock_project_ids)
+
+    assert func_def["function_type"] == "parameters"
+    assert func_def["function_data"]["type"] == "parameters"
+    assert func_def["function_data"]["data"] == {
+        "prefix": "hello",
+        "model": "gpt-5-mini",
+        "main": {
+            "prompt": {
+                "type": "chat",
+                "messages": [{"role": "user", "content": "{{input}}"}],
+            },
+            "options": {
+                "model": "gpt-5-mini",
+            },
+        },
+    }
+    assert func_def["function_data"]["__schema"]["properties"]["model"]["x-bt-type"] == "model"
+    assert "required_text" not in func_def["function_data"]["data"]

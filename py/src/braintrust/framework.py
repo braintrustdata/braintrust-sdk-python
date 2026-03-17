@@ -42,7 +42,7 @@ from .logger import (
     stringify_exception,
 )
 from .logger import init as _init_experiment
-from .parameters import EvalParameters
+from .parameters import EvalParameters, RemoteEvalParameters, is_eval_parameter_schema, validate_parameters
 from .resource_manager import ResourceManager
 from .score import Score, is_score, is_scorer
 from .serializable_data_class import SerializableDataClass
@@ -439,11 +439,13 @@ class Evaluator(Generic[Input, Output]):
     Whether to summarize the scores of the experiment after it has run.
     """
 
-    parameters: EvalParameters | None = None
+    parameters: EvalParameters | RemoteEvalParameters | None = None
     """
     A set of parameters that will be passed to the evaluator.
     Can be used to define prompts or other configurable values.
     """
+
+    parameter_values: dict[str, Any] | None = None
 
 
 @dataclasses.dataclass
@@ -675,7 +677,7 @@ def _EvalCommon(
     summarize_scores: bool,
     no_send_logs: bool,
     error_score_handler: ErrorScoreHandler | None = None,
-    parameters: EvalParameters | None = None,
+    parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
@@ -741,6 +743,12 @@ def _EvalCommon(
         if isinstance(evaluator.data, Dataset):
             dataset = evaluator.data
 
+        experiment_parameters = None
+        if RemoteEvalParameters.is_parameters(evaluator.parameters) and evaluator.parameters.id is not None:
+            experiment_parameters = {"id": evaluator.parameters.id}
+            if evaluator.parameters.version is not None:
+                experiment_parameters["version"] = evaluator.parameters.version
+
         # NOTE: This code is duplicated with run_evaluator_task in py/src/braintrust/cli/eval.py.
         # Make sure to update those arguments if you change this.
         experiment = None
@@ -759,6 +767,7 @@ def _EvalCommon(
                 git_metadata_settings=evaluator.git_metadata_settings,
                 repo_info=evaluator.repo_info,
                 dataset=dataset,
+                parameters=experiment_parameters,
                 state=state,
             )
 
@@ -804,7 +813,7 @@ async def EvalAsync(
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,
-    parameters: EvalParameters | None = None,
+    parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
@@ -931,7 +940,7 @@ def Eval(
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,
-    parameters: EvalParameters | None = None,
+    parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
@@ -1392,6 +1401,15 @@ async def _run_evaluator_internal_impl(
     scorer_names = [_scorer_name(scorer, i) for i, scorer in enumerate(scorers)]
     unhandled_scores = scorer_names
 
+    if evaluator.parameter_values is not None:
+        resolved_evaluator_parameters = evaluator.parameter_values
+    elif RemoteEvalParameters.is_parameters(evaluator.parameters):
+        resolved_evaluator_parameters = validate_parameters({}, evaluator.parameters)
+    elif is_eval_parameter_schema(evaluator.parameters):
+        resolved_evaluator_parameters = validate_parameters({}, evaluator.parameters)
+    else:
+        resolved_evaluator_parameters = evaluator.parameters
+
     async def run_evaluator_task(datum, trial_index=0):
         if isinstance(datum, dict):
             datum = EvalCase.from_dict(datum)
@@ -1451,7 +1469,7 @@ async def _run_evaluator_internal_impl(
                     trial_index=trial_index,
                     tags=tags,
                     report_progress=report_progress,
-                    parameters=evaluator.parameters,
+                    parameters=resolved_evaluator_parameters,
                 )
 
                 # Check if the task takes a hooks argument

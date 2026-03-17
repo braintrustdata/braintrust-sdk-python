@@ -28,7 +28,7 @@ except ModuleNotFoundError as e:
 from ..framework import EvalAsync, EvalScorer, Evaluator, ExperimentSummary, SSEProgressEvent
 from ..generated_types import FunctionId
 from ..logger import BraintrustState, bt_iscoroutinefunction
-from ..parameters import parameters_to_json_schema, validate_parameters
+from ..parameters import serialize_remote_eval_parameters_container, validate_parameters
 from ..span_identifier_v4 import parse_parent
 from .auth import AuthorizationMiddleware
 from .cache import cached_login
@@ -39,6 +39,42 @@ from .schemas import ValidationError, parse_eval_body
 
 
 _all_evaluators: dict[str, Evaluator[Any, Any]] = {}
+
+
+class _ParameterOverrideHooks:
+    def __init__(self, hooks: Any, parameters: dict[str, Any]):
+        self._hooks = hooks
+        self._parameters = parameters
+
+    @property
+    def metadata(self):
+        return self._hooks.metadata
+
+    @property
+    def expected(self):
+        return self._hooks.expected
+
+    @property
+    def span(self):
+        return self._hooks.span
+
+    @property
+    def trial_index(self):
+        return self._hooks.trial_index
+
+    @property
+    def tags(self):
+        return self._hooks.tags
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    def report_progress(self, progress):
+        return self._hooks.report_progress(progress)
+
+    def meta(self, **info: Any):
+        return self._hooks.meta(**info)
 
 
 class CheckAuthorizedMiddleware(BaseHTTPMiddleware):
@@ -95,7 +131,9 @@ async def list_evaluators(request: Request) -> JSONResponse:
     evaluator_list = {}
     for name, evaluator in _all_evaluators.items():
         evaluator_list[name] = {
-            "parameters": parameters_to_json_schema(evaluator.parameters) if evaluator.parameters else {},
+            "parameters": (
+                serialize_remote_eval_parameters_container(evaluator.parameters) if evaluator.parameters else None
+            ),
             "scores": [{"name": getattr(score, "name", f"score_{i}")} for i, score in enumerate(evaluator.scores)],
         }
 
@@ -155,11 +193,12 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     sse_queue = SSEQueue()
 
     async def task(input, hooks):
+        task_hooks = hooks if validated_parameters is None else _ParameterOverrideHooks(hooks, validated_parameters)
         if bt_iscoroutinefunction(evaluator.task):
-            result = await evaluator.task(input, hooks)
+            result = await evaluator.task(input, task_hooks)
         else:
-            result = evaluator.task(input, hooks)
-        hooks.report_progress(
+            result = evaluator.task(input, task_hooks)
+        task_hooks.report_progress(
             {
                 "format": "code",
                 "output_type": "completion",
@@ -186,10 +225,9 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     if parent:
         parent = parse_parent(parent)
 
-    # Override evaluator parameters with validated ones if provided
-    eval_kwargs = {k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name"]}
-    if validated_parameters is not None:
-        eval_kwargs["parameters"] = validated_parameters
+    eval_kwargs = {
+        k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name", "parameter_values"]
+    }
 
     try:
         eval_task = asyncio.create_task(
