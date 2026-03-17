@@ -20,8 +20,6 @@ import tempfile
 import nox
 
 
-<<<<<<< HEAD
-=======
 def _pinned_python_version():
     """Return the (major, minor) Python version pinned in ../.tool-versions, or None."""
     tool_versions = pathlib.Path(__file__).parent.parent / ".tool-versions"
@@ -37,7 +35,6 @@ def _pinned_python_version():
 
 _PINNED_PYTHON = _pinned_python_version()
 
->>>>>>> f9cedc0c (handle when pylint is called)
 # much faster than pip
 nox.options.default_venv_backend = "uv"
 

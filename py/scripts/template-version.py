@@ -6,8 +6,9 @@ import pathlib
 import re
 import subprocess
 
+
 VERSION_FILE = pathlib.Path("src/braintrust/version.py")
-GIT_COMMIT_RE = re.compile(r'__GIT_COMMIT__')
+GIT_COMMIT_RE = re.compile(r"__GIT_COMMIT__")
 RELEASE_CHANNEL_RE = re.compile(r'^RELEASE_CHANNEL = ".*"$', re.MULTILINE)
 VERSION_RE = re.compile(r'^VERSION = ".*"$', re.MULTILINE)
 
@@ -32,7 +33,7 @@ def main() -> int:
         current_version_match = re.search(r'^VERSION = "([^"]+)"$', contents, re.MULTILINE)
         if current_version_match is None:
             raise ValueError(f"Could not find VERSION in {VERSION_FILE}")
-        new_version = f'{current_version_match.group(1)}rc{os.environ["GITHUB_RUN_NUMBER"]}'
+        new_version = f"{current_version_match.group(1)}rc{os.environ['GITHUB_RUN_NUMBER']}"
         contents = VERSION_RE.sub(f'VERSION = "{new_version}"', contents, count=1)
 
     VERSION_FILE.write_text(contents, encoding="utf-8")

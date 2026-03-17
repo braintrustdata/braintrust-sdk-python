@@ -17,6 +17,7 @@ import urllib.request
 import zipfile
 from typing import Any
 
+
 try:
     from packaging.version import InvalidVersion, Version
 except ImportError:  # pragma: no cover
