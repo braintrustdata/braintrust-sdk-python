@@ -11,6 +11,7 @@ from braintrust import logger
 from braintrust.logger import start_span
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.agno import agent as agno_agent_module
+from braintrust.wrappers.agno import model as agno_model_module
 from braintrust.wrappers.agno import run_helpers as agno_run_helpers_module
 from braintrust.wrappers.agno import setup_agno
 from braintrust.wrappers.agno import team as agno_team_module
@@ -110,6 +111,16 @@ def test_agno_simple_agent_execution(memory_logger):
     assert llm_span["metrics"]["prompt_tokens"] == 38
     assert llm_span["metrics"]["completion_tokens"] == 4
     assert llm_span["metrics"]["tokens"] == 42
+
+
+def test_get_model_name_prefers_stable_provider_attribute():
+    class FakeModel:
+        provider = "OpenAI"
+
+        def get_provider(self):
+            return "OpenAI Chat"
+
+    assert agno_model_module._get_model_name(FakeModel()) == "OpenAI"
 
 
 class TestAutoInstrumentAgno:
