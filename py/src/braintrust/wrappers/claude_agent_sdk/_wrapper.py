@@ -259,8 +259,6 @@ def _wrap_options_hooks(options: Any) -> None:
     hooks_by_event = getattr(options, "hooks", None)
     if not isinstance(hooks_by_event, dict):
         return
-    if getattr(options, "_braintrust_wrapped_claude_hooks_ref", None) is hooks_by_event:
-        return
 
     for event_name, matchers in list(hooks_by_event.items()):
         if not isinstance(matchers, list):
@@ -931,6 +929,8 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 yield message
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
+            # Ensure hooks replaced after construction are wrapped before connect snapshots them.
+            _wrap_client_hooks(self._client)
             await self._client.__aenter__()
             return self
 

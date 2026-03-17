@@ -139,6 +139,87 @@ def test_wrap_client_hooks_rewraps_when_hooks_container_is_replaced():
     assert client.options._braintrust_wrapped_claude_hooks_ref is client.options.hooks
 
 
+def test_wrap_client_hooks_rewraps_when_matchers_change_within_same_hooks_container():
+    """Regression test: re-wrap hooks after in-place mutation of the hooks dict."""
+    class FakeOptions:
+        def __init__(self, hooks: dict[str, list[Any]]):
+            self.hooks = hooks
+
+    class FakeClient:
+        def __init__(self, options: FakeOptions):
+            self.options = options
+
+    def first_callback(value: Any) -> Any:
+        return value
+
+    def second_callback(value: Any) -> Any:
+        return value
+
+    first_matcher = types.SimpleNamespace(hooks=[first_callback], matcher="tool")
+    hooks = {"PreToolUse": [first_matcher]}
+    client = FakeClient(FakeOptions(hooks))
+
+    _wrap_client_hooks(client)
+    assert hasattr(first_matcher.hooks[0], "_braintrust_wrapped_claude_hook")
+
+    second_matcher = types.SimpleNamespace(hooks=[second_callback], matcher="tool")
+    hooks["PreToolUse"] = [second_matcher]
+
+    _wrap_client_hooks(client)
+
+    assert hasattr(second_matcher.hooks[0], "_braintrust_wrapped_claude_hook")
+    assert client.options._braintrust_wrapped_claude_hooks_ref is hooks
+
+
+@pytest.mark.asyncio
+async def test_create_client_wrapper_wraps_replaced_hooks_before_connect():
+    """Regression test: replacement hooks must be wrapped before connect snapshots them."""
+    class FakeOptions:
+        def __init__(self, hooks: dict[str, list[Any]]):
+            self.hooks = hooks
+
+    class FakeClaudeSDKClient:
+        def __init__(self, options: FakeOptions | None = None, transport: Any = None):
+            del transport
+            self.options = options
+            self.connected_hook_callbacks: list[Any] | None = None
+
+        async def __aenter__(self) -> "FakeClaudeSDKClient":
+            self.connected_hook_callbacks = self.options.hooks["PreToolUse"][0].hooks
+            return self
+
+        async def __aexit__(self, *args: Any) -> None:
+            del args
+            return None
+
+        async def query(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            return None
+
+        async def receive_response(self) -> AsyncIterable[str]:
+            if False:
+                yield ""
+
+    def first_callback(value: Any) -> Any:
+        return value
+
+    def second_callback(value: Any) -> Any:
+        return value
+
+    wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
+    client = wrapped_client_class(options=FakeOptions({"PreToolUse": [types.SimpleNamespace(hooks=[first_callback], matcher="tool")]}))
+
+    replacement_matcher = types.SimpleNamespace(hooks=[second_callback], matcher="tool")
+    client._client.options.hooks = {"PreToolUse": [replacement_matcher]}
+
+    async with client:
+        await client.query("Say hi")
+
+    assert client._client.connected_hook_callbacks is not None
+    assert hasattr(client._client.connected_hook_callbacks[0], "_braintrust_wrapped_claude_hook")
+    assert hasattr(replacement_matcher.hooks[0], "_braintrust_wrapped_claude_hook")
+
+
 @pytest.mark.asyncio
 async def test_wrap_query_function_forwards_unknown_kwargs():
     call_log: dict[str, Any] = {}
@@ -195,6 +276,22 @@ def test_serialize_hook_context_handles_cyclic_containers():
     assert serialized["name"] == "root"
     assert serialized["child"]["parent"] == "<circular reference>"
     assert "signal" not in serialized
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+def test_setup_claude_agent_sdk_patches_query_only_imports(monkeypatch):
+    """Regression test: modules that imported only query before setup must still be patched."""
+    original_query = claude_agent_sdk.query
+
+    consumer_module_name = "test_issue7_query_only_import"
+    consumer_module = types.ModuleType(consumer_module_name)
+    consumer_module.query = original_query
+    monkeypatch.setitem(sys.modules, consumer_module_name, consumer_module)
+
+    with _patched_claude_sdk():
+        assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+        assert consumer_module.query is claude_agent_sdk.query
+        assert consumer_module.query is not original_query
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
