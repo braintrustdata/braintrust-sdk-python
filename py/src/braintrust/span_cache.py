@@ -13,6 +13,7 @@ import tempfile
 import uuid
 from typing import Any, Optional
 
+from braintrust.types import Metadata
 from braintrust.util import merge_dicts
 
 
@@ -29,7 +30,7 @@ class CachedSpan:
         span_id: str,
         input: Optional[Any] = None,
         output: Optional[Any] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: Metadata | None = None,
         span_parents: Optional[list[str]] = None,
         span_attributes: Optional[dict[str, Any]] = None,
     ):

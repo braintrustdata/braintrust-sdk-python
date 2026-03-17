@@ -163,7 +163,7 @@ class EvalHooks(abc.ABC, Generic[Output]):
 
     @property
     @abc.abstractmethod
-    def metadata(self) -> Metadata:
+    def metadata(self) -> Metadata | None:
         """
         The metadata object for the current evaluation. You can mutate this object to add or remove metadata.
         """
@@ -1148,7 +1148,7 @@ def evaluate_filter(object, filter: Filter):
 class DictEvalHooks(dict[str, Any]):
     def __init__(
         self,
-        metadata: Any | None = None,
+        metadata: Metadata | None = None,
         expected: Any | None = None,
         trial_index: int = 0,
         tags: Sequence[str] | None = None,
@@ -1170,7 +1170,7 @@ class DictEvalHooks(dict[str, Any]):
         self._parameters = parameters
 
     @property
-    def metadata(self):
+    def metadata(self) -> Metadata | None:
         return self.get("metadata")
 
     @property
