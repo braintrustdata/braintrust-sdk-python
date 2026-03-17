@@ -76,6 +76,7 @@ from .serializable_data_class import SerializableDataClass
 from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from .span_identifier_v4 import SpanComponentsV4
 from .span_types import SpanTypeAttribute
+from .types import Metadata
 from .util import (
     GLOBAL_PROJECT,
     AugmentedHTTPError,
@@ -92,15 +93,13 @@ from .util import (
     parse_env_var_float,
     response_raise_for_status,
 )
+from .xact_ids import prettify_xact
 
 
 # Fields that should be passed to the masking function
 # Note: "tags" field is intentionally excluded, but can be added if needed
 REDACTION_FIELDS = ["input", "output", "expected", "metadata", "context", "scores", "metrics"]
-from .xact_ids import prettify_xact
 
-
-Metadata = dict[str, Any]
 DATA_API_VERSION = 2
 LOGS3_OVERFLOW_REFERENCE_TYPE = "logs3_overflow"
 # 6 MB for the AWS lambda gateway (from our own testing).
@@ -3216,7 +3215,7 @@ def _log_feedback_impl(
     expected: Any | None = None,
     tags: Sequence[str] | None = None,
     comment: str | None = None,
-    metadata: Mapping[str, Any] | None = None,
+    metadata: Metadata | None = None,
     source: Literal["external", "app", "api", None] = None,
 ):
     if source is None:
@@ -3667,7 +3666,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         error: str | None = None,
         tags: Sequence[str] | None = None,
         scores: Mapping[str, int | float] | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         metrics: Mapping[str, int | float] | None = None,
         id: str | None = None,
         dataset_record_id: str | None = None,
@@ -3719,7 +3718,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
         comment: str | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         source: Literal["external", "app", "api", None] = None,
     ) -> None:
         """
@@ -4502,7 +4501,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
 
     def _validate_event(
         self,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         expected: Any | None = None,
         output: Any | None = None,
         tags: Sequence[str] | None = None,
@@ -4555,7 +4554,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         input: Any | None = None,
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         id: str | None = None,
         output: Any | None = None,
     ) -> str:
@@ -4599,7 +4598,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         input: Any | None = None,
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
     ) -> str:
         """
         Update fields of a single record in the dataset. The updated fields will be batched and uploaded behind the scenes.
@@ -5100,7 +5099,7 @@ class Logger(Exportable):
         error: str | None = None,
         tags: Sequence[str] | None = None,
         scores: Mapping[str, int | float] | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         metrics: Mapping[str, int | float] | None = None,
         id: str | None = None,
         allow_concurrent_with_spans: bool = False,
@@ -5151,7 +5150,7 @@ class Logger(Exportable):
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
         comment: str | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         source: Literal["external", "app", "api", None] = None,
     ) -> None:
         """

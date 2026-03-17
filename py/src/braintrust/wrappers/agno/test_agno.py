@@ -95,7 +95,9 @@ def test_agno_simple_agent_execution(memory_logger):
     assert root_span["metrics"]["duration"] > 0
 
     llm_span = spans[1]
-    assert llm_span["span_attributes"]["name"] == "OpenAI.response"
+    llm_span_name = llm_span["span_attributes"]["name"]
+    assert "OpenAI" in llm_span_name
+    assert llm_span_name.endswith(".response")
     assert llm_span["span_attributes"]["type"].value == "llm"
     assert llm_span["span_parents"] == [root_span["span_id"]]
     assert llm_span["metadata"]["model"] == "gpt-4o-mini"

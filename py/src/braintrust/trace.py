@@ -10,6 +10,7 @@ from typing import Any, Awaitable, Callable, Optional, Protocol, TypedDict
 
 from braintrust.functions.invoke import invoke
 from braintrust.logger import BraintrustState, ObjectFetcher
+from braintrust.types import Metadata
 
 
 class SpanData:
@@ -19,7 +20,7 @@ class SpanData:
         self,
         input: Optional[Any] = None,
         output: Optional[Any] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: Metadata | None = None,
         span_id: Optional[str] = None,
         span_parents: Optional[list[str]] = None,
         span_attributes: Optional[dict[str, Any]] = None,

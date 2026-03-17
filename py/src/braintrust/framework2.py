@@ -16,6 +16,7 @@ from .generated_types import (
     SavedFunctionId,
     ToolFunctionDefinition,
 )
+from .types import Metadata
 from .util import eprint
 
 
@@ -58,7 +59,7 @@ class CodeFunction:
     parameters: Any
     returns: Any
     if_exists: IfExists | None
-    metadata: dict[str, Any] | None = None
+    metadata: Metadata | None = None
     tags: Sequence[str] | None = None
 
 
@@ -75,7 +76,7 @@ class CodePrompt:
     function_type: str | None
     id: str | None
     if_exists: IfExists | None
-    metadata: dict[str, Any] | None = None
+    metadata: Metadata | None = None
     tags: Sequence[str] | None = None
 
     def to_function_definition(self, if_exists: IfExists | None, project_ids: ProjectIdCache) -> dict[str, Any]:
@@ -133,7 +134,7 @@ class ToolBuilder:
         parameters: Any = None,
         returns: Any = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ) -> CodeFunction:
         """Creates a tool.
@@ -198,7 +199,7 @@ class PromptBuilder:
         params: ModelParams | None = None,
         tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ) -> CodePrompt: ...
 
@@ -215,7 +216,7 @@ class PromptBuilder:
         params: ModelParams | None = None,
         tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ) -> CodePrompt: ...
 
@@ -232,7 +233,7 @@ class PromptBuilder:
         params: ModelParams | None = None,
         tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ):
         """Creates a prompt.
@@ -321,7 +322,7 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
         handler: Callable[..., Any],
         parameters: Any,
@@ -337,7 +338,7 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
         prompt: str,
         model: str,
@@ -355,7 +356,7 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
         messages: list[ChatCompletionMessageParam],
         model: str,
@@ -371,7 +372,7 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
         # Code scorer params.
         handler: Callable[..., Any] | None = None,
