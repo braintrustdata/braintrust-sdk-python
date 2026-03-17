@@ -93,12 +93,12 @@ from .util import (
     parse_env_var_float,
     response_raise_for_status,
 )
+from .xact_ids import prettify_xact
 
 
 # Fields that should be passed to the masking function
 # Note: "tags" field is intentionally excluded, but can be added if needed
 REDACTION_FIELDS = ["input", "output", "expected", "metadata", "context", "scores", "metrics"]
-from .xact_ids import prettify_xact
 
 DATA_API_VERSION = 2
 LOGS3_OVERFLOW_REFERENCE_TYPE = "logs3_overflow"
