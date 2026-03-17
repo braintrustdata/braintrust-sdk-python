@@ -1,5 +1,10 @@
 [tool.ruff]
 line-length = 119
+force-exclude = true
+extend-exclude = [
+    "py/src/braintrust/_generated_types.py",
+    "py/src/braintrust/generated_types.py",
+]
 
 [tool.ruff.lint]
 select = [

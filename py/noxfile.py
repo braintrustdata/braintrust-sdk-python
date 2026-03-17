@@ -31,6 +31,10 @@ SILENT_INSTALLS = True
 LATEST = "latest"
 ERROR_CODES = tuple(range(1, 256))
 INTERNAL_TEST_FLAGS = {"--wheel", "--disable-vcr"}
+GENERATED_LINT_EXCLUDES = {
+    "src/braintrust/_generated_types.py",
+    "src/braintrust/generated_types.py",
+}
 
 
 # The minimal set of dependencies we need to run tests.
@@ -309,7 +313,7 @@ def pylint(session):
     session.install("langsmith")
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
-    files = result.strip().splitlines()
+    files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
     if not files:
         return
     session.run("pylint", "--errors-only", *files)
