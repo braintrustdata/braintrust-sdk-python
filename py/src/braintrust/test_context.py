@@ -754,6 +754,27 @@ async def test_copy_context_token_error_across_async_tasks(test_logger, with_mem
 
 
 @pytest.mark.asyncio
+async def test_unset_current_span_with_cross_context_token_falls_back_to_clear():
+    """Cross-context cleanup should not raise if the token can't be reset."""
+    from braintrust.context import BraintrustContextManager
+
+    context_manager = BraintrustContextManager()
+    token = context_manager.set_current_span("parent")
+    result = {}
+
+    async def other_task():
+        try:
+            context_manager.unset_current_span(token)
+            result["outcome"] = "ok"
+        except Exception as e:
+            result["outcome"] = f"{type(e).__name__}: {e}"
+
+    await asyncio.create_task(other_task())
+
+    assert result["outcome"] == "ok"
+
+
+@pytest.mark.asyncio
 async def test_async_generator_early_break_context_token(test_logger, with_memory_logger):
     """
     Expected: Early breaks from async generators shouldn't cause context token errors.

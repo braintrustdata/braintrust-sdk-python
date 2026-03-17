@@ -3,6 +3,7 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportPrivateUsage=false
 import asyncio
+import inspect
 import time
 
 import pytest
@@ -13,6 +14,7 @@ from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from pydantic import BaseModel
 from pydantic_ai import Agent, ModelSettings
 from pydantic_ai.messages import ModelRequest, UserPromptPart
+from pydantic_ai.usage import UsageLimits
 
 PROJECT_NAME = "test-pydantic-ai-integration"
 MODEL = "openai:gpt-4o-mini"  # Use cheaper model for tests
@@ -30,6 +32,7 @@ def setup_wrapper():
 def direct():
     """Provide pydantic_ai.direct module after setup_wrapper has run."""
     import pydantic_ai.direct as direct_module
+
     return direct_module
 
 
@@ -157,7 +160,6 @@ def test_agent_run_sync(memory_logger):
                 return True
         return False
 
-
     assert is_descendant(chat_span, agent_sync_span["span_id"]), "chat span should be nested under agent_run_sync"
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"
@@ -166,6 +168,71 @@ def test_agent_run_sync(memory_logger):
     # Agent spans should have token metrics
     assert "prompt_tokens" in agent_sync_span["metrics"]
     assert "completion_tokens" in agent_sync_span["metrics"]
+
+
+def test_agent_to_cli_sync(memory_logger, monkeypatch):
+    """Test Agent.to_cli_sync() records a CLI session span."""
+    assert not memory_logger.pop()
+
+    cli_signature = inspect.signature(Agent.to_cli_sync)
+    message_history = [ModelRequest(parts=[UserPromptPart(content="Previous question")])]
+    agent = Agent(MODEL, name="cli-agent", model_settings=ModelSettings(max_tokens=50))
+    captured = {}
+
+    async def fake_run_chat(
+        *,
+        stream,
+        agent,
+        deps,
+        console,
+        code_theme,
+        prog_name,
+        message_history,
+        model_settings=None,
+        usage_limits=None,
+    ):
+        assert stream is True
+        assert prog_name == "braintrust-cli"
+        assert message_history is not None
+        captured["model_settings"] = model_settings
+        captured["usage_limits"] = usage_limits
+        return 0
+
+    monkeypatch.setattr("pydantic_ai._cli.run_chat", fake_run_chat)
+
+    cli_kwargs = {
+        "prog_name": "braintrust-cli",
+        "message_history": message_history,
+    }
+    # pydantic_ai 1.10.0 exposes a smaller to_cli_sync API; newer versions add
+    # model_settings and usage_limits, so assert those fields only when present.
+    if "model_settings" in cli_signature.parameters:
+        cli_kwargs["model_settings"] = ModelSettings(max_tokens=20, temperature=0.2)
+    if "usage_limits" in cli_signature.parameters:
+        cli_kwargs["usage_limits"] = UsageLimits(request_limit=3)
+
+    start = time.time()
+    agent.to_cli_sync(**cli_kwargs)
+    end = time.time()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1, f"Expected 1 CLI span, got {len(spans)}"
+
+    cli_span = spans[0]
+    assert cli_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    assert cli_span["span_attributes"]["name"] == "agent_to_cli_sync [cli-agent]"
+    assert cli_span["metadata"]["model"] == "gpt-4o-mini"
+    assert cli_span["metadata"]["provider"] == "openai"
+    assert cli_span["input"]["prog_name"] == "braintrust-cli"
+    assert "message_history" in cli_span["input"]
+    if "model_settings" in cli_signature.parameters:
+        assert captured["model_settings"] is not None
+        assert cli_span["input"]["model_settings"]["max_tokens"] == 20
+        assert cli_span["input"]["model_settings"]["temperature"] == 0.2
+    if "usage_limits" in cli_signature.parameters:
+        assert captured["usage_limits"] is not None
+        assert cli_span["input"]["usage_limits"]["request_limit"] == 3
+    _assert_metrics_are_valid(cli_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -189,7 +256,7 @@ async def test_multiple_identical_sequential_streams(memory_logger):
                 full_text = ""
                 async for text in result.stream_text(delta=True):
                     full_text += text
-            print(f"Completed stream {i+1}")
+            print(f"Completed stream {i + 1}")
 
     await run_multiple_identical_streams()
 
@@ -215,7 +282,7 @@ async def test_multiple_identical_sequential_streams(memory_logger):
         ttft = chat_start - agent_start
         time_to_first_tokens.append(ttft)
 
-        print(f"\n=== STREAM {i+1} ===")
+        print(f"\n=== STREAM {i + 1} ===")
         print(f"Agent span start: {agent_start}")
         print(f"Chat span start: {chat_start}")
         print(f"Time to first token: {ttft}s")
@@ -236,10 +303,12 @@ async def test_multiple_identical_sequential_streams(memory_logger):
 
     # All should be small (< 3s)
     for i, ttft in enumerate(time_to_first_tokens):
-        assert ttft < 3.0, f"Stream {i+1} time to first token too large: {ttft}s"
+        assert ttft < 3.0, f"Stream {i + 1} time to first token too large: {ttft}s"
 
     # Spread should be small (< 0.5s) - this catches the accumulation bug
-    assert ttft_spread < 0.5, f"Time-to-first-token spread too large: {ttft_spread}s - suggests timing is accumulating from previous calls"
+    assert ttft_spread < 0.5, (
+        f"Time-to-first-token spread too large: {ttft_spread}s - suggests timing is accumulating from previous calls"
+    )
 
 
 @pytest.mark.vcr
@@ -320,7 +389,9 @@ async def test_multiple_sequential_streams(memory_logger):
 
     # CRITICAL: Both time-to-first-token values should be small and similar
     assert time_to_first_token_1 < 3.0, f"First time to first token too large: {time_to_first_token_1}s"
-    assert time_to_first_token_2 < 3.0, f"Second time to first token too large: {time_to_first_token_2}s - suggests start_time is being reused from first call"
+    assert time_to_first_token_2 < 3.0, (
+        f"Second time to first token too large: {time_to_first_token_2}s - suggests start_time is being reused from first call"
+    )
 
     # Agent2 should start AFTER agent1 finishes (or near the end)
     agent1_end = agent1_span["metrics"]["end"]
@@ -370,7 +441,9 @@ async def test_agent_run_stream(memory_logger):
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
     # CRITICAL: Check that time_to_first_token is captured
-    assert "time_to_first_token" in agent_span["metrics"], "agent_run_stream span should have time_to_first_token metric"
+    assert "time_to_first_token" in agent_span["metrics"], (
+        "agent_run_stream span should have time_to_first_token metric"
+    )
     ttft = agent_span["metrics"]["time_to_first_token"]
     duration = agent_span["metrics"]["duration"]
 
@@ -577,7 +650,9 @@ async def test_direct_model_request_stream(memory_logger, direct):
     _assert_metrics_are_valid(direct_span["metrics"], start, end)
 
     # CRITICAL: Verify time_to_first_token is captured in direct streaming
-    assert "time_to_first_token" in direct_span["metrics"], "model_request_stream span should have time_to_first_token metric"
+    assert "time_to_first_token" in direct_span["metrics"], (
+        "model_request_stream span should have time_to_first_token metric"
+    )
     ttft = direct_span["metrics"]["time_to_first_token"]
     duration = direct_span["metrics"]["duration"]
 
@@ -602,13 +677,13 @@ async def test_direct_model_request_stream_complete_output(memory_logger, direct
     async with direct.model_request_stream(model=MODEL, messages=messages) as stream:
         async for chunk in stream:
             # Extract text, skipping final PartStartEvent after deltas
-            if hasattr(chunk, 'part') and hasattr(chunk.part, 'content') and not seen_delta:
+            if hasattr(chunk, "part") and hasattr(chunk.part, "content") and not seen_delta:
                 # PartStartEvent has part.content with initial text
                 collected_text += str(chunk.part.content)
-            elif hasattr(chunk, 'delta') and chunk.delta:
+            elif hasattr(chunk, "delta") and chunk.delta:
                 seen_delta = True
                 # PartDeltaEvent has delta.content_delta
-                if hasattr(chunk.delta, 'content_delta') and chunk.delta.content_delta:
+                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
                     collected_text += chunk.delta.content_delta
 
     # Verify we got complete output including "1"
@@ -631,14 +706,16 @@ async def test_direct_api_streaming_call_3(memory_logger, direct):
     messages = [ModelRequest(parts=[UserPromptPart(content=IDENTICAL_PROMPT)])]
 
     collected_text = ""
-    async with direct.model_request_stream(model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)) as stream:
+    async with direct.model_request_stream(
+        model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)
+    ) as stream:
         async for chunk in stream:
             # FIX: Handle PartStartEvent which contains initial text
-            if hasattr(chunk, 'part') and hasattr(chunk.part, 'content'):
+            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
                 collected_text += str(chunk.part.content)
             # Handle PartDeltaEvent with delta content
-            elif hasattr(chunk, 'delta') and chunk.delta:
-                if hasattr(chunk.delta, 'content_delta') and chunk.delta.content_delta:
+            elif hasattr(chunk, "delta") and chunk.delta:
+                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
                     collected_text += chunk.delta.content_delta
 
     # Now this should pass!
@@ -659,14 +736,16 @@ async def test_direct_api_streaming_call_4(memory_logger, direct):
     messages = [ModelRequest(parts=[UserPromptPart(content=IDENTICAL_PROMPT)])]
 
     collected_text = ""
-    async with direct.model_request_stream(model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)) as stream:
+    async with direct.model_request_stream(
+        model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)
+    ) as stream:
         async for chunk in stream:
             # FIX: Handle PartStartEvent which contains initial text
-            if hasattr(chunk, 'part') and hasattr(chunk.part, 'content'):
+            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
                 collected_text += str(chunk.part.content)
             # Handle PartDeltaEvent with delta content
-            elif hasattr(chunk, 'delta') and chunk.delta:
-                if hasattr(chunk.delta, 'content_delta') and chunk.delta.content_delta:
+            elif hasattr(chunk, "delta") and chunk.delta:
+                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
                     collected_text += chunk.delta.content_delta
 
     # Now this should pass!
@@ -684,14 +763,16 @@ async def test_direct_api_streaming_early_break_call_5(memory_logger, direct):
 
     collected_text = ""
     i = 0
-    async with direct.model_request_stream(model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)) as stream:
+    async with direct.model_request_stream(
+        model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)
+    ) as stream:
         async for chunk in stream:
             # FIX: Handle PartStartEvent which contains initial text
-            if hasattr(chunk, 'part') and hasattr(chunk.part, 'content'):
+            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
                 collected_text += str(chunk.part.content)
             # Handle PartDeltaEvent with delta content
-            elif hasattr(chunk, 'delta') and chunk.delta:
-                if hasattr(chunk.delta, 'content_delta') and chunk.delta.content_delta:
+            elif hasattr(chunk, "delta") and chunk.delta:
+                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
                     collected_text += chunk.delta.content_delta
 
             i += 1
@@ -725,10 +806,10 @@ async def test_direct_api_streaming_no_duplication(memory_logger, direct):
             chunk_count += 1
             # Extract text from chunk
             text = None
-            if hasattr(chunk, 'part') and hasattr(chunk.part, 'content'):
+            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
                 text = str(chunk.part.content)
-            elif hasattr(chunk, 'delta') and chunk.delta:
-                if hasattr(chunk.delta, 'content_delta') and chunk.delta.content_delta:
+            elif hasattr(chunk, "delta") and chunk.delta:
+                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
                     text = chunk.delta.content_delta
 
             if text:
@@ -779,17 +860,19 @@ async def test_direct_api_streaming_no_duplication_comprehensive(memory_logger, 
     chunk_types = []
     seen_delta = False
 
-    async with direct.model_request_stream(messages=messages, model_settings=IDENTICAL_SETTINGS, model="openai:gpt-4o") as stream:
+    async with direct.model_request_stream(
+        messages=messages, model_settings=IDENTICAL_SETTINGS, model="openai:gpt-4o"
+    ) as stream:
         async for chunk in stream:
             # Track chunk types
-            if hasattr(chunk, 'part') and hasattr(chunk.part, 'content') and not seen_delta:
-                chunk_types.append(('PartStartEvent', str(chunk.part.content)))
+            if hasattr(chunk, "part") and hasattr(chunk.part, "content") and not seen_delta:
+                chunk_types.append(("PartStartEvent", str(chunk.part.content)))
                 text = str(chunk.part.content)
                 collected_text += text
-            elif hasattr(chunk, 'delta') and chunk.delta:
+            elif hasattr(chunk, "delta") and chunk.delta:
                 seen_delta = True
-                if hasattr(chunk.delta, 'content_delta') and chunk.delta.content_delta:
-                    chunk_types.append(('PartDeltaEvent', chunk.delta.content_delta))
+                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
+                    chunk_types.append(("PartDeltaEvent", chunk.delta.content_delta))
                     text = chunk.delta.content_delta
                     collected_text += text
 
@@ -802,7 +885,9 @@ async def test_direct_api_streaming_no_duplication_comprehensive(memory_logger, 
     # Verify no duplication in collected text
     # Expected: "Sure! Here you go:\n\n1, 2, 3, 4, 5." or similar (length ~30)
     # Should NOT be duplicated
-    assert len(collected_text) < 60, f"Text seems duplicated (too long): '{collected_text}' (len={len(collected_text)})"
+    assert len(collected_text) < 60, (
+        f"Text seems duplicated (too long): '{collected_text}' (len={len(collected_text)})"
+    )
     assert collected_text.count("1, 2, 3") == 1, f"Text should appear once, not duplicated: '{collected_text}'"
 
     # Check span
@@ -810,7 +895,7 @@ async def test_direct_api_streaming_no_duplication_comprehensive(memory_logger, 
     print(f"Number of spans: {len(spans)}")
     for i, s in enumerate(spans):
         print(f"Span {i}: {s['span_attributes']['name']} (type: {s['span_attributes'].get('type', 'N/A')})")
-        if 'span_parents' in s and s['span_parents']:
+        if "span_parents" in s and s["span_parents"]:
             print(f"  Parents: {s['span_parents']}")
 
     # Should have 1 or 2 spans (direct API wrapper + potentially model wrapper)
@@ -858,12 +943,12 @@ async def test_async_generator_pattern_call_6(memory_logger):
     async for event in stream_with_async_generator(IDENTICAL_PROMPT):
         # run_stream_events returns ResultEvent objects with different structure
         # Try to extract text from whatever event type we get
-        if hasattr(event, 'content') and event.content:
+        if hasattr(event, "content") and event.content:
             collected_text += str(event.content)
-        elif hasattr(event, 'part') and hasattr(event.part, 'content'):
+        elif hasattr(event, "part") and hasattr(event.part, "content"):
             collected_text += str(event.part.content)
-        elif hasattr(event, 'delta') and event.delta:
-            if hasattr(event.delta, 'content_delta') and event.delta.content_delta:
+        elif hasattr(event, "delta") and event.delta:
+            if hasattr(event.delta, "content_delta") and event.delta.content_delta:
                 collected_text += event.delta.content_delta
 
         i += 1
@@ -885,11 +970,7 @@ async def test_agent_structured_output(memory_logger):
         answer: int
         explanation: str
 
-    agent = Agent(
-        MODEL,
-        output_type=MathAnswer,
-        model_settings=ModelSettings(max_tokens=200)
-    )
+    agent = Agent(MODEL, output_type=MathAnswer, model_settings=ModelSettings(max_tokens=200))
 
     start = time.time()
     result = await agent.run("What is 10 + 15?")
@@ -905,7 +986,14 @@ async def test_agent_structured_output(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -963,7 +1051,14 @@ async def test_agent_with_model_settings_in_metadata(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -976,7 +1071,9 @@ async def test_agent_with_model_settings_in_metadata(memory_logger):
     assert agent_settings["temperature"] == 0.5
 
     # Verify model_settings is NOT in agent input (it wasn't passed to run())
-    assert "model_settings" not in agent_span["input"], "model_settings should NOT be in agent_run input when not passed to run()"
+    assert "model_settings" not in agent_span["input"], (
+        "model_settings should NOT be in agent_run input when not passed to run()"
+    )
 
     # Verify model_settings is in chat input (passed to the model)
     assert "model_settings" in chat_span["input"], "model_settings should be in chat span input"
@@ -1016,7 +1113,14 @@ async def test_agent_with_model_settings_override_in_input(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run span
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
     assert agent_span is not None, "agent_run span not found"
 
     # Verify override settings are in agent INPUT (because they were passed to run())
@@ -1026,7 +1130,9 @@ async def test_agent_with_model_settings_override_in_input(memory_logger):
     assert input_settings["temperature"] == 0.9
 
     # Verify agent default settings are NOT in metadata (when overridden in input, we don't duplicate in metadata)
-    assert "model_settings" not in agent_span["metadata"], "model_settings should NOT be in metadata when explicitly passed to run()"
+    assert "model_settings" not in agent_span["metadata"], (
+        "model_settings should NOT be in metadata when explicitly passed to run()"
+    )
 
 
 @pytest.mark.vcr
@@ -1049,12 +1155,21 @@ async def test_agent_with_system_prompt_in_metadata(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run span
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
     assert agent_span is not None, "agent_run span not found"
 
     # Verify system_prompt is in input (because it's semantically part of the LLM input)
     assert "system_prompt" in agent_span["input"], "system_prompt should be in agent_run input"
-    assert agent_span["input"]["system_prompt"] == system_prompt, "system_prompt should be the actual string, not a method reference"
+    assert agent_span["input"]["system_prompt"] == system_prompt, (
+        "system_prompt should be the actual string, not a method reference"
+    )
 
     # Verify system_prompt is NOT in metadata
     assert "system_prompt" not in agent_span["metadata"], "system_prompt should NOT be in agent_run metadata"
@@ -1079,10 +1194,7 @@ async def test_agent_with_message_history(memory_logger):
 
     # Second message with history
     start = time.time()
-    result2 = await agent.run(
-        "What is my name?",
-        message_history=result1.all_messages()
-    )
+    result2 = await agent.run("What is my name?", message_history=result1.all_messages())
     end = time.time()
 
     # Verify it remembers
@@ -1093,7 +1205,14 @@ async def test_agent_with_message_history(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
 
     assert agent_span is not None, "agent_run span not found"
     assert "message_history" in str(agent_span["input"])
@@ -1110,14 +1229,7 @@ async def test_agent_with_custom_settings(memory_logger):
     agent = Agent(MODEL)
 
     start = time.time()
-    result = await agent.run(
-        "Say hello",
-        model_settings=ModelSettings(
-            max_tokens=20,
-            temperature=0.5,
-            top_p=0.9
-        )
-    )
+    result = await agent.run("Say hello", model_settings=ModelSettings(max_tokens=20, temperature=0.5, top_p=0.9))
     end = time.time()
 
     assert result.output
@@ -1127,7 +1239,14 @@ async def test_agent_with_custom_settings(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run span
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
     assert agent_span is not None, "agent_run span not found"
 
     # Model settings passed to run() should be in input (not metadata)
@@ -1175,7 +1294,9 @@ def test_agent_run_stream_sync(memory_logger):
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # CRITICAL: Verify time_to_first_token is captured in sync streaming
-    assert "time_to_first_token" in agent_span["metrics"], "agent_run_stream_sync span should have time_to_first_token metric"
+    assert "time_to_first_token" in agent_span["metrics"], (
+        "agent_run_stream_sync span should have time_to_first_token metric"
+    )
     ttft = agent_span["metrics"]["time_to_first_token"]
     duration = agent_span["metrics"]["duration"]
 
@@ -1275,7 +1396,9 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
     _assert_metrics_are_valid(span["metrics"], start, end)
 
     # CRITICAL: Verify time_to_first_token is captured in sync direct streaming
-    assert "time_to_first_token" in span["metrics"], "model_request_stream_sync span should have time_to_first_token metric"
+    assert "time_to_first_token" in span["metrics"], (
+        "model_request_stream_sync span should have time_to_first_token metric"
+    )
     ttft = span["metrics"]["time_to_first_token"]
     duration = span["metrics"]["duration"]
 
@@ -1537,7 +1660,7 @@ async def test_agent_with_binary_content(memory_logger):
     assert not memory_logger.pop()
 
     # Use a small test image (1x1 PNG)
-    image_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+    image_data = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
 
     agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
 
@@ -1558,7 +1681,14 @@ async def test_agent_with_binary_content(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run span (parent)
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
     assert agent_span is not None, "agent_run span not found"
 
     # Find chat span (child)
@@ -1643,7 +1773,7 @@ async def test_agent_with_document_input(memory_logger):
     assert not memory_logger.pop()
 
     # Create a minimal PDF (this is a valid but minimal PDF structure)
-    pdf_data = b'%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R>>endobj 4 0 obj<</Length 44>>stream\nBT /F1 12 Tf 100 700 Td (Test Document) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000214 00000 n\ntrailer<</Size 5/Root 1 0 R>>\nstartxref\n307\n%%EOF'
+    pdf_data = b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R>>endobj 4 0 obj<</Length 44>>stream\nBT /F1 12 Tf 100 700 Td (Test Document) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000214 00000 n\ntrailer<</Size 5/Root 1 0 R>>\nstartxref\n307\n%%EOF"
 
     agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=150))
 
@@ -1664,7 +1794,14 @@ async def test_agent_with_document_input(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find spans
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]), None)
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -1840,7 +1977,9 @@ def test_tool_execution_creates_spans(memory_logger):
 
     # Verify the tool was actually called and result is correct
     assert result.output
-    assert "6223" in str(result.output) or "6,223" in str(result.output), f"Expected calculation result in output: {result.output}"
+    assert "6223" in str(result.output) or "6,223" in str(result.output), (
+        f"Expected calculation result in output: {result.output}"
+    )
 
     # Get logged spans
     spans = memory_logger.pop()
@@ -1873,7 +2012,9 @@ def test_tool_execution_creates_spans(memory_logger):
     assert calc_tool_span["output"] is not None, "tool span should have output"
     # Verify tool span is nested within the agent span tree
     all_span_ids = {s["span_id"] for s in spans}
-    assert calc_tool_span["span_parents"][0] in all_span_ids, "tool span should be nested under a span in the agent tree"
+    assert calc_tool_span["span_parents"][0] in all_span_ids, (
+        "tool span should be nested under a span in the agent tree"
+    )
 
 
 def test_agent_tool_metadata_extraction(memory_logger):
@@ -2085,7 +2226,9 @@ def test_reasoning_tokens_extraction(memory_logger):
     assert "tokens" in metrics, "Should have total tokens"
     assert metrics["tokens"] == 30.0
     assert "completion_reasoning_tokens" in metrics, "Should have completion_reasoning_tokens"
-    assert metrics["completion_reasoning_tokens"] == 128.0, f"Expected 128.0, got {metrics['completion_reasoning_tokens']}"
+    assert metrics["completion_reasoning_tokens"] == 128.0, (
+        f"Expected 128.0, got {metrics['completion_reasoning_tokens']}"
+    )
     assert "duration" in metrics
     assert "start" in metrics
     assert "end" in metrics
@@ -2106,11 +2249,7 @@ async def test_agent_run_stream_structured_output(memory_logger):
         name: str
         price: float
 
-    agent = Agent(
-        MODEL,
-        output_type=Product,
-        model_settings=ModelSettings(max_tokens=200)
-    )
+    agent = Agent(MODEL, output_type=Product, model_settings=ModelSettings(max_tokens=200))
 
     start = time.time()
     async with agent.run_stream("Create a product: wireless mouse for $29.99") as result:
@@ -2267,12 +2406,8 @@ def test_serialize_content_part_with_user_prompt_part():
     # CRITICAL: First item should be serialized BinaryContent with Attachment
     binary_item = content[0]
     assert isinstance(binary_item, dict), f"Binary item should be dict, got {type(binary_item)}"
-    assert binary_item.get("type") == "binary", (
-        f"Binary item should have type='binary'. Got: {binary_item}"
-    )
-    assert "attachment" in binary_item, (
-        f"Binary item should have 'attachment' key. Keys: {binary_item.keys()}"
-    )
+    assert binary_item.get("type") == "binary", f"Binary item should have type='binary'. Got: {binary_item}"
+    assert "attachment" in binary_item, f"Binary item should have 'attachment' key. Keys: {binary_item.keys()}"
     assert isinstance(binary_item["attachment"], Attachment), (
         f"Should be Braintrust Attachment, got {type(binary_item.get('attachment'))}"
     )
@@ -2322,12 +2457,8 @@ def test_serialize_messages_with_binary_content():
     # CRITICAL: First content item should be serialized BinaryContent with Attachment
     binary_item = content[0]
     assert isinstance(binary_item, dict), f"Binary item should be dict, got {type(binary_item)}"
-    assert binary_item.get("type") == "binary", (
-        f"Binary item should have type='binary'. Got: {binary_item}"
-    )
-    assert "attachment" in binary_item, (
-        f"Binary item should have 'attachment'. Keys: {binary_item.keys()}"
-    )
+    assert binary_item.get("type") == "binary", f"Binary item should have type='binary'. Got: {binary_item}"
+    assert "attachment" in binary_item, f"Binary item should have 'attachment'. Keys: {binary_item.keys()}"
     assert isinstance(binary_item["attachment"], Attachment), (
         f"Should be Braintrust Attachment, got {type(binary_item.get('attachment'))}"
     )
@@ -2639,3 +2770,94 @@ class TestAutoInstrumentPydanticAI:
     def test_auto_instrument_pydantic_ai(self):
         """Test auto_instrument patches Pydantic AI and creates spans."""
         verify_autoinstrument_script("test_auto_pydantic_ai.py")
+
+
+@pytest.mark.vcr
+def test_model_request_stream_sync_thread_context_propagation(memory_logger, direct):
+    """Test that Braintrust context propagates into the background thread created by model_request_stream_sync.
+
+    When using model_request_stream_sync, pydantic_ai creates a background thread to run the async
+    stream producer. This test verifies that Braintrust context (current_span) is available inside
+    that background thread, which is necessary for nested instrumentation (e.g., if wrap_openai is
+    also used, the OpenAI spans should be children of the outer span).
+    """
+    from braintrust import current_span, start_span
+    from pydantic_ai.messages import ModelRequest, UserPromptPart
+
+    assert not memory_logger.pop()
+
+    # We'll capture the span seen inside the background thread by patching StreamedResponseSync._async_producer
+    captured_spans = []
+    original_async_producer = None
+
+    import pydantic_ai.direct as pydantic_direct
+
+    original_class = pydantic_direct.StreamedResponseSync
+
+    class InstrumentedStreamedResponseSync(original_class):
+        def _async_producer(self):
+            # Capture the current span at the start of the background thread
+            captured_spans.append(current_span())
+            return super()._async_producer()
+
+    # Temporarily replace StreamedResponseSync
+    pydantic_direct.StreamedResponseSync = InstrumentedStreamedResponseSync
+
+    try:
+        messages = [ModelRequest(parts=[UserPromptPart(content="Hello")])]
+
+        with start_span(name="outer_span") as outer_span:
+            with direct.model_request_stream_sync(model=MODEL, messages=messages) as stream:
+                # Consume the stream
+                for _ in stream:
+                    pass
+
+        # Verify we captured something
+        assert len(captured_spans) == 1, f"Expected 1 captured span, got {len(captured_spans)}"
+        thread_span = captured_spans[0]
+
+        # The span seen in the background thread should be related to the outer span
+        # Either it's the outer span itself, or it's a child span with the same root
+        if hasattr(thread_span, "root_span_id") and thread_span.root_span_id:
+            # If we have a real span, verify it shares the same trace root
+            assert thread_span.root_span_id == outer_span.root_span_id, (
+                f"Background thread span should share root with outer span. "
+                f"Got thread root={thread_span.root_span_id}, outer root={outer_span.root_span_id}"
+            )
+        else:
+            # If we got NOOP_SPAN (empty id), context didn't propagate - this is the bug we're testing for
+            # After the fix, this branch should not be reached
+            assert thread_span.id != "", (
+                "Background thread received NOOP_SPAN - context did not propagate to the thread. "
+                "This indicates the bug: StreamedResponseSync._start_producer creates a thread without copying context."
+            )
+
+    finally:
+        # Restore original class
+        pydantic_direct.StreamedResponseSync = original_class
+
+
+def test_start_producer_wrapper_exception_does_not_double_invoke_producer():
+    """Regression test: producer exceptions must not trigger a second producer call."""
+    from braintrust.wrappers.pydantic_ai import _create_start_producer_wrapper
+
+    class StreamLike:
+        def __init__(self):
+            self.call_count = 0
+
+        def _async_producer(self):
+            self.call_count += 1
+            raise RuntimeError("boom")
+
+    instance = StreamLike()
+    original_async_producer = instance._async_producer
+    wrapper = _create_start_producer_wrapper()
+
+    def wrapped():
+        return instance._async_producer()
+
+    with pytest.raises(RuntimeError, match="boom"):
+        wrapper(wrapped, instance, (), {})
+
+    assert instance.call_count == 1
+    assert instance._async_producer == original_async_producer

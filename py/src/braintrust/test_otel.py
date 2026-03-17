@@ -191,7 +191,9 @@ def test_braintrust_otel_filter_ai_spans_environment_variable():
         # Verify it has the expected attributes
         assert hasattr(filter_processor, "_processor")
         assert hasattr(filter_processor, "_custom_filter")
+        assert hasattr(filter_processor, "_on_ending")
         assert hasattr(filter_processor, "_should_keep_filtered_span")
+        assert callable(filter_processor._on_ending)
         assert callable(filter_processor._should_keep_filtered_span)
 
     finally:
@@ -216,10 +218,12 @@ def test_braintrust_span_processor_class():
         # Should have the span processor interface
         assert hasattr(processor, "on_start")
         assert hasattr(processor, "on_end")
+        assert hasattr(processor, "_on_ending")
         assert hasattr(processor, "shutdown")
         assert hasattr(processor, "force_flush")
         assert callable(processor.on_start)
         assert callable(processor.on_end)
+        assert callable(processor._on_ending)
         assert callable(processor.shutdown)
         assert callable(processor.force_flush)
 
@@ -235,6 +239,7 @@ def test_braintrust_span_processor_class():
         # Should have the same interface
         assert hasattr(processor_with_filtering, "on_start")
         assert hasattr(processor_with_filtering, "on_end")
+        assert hasattr(processor_with_filtering, "_on_ending")
         assert hasattr(processor_with_filtering, "shutdown")
         assert hasattr(processor_with_filtering, "force_flush")
 

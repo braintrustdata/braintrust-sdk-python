@@ -18,7 +18,7 @@ Usage:
     response = agent.run(...)
 """
 
-__all__ = ["setup_agno", "wrap_agent", "wrap_function_call", "wrap_model", "wrap_team"]
+__all__ = ["setup_agno", "wrap_agent", "wrap_function_call", "wrap_model", "wrap_team", "wrap_workflow"]
 
 import logging
 
@@ -28,6 +28,7 @@ from .agent import wrap_agent
 from .function_call import wrap_function_call
 from .model import wrap_model
 from .team import wrap_team
+from .workflow import wrap_workflow
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,16 @@ def setup_agno(
         team.Team = wrap_team(team.Team)  # pyright: ignore[reportUnknownMemberType]
         models.base.Model = wrap_model(models.base.Model)  # pyright: ignore[reportUnknownMemberType]
         tools.function.FunctionCall = wrap_function_call(tools.function.FunctionCall)  # pyright: ignore[reportUnknownMemberType]
-        return True
     except ImportError:
         # Not installed - this is expected when using auto_instrument()
         return False
+
+    try:
+        from agno import workflow  # pyright: ignore
+
+        workflow.Workflow = wrap_workflow(workflow.Workflow)  # pyright: ignore[reportUnknownMemberType]
+    except ImportError:
+        # agno.workflow requires fastapi which may not be installed
+        pass
+
+    return True

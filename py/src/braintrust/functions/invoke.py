@@ -3,6 +3,7 @@ from typing import Any, Literal, TypedDict, TypeVar, overload
 from sseclient import SSEClient
 
 from .._generated_types import FunctionTypeEnum
+from ..bt_json import bt_dumps
 from ..logger import Exportable, _internal_get_global_state, get_span_parent_object, login, proxy_conn
 from ..util import response_raise_for_status
 from .constants import INVOKE_API_VERSION
@@ -201,7 +202,8 @@ def invoke(
     if org_name is not None:
         headers["x-bt-org-name"] = org_name
 
-    resp = proxy_conn().post("function/invoke", json=request, headers=headers, stream=stream)
+    request_json = bt_dumps(request)
+    resp = proxy_conn().post("function/invoke", data=request_json, headers=headers, stream=stream)
     if resp.status_code == 500:
         raise BraintrustInvokeError(resp.text)
 

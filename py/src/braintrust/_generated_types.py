@@ -849,18 +849,6 @@ class FunctionIdFunctionId4InlineContext(TypedDict):
     version: str
 
 
-class FunctionIdFunctionId4(TypedDict):
-    inline_context: FunctionIdFunctionId4InlineContext
-    code: str
-    """
-    The inline code to execute
-    """
-    name: NotRequired[str | None]
-    """
-    The name of the inline code function
-    """
-
-
 FunctionIdRef: TypeAlias = Mapping[str, Any]
 
 
@@ -1274,6 +1262,7 @@ class InvokeFunctionInvokeFunction4(TypedDict):
     """
     The inline code to execute
     """
+    function_type: NotRequired[FunctionTypeEnum | None]
     name: NotRequired[str | None]
     """
     The name of the inline code function
@@ -2108,6 +2097,7 @@ class TaskTask4(TypedDict):
     """
     The inline code to execute
     """
+    function_type: NotRequired[FunctionTypeEnum | None]
     name: NotRequired[str | None]
     """
     The name of the inline code function
@@ -2323,6 +2313,15 @@ class ToolFunctionDefinitionFunction(TypedDict):
 class ToolFunctionDefinition(TypedDict):
     type: Literal['function']
     function: ToolFunctionDefinitionFunction
+
+
+TopicAutomationConfigBackfillTimeRange = TypedDict(
+    'TopicAutomationConfigBackfillTimeRange',
+    {
+        'from': str,
+        'to': str,
+    },
+)
 
 
 class TopicAutomationDataScopeTopicAutomationDataScope(TypedDict):
@@ -2905,6 +2904,14 @@ class Experiment(TypedDict):
     """
     Version number of the linked dataset the experiment was run against. This can be used to reproduce the experiment after the dataset has been modified.
     """
+    parameters_id: NotRequired[str | None]
+    """
+    Identifier of the linked saved parameters object, or null if the experiment is not linked to saved parameters
+    """
+    parameters_version: NotRequired[str | None]
+    """
+    Version number of the linked saved parameters object the experiment was run against.
+    """
     public: bool
     """
     Whether or not the experiment is public. Public experiments can be viewed by anybody inside or outside the organization
@@ -2986,6 +2993,19 @@ class FunctionIdFunctionId2(TypedDict):
     The name of the global function. Currently, the global namespace includes the functions in autoevals
     """
     function_type: NotRequired[FunctionTypeEnum | None]
+
+
+class FunctionIdFunctionId4(TypedDict):
+    inline_context: FunctionIdFunctionId4InlineContext
+    code: str
+    """
+    The inline code to execute
+    """
+    function_type: NotRequired[FunctionTypeEnum | None]
+    name: NotRequired[str | None]
+    """
+    The name of the inline code function
+    """
 
 
 class InvokeFunctionInvokeFunction7(TypedDict):
@@ -3241,6 +3261,10 @@ class TopicAutomationConfig(TypedDict):
     btql_filter: NotRequired[str | None]
     """
     Optional BTQL filter applied before topic automation.
+    """
+    backfill_time_range: NotRequired[str | TopicAutomationConfigBackfillTimeRange | None]
+    """
+    Optional default time range for backfill operations.
     """
 
 

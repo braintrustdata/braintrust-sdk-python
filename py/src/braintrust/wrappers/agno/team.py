@@ -5,6 +5,7 @@ from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
 
+from .run_helpers import arun_public_dispatch_wrapper, run_public_dispatch_wrapper
 from .utils import (
     _aggregate_agent_chunks,
     extract_metadata,
@@ -46,10 +47,9 @@ def wrap_team(Team: Any) -> Any:
         return _create_run_span(wrapped, instance, args, kwargs, input_data)
 
     def _run_wrapper_public(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        """Entry point for public run(input)."""
-        input_arg = args[0] if len(args) > 0 else kwargs.get("input")
-        input_data = {"input": input_arg}
-        return _create_run_span(wrapped, instance, args, kwargs, input_data)
+        return run_public_dispatch_wrapper(
+            wrapped, instance, args, kwargs, default_name="Team", metadata_component="team"
+        )
 
     # Wrap private method if it exists, otherwise wrap public method
     if hasattr(Team, "_run"):
@@ -57,8 +57,8 @@ def wrap_team(Team: Any) -> Any:
     elif hasattr(Team, "run"):
         wrap_function_wrapper(Team, "run", _run_wrapper_public)
 
-    async def _create_arun_span(wrapped: Any, instance: Any, args: Any, kwargs: Any, input_data: dict):
-        """Shared logic to create span and execute arun method."""
+    async def _create_arun_span_private(wrapped: Any, instance: Any, args: Any, kwargs: Any, input_data: dict):
+        """Shared logic to create span and execute async private _arun method."""
         agent_name = getattr(instance, "name", None) or "Team"
         span_name = f"{agent_name}.arun"
 
@@ -80,19 +80,16 @@ def wrap_team(Team: Any) -> Any:
         run_response = args[0] if len(args) > 0 else kwargs.get("run_response")
         input_arg = args[1] if len(args) > 1 else kwargs.get("input")
         input_data = {"run_response": run_response, "input": input_arg}
-        return await _create_arun_span(wrapped, instance, args, kwargs, input_data)
+        return await _create_arun_span_private(wrapped, instance, args, kwargs, input_data)
 
-    async def _arun_wrapper_public(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        """Entry point for public arun(input)."""
-        input_arg = args[0] if len(args) > 0 else kwargs.get("input")
-        input_data = {"input": input_arg}
-        return await _create_arun_span(wrapped, instance, args, kwargs, input_data)
+    def _arun_wrapper_public(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+        return arun_public_dispatch_wrapper(
+            wrapped, instance, args, kwargs, default_name="Team", metadata_component="team"
+        )
 
     # Wrap private method if it exists, otherwise wrap public method
     if hasattr(Team, "_arun"):
         wrap_function_wrapper(Team, "_arun", _arun_wrapper_private)
-    elif hasattr(Team, "arun"):
-        wrap_function_wrapper(Team, "arun", _arun_wrapper_public)
 
     def run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         agent_name = getattr(instance, "name", None) or "Team"
@@ -211,6 +208,9 @@ def wrap_team(Team: Any) -> Any:
 
     if hasattr(Team, "_arun_stream"):
         wrap_function_wrapper(Team, "_arun_stream", arun_stream_wrapper)
+    elif not hasattr(Team, "_arun") and hasattr(Team, "arun"):
+        # Agno >= 2.5 routes through public arun(..., stream=...)
+        wrap_function_wrapper(Team, "arun", _arun_wrapper_public)
 
     mark_patched(Team)
     return Team

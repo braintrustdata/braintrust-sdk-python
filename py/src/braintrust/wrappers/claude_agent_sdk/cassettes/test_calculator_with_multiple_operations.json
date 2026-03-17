@@ -1,0 +1,835 @@
+{
+  "cassette_name": "test_calculator_with_multiple_operations",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_7bac646b",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "claude-code",
+                "version": "2.1.71"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "2127d480-b055-4e3f-864b-d8a56d74bf39",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "2127d480-b055-4e3f-864b-d8a56d74bf39",
+            "response": {
+              "mcp_response": {
+                "id": 0,
+                "jsonrpc": "2.0",
+                "result": {
+                  "capabilities": {
+                    "tools": {}
+                  },
+                  "protocolVersion": "2024-11-05",
+                  "serverInfo": {
+                    "name": "calculator",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_7bac646b",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "What is 15 multiplied by 7? Then subtract 5 from the result.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "283bbf65-3d77-4488-aa6d-5c50fea285bf",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "283bbf65-3d77-4488-aa6d-5c50fea285bf",
+            "response": {
+              "mcp_response": {
+                "jsonrpc": "2.0",
+                "result": {}
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "claude-code",
+                "version": "2.1.71"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "7e196f9d-3a93-42aa-b4f8-cbc7bae54d8a",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "7e196f9d-3a93-42aa-b4f8-cbc7bae54d8a",
+            "response": {
+              "mcp_response": {
+                "id": 0,
+                "jsonrpc": "2.0",
+                "result": {
+                  "capabilities": {
+                    "tools": {}
+                  },
+                  "protocolVersion": "2024-11-05",
+                  "serverInfo": {
+                    "name": "calculator",
+                    "version": "1.0.0"
+                  }
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "tools/list"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "2cf91a70-c2e5-434c-93f3-a0f21019490e",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "2cf91a70-c2e5-434c-93f3-a0f21019490e",
+            "response": {
+              "mcp_response": {
+                "id": 1,
+                "jsonrpc": "2.0",
+                "result": {
+                  "tools": [
+                    {
+                      "description": "Performs basic arithmetic operations",
+                      "inputSchema": {
+                        "properties": {
+                          "a": {
+                            "description": "First number",
+                            "type": "number"
+                          },
+                          "b": {
+                            "description": "Second number",
+                            "type": "number"
+                          },
+                          "operation": {
+                            "description": "The arithmetic operation to perform",
+                            "enum": [
+                              "add",
+                              "subtract",
+                              "multiply",
+                              "divide"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "operation",
+                          "a",
+                          "b"
+                        ],
+                        "type": "object"
+                      },
+                      "name": "calculator"
+                    }
+                  ]
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "c37d9442-dd36-4269-b59a-feeed63e7d61",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "c37d9442-dd36-4269-b59a-feeed63e7d61",
+            "response": {
+              "mcp_response": {
+                "jsonrpc": "2.0",
+                "result": {}
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.71",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [
+          {
+            "name": "calculator",
+            "status": "connected"
+          }
+        ],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "skills": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "ToolSearch",
+          "mcp__calculator__calculator"
+        ],
+        "type": "system",
+        "uuid": "9065a984-ce57-42b9-b22e-1f81a9daf0ed"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user is asking me to:\n1. Multiply 15 by 7\n2. Subtract 5 from the result\n\nI can use the calculator tool for this. Let me first multiply 15 by 7, then subtract 5 from that result.\n\nFirst call: 15 * 7 = 105\nSecond call: 105 - 5 = 100\n\nI'll need to make the first calculation, get the result, then make the second calculation. These are dependent operations, so I should do the first one first.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01SZLU92jt1i6LRNuaTfx7HD",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 4311
+            },
+            "cache_creation_input_tokens": 4311,
+            "cache_read_input_tokens": 13723,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 7,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "type": "assistant",
+        "uuid": "1a074bf6-f4fa-41c9-82f1-b14cbc463f93"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01GTvysuW8mhwmw8uR6trESb",
+              "input": {
+                "a": 15,
+                "b": 7,
+                "operation": "multiply"
+              },
+              "name": "mcp__calculator__calculator",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01SZLU92jt1i6LRNuaTfx7HD",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 4311
+            },
+            "cache_creation_input_tokens": 4311,
+            "cache_read_input_tokens": 13723,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 7,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "type": "assistant",
+        "uuid": "4fd4c99b-f8a4-4a63-9ca8-e0ee9b66d89f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "claudecode/toolUseId": "toolu_01GTvysuW8mhwmw8uR6trESb",
+                "progressToken": 2
+              },
+              "arguments": {
+                "a": 15,
+                "b": 7,
+                "operation": "multiply"
+              },
+              "name": "calculator"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "5103eab1-ac9e-4773-a7f3-0d1896284ef0",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "5103eab1-ac9e-4773-a7f3-0d1896284ef0",
+            "response": {
+              "mcp_response": {
+                "id": 2,
+                "jsonrpc": "2.0",
+                "result": {
+                  "content": [
+                    {
+                      "text": "The result of multiply(15, 7) is 105",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "The result of multiply(15, 7) is 105",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01GTvysuW8mhwmw8uR6trESb",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "tool_use_result": [
+          {
+            "text": "The result of multiply(15, 7) is 105",
+            "type": "text"
+          }
+        ],
+        "type": "user",
+        "uuid": "e1b4150c-44c8-43ba-ad21-193308652b17"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Great, 15 * 7 = 105. Now I need to subtract 5 from 105.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_012L8xHqi8Qw2DMNPuxXhXk7",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 249
+            },
+            "cache_creation_input_tokens": 249,
+            "cache_read_input_tokens": 18034,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "type": "assistant",
+        "uuid": "220a27fe-9bb8-4787-9b70-398b37020369"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01PfSFqVXeF82k7N9oKrY7Ni",
+              "input": {
+                "a": 105,
+                "b": 5,
+                "operation": "subtract"
+              },
+              "name": "mcp__calculator__calculator",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_012L8xHqi8Qw2DMNPuxXhXk7",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 249
+            },
+            "cache_creation_input_tokens": 249,
+            "cache_read_input_tokens": 18034,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "type": "assistant",
+        "uuid": "15aa21b8-cbf2-4fa4-bd93-a5ec31626375"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "message": {
+            "id": 3,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "_meta": {
+                "claudecode/toolUseId": "toolu_01PfSFqVXeF82k7N9oKrY7Ni",
+                "progressToken": 3
+              },
+              "arguments": {
+                "a": 105,
+                "b": 5,
+                "operation": "subtract"
+              },
+              "name": "calculator"
+            }
+          },
+          "server_name": "calculator",
+          "subtype": "mcp_message"
+        },
+        "request_id": "c261ffdf-d271-4522-ab21-b17c4db5c27d",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "c261ffdf-d271-4522-ab21-b17c4db5c27d",
+            "response": {
+              "mcp_response": {
+                "id": 3,
+                "jsonrpc": "2.0",
+                "result": {
+                  "content": [
+                    {
+                      "text": "The result of subtract(105, 5) is 100",
+                      "type": "text"
+                    }
+                  ]
+                }
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "The result of subtract(105, 5) is 100",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01PfSFqVXeF82k7N9oKrY7Ni",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "tool_use_result": [
+          {
+            "text": "The result of subtract(105, 5) is 100",
+            "type": "text"
+          }
+        ],
+        "type": "user",
+        "uuid": "c091d10a-3e93-4251-97fb-3ff4b0436391"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Perfect! So:\n- 15 \u00d7 7 = 105\n- 105 - 5 = 100\n\nThe final answer is 100.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_0113WA3B1LfYfcAwGDYzsQK8",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 155
+            },
+            "cache_creation_input_tokens": 155,
+            "cache_read_input_tokens": 18283,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "type": "assistant",
+        "uuid": "e1e7bf78-2285-4bb0-845e-b902e6965db0"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "The answer is **100**.\n\nHere's the breakdown:\n- 15 \u00d7 7 = 105\n- 105 \u2212 5 = **100**",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_0113WA3B1LfYfcAwGDYzsQK8",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 155
+            },
+            "cache_creation_input_tokens": 155,
+            "cache_read_input_tokens": 18283,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "type": "assistant",
+        "uuid": "487dce71-f0fa-40c9-878a-84b146d11ffe"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 4772,
+        "duration_ms": 4944,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 4715,
+            "cacheReadInputTokens": 50040,
+            "contextWindow": 200000,
+            "costUSD": 0.013053750000000001,
+            "inputTokens": 26,
+            "maxOutputTokens": 32000,
+            "outputTokens": 426,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 3,
+        "permission_denials": [],
+        "result": "The answer is **100**.\n\nHere's the breakdown:\n- 15 \u00d7 7 = 105\n- 105 \u2212 5 = **100**",
+        "session_id": "aedda120-23b6-46ba-8377-2bff1cd7410b",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "total_cost_usd": 0.013053750000000001,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 4715
+          },
+          "cache_creation_input_tokens": 4715,
+          "cache_read_input_tokens": 50040,
+          "inference_geo": "",
+          "input_tokens": 26,
+          "iterations": [],
+          "output_tokens": 426,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "3ed72c05-f236-44cc-bcb7-dea85e825f7b"
+      }
+    }
+  ],
+  "sdk_version": "0.1.48"
+}

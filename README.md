@@ -1,60 +1,57 @@
-# Braintrust SDK
+# Braintrust Python SDKs
 
-[Braintrust](https://www.braintrust.dev/) is a platform for evaluating and shipping AI products. To learn more about Braintrust or sign up for free,
-visit our [website](https://www.braintrust.dev/) or check out the [docs](https://www.braintrust.dev/docs).
+[Braintrust](https://www.braintrust.dev/) is a platform for evaluating and shipping AI products. Learn more at [braintrust.dev](https://www.braintrust.dev/) and in the [docs](https://www.braintrust.dev/docs).
 
-This repository contains the Python SDK for Braintrust. The SDK includes utilities to:
+This repository contains Braintrust's Python SDKs and integrations, including:
 
-- Log experiments and datasets to Braintrust
-- Run evaluations (via the `Eval` framework)
-- Manage an on-premises installation of Braintrust
+- The main `braintrust` SDK package in [`./py`](./py)
+- Integration packages under [`./integrations`](./integrations)
+- Examples, tests, and local development tooling for Python SDK development
 
-## Quickstart: Python
+## Quickstart
 
-Install the library with pip.
+Install the main SDK and scorer package:
 
 ```bash
 pip install braintrust autoevals
 ```
 
-Then, create a file named `eval_tutorial.py` with the following code:
+Create `tutorial_eval.py`:
 
 ```python
-from braintrust import Eval
 from autoevals import LevenshteinScorer
+from braintrust import Eval
 
 Eval(
-  "Say Hi Bot",
-  data=lambda: [
-      {
-          "input": "Foo",
-          "expected": "Hi Foo",
-      },
-      {
-          "input": "Bar",
-          "expected": "Hello Bar",
-      },
-  ],  # Replace with your eval dataset
-  task=lambda input: "Hi " + input,  # Replace with your LLM call
-  scores=[LevenshteinScorer],
+    "Say Hi Bot",
+    data=lambda: [
+        {"input": "Foo", "expected": "Hi Foo"},
+        {"input": "Bar", "expected": "Hello Bar"},
+    ],
+    task=lambda input: "Hi " + input,
+    scores=[LevenshteinScorer],
 )
 ```
 
-Then, run the following command:
+Run it:
 
 ```bash
-BRAINTRUST_API_KEY=<YOUR_API_KEY> \
-  braintrust eval eval_tutorial.py
+BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 ```
 
-## Integrations
+## Packages
 
-Braintrust provides integrations with several popular AI development tools and platforms:
-
-- **LangChain Python**: Integration for logging LangChain Python executions to Braintrust. [Learn more](integrations/langchain-py)
+| Package | Purpose | PyPI | Docs |
+| --- | --- | --- | --- |
+| `braintrust` | Core Python SDK for logging, tracing, evals, and CLI workflows. | [![PyPI - braintrust](https://img.shields.io/pypi/v/braintrust.svg)](https://pypi.org/project/braintrust/) | [py/README.md](py/README.md) |
+| `braintrust-langchain` | LangChain callback integration for automatic Braintrust logging. | [![PyPI - braintrust-langchain](https://img.shields.io/pypi/v/braintrust-langchain.svg)](https://pypi.org/project/braintrust-langchain/) | [integrations/langchain-py/README.md](integrations/langchain-py/README.md) |
+| `braintrust-adk` | Deprecated Google ADK integration package. New ADK support lives in `braintrust`. | [![PyPI - braintrust-adk](https://img.shields.io/pypi/v/braintrust-adk.svg)](https://pypi.org/project/braintrust-adk/) | [integrations/adk-py/README.md](integrations/adk-py/README.md) |
 
 ## Documentation
 
-For more information, check out the [docs](https://www.braintrust.dev/docs):
+- Python SDK docs: https://www.braintrust.dev/docs/reference/sdks/python
+- Release notes: https://www.braintrust.dev/docs/reference/release-notes
 
-- [Python](https://www.braintrust.dev/docs/reference/sdks/python)
+## License
+
+Apache-2.0

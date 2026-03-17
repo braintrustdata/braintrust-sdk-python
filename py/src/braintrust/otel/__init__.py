@@ -43,6 +43,18 @@ except ImportError:
 FILTER_PREFIXES = ("gen_ai.", "braintrust.", "llm.", "ai.", "traceloop.")
 
 
+def _forward_on_ending(processor, span) -> None:
+    """
+    Forward OpenTelemetry's optional _on_ending hook when available.
+
+    Newer OpenTelemetry SDK versions call _on_ending before on_end. Older SDK
+    versions may not implement the hook on wrapped processors.
+    """
+    on_ending = getattr(processor, "_on_ending", None)
+    if callable(on_ending):
+        on_ending(span)
+
+
 class AISpanProcessor:
     """
     A span processor that filters spans to only export filtered telemetry.
@@ -78,6 +90,13 @@ class AISpanProcessor:
         """Apply filtering logic and conditionally forward span end events."""
         if self._should_keep_filtered_span(span):
             self._processor.on_end(span)
+
+    def _on_ending(self, span):
+        """
+        Forward pre-end hook for kept spans when the wrapped processor supports it.
+        """
+        if self._should_keep_filtered_span(span):
+            _forward_on_ending(self._processor, span)
 
     def shutdown(self):
         """Shutdown the inner processor."""
@@ -321,6 +340,10 @@ class BraintrustSpanProcessor:
     def on_end(self, span):
         """Forward span end events to the inner processor."""
         self._processor.on_end(span)
+
+    def _on_ending(self, span):
+        """Forward pre-end hook when the wrapped processor supports it."""
+        _forward_on_ending(self._processor, span)
 
     def shutdown(self):
         """Shutdown the inner processor."""

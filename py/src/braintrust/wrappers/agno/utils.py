@@ -94,6 +94,12 @@ def extract_metadata(instance: Any, component: str) -> dict[str, Any]:
         model = getattr(instance, "model", None)
         if model:
             metadata["model"] = getattr(model, "id", None) or model.__class__.__name__
+    elif component == "workflow":
+        metadata["workflow_id"] = getattr(instance, "id", None)
+        metadata["workflow_name"] = getattr(instance, "name", None)
+        steps = getattr(instance, "steps", None)
+        if steps:
+            metadata["steps_count"] = len(steps)
 
     return metadata
 
@@ -134,21 +140,7 @@ def extract_metrics(result: Any, messages: list | None = None) -> dict[str, Any]
 
     # For agent/team responses with metrics
     if hasattr(result, "metrics") and result.metrics:
-        agno_metrics = result.metrics
-        metrics = {}
-
-        # Direct field mapping for agent/team metrics
-        if hasattr(agno_metrics, "input_tokens") and agno_metrics.input_tokens:
-            metrics["prompt_tokens"] = agno_metrics.input_tokens
-        if hasattr(agno_metrics, "output_tokens") and agno_metrics.output_tokens:
-            metrics["completion_tokens"] = agno_metrics.output_tokens
-        if hasattr(agno_metrics, "total_tokens") and agno_metrics.total_tokens:
-            metrics["total_tokens"] = agno_metrics.total_tokens
-        if hasattr(agno_metrics, "duration") and agno_metrics.duration:
-            metrics["duration"] = agno_metrics.duration
-        if hasattr(agno_metrics, "time_to_first_token") and agno_metrics.time_to_first_token:
-            metrics["time_to_first_token"] = agno_metrics.time_to_first_token
-
+        metrics = parse_metrics_from_agno(result.metrics)
         return metrics if metrics else None
 
     # If no metrics found and we have messages, look for metrics in assistant messages (model-specific)
@@ -165,14 +157,16 @@ def extract_streaming_metrics(aggregated: dict[str, Any], start_time: float) -> 
     """Extract metrics from aggregated streaming response."""
     metrics = {}
 
-    # Add duration
-    metrics["duration"] = time.time() - start_time
-
     # Extract metrics from aggregated data
     # The metrics are already in Braintrust format from _aggregate_model_chunks
     if aggregated.get("metrics") and isinstance(aggregated["metrics"], dict):
         # Merge the aggregated metrics
         metrics.update(aggregated["metrics"])
+    # Handle object-like metrics payloads (e.g. RunCompletedEvent.metrics)
+    elif aggregated.get("metrics"):
+        parsed_metrics = parse_metrics_from_agno(aggregated["metrics"])
+        if parsed_metrics:
+            metrics.update(parsed_metrics)
     # Also check response_usage for backward compatibility
     elif aggregated.get("response_usage"):
         response_metrics = parse_metrics_from_agno(aggregated["response_usage"])
@@ -357,15 +351,15 @@ def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
     }
 
     for chunk in chunks:
-        # Handle RunStartedEvent
-        if hasattr(chunk, "event") and chunk.event == "RunStarted":
+        event = getattr(chunk, "event", None)
+
+        if event == "RunStarted":
             if hasattr(chunk, "model"):
                 aggregated["model"] = chunk.model
             if hasattr(chunk, "model_provider"):
                 aggregated["model_provider"] = chunk.model_provider
 
-        # Handle RunContentEvent
-        elif hasattr(chunk, "event") and chunk.event == "RunContent":
+        elif event == "RunContent":
             if hasattr(chunk, "content") and chunk.content:
                 aggregated["content"] += str(chunk.content)  # type: ignore
             if hasattr(chunk, "reasoning_content") and chunk.reasoning_content:
@@ -375,18 +369,16 @@ def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
             if hasattr(chunk, "references"):
                 aggregated["references"] = chunk.references
 
-        # Handle RunCompletedEvent
-        elif hasattr(chunk, "event") and chunk.event == "RunCompleted":
+        elif event == "RunCompleted":
             if hasattr(chunk, "metrics"):
-                aggregated["metrics"] = chunk.metrics
+                parsed_metrics = parse_metrics_from_agno(chunk.metrics)
+                aggregated["metrics"] = parsed_metrics if parsed_metrics else chunk.metrics
             aggregated["finish_reason"] = "stop"
 
-        # Handle RunError
-        elif hasattr(chunk, "event") and chunk.event == "RunError":
+        elif event == "RunError":
             aggregated["finish_reason"] = "error"
 
-        # Handle tool calls
-        elif hasattr(chunk, "event") and chunk.event == "ToolCallStarted":
+        elif event == "ToolCallStarted":
             if hasattr(chunk, "tool_call"):
                 aggregated["tool_calls"].append(  # type:ignore
                     {
@@ -400,6 +392,126 @@ def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
                 )
 
     return {k: v for k, v in aggregated.items() if v not in (None, "")}
+
+
+def _aggregate_workflow_chunks(chunks: list[Any], workflow_run_response: Any | None = None) -> dict[str, Any]:
+    """Aggregate workflow/step events into a final workflow-style response."""
+    aggregated = {
+        "content": "",
+        "status": None,
+        "metrics": None,
+    }
+    final_workflow_content = None
+
+    for chunk in chunks:
+        event = getattr(chunk, "event", None)
+
+        if hasattr(chunk, "content") and chunk.content:
+            if event == "WorkflowCompleted":
+                final_workflow_content = str(chunk.content)
+            elif final_workflow_content is None:
+                aggregated["content"] += str(chunk.content)
+
+        if hasattr(chunk, "status") and chunk.status:
+            aggregated["status"] = chunk.status
+
+        if hasattr(chunk, "metrics") and chunk.metrics:
+            parsed_metrics = parse_metrics_from_agno(chunk.metrics)
+            aggregated["metrics"] = parsed_metrics if parsed_metrics else chunk.metrics
+
+    if final_workflow_content is not None:
+        accumulated_content = aggregated["content"]
+        if not accumulated_content:
+            aggregated["content"] = final_workflow_content
+        elif accumulated_content.endswith(final_workflow_content):
+            aggregated["content"] = accumulated_content
+        else:
+            aggregated["content"] = f"{accumulated_content}{final_workflow_content}"
+
+    if workflow_run_response is not None:
+        if not aggregated["content"] and hasattr(workflow_run_response, "content") and workflow_run_response.content:
+            aggregated["content"] = str(workflow_run_response.content)
+
+        if not aggregated["status"] and hasattr(workflow_run_response, "status") and workflow_run_response.status:
+            aggregated["status"] = workflow_run_response.status
+
+        if not aggregated["metrics"] and hasattr(workflow_run_response, "metrics") and workflow_run_response.metrics:
+            parsed_metrics = parse_metrics_from_agno(workflow_run_response.metrics)
+            aggregated["metrics"] = parsed_metrics if parsed_metrics else workflow_run_response.metrics
+
+    return {k: v for k, v in aggregated.items() if v not in (None, "")}
+
+
+def is_sync_iterator(result: Any) -> bool:
+    return hasattr(result, "__iter__") and hasattr(result, "__next__")
+
+
+def is_async_iterator(result: Any) -> bool:
+    return hasattr(result, "__aiter__") and hasattr(result, "__anext__")
+
+
+def trace_sync_stream_result(result: Any, span: Any, start: float):
+    def _trace_stream():
+        should_unset = True
+        try:
+            first = True
+            all_chunks = []
+            for chunk in result:
+                if first:
+                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    first = False
+                all_chunks.append(chunk)
+                yield chunk
+
+            aggregated = _aggregate_agent_chunks(all_chunks)
+            span.log(
+                output=aggregated,
+                metrics=extract_streaming_metrics(aggregated, start),
+            )
+        except GeneratorExit:
+            should_unset = False
+            raise
+        except Exception as e:
+            span.log(error=str(e))
+            raise
+        finally:
+            if should_unset:
+                span.unset_current()
+            span.end()
+
+    return _trace_stream()
+
+
+def trace_async_stream_result(result: Any, span: Any, start: float):
+    async def _trace_astream():
+        should_unset = True
+        try:
+            first = True
+            all_chunks = []
+            async for chunk in result:
+                if first:
+                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    first = False
+                all_chunks.append(chunk)
+                yield chunk
+
+            aggregated = _aggregate_agent_chunks(all_chunks)
+            span.log(
+                output=aggregated,
+                metrics=extract_streaming_metrics(aggregated, start),
+            )
+        except GeneratorExit:
+            should_unset = False
+            raise
+        except Exception as e:
+            span.log(error=str(e))
+            raise
+        finally:
+            if should_unset:
+                span.unset_current()
+            span.end()
+
+    return _trace_astream()
 
 
 # Legacy aliases for backward compatibility

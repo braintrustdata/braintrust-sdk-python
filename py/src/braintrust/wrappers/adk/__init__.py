@@ -1,3 +1,4 @@
+import contextvars
 import inspect
 import logging
 import time
@@ -55,6 +56,15 @@ def setup_adk(
         runners.Runner = wrap_runner(runners.Runner)
         base_llm_flow.BaseLlmFlow = wrap_flow(base_llm_flow.BaseLlmFlow)
 
+        try:
+            from google.adk.platform import thread as adk_thread
+
+            adk_thread.create_thread = _wrap_create_thread(adk_thread.create_thread)
+            runners.create_thread = _wrap_create_thread(runners.create_thread)
+            logger.debug("ADK thread bridge patching successful")
+        except Exception as e:
+            logger.warning(f"Failed to patch ADK thread bridge: {e}")
+
         # Try to patch McpTool if available (MCP is optional)
         try:
             from google.adk.tools.mcp_tool import mcp_tool
@@ -73,6 +83,22 @@ def setup_adk(
         logger.error(f"Failed to import Google ADK agents: {e}")
         logger.error("Google ADK is not installed. Please install it with: pip install google-adk")
         return False
+
+
+def _wrap_create_thread(create_thread):
+    if _is_patched(create_thread):
+        return create_thread
+
+    def _wrapped_create_thread(target: Any, *args: Any, **kwargs: Any):
+        ctx = contextvars.copy_context()
+
+        def _run_in_context(*target_args: Any, **target_kwargs: Any):
+            return ctx.run(target, *target_args, **target_kwargs)
+
+        return create_thread(_run_in_context, *args, **kwargs)
+
+    _wrapped_create_thread._braintrust_patched = True
+    return _wrapped_create_thread
 
 
 def wrap_agent(Agent: Any) -> Any:

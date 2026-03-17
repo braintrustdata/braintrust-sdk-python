@@ -7,7 +7,7 @@ from braintrust import logger
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.adk import setup_adk
+from braintrust.wrappers.adk import _wrap_create_thread, setup_adk
 from google.adk import Agent
 
 ADK_VERSION = tuple(int(x) for x in pkg_version("google-adk").split(".")[:3])
@@ -48,6 +48,84 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+def test_adk_thread_context_propagation(memory_logger):
+    """Runner.run should preserve Braintrust context across its thread bridge."""
+    import asyncio
+
+    from braintrust import current_span, start_span
+    from google.adk.agents import LlmAgent
+    from google.adk.models.base_llm import BaseLlm
+    from google.adk.models.llm_request import LlmRequest
+    from google.adk.models.llm_response import LlmResponse
+    from google.adk.models.registry import LLMRegistry
+    from google.adk.runners import Runner
+    from google.adk.sessions import InMemorySessionService
+    from google.genai import types
+
+    assert not memory_logger.pop()
+
+    parent_seen = []
+
+    class TestLlm(BaseLlm):
+        @classmethod
+        def supported_models(cls) -> list[str]:
+            return [r"test-llm-context-prop"]
+
+        async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False):
+            parent_seen.append(current_span())
+            yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text="ok")]))
+
+    LLMRegistry.register(TestLlm)
+
+    agent = LlmAgent(
+        name="echo_agent",
+        model="test-llm-context-prop",
+        instruction="Respond with ok.",
+    )
+    session_service = InMemorySessionService()
+    app_name = "thread_bridge_app"
+    user_id = "test-user"
+    session_id = "test-session-thread"
+    asyncio.run(
+        session_service.create_session(
+            app_name=app_name,
+            user_id=user_id,
+            session_id=session_id,
+        )
+    )
+    runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
+    user_msg = types.Content(role="user", parts=[types.Part(text="hello")])
+
+    with start_span(name="adk_thread_parent") as parent_span:
+        events = list(runner.run(user_id=user_id, session_id=session_id, new_message=user_msg))
+
+    assert events
+    assert parent_seen
+    thread_root = getattr(parent_seen[0], "root_span_id", None)
+    assert thread_root is not None
+    assert thread_root == parent_span.root_span_id
+
+
+def test_wrap_create_thread_exception_does_not_double_invoke_target():
+    """Regression test: target exceptions must not cause a second invocation."""
+    call_count = 0
+
+    def create_thread(target, *args, **kwargs):
+        return target(*args, **kwargs)
+
+    wrapped_create_thread = _wrap_create_thread(create_thread)
+
+    def target():
+        nonlocal call_count
+        call_count += 1
+        raise RuntimeError("boom")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        wrapped_create_thread(target)
+
+    assert call_count == 1
 
 
 @pytest.mark.vcr
@@ -1337,6 +1415,7 @@ async def test_bt_safe_deep_copy_with_attachments(memory_logger):
     assert result["nested"]["also_file"] is attachment
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_adk_agent_metadata_with_attachment(memory_logger):
     """Test that attachments in ADK agent metadata are preserved and uploaded."""

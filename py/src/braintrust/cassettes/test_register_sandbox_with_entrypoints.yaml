@@ -1,0 +1,560 @@
+interactions:
+- request:
+    body: '{"project_name": "My Project", "org_id": "bf61839e-94bb-4a81-85ed-26b533a24b61"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '80'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.5
+    method: POST
+    uri: https://www.braintrust.dev/api/project/register
+  response:
+    body:
+      string: '{"project":{"id":"6b770640-a26a-4680-9d69-537262023137","org_id":"bf61839e-94bb-4a81-85ed-26b533a24b61","name":"My
+        Project","description":null,"created":"2026-03-12T19:49:37.394Z","deleted_at":null,"user_id":"fd67d1e5-c011-43fa-8096-ee5fed2b7df1","settings":null},"found_existing":true}'
+    headers:
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '286'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-ZDFkNjJkY2EtMWVmOS00ZTZmLThjZTItNGRmMjAzMWZlZDZh''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self'';
+        frame-ancestors ''self''; worker-src ''self'' blob:; report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 12 Mar 2026 20:26:58 GMT
+      Etag:
+      - '"kzpvhxucks7y"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Bt-Was-Udf-Cached:
+      - 'true'
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/project/register
+      X-Nonce:
+      - ZDFkNjJkY2EtMWVmOS00ZTZmLThjZTItNGRmMjAzMWZlZDZh
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - sfo1::iad1::tp2pw-1773347218334-903d13f4bb17
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"sandbox_spec": {"provider": "modal", "snapshot_ref": "im-icRxmsk1Sz9XPP2f8OblVU"},
+      "entrypoints": ["./local/js/optimization/evals/btql-generation/btql-queries.eval.ts"],
+      "project_id": "6b770640-a26a-4680-9d69-537262023137"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '225'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.5
+      x-bt-org-name:
+      - nate test
+    method: POST
+    uri: https://api.braintrust.dev/function/sandbox-list
+  response:
+    body:
+      string: "{\"Loop [experimentName=BTQL Query Generation - claude-sonnet-4-5]\":{\"parameters\":{\"type\":\"braintrust.staticParameters\",\"schema\":{\"btqlQueryToolDescription\":{\"type\":\"data\",\"schema\":{\"type\":\"string\",\"description\":\"Description
+        for the BTQL query tool\",\"default\":\"Execute BTQL (Braintrust Query Language)
+        queries to analyze logs, experiments, datasets and traces.\\n\\nBTQL is a
+        SQL-like language for querying AI application data. Key capabilities:\\n\\n\\nCLAUSES:\\n-
+        select: Choose fields (use * for all fields)\\n- filter: Apply conditions
+        (supports =, !=, >, <, >=, <=, IS NULL, LIKE, MATCH, CONTAINS)\\n- sort: Order
+        results (field asc/desc)\\n- limit: Limit results (default 100)\\n- dimensions/measures:
+        For aggregations (count, sum, avg, min, max, percentile)\\n- unpivot: Expand
+        arrays into individual rows (e.g., unpivot: tags as tag)\\n\\n\\nFIELDS BY
+        SHAPE:\\n\\nFor 'spans' and 'traces':\\n- id: Unique span identifier\\n- span_id:
+        Current span ID\\n- root_span_id: Root span ID for the trace\\n- created:
+        Timestamp when created\\n- input/output: The prompts and responses\\n- expected:
+        Expected output (if available)\\n- error: Error information (if any)\\n- metadata.*
+        : Nested fields MUST use dot notation (e.g., metadata.user_id, metadata.model,
+        metadata.session_id)\\n- scores.* : Nested score fields (e.g., scores.Factuality,
+        scores.Coherence, scores.Helpfulness)\\n- metrics.* : Nested metrics (e.g.,
+        metrics.tokens, metrics.latency, metrics.cost)\\n- tags: Array of tags applied
+        to the span\\n- span_attributes.name/type/purpose: Span classification (use
+        dot notation: span_attributes.name)\\n- origin: Information about where the
+        span was created\\n\\nFor 'summary' (aggregated per trace):\\n- id: Root span
+        ID (trace identifier)\\n- comparison_key: Key for comparing traces\\n- created:
+        Timestamp of the trace\\n- input/output/expected/error/metadata: From root
+        span only (truncated to preview_length)\\n- tags/origin: Full arrays from
+        root span\\n- scores.*: Averaged across all spans in the trace\\n- metrics.duration/llm_duration:
+        Timing metrics\\n- metrics.prompt_tokens/completion_tokens/total_tokens: Summed
+        across trace\\n- metrics.estimated_cost: Total estimated cost\\n- span_type_info:
+        Summary of span types in the trace\\n\\nOPERATORS:\\n- Text: MATCH (semantic
+        search for finding content), = (standard equality)\\n- Arrays: CONTAINS (check
+        if array contains value, e.g., tags CONTAINS 'production')\\n- Logic: AND,
+        OR, NOT\\n- Time: created > now() - interval 1 day\\n- IS NULL, IS NOT NULL
+        for checking null values\\n- =, != for exact matches\\n- >, <, >=, <= for
+        numeric comparisons\\n\\nFUNCTIONS:\\n- Time: day(), hour(), month(), year(),
+        now()\\n- Aggregates: count(), sum(), avg(), min(), max(), percentile()\\n-
+        String: lower(), upper(), concat()\\n- Array: len() (array length), CONTAINS
+        (check if value in array)\\n- Conditional: Use ternary operator (a ? b : c)
+        for conditional logic, NOT CASE WHEN\\n\\nFIELD ACCESS RULES:\\n- ALWAYS use
+        dot notation for nested fields\\n- If InferSchemaTool shows ['metadata', 'user_id'],
+        write it as: metadata.user_id\\n- If InferSchemaTool shows ['scores', 'Factuality'],
+        write it as: scores.Factuality\\n- NEVER use just 'user_id' or 'Factuality'
+        - always include the parent object\\n- NO WILDCARD SUBFIELDS: To get all fields
+        from an object, project the object itself\\n  - CORRECT: select: metadata,
+        metrics (gets all metadata fields and all metrics fields)\\n  - WRONG: select:
+        metadata.*, metrics.* (this syntax does not exist)\\n- If you use the summary
+        shape, you can only `select: *`.\\n\\nSORT: NEVER add sort clauses when asked
+        for \\\"most recent\\\", \\\"latest\\\", \\\"newest\\\", or \\\"last\\\" items\\n-
+        Results are automatically sorted by timestamp in descending order (newest
+        first)\\n- Just use limit to get the desired number of recent items\\n- Example:
+        \\\"find the most recent error\\\" \u2192 \\\"filter: error IS NOT NULL |
+        select: * | limit: 1\\\"\\n- Example: \\\"show the latest 5 failures\\\" \u2192
+        \\\"filter: error IS NOT NULL | select: * | limit: 5\\\"\\n\\nLITERAL VALUES:\\n-
+        Strings: to escape quotes, use backslash (e.g., 'This is a string with a quote:
+        \\\\'')\\n\\nWORKING WITH ARRAYS (e.g., tags):\\n- Filter by exact tag: filter:
+        tags CONTAINS 'production'\\n- Multiple tags: filter: tags CONTAINS 'production'
+        AND tags CONTAINS 'high_priority'\\n- Non-empty array: filter: tags IS NOT
+        NULL AND len(tags) > 0\\n- Expand array for grouping: unpivot: tags as tag
+        | dimensions: tag | measures: count(1)\\n\\nIMPORTANT ARRAY LIMITATIONS:\\n-
+        You CANNOT use LIKE with arrays: tags LIKE 'environment:%' is INVALID\\n-
+        You CANNOT filter on unpivoted columns: after unpivot: tags as tag, you cannot
+        use tag in filters\\n- To find tags matching a pattern, you must either:\\n
+        \ 1. Filter by exact values: filter: tags CONTAINS 'environment:production'\\n
+        \ 2. Or unpivot and group all tags, then look for patterns in the results\\n\\nSPANS
+        AND TRACES:\\n- When you are querying with the 'spans' shape (the default)
+        or 'traces' shape, you will receive one\\n  row per span. That means you should
+        be prepared to handle data from subspans, or filter them out.\\n- To only
+        consider root spans, you can add the `is_root` expression to your query. This
+        is useful\\n  when you are grouping by an attribute in metadata, for example,
+        that is only present on the root span.\\n- If you see a lot of null values
+        while grouping, you are probably grouping by a field that is not present\\n
+        \ on all spans. Consider using the `is_root` expression to only consider root
+        spans, or an \\\"IS NOT NULL\\\"\\n  filter on your grouping field.\\n\\n\\n\\nEXAMPLES:\\n1.
+        Find recent errors: filter: error IS NOT NULL AND created > now() - interval
+        1 day\\n2. Group by model: dimensions: metadata.model | measures: count(1)
+        as calls, avg(scores.Factuality) as avg_score\\n3. Filter by user: filter:
+        metadata.user_id = '3e29ac38-5588-412a-a91c-7498c2f7277e' (NOT just user_id
+        = ...)\\n4. User activity: dimensions: metadata.user_id | measures: count(1)
+        as activity | sort: activity desc\\n5. Score filtering: filter: scores.Factuality
+        > 0.8 AND scores.Helpfulness > 0.7\\n6. Conditional grouping: dimensions:
+        error as has_error | measures: count(1) as count\\n7. Calculate error rate:
+        measures: count(error) as errors, count(1) as total\\n8. Most popular tag:
+        unpivot: tags as tag | dimensions: tag | measures: count(1) as usage | sort:
+        usage desc | limit: 1\\n9. Tag percentage: measures: count(tags CONTAINS 'experimental'
+        ? 1 : null) as exp_count, count(1) as total\\n10. All tag distribution: unpivot:
+        tags as tag | dimensions: tag | measures: count(1) as count (then filter results
+        for patterns)\\n11. Specific environment: filter: tags CONTAINS 'environment:production'
+        (must know exact value, not pattern)\\n\\n\\n\\nTime range filter guidance:\\n-
+        All queries MUST have a time range filter.\\n- If you do not provide a time
+        range filter the request will fail.\\n- If the user does not specify a time
+        range, always use the default time range filter provided in the prompt.\\n-
+        If the user specifies a time range in the prompt, always use the time range
+        they specified.\\n- If default time range is missing and user does not specify
+        a time range, always use the last 3 days.\\n- Unless the user specifies a
+        specific from and to hour, always provide 06:00:00.000Z as the from hour and
+        05:59:59.999Z as the to hour to go along with the year, month, and day.\\nExample:\\nIf
+        the current date is 2025-10-20, the last 2 days time range filter should be:\\n{\\n
+        \ from: \\\"2025-10-18T06:00:00.000Z\\\",\\n  to: \\\"2025-10-20T05:59:59.999Z\\\"\\n}\\n\",\"$schema\":\"http://json-schema.org/draft-07/schema#\"},\"default\":\"Execute
+        BTQL (Braintrust Query Language) queries to analyze logs, experiments, datasets
+        and traces.\\n\\nBTQL is a SQL-like language for querying AI application data.
+        Key capabilities:\\n\\n\\nCLAUSES:\\n- select: Choose fields (use * for all
+        fields)\\n- filter: Apply conditions (supports =, !=, >, <, >=, <=, IS NULL,
+        LIKE, MATCH, CONTAINS)\\n- sort: Order results (field asc/desc)\\n- limit:
+        Limit results (default 100)\\n- dimensions/measures: For aggregations (count,
+        sum, avg, min, max, percentile)\\n- unpivot: Expand arrays into individual
+        rows (e.g., unpivot: tags as tag)\\n\\n\\nFIELDS BY SHAPE:\\n\\nFor 'spans'
+        and 'traces':\\n- id: Unique span identifier\\n- span_id: Current span ID\\n-
+        root_span_id: Root span ID for the trace\\n- created: Timestamp when created\\n-
+        input/output: The prompts and responses\\n- expected: Expected output (if
+        available)\\n- error: Error information (if any)\\n- metadata.* : Nested fields
+        MUST use dot notation (e.g., metadata.user_id, metadata.model, metadata.session_id)\\n-
+        scores.* : Nested score fields (e.g., scores.Factuality, scores.Coherence,
+        scores.Helpfulness)\\n- metrics.* : Nested metrics (e.g., metrics.tokens,
+        metrics.latency, metrics.cost)\\n- tags: Array of tags applied to the span\\n-
+        span_attributes.name/type/purpose: Span classification (use dot notation:
+        span_attributes.name)\\n- origin: Information about where the span was created\\n\\nFor
+        'summary' (aggregated per trace):\\n- id: Root span ID (trace identifier)\\n-
+        comparison_key: Key for comparing traces\\n- created: Timestamp of the trace\\n-
+        input/output/expected/error/metadata: From root span only (truncated to preview_length)\\n-
+        tags/origin: Full arrays from root span\\n- scores.*: Averaged across all
+        spans in the trace\\n- metrics.duration/llm_duration: Timing metrics\\n- metrics.prompt_tokens/completion_tokens/total_tokens:
+        Summed across trace\\n- metrics.estimated_cost: Total estimated cost\\n- span_type_info:
+        Summary of span types in the trace\\n\\nOPERATORS:\\n- Text: MATCH (semantic
+        search for finding content), = (standard equality)\\n- Arrays: CONTAINS (check
+        if array contains value, e.g., tags CONTAINS 'production')\\n- Logic: AND,
+        OR, NOT\\n- Time: created > now() - interval 1 day\\n- IS NULL, IS NOT NULL
+        for checking null values\\n- =, != for exact matches\\n- >, <, >=, <= for
+        numeric comparisons\\n\\nFUNCTIONS:\\n- Time: day(), hour(), month(), year(),
+        now()\\n- Aggregates: count(), sum(), avg(), min(), max(), percentile()\\n-
+        String: lower(), upper(), concat()\\n- Array: len() (array length), CONTAINS
+        (check if value in array)\\n- Conditional: Use ternary operator (a ? b : c)
+        for conditional logic, NOT CASE WHEN\\n\\nFIELD ACCESS RULES:\\n- ALWAYS use
+        dot notation for nested fields\\n- If InferSchemaTool shows ['metadata', 'user_id'],
+        write it as: metadata.user_id\\n- If InferSchemaTool shows ['scores', 'Factuality'],
+        write it as: scores.Factuality\\n- NEVER use just 'user_id' or 'Factuality'
+        - always include the parent object\\n- NO WILDCARD SUBFIELDS: To get all fields
+        from an object, project the object itself\\n  - CORRECT: select: metadata,
+        metrics (gets all metadata fields and all metrics fields)\\n  - WRONG: select:
+        metadata.*, metrics.* (this syntax does not exist)\\n- If you use the summary
+        shape, you can only `select: *`.\\n\\nSORT: NEVER add sort clauses when asked
+        for \\\"most recent\\\", \\\"latest\\\", \\\"newest\\\", or \\\"last\\\" items\\n-
+        Results are automatically sorted by timestamp in descending order (newest
+        first)\\n- Just use limit to get the desired number of recent items\\n- Example:
+        \\\"find the most recent error\\\" \u2192 \\\"filter: error IS NOT NULL |
+        select: * | limit: 1\\\"\\n- Example: \\\"show the latest 5 failures\\\" \u2192
+        \\\"filter: error IS NOT NULL | select: * | limit: 5\\\"\\n\\nLITERAL VALUES:\\n-
+        Strings: to escape quotes, use backslash (e.g., 'This is a string with a quote:
+        \\\\'')\\n\\nWORKING WITH ARRAYS (e.g., tags):\\n- Filter by exact tag: filter:
+        tags CONTAINS 'production'\\n- Multiple tags: filter: tags CONTAINS 'production'
+        AND tags CONTAINS 'high_priority'\\n- Non-empty array: filter: tags IS NOT
+        NULL AND len(tags) > 0\\n- Expand array for grouping: unpivot: tags as tag
+        | dimensions: tag | measures: count(1)\\n\\nIMPORTANT ARRAY LIMITATIONS:\\n-
+        You CANNOT use LIKE with arrays: tags LIKE 'environment:%' is INVALID\\n-
+        You CANNOT filter on unpivoted columns: after unpivot: tags as tag, you cannot
+        use tag in filters\\n- To find tags matching a pattern, you must either:\\n
+        \ 1. Filter by exact values: filter: tags CONTAINS 'environment:production'\\n
+        \ 2. Or unpivot and group all tags, then look for patterns in the results\\n\\nSPANS
+        AND TRACES:\\n- When you are querying with the 'spans' shape (the default)
+        or 'traces' shape, you will receive one\\n  row per span. That means you should
+        be prepared to handle data from subspans, or filter them out.\\n- To only
+        consider root spans, you can add the `is_root` expression to your query. This
+        is useful\\n  when you are grouping by an attribute in metadata, for example,
+        that is only present on the root span.\\n- If you see a lot of null values
+        while grouping, you are probably grouping by a field that is not present\\n
+        \ on all spans. Consider using the `is_root` expression to only consider root
+        spans, or an \\\"IS NOT NULL\\\"\\n  filter on your grouping field.\\n\\n\\n\\nEXAMPLES:\\n1.
+        Find recent errors: filter: error IS NOT NULL AND created > now() - interval
+        1 day\\n2. Group by model: dimensions: metadata.model | measures: count(1)
+        as calls, avg(scores.Factuality) as avg_score\\n3. Filter by user: filter:
+        metadata.user_id = '3e29ac38-5588-412a-a91c-7498c2f7277e' (NOT just user_id
+        = ...)\\n4. User activity: dimensions: metadata.user_id | measures: count(1)
+        as activity | sort: activity desc\\n5. Score filtering: filter: scores.Factuality
+        > 0.8 AND scores.Helpfulness > 0.7\\n6. Conditional grouping: dimensions:
+        error as has_error | measures: count(1) as count\\n7. Calculate error rate:
+        measures: count(error) as errors, count(1) as total\\n8. Most popular tag:
+        unpivot: tags as tag | dimensions: tag | measures: count(1) as usage | sort:
+        usage desc | limit: 1\\n9. Tag percentage: measures: count(tags CONTAINS 'experimental'
+        ? 1 : null) as exp_count, count(1) as total\\n10. All tag distribution: unpivot:
+        tags as tag | dimensions: tag | measures: count(1) as count (then filter results
+        for patterns)\\n11. Specific environment: filter: tags CONTAINS 'environment:production'
+        (must know exact value, not pattern)\\n\\n\\n\\nTime range filter guidance:\\n-
+        All queries MUST have a time range filter.\\n- If you do not provide a time
+        range filter the request will fail.\\n- If the user does not specify a time
+        range, always use the default time range filter provided in the prompt.\\n-
+        If the user specifies a time range in the prompt, always use the time range
+        they specified.\\n- If default time range is missing and user does not specify
+        a time range, always use the last 3 days.\\n- Unless the user specifies a
+        specific from and to hour, always provide 06:00:00.000Z as the from hour and
+        05:59:59.999Z as the to hour to go along with the year, month, and day.\\nExample:\\nIf
+        the current date is 2025-10-20, the last 2 days time range filter should be:\\n{\\n
+        \ from: \\\"2025-10-18T06:00:00.000Z\\\",\\n  to: \\\"2025-10-20T05:59:59.999Z\\\"\\n}\\n\",\"description\":\"Description
+        for the BTQL query tool\"}},\"source\":null},\"scores\":[]}}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 12 Mar 2026 20:27:09 GMT
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 465fd463b8e31c8b402f3b1a6398314c.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - jukMY95gfXs19bOGnSkk829qeuN0BcUYSXv5FBC82RZ50gu8wo4Jkg==
+      X-Amz-Cf-Pop:
+      - SFO53-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69b32192-58aa1a037ab4d9b7286eab00;Parent=35dfe387c550a849;Sampled=0;Lineage=1:8be8f50d:0
+      X-Cache:
+      - Miss from cloudfront
+      x-amzn-RequestId:
+      - 8a45e228-b06c-422b-bb8f-60b6caaed322
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"functions": [{"project_id": "6b770640-a26a-4680-9d69-537262023137", "org_name":
+      "nate test", "name": "Loop [experimentName=BTQL Query Generation - claude-sonnet-4-5]",
+      "slug": "loop-experimentname-btql-query-generation-claude-sonnet-4-5", "function_type":
+      "sandbox", "function_data": {"type": "code", "data": {"type": "bundle", "runtime_context":
+      {"runtime": "python", "version": "3.13"}, "location": {"type": "sandbox", "sandbox_spec":
+      {"provider": "modal", "snapshot_ref": "im-icRxmsk1Sz9XPP2f8OblVU"}, "entrypoints":
+      ["./local/js/optimization/evals/btql-generation/btql-queries.eval.ts"], "eval_name":
+      "Loop [experimentName=BTQL Query Generation - claude-sonnet-4-5]", "evaluator_definition":
+      {"parameters": {"type": "braintrust.staticParameters", "schema": {"btqlQueryToolDescription":
+      {"type": "data", "schema": {"type": "string", "description": "Description for
+      the BTQL query tool", "default": "Execute BTQL (Braintrust Query Language) queries
+      to analyze logs, experiments, datasets and traces.\n\nBTQL is a SQL-like language
+      for querying AI application data. Key capabilities:\n\n\nCLAUSES:\n- select:
+      Choose fields (use * for all fields)\n- filter: Apply conditions (supports =,
+      !=, >, <, >=, <=, IS NULL, LIKE, MATCH, CONTAINS)\n- sort: Order results (field
+      asc/desc)\n- limit: Limit results (default 100)\n- dimensions/measures: For
+      aggregations (count, sum, avg, min, max, percentile)\n- unpivot: Expand arrays
+      into individual rows (e.g., unpivot: tags as tag)\n\n\nFIELDS BY SHAPE:\n\nFor
+      ''spans'' and ''traces'':\n- id: Unique span identifier\n- span_id: Current
+      span ID\n- root_span_id: Root span ID for the trace\n- created: Timestamp when
+      created\n- input/output: The prompts and responses\n- expected: Expected output
+      (if available)\n- error: Error information (if any)\n- metadata.* : Nested fields
+      MUST use dot notation (e.g., metadata.user_id, metadata.model, metadata.session_id)\n-
+      scores.* : Nested score fields (e.g., scores.Factuality, scores.Coherence, scores.Helpfulness)\n-
+      metrics.* : Nested metrics (e.g., metrics.tokens, metrics.latency, metrics.cost)\n-
+      tags: Array of tags applied to the span\n- span_attributes.name/type/purpose:
+      Span classification (use dot notation: span_attributes.name)\n- origin: Information
+      about where the span was created\n\nFor ''summary'' (aggregated per trace):\n-
+      id: Root span ID (trace identifier)\n- comparison_key: Key for comparing traces\n-
+      created: Timestamp of the trace\n- input/output/expected/error/metadata: From
+      root span only (truncated to preview_length)\n- tags/origin: Full arrays from
+      root span\n- scores.*: Averaged across all spans in the trace\n- metrics.duration/llm_duration:
+      Timing metrics\n- metrics.prompt_tokens/completion_tokens/total_tokens: Summed
+      across trace\n- metrics.estimated_cost: Total estimated cost\n- span_type_info:
+      Summary of span types in the trace\n\nOPERATORS:\n- Text: MATCH (semantic search
+      for finding content), = (standard equality)\n- Arrays: CONTAINS (check if array
+      contains value, e.g., tags CONTAINS ''production'')\n- Logic: AND, OR, NOT\n-
+      Time: created > now() - interval 1 day\n- IS NULL, IS NOT NULL for checking
+      null values\n- =, != for exact matches\n- >, <, >=, <= for numeric comparisons\n\nFUNCTIONS:\n-
+      Time: day(), hour(), month(), year(), now()\n- Aggregates: count(), sum(), avg(),
+      min(), max(), percentile()\n- String: lower(), upper(), concat()\n- Array: len()
+      (array length), CONTAINS (check if value in array)\n- Conditional: Use ternary
+      operator (a ? b : c) for conditional logic, NOT CASE WHEN\n\nFIELD ACCESS RULES:\n-
+      ALWAYS use dot notation for nested fields\n- If InferSchemaTool shows [''metadata'',
+      ''user_id''], write it as: metadata.user_id\n- If InferSchemaTool shows [''scores'',
+      ''Factuality''], write it as: scores.Factuality\n- NEVER use just ''user_id''
+      or ''Factuality'' - always include the parent object\n- NO WILDCARD SUBFIELDS:
+      To get all fields from an object, project the object itself\n  - CORRECT: select:
+      metadata, metrics (gets all metadata fields and all metrics fields)\n  - WRONG:
+      select: metadata.*, metrics.* (this syntax does not exist)\n- If you use the
+      summary shape, you can only `select: *`.\n\nSORT: NEVER add sort clauses when
+      asked for \"most recent\", \"latest\", \"newest\", or \"last\" items\n- Results
+      are automatically sorted by timestamp in descending order (newest first)\n-
+      Just use limit to get the desired number of recent items\n- Example: \"find
+      the most recent error\" \u2192 \"filter: error IS NOT NULL | select: * | limit:
+      1\"\n- Example: \"show the latest 5 failures\" \u2192 \"filter: error IS NOT
+      NULL | select: * | limit: 5\"\n\nLITERAL VALUES:\n- Strings: to escape quotes,
+      use backslash (e.g., ''This is a string with a quote: \\'''')\n\nWORKING WITH
+      ARRAYS (e.g., tags):\n- Filter by exact tag: filter: tags CONTAINS ''production''\n-
+      Multiple tags: filter: tags CONTAINS ''production'' AND tags CONTAINS ''high_priority''\n-
+      Non-empty array: filter: tags IS NOT NULL AND len(tags) > 0\n- Expand array
+      for grouping: unpivot: tags as tag | dimensions: tag | measures: count(1)\n\nIMPORTANT
+      ARRAY LIMITATIONS:\n- You CANNOT use LIKE with arrays: tags LIKE ''environment:%''
+      is INVALID\n- You CANNOT filter on unpivoted columns: after unpivot: tags as
+      tag, you cannot use tag in filters\n- To find tags matching a pattern, you must
+      either:\n  1. Filter by exact values: filter: tags CONTAINS ''environment:production''\n  2.
+      Or unpivot and group all tags, then look for patterns in the results\n\nSPANS
+      AND TRACES:\n- When you are querying with the ''spans'' shape (the default)
+      or ''traces'' shape, you will receive one\n  row per span. That means you should
+      be prepared to handle data from subspans, or filter them out.\n- To only consider
+      root spans, you can add the `is_root` expression to your query. This is useful\n  when
+      you are grouping by an attribute in metadata, for example, that is only present
+      on the root span.\n- If you see a lot of null values while grouping, you are
+      probably grouping by a field that is not present\n  on all spans. Consider using
+      the `is_root` expression to only consider root spans, or an \"IS NOT NULL\"\n  filter
+      on your grouping field.\n\n\n\nEXAMPLES:\n1. Find recent errors: filter: error
+      IS NOT NULL AND created > now() - interval 1 day\n2. Group by model: dimensions:
+      metadata.model | measures: count(1) as calls, avg(scores.Factuality) as avg_score\n3.
+      Filter by user: filter: metadata.user_id = ''3e29ac38-5588-412a-a91c-7498c2f7277e''
+      (NOT just user_id = ...)\n4. User activity: dimensions: metadata.user_id | measures:
+      count(1) as activity | sort: activity desc\n5. Score filtering: filter: scores.Factuality
+      > 0.8 AND scores.Helpfulness > 0.7\n6. Conditional grouping: dimensions: error
+      as has_error | measures: count(1) as count\n7. Calculate error rate: measures:
+      count(error) as errors, count(1) as total\n8. Most popular tag: unpivot: tags
+      as tag | dimensions: tag | measures: count(1) as usage | sort: usage desc |
+      limit: 1\n9. Tag percentage: measures: count(tags CONTAINS ''experimental''
+      ? 1 : null) as exp_count, count(1) as total\n10. All tag distribution: unpivot:
+      tags as tag | dimensions: tag | measures: count(1) as count (then filter results
+      for patterns)\n11. Specific environment: filter: tags CONTAINS ''environment:production''
+      (must know exact value, not pattern)\n\n\n\nTime range filter guidance:\n- All
+      queries MUST have a time range filter.\n- If you do not provide a time range
+      filter the request will fail.\n- If the user does not specify a time range,
+      always use the default time range filter provided in the prompt.\n- If the user
+      specifies a time range in the prompt, always use the time range they specified.\n-
+      If default time range is missing and user does not specify a time range, always
+      use the last 3 days.\n- Unless the user specifies a specific from and to hour,
+      always provide 06:00:00.000Z as the from hour and 05:59:59.999Z as the to hour
+      to go along with the year, month, and day.\nExample:\nIf the current date is
+      2025-10-20, the last 2 days time range filter should be:\n{\n  from: \"2025-10-18T06:00:00.000Z\",\n  to:
+      \"2025-10-20T05:59:59.999Z\"\n}\n", "$schema": "http://json-schema.org/draft-07/schema#"},
+      "default": "Execute BTQL (Braintrust Query Language) queries to analyze logs,
+      experiments, datasets and traces.\n\nBTQL is a SQL-like language for querying
+      AI application data. Key capabilities:\n\n\nCLAUSES:\n- select: Choose fields
+      (use * for all fields)\n- filter: Apply conditions (supports =, !=, >, <, >=,
+      <=, IS NULL, LIKE, MATCH, CONTAINS)\n- sort: Order results (field asc/desc)\n-
+      limit: Limit results (default 100)\n- dimensions/measures: For aggregations
+      (count, sum, avg, min, max, percentile)\n- unpivot: Expand arrays into individual
+      rows (e.g., unpivot: tags as tag)\n\n\nFIELDS BY SHAPE:\n\nFor ''spans'' and
+      ''traces'':\n- id: Unique span identifier\n- span_id: Current span ID\n- root_span_id:
+      Root span ID for the trace\n- created: Timestamp when created\n- input/output:
+      The prompts and responses\n- expected: Expected output (if available)\n- error:
+      Error information (if any)\n- metadata.* : Nested fields MUST use dot notation
+      (e.g., metadata.user_id, metadata.model, metadata.session_id)\n- scores.* :
+      Nested score fields (e.g., scores.Factuality, scores.Coherence, scores.Helpfulness)\n-
+      metrics.* : Nested metrics (e.g., metrics.tokens, metrics.latency, metrics.cost)\n-
+      tags: Array of tags applied to the span\n- span_attributes.name/type/purpose:
+      Span classification (use dot notation: span_attributes.name)\n- origin: Information
+      about where the span was created\n\nFor ''summary'' (aggregated per trace):\n-
+      id: Root span ID (trace identifier)\n- comparison_key: Key for comparing traces\n-
+      created: Timestamp of the trace\n- input/output/expected/error/metadata: From
+      root span only (truncated to preview_length)\n- tags/origin: Full arrays from
+      root span\n- scores.*: Averaged across all spans in the trace\n- metrics.duration/llm_duration:
+      Timing metrics\n- metrics.prompt_tokens/completion_tokens/total_tokens: Summed
+      across trace\n- metrics.estimated_cost: Total estimated cost\n- span_type_info:
+      Summary of span types in the trace\n\nOPERATORS:\n- Text: MATCH (semantic search
+      for finding content), = (standard equality)\n- Arrays: CONTAINS (check if array
+      contains value, e.g., tags CONTAINS ''production'')\n- Logic: AND, OR, NOT\n-
+      Time: created > now() - interval 1 day\n- IS NULL, IS NOT NULL for checking
+      null values\n- =, != for exact matches\n- >, <, >=, <= for numeric comparisons\n\nFUNCTIONS:\n-
+      Time: day(), hour(), month(), year(), now()\n- Aggregates: count(), sum(), avg(),
+      min(), max(), percentile()\n- String: lower(), upper(), concat()\n- Array: len()
+      (array length), CONTAINS (check if value in array)\n- Conditional: Use ternary
+      operator (a ? b : c) for conditional logic, NOT CASE WHEN\n\nFIELD ACCESS RULES:\n-
+      ALWAYS use dot notation for nested fields\n- If InferSchemaTool shows [''metadata'',
+      ''user_id''], write it as: metadata.user_id\n- If InferSchemaTool shows [''scores'',
+      ''Factuality''], write it as: scores.Factuality\n- NEVER use just ''user_id''
+      or ''Factuality'' - always include the parent object\n- NO WILDCARD SUBFIELDS:
+      To get all fields from an object, project the object itself\n  - CORRECT: select:
+      metadata, metrics (gets all metadata fields and all metrics fields)\n  - WRONG:
+      select: metadata.*, metrics.* (this syntax does not exist)\n- If you use the
+      summary shape, you can only `select: *`.\n\nSORT: NEVER add sort clauses when
+      asked for \"most recent\", \"latest\", \"newest\", or \"last\" items\n- Results
+      are automatically sorted by timestamp in descending order (newest first)\n-
+      Just use limit to get the desired number of recent items\n- Example: \"find
+      the most recent error\" \u2192 \"filter: error IS NOT NULL | select: * | limit:
+      1\"\n- Example: \"show the latest 5 failures\" \u2192 \"filter: error IS NOT
+      NULL | select: * | limit: 5\"\n\nLITERAL VALUES:\n- Strings: to escape quotes,
+      use backslash (e.g., ''This is a string with a quote: \\'''')\n\nWORKING WITH
+      ARRAYS (e.g., tags):\n- Filter by exact tag: filter: tags CONTAINS ''production''\n-
+      Multiple tags: filter: tags CONTAINS ''production'' AND tags CONTAINS ''high_priority''\n-
+      Non-empty array: filter: tags IS NOT NULL AND len(tags) > 0\n- Expand array
+      for grouping: unpivot: tags as tag | dimensions: tag | measures: count(1)\n\nIMPORTANT
+      ARRAY LIMITATIONS:\n- You CANNOT use LIKE with arrays: tags LIKE ''environment:%''
+      is INVALID\n- You CANNOT filter on unpivoted columns: after unpivot: tags as
+      tag, you cannot use tag in filters\n- To find tags matching a pattern, you must
+      either:\n  1. Filter by exact values: filter: tags CONTAINS ''environment:production''\n  2.
+      Or unpivot and group all tags, then look for patterns in the results\n\nSPANS
+      AND TRACES:\n- When you are querying with the ''spans'' shape (the default)
+      or ''traces'' shape, you will receive one\n  row per span. That means you should
+      be prepared to handle data from subspans, or filter them out.\n- To only consider
+      root spans, you can add the `is_root` expression to your query. This is useful\n  when
+      you are grouping by an attribute in metadata, for example, that is only present
+      on the root span.\n- If you see a lot of null values while grouping, you are
+      probably grouping by a field that is not present\n  on all spans. Consider using
+      the `is_root` expression to only consider root spans, or an \"IS NOT NULL\"\n  filter
+      on your grouping field.\n\n\n\nEXAMPLES:\n1. Find recent errors: filter: error
+      IS NOT NULL AND created > now() - interval 1 day\n2. Group by model: dimensions:
+      metadata.model | measures: count(1) as calls, avg(scores.Factuality) as avg_score\n3.
+      Filter by user: filter: metadata.user_id = ''3e29ac38-5588-412a-a91c-7498c2f7277e''
+      (NOT just user_id = ...)\n4. User activity: dimensions: metadata.user_id | measures:
+      count(1) as activity | sort: activity desc\n5. Score filtering: filter: scores.Factuality
+      > 0.8 AND scores.Helpfulness > 0.7\n6. Conditional grouping: dimensions: error
+      as has_error | measures: count(1) as count\n7. Calculate error rate: measures:
+      count(error) as errors, count(1) as total\n8. Most popular tag: unpivot: tags
+      as tag | dimensions: tag | measures: count(1) as usage | sort: usage desc |
+      limit: 1\n9. Tag percentage: measures: count(tags CONTAINS ''experimental''
+      ? 1 : null) as exp_count, count(1) as total\n10. All tag distribution: unpivot:
+      tags as tag | dimensions: tag | measures: count(1) as count (then filter results
+      for patterns)\n11. Specific environment: filter: tags CONTAINS ''environment:production''
+      (must know exact value, not pattern)\n\n\n\nTime range filter guidance:\n- All
+      queries MUST have a time range filter.\n- If you do not provide a time range
+      filter the request will fail.\n- If the user does not specify a time range,
+      always use the default time range filter provided in the prompt.\n- If the user
+      specifies a time range in the prompt, always use the time range they specified.\n-
+      If default time range is missing and user does not specify a time range, always
+      use the last 3 days.\n- Unless the user specifies a specific from and to hour,
+      always provide 06:00:00.000Z as the from hour and 05:59:59.999Z as the to hour
+      to go along with the year, month, and day.\nExample:\nIf the current date is
+      2025-10-20, the last 2 days time range filter should be:\n{\n  from: \"2025-10-18T06:00:00.000Z\",\n  to:
+      \"2025-10-20T05:59:59.999Z\"\n}\n", "description": "Description for the BTQL
+      query tool"}}, "source": null}, "scores": []}}, "bundle_id": null, "preview":
+      null}}, "metadata": {"_bt_sandbox_group_name": "test-sandbox"}, "if_exists":
+      "replace"}]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '15581'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.5
+    method: POST
+    uri: https://api.braintrust.dev/insert-functions
+  response:
+    body:
+      string: '{"status":"success","xact_id":"1000196810337004963","functions":[{"id":"f09a1874-78b7-4b4b-a5bc-95893d0ee325","project_id":"6b770640-a26a-4680-9d69-537262023137","slug":"loop-experimentname-btql-query-generation-claude-sonnet-4-5","found_existing":true}]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 12 Mar 2026 20:27:09 GMT
+      Via:
+      - 1.1 5f63640c4cc5b2c8c3fe465bddc1678c.cloudfront.net (CloudFront), 1.1 e4c1621d1a01ac203cab18901cb7540a.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - mlHh_PfeqZlNG5KYxDyIqG8jQOHacOi0UYMRwrUbH6F-BGSkFnH0uw==
+      X-Amz-Cf-Pop:
+      - SFO53-P8
+      - SFO53-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69b3219d-5adddb89518d23376b2def07;Parent=11bb6cbcddd2d398;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms
+      content-length:
+      - '255'
+      etag:
+      - W/"ff-XGgCN8o1ZmD6+qsDUbfmCzgeT8o"
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - aIIwqGWuIAMEc4g=
+      x-amzn-RequestId:
+      - a000c6a3-1f3f-491f-b1c7-7869a94b7616
+      x-bt-internal-trace-id:
+      - 69b3219d000000000455bb045326bb67
+    status:
+      code: 200
+      message: OK
+version: 1

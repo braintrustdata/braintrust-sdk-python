@@ -78,6 +78,12 @@ from .logger import (
 from .oai import (
     wrap_openai,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
+from .sandbox import (
+    RegisteredSandboxFunction,  # noqa: F401 # type: ignore[reportUnusedImport]
+    RegisterSandboxResult,  # noqa: F401 # type: ignore[reportUnusedImport]
+    SandboxConfig,  # noqa: F401 # type: ignore[reportUnusedImport]
+    register_sandbox,  # noqa: F401 # type: ignore[reportUnusedImport]
+)
 from .util import (
     BT_IS_ASYNC_ATTRIBUTE,  # noqa: F401 # type: ignore[reportUnusedImport]
     MarkAsyncWrapper,  # noqa: F401 # type: ignore[reportUnusedImport]

@@ -16,11 +16,13 @@ import zipfile
 from typing import Any
 
 import requests
-from braintrust.framework import _set_lazy_load
+import slugify
+from braintrust.framework import _evals, _scorer_name, _set_lazy_load
 
 from .. import api_conn, login, org_id, proxy_conn
 from ..framework2 import ProjectIdCache, global_
 from ..generated_types import IfExists
+from ..parameters import parameters_to_json_schema
 from ..util import add_azure_blob_headers
 
 
@@ -251,6 +253,8 @@ def _collect_function_function_defs(
         }
         if f.metadata is not None:
             j["metadata"] = f.metadata
+        if f.tags is not None:
+            j["tags"] = list(f.tags)
         if f.parameters is None:
             raise ValueError(f"Function {f.name} has no supplied parameters")
         j["function_schema"] = {
@@ -266,6 +270,56 @@ def _collect_prompt_function_defs(
 ) -> None:
     for p in global_.prompts:
         functions.append(p.to_function_definition(if_exists, project_ids))
+
+
+def _collect_evaluator_defs(
+    project_ids: ProjectIdCache,
+    functions: list[dict[str, Any]],
+    bundle_id: str | None,
+    if_exists: IfExists,
+    source_file: str,
+    evaluators: dict[str, Any],
+) -> None:
+    source_stem = os.path.splitext(os.path.basename(source_file))[0]
+
+    for eval_name, eval_instance in evaluators.items():
+        evaluator = eval_instance.evaluator
+        project_id = project_ids.get_by_name(evaluator.project_name)
+
+        scores = [{"name": _scorer_name(scorer, i)} for i, scorer in enumerate(evaluator.scores)]
+        evaluator_definition: dict[str, Any] = {"scores": scores}
+        if evaluator.parameters is not None:
+            evaluator_definition["parameters"] = parameters_to_json_schema(evaluator.parameters)
+
+        functions.append(
+            {
+                "project_id": project_id,
+                "name": f"Eval {eval_name} sandbox",
+                "slug": slugify.slugify(f"{source_stem}-{eval_name}-sandbox"),
+                "description": f"Sandbox eval {eval_name}",
+                "function_data": {
+                    "type": "code",
+                    "data": {
+                        "type": "bundle",
+                        "runtime_context": {
+                            "runtime": "python",
+                            "version": _py_version(),
+                        },
+                        "location": {
+                            "type": "sandbox",
+                            "sandbox_spec": {"provider": "lambda"},
+                            "entrypoints": [source_file],
+                            "eval_name": eval_name,
+                            "evaluator_definition": evaluator_definition,
+                        },
+                        "bundle_id": bundle_id,
+                    },
+                },
+                "function_type": "sandbox",
+                "metadata": {"_bt_sandbox_group_name": source_stem},
+                "if_exists": if_exists,
+            }
+        )
 
 
 def run(args):
@@ -287,6 +341,7 @@ def run(args):
     try:
         with _set_lazy_load(True):
             sources = _import_module(module_name, path)
+            evaluators = _evals.evaluators.copy()
     except ImportError as e:
         if str(e) == "attempted relative import with no known parent package":
             raise ImportError(
@@ -298,12 +353,30 @@ def run(args):
         raise
     except Exception as e:
         raise
+    finally:
+        _evals.clear()
 
     project_ids = ProjectIdCache()
     functions: list[dict[str, Any]] = []
-    if len(global_.functions) > 0:
+
+    needs_bundle = len(global_.functions) > 0 or len(evaluators) > 0
+    bundle_id = None
+    if needs_bundle:
         bundle_id = _upload_bundle(module_name, sources, args.requirements)
+
+    if len(global_.functions) > 0:
         _collect_function_function_defs(project_ids, functions, bundle_id, args.if_exists)
+
+    if len(evaluators) > 0:
+        _collect_evaluator_defs(
+            project_ids,
+            functions,
+            bundle_id,
+            args.if_exists,
+            args.file,
+            evaluators,
+        )
+
     if len(global_.prompts) > 0:
         _collect_prompt_function_defs(project_ids, functions, args.if_exists)
 

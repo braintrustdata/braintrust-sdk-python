@@ -1,38 +1,28 @@
-SHELL := /bin/bash
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-VENV_PRE_COMMIT := ${ROOT_DIR}/venv/.pre_commit
+UV ?= uv
+RUN := $(UV) run
 
-.PHONY: all
-all: ${VENV_PRE_COMMIT}
+.PHONY: help install test lint format fixup
 
-.PHONY: py
-py: ${VENV_PYTHON_PACKAGES}
-	bash -c 'source venv/bin/activate'
-
-VENV_INITIALIZED := venv/.initialized
-
-${VENV_INITIALIZED}:
-	rm -rf venv && python -m venv venv
-	@touch ${VENV_INITIALIZED}
-
-VENV_PYTHON_PACKAGES := venv/.python_packages
-
-${VENV_PYTHON_PACKAGES}: ${VENV_INITIALIZED}
-	bash -c 'source venv/bin/activate && python -m pip install --upgrade pip setuptools'
-	bash -c 'source venv/bin/activate && python -m pip install -e .[all]'
-	@touch $@
-
-${VENV_PRE_COMMIT}: ${VENV_PYTHON_PACKAGES}
-	bash -c 'source venv/bin/activate && pre-commit install'
-	@touch $@
-
-develop: ${VENV_PRE_COMMIT}
-	@echo "--\nRun "source env.sh" to enter development mode!"
-
-fixup:
-	source env.sh && pre-commit run --all-files
-
-.PHONY: test
+install:
+	$(UV) sync
 
 test:
-	source env.sh && pytest
+	$(RUN) pytest src
+
+lint:
+	$(RUN) ruff check .
+
+format:
+	$(RUN) ruff format .
+
+fixup: format
+
+help:
+	@echo "Available targets:"
+	@echo "  fixup   - Format the integration sources with ruff"
+	@echo "  format  - Format the integration sources with ruff"
+	@echo "  install - Install dependencies with uv sync"
+	@echo "  lint    - Run ruff checks"
+	@echo "  test    - Run pytest against src/"
+
+.DEFAULT_GOAL := help
