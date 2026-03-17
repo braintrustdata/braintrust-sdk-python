@@ -28,7 +28,7 @@ except ModuleNotFoundError as e:
 from ..framework import EvalAsync, EvalScorer, Evaluator, ExperimentSummary, SSEProgressEvent
 from ..generated_types import FunctionId
 from ..logger import BraintrustState, bt_iscoroutinefunction
-from ..parameters import serialize_remote_eval_parameters_container, validate_parameters
+from ..parameters import RemoteEvalParameters, serialize_remote_eval_parameters_container, validate_parameters
 from ..span_identifier_v4 import parse_parent
 from .auth import AuthorizationMiddleware
 from .cache import cached_login
@@ -228,6 +228,8 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     eval_kwargs = {
         k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name", "parameter_values"]
     }
+    if validated_parameters is not None and not RemoteEvalParameters.is_parameters(evaluator.parameters):
+        eval_kwargs["parameters"] = validated_parameters
 
     try:
         eval_task = asyncio.create_task(

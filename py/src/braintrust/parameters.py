@@ -321,27 +321,38 @@ def serialize_eval_parameters(parameters: EvalParameters) -> dict[str, Any]:
 
     for name, schema in parameters.items():
         if _is_prompt_parameter(schema):
-            result[name] = {
+            parameter_data = {
                 "type": "prompt",
-                "default": _prompt_data_to_dict(schema.get("default")),
                 "description": schema.get("description"),
             }
+            default = schema.get("default")
+            if default is not None:
+                parameter_data["default"] = _prompt_data_to_dict(default)
+            result[name] = parameter_data
         elif _is_model_parameter(schema):
-            result[name] = {
+            parameter_data = {
                 "type": "model",
-                "default": schema.get("default"),
                 "description": schema.get("description"),
             }
+            default = schema.get("default")
+            if default is not None:
+                parameter_data["default"] = default
+            result[name] = parameter_data
         elif schema is None:
             result[name] = {
                 "type": "data",
                 "schema": {},
             }
         else:
-            result[name] = {
+            schema_json = _serialize_pydantic_parameter_schema(schema)
+            parameter_data = {
                 "type": "data",
-                "schema": _serialize_pydantic_parameter_schema(schema),
+                "schema": schema_json,
+                "description": schema_json.get("description"),
             }
+            if "default" in schema_json:
+                parameter_data["default"] = schema_json["default"]
+            result[name] = parameter_data
 
     return result
 
