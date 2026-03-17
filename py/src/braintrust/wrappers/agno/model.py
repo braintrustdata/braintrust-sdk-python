@@ -310,6 +310,9 @@ def wrap_model(Model: Any) -> Any:
 
 
 def _get_model_name(instance: Any) -> str:
+    provider = getattr(instance, "provider", None)
+    if provider:
+        return str(provider)
     if hasattr(instance, "get_provider") and callable(instance.get_provider):
         return str(instance.get_provider())
     return getattr(instance.__class__, "__name__", "Model")
