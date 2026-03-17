@@ -180,6 +180,13 @@ def _callback_name(callback: Any) -> str:
     return getattr(callback, "__qualname__", None) or getattr(callback, "__name__", None) or type(callback).__name__
 
 
+def _extract_hook_callback_args(args: tuple[Any, ...], kwargs: dict[str, Any]) -> tuple[Any, Any, Any]:
+    hook_input = kwargs.get("input") if "input" in kwargs else (args[0] if args else None)
+    tool_use_id = kwargs.get("tool_use_id") if "tool_use_id" in kwargs else (args[1] if len(args) > 1 else None)
+    context = kwargs.get("context") if "context" in kwargs else (args[2] if len(args) > 2 else None)
+    return hook_input, tool_use_id, context
+
+
 def _resolve_hook_parent(tool_use_id: Any) -> str | None:
     tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
     if tool_span_tracker is not None:
@@ -198,9 +205,7 @@ def _wrap_hook_callback(callback: Any, *, event_name: str, matcher: Any) -> Any:
     serialized_matcher = None if matcher is None else str(matcher)
 
     async def wrapped_hook(*args: Any, **kwargs: Any) -> Any:
-        hook_input = args[0] if args else kwargs.get("input")
-        tool_use_id = kwargs.get("tool_use_id") if "tool_use_id" in kwargs else (args[1] if len(args) > 1 else None)
-        context = kwargs.get("context") if "context" in kwargs else (args[2] if len(args) > 2 else None)
+        hook_input, tool_use_id, context = _extract_hook_callback_args(args, kwargs)
 
         span_input = {"input": bt_safe_deep_copy(hook_input)}
         if tool_use_id is not None:
@@ -243,7 +248,7 @@ def _wrap_hook_matcher(matcher: Any, *, event_name: str) -> Any:
         _wrap_hook_callback(callback, event_name=event_name, matcher=getattr(matcher, "matcher", None))
         for callback in hooks
     ]
-    if hooks == wrapped_hooks:
+    if all(original is wrapped for original, wrapped in zip(hooks, wrapped_hooks, strict=False)):
         return matcher
 
     try:
@@ -265,18 +270,13 @@ def _wrap_options_hooks(options: Any) -> None:
             continue
 
         wrapped_matchers = [_wrap_hook_matcher(matcher, event_name=str(event_name)) for matcher in matchers]
-        if wrapped_matchers == matchers:
+        if all(original is wrapped for original, wrapped in zip(matchers, wrapped_matchers, strict=False)):
             continue
 
         try:
             hooks_by_event[event_name] = wrapped_matchers
         except Exception:
             continue
-
-    try:
-        setattr(options, "_braintrust_wrapped_claude_hooks_ref", hooks_by_event)
-    except Exception:
-        pass
 
 
 def _wrap_client_hooks(client: Any) -> None:
@@ -899,8 +899,6 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             """Wrap query to capture the prompt and start time for tracing."""
             # Capture the time when query is called (when LLM call starts)
             self._query_start_time = time.time()
-            # Re-wrap if client.options.hooks was replaced after client construction.
-            _wrap_client_hooks(self._client)
 
             # Capture the prompt for use in receive_response
             prompt = args[0] if args else kwargs.get("prompt")
