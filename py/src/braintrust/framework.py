@@ -42,7 +42,13 @@ from .logger import (
     stringify_exception,
 )
 from .logger import init as _init_experiment
-from .parameters import EvalParameters, RemoteEvalParameters, is_eval_parameter_schema, validate_parameters
+from .parameters import (
+    EvalParameters,
+    RemoteEvalParameters,
+    ValidatedParameters,
+    is_eval_parameter_schema,
+    validate_parameters,
+)
 from .resource_manager import ResourceManager
 from .score import Score, is_score, is_scorer
 from .serializable_data_class import SerializableDataClass
@@ -215,7 +221,7 @@ class EvalHooks(abc.ABC, Generic[Output]):
 
     @property
     @abc.abstractmethod
-    def parameters(self) -> dict[str, Any] | None:
+    def parameters(self) -> ValidatedParameters | None:
         """
         The parameters for the current evaluation. These are the validated parameter values
         that were passed to the evaluator.
@@ -744,7 +750,7 @@ def _EvalCommon(
             dataset = evaluator.data
 
         experiment_parameters = None
-        if RemoteEvalParameters.is_parameters(evaluator.parameters) and evaluator.parameters.id is not None:
+        if isinstance(evaluator.parameters, RemoteEvalParameters) and evaluator.parameters.id is not None:
             experiment_parameters = {"id": evaluator.parameters.id}
             if evaluator.parameters.version is not None:
                 experiment_parameters["version"] = evaluator.parameters.version
@@ -1162,7 +1168,7 @@ class DictEvalHooks(dict[str, Any]):
         trial_index: int = 0,
         tags: Sequence[str] | None = None,
         report_progress: Callable[[TaskProgressEvent], None] = None,
-        parameters: dict[str, Any] | None = None,
+        parameters: ValidatedParameters | None = None,
     ):
         if metadata is not None:
             self.update({"metadata": metadata})
@@ -1220,7 +1226,7 @@ class DictEvalHooks(dict[str, Any]):
             return self._report_progress(event)
 
     @property
-    def parameters(self) -> dict[str, Any] | None:
+    def parameters(self) -> ValidatedParameters | None:
         return self._parameters
 
 
@@ -1403,7 +1409,7 @@ async def _run_evaluator_internal_impl(
 
     if evaluator.parameter_values is not None:
         resolved_evaluator_parameters = evaluator.parameter_values
-    elif RemoteEvalParameters.is_parameters(evaluator.parameters):
+    elif isinstance(evaluator.parameters, RemoteEvalParameters):
         resolved_evaluator_parameters = validate_parameters({}, evaluator.parameters)
     elif is_eval_parameter_schema(evaluator.parameters):
         resolved_evaluator_parameters = validate_parameters({}, evaluator.parameters)

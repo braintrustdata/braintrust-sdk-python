@@ -2050,7 +2050,7 @@ def _get_parameters_ref(
 ) -> ParametersRef | None:
     if parameters is None:
         return None
-    if RemoteEvalParameters.is_parameters(parameters):
+    if isinstance(parameters, RemoteEvalParameters):
         if parameters.id is None:
             return None
         ref: ParametersRef = {"id": parameters.id}
@@ -2091,43 +2091,39 @@ def load_parameters(
     :returns: A `RemoteEvalParameters` object.
     """
     if version is not None and environment is not None:
-        raise ValueError(
-            "Cannot specify both 'version' and 'environment' parameters. Please use only one (remove the other)."
-        )
+        raise ValueError("Cannot specify both 'version' and 'environment' parameters.")
 
-    if id:
-        pass
-    elif not project and not project_id:
+    if id is None and not project and not project_id:
         raise ValueError("Must specify at least one of project or project_id")
-    elif not slug:
+    if id is None and not slug:
         raise ValueError("Must specify slug")
+
+    should_fall_back_to_cache = version is None and environment is None
+    query_args = _populate_args(
+        {
+            "version": version,
+            "environment": environment,
+        }
+    )
 
     try:
         login(org_name=org_name, api_key=api_key, app_url=app_url)
         if id:
-            parameters_args = {}
-            if version is not None:
-                parameters_args["version"] = version
-            if environment is not None:
-                parameters_args["environment"] = environment
-            response = _state.api_conn().get_json(f"/v1/function/{id}", parameters_args)
+            response = _state.api_conn().get_json(f"/v1/function/{id}", query_args)
             if response is not None:
                 response = {"objects": [response]}
         else:
-            args = _populate_args(
-                {
-                    "project_name": project,
-                    "project_id": project_id,
-                    "slug": slug,
-                    "version": version,
-                    "environment": environment,
-                    "function_type": "parameters",
-                }
-            )
+            args = {
+                "project_name": project,
+                "project_id": project_id,
+                "slug": slug,
+                "function_type": "parameters",
+                **query_args,
+            }
             response = _state.api_conn().get_json("/v1/function", args)
     except Exception as server_error:
-        if environment is not None or version is not None:
-            raise ValueError("Parameters not found with specified parameters") from server_error
+        if not should_fall_back_to_cache:
+            raise
 
         eprint(f"Failed to load parameters, attempting to fall back to cache: {server_error}")
         try:
@@ -2145,7 +2141,7 @@ def load_parameters(
                     f"Parameters with id {id} not found (not found on server or in local cache): {cache_error}"
                 ) from server_error
             raise ValueError(
-                f"Parameters {slug} (version {version or 'latest'}) not found in {project or project_id} (not found on server or in local cache): {cache_error}"
+                f"Parameters {slug} not found in {project or project_id} (not found on server or in local cache): {cache_error}"
             ) from server_error
 
     if response is None or "objects" not in response or len(response["objects"]) == 0:

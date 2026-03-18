@@ -25,10 +25,22 @@ except ModuleNotFoundError as e:
         )
     )
 
-from ..framework import EvalAsync, EvalScorer, Evaluator, ExperimentSummary, SSEProgressEvent
+from ..framework import (
+    EvalAsync,
+    EvalHooks,
+    EvalScorer,
+    Evaluator,
+    ExperimentSummary,
+    SSEProgressEvent,
+)
 from ..generated_types import FunctionId
 from ..logger import BraintrustState, bt_iscoroutinefunction
-from ..parameters import RemoteEvalParameters, serialize_remote_eval_parameters_container, validate_parameters
+from ..parameters import (
+    RemoteEvalParameters,
+    ValidatedParameters,
+    serialize_remote_eval_parameters_container,
+    validate_parameters,
+)
 from ..span_identifier_v4 import parse_parent
 from .auth import AuthorizationMiddleware
 from .cache import cached_login
@@ -42,39 +54,16 @@ _all_evaluators: dict[str, Evaluator[Any, Any]] = {}
 
 
 class _ParameterOverrideHooks:
-    def __init__(self, hooks: Any, parameters: dict[str, Any]):
+    def __init__(self, hooks: EvalHooks[Any], parameters: ValidatedParameters):
         self._hooks = hooks
         self._parameters = parameters
 
     @property
-    def metadata(self):
-        return self._hooks.metadata
-
-    @property
-    def expected(self):
-        return self._hooks.expected
-
-    @property
-    def span(self):
-        return self._hooks.span
-
-    @property
-    def trial_index(self):
-        return self._hooks.trial_index
-
-    @property
-    def tags(self):
-        return self._hooks.tags
-
-    @property
-    def parameters(self):
+    def parameters(self) -> ValidatedParameters:
         return self._parameters
 
-    def report_progress(self, progress):
-        return self._hooks.report_progress(progress)
-
-    def meta(self, **info: Any):
-        return self._hooks.meta(**info)
+    def __getattr__(self, name: str):
+        return getattr(self._hooks, name)
 
 
 class CheckAuthorizedMiddleware(BaseHTTPMiddleware):
@@ -192,7 +181,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     # Set up SSE headers for streaming
     sse_queue = SSEQueue()
 
-    async def task(input, hooks):
+    async def task(input: Any, hooks: EvalHooks[Any]):
         task_hooks = hooks if validated_parameters is None else _ParameterOverrideHooks(hooks, validated_parameters)
         if bt_iscoroutinefunction(evaluator.task):
             result = await evaluator.task(input, task_hooks)
@@ -228,7 +217,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     eval_kwargs = {
         k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name", "parameter_values"]
     }
-    if validated_parameters is not None and not RemoteEvalParameters.is_parameters(evaluator.parameters):
+    if validated_parameters is not None and not isinstance(evaluator.parameters, RemoteEvalParameters):
         eval_kwargs["parameters"] = validated_parameters
 
     try:
@@ -329,7 +318,10 @@ def create_app(evaluators: list[Evaluator[Any, Any]], org_name: str | None = Non
 
 
 def run_dev_server(
-    evaluators: list[Evaluator[Any, Any]], host: str = "localhost", port: int = 8300, org_name: str | None = None
+    evaluators: list[Evaluator[Any, Any]],
+    host: str = "localhost",
+    port: int = 8300,
+    org_name: str | None = None,
 ):
     """Start the dev server.
 

@@ -133,7 +133,7 @@ async def run_evaluator_task(evaluator, position, opts: EvaluatorOpts):
             dataset = evaluator.data
 
         parameters = None
-        if RemoteEvalParameters.is_parameters(evaluator.parameters) and evaluator.parameters.id is not None:
+        if isinstance(evaluator.parameters, RemoteEvalParameters) and evaluator.parameters.id is not None:
             parameters = {"id": evaluator.parameters.id}
             if evaluator.parameters.version is not None:
                 parameters["version"] = evaluator.parameters.version

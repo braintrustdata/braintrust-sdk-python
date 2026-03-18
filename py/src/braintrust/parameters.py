@@ -32,7 +32,8 @@ class ModelParameter(TypedDict):
     description: NotRequired[str | None]
 
 
-ParameterSchema = PromptParameter | ModelParameter | Any
+ValidatedParameters = dict[str, object]
+ParameterSchema = PromptParameter | ModelParameter | type[object] | None
 EvalParameters = dict[str, ParameterSchema]
 ParametersSchema = dict[str, Any]
 
@@ -47,20 +48,6 @@ class RemoteEvalParameters(SerializableDataClass):
     schema: ParametersSchema
     data: dict[str, Any]
 
-    __braintrust_parameters_marker: bool = True
-
-    @classmethod
-    def from_dict_deep(cls, d: dict[str, Any]):
-        return cls(
-            id=d.get("id"),
-            project_id=d.get("project_id"),
-            name=d["name"],
-            slug=d["slug"],
-            version=d.get("version"),
-            schema=d.get("schema") or {},
-            data=d.get("data") or {},
-        )
-
     @classmethod
     def from_function_row(cls, row: dict[str, Any]) -> "RemoteEvalParameters":
         function_data = row.get("function_data") or {}
@@ -73,10 +60,6 @@ class RemoteEvalParameters(SerializableDataClass):
             schema=function_data.get("__schema") or {},
             data=function_data.get("data") or {},
         )
-
-    @staticmethod
-    def is_parameters(x: Any) -> bool:
-        return isinstance(x, RemoteEvalParameters)
 
     def validate(self, data: Any) -> bool:
         try:
@@ -124,8 +107,15 @@ def _serialize_pydantic_parameter_schema(schema: Any) -> dict[str, Any]:
     return schema_json
 
 
+def _pydantic_field_required(field: Any) -> bool:
+    is_required = getattr(field, "is_required", None)
+    if callable(is_required):
+        return bool(is_required())
+    return bool(getattr(field, "required", False))
+
+
 def is_eval_parameter_schema(schema: Any) -> bool:
-    if RemoteEvalParameters.is_parameters(schema):
+    if isinstance(schema, RemoteEvalParameters):
         return True
     if not isinstance(schema, dict):
         return False
@@ -139,7 +129,9 @@ def is_eval_parameter_schema(schema: Any) -> bool:
     return True
 
 
-def _prompt_data_to_dict(prompt_data: PromptData | dict[str, Any] | None) -> dict[str, Any] | None:
+def _prompt_data_to_dict(
+    prompt_data: PromptData | dict[str, Any] | None,
+) -> dict[str, Any] | None:
     if prompt_data is None:
         return None
     if isinstance(prompt_data, PromptData):
@@ -199,34 +191,11 @@ def validate_json_schema(parameters: dict[str, Any], schema: ParametersSchema) -
     return candidate
 
 
-def _hydrate_remote_parameters(parameters: dict[str, Any], schema: ParametersSchema) -> dict[str, Any]:
-    properties = schema.get("properties")
-    if not isinstance(properties, dict):
-        return parameters
-
-    hydrated = dict(parameters)
-    for name, property_schema in properties.items():
-        if name not in hydrated or not isinstance(property_schema, dict):
-            continue
-
-        value = hydrated[name]
-        bt_type = property_schema.get("x-bt-type")
-        if bt_type == "prompt":
-            if not isinstance(value, dict):
-                raise ValueError(f"Invalid parameter '{name}': prompt values must be objects")
-            hydrated[name] = _create_prompt(name, value)
-        elif bt_type == "model":
-            if not isinstance(value, str):
-                raise ValueError(f"Invalid parameter '{name}': model values must be strings")
-
-    return hydrated
-
-
 def _validate_local_parameters(
     parameters: dict[str, Any],
     parameter_schema: EvalParameters,
-) -> dict[str, Any]:
-    result: dict[str, Any] = {}
+) -> ValidatedParameters:
+    result: ValidatedParameters = {}
 
     for name, schema in parameter_schema.items():
         value = parameters.get(name)
@@ -290,7 +259,7 @@ def _validate_local_parameters(
 def validate_parameters(
     parameters: dict[str, Any],
     parameter_schema: EvalParameters | RemoteEvalParameters | None,
-) -> dict[str, Any]:
+) -> ValidatedParameters:
     """
     Validate parameters against the schema.
 
@@ -307,11 +276,10 @@ def validate_parameters(
     if parameter_schema is None:
         return dict(parameters)
 
-    if RemoteEvalParameters.is_parameters(parameter_schema):
+    if isinstance(parameter_schema, RemoteEvalParameters):
         merged = dict(parameter_schema.data)
         merged.update(parameters)
-        validated = validate_json_schema(merged, parameter_schema.schema)
-        return _hydrate_remote_parameters(validated, parameter_schema.schema)
+        return validate_json_schema(merged, parameter_schema.schema)
 
     return _validate_local_parameters(parameters, parameter_schema)
 
@@ -357,8 +325,20 @@ def serialize_eval_parameters(parameters: EvalParameters) -> dict[str, Any]:
     return result
 
 
-def _parameter_schema_required(property_schema: dict[str, Any]) -> bool:
-    return "default" not in property_schema
+def _parameter_required(schema: ParameterSchema) -> bool:
+    if _is_prompt_parameter(schema) or _is_model_parameter(schema):
+        return schema.get("default") is None
+
+    if schema is None:
+        return False
+
+    if _is_pydantic_model(schema):
+        fields = _get_pydantic_fields(schema)
+        if len(fields) == 1 and "value" in fields:
+            return _pydantic_field_required(fields["value"])
+        return False
+
+    return False
 
 
 def parameters_to_json_schema(parameters: EvalParameters) -> ParametersSchema:
@@ -395,7 +375,7 @@ def parameters_to_json_schema(parameters: EvalParameters) -> ParametersSchema:
         else:
             properties[name] = _serialize_pydantic_parameter_schema(schema)
 
-        if _parameter_schema_required(properties[name]):
+        if _parameter_required(schema):
             required.append(name)
 
     result: ParametersSchema = {
@@ -423,7 +403,7 @@ def get_default_data_from_parameters_schema(schema: ParametersSchema) -> dict[st
 def serialize_remote_eval_parameters_container(
     parameters: EvalParameters | RemoteEvalParameters,
 ) -> dict[str, Any]:
-    if RemoteEvalParameters.is_parameters(parameters):
+    if isinstance(parameters, RemoteEvalParameters):
         return {
             "type": "braintrust.parameters",
             "schema": parameters.schema,
