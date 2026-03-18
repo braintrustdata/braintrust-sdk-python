@@ -1026,6 +1026,11 @@ class _HTTPBackgroundLogger:
         except:
             self.all_publish_payloads_dir = None
 
+        try:
+            disable_atexit_flush = os.environ["BRAINTRUST_DISABLE_ATEXIT_FLUSH"].lower() in ("true", "1", "yes")
+        except:
+            disable_atexit_flush = False
+
         self.start_thread_lock = threading.RLock()
         self.thread = threading.Thread(target=self._publisher, daemon=True)
         self.started = False
@@ -1036,7 +1041,8 @@ class _HTTPBackgroundLogger:
         # Counter for tracking overflow uploads (useful for testing)
         self._overflow_upload_count = 0
 
-        atexit.register(self._finalize)
+        if not disable_atexit_flush:
+            atexit.register(self._finalize)
 
     def enforce_queue_size_limit(self, enforce: bool) -> None:
         """
