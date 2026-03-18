@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import math
+import warnings
 from typing import Any, Callable, Mapping, NamedTuple, cast, overload
 
 
@@ -53,8 +54,13 @@ def _to_bt_safe(v: Any) -> Any:
             pass
 
     # Attempt to dump a Pydantic v2 `BaseModel`.
+    # Suppress Pydantic serializer warnings that arise from generic/discriminated-union
+    # models (e.g. OpenAI's ParsedResponse[T]).  See
+    # https://github.com/braintrustdata/braintrust-sdk-python/issues/60
     try:
-        return cast(Any, v).model_dump(exclude_none=True)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+            return cast(Any, v).model_dump(exclude_none=True)
     except (AttributeError, TypeError):
         pass
 
