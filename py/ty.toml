@@ -1,0 +1,65 @@
+[environment]
+python-version = "3.10"
+# Use the repo-level venv for third-party stubs/packages.
+python = "../venv"
+
+[src]
+# Focus on the SDK source tree; integration packages and examples have their
+# own (often uninstalled) dependency surfaces and are better checked separately.
+include = ["src/"]
+exclude = [
+    "**/__pycache__/",
+]
+
+[rules]
+# Start with errors-only to match the existing pylint --errors-only baseline.
+# Warnings can be promoted to errors later as the codebase is cleaned up.
+
+[analysis]
+# Optional provider packages are imported behind try/except guards.
+# Suppress unresolved-import for all of them so ty can run without
+# installing the full dependency surface (matching how test_core works).
+# Use ** to match arbitrarily deep submodules (e.g. opentelemetry.sdk.trace).
+allowed-unresolved-imports = [
+    "agno.**",
+    "agents.**",
+    "anthropic.**",
+    "autoevals.**",
+    "boto3.**",
+    "botocore.**",
+    "braintrust_core.**",
+    "claude_agent_sdk.**",
+    "dspy.**",
+    "google.adk.**",
+    "google.genai.**",
+    "httpx.**",
+    "langchain.**",
+    "langchain_anthropic.**",
+    "langchain_core.**",
+    "langchain_openai.**",
+    "langsmith.**",
+    "litellm.**",
+    "logfire.**",
+    "mcp.**",
+    "openai.**",
+    "opentelemetry.**",
+    "orjson.**",
+    "pydantic_ai.**",
+    "starlette.**",
+    "temporalio.**",
+    "tenacity.**",
+    "uvicorn.**",
+    "aiohttp.**",
+    "anyio.**",
+]
+
+[terminal]
+output-format = "full"
+
+# Relax rules for test files – they use mocks, dynamic fixtures, etc.
+[[overrides]]
+include = ["src/**/test_*.py", "src/**/conftest.py"]
+[overrides.rules]
+invalid-argument-type = "warn"
+unresolved-attribute = "warn"
+call-non-callable = "warn"

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help develop install-dev install-deps fixup test test-core test-wheel lint pylint nox
+.PHONY: help develop install-dev install-deps fixup test test-core test-wheel lint pylint typecheck nox
 
 develop: install-dev
 	mise exec -- pre-commit install
@@ -30,6 +30,9 @@ lint:
 pylint:
 	mise exec -- $(MAKE) -C py pylint
 
+typecheck:
+	mise exec -- $(MAKE) -C py typecheck
+
 nox: test
 
 help:
@@ -40,6 +43,7 @@ help:
 	@echo "  install-dev  - Install pinned tools and create/update the repo env via mise"
 	@echo "  lint         - Run pre-commit hooks plus Python SDK pylint via py/Makefile"
 	@echo "  pylint       - Run Python SDK pylint only via py/Makefile"
+	@echo "  typecheck    - Run ty type checker on the Python SDK via py/Makefile"
 	@echo "  nox          - Alias for test"
 	@echo "  test         - Run the Python SDK nox matrix via py/Makefile"
 	@echo "  test-core    - Run Python SDK core tests via py/Makefile"

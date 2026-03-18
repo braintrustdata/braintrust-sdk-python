@@ -315,6 +315,17 @@ def pylint(session):
     session.run("pylint", "--errors-only", *files)
 
 
+@nox.session(venv_backend="none")
+def typecheck(session):
+    """Run the ty type checker.
+
+    ty is installed via mise (see mise.toml) and reads its configuration from
+    py/ty.toml. It does not need optional vendor packages because
+    allowed-unresolved-imports suppresses those diagnostics.
+    """
+    session.run("ty", "check", *session.posargs, external=True)
+
+
 @nox.session()
 def test_latest_wrappers_novcr(session):
     """Run the latest wrapper tests without vcrpy."""
