@@ -1934,17 +1934,14 @@ def load_prompt(
     :param id: The id of a specific prompt to load. If specified, this takes precedence over all other parameters (project, slug, version).
     :param defaults: (Optional) A dictionary of default values to use when rendering the prompt. Prompt values will override these defaults.
     :param no_trace: If true, do not include logging metadata for this prompt when build() is called.
-    :param environment: The environment to load the prompt from. Cannot be used together with version.
+    :param environment: The environment to load the prompt from. If both `version` and `environment` are provided, `version` takes precedence.
     :param app_url: The URL of the Braintrust App. Defaults to https://www.braintrust.dev.
     :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable. If no API
     key is specified, will prompt the user to login.
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :returns: The prompt object.
     """
-    if version is not None and environment is not None:
-        raise ValueError(
-            "Cannot specify both 'version' and 'environment' parameters. Please use only one (remove the other)."
-        )
+    effective_environment = None if version is not None else environment
 
     if id:
         # When loading by ID, we don't need project or slug
@@ -1959,29 +1956,24 @@ def load_prompt(
             login(org_name=org_name, api_key=api_key, app_url=app_url)
             if id:
                 # Load prompt by ID using the /v1/prompt/{id} endpoint
-                prompt_args = {}
-                if version is not None:
-                    prompt_args["version"] = version
-                if environment is not None:
-                    prompt_args["environment"] = environment
+                prompt_args = _populate_args({}, version=version, environment=effective_environment)
                 response = _state.api_conn().get_json(f"/v1/prompt/{id}", prompt_args)
                 # Wrap single prompt response in objects array to match list API format
                 if response is not None:
                     response = {"objects": [response]}
             else:
                 args = _populate_args(
-                    {
-                        "project_name": project,
-                        "project_id": project_id,
-                        "slug": slug,
-                        "version": version,
-                        "environment": environment,
-                    },
+                    {},
+                    project_name=project,
+                    project_id=project_id,
+                    slug=slug,
+                    version=version,
+                    environment=effective_environment,
                 )
                 response = _state.api_conn().get_json("/v1/prompt", args)
         except Exception as server_error:
             # If environment or version was specified, don't fall back to cache
-            if environment is not None or version is not None:
+            if effective_environment is not None or version is not None:
                 raise ValueError(f"Prompt not found with specified parameters") from server_error
 
             eprint(f"Failed to load prompt, attempting to fall back to cache: {server_error}")
@@ -2084,27 +2076,20 @@ def load_parameters(
     :param version: An optional version of the parameters to read. If not specified, the latest version will be used.
     :param project_id: The ID of the project to load the parameters from. This takes precedence over `project`.
     :param id: The ID of a specific parameters object to load. If specified, this takes precedence over project and slug.
-    :param environment: The environment to load the parameters from. Cannot be used together with version.
+    :param environment: The environment to load the parameters from. If both `version` and `environment` are provided, `version` takes precedence.
     :param app_url: The URL of the Braintrust App. Defaults to https://www.braintrust.dev.
     :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable.
     :param org_name: The name of a specific organization to connect to.
     :returns: A `RemoteEvalParameters` object.
     """
-    if version is not None and environment is not None:
-        raise ValueError("Cannot specify both 'version' and 'environment' parameters.")
-
     if id is None and not project and not project_id:
         raise ValueError("Must specify at least one of project or project_id")
     if id is None and not slug:
         raise ValueError("Must specify slug")
 
-    should_fall_back_to_cache = version is None and environment is None
-    query_args = _populate_args(
-        {
-            "version": version,
-            "environment": environment,
-        }
-    )
+    effective_environment = None if version is not None else environment
+    should_fall_back_to_cache = version is None and effective_environment is None
+    query_args = _populate_args({}, version=version, environment=effective_environment)
 
     try:
         login(org_name=org_name, api_key=api_key, app_url=app_url)
@@ -2113,13 +2098,13 @@ def load_parameters(
             if response is not None:
                 response = {"objects": [response]}
         else:
-            args = {
-                "project_name": project,
-                "project_id": project_id,
-                "slug": slug,
-                "function_type": "parameters",
+            args = _populate_args(
+                {"function_type": "parameters"},
+                project_name=project,
+                project_id=project_id,
+                slug=slug,
                 **query_args,
-            }
+            )
             response = _state.api_conn().get_json("/v1/function", args)
     except Exception as server_error:
         if not should_fall_back_to_cache:
