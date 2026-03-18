@@ -26,6 +26,7 @@ from braintrust.wrappers.claude_agent_sdk._constants import (
     SerializedContentType,
 )
 
+
 log = logging.getLogger(__name__)
 _thread_local = threading.local()
 
@@ -166,6 +167,7 @@ def _serialize_system_message(message: Any) -> dict[str, Any]:
             serialized["data"] = data
 
     return serialized
+
 
 def _serialize_hook_context(context: Any) -> dict[str, Any] | None:
     serialized = bt_safe_deep_copy(context)
@@ -575,7 +577,9 @@ class ToolSpanTracker:
 
     def acquire_span_for_handler(self, tool_name: Any, args: Any) -> _ActiveToolSpan | None:
         parsed_tool_name = _parse_tool_name(tool_name)
-        candidate_names = list(dict.fromkeys((parsed_tool_name.raw_name, parsed_tool_name.display_name, str(tool_name))))
+        candidate_names = list(
+            dict.fromkeys((parsed_tool_name.raw_name, parsed_tool_name.display_name, str(tool_name)))
+        )
 
         candidates = [
             active_tool_span
@@ -591,7 +595,9 @@ class ToolSpanTracker:
         matched_span.activate()
         return matched_span
 
-    def _end_tool_span(self, tool_use_id: str, tool_result_block: Any | None = None, end_time: float | None = None) -> None:
+    def _end_tool_span(
+        self, tool_use_id: str, tool_result_block: Any | None = None, end_time: float | None = None
+    ) -> None:
         active_tool_span = self._active_spans.pop(tool_use_id, None)
         self._pending_task_link_tool_use_ids.discard(tool_use_id)
         if active_tool_span is None:
@@ -784,7 +790,9 @@ class TaskEventSpanTracker:
                 self._task_span_by_tool_use_id.pop(str(tool_use_id), None)
             task_span.end()
             del self._active_spans[task_id]
-            self._active_task_order = [active_task_id for active_task_id in self._active_task_order if active_task_id != task_id]
+            self._active_task_order = [
+                active_task_id for active_task_id in self._active_task_order if active_task_id != task_id
+            ]
 
     @property
     def active_tool_use_ids(self) -> frozenset[str]:
@@ -824,11 +832,7 @@ class TaskEventSpanTracker:
         return self._tool_tracker.get_span_export(getattr(message, "tool_use_id", None)) or self._root_span_export
 
     def _span_name(self, message: Any, task_id: str) -> str:
-        return (
-            getattr(message, "description", None)
-            or getattr(message, "task_type", None)
-            or f"Task {task_id}"
-        )
+        return getattr(message, "description", None) or getattr(message, "task_type", None) or f"Task {task_id}"
 
     def _metadata(self, message: Any) -> dict[str, Any]:
         metadata = {
