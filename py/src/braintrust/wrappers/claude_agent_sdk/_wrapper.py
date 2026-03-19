@@ -580,6 +580,43 @@ class LLMSpanTracker:
                 state.current_output = None
 
 
+def _task_span_name(message: Any, task_id: str) -> str:
+    return getattr(message, "description", None) or getattr(message, "task_type", None) or f"Task {task_id}"
+
+
+def _task_metadata(message: Any) -> dict[str, Any]:
+    return {
+        k: v
+        for k, v in {
+            "task_id": getattr(message, "task_id", None),
+            "session_id": getattr(message, "session_id", None),
+            "tool_use_id": getattr(message, "tool_use_id", None),
+            "task_type": getattr(message, "task_type", None),
+            "status": getattr(message, "status", None),
+            "last_tool_name": getattr(message, "last_tool_name", None),
+            "usage": getattr(message, "usage", None),
+        }.items()
+        if v is not None
+    }
+
+
+def _task_output(message: Any) -> dict[str, Any] | None:
+    summary = getattr(message, "summary", None)
+    output_file = getattr(message, "output_file", None)
+
+    if summary is None and output_file is None:
+        return None
+
+    return {
+        k: v
+        for k, v in {
+            "summary": summary,
+            "output_file": output_file,
+        }.items()
+        if v is not None
+    }
+
+
 class TaskEventSpanTracker:
     def __init__(self, root_span_export: str, tool_tracker: ToolSpanTracker):
         self._root_span_export = root_span_export
@@ -672,39 +709,13 @@ class TaskEventSpanTracker:
         return self._tool_tracker.get_span_export(getattr(message, "tool_use_id", None)) or self._root_span_export
 
     def _span_name(self, message: Any, task_id: str) -> str:
-        return getattr(message, "description", None) or getattr(message, "task_type", None) or f"Task {task_id}"
+        return _task_span_name(message, task_id)
 
     def _metadata(self, message: Any) -> dict[str, Any]:
-        metadata = {
-            k: v
-            for k, v in {
-                "task_id": getattr(message, "task_id", None),
-                "session_id": getattr(message, "session_id", None),
-                "tool_use_id": getattr(message, "tool_use_id", None),
-                "task_type": getattr(message, "task_type", None),
-                "status": getattr(message, "status", None),
-                "last_tool_name": getattr(message, "last_tool_name", None),
-                "usage": getattr(message, "usage", None),
-            }.items()
-            if v is not None
-        }
-        return metadata
+        return _task_metadata(message)
 
     def _output(self, message: Any) -> dict[str, Any] | None:
-        summary = getattr(message, "summary", None)
-        output_file = getattr(message, "output_file", None)
-
-        if summary is None and output_file is None:
-            return None
-
-        return {
-            k: v
-            for k, v in {
-                "summary": summary,
-                "output_file": output_file,
-            }.items()
-            if v is not None
-        }
+        return _task_output(message)
 
     def _should_end(self, message_type: str) -> bool:
         return message_type == MessageClassName.TASK_NOTIFICATION
