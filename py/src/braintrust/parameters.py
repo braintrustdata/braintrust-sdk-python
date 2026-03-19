@@ -1,5 +1,6 @@
 """Evaluation parameters support for Python SDK."""
 
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
@@ -32,6 +33,7 @@ class ModelParameter(TypedDict):
     description: NotRequired[str | None]
 
 
+JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
 ValidatedParameters = dict[str, object]
 ParameterSchema = PromptParameter | ModelParameter | type[object] | None
 EvalParameters = dict[str, ParameterSchema]
@@ -97,8 +99,61 @@ def _get_pydantic_fields(schema: Any) -> dict[str, Any]:
     return getattr(schema, "__fields__", {})
 
 
+def _resolve_json_pointer(document: dict[str, JSONValue], pointer: str) -> JSONValue:
+    if pointer == "#":
+        return document
+    if not pointer.startswith("#/"):
+        raise ValueError(f"Unsupported JSON schema ref '{pointer}'")
+
+    current: JSONValue = document
+    for raw_part in pointer[2:].split("/"):
+        part = raw_part.replace("~1", "/").replace("~0", "~")
+        if not isinstance(current, dict) or part not in current:
+            raise ValueError(f"JSON schema ref '{pointer}' could not be resolved")
+        current = current[part]
+    return current
+
+
+def _resolve_local_json_schema_refs(
+    node: JSONValue,
+    root: dict[str, JSONValue],
+    resolving: tuple[str, ...] = (),
+) -> JSONValue:
+    if isinstance(node, list):
+        return [_resolve_local_json_schema_refs(item, root, resolving) for item in node]
+
+    if not isinstance(node, dict):
+        return node
+
+    ref = node.get("$ref")
+    if isinstance(ref, str):
+        if ref in resolving:
+            raise ValueError(f"Cyclic JSON schema ref '{ref}'")
+
+        resolved = deepcopy(_resolve_json_pointer(root, ref))
+        resolved = _resolve_local_json_schema_refs(resolved, root, resolving + (ref,))
+
+        siblings = {
+            key: _resolve_local_json_schema_refs(value, root, resolving)
+            for key, value in node.items()
+            if key != "$ref"
+        }
+        if siblings:
+            if not isinstance(resolved, dict):
+                raise ValueError(f"Cannot merge sibling keys into non-object JSON schema ref '{ref}'")
+            merged = dict(resolved)
+            merged.update(siblings)
+            return merged
+        return resolved
+
+    return {key: _resolve_local_json_schema_refs(value, root, resolving) for key, value in node.items()}
+
+
 def _serialize_pydantic_parameter_schema(schema: Any) -> dict[str, Any]:
     schema_json = _pydantic_to_json_schema(schema)
+    schema_json = _resolve_local_json_schema_refs(schema_json, schema_json)
+    schema_json.pop("$defs", None)
+    schema_json.pop("definitions", None)
     fields = _get_pydantic_fields(schema)
     if len(fields) == 1 and "value" in fields:
         properties = schema_json.get("properties")
