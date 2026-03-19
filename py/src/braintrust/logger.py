@@ -2768,6 +2768,8 @@ def _enrich_attachments(event: TMutableMapping) -> TMutableMapping:
 
 
 def _validate_and_sanitize_experiment_log_partial_args(event: Mapping[str, Any]) -> dict[str, Any]:
+    if not event:
+        return {}
     scores = event.get("scores")
     if scores:
         for name, score in scores.items():
@@ -4562,9 +4564,23 @@ def stringify_exception(exc_type: type[BaseException], exc_value: BaseException,
 
 
 def _strip_nones(d: T, deep: bool) -> T:
-    if not isinstance(d, dict):
+    if type(d) is not dict:
         return d
-    return {k: (_strip_nones(v, deep) if deep else v) for (k, v) in d.items() if v is not None}  # type: ignore
+    has_none = any(v is None for v in d.values())
+    if not has_none and not deep:
+        return d
+    if deep:
+        if has_none:
+            return {k: (_strip_nones(v, True) if type(v) is dict else v) for k, v in d.items() if v is not None}  # type: ignore
+        if any(type(v) is dict for v in d.values()):
+            return {k: (_strip_nones(v, True) if type(v) is dict else v) for k, v in d.items()}  # type: ignore
+        return d
+    if has_none:
+        return {k: v for k, v in d.items() if v is not None}  # type: ignore
+    return d
+
+
+_EMPTY_DICT: dict[str, Any] = {}
 
 
 def split_logging_data(
@@ -4573,24 +4589,34 @@ def split_logging_data(
     # There should be no overlap between the dictionaries being merged,
     # except for `sanitized` and `internal_data`, where the former overrides
     # the latter.
-    sanitized = _validate_and_sanitize_experiment_log_partial_args(event or {})
-    sanitized_and_internal_data = _strip_nones(internal_data or {}, deep=True)
-    merge_dicts(sanitized_and_internal_data, _strip_nones(sanitized, deep=False))
+    sanitized = _validate_and_sanitize_experiment_log_partial_args(event or _EMPTY_DICT)
 
-    serializable_partial_record: dict[str, Any] = {}
+    if internal_data and sanitized:
+        sanitized_and_internal_data = _strip_nones(internal_data, deep=True)
+        merge_dicts(sanitized_and_internal_data, _strip_nones(sanitized, deep=False))
+    elif internal_data:
+        sanitized_and_internal_data = _strip_nones(internal_data, deep=True)
+    elif sanitized:
+        sanitized_and_internal_data = _strip_nones(sanitized, deep=False)
+    else:
+        return _EMPTY_DICT, _EMPTY_DICT
+
+    # Fast path: no BraintrustStream values (the common case)
     lazy_partial_record: dict[str, Any] = {}
-    for k, v in sanitized_and_internal_data.items():
+    for v in sanitized_and_internal_data.values():
         if isinstance(v, BraintrustStream):
-            # Python has weird semantics with loop variables and lambda functions, so we
-            # capture `v` by plugging it through a closure that itself returns the LazyValue
-            def make_final_value_callback(v):
-                return LazyValue(lambda: v.copy().final_value(), use_mutex=False)
+            serializable_partial_record: dict[str, Any] = {}
+            for k2, v2 in sanitized_and_internal_data.items():
+                if isinstance(v2, BraintrustStream):
 
-            lazy_partial_record[k] = make_final_value_callback(v)
-        else:
-            serializable_partial_record[k] = v
+                    def make_final_value_callback(v2):
+                        return LazyValue(lambda: v2.copy().final_value(), use_mutex=False)
 
-    return serializable_partial_record, lazy_partial_record
+                    lazy_partial_record[k2] = make_final_value_callback(v2)
+                else:
+                    serializable_partial_record[k2] = v2
+            return serializable_partial_record, lazy_partial_record
+    return sanitized_and_internal_data, lazy_partial_record
 
 
 class Dataset(ObjectFetcher[DatasetEvent]):

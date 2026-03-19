@@ -98,9 +98,26 @@ def merge_dicts_with_paths(
 
 
 def merge_dicts(merge_into: dict[str, Any], merge_from: Mapping[str, Any]) -> dict[str, Any]:
-    """Merges merge_from into merge_into, destructively updating merge_into."""
+    """Merges merge_from into merge_into, destructively updating merge_into.
 
-    return merge_dicts_with_paths(merge_into, merge_from, (), set())
+    Inlines the common fast path to avoid tuple path tracking overhead.
+    """
+    for k, merge_from_v in merge_from.items():
+        merge_into_v = merge_into.get(k)
+        if type(merge_into_v) is dict and type(merge_from_v) is dict:
+            merge_dicts(merge_into_v, merge_from_v)
+        elif k in _SET_UNION_FIELDS and isinstance(merge_into_v, list) and isinstance(merge_from_v, list):
+            seen: set[str] = set()
+            combined = []
+            for item in merge_into_v + list(merge_from_v):
+                item_key = json.dumps(item, sort_keys=True) if isinstance(item, (dict, list)) else str(item)
+                if item_key not in seen:
+                    seen.add(item_key)
+                    combined.append(item)
+            merge_into[k] = combined
+        else:
+            merge_into[k] = merge_from_v
+    return merge_into
 
 
 def encode_uri_component(name: str) -> str:
