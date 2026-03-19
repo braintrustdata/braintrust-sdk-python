@@ -21,17 +21,21 @@ orchestrator).
 @dataclasses.dataclass
 class _AgentContext:
     llm_span: Any | None = None          # current open LLM span
+    llm_parent_export: str | None = None # parent of current LLM span (merge guard)
     llm_output: list[dict[str, Any]] | None = None  # accumulated output for merge path
     next_llm_start: float | None = None  # timestamp from tool results
     task_span: Any | None = None         # TASK span for this subagent
     task_confirmed: bool = False         # True after TaskStartedMessage
 ```
 
-Three fields dropped vs the old trackers:
+Two fields dropped vs the old trackers:
 - `llm_span_export` → derived: `ctx.llm_span.export() if ctx.llm_span else None`
-- `llm_parent_export` → redundant: consecutive merges only happen in the
-  orchestrator context where the parent never changes (see SIMPLIFICATION.md §3b)
 - `task_id` → written to metadata at creation, never read back
+
+`llm_parent_export` was retained (originally planned for removal) because it
+guards against incorrect merges when a subagent `AssistantMessage` with
+`parent_tool_use_id=None` follows an orchestrator `AssistantMessage` — the
+resolved parent changes but `next_llm_start` is still `None`.
 
 ### `ContextTracker` — public API
 
@@ -530,41 +534,31 @@ module-level functions. `TaskEventSpanTracker._span_name` / `._metadata` /
 
 Done. Added both methods. Existing `cleanup()` left untouched.
 
-### Step 3 — Migrate mid-stream cleanup call in `receive_response`
+### Step 3 ✅ — Migrate mid-stream cleanup call in `receive_response`
 
-Replace the mid-stream `tool_tracker.cleanup(end_time=..., exclude_...,
-only_...)` call with `tool_tracker.cleanup_context(...)`. Simplify old
-`cleanup()` to delegate to `cleanup_all(end_time)`. Remove `_UNSET_PARENT` from
-`cleanup()`'s signature (the sentinel itself stays — `LLMSpanTracker` still
-uses it).
+Done. Mid-stream call now uses `cleanup_context()`. Old `cleanup()` delegates
+to `cleanup_all()`. Two unit tests updated to use `cleanup_context()` directly.
 
-**Dependencies:** Step 2.
+### Step 4 ✅ — Add `_AgentContext` and `ContextTracker`
 
-### Step 4 — Add `_AgentContext` and `ContextTracker`
+Done. Full `ContextTracker` class implemented (dead code — not wired in yet).
 
-Implement the full `ContextTracker` class (dead code — not wired in yet).
+### Step 5 ✅ — Wire `ContextTracker` into `receive_response`; delete old classes
 
-**Dependencies:** Steps 1 + 2.
+Done. Rewrote `receive_response` to use `ContextTracker`. Deleted
+`LLMSpanTracker`, `TaskEventSpanTracker`, `_UNSET_PARENT`. Cleaned up
+`ToolSpanTracker` (removed pending-task-link bookkeeping and old `cleanup()`).
 
-### Step 5 — Wire `ContextTracker` into `receive_response`; delete old classes
+**Implementation note:** `llm_parent_export` was retained on `_AgentContext`
+(contrary to the original plan's §1b which proposed dropping it). Testing
+revealed it's needed when a subagent `AssistantMessage` arrives with
+`parent_tool_use_id=None` right after an orchestrator `AssistantMessage` — the
+parent export changes (root → task span) but `next_llm_start` is still `None`,
+so without the guard the two messages would incorrectly merge.
 
-- Rewrite `receive_response` to use `ContextTracker`.
-- Delete `LLMSpanTracker`, `TaskEventSpanTracker`, `_UNSET_PARENT`.
-- From `ToolSpanTracker`: remove `_pending_task_link_tool_use_ids` field +
-  property, `mark_task_started()`, the discard in `_end_tool_span` and
-  `start_tool_spans`, and old `cleanup()`.
+---
 
-**Dependencies:** Steps 3 + 4.
-
-### Dependency graph
-
-```
-Step 0 (done)
-  │
-  ├─► Step 1 (extract helpers)       ─┐
-  │                                    ├─► Step 4 (ContextTracker) ─► Step 5 (wire + delete)
-  ├─► Step 2 (add cleanup methods)  ──┤
-  │                                    │
-  └─► Step 3 (migrate cleanup call) ──┘
-           ↑ depends on Step 2
-```
+All steps complete. The three-tracker architecture (`LLMSpanTracker` +
+`TaskEventSpanTracker` + `ToolSpanTracker`) has been replaced with two
+(`ContextTracker` + `ToolSpanTracker`), with `ContextTracker` owning the
+`ToolSpanTracker` as a private component.
