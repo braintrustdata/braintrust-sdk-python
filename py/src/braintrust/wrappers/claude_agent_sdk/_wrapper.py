@@ -323,6 +323,30 @@ class ToolSpanTracker:
                     continue
             self._end_tool_span(tool_use_id, end_time=end_time)
 
+    def cleanup_context(
+        self,
+        parent_tool_use_id: str | None,
+        *,
+        end_time: float | None = None,
+        exclude_ids: frozenset[str] = frozenset(),
+    ) -> None:
+        """Close tool spans belonging to one subagent context.
+
+        Skips any span whose tool_use_id is in exclude_ids (live Agent spans).
+        Called before starting a new LLM span for that context.
+        """
+        for tool_use_id in list(self._active_spans):
+            if tool_use_id in exclude_ids:
+                continue
+            if self._active_spans[tool_use_id].parent_tool_use_id != parent_tool_use_id:
+                continue
+            self._end_tool_span(tool_use_id, end_time=end_time)
+
+    def cleanup_all(self, end_time: float | None = None) -> None:
+        """Close all remaining active spans. Called at end-of-stream."""
+        for tool_use_id in list(self._active_spans):
+            self._end_tool_span(tool_use_id, end_time=end_time)
+
     @property
     def has_active_spans(self) -> bool:
         return bool(self._active_spans)
