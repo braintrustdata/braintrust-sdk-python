@@ -2,6 +2,7 @@ import abc
 import base64
 import re
 import time
+import warnings
 from collections.abc import Callable
 from typing import Any
 
@@ -1023,9 +1024,14 @@ def _try_to_dict(obj: Any) -> dict[str, Any]:
     if isinstance(obj, dict):
         return obj
     # convert a pydantic object to a dict
+    # Suppress Pydantic serializer warnings from generic/discriminated-union models
+    # (e.g. OpenAI's ParsedResponse[T]).  See
+    # https://github.com/braintrustdata/braintrust-sdk-python/issues/60
     if hasattr(obj, "model_dump") and callable(obj.model_dump):
         try:
-            return obj.model_dump()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+                return obj.model_dump()
         except Exception:
             pass
     # deprecated pydantic method, try model_dump first.

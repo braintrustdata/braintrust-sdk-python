@@ -1,3 +1,4 @@
+import importlib.util
 from typing import List
 from unittest.mock import MagicMock
 
@@ -14,6 +15,9 @@ from .framework import (
 )
 from .score import Score, Scorer
 from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login  # noqa: F401
+
+
+HAS_PYDANTIC = importlib.util.find_spec("pydantic") is not None
 
 
 @pytest.mark.asyncio
@@ -67,6 +71,44 @@ async def test_run_evaluator_basic():
     assert result.summary.project_name == "test-project"
     assert "exact_match" in result.summary.scores
     assert result.summary.scores["exact_match"].score == 1.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
+async def test_run_evaluator_exposes_validated_parameter_values_to_hooks():
+    from pydantic import BaseModel
+
+    class PrefixParam(BaseModel):
+        value: str = "hello"
+
+    data = [EvalCase(input="world", expected="hello world")]
+
+    def task(input_value, hooks):
+        return f"{hooks.parameters['prefix']} {input_value}"
+
+    def exact_match(input_value, output, expected):
+        return 1.0 if output == expected else 0.0
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-parameters",
+        data=data,
+        task=task,
+        scores=[exact_match],
+        experiment_name=None,
+        metadata=None,
+        parameters={
+            "prefix": PrefixParam,
+            "model": {
+                "type": "model",
+                "default": "gpt-5-mini",
+            },
+        },
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    assert result.results[0].output == "hello world"
 
 
 @pytest.mark.asyncio

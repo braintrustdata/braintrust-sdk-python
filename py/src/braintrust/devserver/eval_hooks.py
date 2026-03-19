@@ -10,6 +10,8 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from ..parameters import ValidatedParameters
+
 
 class EvalHooks:
     """Hooks provided to eval tasks for progress reporting."""
@@ -17,7 +19,7 @@ class EvalHooks:
     def __init__(
         self,
         report_progress: Callable[[dict[str, Any]], None] | None = None,
-        parameters: dict[str, Any] | None = None,
+        parameters: ValidatedParameters | None = None,
     ):
         self._report_progress = report_progress
         self.parameters = parameters or {}
