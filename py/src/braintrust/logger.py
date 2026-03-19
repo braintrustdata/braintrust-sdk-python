@@ -1362,7 +1362,7 @@ class _HTTPBackgroundLogger:
 
             is_retrying = i + 1 < self.num_tries
             retrying_text = "" if is_retrying else " Retrying"
-            errmsg = f"log request failed. Elapsed time: {time.time() - start_time} seconds. Payload size: {payload_bytes}.{retrying_text}\nError: {resp_errmsg}"
+            errmsg = f"log request failed. Elapsed time: {time.time() - start_time} seconds. Payload size: {payload_bytes}.{retrying_text} Error: {resp_errmsg}"
 
             if not is_retrying and self.failed_publish_payloads_dir:
                 _HTTPBackgroundLogger._write_payload_to_dir(
