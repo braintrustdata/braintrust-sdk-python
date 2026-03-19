@@ -22,6 +22,7 @@ from ..framework import (
     set_thread_pool_max_workers,
 )
 from ..logger import Dataset
+from ..parameters import RemoteEvalParameters
 from ..util import eprint
 
 
@@ -131,6 +132,12 @@ async def run_evaluator_task(evaluator, position, opts: EvaluatorOpts):
         if isinstance(evaluator.data, Dataset):
             dataset = evaluator.data
 
+        parameters = None
+        if isinstance(evaluator.parameters, RemoteEvalParameters) and evaluator.parameters.id is not None:
+            parameters = {"id": evaluator.parameters.id}
+            if evaluator.parameters.version is not None:
+                parameters["version"] = evaluator.parameters.version
+
         # NOTE: This code is duplicated with _EvalCommon in py/src/braintrust/framework.py.
         # Make sure to update those arguments if you change this.
         experiment = init_experiment(
@@ -147,6 +154,7 @@ async def run_evaluator_task(evaluator, position, opts: EvaluatorOpts):
             git_metadata_settings=evaluator.git_metadata_settings,
             repo_info=evaluator.repo_info,
             dataset=dataset,
+            parameters=parameters,
         )
 
     try:
