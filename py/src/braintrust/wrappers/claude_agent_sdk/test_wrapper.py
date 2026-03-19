@@ -883,7 +883,7 @@ async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm
 async def test_agent_tool_spans_encapsulate_child_task_spans(memory_logger):
     """Agent TOOL spans must end after their child TASK spans, not before.
 
-    The mid-stream tool_tracker.cleanup() in the AssistantMessage handler must
+    The mid-stream tool_tracker.cleanup_context() in the AssistantMessage handler must
     not close Agent TOOL spans that still have active child TASK spans. Those
     Agent TOOL spans should only close when their ToolResult arrives.
     """
@@ -1427,7 +1427,7 @@ def test_tool_span_tracker_cleanup_closes_unmatched_spans(memory_logger):
             AssistantMessage(content=[ToolUseBlock(id="call-dangling", name="weather", input={"city": "Toronto"})]),
             llm_span.export(),
         )
-        tracker.cleanup()
+        tracker.cleanup_all()
         llm_span.end()
 
     spans = memory_logger.pop()
@@ -1709,7 +1709,7 @@ async def test_wrapped_tool_handler_keeps_nested_traces_under_stream_tool_span(m
             )
         finally:
             _clear_tool_span_tracker()
-            tracker.cleanup()
+            tracker.cleanup_all()
             llm_span.end()
 
     assert result == {"content": [{"type": "text", "text": "42"}]}
@@ -1770,7 +1770,7 @@ async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory
             )
         finally:
             _clear_tool_span_tracker()
-            tracker.cleanup()
+            tracker.cleanup_all()
             llm_span.end()
 
     spans = memory_logger.pop()
@@ -2295,7 +2295,7 @@ async def test_identical_concurrent_tool_calls_from_sibling_subagents_disambigua
             )
         finally:
             _clear_tool_span_tracker()
-            tracker.cleanup()
+            tracker.cleanup_all()
             alpha_llm.end()
             beta_llm.end()
 
@@ -2382,7 +2382,7 @@ def test_dispatch_queue_assigns_identical_tool_spans_in_fifo_order(memory_logger
         # Cleanup
         first.release()
         second.release()
-        tracker.cleanup()
+        tracker.cleanup_all()
         llm_alpha.end()
         llm_beta.end()
 

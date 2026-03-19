@@ -39,10 +39,6 @@ class ParsedToolName:
     mcp_server: str | None = None
 
 
-_UNSET_PARENT = object()
-"""Sentinel to distinguish 'no filter' from 'filter to orchestrator (None)'."""
-
-
 @dataclasses.dataclass
 class _ActiveToolSpan:
     span: Any
@@ -236,7 +232,6 @@ def _make_dispatch_key(tool_name: str, tool_input: Any) -> tuple[str, str]:
 class ToolSpanTracker:
     def __init__(self):
         self._active_spans: dict[str, _ActiveToolSpan] = {}
-        self._pending_task_link_tool_use_ids: set[str] = set()
         # Per-(tool_name, input_signature) FIFO queue of tool_use_ids.
         # Used by acquire_span_for_handler to disambiguate identical concurrent
         # tool calls (same name + same input) from sibling subagents.
@@ -291,8 +286,6 @@ class ToolSpanTracker:
             )
             dispatch_key = _make_dispatch_key(parsed_tool_name.raw_name, tool_input)
             self._dispatch_queues.setdefault(dispatch_key, collections.deque()).append(tool_use_id)
-            if parsed_tool_name.display_name == "Agent":
-                self._pending_task_link_tool_use_ids.add(tool_use_id)
 
     def finish_tool_spans(self, message: Any) -> None:
         if not hasattr(message, "content"):
@@ -307,9 +300,6 @@ class ToolSpanTracker:
                 continue
 
             self._end_tool_span(str(tool_use_id), tool_result_block=block)
-
-    def cleanup(self, end_time: float | None = None) -> None:
-        self.cleanup_all(end_time=end_time)
 
     def cleanup_context(
         self,
@@ -338,16 +328,6 @@ class ToolSpanTracker:
     @property
     def has_active_spans(self) -> bool:
         return bool(self._active_spans)
-
-    @property
-    def pending_task_link_tool_use_ids(self) -> frozenset[str]:
-        return frozenset(self._pending_task_link_tool_use_ids)
-
-    def mark_task_started(self, tool_use_id: Any) -> None:
-        if tool_use_id is None:
-            return
-
-        self._pending_task_link_tool_use_ids.discard(str(tool_use_id))
 
     def acquire_span_for_handler(self, tool_name: Any, args: Any) -> _ActiveToolSpan | None:
         parsed_tool_name = _parse_tool_name(tool_name)
@@ -397,7 +377,6 @@ class ToolSpanTracker:
         self, tool_use_id: str, tool_result_block: Any | None = None, end_time: float | None = None
     ) -> None:
         active_tool_span = self._active_spans.pop(tool_use_id, None)
-        self._pending_task_link_tool_use_ids.discard(tool_use_id)
         if active_tool_span is None:
             return
 
@@ -460,138 +439,6 @@ def _activate_tool_span_for_handler(tool_name: Any, args: Any) -> _ActiveToolSpa
     return tool_span_tracker.acquire_span_for_handler(tool_name, args) or _NOOP_ACTIVE_TOOL_SPAN
 
 
-class LLMSpanTracker:
-    """Manages LLM span lifecycle for Claude Agent SDK message streams.
-
-    Message flow per turn:
-    1. UserMessage (tool results) -> mark the time when next LLM will start
-    2. AssistantMessage - LLM response arrives -> create span with the marked start time, ending previous span
-    3. ResultMessage - usage metrics -> log to span
-
-    We end the previous span when the next AssistantMessage arrives, using the marked
-    start time to ensure sequential spans (no overlapping LLM spans).
-
-    Each subagent context (identified by parent_tool_use_id) gets its own independent
-    span state so concurrent subagents don't truncate each other's LLM spans.
-    """
-
-    @dataclasses.dataclass
-    class _SubagentState:
-        current_span: Any | None = None
-        current_span_export: str | None = None
-        current_parent_export: str | None = None
-        current_output: list[dict[str, Any]] | None = None
-        next_start_time: float | None = None
-
-    def __init__(self, query_start_time: float | None = None):
-        self._states: dict[str | None, LLMSpanTracker._SubagentState] = {}
-        self._active_context: str | None = None
-        # Seed the orchestrator context (parent_tool_use_id=None) with the
-        # query start time so the first orchestrator LLM span gets the right start.
-        self._states[None] = self._SubagentState(next_start_time=query_start_time)
-
-    def _get_state(self, parent_tool_use_id: str | None = _UNSET_PARENT) -> "_SubagentState":
-        key = self._active_context if parent_tool_use_id is _UNSET_PARENT else parent_tool_use_id
-        state = self._states.get(key)
-        if state is None:
-            state = self._SubagentState()
-            self._states[key] = state
-        return state
-
-    @property
-    def current_span(self) -> Any | None:
-        return self._get_state().current_span
-
-    @property
-    def current_span_export(self) -> str | None:
-        return self._get_state().current_span_export
-
-    def set_context(self, parent_tool_use_id: str | None) -> None:
-        """Set which subagent context subsequent calls operate on."""
-        self._active_context = parent_tool_use_id
-
-    def get_next_start_time(self) -> float:
-        state = self._get_state()
-        return state.next_start_time if state.next_start_time is not None else time.time()
-
-    def start_llm_span(
-        self,
-        message: Any,
-        prompt: Any,
-        conversation_history: list[dict[str, Any]],
-        parent_export: str | None = None,
-        start_time: float | None = None,
-    ) -> tuple[dict[str, Any] | None, bool]:
-        """Start a new LLM span, ending the previous one *in the same context*."""
-        state = self._get_state()
-        current_message = _serialize_assistant_message(message)
-
-        if (
-            state.current_span
-            and state.next_start_time is None
-            and state.current_parent_export == parent_export
-            and current_message is not None
-        ):
-            merged_message = _merge_assistant_messages(
-                state.current_output[0] if state.current_output else None,
-                current_message,
-            )
-            if merged_message is not None:
-                state.current_output = [merged_message]
-                state.current_span.log(output=state.current_output)
-            return merged_message, True
-
-        resolved_start_time = start_time if start_time is not None else self.get_next_start_time()
-        first_token_time = time.time()
-
-        if state.current_span:
-            state.current_span.end(end_time=resolved_start_time)
-
-        final_content, span = _create_llm_span_for_messages(
-            [message],
-            prompt,
-            conversation_history,
-            parent=parent_export,
-            start_time=resolved_start_time,
-        )
-        if span is not None:
-            span.log(metrics={"time_to_first_token": max(0.0, first_token_time - resolved_start_time)})
-        state.current_span = span
-        state.current_span_export = span.export() if span else None
-        state.current_parent_export = parent_export
-        state.current_output = [final_content] if final_content is not None else None
-        state.next_start_time = None
-        return final_content, False
-
-    def mark_next_llm_start(self, parent_tool_use_id: Any = _UNSET_PARENT) -> None:
-        """Mark when the next LLM call will start (after tool results).
-
-        When ``parent_tool_use_id`` is ``None`` (i.e. the message lacks the
-        attribute) but we have an active subagent context, fall back to the
-        active context so the timestamp lands on the correct subagent state
-        rather than the orchestrator state.
-        """
-        if parent_tool_use_id is None and self._active_context is not None:
-            parent_tool_use_id = _UNSET_PARENT
-        self._get_state(parent_tool_use_id).next_start_time = time.time()
-
-    def log_usage(self, usage_metrics: dict[str, float]) -> None:
-        """Log usage metrics to the current LLM span."""
-        state = self._get_state()
-        if state.current_span and usage_metrics:
-            state.current_span.log(metrics=usage_metrics)
-
-    def cleanup(self) -> None:
-        """End any unclosed spans across all subagent contexts."""
-        for state in self._states.values():
-            if state.current_span:
-                state.current_span.end()
-                state.current_span = None
-                state.current_span_export = None
-                state.current_parent_export = None
-                state.current_output = None
-
-
 def _task_span_name(message: Any, task_id: str) -> str:
     return getattr(message, "description", None) or getattr(message, "task_type", None) or f"Task {task_id}"
 
@@ -629,110 +476,6 @@ def _task_output(message: Any) -> dict[str, Any] | None:
     }
 
 
-class TaskEventSpanTracker:
-    def __init__(self, root_span_export: str, tool_tracker: ToolSpanTracker):
-        self._root_span_export = root_span_export
-        self._tool_tracker = tool_tracker
-        self._active_spans: dict[str, Any] = {}
-        self._task_span_by_tool_use_id: dict[str, Any] = {}
-        self._active_task_order: list[str] = []
-
-    def process(self, message: Any) -> None:
-        task_id = getattr(message, "task_id", None)
-        if task_id is None:
-            return
-
-        task_id = str(task_id)
-        message_type = type(message).__name__
-        task_span = self._active_spans.get(task_id)
-
-        if task_span is None:
-            task_span = start_span(
-                name=self._span_name(message, task_id),
-                span_attributes={"type": SpanTypeAttribute.TASK},
-                metadata=self._metadata(message),
-                parent=self._parent_export(message),
-            )
-            self._active_spans[task_id] = task_span
-            self._active_task_order.append(task_id)
-            tool_use_id = getattr(message, "tool_use_id", None)
-            if tool_use_id is not None:
-                tool_use_id = str(tool_use_id)
-                self._task_span_by_tool_use_id[tool_use_id] = task_span
-                self._tool_tracker.mark_task_started(tool_use_id)
-        else:
-            update: dict[str, Any] = {}
-            metadata = self._metadata(message)
-            if metadata:
-                update["metadata"] = metadata
-
-            output = self._output(message)
-            if output is not None:
-                update["output"] = output
-
-            if update:
-                task_span.log(**update)
-
-        if self._should_end(message_type):
-            tool_use_id = getattr(message, "tool_use_id", None)
-            if tool_use_id is not None:
-                self._task_span_by_tool_use_id.pop(str(tool_use_id), None)
-            task_span.end()
-            del self._active_spans[task_id]
-            self._active_task_order = [
-                active_task_id for active_task_id in self._active_task_order if active_task_id != task_id
-            ]
-
-    @property
-    def active_tool_use_ids(self) -> frozenset[str]:
-        return frozenset(self._task_span_by_tool_use_id.keys())
-
-    def cleanup(self) -> None:
-        for task_id, span in list(self._active_spans.items()):
-            span.end()
-            del self._active_spans[task_id]
-        self._task_span_by_tool_use_id.clear()
-        self._active_task_order.clear()
-
-    def parent_export_for_message(self, message: Any, fallback_export: str) -> str:
-        parent_tool_use_id = getattr(message, "parent_tool_use_id", None)
-        if parent_tool_use_id is None:
-            if _message_starts_subagent_tool(message):
-                return fallback_export
-            active_task_export = self._latest_active_task_export()
-            return active_task_export or fallback_export
-
-        task_span = self._task_span_by_tool_use_id.get(str(parent_tool_use_id))
-        if task_span is not None:
-            return task_span.export()
-
-        active_task_export = self._latest_active_task_export()
-        return active_task_export or fallback_export
-
-    def _latest_active_task_export(self) -> str | None:
-        for task_id in reversed(self._active_task_order):
-            task_span = self._active_spans.get(task_id)
-            if task_span is not None:
-                return task_span.export()
-
-        return None
-
-    def _parent_export(self, message: Any) -> str:
-        return self._tool_tracker.get_span_export(getattr(message, "tool_use_id", None)) or self._root_span_export
-
-    def _span_name(self, message: Any, task_id: str) -> str:
-        return _task_span_name(message, task_id)
-
-    def _metadata(self, message: Any) -> dict[str, Any]:
-        return _task_metadata(message)
-
-    def _output(self, message: Any) -> dict[str, Any] | None:
-        return _task_output(message)
-
-    def _should_end(self, message_type: str) -> bool:
-        return message_type == MessageClassName.TASK_NOTIFICATION
-
-
 def _message_starts_subagent_tool(message: Any) -> bool:
     if not hasattr(message, "content"):
         return False
@@ -751,6 +494,7 @@ class _AgentContext:
     """Per-subagent-context state, keyed by parent_tool_use_id (None = orchestrator)."""
 
     llm_span: Any | None = None
+    llm_parent_export: str | None = None
     llm_output: list[dict[str, Any]] | None = None
     next_llm_start: float | None = None
     task_span: Any | None = None
@@ -943,7 +687,12 @@ class ContextTracker:
         current_message = _serialize_assistant_message(message)
 
         # Merge path.
-        if ctx.llm_span and ctx.next_llm_start is None and current_message is not None:
+        if (
+            ctx.llm_span
+            and ctx.next_llm_start is None
+            and ctx.llm_parent_export == parent_export
+            and current_message is not None
+        ):
             merged = _merge_assistant_messages(
                 ctx.llm_output[0] if ctx.llm_output else None,
                 current_message,
@@ -970,6 +719,7 @@ class ContextTracker:
         if span is not None:
             span.log(metrics={"time_to_first_token": max(0.0, first_token_time - resolved_start)})
         ctx.llm_span = span
+        ctx.llm_parent_export = parent_export
         ctx.llm_output = [final_content] if final_content is not None else None
         ctx.next_llm_start = None
         return final_content, False
@@ -1075,91 +825,23 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 span_attributes={"type": SpanTypeAttribute.TASK},
                 input=initial_input,
             ) as span:
-                # If we're capturing async messages, we'll update input after they're consumed
                 input_needs_update = self.__captured_messages is not None
-
-                final_results: list[dict[str, Any]] = []
-                task_events: list[dict[str, Any]] = []
-                llm_tracker = LLMSpanTracker(query_start_time=self.__query_start_time)
-                tool_tracker = ToolSpanTracker()
-                task_event_span_tracker = TaskEventSpanTracker(span.export(), tool_tracker)
-                _thread_local.tool_span_tracker = tool_tracker
+                context_tracker = ContextTracker(
+                    root_span=span,
+                    prompt=self.__last_prompt,
+                    query_start_time=self.__query_start_time,
+                )
 
                 try:
                     async for message in generator:
-                        # Update input from captured async messages (once, after they're consumed)
+                        # One-shot: update root span input from async-generator prompt.
                         if input_needs_update:
-                            captured_input = self.__captured_messages if self.__captured_messages else []
-                            if captured_input:
-                                span.log(input=captured_input)
+                            captured = self.__captured_messages or []
+                            if captured:
+                                span.log(input=captured)
                             input_needs_update = False
 
-                        message_type = type(message).__name__
-
-                        if message_type == MessageClassName.ASSISTANT:
-                            incoming_parent = getattr(message, "parent_tool_use_id", None)
-                            llm_tracker.set_context(incoming_parent)
-                            if llm_tracker.current_span and tool_tracker.has_active_spans:
-                                active_subagent_tool_use_ids = (
-                                    task_event_span_tracker.active_tool_use_ids
-                                    | tool_tracker.pending_task_link_tool_use_ids
-                                )
-                                tool_tracker.cleanup_context(
-                                    incoming_parent,
-                                    end_time=llm_tracker.get_next_start_time(),
-                                    exclude_ids=active_subagent_tool_use_ids,
-                                )
-                            llm_parent_export = task_event_span_tracker.parent_export_for_message(
-                                message,
-                                span.export(),
-                            )
-                            final_content, extended_existing_span = llm_tracker.start_llm_span(
-                                message,
-                                self.__last_prompt,
-                                final_results,
-                                parent_export=llm_parent_export,
-                            )
-                            tool_tracker.start_tool_spans(message, llm_tracker.current_span_export)
-                            if final_content:
-                                if (
-                                    extended_existing_span
-                                    and final_results
-                                    and final_results[-1].get("role") == "assistant"
-                                ):
-                                    final_results[-1] = final_content
-                                else:
-                                    final_results.append(final_content)
-                        elif message_type == MessageClassName.USER:
-                            tool_tracker.finish_tool_spans(message)
-                            has_tool_results = False
-                            user_parent = getattr(message, "parent_tool_use_id", None)
-                            if hasattr(message, "content"):
-                                has_tool_results = any(
-                                    type(block).__name__ == BlockClassName.TOOL_RESULT for block in message.content
-                                )
-                                content = _serialize_content_blocks(message.content)
-                                final_results.append({"content": content, "role": "user"})
-                            if has_tool_results:
-                                llm_tracker.mark_next_llm_start(user_parent)
-                        elif message_type == MessageClassName.RESULT:
-                            llm_tracker.set_context(None)
-                            if hasattr(message, "usage"):
-                                usage_metrics = _extract_usage_from_result_message(message)
-                                llm_tracker.log_usage(usage_metrics)
-
-                            result_metadata = {
-                                k: v
-                                for k, v in {
-                                    "num_turns": getattr(message, "num_turns", None),
-                                    "session_id": getattr(message, "session_id", None),
-                                }.items()
-                                if v is not None
-                            }
-                            span.log(metadata=result_metadata)
-                        elif message_type in SYSTEM_MESSAGE_TYPES:
-                            task_event_span_tracker.process(message)
-                            task_events.append(_serialize_system_message(message))
-
+                        context_tracker.add(message)
                         yield message
                 except asyncio.CancelledError:
                     # The CancelledError may come from the subprocess transport
@@ -1168,19 +850,12 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                     # the response stream ends cleanly. If the caller genuinely
                     # cancelled the task, they still have pending cancellation
                     # requests that will fire at their next await point.
-                    if final_results:
-                        span.log(output=final_results[-1])
+                    context_tracker.log_output()
                 else:
-                    if final_results:
-                        span.log(output=final_results[-1])
+                    context_tracker.log_output()
                 finally:
-                    if task_events:
-                        span.log(metadata={"task_events": task_events})
-                    task_event_span_tracker.cleanup()
-                    tool_tracker.cleanup()
-                    llm_tracker.cleanup()
-                    if hasattr(_thread_local, "tool_span_tracker"):
-                        delattr(_thread_local, "tool_span_tracker")
+                    context_tracker.log_tasks()
+                    context_tracker.cleanup()
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
             await self.__client.__aenter__()
