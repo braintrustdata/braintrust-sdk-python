@@ -433,29 +433,47 @@ def _activate_tool_span_for_handler(tool_name: Any, args: Any) -> _ActiveToolSpa
     return tool_span_tracker.acquire_span_for_handler(tool_name, args) or _NOOP_ACTIVE_TOOL_SPAN
 
 
+def _msg_field(message: Any, field: str) -> Any:
+    """Read a field from a system message, falling back to message.data for older SDK versions.
+
+    SDK >= 0.1.11 exposes TaskStartedMessage / TaskProgressMessage /
+    TaskNotificationMessage with fields as top-level attributes.
+    SDK 0.1.10 uses a flat SystemMessage(subtype, data=<full raw payload dict>)
+    where task fields live directly in data (e.g. data["task_id"]).
+    """
+    value = getattr(message, field, None)
+    if value is not None:
+        return value
+    # Older SDK: message.data is the full raw payload dict with task fields at its top level.
+    data = getattr(message, "data", None)
+    if isinstance(data, dict):
+        return data.get(field)
+    return None
+
+
 def _task_span_name(message: Any, task_id: str) -> str:
-    return getattr(message, "description", None) or getattr(message, "task_type", None) or f"Task {task_id}"
+    return _msg_field(message, "description") or _msg_field(message, "task_type") or f"Task {task_id}"
 
 
 def _task_metadata(message: Any) -> dict[str, Any]:
     return {
         k: v
         for k, v in {
-            "task_id": getattr(message, "task_id", None),
-            "session_id": getattr(message, "session_id", None),
-            "tool_use_id": getattr(message, "tool_use_id", None),
-            "task_type": getattr(message, "task_type", None),
-            "status": getattr(message, "status", None),
-            "last_tool_name": getattr(message, "last_tool_name", None),
-            "usage": getattr(message, "usage", None),
+            "task_id": _msg_field(message, "task_id"),
+            "session_id": _msg_field(message, "session_id"),
+            "tool_use_id": _msg_field(message, "tool_use_id"),
+            "task_type": _msg_field(message, "task_type"),
+            "status": _msg_field(message, "status"),
+            "last_tool_name": _msg_field(message, "last_tool_name"),
+            "usage": _msg_field(message, "usage"),
         }.items()
         if v is not None
     }
 
 
 def _task_output(message: Any) -> dict[str, Any] | None:
-    summary = getattr(message, "summary", None)
-    output_file = getattr(message, "output_file", None)
+    summary = _msg_field(message, "summary")
+    output_file = _msg_field(message, "output_file")
 
     if summary is None and output_file is None:
         return None
@@ -627,7 +645,7 @@ class ContextTracker:
             self._root_span.log(metadata=result_metadata)
 
     def _handle_system(self, message: Any) -> None:
-        agent_span_export = self._tool_tracker.get_span_export(getattr(message, "tool_use_id", None))
+        agent_span_export = self._tool_tracker.get_span_export(_msg_field(message, "tool_use_id"))
         self._process_task_event(message, agent_span_export)
         self._task_events.append(_serialize_system_message(message))
 
@@ -727,11 +745,11 @@ class ContextTracker:
 
     def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:
         """Handle TaskStarted / TaskProgress / TaskNotification system messages."""
-        task_id = getattr(message, "task_id", None)
+        task_id = _msg_field(message, "task_id")
         if task_id is None:
             return
         task_id = str(task_id)
-        tool_use_id = getattr(message, "tool_use_id", None)
+        tool_use_id = _msg_field(message, "tool_use_id")
         tool_use_id_str = str(tool_use_id) if tool_use_id is not None else None
         ctx = self._get_context(tool_use_id_str)
         message_type = type(message).__name__

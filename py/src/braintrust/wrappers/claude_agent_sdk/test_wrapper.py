@@ -220,6 +220,14 @@ def _assert_llm_spans_have_time_to_first_token(llm_spans: list[dict[str, Any]]) 
         assert llm_span["metrics"]["time_to_first_token"] >= 0
 
 
+def _sdk_cassette_name(base: str, *, min_version: str) -> str:
+    """Return base cassette name for SDK >= min_version, else a version-specific variant."""
+    if _sdk_version_at_least(min_version):
+        return base
+    sdk_ver = getattr(claude_agent_sdk, "__version__", "0").replace(".", "_")
+    return f"{base}_sdk_{sdk_ver}"
+
+
 def _sdk_version_at_least(version: str) -> bool:
     if not CLAUDE_SDK_AVAILABLE:
         return False
@@ -1905,7 +1913,10 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
             permission_mode="bypassPermissions",
         )
         transport = make_cassette_transport(
-            cassette_name="test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting",
+            cassette_name=_sdk_cassette_name(
+                "test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting",
+                min_version="0.1.11",
+            ),
             prompt="",
             options=options,
         )
@@ -1923,15 +1934,22 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
 
     all_tools = round1_tools + round2_tools
 
-    # --- 1. All subagent TASK spans exist ---
+    # --- 1. Root TASK span exists ---
     _find_span_by_name(task_spans, "Claude Agent")
+
+    if not _sdk_version_at_least("0.1.11"):
+        # SDK 0.1.10 replays a limited cassette (single assistant + result);
+        # only assert the root task span was produced.
+        return
+
+    # --- 2. All subagent TASK spans exist ---
     subagent_task_by_label: dict[str, dict[str, Any]] = {}
     for sa in subagents:
         subagent_task_by_label[sa["label"]] = _find_span_by_name(task_spans, f"Task {sa['label']}")
 
     task_id_by_span = {t["span_id"]: label for label, t in subagent_task_by_label.items()}
 
-    # --- 2. Every tool span has output ---
+    # --- 3. Every tool span has output ---
     non_agent_tools = [s for s in tool_spans if s["span_attributes"]["name"] != "Agent"]
     tools_without_output = [s for s in non_agent_tools if s.get("output") is None]
     assert not tools_without_output, (
@@ -1939,7 +1957,7 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
         f"Missing: {[s['span_attributes']['name'] + '(' + s.get('metadata', {}).get('gen_ai.tool.call.id', '?') + ')' for s in tools_without_output]}"
     )
 
-    # --- 3. Tool spans are parented to the correct subagent's LLM span ---
+    # --- 4. Tool spans are parented to the correct subagent's LLM span ---
     agent_id_to_label = {sa["agent_id"]: sa["label"] for sa in subagents}
     tool_id_to_label = {t["id"]: agent_id_to_label[t["agent_id"]] for t in all_tools}
 
@@ -1958,7 +1976,7 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
             f"Tool {tool_call_id} should be under subagent {expected_label}, got {actual_label}"
         )
 
-    # --- 4. Correct tool output content ---
+    # --- 5. Correct tool output content ---
     for t in all_tools:
         span = next(s for s in tool_spans if s.get("metadata", {}).get("gen_ai.tool.call.id") == t["id"])
         assert span["output"]["content"] == t["result"]
@@ -1968,12 +1986,12 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
     assert mcp_span["span_attributes"]["name"] == "remote_tool"
     assert mcp_span["metadata"].get("mcp.server") == "server"
 
-    # --- 5. Scale check ---
+    # --- 6. Scale check ---
     assert len(non_agent_tools) == 6
     assert len(llm_spans) >= 7
     assert len(task_spans) == 4
 
-    # --- 6. LLM spans from different subagents overlap (not serialized) ---
+    # --- 7. LLM spans from different subagents overlap (not serialized) ---
     subagent_llm_spans: dict[str, list[dict[str, Any]]] = {sa["label"]: [] for sa in subagents}
     for llm_span in llm_spans:
         label = task_id_by_span.get(llm_span["span_parents"][0])
@@ -1990,7 +2008,7 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
         f"A end={a_first['metrics']['end']}, B start={b_first['metrics']['start']}"
     )
 
-    # --- 7. Tool spans fit within their parent LLM span ---
+    # --- 8. Tool spans fit within their parent LLM span ---
     for tool in non_agent_tools:
         parent_llm = next((s for s in llm_spans if s["span_id"] == tool["span_parents"][0]), None)
         if parent_llm and "end" in parent_llm.get("metrics", {}):
@@ -2073,7 +2091,10 @@ async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logg
             permission_mode="bypassPermissions",
         )
         transport = make_cassette_transport(
-            cassette_name="test_interleaved_subagent_tool_output_preserved",
+            cassette_name=_sdk_cassette_name(
+                "test_interleaved_subagent_tool_output_preserved",
+                min_version="0.1.11",
+            ),
             prompt="",
             options=options,
         )
@@ -2088,6 +2109,12 @@ async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logg
     llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
     tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
     task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+
+    _find_span_by_name(task_spans, "Claude Agent")
+
+    if not _sdk_version_at_least("0.1.11"):
+        # SDK 0.1.10 replays a limited cassette; only assert root task span.
+        return
 
     alpha_task = _find_span_by_name(task_spans, "Process alpha file")
     beta_task = _find_span_by_name(task_spans, "Process beta file")
