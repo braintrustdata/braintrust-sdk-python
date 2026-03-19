@@ -2,7 +2,6 @@ import asyncio
 import collections
 import dataclasses
 import json
-import logging
 import threading
 import time
 from collections.abc import AsyncGenerator, AsyncIterable
@@ -27,7 +26,6 @@ from braintrust.wrappers.claude_agent_sdk._constants import (
 )
 
 
-log = logging.getLogger(__name__)
 _thread_local = threading.local()
 
 
@@ -81,10 +79,6 @@ class _NoopActiveToolSpan:
 
 
 _NOOP_ACTIVE_TOOL_SPAN = _NoopActiveToolSpan()
-
-
-def _log_tracing_warning(exc: Exception) -> None:
-    log.warning("Error in tracing code", exc_info=exc)
 
 
 def _parse_tool_name(tool_name: Any) -> ParsedToolName:
@@ -808,13 +802,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             return await self.__client.query(*args, **kwargs)
 
         async def receive_response(self) -> AsyncGenerator[Any, None]:
-            """Wrap receive_response to add tracing.
-
-            Uses start_span context manager which automatically:
-            - Handles exceptions and logs them as errors
-            - Sets the span as current so tool calls automatically nest under it
-            - Manages span lifecycle (start/end)
-            """
+            """Wrap receive_response to add tracing via ContextTracker."""
             generator = self.__client.receive_response()
 
             # Determine the initial input - may be updated later if using async generator
@@ -880,9 +868,7 @@ def _create_llm_span_for_messages(
     - final_content: The final message content to add to conversation history
     - span: The LLM span object (for logging metrics later)
 
-    Automatically nests under the current span (TASK span from receive_response).
-
-    Note: This is called from within a catch_exceptions block, so errors won't break user code.
+    Called by ContextTracker._start_or_merge_llm_span with an explicit parent export.
     """
     if not messages:
         return None, None
