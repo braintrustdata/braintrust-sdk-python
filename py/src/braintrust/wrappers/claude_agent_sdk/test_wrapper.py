@@ -1862,3 +1862,536 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
     assert len(task_spans) == 1
     assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
     assert task_spans[0]["input"] == "Say hi"
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting(memory_logger):
+    """Concurrent subagent LLM spans must run in parallel, not be serialized into a single
+    sequential chain — and every tool span must be parented to its own subagent's LLM span
+    with output preserved.
+
+    Three subagents each perform two interleaved tool rounds:
+      LLM(A:Bash) → LLM(B:Bash) → LLM(C:MCP tool) → result(A) → result(B) → result(C)
+      LLM(A:Read) → LLM(B:Read) → LLM(C:Read)      → result(A) → result(B) → result(C)
+
+    Verifies:
+    - Each subagent gets its own LLM spans (not shared with other subagents)
+    - LLM spans from different subagents overlap in time (parallel execution)
+    - Tool spans are parented to the correct subagent's LLM span
+    - Tool output is preserved despite cross-subagent message interleaving
+    """
+    assert not memory_logger.pop()
+
+    subagents = [
+        {"label": "A", "agent_id": "toolu_agent_a", "task_id": "task_a"},
+        {"label": "B", "agent_id": "toolu_agent_b", "task_id": "task_b"},
+        {"label": "C", "agent_id": "toolu_agent_c", "task_id": "task_c"},
+    ]
+    round1_tools = [
+        {"id": "toolu_tool_a1", "name": "Bash", "agent_id": "toolu_agent_a", "result": "a1-output"},
+        {"id": "toolu_tool_b1", "name": "Bash", "agent_id": "toolu_agent_b", "result": "b1-output"},
+        {
+            "id": "toolu_tool_c1",
+            "name": "mcp__server__remote_tool",
+            "agent_id": "toolu_agent_c",
+            "result": "c1-output",
+        },
+    ]
+    round2_tools = [
+        {"id": "toolu_tool_a2", "name": "Read", "agent_id": "toolu_agent_a", "result": "a2-output"},
+        {"id": "toolu_tool_b2", "name": "Read", "agent_id": "toolu_agent_b", "result": "b2-output"},
+        {"id": "toolu_tool_c2", "name": "Read", "agent_id": "toolu_agent_c", "result": "c2-output"},
+    ]
+    all_tools = round1_tools + round2_tools
+
+    with _patched_claude_sdk(wrap_client=True):
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model=TEST_MODEL,
+            permission_mode="bypassPermissions",
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting",
+            prompt="",
+            options=options,
+        )
+
+        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+            await client.query("Run three tasks.")
+            async for message in client.receive_response():
+                if type(message).__name__ == "ResultMessage":
+                    break
+
+    spans = memory_logger.pop()
+    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    all_tools = round1_tools + round2_tools
+
+    # --- 1. All subagent TASK spans exist ---
+    _find_span_by_name(task_spans, "Claude Agent")
+    subagent_task_by_label: dict[str, dict[str, Any]] = {}
+    for sa in subagents:
+        subagent_task_by_label[sa["label"]] = _find_span_by_name(task_spans, f"Task {sa['label']}")
+
+    task_id_by_span = {t["span_id"]: label for label, t in subagent_task_by_label.items()}
+
+    # --- 2. Every tool span has output ---
+    non_agent_tools = [s for s in tool_spans if s["span_attributes"]["name"] != "Agent"]
+    tools_without_output = [s for s in non_agent_tools if s.get("output") is None]
+    assert not tools_without_output, (
+        f"{len(tools_without_output)} of {len(non_agent_tools)} tool spans lost their output. "
+        f"Missing: {[s['span_attributes']['name'] + '(' + s.get('metadata', {}).get('gen_ai.tool.call.id', '?') + ')' for s in tools_without_output]}"
+    )
+
+    # --- 3. Tool spans are parented to the correct subagent's LLM span ---
+    agent_id_to_label = {sa["agent_id"]: sa["label"] for sa in subagents}
+    tool_id_to_label = {t["id"]: agent_id_to_label[t["agent_id"]] for t in all_tools}
+
+    for tool in non_agent_tools:
+        tool_call_id = tool.get("metadata", {}).get("gen_ai.tool.call.id", "")
+        expected_label = tool_id_to_label.get(tool_call_id)
+        if expected_label is None:
+            continue
+
+        parent_llm = next((s for s in llm_spans if s["span_id"] == tool["span_parents"][0]), None)
+        assert parent_llm is not None, f"Tool {tool_call_id} has no parent LLM span"
+
+        llm_task_parent_id = parent_llm["span_parents"][0]
+        actual_label = task_id_by_span.get(llm_task_parent_id)
+        assert actual_label == expected_label, (
+            f"Tool {tool_call_id} should be under subagent {expected_label}, got {actual_label}"
+        )
+
+    # --- 4. Correct tool output content ---
+    for t in all_tools:
+        span = next(s for s in tool_spans if s.get("metadata", {}).get("gen_ai.tool.call.id") == t["id"])
+        assert span["output"]["content"] == t["result"]
+
+    # MCP tool name should be parsed
+    mcp_span = next(s for s in tool_spans if s.get("metadata", {}).get("gen_ai.tool.call.id") == "toolu_tool_c1")
+    assert mcp_span["span_attributes"]["name"] == "remote_tool"
+    assert mcp_span["metadata"].get("mcp.server") == "server"
+
+    # --- 5. Scale check ---
+    assert len(non_agent_tools) == 6
+    assert len(llm_spans) >= 7
+    assert len(task_spans) == 4
+
+    # --- 6. LLM spans from different subagents overlap (not serialized) ---
+    subagent_llm_spans: dict[str, list[dict[str, Any]]] = {sa["label"]: [] for sa in subagents}
+    for llm_span in llm_spans:
+        label = task_id_by_span.get(llm_span["span_parents"][0])
+        if label:
+            subagent_llm_spans[label].append(llm_span)
+
+    for label, llms in subagent_llm_spans.items():
+        assert len(llms) == 2, f"Expected 2 LLM spans for subagent {label} (one per tool round), got {len(llms)}"
+
+    a_first = min(subagent_llm_spans["A"], key=lambda s: s["metrics"]["start"])
+    b_first = min(subagent_llm_spans["B"], key=lambda s: s["metrics"]["start"])
+    assert a_first["metrics"]["end"] > b_first["metrics"]["start"], (
+        f"Subagent A's first LLM span should overlap with B's (not be truncated). "
+        f"A end={a_first['metrics']['end']}, B start={b_first['metrics']['start']}"
+    )
+
+    # --- 7. Tool spans fit within their parent LLM span ---
+    for tool in non_agent_tools:
+        parent_llm = next((s for s in llm_spans if s["span_id"] == tool["span_parents"][0]), None)
+        if parent_llm and "end" in parent_llm.get("metrics", {}):
+            assert tool["metrics"]["start"] >= parent_llm["metrics"]["start"], "Tool starts before parent LLM"
+            assert tool["metrics"]["end"] <= parent_llm["metrics"]["end"], "Tool extends past parent LLM"
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_interleaved_subagent_tool_spans_preserve_output(memory_logger):
+    """Cassette-backed test: tool spans from one subagent must retain their
+    output when another subagent's AssistantMessage arrives before the first
+    subagent's ToolResultBlock.
+
+    The cassette replays a realistic SDK message stream where:
+      1. Orchestrator launches subagent-alpha and subagent-beta
+      2. Alpha's LLM turn emits a Bash tool call
+      3. Beta's LLM turn emits a Read tool call BEFORE alpha's tool result
+      4. Alpha's tool result arrives
+      5. Beta's tool result arrives
+
+    Expected: Both Bash and Read tool spans should have their output recorded.
+    Bug: cleanup() in receive_response force-ends alpha's Bash tool span when
+    beta's AssistantMessage arrives, so alpha's ToolResultBlock is silently
+    skipped and its output is lost.
+    """
+    assert not memory_logger.pop()
+
+    with _patched_claude_sdk(wrap_client=True):
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model=TEST_MODEL,
+            permission_mode="bypassPermissions",
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_interleaved_subagent_tool_output_preserved",
+            prompt="",
+            options=options,
+        )
+
+        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+            await client.query("Launch two subagents to process files.")
+            async for message in client.receive_response():
+                if type(message).__name__ == "ResultMessage":
+                    break
+
+    spans = memory_logger.pop()
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    bash_span = _find_span_by_name(tool_spans, "Bash")
+    read_span = _find_span_by_name(tool_spans, "Read")
+
+    # Both tool spans should have their output recorded
+    assert bash_span.get("output") is not None, (
+        "Bash tool span output was lost — the cleanup force-ended it before its ToolResultBlock arrived"
+    )
+    assert bash_span["output"]["content"] == "alpha_file_contents"
+
+    assert read_span.get("output") is not None, (
+        "Read tool span output was lost — the cleanup force-ended it before its ToolResultBlock arrived"
+    )
+    assert read_span["output"]["content"] == "beta_file_contents"
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logger):
+    """Cassette-backed test: tool spans from interleaved subagents must be
+    parented to the LLM span from their own subagent, not the most recent
+    LLM span from any subagent.
+
+    Uses the same interleaved cassette to verify that even when messages from
+    different subagents interleave on the single message stream, each tool span
+    references the correct LLM parent via parent_tool_use_id routing.
+    """
+    assert not memory_logger.pop()
+
+    with _patched_claude_sdk(wrap_client=True):
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model=TEST_MODEL,
+            permission_mode="bypassPermissions",
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_interleaved_subagent_tool_output_preserved",
+            prompt="",
+            options=options,
+        )
+
+        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+            await client.query("Launch two subagents to process files.")
+            async for message in client.receive_response():
+                if type(message).__name__ == "ResultMessage":
+                    break
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+
+    alpha_task = _find_span_by_name(task_spans, "Process alpha file")
+    beta_task = _find_span_by_name(task_spans, "Process beta file")
+
+    bash_span = _find_span_by_name(tool_spans, "Bash")
+    read_span = _find_span_by_name(tool_spans, "Read")
+
+    # Find each tool's parent LLM span
+    bash_parent_llm_id = bash_span["span_parents"][0]
+    read_parent_llm_id = read_span["span_parents"][0]
+
+    bash_parent_llm = next(s for s in llm_spans if s["span_id"] == bash_parent_llm_id)
+    read_parent_llm = next(s for s in llm_spans if s["span_id"] == read_parent_llm_id)
+
+    # Bash's parent LLM should be under alpha's task
+    assert alpha_task["span_id"] in bash_parent_llm["span_parents"], (
+        f"Bash's parent LLM span should be under alpha task, but its parents are {bash_parent_llm['span_parents']}"
+    )
+
+    # Read's parent LLM should be under beta's task
+    assert beta_task["span_id"] in read_parent_llm["span_parents"], (
+        f"Read's parent LLM span should be under beta task, but its parents are {read_parent_llm['span_parents']}"
+    )
+
+    # The two tool spans should have DIFFERENT LLM parents (not shared)
+    assert bash_parent_llm_id != read_parent_llm_id, (
+        "Tool spans from different subagents should be parented to different LLM spans"
+    )
+
+
+@pytest.mark.asyncio
+async def test_concurrent_subagent_tool_output_not_silently_dropped(memory_logger):
+    """cleanup() scoped to a different subagent must not end tool spans from
+    the first subagent.  When only_parent_tool_use_id targets beta's context,
+    alpha's Bash tool span must survive so its ToolResultBlock is recorded.
+    """
+    assert not memory_logger.pop()
+
+    tracker = ToolSpanTracker()
+
+    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
+        # Alpha's LLM span and Bash tool span (parent_tool_use_id="call-alpha")
+        llm_span = start_span(
+            name="anthropic.messages.create",
+            type=SpanTypeAttribute.LLM,
+            parent=task_span.export(),
+        )
+        tracker.start_tool_spans(
+            AssistantMessage(
+                content=[ToolUseBlock(id="bash-1", name="Bash", input={"command": "echo hello"})],
+                parent_tool_use_id="call-alpha",
+            ),
+            llm_span.export(),
+        )
+
+        assert tracker.has_active_spans, "Tool span should be active after start_tool_spans"
+
+        # Cleanup triggered by beta's AssistantMessage — scoped to beta's context
+        tracker.cleanup(only_parent_tool_use_id="call-beta")
+
+        # Alpha's tool span should still be active
+        assert tracker.has_active_spans, (
+            "cleanup(only_parent_tool_use_id='call-beta') should not end alpha's tool span"
+        )
+
+        # Alpha's ToolResultBlock arrives and should be recorded
+        tracker.finish_tool_spans(
+            UserMessage(content=[ToolResultBlock(tool_use_id="bash-1", content=[TextBlock("hello")])])
+        )
+        llm_span.end()
+
+    spans = memory_logger.pop()
+    bash_span = _find_span_by_name(
+        [s for s in spans if s.get("span_attributes", {}).get("type") == SpanTypeAttribute.TOOL],
+        "Bash",
+    )
+
+    assert bash_span.get("output") is not None, (
+        "Tool result was silently dropped. cleanup() scoped to a different subagent "
+        "should not have ended this tool span."
+    )
+    assert bash_span["output"]["content"] == "hello"
+
+
+def test_tool_span_tracker_cleanup_preserves_cross_subagent_spans(memory_logger):
+    """cleanup(only_parent_tool_use_id=...) should not end tool spans that
+    belong to a different subagent context.
+
+    Alpha starts a Bash tool span.  A cleanup scoped to beta's context fires.
+    Alpha's span must survive so its ToolResultBlock is recorded.
+    """
+    assert not memory_logger.pop()
+
+    tracker = ToolSpanTracker()
+
+    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
+        # Alpha's LLM span and tool span
+        alpha_llm = start_span(
+            name="anthropic.messages.create",
+            type=SpanTypeAttribute.LLM,
+            parent=task_span.export(),
+        )
+        tracker.start_tool_spans(
+            AssistantMessage(
+                content=[ToolUseBlock(id="bash-alpha", name="Bash", input={"command": "echo alpha"})],
+                parent_tool_use_id="call-alpha",
+            ),
+            alpha_llm.export(),
+        )
+
+        # Cleanup triggered by beta's AssistantMessage — scoped to beta
+        tracker.cleanup(only_parent_tool_use_id="call-beta")
+
+        # Alpha's span should still be active
+        assert tracker.has_active_spans, "Alpha's tool span should survive beta-scoped cleanup"
+
+        # Alpha's tool result arrives
+        tracker.finish_tool_spans(
+            UserMessage(content=[ToolResultBlock(tool_use_id="bash-alpha", content=[TextBlock("alpha output")])])
+        )
+        alpha_llm.end()
+
+    spans = memory_logger.pop()
+    bash_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "Bash"]
+    assert len(bash_spans) == 1
+    bash_span = bash_spans[0]
+
+    assert bash_span.get("output") is not None, (
+        "Tool span output was lost because cleanup() ended a span from a different subagent context."
+    )
+    assert bash_span["output"]["content"] == "alpha output"
+
+
+@pytest.mark.asyncio
+async def test_identical_concurrent_tool_calls_from_sibling_subagents_disambiguated(memory_logger):
+    """When two sibling subagents invoke the same tool with the same args,
+    each handler must acquire the tool span belonging to its own subagent
+    (matched by FIFO dispatch order) rather than stealing the other's span.
+    """
+    assert not memory_logger.pop()
+
+    wrapped_tool_class = _create_tool_wrapper_class(_make_fake_sdk_mcp_tool_class())
+
+    async def echo_handler(args):
+        nested = start_span(name=f"nested_{args['_tag']}")
+        nested.log(input=args)
+        nested.end()
+        return {"content": [{"type": "text", "text": args["_tag"]}]}
+
+    echo_tool = wrapped_tool_class(
+        name="echo",
+        description="Echo a message",
+        input_schema={"type": "object"},
+        handler=echo_handler,
+    )
+
+    tracker = ToolSpanTracker()
+    shared_input = {"message": "hello", "_tag": "alpha"}
+
+    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
+        # Subagent alpha's LLM span and tool span
+        alpha_llm = start_span(
+            name="anthropic.messages.create",
+            type=SpanTypeAttribute.LLM,
+            parent=task_span.export(),
+        )
+        tracker.start_tool_spans(
+            AssistantMessage(
+                content=[ToolUseBlock(id="echo-alpha", name="echo", input=shared_input)],
+                parent_tool_use_id="call-alpha",
+            ),
+            alpha_llm.export(),
+        )
+
+        # Subagent beta's LLM span and tool span — same tool, same input
+        beta_llm = start_span(
+            name="anthropic.messages.create",
+            type=SpanTypeAttribute.LLM,
+            parent=task_span.export(),
+        )
+        tracker.start_tool_spans(
+            AssistantMessage(
+                content=[ToolUseBlock(id="echo-beta", name="echo", input=shared_input)],
+                parent_tool_use_id="call-beta",
+            ),
+            beta_llm.export(),
+        )
+
+        _thread_local.tool_span_tracker = tracker
+        try:
+            # Handler for alpha fires first (FIFO order matches creation order)
+            await echo_tool.handler(shared_input)
+            # Handler for beta fires second
+            await echo_tool.handler(shared_input)
+
+            tracker.finish_tool_spans(
+                UserMessage(
+                    content=[ToolResultBlock(tool_use_id="echo-alpha", content=[TextBlock("alpha")])],
+                    parent_tool_use_id="call-alpha",
+                )
+            )
+            tracker.finish_tool_spans(
+                UserMessage(
+                    content=[ToolResultBlock(tool_use_id="echo-beta", content=[TextBlock("beta")])],
+                    parent_tool_use_id="call-beta",
+                )
+            )
+        finally:
+            _clear_tool_span_tracker()
+            tracker.cleanup()
+            alpha_llm.end()
+            beta_llm.end()
+
+    spans = memory_logger.pop()
+    echo_spans = [
+        s for s in _find_spans_by_type(spans, SpanTypeAttribute.TOOL) if s["span_attributes"]["name"] == "echo"
+    ]
+    assert len(echo_spans) == 2, f"Expected 2 echo tool spans, got {len(echo_spans)}"
+
+    # Identify which span belongs to alpha's and beta's tool call
+    alpha_echo = [s for s in echo_spans if s.get("metadata", {}).get("gen_ai.tool.call.id") == "echo-alpha"]
+    beta_echo = [s for s in echo_spans if s.get("metadata", {}).get("gen_ai.tool.call.id") == "echo-beta"]
+    assert len(alpha_echo) == 1, "Should have exactly one alpha echo span"
+    assert len(beta_echo) == 1, "Should have exactly one beta echo span"
+
+    # Both handlers receive the same input with _tag="alpha", so both nested
+    # spans are named "nested_alpha".  Find both by filtering.
+    nested_spans = [s for s in spans if s["span_attributes"]["name"] == "nested_alpha"]
+    assert len(nested_spans) == 2, f"Expected 2 nested spans, got {len(nested_spans)}"
+
+    # The first handler invocation should nest under the first span (alpha),
+    # and the second under the second span (beta).
+    first_nested = nested_spans[0]
+    assert alpha_echo[0]["span_id"] in first_nested["span_parents"], (
+        "First handler's nested span should be parented under alpha's echo tool span, not swapped with beta's."
+    )
+    second_nested = nested_spans[1]
+    assert beta_echo[0]["span_id"] in second_nested["span_parents"], (
+        "Second handler's nested span should be parented under beta's echo tool span, not swapped with alpha's."
+    )
+
+
+def test_dispatch_queue_assigns_identical_tool_spans_in_fifo_order(memory_logger):
+    """ToolSpanTracker.acquire_span_for_handler() should use the dispatch queue
+    to assign identical (same name + same input) tool spans in FIFO order,
+    preventing span swaps between sibling subagents.
+    """
+    assert not memory_logger.pop()
+
+    tracker = ToolSpanTracker()
+    shared_input = {"cmd": "echo hi"}
+
+    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
+        llm_alpha = start_span(
+            name="anthropic.messages.create",
+            type=SpanTypeAttribute.LLM,
+            parent=task_span.export(),
+        )
+        tracker.start_tool_spans(
+            AssistantMessage(
+                content=[ToolUseBlock(id="bash-A", name="Bash", input=shared_input)],
+                parent_tool_use_id="call-alpha",
+            ),
+            llm_alpha.export(),
+        )
+
+        llm_beta = start_span(
+            name="anthropic.messages.create",
+            type=SpanTypeAttribute.LLM,
+            parent=task_span.export(),
+        )
+        tracker.start_tool_spans(
+            AssistantMessage(
+                content=[ToolUseBlock(id="bash-B", name="Bash", input=shared_input)],
+                parent_tool_use_id="call-beta",
+            ),
+            llm_beta.export(),
+        )
+
+        # First acquire should return alpha's span (FIFO)
+        first = tracker.acquire_span_for_handler("Bash", shared_input)
+        assert first is not None
+        assert first.tool_use_id == "bash-A", (
+            f"First acquire should return alpha's span (bash-A), got {first.tool_use_id}"
+        )
+
+        # Second acquire should return beta's span
+        second = tracker.acquire_span_for_handler("Bash", shared_input)
+        assert second is not None
+        assert second.tool_use_id == "bash-B", (
+            f"Second acquire should return beta's span (bash-B), got {second.tool_use_id}"
+        )
+
+        # Cleanup
+        first.release()
+        second.release()
+        tracker.cleanup()
+        llm_alpha.end()
+        llm_beta.end()
+
+    memory_logger.pop()  # consume spans
