@@ -25,9 +25,17 @@ def _to_bt_safe(v: Any) -> Any:
     if v is None or v is True or v is False:
         return v
     tv = type(v)
-    if tv is int or tv is str:
+    if tv is int or tv is str or tv is float:
+        if tv is float:
+            if math.isnan(v):
+                return "NaN"
+            if math.isinf(v):
+                return "Infinity" if v > 0 else "-Infinity"
         return v
-    if tv is float:
+    # Also catch str/int subclasses (e.g. str-enums like SpanTypeAttribute)
+    if isinstance(v, (int, str, bool)):
+        return v
+    if isinstance(v, float):
         if math.isnan(v):
             return "NaN"
         if math.isinf(v):
@@ -139,9 +147,17 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
         if v is None or v is True or v is False:
             return v
         tv = type(v)
-        if tv is int or tv is str:
+        if tv is int or tv is str or tv is float:
+            if tv is float:
+                if math.isnan(v):
+                    return "NaN"
+                if math.isinf(v):
+                    return "Infinity" if v > 0 else "-Infinity"
             return v
-        if tv is float:
+        # Also catch str/int subclasses (e.g. str-enums)
+        if isinstance(v, (int, str, bool)):
+            return v
+        if isinstance(v, float):
             if math.isnan(v):
                 return "NaN"
             if math.isinf(v):
