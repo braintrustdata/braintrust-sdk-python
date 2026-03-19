@@ -746,6 +746,271 @@ def _message_starts_subagent_tool(message: Any) -> bool:
     return False
 
 
+@dataclasses.dataclass
+class _AgentContext:
+    """Per-subagent-context state, keyed by parent_tool_use_id (None = orchestrator)."""
+
+    llm_span: Any | None = None
+    llm_output: list[dict[str, Any]] | None = None
+    next_llm_start: float | None = None
+    task_span: Any | None = None
+    task_confirmed: bool = False
+
+
+class ContextTracker:
+    """Single consumer of the raw SDK message stream.
+
+    Replaces LLMSpanTracker + TaskEventSpanTracker with unified per-subagent
+    context tracking.  Owns a private ToolSpanTracker instance.
+    """
+
+    def __init__(
+        self,
+        root_span: Any,
+        prompt: Any,
+        query_start_time: float | None = None,
+    ) -> None:
+        self._root_span = root_span
+        self._root_span_export = root_span.export()
+        self._prompt = prompt
+
+        self._tool_tracker = ToolSpanTracker()
+        self._contexts: dict[str | None, _AgentContext] = {None: _AgentContext(next_llm_start=query_start_time)}
+        self._active_key: str | None = None
+        self._task_order: list[str | None] = []
+
+        self._final_results: list[dict[str, Any]] = []
+        self._task_events: list[dict[str, Any]] = []
+
+        _thread_local.tool_span_tracker = self._tool_tracker
+
+    # -- public API --
+
+    def add(self, message: Any) -> None:
+        """Consume one SDK message and update spans accordingly."""
+        message_type = type(message).__name__
+        if message_type == MessageClassName.ASSISTANT:
+            self._handle_assistant(message)
+        elif message_type == MessageClassName.USER:
+            self._handle_user(message)
+        elif message_type == MessageClassName.RESULT:
+            self._handle_result(message)
+        elif message_type in SYSTEM_MESSAGE_TYPES:
+            self._handle_system(message)
+
+    def log_output(self) -> None:
+        """Log the last accumulated assistant message as the root span output."""
+        if self._final_results:
+            self._root_span.log(output=self._final_results[-1])
+
+    def log_tasks(self) -> None:
+        """Flush accumulated task events to the root span metadata."""
+        if self._task_events:
+            self._root_span.log(metadata={"task_events": self._task_events})
+
+    def cleanup(self) -> None:
+        """End all open LLM spans, TASK spans, and TOOL spans; clear thread-local."""
+        for ctx in self._contexts.values():
+            if ctx.llm_span:
+                ctx.llm_span.end()
+                ctx.llm_span = None
+            if ctx.task_span:
+                ctx.task_span.end()
+                ctx.task_span = None
+        self._task_order.clear()
+        self._tool_tracker.cleanup_all()
+        if hasattr(_thread_local, "tool_span_tracker"):
+            delattr(_thread_local, "tool_span_tracker")
+
+    # -- internal handlers --
+
+    def _handle_assistant(self, message: Any) -> None:
+        incoming_parent = getattr(message, "parent_tool_use_id", None)
+        self._active_key = incoming_parent
+        ctx = self._get_context(incoming_parent)
+
+        # Close dangling tool spans from the previous turn in this context.
+        if ctx.llm_span and self._tool_tracker.has_active_spans:
+            self._tool_tracker.cleanup_context(
+                incoming_parent,
+                end_time=ctx.next_llm_start or time.time(),
+                exclude_ids=self._live_agent_tool_use_ids(),
+            )
+
+        parent_export = self._llm_parent_for_message(message)
+        final_content, extended = self._start_or_merge_llm_span(message, parent_export, ctx)
+
+        llm_export = ctx.llm_span.export() if ctx.llm_span else None
+        self._tool_tracker.start_tool_spans(message, llm_export)
+
+        self._register_pending_agent_contexts(message)
+
+        if final_content:
+            if extended and self._final_results and self._final_results[-1].get("role") == "assistant":
+                self._final_results[-1] = final_content
+            else:
+                self._final_results.append(final_content)
+
+    def _handle_user(self, message: Any) -> None:
+        self._tool_tracker.finish_tool_spans(message)
+        has_tool_results = False
+        if hasattr(message, "content"):
+            has_tool_results = any(type(b).__name__ == BlockClassName.TOOL_RESULT for b in message.content)
+            content = _serialize_content_blocks(message.content)
+            self._final_results.append({"content": content, "role": "user"})
+        if has_tool_results:
+            user_parent = getattr(message, "parent_tool_use_id", None)
+            resolved_key = user_parent if user_parent is not None else self._active_key
+            self._get_context(resolved_key).next_llm_start = time.time()
+
+    def _handle_result(self, message: Any) -> None:
+        self._active_key = None
+        if hasattr(message, "usage"):
+            usage_metrics = _extract_usage_from_result_message(message)
+            ctx = self._get_context(None)
+            if ctx.llm_span and usage_metrics:
+                ctx.llm_span.log(metrics=usage_metrics)
+        result_metadata = {
+            k: v
+            for k, v in {
+                "num_turns": getattr(message, "num_turns", None),
+                "session_id": getattr(message, "session_id", None),
+            }.items()
+            if v is not None
+        }
+        if result_metadata:
+            self._root_span.log(metadata=result_metadata)
+
+    def _handle_system(self, message: Any) -> None:
+        agent_span_export = self._tool_tracker.get_span_export(getattr(message, "tool_use_id", None))
+        self._process_task_event(message, agent_span_export)
+        self._task_events.append(_serialize_system_message(message))
+
+    # -- internal helpers --
+
+    def _get_context(self, key: str | None) -> _AgentContext:
+        ctx = self._contexts.get(key)
+        if ctx is None:
+            ctx = _AgentContext()
+            self._contexts[key] = ctx
+        return ctx
+
+    def _register_pending_agent_contexts(self, message: Any) -> None:
+        """Pre-create _AgentContext for Agent tool calls (task_confirmed=False)."""
+        if not hasattr(message, "content"):
+            return
+        for block in message.content:
+            if type(block).__name__ == BlockClassName.TOOL_USE and getattr(block, "name", None) == "Agent":
+                tool_use_id = getattr(block, "id", None)
+                if tool_use_id:
+                    self._get_context(str(tool_use_id))
+
+    def _live_agent_tool_use_ids(self) -> frozenset[str]:
+        """Return tool_use_ids of Agent spans that must not be closed yet."""
+        result: set[str] = set()
+        for key, ctx in self._contexts.items():
+            if key is None:
+                continue
+            if not ctx.task_confirmed or ctx.task_span is not None:
+                result.add(key)
+        return frozenset(result)
+
+    def _llm_parent_for_message(self, message: Any) -> str:
+        """Determine the parent span export for an incoming AssistantMessage."""
+        parent_tool_use_id = getattr(message, "parent_tool_use_id", None)
+        if parent_tool_use_id is not None:
+            ctx = self._contexts.get(str(parent_tool_use_id))
+            if ctx is not None and ctx.task_span is not None:
+                return ctx.task_span.export()
+
+        if _message_starts_subagent_tool(message):
+            return self._root_span_export
+
+        for key in reversed(self._task_order):
+            ctx = self._contexts.get(key)
+            if ctx is not None and ctx.task_span is not None:
+                return ctx.task_span.export()
+
+        return self._root_span_export
+
+    def _start_or_merge_llm_span(
+        self,
+        message: Any,
+        parent_export: str | None,
+        ctx: _AgentContext,
+    ) -> tuple[dict[str, Any] | None, bool]:
+        """Start a new LLM span or extend the existing one via merge."""
+        current_message = _serialize_assistant_message(message)
+
+        # Merge path.
+        if ctx.llm_span and ctx.next_llm_start is None and current_message is not None:
+            merged = _merge_assistant_messages(
+                ctx.llm_output[0] if ctx.llm_output else None,
+                current_message,
+            )
+            if merged is not None:
+                ctx.llm_output = [merged]
+                ctx.llm_span.log(output=ctx.llm_output)
+            return merged, True
+
+        # New span path.
+        resolved_start = ctx.next_llm_start or time.time()
+        first_token_time = time.time()
+
+        if ctx.llm_span:
+            ctx.llm_span.end(end_time=resolved_start)
+
+        final_content, span = _create_llm_span_for_messages(
+            [message],
+            self._prompt,
+            self._final_results,
+            parent=parent_export,
+            start_time=resolved_start,
+        )
+        if span is not None:
+            span.log(metrics={"time_to_first_token": max(0.0, first_token_time - resolved_start)})
+        ctx.llm_span = span
+        ctx.llm_output = [final_content] if final_content is not None else None
+        ctx.next_llm_start = None
+        return final_content, False
+
+    def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:
+        """Handle TaskStarted / TaskProgress / TaskNotification system messages."""
+        task_id = getattr(message, "task_id", None)
+        if task_id is None:
+            return
+        task_id = str(task_id)
+        tool_use_id = getattr(message, "tool_use_id", None)
+        tool_use_id_str = str(tool_use_id) if tool_use_id is not None else None
+        ctx = self._get_context(tool_use_id_str)
+        message_type = type(message).__name__
+
+        if ctx.task_span is None:
+            ctx.task_span = start_span(
+                name=_task_span_name(message, task_id),
+                span_attributes={"type": SpanTypeAttribute.TASK},
+                metadata=_task_metadata(message),
+                parent=agent_span_export or self._root_span_export,
+            )
+            ctx.task_confirmed = True
+            self._task_order.append(tool_use_id_str)
+        else:
+            update: dict[str, Any] = {}
+            metadata = _task_metadata(message)
+            if metadata:
+                update["metadata"] = metadata
+            output = _task_output(message)
+            if output is not None:
+                update["output"] = output
+            if update:
+                ctx.task_span.log(**update)
+
+        if message_type == MessageClassName.TASK_NOTIFICATION:
+            ctx.task_span.end()
+            ctx.task_span = None
+            self._task_order = [k for k in self._task_order if k != tool_use_id_str]
+
+
 def _create_client_wrapper_class(original_client_class: Any) -> Any:
     """Creates a wrapper class for ClaudeSDKClient that wraps query and receive_response."""
 
