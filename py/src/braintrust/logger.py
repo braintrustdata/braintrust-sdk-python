@@ -4192,7 +4192,7 @@ class SpanImpl(Span):
         if self.propagated_event:
             merge_dicts(event, self.propagated_event)
 
-        caller_location = get_caller_location()
+        caller_location = get_caller_location() if name is None else None
         if name is None:
             if not parent_span_ids:
                 name = "root"
@@ -4300,7 +4300,13 @@ class SpanImpl(Span):
             **{IS_MERGE_FIELD: self._is_merge},
         )
 
-        serializable_partial_record = bt_safe_deep_copy(partial_record)
+        # Only deep copy when user event data is present. Internal-only data
+        # (metrics, span_attributes, created, context) contains only primitives
+        # and doesn't reference user objects, so deep copy is unnecessary.
+        if event:
+            serializable_partial_record = bt_safe_deep_copy(partial_record)
+        else:
+            serializable_partial_record = partial_record
         if serializable_partial_record.get("metrics", {}).get("end") is not None:
             self._logged_end_time = serializable_partial_record["metrics"]["end"]
 
