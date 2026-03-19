@@ -61,7 +61,6 @@ def memory_logger():
 def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = False):
     original_client = claude_agent_sdk.ClaudeSDKClient
     original_tool_class = claude_agent_sdk.SdkMcpTool
-    original_tool_fn = claude_agent_sdk.tool
 
     if wrap_client:
         claude_agent_sdk.ClaudeSDKClient = _create_client_wrapper_class(original_client)
@@ -73,7 +72,6 @@ def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = Fa
     finally:
         claude_agent_sdk.ClaudeSDKClient = original_client
         claude_agent_sdk.SdkMcpTool = original_tool_class
-        claude_agent_sdk.tool = original_tool_fn
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
@@ -1810,14 +1808,12 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
     assert not memory_logger.pop()
     original_client = claude_agent_sdk.ClaudeSDKClient
     original_tool_class = claude_agent_sdk.SdkMcpTool
-    original_tool_fn = claude_agent_sdk.tool
 
     consumer_module_name = "test_issue7_repro_module"
     consumer_module = types.ModuleType(consumer_module_name)
     consumer_module.ClaudeSDKClient = original_client
     consumer_module.ClaudeAgentOptions = claude_agent_sdk.ClaudeAgentOptions
     consumer_module.SdkMcpTool = original_tool_class
-    consumer_module.tool = original_tool_fn
     monkeypatch.setitem(sys.modules, consumer_module_name, consumer_module)
 
     loop_errors = []
@@ -1827,9 +1823,7 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
         assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
         assert getattr(consumer_module, "ClaudeSDKClient") is not original_client
         assert getattr(consumer_module, "SdkMcpTool") is not original_tool_class
-        assert getattr(consumer_module, "tool") is not original_tool_fn
         assert claude_agent_sdk.SdkMcpTool is not original_tool_class
-        assert claude_agent_sdk.tool is not original_tool_fn
 
         async def main() -> None:
             loop = asyncio.get_running_loop()

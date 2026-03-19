@@ -195,26 +195,6 @@ def _create_tool_wrapper_class(original_tool_class: Any) -> Any:
     return WrappedSdkMcpTool
 
 
-def _wrap_tool_factory(tool_fn: Any) -> Any:
-    """Wrap the tool() factory so decorated handlers inherit the active TOOL span."""
-
-    def wrapped_tool(*args: Any, **kwargs: Any) -> Any:
-        result = tool_fn(*args, **kwargs)
-        if not callable(result):
-            return result
-
-        def wrapped_decorator(handler_fn: Any) -> Any:
-            tool_def = result(handler_fn)
-            if tool_def and hasattr(tool_def, "handler"):
-                tool_name = getattr(tool_def, "name", DEFAULT_TOOL_NAME)
-                tool_def.handler = _wrap_tool_handler(tool_def.handler, tool_name)
-            return tool_def
-
-        return wrapped_decorator
-
-    return wrapped_tool
-
-
 def _wrap_tool_handler(handler: Any, tool_name: Any) -> Any:
     """Wrap a tool handler so nested spans execute under the stream-based TOOL span."""
     if hasattr(handler, "_braintrust_wrapped"):

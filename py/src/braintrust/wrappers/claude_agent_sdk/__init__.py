@@ -19,7 +19,7 @@ import logging
 
 from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
-from ._wrapper import _create_client_wrapper_class, _create_tool_wrapper_class, _wrap_tool_factory
+from ._wrapper import _create_client_wrapper_class, _create_tool_wrapper_class
 
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,6 @@ def setup_claude_agent_sdk(
 
         original_client = claude_agent_sdk.ClaudeSDKClient if hasattr(claude_agent_sdk, "ClaudeSDKClient") else None
         original_tool_class = claude_agent_sdk.SdkMcpTool if hasattr(claude_agent_sdk, "SdkMcpTool") else None
-        original_tool_fn = claude_agent_sdk.tool if hasattr(claude_agent_sdk, "tool") else None
 
         if original_client:
             wrapped_client = _create_client_wrapper_class(original_client)
@@ -88,15 +87,6 @@ def setup_claude_agent_sdk(
                 if module and hasattr(module, "SdkMcpTool"):
                     if getattr(module, "SdkMcpTool", None) is original_tool_class:
                         setattr(module, "SdkMcpTool", wrapped_tool_class)
-
-        if original_tool_fn:
-            wrapped_tool_fn = _wrap_tool_factory(original_tool_fn)
-            claude_agent_sdk.tool = wrapped_tool_fn
-
-            for module in list(sys.modules.values()):
-                if module and hasattr(module, "tool"):
-                    if getattr(module, "tool", None) is original_tool_fn:
-                        setattr(module, "tool", wrapped_tool_fn)
 
         return True
     except ImportError:
