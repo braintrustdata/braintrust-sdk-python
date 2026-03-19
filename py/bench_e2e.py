@@ -11,14 +11,15 @@ import pstats
 import sys
 import time
 
+
 os.environ["BRAINTRUST_DISABLE_ATEXIT_FLUSH"] = "true"
 sys.path.insert(0, "src")
 
 from braintrust.logger import (
     BraintrustState,
     SpanImpl,
-    _MemoryBackgroundLogger,
     SpanObjectTypeV3,
+    _MemoryBackgroundLogger,
     stringify_with_overflow_meta,
 )
 from braintrust.merge_row_batch import merge_row_batch
@@ -62,9 +63,7 @@ def run_workload(state, ml, pid, num_requests):
         )
         child.log(
             output={
-                "choices": [
-                    {"message": {"role": "assistant", "content": f"The answer is {i * 2}."}}
-                ],
+                "choices": [{"message": {"role": "assistant", "content": f"The answer is {i * 2}."}}],
                 "usage": {"prompt_tokens": 50, "completion_tokens": 20, "total_tokens": 70},
             },
             metrics={"latency": 0.234, "tokens_per_second": 85.5},
