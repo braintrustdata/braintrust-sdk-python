@@ -18,6 +18,7 @@ install_requires = [
     "chevron",
     "tqdm",
     "exceptiongroup>=1.2.0",
+    "jsonschema",
     "python-dotenv",
     "sseclient-py",
     "python-slugify",

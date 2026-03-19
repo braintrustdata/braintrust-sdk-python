@@ -8,6 +8,9 @@ from braintrust.framework import _evals
 from braintrust.test_helpers import has_devserver_installed
 
 
+HAS_PYDANTIC = __import__("importlib.util").util.find_spec("pydantic") is not None
+
+
 @pytest.fixture
 def client():
     """Create test client using the real simple_eval.py example."""
@@ -205,3 +208,67 @@ def test_eval_error_handling(client, api_key, org_name):
     error = response.json()
     assert "error" in error
     assert "not found" in error["error"].lower()
+
+
+@pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
+def test_eval_uses_inline_request_parameters(api_key, org_name, monkeypatch):
+    from braintrust import Evaluator
+    from braintrust.devserver import server as devserver_module
+    from braintrust.devserver.server import create_app
+    from braintrust.logger import BraintrustState
+    from pydantic import BaseModel
+    from starlette.testclient import TestClient
+
+    class RequiredInt(BaseModel):
+        value: int
+
+    def task(input: str, hooks) -> dict[str, Any]:
+        return {"input": input, "num_samples": hooks.parameters["num_samples_without_default"]}
+
+    evaluator = Evaluator(
+        project_name="test-math-eval",
+        eval_name="inline-parameter-eval",
+        data=lambda: [{"input": "What is 2+2?", "expected": "4"}],
+        task=task,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        parameters={"num_samples_without_default": RequiredInt},
+    )
+
+    async def fake_cached_login(**_kwargs):
+        return BraintrustState()
+
+    class FakeSummary:
+        def as_dict(self):
+            return {"experiment_name": "inline-parameter-eval", "project_name": "test-math-eval", "scores": {}}
+
+    class FakeResult:
+        summary = FakeSummary()
+
+    async def fake_eval_async(*, task, data, parameters, **_kwargs):
+        assert parameters == {"num_samples_without_default": 1}
+        datum = data[0]
+        hooks = type("Hooks", (), {"parameters": parameters, "report_progress": lambda self, _progress: None})()
+        await task(datum["input"], hooks)
+        return FakeResult()
+
+    monkeypatch.setattr(devserver_module, "cached_login", fake_cached_login)
+    monkeypatch.setattr(devserver_module, "EvalAsync", fake_eval_async)
+
+    response = TestClient(create_app([evaluator])).post(
+        "/eval",
+        headers={
+            "x-bt-auth-token": api_key,
+            "x-bt-org-name": org_name,
+            "Content-Type": "application/json",
+        },
+        json={
+            "name": "inline-parameter-eval",
+            "stream": False,
+            "parameters": {"num_samples_without_default": 1},
+            "data": [{"input": "What is 2+2?", "expected": "4"}],
+        },
+    )
+
+    assert response.status_code == 200

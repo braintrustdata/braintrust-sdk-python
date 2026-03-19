@@ -25,10 +25,22 @@ except ModuleNotFoundError as e:
         )
     )
 
-from ..framework import EvalAsync, EvalScorer, Evaluator, ExperimentSummary, SSEProgressEvent
+from ..framework import (
+    EvalAsync,
+    EvalHooks,
+    EvalScorer,
+    Evaluator,
+    ExperimentSummary,
+    SSEProgressEvent,
+)
 from ..generated_types import FunctionId
 from ..logger import BraintrustState, bt_iscoroutinefunction
-from ..parameters import parameters_to_json_schema, validate_parameters
+from ..parameters import (
+    RemoteEvalParameters,
+    ValidatedParameters,
+    serialize_remote_eval_parameters_container,
+    validate_parameters,
+)
 from ..span_identifier_v4 import parse_parent
 from .auth import AuthorizationMiddleware
 from .cache import cached_login
@@ -39,6 +51,19 @@ from .schemas import ValidationError, parse_eval_body
 
 
 _all_evaluators: dict[str, Evaluator[Any, Any]] = {}
+
+
+class _ParameterOverrideHooks:
+    def __init__(self, hooks: EvalHooks[Any], parameters: ValidatedParameters):
+        self._hooks = hooks
+        self._parameters = parameters
+
+    @property
+    def parameters(self) -> ValidatedParameters:
+        return self._parameters
+
+    def __getattr__(self, name: str):
+        return getattr(self._hooks, name)
 
 
 class CheckAuthorizedMiddleware(BaseHTTPMiddleware):
@@ -95,7 +120,9 @@ async def list_evaluators(request: Request) -> JSONResponse:
     evaluator_list = {}
     for name, evaluator in _all_evaluators.items():
         evaluator_list[name] = {
-            "parameters": parameters_to_json_schema(evaluator.parameters) if evaluator.parameters else {},
+            "parameters": (
+                serialize_remote_eval_parameters_container(evaluator.parameters) if evaluator.parameters else None
+            ),
             "scores": [{"name": getattr(score, "name", f"score_{i}")} for i, score in enumerate(evaluator.scores)],
         }
 
@@ -154,12 +181,13 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     # Set up SSE headers for streaming
     sse_queue = SSEQueue()
 
-    async def task(input, hooks):
+    async def task(input: Any, hooks: EvalHooks[Any]):
+        task_hooks = hooks if validated_parameters is None else _ParameterOverrideHooks(hooks, validated_parameters)
         if bt_iscoroutinefunction(evaluator.task):
-            result = await evaluator.task(input, hooks)
+            result = await evaluator.task(input, task_hooks)
         else:
-            result = evaluator.task(input, hooks)
-        hooks.report_progress(
+            result = evaluator.task(input, task_hooks)
+        task_hooks.report_progress(
             {
                 "format": "code",
                 "output_type": "completion",
@@ -186,9 +214,10 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     if parent:
         parent = parse_parent(parent)
 
-    # Override evaluator parameters with validated ones if provided
-    eval_kwargs = {k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name"]}
-    if validated_parameters is not None:
+    eval_kwargs = {
+        k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name", "parameter_values"]
+    }
+    if validated_parameters is not None and not isinstance(evaluator.parameters, RemoteEvalParameters):
         eval_kwargs["parameters"] = validated_parameters
 
     try:
@@ -289,7 +318,10 @@ def create_app(evaluators: list[Evaluator[Any, Any]], org_name: str | None = Non
 
 
 def run_dev_server(
-    evaluators: list[Evaluator[Any, Any]], host: str = "localhost", port: int = 8300, org_name: str | None = None
+    evaluators: list[Evaluator[Any, Any]],
+    host: str = "localhost",
+    port: int = 8300,
+    org_name: str | None = None,
 ):
     """Start the dev server.
 

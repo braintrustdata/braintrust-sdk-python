@@ -24,6 +24,7 @@ from braintrust import (
 )
 from braintrust.id_gen import OTELIDGenerator, get_id_generator
 from braintrust.logger import (
+    RemoteEvalParameters,
     _extract_attachments,
     parent_context,
     render_message,
@@ -159,8 +160,229 @@ class TestInit(TestCase):
                 _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
                 mock_register.assert_not_called()
 
+    def test_init_with_saved_parameters_attaches_reference(self):
+        mock_conn = MagicMock()
+        mock_conn.post_json.return_value = {
+            "project": {"id": "test-project-id", "name": "test-project"},
+            "experiment": {"id": "test-exp-id", "name": "test-exp"},
+        }
+
+        parameters = RemoteEvalParameters(
+            id="params-123",
+            project_id="project-123",
+            name="Saved parameters",
+            slug="saved-parameters",
+            version="v1",
+            schema={},
+            data={},
+        )
+
+        simulate_login()
+        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+            exp = braintrust.init(project="test-project", parameters=parameters)
+            exp._lazy_metadata.get()
+
+        _, payload = mock_conn.post_json.call_args.args
+        assert payload["parameters_id"] == "params-123"
+        assert payload["parameters_version"] == "v1"
+
 
 class TestLogger(TestCase):
+    def test_load_prompt_prefers_version_over_environment_for_project_slug(self):
+        mock_api_conn = MagicMock()
+        mock_api_conn.get_json.return_value = {
+            "objects": [
+                {
+                    "id": "prompt-123",
+                    "project_id": "project-123",
+                    "name": "Saved prompt",
+                    "slug": "saved-prompt",
+                    "_xact_id": "v1",
+                    "description": None,
+                    "tags": None,
+                    "prompt_data": {
+                        "prompt": {
+                            "type": "chat",
+                            "messages": [{"role": "user", "content": "Hello"}],
+                        },
+                        "options": {"model": "gpt-5-mini"},
+                    },
+                }
+            ]
+        }
+
+        simulate_login()
+        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+            prompt = braintrust.load_prompt(
+                project="test-project",
+                slug="saved-prompt",
+                version="v1",
+                environment="production",
+            )
+            assert prompt.slug == "saved-prompt"
+
+        mock_api_conn.get_json.assert_called_once_with(
+            "/v1/prompt",
+            {
+                "project_name": "test-project",
+                "slug": "saved-prompt",
+                "version": "v1",
+            },
+        )
+
+    def test_load_prompt_prefers_version_over_environment_for_id(self):
+        mock_api_conn = MagicMock()
+        mock_api_conn.get_json.return_value = {
+            "id": "prompt-123",
+            "project_id": "project-123",
+            "name": "Saved prompt",
+            "slug": "saved-prompt",
+            "_xact_id": "v1",
+            "description": None,
+            "tags": None,
+            "prompt_data": {
+                "prompt": {
+                    "type": "chat",
+                    "messages": [{"role": "user", "content": "Hello"}],
+                },
+                "options": {"model": "gpt-5-mini"},
+            },
+        }
+
+        simulate_login()
+        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+            prompt = braintrust.load_prompt(
+                id="prompt-123",
+                version="v1",
+                environment="production",
+            )
+            assert prompt.id == "prompt-123"
+
+        mock_api_conn.get_json.assert_called_once_with(
+            "/v1/prompt/prompt-123",
+            {"version": "v1"},
+        )
+
+    def test_load_parameters_returns_remote_object(self):
+        mock_api_conn = MagicMock()
+        mock_api_conn.get_json.return_value = {
+            "objects": [
+                {
+                    "id": "params-123",
+                    "project_id": "project-123",
+                    "name": "Saved parameters",
+                    "slug": "saved-parameters",
+                    "_xact_id": "v1",
+                    "function_data": {
+                        "type": "parameters",
+                        "data": {"prefix": "hello"},
+                        "__schema": {
+                            "type": "object",
+                            "properties": {
+                                "prefix": {"type": "string", "default": "hello"},
+                            },
+                            "additionalProperties": True,
+                        },
+                    },
+                }
+            ]
+        }
+
+        simulate_login()
+        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+            parameters = braintrust.load_parameters(project="test-project", slug="saved-parameters")
+
+        assert isinstance(parameters, RemoteEvalParameters)
+        assert parameters.id == "params-123"
+        assert parameters.version == "v1"
+        assert parameters.data == {"prefix": "hello"}
+        assert (
+            logger._state._parameters_cache.get(
+                slug="saved-parameters",
+                version="latest",
+                project_name="test-project",
+            ).id
+            == "params-123"
+        )
+
+    def test_load_parameters_prefers_version_over_environment_for_project_slug(self):
+        mock_api_conn = MagicMock()
+        mock_api_conn.get_json.return_value = {
+            "objects": [
+                {
+                    "id": "params-123",
+                    "project_id": "project-123",
+                    "name": "Saved parameters",
+                    "slug": "saved-parameters",
+                    "_xact_id": "v1",
+                    "function_data": {
+                        "type": "parameters",
+                        "data": {"prefix": "hello"},
+                        "__schema": {
+                            "type": "object",
+                            "properties": {
+                                "prefix": {"type": "string", "default": "hello"},
+                            },
+                            "additionalProperties": True,
+                        },
+                    },
+                }
+            ]
+        }
+
+        simulate_login()
+        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+            parameters = braintrust.load_parameters(
+                project="test-project",
+                slug="saved-parameters",
+                version="v1",
+                environment="production",
+            )
+
+        assert parameters.version == "v1"
+        mock_api_conn.get_json.assert_called_once()
+        assert mock_api_conn.get_json.call_args.args[0] == "/v1/function"
+        assert mock_api_conn.get_json.call_args.args[1]["project_name"] == "test-project"
+        assert mock_api_conn.get_json.call_args.args[1]["slug"] == "saved-parameters"
+        assert mock_api_conn.get_json.call_args.args[1]["version"] == "v1"
+        assert mock_api_conn.get_json.call_args.args[1]["function_type"] == "parameters"
+        assert "environment" not in mock_api_conn.get_json.call_args.args[1]
+
+    def test_load_parameters_prefers_version_over_environment_for_id(self):
+        mock_api_conn = MagicMock()
+        mock_api_conn.get_json.return_value = {
+            "id": "params-123",
+            "project_id": "project-123",
+            "name": "Saved parameters",
+            "slug": "saved-parameters",
+            "_xact_id": "v1",
+            "function_data": {
+                "type": "parameters",
+                "data": {"prefix": "hello"},
+                "__schema": {
+                    "type": "object",
+                    "properties": {
+                        "prefix": {"type": "string", "default": "hello"},
+                    },
+                    "additionalProperties": True,
+                },
+            },
+        }
+
+        simulate_login()
+        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+            parameters = braintrust.load_parameters(
+                id="params-123",
+                version="v1",
+                environment="production",
+            )
+
+        assert parameters.id == "params-123"
+        mock_api_conn.get_json.assert_called_once()
+        assert mock_api_conn.get_json.call_args.args[0] == "/v1/function/params-123"
+        assert mock_api_conn.get_json.call_args.args[1]["version"] == "v1"
+        assert "environment" not in mock_api_conn.get_json.call_args.args[1]
+
     def test_extract_attachments_no_op(self):
         attachments: List[BaseAttachment] = []
 
