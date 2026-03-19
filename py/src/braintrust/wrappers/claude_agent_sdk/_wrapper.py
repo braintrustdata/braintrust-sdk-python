@@ -308,20 +308,8 @@ class ToolSpanTracker:
 
             self._end_tool_span(str(tool_use_id), tool_result_block=block)
 
-    def cleanup(
-        self,
-        end_time: float | None = None,
-        exclude_tool_use_ids: frozenset[str] | None = None,
-        only_parent_tool_use_id: Any = _UNSET_PARENT,
-    ) -> None:
-        for tool_use_id in list(self._active_spans):
-            if exclude_tool_use_ids and tool_use_id in exclude_tool_use_ids:
-                continue
-            if only_parent_tool_use_id is not _UNSET_PARENT:
-                active = self._active_spans.get(tool_use_id)
-                if active is not None and active.parent_tool_use_id != only_parent_tool_use_id:
-                    continue
-            self._end_tool_span(tool_use_id, end_time=end_time)
+    def cleanup(self, end_time: float | None = None) -> None:
+        self.cleanup_all(end_time=end_time)
 
     def cleanup_context(
         self,
@@ -851,10 +839,10 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                                     task_event_span_tracker.active_tool_use_ids
                                     | tool_tracker.pending_task_link_tool_use_ids
                                 )
-                                tool_tracker.cleanup(
+                                tool_tracker.cleanup_context(
+                                    incoming_parent,
                                     end_time=llm_tracker.get_next_start_time(),
-                                    exclude_tool_use_ids=active_subagent_tool_use_ids,
-                                    only_parent_tool_use_id=incoming_parent,
+                                    exclude_ids=active_subagent_tool_use_ids,
                                 )
                             llm_parent_export = task_event_span_tracker.parent_export_for_message(
                                 message,

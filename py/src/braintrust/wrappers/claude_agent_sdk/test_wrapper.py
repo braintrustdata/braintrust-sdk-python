@@ -2146,12 +2146,10 @@ async def test_concurrent_subagent_tool_output_not_silently_dropped(memory_logge
         assert tracker.has_active_spans, "Tool span should be active after start_tool_spans"
 
         # Cleanup triggered by beta's AssistantMessage — scoped to beta's context
-        tracker.cleanup(only_parent_tool_use_id="call-beta")
+        tracker.cleanup_context("call-beta")
 
         # Alpha's tool span should still be active
-        assert tracker.has_active_spans, (
-            "cleanup(only_parent_tool_use_id='call-beta') should not end alpha's tool span"
-        )
+        assert tracker.has_active_spans, "cleanup_context('call-beta') should not end alpha's tool span"
 
         # Alpha's ToolResultBlock arrives and should be recorded
         tracker.finish_tool_spans(
@@ -2199,7 +2197,7 @@ def test_tool_span_tracker_cleanup_preserves_cross_subagent_spans(memory_logger)
         )
 
         # Cleanup triggered by beta's AssistantMessage — scoped to beta
-        tracker.cleanup(only_parent_tool_use_id="call-beta")
+        tracker.cleanup_context("call-beta")
 
         # Alpha's span should still be active
         assert tracker.has_active_spans, "Alpha's tool span should survive beta-scoped cleanup"
