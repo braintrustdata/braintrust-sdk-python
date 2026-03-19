@@ -507,10 +507,12 @@ class ContextTracker:
         root_span: Any,
         prompt: Any,
         query_start_time: float | None = None,
+        captured_messages: list[dict[str, Any]] | None = None,
     ) -> None:
         self._root_span = root_span
         self._root_span_export = root_span.export()
         self._prompt = prompt
+        self._captured_messages = captured_messages  # logged to root span on first add()
 
         self._tool_tracker = ToolSpanTracker()
         self._contexts: dict[str | None, _AgentContext] = {None: _AgentContext(next_llm_start=query_start_time)}
@@ -526,6 +528,11 @@ class ContextTracker:
 
     def add(self, message: Any) -> None:
         """Consume one SDK message and update spans accordingly."""
+        if self._captured_messages is not None:
+            if self._captured_messages:
+                self._root_span.log(input=self._captured_messages)
+            self._captured_messages = None
+
         message_type = type(message).__name__
         if message_type == MessageClassName.ASSISTANT:
             self._handle_assistant(message)
@@ -805,30 +812,20 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             """Wrap receive_response to add tracing via ContextTracker."""
             generator = self.__client.receive_response()
 
-            # Determine the initial input - may be updated later if using async generator
-            initial_input = self.__last_prompt if self.__last_prompt else None
-
             with start_span(
                 name=CLAUDE_AGENT_TASK_SPAN_NAME,
                 span_attributes={"type": SpanTypeAttribute.TASK},
-                input=initial_input,
+                input=self.__last_prompt or None,
             ) as span:
-                input_needs_update = self.__captured_messages is not None
                 context_tracker = ContextTracker(
                     root_span=span,
                     prompt=self.__last_prompt,
                     query_start_time=self.__query_start_time,
+                    captured_messages=self.__captured_messages,
                 )
 
                 try:
                     async for message in generator:
-                        # One-shot: update root span input from async-generator prompt.
-                        if input_needs_update:
-                            captured = self.__captured_messages or []
-                            if captured:
-                                span.log(input=captured)
-                            input_needs_update = False
-
                         context_tracker.add(message)
                         yield message
                 except asyncio.CancelledError:
