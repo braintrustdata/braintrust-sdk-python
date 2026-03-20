@@ -1276,7 +1276,8 @@ async def run_evaluator(
 ) -> EvalResultWithSummary[Input, Output]:
     """Wrapper on _run_evaluator_internal that times out execution after evaluator.timeout."""
     results = await asyncio.wait_for(
-        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache), evaluator.timeout
+        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache),
+        evaluator.timeout,
     )
 
     if experiment:
@@ -1473,9 +1474,7 @@ async def _run_evaluator_internal_impl(
                 async def ensure_spans_flushed():
                     # Flush native Braintrust spans
                     if experiment:
-                        await asyncio.get_event_loop().run_in_executor(
-                            None, lambda: experiment.state.flush()
-                        )
+                        await asyncio.get_event_loop().run_in_executor(None, lambda: experiment.state.flush())
                     elif state:
                         await asyncio.get_event_loop().run_in_executor(None, lambda: state.flush())
                     else:
@@ -1672,7 +1671,9 @@ async def _run_evaluator_internal_impl(
                 tasks.append(asyncio.create_task(with_max_concurrency(run_evaluator_task(datum, trial_index))))
 
     if not tasks:
-        eprint(f"{bcolors.WARNING}Warning: no data rows found for evaluator '{evaluator.eval_name}'. The experiment will be empty.{bcolors.ENDC}")
+        eprint(
+            f"{bcolors.WARNING}Warning: no data rows found for evaluator '{evaluator.eval_name}'. The experiment will be empty.{bcolors.ENDC}"
+        )
 
     results = []
     for task in std_tqdm(tasks, desc=f"{evaluator.eval_name} (tasks)", position=position, disable=position is None):
