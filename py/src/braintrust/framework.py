@@ -1671,6 +1671,12 @@ async def _run_evaluator_internal_impl(
             for trial_index in range(evaluator.trial_count):
                 tasks.append(asyncio.create_task(with_max_concurrency(run_evaluator_task(datum, trial_index))))
 
+    if not tasks:
+        print(
+            f"Warning: no data rows found for evaluator '{evaluator.eval_name}'. The experiment will be empty.",
+            file=sys.stderr,
+        )
+
     results = []
     for task in std_tqdm(tasks, desc=f"{evaluator.eval_name} (tasks)", position=position, disable=position is None):
         results.append(await task)

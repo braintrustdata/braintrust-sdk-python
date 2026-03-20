@@ -564,3 +564,22 @@ async def test_eval_enable_cache():
     )
     state.span_cache.start.assert_called()
     state.span_cache.stop.assert_called()
+
+
+@pytest.mark.asyncio
+async def test_run_evaluator_empty_dataset_warns(capsys):
+    """Warn when run_evaluator receives an empty dataset."""
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[],
+        task=lambda input: input,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+    await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    captured = capsys.readouterr()
+    assert "Warning" in captured.err
+    assert "empty" in captured.err.lower()
