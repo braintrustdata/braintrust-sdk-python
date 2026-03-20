@@ -68,8 +68,8 @@ def _normalize_write(data: str, *, sanitize: bool = False) -> dict[str, Any]:
 
 
 async def _empty_stream():
-    return
-    yield {}  # type: ignore[unreachable]
+    for _ in ():
+        yield {}
 
 
 def _normalize_for_match(value: Any) -> Any:

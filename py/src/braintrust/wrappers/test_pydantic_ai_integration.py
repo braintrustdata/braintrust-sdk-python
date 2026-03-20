@@ -184,13 +184,11 @@ def test_agent_to_cli_sync(memory_logger, monkeypatch):
         *,
         stream,
         agent,
-        deps,
-        console,
-        code_theme,
         prog_name,
         message_history,
         model_settings=None,
         usage_limits=None,
+        **_,
     ):
         assert stream is True
         assert prog_name == "braintrust-cli"
