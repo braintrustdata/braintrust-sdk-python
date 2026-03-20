@@ -56,10 +56,10 @@ def make_fake_workflow(name: str):
             self.name = name
             self.steps = ["first-step"]
 
-        async def _aexecute(self, session_id, user_id, execution_input, workflow_run_response, run_context=None):
+        async def _aexecute(self, session_id, user_id, execution_input, workflow_run_response, _run_context=None):
             return FakeWorkflowRunResponse(input=execution_input.input, content="workflow-async")
 
-        def _execute_stream(self, session, execution_input, workflow_run_response, run_context=None):
+        def _execute_stream(self, session, execution_input, workflow_run_response, _run_context=None):
             yield FakeEvent("WorkflowStarted", content=None)
             yield FakeEvent("StepStarted", content=None)
             yield FakeEvent("StepCompleted", content="hello ")
@@ -74,7 +74,7 @@ def make_fake_duplicate_content_workflow(name: str):
             self.name = name
             self.steps = ["first-step"]
 
-        def _execute_stream(self, session, execution_input, workflow_run_response, run_context=None):
+        def _execute_stream(self, session, execution_input, workflow_run_response, _run_context=None):
             yield FakeEvent("StepCompleted", content="hello")
             yield FakeEvent("WorkflowCompleted", content="hello", metrics=FakeMetrics(), status="COMPLETED")
 
@@ -87,7 +87,7 @@ def make_fake_streaming_workflow_with_mutated_run_response(name: str):
             self.name = name
             self.steps = ["first-step"]
 
-        def _execute_stream(self, session, execution_input, workflow_run_response, run_context=None):
+        def _execute_stream(self, session, execution_input, workflow_run_response, _run_context=None):
             yield FakeEvent("WorkflowStarted", content=None)
             yield FakeEvent("StepCompleted", content="hello ")
             workflow_run_response.content = "world"
@@ -115,7 +115,7 @@ def make_fake_workflow_with_async_agent(name: str, agent_name: str):
             self.steps = ["agent-step"]
             self.agent = WrappedAgent()
 
-        async def _aexecute(self, session_id, user_id, execution_input, workflow_run_response, run_context=None):
+        async def _aexecute(self, session_id, user_id, execution_input, workflow_run_response, _run_context=None):
             return await self.agent.arun(execution_input.input)
 
     return FakeWorkflow
@@ -128,7 +128,7 @@ def make_fake_workflow_agent_path(name: str):
             self.id = "workflow-agent-123"
             self.steps = ["agent-step"]
 
-        def _execute_workflow_agent(self, user_input, session, execution_input, run_context, stream=False, **kwargs):
+        def _execute_workflow_agent(self, user_input, session, execution_input, _run_context, stream=False, **kwargs):
             if stream:
 
                 def _stream():
@@ -143,7 +143,7 @@ def make_fake_workflow_agent_path(name: str):
                 return _stream()
             return FakeRunOutput(f"{user_input}-sync")
 
-        async def _aexecute_workflow_agent(self, user_input, run_context, execution_input, stream=False, **kwargs):
+        async def _aexecute_workflow_agent(self, user_input, _run_context, execution_input, stream=False, **kwargs):
             if stream:
 
                 async def _astream():
