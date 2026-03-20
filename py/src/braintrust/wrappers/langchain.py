@@ -9,11 +9,11 @@ import braintrust
 _logger = logging.getLogger("braintrust.wrappers.langchain")
 
 try:
-    from langchain.callbacks.base import BaseCallbackHandler
-    from langchain.schema import Document
-    from langchain.schema.agent import AgentAction
-    from langchain.schema.messages import BaseMessage
-    from langchain.schema.output import LLMResult
+    from langchain_classic.callbacks.base import BaseCallbackHandler
+    from langchain_classic.schema import Document
+    from langchain_classic.schema.agent import AgentAction
+    from langchain_classic.schema.messages import BaseMessage
+    from langchain_classic.schema.output import LLMResult
 except ImportError:
     _logger.warning("Failed to import langchain, using stubs")
     BaseCallbackHandler = object
