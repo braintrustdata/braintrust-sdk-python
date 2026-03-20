@@ -9,18 +9,31 @@ import braintrust
 _logger = logging.getLogger("braintrust.wrappers.langchain")
 
 try:
-    from langchain.callbacks.base import BaseCallbackHandler
-    from langchain.schema import Document
-    from langchain.schema.agent import AgentAction
-    from langchain.schema.messages import BaseMessage
-    from langchain.schema.output import LLMResult
+    # Modern langchain
+    from langchain_core.callbacks.base import BaseCallbackHandler
+    from langchain_core.documents.base import Document
+    from langchain_core.messages.base import BaseMessage
+    from langchain_core.outputs.llm_result import LLMResult
 except ImportError:
-    _logger.warning("Failed to import langchain, using stubs")
-    BaseCallbackHandler = object
-    Document = object
-    AgentAction = object
-    BaseMessage = object
-    LLMResult = object
+    try:
+        # after the release of langchain v1, these submodules were also migrated to langchain_classic
+        from langchain_classic.callbacks.base import BaseCallbackHandler
+        from langchain_classic.schema import Document
+        from langchain_classic.schema.messages import BaseMessage
+        from langchain_classic.schema.output import LLMResult
+    except ImportError:
+        try:
+            # Old langchain from before the v1 version and the creation of langchain_classic
+            from langchain.callbacks.base import BaseCallbackHandler
+            from langchain.schema import Document
+            from langchain.schema.messages import BaseMessage
+            from langchain.schema.output import LLMResult
+        except ImportError:
+            raise ImportError(
+                "Could not import langchain callbacks and schema submodules. "
+                "Install one of: langchain_classic, langchain-core, or langchain<1."
+            )
+
 
 langchain_parent = contextvars.ContextVar("langchain_current_span", default=None)
 
