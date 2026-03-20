@@ -37,6 +37,7 @@ METADATA_PARAMS = (
     "tool_choice",
     "tools",
     "stream",
+    "thinking",
 )
 
 
