@@ -788,6 +788,9 @@ class HTTPConnection:
     def post(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
         return self.session.post(_urljoin(self.base_url, path), *args, **kwargs)
 
+    def patch(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
+        return self.session.patch(_urljoin(self.base_url, path), *args, **kwargs)
+
     def put(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
         return self.session.put(_urljoin(self.base_url, path), *args, **kwargs)
 
@@ -801,6 +804,11 @@ class HTTPConnection:
 
     def post_json(self, object_type: str, args: Mapping[str, Any] | None = None) -> Any:
         resp = self.post(f"/{object_type.lstrip('/')}", json=args)
+        response_raise_for_status(resp)
+        return resp.json()
+
+    def patch_json(self, object_type: str, args: Mapping[str, Any] | None = None) -> Any:
+        resp = self.patch(f"/{object_type.lstrip('/')}", json=args)
         response_raise_for_status(resp)
         return resp.json()
 
