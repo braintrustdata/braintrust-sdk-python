@@ -1,9 +1,17 @@
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
+
+
+if TYPE_CHECKING:
+    from google.genai.types import (
+        EmbedContentResponse,
+        GenerateContentResponse,
+        GenerateContentResponseUsageMetadata,
+    )
 from braintrust.logger import NOOP_SPAN, Attachment, current_span, init_logger, start_span
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
@@ -60,7 +68,7 @@ def wrap_models(Models: Any):
             kwargs,
             name="generate_content",
             invoke=lambda: wrapped(*args, **kwargs),
-            process_result=lambda result, start: (result, _extract_generate_content_metrics(result, start)),
+            process_result=_gc_process_result,
         )
 
     wrap_function_wrapper(Models, "_generate_content", wrap_generate_content)
@@ -84,10 +92,7 @@ def wrap_models(Models: Any):
             kwargs,
             name="embed_content",
             invoke=lambda: wrapped(*args, **kwargs),
-            process_result=lambda result, start: (
-                _extract_embed_content_output(result),
-                _extract_embed_content_metrics(result, start),
-            ),
+            process_result=_embed_process_result,
         )
 
     wrap_function_wrapper(Models, "embed_content", wrap_embed_content)
@@ -107,7 +112,7 @@ def wrap_async_models(AsyncModels: Any):
             kwargs,
             name="generate_content",
             invoke=lambda: wrapped(*args, **kwargs),
-            process_result=lambda result, start: (result, _extract_generate_content_metrics(result, start)),
+            process_result=_gc_process_result,
         )
 
     wrap_function_wrapper(AsyncModels, "generate_content", wrap_generate_content)
@@ -131,10 +136,7 @@ def wrap_async_models(AsyncModels: Any):
             kwargs,
             name="embed_content",
             invoke=lambda: wrapped(*args, **kwargs),
-            process_result=lambda result, start: (
-                _extract_embed_content_output(result),
-                _extract_embed_content_metrics(result, start),
-            ),
+            process_result=_embed_process_result,
         )
 
     wrap_function_wrapper(AsyncModels, "embed_content", wrap_embed_content)
@@ -159,6 +161,14 @@ def _serialize_input(api_client: Any, input: dict[str, Any]):
         input["contents"] = _serialize_contents(input["contents"])
 
     return input
+
+
+def _gc_process_result(result: "GenerateContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
+    return result, _extract_generate_content_metrics(result, start)
+
+
+def _embed_process_result(result: "EmbedContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
+    return _extract_embed_content_output(result), _extract_embed_content_metrics(result, start)
 
 
 def _prepare_traced_call(
@@ -354,7 +364,23 @@ def get_args_kwargs(
     return {k: args[i] if args else kwargs.get(k) for i, k in enumerate(keys)}, omit(kwargs, omit_keys or keys)
 
 
-def _extract_generate_content_metrics(response: Any, start: float) -> dict[str, Any]:
+def _extract_usage_metadata_metrics(
+    usage_metadata: "GenerateContentResponseUsageMetadata", metrics: dict[str, Any]
+) -> None:
+    """Mutate metrics in-place with token counts from a usage_metadata object."""
+    if hasattr(usage_metadata, "prompt_token_count"):
+        metrics["prompt_tokens"] = usage_metadata.prompt_token_count
+    if hasattr(usage_metadata, "candidates_token_count"):
+        metrics["completion_tokens"] = usage_metadata.candidates_token_count
+    if hasattr(usage_metadata, "total_token_count"):
+        metrics["tokens"] = usage_metadata.total_token_count
+    if hasattr(usage_metadata, "cached_content_token_count"):
+        metrics["prompt_cached_tokens"] = usage_metadata.cached_content_token_count
+    if hasattr(usage_metadata, "thoughts_token_count"):
+        metrics["completion_reasoning_tokens"] = usage_metadata.thoughts_token_count
+
+
+def _extract_generate_content_metrics(response: "GenerateContentResponse", start: float) -> dict[str, Any]:
     """Extract metrics from a non-streaming generate_content response."""
     end_time = time.time()
     metrics = dict(
@@ -363,36 +389,13 @@ def _extract_generate_content_metrics(response: Any, start: float) -> dict[str, 
         duration=end_time - start,
     )
 
-    # Extract usage metadata if available
     if hasattr(response, "usage_metadata") and response.usage_metadata:
-        usage_metadata = response.usage_metadata
-
-        # Extract token metrics
-        if hasattr(usage_metadata, "prompt_token_count"):
-            metrics["prompt_tokens"] = usage_metadata.prompt_token_count
-        if hasattr(usage_metadata, "candidates_token_count"):
-            metrics["completion_tokens"] = usage_metadata.candidates_token_count
-        if hasattr(usage_metadata, "total_token_count"):
-            metrics["tokens"] = usage_metadata.total_token_count
-        if hasattr(usage_metadata, "cached_content_token_count"):
-            metrics["prompt_cached_tokens"] = usage_metadata.cached_content_token_count
-
-        # Extract additional metrics for thinking/reasoning tokens
-        if hasattr(usage_metadata, "thoughts_token_count"):
-            metrics["completion_reasoning_tokens"] = usage_metadata.thoughts_token_count
-
-        # Extract tool use prompt tokens if available
-        if hasattr(usage_metadata, "tool_use_prompt_token_count"):
-            # Add to prompt_tokens if not already counted
-            tool_tokens = usage_metadata.tool_use_prompt_token_count
-            if tool_tokens and "prompt_tokens" in metrics:
-                # Tool tokens are typically part of prompt tokens, but track separately if needed
-                pass
+        _extract_usage_metadata_metrics(response.usage_metadata, metrics)
 
     return clean(dict(metrics))
 
 
-def _extract_embed_content_output(response: Any) -> dict[str, Any]:
+def _extract_embed_content_output(response: "EmbedContentResponse") -> dict[str, Any]:
     embeddings = getattr(response, "embeddings", None) or []
     first_embedding = embeddings[0] if embeddings else None
     first_values = getattr(first_embedding, "values", None) or []
@@ -405,7 +408,7 @@ def _extract_embed_content_output(response: Any) -> dict[str, Any]:
     )
 
 
-def _extract_embed_content_metrics(response: Any, start: float) -> dict[str, Any]:
+def _extract_embed_content_metrics(response: "EmbedContentResponse", start: float) -> dict[str, Any]:
     end_time = time.time()
     metrics = dict(
         start=start,
@@ -434,7 +437,7 @@ def _extract_embed_content_metrics(response: Any, start: float) -> dict[str, Any
 
 
 def _aggregate_generate_content_chunks(
-    chunks: list[Any], start: float, first_token_time: float | None = None
+    chunks: "list[GenerateContentResponse]", start: float, first_token_time: float | None = None
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Aggregate streaming chunks into a single response with metrics."""
     end_time = time.time()
@@ -515,28 +518,7 @@ def _aggregate_generate_content_chunks(
     # Add usage metadata
     if usage_metadata:
         aggregated["usage_metadata"] = usage_metadata
-
-        # Extract token metrics
-        if hasattr(usage_metadata, "prompt_token_count"):
-            metrics["prompt_tokens"] = usage_metadata.prompt_token_count
-        if hasattr(usage_metadata, "candidates_token_count"):
-            metrics["completion_tokens"] = usage_metadata.candidates_token_count
-        if hasattr(usage_metadata, "total_token_count"):
-            metrics["tokens"] = usage_metadata.total_token_count
-        if hasattr(usage_metadata, "cached_content_token_count"):
-            metrics["prompt_cached_tokens"] = usage_metadata.cached_content_token_count
-
-        # Extract additional metrics for thinking/reasoning tokens
-        if hasattr(usage_metadata, "thoughts_token_count"):
-            metrics["completion_reasoning_tokens"] = usage_metadata.thoughts_token_count
-
-        # Extract tool use prompt tokens if available
-        if hasattr(usage_metadata, "tool_use_prompt_token_count"):
-            # Add to prompt_tokens if not already counted
-            tool_tokens = usage_metadata.tool_use_prompt_token_count
-            if tool_tokens and "prompt_tokens" in metrics:
-                # Tool tokens are typically part of prompt tokens, but track separately if needed
-                pass
+        _extract_usage_metadata_metrics(usage_metadata, metrics)
 
     # Add convenience text property
     if text:
