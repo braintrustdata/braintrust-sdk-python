@@ -13,6 +13,7 @@ from google.genai.client import Client
 
 PROJECT_NAME = "test-genai-app"
 MODEL = "gemini-2.0-flash-001"
+EMBEDDING_MODEL = "gemini-embedding-001"
 FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent / "internal/golden/fixtures"
 
 
@@ -55,6 +56,14 @@ def _assert_metrics_are_valid(metrics, start=None, end=None):
     assert metrics["tokens"] > 0
     assert metrics["prompt_tokens"] > 0
     assert metrics["completion_tokens"] > 0
+    if start and end:
+        assert start <= metrics["start"] <= metrics["end"] <= end
+    else:
+        assert metrics["start"] <= metrics["end"]
+
+
+def _assert_timing_metrics_are_valid(metrics, start=None, end=None):
+    assert metrics["duration"] >= 0
     if start and end:
         assert start <= metrics["start"] <= metrics["end"] <= end
     else:
@@ -162,6 +171,71 @@ async def test_basic_completion_async(memory_logger, mode):
     assert span["output"]
     assert "Paris" in str(span["output"])
     _assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+def test_embed_content(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+    response = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=["This is a test", "This is another test"],
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_DOCUMENT",
+            output_dimensionality=32,
+        ),
+    )
+    end = time.time()
+
+    assert response.embeddings
+    assert len(response.embeddings) == 2
+    assert response.embeddings[0].values
+    assert len(response.embeddings[0].values) == 32
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == EMBEDDING_MODEL
+    assert "RETRIEVAL_DOCUMENT" in str(span["input"])
+    assert "This is a test" in str(span["input"])
+    assert span["output"]["embedding_length"] == 32
+    assert span["output"]["embeddings_count"] == 2
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_embed_content_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+    response = await client.aio.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=["This is a test", "This is another test"],
+        config=types.EmbedContentConfig(
+            task_type="RETRIEVAL_DOCUMENT",
+            output_dimensionality=32,
+        ),
+    )
+    end = time.time()
+
+    assert response.embeddings
+    assert len(response.embeddings) == 2
+    assert response.embeddings[0].values
+    assert len(response.embeddings[0].values) == 32
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == EMBEDDING_MODEL
+    assert "RETRIEVAL_DOCUMENT" in str(span["input"])
+    assert "This is a test" in str(span["input"])
+    assert span["output"]["embedding_length"] == 32
+    assert span["output"]["embeddings_count"] == 2
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
 
 
 # Test 2: Mixed Content (Sync)
