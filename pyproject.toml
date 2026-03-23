@@ -20,3 +20,8 @@ split-on-trailing-comma = true
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "--durations=3 --durations-min=0.1"
+
+[tool.vulture]
+paths = ["py/src"]
+ignore_names = ["with_simulate_login", "reset_id_generator_state", "dataset_record_id"] # pytest fixtures and deprecated-but-public API parameters
+min_confidence = 100
