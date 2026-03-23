@@ -63,6 +63,7 @@ if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"
 
 from .audit import *
 from .auto import (
+    IntegrationPatchConfig,  # noqa: F401 # type: ignore[reportUnusedImport]
     auto_instrument,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
 from .framework import *
@@ -70,6 +71,9 @@ from .framework2 import *
 from .functions.invoke import *
 from .functions.stream import *
 from .generated_types import *
+from .integrations.anthropic import (
+    wrap_anthropic,  # noqa: F401 # type: ignore[reportUnusedImport]
+)
 from .logger import *
 from .logger import (
     _internal_get_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
@@ -88,9 +92,6 @@ from .sandbox import (
 from .util import (
     BT_IS_ASYNC_ATTRIBUTE,  # noqa: F401 # type: ignore[reportUnusedImport]
     MarkAsyncWrapper,  # noqa: F401 # type: ignore[reportUnusedImport]
-)
-from .wrappers.anthropic import (
-    wrap_anthropic,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
 from .wrappers.litellm import (
     wrap_litellm,  # noqa: F401 # type: ignore[reportUnusedImport]

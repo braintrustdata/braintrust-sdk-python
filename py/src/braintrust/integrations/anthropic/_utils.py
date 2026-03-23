@@ -34,13 +34,11 @@ def extract_anthropic_usage(usage: Any) -> dict[str, float]:
     if not usage:
         return metrics
 
-    # Handle both dict and object with attributes
     def get_value(key: str) -> Any:
         if isinstance(usage, dict):
             return usage.get(key)
         return getattr(usage, key, None)
 
-    # Standard token counts
     input_tokens = get_value("input_tokens")
     if input_tokens is not None:
         try:
@@ -55,7 +53,6 @@ def extract_anthropic_usage(usage: Any) -> dict[str, float]:
         except (ValueError, TypeError):
             pass
 
-    # Anthropic cache tokens
     cache_read_tokens = get_value("cache_read_input_tokens")
     if cache_read_tokens is not None:
         try:
@@ -74,17 +71,7 @@ def extract_anthropic_usage(usage: Any) -> dict[str, float]:
 
 
 def finalize_anthropic_tokens(metrics: dict[str, float]) -> dict[str, float]:
-    """Finalize Anthropic token calculations.
-
-    Anthropic doesn't include cache tokens in the total, so we need to sum them.
-    Updates 'prompt_tokens' to include cache tokens and adds 'tokens' field with the total.
-
-    Args:
-        metrics: Dictionary with token metrics
-
-    Returns:
-        Updated metrics with total prompt tokens and total tokens fields
-    """
+    """Finalize Anthropic token calculations."""
     total_prompt_tokens = (
         metrics.get("prompt_tokens", 0)
         + metrics.get("prompt_cached_tokens", 0)

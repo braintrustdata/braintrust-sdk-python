@@ -144,3 +144,4 @@ Avoid editing `py/src/braintrust/version.py` while also running build commands.
 - Reuse existing fixtures and cassette patterns.
 - If a change affects examples or integrations, update the nearest example or focused test.
 - For CLI/devserver changes, consider whether wheel-mode behavior also needs coverage.
+- Do **not** add `from __future__ import annotations` unless it is absolutely required (e.g., a genuine forward-reference that cannot be resolved any other way). This import changes annotation evaluation semantics at runtime and can silently break `get_type_hints()`, Pydantic models, and other runtime introspection. Prefer quoted string literals (`"MyClass"`) or `TYPE_CHECKING` guards for forward references instead.

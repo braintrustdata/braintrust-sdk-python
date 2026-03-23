@@ -1,0 +1,211 @@
+"""Shared integration orchestration primitives."""
+
+import importlib
+import inspect
+import re
+from abc import ABC, abstractmethod
+from collections.abc import Collection, Iterable
+from dataclasses import dataclass
+from typing import Any, ClassVar
+
+from wrapt import wrap_function_wrapper
+
+from .versioning import detect_module_version, make_specifier, version_satisfies
+
+
+@dataclass(frozen=True)
+class IntegrationPatchConfig:
+    """Per-integration patch selection for instrumentation setup."""
+
+    enabled_patchers: Collection[str] | None = None
+    disabled_patchers: Collection[str] | None = None
+
+
+class BasePatcher(ABC):
+    """Base class for one concrete integration patch strategy."""
+
+    name: ClassVar[str]
+    patch_id: ClassVar[str | None] = None
+    version_spec: ClassVar[str | None] = None
+    priority: ClassVar[int] = 100
+
+    @classmethod
+    def identifier(cls) -> str:
+        """Return the public identifier for selecting this patcher."""
+        return cls.patch_id or cls.name
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether this patcher should run for the given module/version."""
+        return version_satisfies(version, cls.version_spec)
+
+    @classmethod
+    @abstractmethod
+    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether this patcher's target has already been instrumented."""
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Apply instrumentation for this patcher."""
+        raise NotImplementedError
+
+
+class FunctionWrapperPatcher(BasePatcher):
+    """Base patcher for single-target `wrap_function_wrapper` instrumentation."""
+
+    target_path: ClassVar[str]
+    wrapper: ClassVar[Any]
+
+    @classmethod
+    def resolve_root(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
+        """Return the root object from which this patcher resolves its target."""
+        return target or module
+
+    @classmethod
+    def resolve_target(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
+        """Return the concrete callable or descriptor that this patcher instruments."""
+        root = cls.resolve_root(module, version, target=target)
+        if root is None:
+            return None
+        return _resolve_attr_path(root, cls.target_path)
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether the target exists and this patcher's version gate passes."""
+        return (
+            super().applies(module, version, target=target)
+            and cls.resolve_target(module, version, target=target) is not None
+        )
+
+    @classmethod
+    def patch_marker_attr(cls) -> str:
+        """Return the sentinel attribute used to mark this target as patched."""
+        suffix = re.sub(r"\W+", "_", cls.name).strip("_")
+        return f"__braintrust_patched_{suffix}__"
+
+    @classmethod
+    def mark_patched(cls, obj: Any) -> None:
+        """Mark a wrapped target so future patch attempts are idempotent."""
+        setattr(obj, cls.patch_marker_attr(), True)
+
+    @classmethod
+    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether this patcher's target has already been instrumented."""
+        resolved_target = cls.resolve_target(module, version, target=target)
+        return bool(resolved_target is not None and getattr(resolved_target, cls.patch_marker_attr(), False))
+
+    @classmethod
+    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Apply instrumentation for this patcher."""
+        root = cls.resolve_root(module, version, target=target)
+        if root is None or not cls.applies(module, version, target=target):
+            return False
+
+        wrap_function_wrapper(root, cls.target_path, cls.wrapper)
+        resolved_target = cls.resolve_target(module, version, target=target)
+        if resolved_target is None:
+            return False
+
+        cls.mark_patched(resolved_target)
+        return True
+
+
+class BaseIntegration(ABC):
+    """Base class for an instrumentable third-party integration."""
+
+    name: ClassVar[str]
+    import_names: ClassVar[tuple[str, ...]]
+    patchers: ClassVar[tuple[type[BasePatcher], ...]] = ()
+    min_version: ClassVar[str | None] = None
+    max_version: ClassVar[str | None] = None
+
+    @classmethod
+    def available_patchers(cls) -> tuple[str, ...]:
+        """Return patcher identifiers in declaration order."""
+        return tuple(patcher.identifier() for patcher in cls.patchers)
+
+    @classmethod
+    def resolve_patchers(
+        cls,
+        *,
+        enabled_patchers: Collection[str] | None = None,
+        disabled_patchers: Collection[str] | None = None,
+    ) -> tuple[type[BasePatcher], ...]:
+        """Return the selected patchers after validating explicit selectors."""
+        patchers_by_id: dict[str, type[BasePatcher]] = {}
+        for patcher in cls.patchers:
+            patcher_id = patcher.identifier()
+            existing = patchers_by_id.get(patcher_id)
+            if existing is not None and existing is not patcher:
+                raise ValueError(f"Duplicate patcher identifier {patcher_id!r} for integration {cls.name!r}")
+            patchers_by_id[patcher_id] = patcher
+
+        enabled = set(enabled_patchers) if enabled_patchers is not None else None
+        disabled = set(disabled_patchers or ())
+        requested = disabled if enabled is None else enabled | disabled
+        unknown = requested - set(patchers_by_id)
+        if unknown:
+            available = ", ".join(sorted(patchers_by_id))
+            unknown_display = ", ".join(sorted(unknown))
+            raise ValueError(
+                f"Unknown patchers for integration {cls.name!r}: {unknown_display}. Available patchers: {available}"
+            )
+
+        return tuple(
+            patcher
+            for patcher in cls.patchers
+            if (enabled is None or patcher.identifier() in enabled) and patcher.identifier() not in disabled
+        )
+
+    @classmethod
+    def setup(
+        cls,
+        *,
+        target: Any | None = None,
+        enabled_patchers: Collection[str] | None = None,
+        disabled_patchers: Collection[str] | None = None,
+    ) -> bool:
+        """Apply all applicable patchers for this integration."""
+        module = _import_first_available(cls.import_names)
+        if module is None:
+            return False
+        version = detect_module_version(module, cls.import_names)
+        if not version_satisfies(version, make_specifier(min_version=cls.min_version, max_version=cls.max_version)):
+            return False
+
+        success = False
+        selected_patchers = cls.resolve_patchers(
+            enabled_patchers=enabled_patchers,
+            disabled_patchers=disabled_patchers,
+        )
+        for patcher in sorted(selected_patchers, key=lambda patcher: patcher.priority):
+            if not patcher.applies(module, version, target=target):
+                continue
+            if patcher.is_patched(module, version, target=target):
+                success = True
+                continue
+            success = patcher.patch(module, version, target=target) or success
+
+        return success
+
+
+def _import_first_available(import_names: Iterable[str]) -> Any | None:
+    """Import and return the first available module from the given names."""
+    for import_name in import_names:
+        try:
+            return importlib.import_module(import_name)
+        except ImportError:
+            continue
+    return None
+
+
+def _resolve_attr_path(root: Any, path: str) -> Any | None:
+    current = root
+    for part in path.split("."):
+        try:
+            current = inspect.getattr_static(current, part)
+        except AttributeError:
+            return None
+    return current

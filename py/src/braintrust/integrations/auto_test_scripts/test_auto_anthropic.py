@@ -6,12 +6,19 @@ from braintrust.wrappers.test_utils import autoinstrument_test_context
 
 
 # 1. Verify not patched initially
-assert not getattr(anthropic, "__braintrust_wrapped__", False)
+original_sync_module = type(anthropic.Anthropic(api_key="test-key").messages).__module__
+original_async_module = type(anthropic.AsyncAnthropic(api_key="test-key").messages).__module__
 
 # 2. Instrument
 results = auto_instrument()
 assert results.get("anthropic") == True
-assert getattr(anthropic, "__braintrust_wrapped__", False)
+
+patched_sync = anthropic.Anthropic(api_key="test-key")
+patched_async = anthropic.AsyncAnthropic(api_key="test-key")
+assert type(patched_sync.messages).__module__ == "braintrust.integrations.anthropic.tracing"
+assert type(patched_async.messages).__module__ == "braintrust.integrations.anthropic.tracing"
+assert type(patched_sync.messages).__module__ != original_sync_module
+assert type(patched_async.messages).__module__ != original_async_module
 
 # 3. Idempotent
 results2 = auto_instrument()

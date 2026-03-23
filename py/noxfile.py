@@ -40,6 +40,9 @@ nox.options.default_venv_backend = "uv"
 
 SRC_DIR = "braintrust"
 WRAPPER_DIR = "braintrust/wrappers"
+INTEGRATION_DIR = "braintrust/integrations"
+INTEGRATION_AUTO_TEST_DIR = "braintrust/integrations/auto_test_scripts"
+ANTHROPIC_INTEGRATION_DIR = "braintrust/integrations/anthropic"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
 
@@ -176,6 +179,7 @@ def test_anthropic(session, version):
     _install_test_deps(session)
     _install(session, "anthropic", version)
     _run_tests(session, f"{WRAPPER_DIR}/test_anthropic.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py")
     _run_core_tests(session)
 
 
@@ -400,7 +404,11 @@ def _get_braintrust_wheel():
 
 def _run_core_tests(session):
     """Run all tests which don't require optional dependencies."""
-    _run_tests(session, SRC_DIR, ignore_paths=[WRAPPER_DIR, CONTRIB_DIR, DEVSERVER_DIR])
+    _run_tests(
+        session,
+        SRC_DIR,
+        ignore_paths=[WRAPPER_DIR, INTEGRATION_AUTO_TEST_DIR, ANTHROPIC_INTEGRATION_DIR, CONTRIB_DIR, DEVSERVER_DIR],
+    )
 
 
 def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
