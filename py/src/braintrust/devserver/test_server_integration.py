@@ -104,9 +104,7 @@ def test_cors_preflight_allows_gateway_header(client):
     )
     assert response.status_code == 200
     allowed = response.headers.get("access-control-allow-headers", "")
-    assert "x-bt-use-gateway" in allowed, (
-        f"x-bt-use-gateway not found in access-control-allow-headers: {allowed}"
-    )
+    assert "x-bt-use-gateway" in allowed, f"x-bt-use-gateway not found in access-control-allow-headers: {allowed}"
 
 
 @pytest.mark.vcr
