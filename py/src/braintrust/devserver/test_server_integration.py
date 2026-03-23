@@ -87,6 +87,28 @@ def test_devserver_health_check(client):
     assert response.text == "Hello, world!"
 
 
+def test_cors_preflight_allows_gateway_header(client):
+    """Test that CORS preflight accepts x-bt-use-gateway header.
+
+    The Braintrust Playground sends this header when gateway routing is
+    enabled.  If it is missing from the devserver's allowed-headers list
+    the browser blocks the actual request with a CORS error.
+    """
+    response = client.options(
+        "/eval",
+        headers={
+            "origin": "https://www.braintrust.dev",
+            "access-control-request-method": "POST",
+            "access-control-request-headers": "x-bt-use-gateway",
+        },
+    )
+    assert response.status_code == 200
+    allowed = response.headers.get("access-control-allow-headers", "")
+    assert "x-bt-use-gateway" in allowed, (
+        f"x-bt-use-gateway not found in access-control-allow-headers: {allowed}"
+    )
+
+
 @pytest.mark.vcr
 def test_devserver_list_evaluators(client, api_key, org_name):
     """Test listing evaluators endpoint."""

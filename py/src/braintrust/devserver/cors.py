@@ -23,6 +23,7 @@ ALLOWED_HEADERS = [
     "x-bt-project-id",
     "x-bt-stream-fmt",
     "x-bt-use-cache",
+    "x-bt-use-gateway",
     "x-stainless-os",
     "x-stainless-lang",
     "x-stainless-package-version",
