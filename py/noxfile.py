@@ -211,6 +211,16 @@ def test_openai(session, version):
 
 
 @nox.session()
+def test_openai_http2_streaming(session):
+    _install_test_deps(session)
+    _install(session, "openai")
+    # h2 is isolated to this session because it's only needed to force the
+    # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
+    session.install("h2")
+    _run_tests(session, f"{WRAPPER_DIR}/test_openai_http2.py")
+
+
+@nox.session()
 def test_openrouter(session):
     """Test wrap_openai with OpenRouter. Requires OPENROUTER_API_KEY env var."""
     _install_test_deps(session)

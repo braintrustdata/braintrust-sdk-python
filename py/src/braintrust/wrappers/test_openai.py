@@ -91,6 +91,10 @@ def test_openai_chat_metrics(memory_logger):
         metrics = span["metrics"]
         assert_metrics_are_valid(metrics, start, end)
         assert TEST_MODEL in span["metadata"]["model"]
+        # assert span["metadata"]["provider"] == "openai"
+        assert TEST_PROMPT in str(span["input"])
+        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+        assert TEST_MODEL in span["metadata"]["model"]
         assert span["metadata"]["provider"] == "openai"
         assert TEST_PROMPT in str(span["input"])
 
@@ -458,10 +462,6 @@ def test_openai_chat_streaming_sync(memory_logger):
         assert span
         metrics = span["metrics"]
         assert_metrics_are_valid(metrics, start, end)
-        assert TEST_MODEL in span["metadata"]["model"]
-        # assert span["metadata"]["provider"] == "openai"
-        assert TEST_PROMPT in str(span["input"])
-        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
 @pytest.mark.vcr
