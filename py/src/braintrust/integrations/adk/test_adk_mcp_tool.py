@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from braintrust.wrappers.adk import setup_adk, wrap_mcp_tool
+from braintrust.integrations.adk import setup_adk, wrap_mcp_tool
 
 
 @pytest.mark.asyncio
@@ -18,16 +18,17 @@ async def test_wrap_mcp_tool_marks_as_patched():
     # Wrap the class
     wrapped_class = wrap_mcp_tool(MockMcpTool)
 
-    # Verify it's marked as patched
-    assert hasattr(wrapped_class, "_braintrust_patched")
-    assert wrapped_class._braintrust_patched is True  # pylint: disable=no-member
+    # Verify it's marked as patched via the patcher marker
+    from braintrust.integrations.adk.patchers import McpToolPatcher
+
+    assert getattr(wrapped_class, McpToolPatcher.patch_marker_attr(), False)
 
 
 @pytest.mark.asyncio
 async def test_mcp_tool_execution_creates_span():
     """Test that MCP tool execution creates proper trace spans."""
 
-    with patch("braintrust.wrappers.adk.start_span") as mock_start_span:
+    with patch("braintrust.integrations.adk.tracing.start_span") as mock_start_span:
         # Setup mock span
         mock_span = MagicMock()
         mock_span.__enter__ = MagicMock(return_value=mock_span)
@@ -69,7 +70,7 @@ async def test_mcp_tool_span_captures_tool_info():
     """Test that MCP tool spans capture tool name, args, and results."""
     from braintrust.span_types import SpanTypeAttribute
 
-    with patch("braintrust.wrappers.adk.start_span") as mock_start_span:
+    with patch("braintrust.integrations.adk.tracing.start_span") as mock_start_span:
         mock_span = MagicMock()
         mock_span.__enter__ = MagicMock(return_value=mock_span)
         mock_span.__exit__ = MagicMock(return_value=False)
@@ -120,7 +121,7 @@ async def test_mcp_tool_span_captures_tool_info():
 @pytest.mark.asyncio
 async def test_mcp_tool_error_handling():
     """Test that MCP tool errors are captured in spans."""
-    with patch("braintrust.wrappers.adk.start_span") as mock_start_span:
+    with patch("braintrust.integrations.adk.tracing.start_span") as mock_start_span:
         mock_span = MagicMock()
         mock_span.__enter__ = MagicMock(return_value=mock_span)
         mock_span.__exit__ = MagicMock(return_value=False)
@@ -152,35 +153,28 @@ async def test_mcp_tool_error_handling():
 
 @pytest.mark.asyncio
 async def test_setup_adk_patches_mcp_tool():
-    """Test that setup_adk automatically patches McpTool."""
-    MockMcpTool = MagicMock()
+    """Test that setup_adk automatically patches McpTool via ADKIntegration."""
+    result = setup_adk(project_name="test")
+    assert result is True
 
-    with patch("braintrust.wrappers.adk.init_logger"):
-        with patch("braintrust.wrappers.adk.wrap_mcp_tool") as mock_wrap:
-            with patch("google.adk.tools.mcp_tool.mcp_tool") as mock_mcp_module:
-                mock_mcp_module.McpTool = MockMcpTool
-                result = setup_adk(project_name="test")
+    # Verify McpTool got patched (if available)
+    try:
+        from braintrust.integrations.adk.patchers import McpToolPatcher
 
-                assert result is True
-                mock_wrap.assert_called_once_with(MockMcpTool)
+        assert McpToolPatcher.is_patched(None, None), "McpTool should be patched"
+    except ImportError:
+        pass  # MCP is optional
 
 
 @pytest.mark.asyncio
 async def test_setup_adk_graceful_fallback_when_mcp_unavailable():
     """Test that setup_adk gracefully handles MCP not being installed."""
-    with patch("braintrust.wrappers.adk.init_logger"):
-        # This test is tricky - we need MCP import to fail but not break other imports
-        # The actual behavior is tested in integration: when MCP is not available,
-        # it gets ImportError from the google.adk.tools.mcp_tool module itself
-        # For this test, we just verify setup_adk succeeds even when MCP module raises ImportError
+    # setup_adk delegates to ADKIntegration.setup() which handles ImportError
+    # in the McpToolPatcher gracefully
+    result = setup_adk(project_name="test")
 
-        result = setup_adk(project_name="test")
-
-        # Should succeed - MCP is optional
-        assert result is True
-
-        # When MCP is not available, MCP import fails but setup_adk continues
-        # This is the actual graceful fallback in action
+    # Should succeed - MCP is optional
+    assert result is True
 
 
 @pytest.mark.asyncio
@@ -194,7 +188,7 @@ async def test_mcp_tool_async_context_preservation():
     """
     import contextvars
 
-    from braintrust.wrappers.adk import wrap_mcp_tool
+    from braintrust.integrations.adk import wrap_mcp_tool
 
     # Track context switches
     context_var = contextvars.ContextVar("test_context", default=None)
@@ -252,7 +246,7 @@ async def test_mcp_tool_nested_async_generators():
     3. MCP tool execution happens deep in the stack
     4. All generators yield and resume, potentially in different contexts
     """
-    from braintrust.wrappers.adk import wrap_mcp_tool
+    from braintrust.integrations.adk import wrap_mcp_tool
 
     class MockMcpTool:
         def __init__(self):
@@ -309,9 +303,9 @@ async def test_real_context_loss_with_braintrust_spans():
     suppressing in the aclosing.__aexit__ method.
     """
     import asyncio
+    from contextlib import aclosing
 
     from braintrust import init_logger
-    from braintrust.wrappers.adk import aclosing
 
     # Initialize a test logger
     logger = init_logger(project="test-context-loss")

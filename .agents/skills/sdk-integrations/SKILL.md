@@ -1,171 +1,108 @@
 ---
 name: sdk-integrations
-description: Create or update a Braintrust Python SDK integration using the integrations API. Use when asked to add an integration, update an existing integration, add or update patchers, update auto_instrument, add integration tests, or work in py/src/braintrust/integrations/.
+description: Create or update Braintrust Python SDK integrations built on the integrations API. Use for work in `py/src/braintrust/integrations/`, including new providers, patchers, tracing, `auto_instrument()` updates, integration exports, and integration tests.
 ---
 
 # SDK Integrations
 
-SDK integrations define how Braintrust discovers a provider, patches it safely, and keeps provider-specific tracing local to that integration. Read the existing integration closest to your task before writing a new one. If there is no closer example, `py/src/braintrust/integrations/anthropic/` is a useful reference implementation.
+Use this skill for integrations API work under `py/src/braintrust/integrations/`.
+
+Start from the nearest existing provider instead of designing from scratch:
+
+- ADK (`py/src/braintrust/integrations/adk/`) is the best reference for direct method patching, `target_module`, `CompositeFunctionWrapperPatcher`, and public `wrap_*()` helpers.
+- Anthropic (`py/src/braintrust/integrations/anthropic/`) is the best reference for constructor patching with `FunctionWrapperPatcher`.
 
 ## Workflow
 
-1. Read the shared integration primitives and the closest provider example.
-2. Choose the task shape: new provider, existing provider update, or `auto_instrument()` update.
-3. Implement the smallest integration, patcher, tracing, and export changes needed.
-4. Add or update VCR-backed integration tests and only re-record cassettes when behavior changed intentionally.
-5. Run the narrowest provider session first, then expand to shared validation only if the change touched shared code.
+1. Read the shared primitives and the nearest provider example.
+2. Decide whether the task is a new provider, an existing provider update, or an `auto_instrument()` change.
+3. Change only the affected integration, patchers, tracing, exports, and tests.
+4. Update tests and cassettes only where behavior changed intentionally.
+5. Run the narrowest provider session first, then expand only if shared code changed.
 
-## Commands
+## Read First
 
-```bash
-cd py && nox -s "test_<provider>(latest)"
-cd py && nox -s "test_<provider>(latest)" -- -k "test_name"
-cd py && nox -s "test_<provider>(latest)" -- --vcr-record=all -k "test_name"
-cd py && make test-core
-cd py && make lint
-```
-
-## Creating or Updating an Integration
-
-### 1. Read the nearest existing implementation
-
-Always inspect these first:
+Always read:
 
 - `py/src/braintrust/integrations/base.py`
-- `py/src/braintrust/integrations/runtime.py`
 - `py/src/braintrust/integrations/versioning.py`
-- `py/src/braintrust/integrations/config.py`
 
-Relevant example implementation:
+Read when relevant:
 
-- `py/src/braintrust/integrations/anthropic/`
+- `py/src/braintrust/auto.py` for `auto_instrument()` work
+- `py/src/braintrust/conftest.py` for VCR behavior
+- `py/src/braintrust/integrations/adk/test_adk.py` for integration test patterns
+- `py/src/braintrust/integrations/auto_test_scripts/` for subprocess auto-instrument tests
 
-Read these additional files only when the task needs them:
+## Package Layout
 
-- changing `auto_instrument()`: `py/src/braintrust/auto.py` and `py/src/braintrust/auto_test_scripts/test_auto_anthropic_patch_config.py`
-- adding or updating VCR tests: `py/src/braintrust/conftest.py` and `py/src/braintrust/integrations/anthropic/test_anthropic.py`
-
-Then choose the path that matches the task:
-
-- new provider: create `py/src/braintrust/integrations/<provider>/`
-- existing provider: read the provider package first and change only the affected patchers, tracing, tests, or exports
-- `auto_instrument()` only: keep the integration package unchanged unless the option shape or patcher surface also changed
-
-### 2. Create or extend the integration module
-
-For a new provider, create a package under `py/src/braintrust/integrations/<provider>/`.
-
-For an existing provider, keep the module layout unless the current structure is actively causing problems.
+Create new providers under `py/src/braintrust/integrations/<provider>/`. Keep the existing layout for provider updates unless the current structure is the problem.
 
 Typical files:
 
-- `__init__.py`: public exports for the integration type and any public helpers
-- `integration.py`: the `BaseIntegration` subclass, patcher registration, and high-level orchestration
-- `patchers.py`: one patcher per patch target, with version gating and existence checks close to the patch
-- `tracing.py`: provider-specific span creation, metadata extraction, stream handling, and output normalization
-- `test_<provider>.py`: integration tests for `wrap(...)`, `setup()`, sync/async behavior, streaming, and error handling
-- `cassettes/`: recorded provider traffic for VCR-backed integration tests when the provider uses HTTP
+- `__init__.py`: export the integration class, `setup_<provider>()`, and public `wrap_*()` helpers
+- `integration.py`: define the `BaseIntegration` subclass and register patchers
+- `patchers.py`: define patchers and `wrap_*()` helpers
+- `tracing.py`: keep provider-specific tracing, stream handling, and normalization
+- `test_<provider>.py`: keep provider behavior tests next to the integration
+- `cassettes/`: keep VCR recordings next to the integration tests when the provider uses HTTP
 
-### 3. Define the integration class
+## Integration Rules
 
-Implement a `BaseIntegration` subclass in `integration.py`.
-
-Set:
+Keep `integration.py` thin. Set:
 
 - `name`
 - `import_names`
-- `min_version` and `max_version` only when needed
 - `patchers`
+- `min_version` and `max_version` only when needed
 
-Keep the class focused on orchestration. Provider-specific tracing logic should stay in `tracing.py`.
+Keep provider behavior in the provider package, not in shared integration code. Put span creation, metadata extraction, stream aggregation, error logging, and output normalization in `tracing.py`.
 
-### 4. Add one patcher per coherent patch target
+Preserve provider behavior. Do not let tracing-only code break the provider call.
 
-Put patchers in `patchers.py`.
+## Patcher Rules
 
-Use `FunctionWrapperPatcher` when patching a single import path with `wrapt.wrap_function_wrapper`. Good examples:
+Create one patcher per coherent patch target. If targets are unrelated, split them.
 
-- constructor patchers like `ProviderClient.__init__`
-- single API surfaces like `client.responses.create`
-- one sync and one async constructor patcher instead of one patcher doing both
+Use `FunctionWrapperPatcher` for one import path or one constructor/method surface, for example:
 
-Keep patchers narrow. If you need to patch multiple unrelated targets, create multiple patchers rather than one large patcher.
+- `ProviderClient.__init__`
+- `client.responses.create`
 
-Patchers are responsible for:
+Use `CompositeFunctionWrapperPatcher` when several closely related targets should appear as one patcher, for example:
 
-- stable patcher ids via `name`
-- optional version gating
+- sync and async variants of the same method
+- the same function patched across multiple modules
+
+Set `target_module` when the patch target lives outside the module named by `import_names`, especially for optional or deep submodules. Failed `target_module` imports should cause the patcher to skip cleanly through `applies()`.
+
+Expose manual wrapping helpers through `wrap_target()`:
+
+```python
+def wrap_agent(Agent: Any) -> Any:
+    return AgentRunAsyncPatcher.wrap_target(Agent)
+```
+
+Use lower `priority` values only when ordering matters, such as context propagation before tracing.
+
+Patchers must provide:
+
+- stable `name` values
+- version gating only when needed
 - existence checks
 - idempotence through the base patcher marker
 
-### 5. Keep tracing provider-local
+Use `IntegrationPatchConfig` only when users need patcher-level selection. Let `BaseIntegration.resolve_patchers()` reject unknown patcher ids instead of silently ignoring them.
 
-Put span creation, metadata extraction, stream aggregation, error logging, and output normalization in `tracing.py`.
+## Patching Patterns
 
-This layer should:
+Use constructor patching when the goal is to instrument future clients created by the provider SDK. Patch the constructor, then attach traced surfaces after the real constructor runs.
 
-- preserve provider behavior
-- support sync, async, and streaming paths as needed
-- avoid raising from tracing-only code when that would break the provider call
+Use direct method patching with `target_module` when the provider exposes a flatter API and there is no useful constructor patch point.
 
-If the provider has complex streaming internals, keep that logic local instead of forcing it into shared abstractions.
+Keep public `wrap_*()` helpers in `patchers.py` and export them from the integration package.
 
-### 6. Wire public exports
-
-Update public exports only as needed:
-
-- `py/src/braintrust/integrations/__init__.py`
-- `py/src/braintrust/__init__.py`
-
-### 7. Update auto_instrument only if this integration should be auto-patched
-
-If the provider belongs in `braintrust.auto.auto_instrument()`, add a branch in `py/src/braintrust/auto.py`.
-
-Match the current pattern:
-
-- plain `bool` options for simple on/off integrations
-- `IntegrationPatchConfig` only when users need patcher-level selection
-
-## Tests
-
-Keep integration tests with the integration package.
-
-Provider behavior tests should use `@pytest.mark.vcr` whenever the provider uses network calls. Avoid mocks and fakes.
-
-Cover:
-
-- direct `wrap(...)` behavior
-- `setup()` patching new clients
-- sync behavior
-- async behavior
-- streaming behavior
-- idempotence
-- failure/error logging
-- patcher selection if using `IntegrationPatchConfig`
-
-Preferred locations:
-
-- provider behavior tests: `py/src/braintrust/integrations/<provider>/test_<provider>.py`
-- version helper tests: `py/src/braintrust/integrations/test_versioning.py`
-- auto-instrument subprocess tests: `py/src/braintrust/auto_test_scripts/`
-
-If the provider uses VCR, keep cassettes next to the integration test file under `py/src/braintrust/integrations/<provider>/cassettes/`.
-
-Only re-record cassettes when the behavior change is intentional.
-
-Use mocks or fakes only for cases that are hard to drive through recorded provider traffic, such as narrowly scoped error injection, local version-routing logic, or patcher existence checks.
-
-## Patterns
-
-### Constructor patching
-
-If instrumenting future clients created by the SDK is the goal, patch constructors and attach traced surfaces after the real constructor runs. Anthropic is an example of this pattern.
-
-### Patcher selection
-
-Use `IntegrationPatchConfig` only when users benefit from enabling or disabling specific patchers. Validate unknown patcher ids through `BaseIntegration.resolve_patchers()` instead of silently ignoring them.
-
-### Versioning
+## Versioning
 
 Prefer feature detection first and version checks second.
 
@@ -177,28 +114,72 @@ Use:
 
 Do not add `packaging` just for integration routing.
 
+## `auto_instrument()`
+
+Update `py/src/braintrust/auto.py` only if the integration should be auto-patched.
+
+Match the existing option shape:
+
+- use plain `bool` for simple on/off integrations that do not use the integrations API
+- use `InstrumentOption` for integrations API providers that support `IntegrationPatchConfig`
+
+For integrations API providers, use `_normalize_instrument_option()` and `_instrument_integration(...)` instead of adding a custom `_instrument_*` function:
+
+```python
+enabled, config = _normalize_instrument_option("provider", provider)
+if enabled:
+    results["provider"] = _instrument_integration(ProviderIntegration, patch_config=config)
+```
+
+Add the integration import near the other integration imports in `auto.py`.
+
+## Tests
+
+Keep integration tests in the provider package.
+
+Use `@pytest.mark.vcr` for real provider network behavior. Prefer recorded provider traffic over mocks or fakes. Use mocks or fakes only for cases that are hard to drive through recordings, such as:
+
+- narrow error injection
+- local version-routing logic
+- patcher existence checks
+
+Cover the surfaces that changed:
+
+- direct `wrap(...)` behavior
+- `setup()` patching new clients
+- sync behavior
+- async behavior
+- streaming behavior
+- idempotence
+- failure and error logging
+- patcher selection when using `IntegrationPatchConfig`
+
+Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/`. Re-record them only for intentional behavior changes.
+
+## Commands
+
+```bash
+cd py && nox -s "test_<provider>(latest)"
+cd py && nox -s "test_<provider>(latest)" -- -k "test_name"
+cd py && nox -s "test_<provider>(latest)" -- --vcr-record=all -k "test_name"
+cd py && make test-core
+cd py && make lint
+```
+
 ## Validation
 
 - Run the narrowest provider session first.
-- Run `cd py && make test-core` if you changed shared integration code.
+- Run `cd py && make test-core` if shared integration code changed.
 - Run `cd py && make lint` before handing off broader integration changes.
-- If you changed `auto_instrument()`, run the relevant subprocess auto-instrument tests.
+- Run the relevant auto-instrument subprocess tests if `auto_instrument()` changed.
 
-## Done When
+## Pitfalls
 
-- the provider package contains only the integration, patcher, tracing, export, and test changes required by the task
-- provider behavior tests use VCR unless recorded traffic cannot cover the behavior
-- cassette changes are present only when provider behavior changed intentionally
-- the narrowest affected provider session passes
-- `cd py && make test-core` has been run if shared integration code changed
-- `cd py && make lint` has been run before handoff
-
-## Common Pitfalls
-
-- Leaving provider behavior in `BaseIntegration` instead of the provider package.
-- Combining multiple unrelated patch targets into one patcher.
+- Moving provider-specific behavior into shared integration code.
+- Combining unrelated targets into one patcher.
 - Forgetting async or streaming coverage.
-- Defaulting to mocks or fakes when the provider flow can be covered with VCR.
-- Moving tests but not moving their cassettes.
 - Adding patcher selection without tests for enabled and disabled cases.
-- Editing `auto_instrument()` in a way that implies a registry exists when it does not.
+- Re-recording cassettes when behavior did not intentionally change.
+- Using `_normalize_bool_option()` for an integrations API provider.
+- Adding a custom `_instrument_*` helper where `_instrument_integration()` already fits.
+- Forgetting `target_module` for deep or optional submodule patch targets.

@@ -41,8 +41,6 @@ nox.options.default_venv_backend = "uv"
 SRC_DIR = "braintrust"
 WRAPPER_DIR = "braintrust/wrappers"
 INTEGRATION_DIR = "braintrust/integrations"
-INTEGRATION_AUTO_TEST_DIR = "braintrust/integrations/auto_test_scripts"
-ANTHROPIC_INTEGRATION_DIR = "braintrust/integrations/anthropic"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
 
@@ -198,8 +196,8 @@ def test_google_adk(session, version):
     """Test Google ADK integration."""
     _install_test_deps(session)
     _install(session, "google-adk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk.py")
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk_mcp_tool.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk_mcp_tool.py")
     _run_core_tests(session)
 
 
@@ -407,7 +405,12 @@ def _run_core_tests(session):
     _run_tests(
         session,
         SRC_DIR,
-        ignore_paths=[WRAPPER_DIR, INTEGRATION_AUTO_TEST_DIR, ANTHROPIC_INTEGRATION_DIR, CONTRIB_DIR, DEVSERVER_DIR],
+        ignore_paths=[
+            WRAPPER_DIR,
+            INTEGRATION_DIR,
+            CONTRIB_DIR,
+            DEVSERVER_DIR,
+        ],
     )
 
 

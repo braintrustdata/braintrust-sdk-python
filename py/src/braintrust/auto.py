@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 
-from braintrust.integrations import AnthropicIntegration, IntegrationPatchConfig
+from braintrust.integrations import ADKIntegration, AnthropicIntegration, IntegrationPatchConfig
 
 
 __all__ = ["auto_instrument"]
@@ -39,7 +39,7 @@ def auto_instrument(
     agno: bool = True,
     claude_agent_sdk: bool = True,
     dspy: bool = True,
-    adk: bool = True,
+    adk: InstrumentOption = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -109,14 +109,14 @@ def auto_instrument(
     results = {}
 
     openai_enabled = _normalize_bool_option("openai", openai)
-    anthropic_enabled, anthropic_config = _normalize_anthropic_option(anthropic)
+    anthropic_enabled, anthropic_config = _normalize_instrument_option("anthropic", anthropic)
     litellm_enabled = _normalize_bool_option("litellm", litellm)
     pydantic_ai_enabled = _normalize_bool_option("pydantic_ai", pydantic_ai)
     google_genai_enabled = _normalize_bool_option("google_genai", google_genai)
     agno_enabled = _normalize_bool_option("agno", agno)
     claude_agent_sdk_enabled = _normalize_bool_option("claude_agent_sdk", claude_agent_sdk)
     dspy_enabled = _normalize_bool_option("dspy", dspy)
-    adk_enabled = _normalize_bool_option("adk", adk)
+    adk_enabled, adk_config = _normalize_instrument_option("adk", adk)
 
     if openai_enabled:
         results["openai"] = _instrument_openai()
@@ -135,7 +135,7 @@ def auto_instrument(
     if dspy_enabled:
         results["dspy"] = _instrument_dspy()
     if adk_enabled:
-        results["adk"] = _instrument_adk()
+        results["adk"] = _instrument_integration(ADKIntegration, patch_config=adk_config)
 
     return results
 
@@ -164,7 +164,7 @@ def _normalize_bool_option(name: str, option: bool) -> bool:
     raise TypeError(f"auto_instrument option {name!r} must be a bool, got {type(option).__name__}")
 
 
-def _normalize_anthropic_option(option: InstrumentOption) -> tuple[bool, IntegrationPatchConfig | None]:
+def _normalize_instrument_option(name: str, option: InstrumentOption) -> tuple[bool, IntegrationPatchConfig | None]:
     if isinstance(option, bool):
         return option, None
 
@@ -172,7 +172,7 @@ def _normalize_anthropic_option(option: InstrumentOption) -> tuple[bool, Integra
         return True, option
 
     raise TypeError(
-        f"auto_instrument option 'anthropic' must be a bool or IntegrationPatchConfig, got {type(option).__name__}"
+        f"auto_instrument option {name} must be a bool or IntegrationPatchConfig, got {type(option).__name__}"
     )
 
 
@@ -221,12 +221,4 @@ def _instrument_dspy() -> bool:
         from braintrust.wrappers.dspy import patch_dspy
 
         return patch_dspy()
-    return False
-
-
-def _instrument_adk() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.adk import setup_adk
-
-        return setup_adk()
     return False

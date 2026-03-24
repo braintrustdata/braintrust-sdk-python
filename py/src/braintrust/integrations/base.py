@@ -53,15 +53,34 @@ class BasePatcher(ABC):
 
 
 class FunctionWrapperPatcher(BasePatcher):
-    """Base patcher for single-target `wrap_function_wrapper` instrumentation."""
+    """Base patcher for single-target `wrap_function_wrapper` instrumentation.
+
+    Set ``target_module`` to an import path when the patch target lives in a
+    different module than the one provided by the integration (e.g. a deep
+    submodule that may or may not be installed).  The module is imported lazily
+    when the patcher is evaluated.
+    """
 
     target_path: ClassVar[str]
     wrapper: ClassVar[Any]
+    target_module: ClassVar[str | None] = None
 
     @classmethod
     def resolve_root(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
-        """Return the root object from which this patcher resolves its target."""
-        return target or module
+        """Return the root object from which this patcher resolves its target.
+
+        When ``target_module`` is set, the patcher imports that module and uses
+        it as root instead of the integration-level module.  If the import
+        fails, ``None`` is returned so that ``applies()`` returns ``False``.
+        """
+        if target is not None:
+            return target
+        if cls.target_module is not None:
+            try:
+                return importlib.import_module(cls.target_module)
+            except ImportError:
+                return None
+        return module
 
     @classmethod
     def resolve_target(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
@@ -110,6 +129,89 @@ class FunctionWrapperPatcher(BasePatcher):
 
         cls.mark_patched(resolved_target)
         return True
+
+    @classmethod
+    def wrap_target(cls, target: Any) -> Any:
+        """Patch *target* directly for tracing (idempotent).
+
+        Unlike ``patch()``, which resolves the full ``target_path`` from a
+        module root, this method wraps the **leaf** attribute of
+        ``target_path`` directly on *target*.  This is useful for manual
+        wrapping of a specific class or object (e.g. ``wrap_agent(MyAgent)``).
+
+        The patch marker is set on *target* itself so that callers can check
+        ``getattr(target, patcher.patch_marker_attr(), False)`` to detect
+        whether the patch has already been applied.
+
+        Returns *target* unchanged if the leaf attribute does not exist on
+        *target* or the patch has already been applied.  Returns *target*
+        for convenient chaining.
+        """
+        marker = cls.patch_marker_attr()
+        if getattr(target, marker, False):
+            return target
+        attr = cls.target_path.rsplit(".", 1)[-1]
+        if _resolve_attr_path(target, attr) is None:
+            return target
+        wrap_function_wrapper(target, attr, cls.wrapper)
+        cls.mark_patched(target)
+        return target
+
+
+class CompositeFunctionWrapperPatcher(BasePatcher):
+    """Patcher that applies multiple ``FunctionWrapperPatcher`` sub-patchers as one unit.
+
+    Use this when several closely related targets should be patched together
+    under a single patcher name — for example, patching both the sync and async
+    variants of the same method on one class.
+
+    Subclasses declare ``sub_patchers`` as a tuple of ``FunctionWrapperPatcher``
+    classes.  The composite delegates ``applies``, ``is_patched``, and ``patch``
+    to the sub-patchers, and the composite is considered patched when **all**
+    applicable sub-patchers have been applied.
+    """
+
+    sub_patchers: ClassVar[tuple[type[FunctionWrapperPatcher], ...]]
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return ``True`` if the version gate passes and at least one sub-patcher applies."""
+        if not super().applies(module, version, target=target):
+            return False
+        return any(sub.applies(module, version, target=target) for sub in cls.sub_patchers)
+
+    @classmethod
+    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return ``True`` when every applicable sub-patcher has been applied."""
+        applicable = [sub for sub in cls.sub_patchers if sub.applies(module, version, target=target)]
+        if not applicable:
+            return False
+        return all(sub.is_patched(module, version, target=target) for sub in applicable)
+
+    @classmethod
+    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Apply all applicable sub-patchers."""
+        success = False
+        for sub in cls.sub_patchers:
+            if not sub.applies(module, version, target=target):
+                continue
+            if sub.is_patched(module, version, target=target):
+                success = True
+                continue
+            success = sub.patch(module, version, target=target) or success
+        return success
+
+    @classmethod
+    def wrap_target(cls, target: Any) -> Any:
+        """Patch *target* directly for tracing (idempotent).
+
+        Delegates to each sub-patcher's ``wrap_target``, which individually
+        skips sub-patchers whose leaf attribute does not exist on *target*.
+        Returns *target* for convenient chaining.
+        """
+        for sub in cls.sub_patchers:
+            sub.wrap_target(target)
+        return target
 
 
 class BaseIntegration(ABC):

@@ -5,9 +5,10 @@ from pathlib import Path
 import pytest
 from braintrust import logger
 from braintrust.bt_json import bt_safe_deep_copy
+from braintrust.integrations.adk import setup_adk
+from braintrust.integrations.adk.tracing import _create_thread_wrapper
 from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.adk import _wrap_create_thread, setup_adk
 from google.adk import Agent
 
 
@@ -36,7 +37,7 @@ def vcr_config():
 
     return {
         "record_mode": record_mode,
-        "cassette_library_dir": str(Path(__file__).parent.parent / "cassettes"),
+        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
         "filter_headers": [
             "authorization",
             "x-goog-api-key",
@@ -110,14 +111,12 @@ def test_adk_thread_context_propagation(memory_logger):
     assert thread_root == parent_span.root_span_id
 
 
-def test_wrap_create_thread_exception_does_not_double_invoke_target():
+def test_create_thread_wrapper_exception_does_not_double_invoke_target():
     """Regression test: target exceptions must not cause a second invocation."""
     call_count = 0
 
     def create_thread(target, *args, **kwargs):
         return target(*args, **kwargs)
-
-    wrapped_create_thread = _wrap_create_thread(create_thread)
 
     def target():
         nonlocal call_count
@@ -125,7 +124,7 @@ def test_wrap_create_thread_exception_does_not_double_invoke_target():
         raise RuntimeError("boom")
 
     with pytest.raises(RuntimeError, match="boom"):
-        wrapped_create_thread(target)
+        _create_thread_wrapper(create_thread, None, (target,), {})
 
     assert call_count == 1
 
@@ -290,8 +289,8 @@ async def test_adk_max_tokens_captures_content(memory_logger):
 
 def test_serialize_content_with_binary_data():
     """Test that _serialize_content converts binary data to Attachment references."""
+    from braintrust.integrations.adk.tracing import _serialize_content, _serialize_part
     from braintrust.logger import Attachment
-    from braintrust.wrappers.adk import _serialize_content, _serialize_part
 
     # Create a minimal PNG image (1x1 red pixel)
     minimal_png = (
@@ -364,7 +363,7 @@ def test_serialize_content_with_binary_data():
 
 def test_serialize_part_with_file_data():
     """Test that _serialize_part handles file_data (file references) correctly."""
-    from braintrust.wrappers.adk import _serialize_part
+    from braintrust.integrations.adk.tracing import _serialize_part
 
     class MockFileData:
         def __init__(self, file_uri, mime_type):
@@ -387,7 +386,7 @@ def test_serialize_part_with_file_data():
 
 def test_serialize_part_with_dict():
     """Test that _serialize_part handles dict input correctly."""
-    from braintrust.wrappers.adk import _serialize_part
+    from braintrust.integrations.adk.tracing import _serialize_part
 
     # Test that dicts pass through unchanged
     dict_part = {"text": "Hello", "custom": "field"}
@@ -397,7 +396,7 @@ def test_serialize_part_with_dict():
 
 def test_serialize_content_with_none():
     """Test that _serialize_content handles None correctly."""
-    from braintrust.wrappers.adk import _serialize_content
+    from braintrust.integrations.adk.tracing import _serialize_content
 
     result = _serialize_content(None)
     assert result is None, "None should serialize to None"
@@ -574,7 +573,7 @@ async def test_adk_captures_metrics(memory_logger):
 
 def test_determine_llm_call_type_direct_response():
     """Test that _determine_llm_call_type returns 'direct_response' when tools are available but not used."""
-    from braintrust.wrappers.adk import _determine_llm_call_type
+    from braintrust.integrations.adk.tracing import _determine_llm_call_type
 
     # Request with tools available
     llm_request = {
@@ -603,7 +602,7 @@ def test_determine_llm_call_type_direct_response():
 
 def test_determine_llm_call_type_tool_selection():
     """Test that _determine_llm_call_type returns 'tool_selection' when LLM calls a tool."""
-    from braintrust.wrappers.adk import _determine_llm_call_type
+    from braintrust.integrations.adk.tracing import _determine_llm_call_type
 
     # Request with tools available
     llm_request = {
@@ -633,7 +632,7 @@ def test_determine_llm_call_type_tool_selection():
 
 def test_determine_llm_call_type_tool_selection_snake_case():
     """Test that _determine_llm_call_type handles snake_case function_call."""
-    from braintrust.wrappers.adk import _determine_llm_call_type
+    from braintrust.integrations.adk.tracing import _determine_llm_call_type
 
     llm_request = {
         "config": {"tools": [{"function_declarations": [{"name": "search"}]}]},
@@ -654,7 +653,7 @@ def test_determine_llm_call_type_tool_selection_snake_case():
 
 def test_determine_llm_call_type_response_generation():
     """Test that _determine_llm_call_type returns 'response_generation' after tool execution."""
-    from braintrust.wrappers.adk import _determine_llm_call_type
+    from braintrust.integrations.adk.tracing import _determine_llm_call_type
 
     # Request with function_response in history
     llm_request = {
@@ -680,7 +679,7 @@ def test_determine_llm_call_type_response_generation():
 
 def test_determine_llm_call_type_no_tools():
     """Test that _determine_llm_call_type returns 'direct_response' when no tools configured."""
-    from braintrust.wrappers.adk import _determine_llm_call_type
+    from braintrust.integrations.adk.tracing import _determine_llm_call_type
 
     llm_request = {
         "config": {},
@@ -697,7 +696,7 @@ def test_determine_llm_call_type_no_tools():
 
 def test_determine_llm_call_type_no_response():
     """Test that _determine_llm_call_type handles missing model_response gracefully."""
-    from braintrust.wrappers.adk import _determine_llm_call_type
+    from braintrust.integrations.adk.tracing import _determine_llm_call_type
 
     llm_request = {
         "config": {"tools": [{"function_declarations": [{"name": "tool1"}]}]},
@@ -725,7 +724,7 @@ async def test_llm_call_span_wraps_child_spans(memory_logger):
     from unittest.mock import MagicMock
 
     from braintrust import current_span, start_span
-    from braintrust.wrappers.adk import wrap_flow
+    from braintrust.integrations.adk import wrap_flow
 
     # Clear any existing logs
     memory_logger.pop()
@@ -817,9 +816,9 @@ async def test_async_context_preservation_across_yields():
     that occur when async generators yield control and resume in different contexts.
     """
     import asyncio
+    from contextlib import aclosing
 
     from braintrust import start_span
-    from braintrust.wrappers.adk import aclosing
 
     # Initialize logger
     init_test_logger("test-context")
@@ -1136,7 +1135,7 @@ async def test_adk_complex_nested_schema(memory_logger):
 @pytest.mark.asyncio
 async def test_serialize_config_handles_all_schema_fields():
     """Test that _serialize_config handles all 4 schema fields."""
-    from braintrust.wrappers.adk import _serialize_config
+    from braintrust.integrations.adk.tracing import _serialize_config
 
     class TestSchema(BaseModel):
         value: str = Field(description="Test value")
@@ -1170,7 +1169,7 @@ async def test_serialize_config_handles_all_schema_fields():
 @pytest.mark.asyncio
 async def test_serialize_config_handles_non_pydantic():
     """Test that _serialize_config handles non-Pydantic values gracefully."""
-    from braintrust.wrappers.adk import _serialize_config
+    from braintrust.integrations.adk.tracing import _serialize_config
 
     # Test with non-Pydantic values
     config = {"response_schema": "not a pydantic model", "other_field": {"key": "value"}}
@@ -1186,7 +1185,7 @@ async def test_serialize_config_handles_non_pydantic():
 @pytest.mark.asyncio
 async def test_serialize_pydantic_schema_direct():
     """Test _serialize_pydantic_schema directly with various inputs."""
-    from braintrust.wrappers.adk import _serialize_pydantic_schema
+    from braintrust.integrations.adk.tracing import _serialize_pydantic_schema
 
     class SimpleSchema(BaseModel):
         name: str = Field(description="A name")
@@ -1219,7 +1218,7 @@ async def test_serialize_pydantic_schema_direct():
 @pytest.mark.asyncio
 async def test_bt_safe_deep_copy_never_raises():
     """Test that bt_safe_deep_copy never raises exceptions."""
-    from braintrust.wrappers.adk import bt_safe_deep_copy
+    from braintrust.bt_json import bt_safe_deep_copy
 
     class BrokenModel:
         def model_dump(self):
@@ -1377,7 +1376,7 @@ async def test_adk_response_json_schema_dict(memory_logger):
 @pytest.mark.asyncio
 async def test_serialize_config_preserves_none():
     """Test that _serialize_config returns None when config is None (not empty dict)."""
-    from braintrust.wrappers.adk import _serialize_config
+    from braintrust.integrations.adk.tracing import _serialize_config
 
     # None should be preserved as None, not converted to {}
     result = _serialize_config(None)
@@ -1494,3 +1493,13 @@ async def test_adk_bytes_and_attachment_in_structure():
     assert "binary_data" in result
     assert "nested" in result
     assert "more_bytes" in result["nested"]
+
+
+class TestAutoInstrumentADK:
+    """Tests for auto_instrument() with Google ADK."""
+
+    def test_auto_instrument_adk(self):
+        """Test auto_instrument patches ADK classes and is idempotent."""
+        from braintrust.wrappers.test_utils import verify_autoinstrument_script
+
+        verify_autoinstrument_script("test_auto_adk.py")
