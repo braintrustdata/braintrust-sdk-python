@@ -19,13 +19,16 @@ X_CACHED_HEADER = "x-bt-cached"
 
 class NamedWrapper:
     def __init__(self, wrapped: Any):
-        self._wrapped = wrapped
         # Keep the legacy mangled attribute for existing wrapped-client checks
         # that introspect `_NamedWrapper__wrapped` directly.
         self.__wrapped = wrapped
 
+    @property
+    def _wrapped(self) -> Any:
+        return self.__wrapped
+
     def __getattr__(self, name: str) -> Any:
-        return getattr(self._wrapped, name)
+        return getattr(self.__wrapped, name)
 
 
 class AsyncResponseWrapper:
@@ -36,8 +39,8 @@ class AsyncResponseWrapper:
 
     async def __aenter__(self):
         if hasattr(self._response, "__aenter__"):
-            return await self._response.__aenter__()
-        return self._response
+            await self._response.__aenter__()
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if hasattr(self._response, "__aexit__"):

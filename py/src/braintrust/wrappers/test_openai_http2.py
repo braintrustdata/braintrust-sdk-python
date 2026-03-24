@@ -40,8 +40,6 @@ def test_openai_chat_streaming_sync_http2_preserves_stream_interface(memory_logg
                 stream_options={"include_usage": True},
             )
 
-            # HTTP/2 pushes the OpenAI SDK through the LegacyAPIResponse.parse()
-            # path. The wrapped stream must still preserve the SDK stream surface.
             assert hasattr(stream, "response")
             assert hasattr(stream, "_iterator")
 
@@ -146,12 +144,7 @@ async def test_openai_chat_streaming_async_http2_context_manager_preserves_wrapp
 
         chunks = []
         async with stream as entered_stream:
-            # The async chat wrapper still returns AsyncResponseWrapper at the
-            # outer boundary, while __aenter__ yields the traced inner stream.
-            # So we assert the traced stream interface is preserved rather than
-            # Python object identity with the outer wrapper.
-            assert entered_stream.response is stream.response
-            assert entered_stream._iterator is stream._iterator
+            assert entered_stream is stream
             async for chunk in entered_stream:
                 chunks.append(chunk)
         end = time.time()
