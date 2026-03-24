@@ -167,8 +167,8 @@ def test_agno(session, version):
     _install(session, "agno", version)
     _install(session, "openai")  # Required for agno.models.openai
     _install(session, "fastapi")  # Required for agno.workflow
-    _run_tests(session, f"{WRAPPER_DIR}/agno/test_agno.py")
-    _run_tests(session, f"{WRAPPER_DIR}/agno/test_workflow.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py")
     _run_core_tests(session)
 
 

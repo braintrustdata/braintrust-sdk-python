@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 from braintrust import logger
+from braintrust.integrations.agno import setup_agno
+from braintrust.integrations.agno.patchers import wrap_workflow
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.agno import setup_agno
-from braintrust.wrappers.agno.workflow import wrap_workflow
 
 from ._test_agno_helpers import (
     PROJECT_NAME,
@@ -34,7 +34,7 @@ def memory_logger():
 @pytest.fixture(scope="module")
 def vcr_config():
     return {
-        "cassette_library_dir": str(Path(__file__).parent.parent / "cassettes"),
+        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
     }
 
 

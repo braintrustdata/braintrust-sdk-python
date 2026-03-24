@@ -8,15 +8,11 @@ from pathlib import Path
 
 import pytest
 from braintrust import logger
+from braintrust.integrations.agno import setup_agno
+from braintrust.integrations.agno import tracing as agno_tracing_module
+from braintrust.integrations.agno.patchers import wrap_agent, wrap_team
 from braintrust.logger import start_span
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.agno import agent as agno_agent_module
-from braintrust.wrappers.agno import model as agno_model_module
-from braintrust.wrappers.agno import run_helpers as agno_run_helpers_module
-from braintrust.wrappers.agno import setup_agno
-from braintrust.wrappers.agno import team as agno_team_module
-from braintrust.wrappers.agno.agent import wrap_agent
-from braintrust.wrappers.agno.team import wrap_team
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
 from ._test_agno_helpers import (
@@ -40,7 +36,7 @@ def memory_logger():
 @pytest.fixture(scope="module")
 def vcr_config():
     return {
-        "cassette_library_dir": str(Path(__file__).parent.parent / "cassettes"),
+        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
     }
 
 
@@ -122,7 +118,7 @@ def test_get_model_name_prefers_stable_provider_attribute():
         def get_provider(self):
             return "OpenAI Chat"
 
-    assert agno_model_module._get_model_name(FakeModel()) == "OpenAI"
+    assert agno_tracing_module._get_model_name(FakeModel()) == "OpenAI"
 
 
 class TestAutoInstrumentAgno:
@@ -209,16 +205,15 @@ async def test_agno_public_arun_awaited_async_iterator_compat(memory_logger, wra
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "module,wrapper,name",
+    "wrapper,name",
     [
-        (agno_agent_module, wrap_agent, "StrictAgentAwaitedAsync"),
-        (agno_team_module, wrap_team, "StrictTeamAwaitedAsync"),
+        (wrap_agent, "StrictAgentAwaitedAsync"),
+        (wrap_team, "StrictTeamAwaitedAsync"),
     ],
 )
-async def test_agno_public_arun_awaited_async_iterator_span_lifecycle(monkeypatch, module, wrapper, name):
+async def test_agno_public_arun_awaited_async_iterator_span_lifecycle(monkeypatch, wrapper, name):
     strict_span = StrictSpan()
-    monkeypatch.setattr(module, "start_span", lambda **kwargs: strict_span)
-    monkeypatch.setattr(agno_run_helpers_module, "start_span", lambda **kwargs: strict_span)
+    monkeypatch.setattr(agno_tracing_module, "start_span", lambda **kwargs: strict_span)
 
     Component = wrapper(make_fake_async_dispatch_component(name))
     instance = Component()

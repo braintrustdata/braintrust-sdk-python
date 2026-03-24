@@ -5,7 +5,7 @@
 
 from inspect import isawaitable
 
-from braintrust.wrappers.agno.agent import wrap_agent
+from braintrust.integrations.agno.patchers import wrap_agent
 
 
 PROJECT_NAME = "test-agno-app"

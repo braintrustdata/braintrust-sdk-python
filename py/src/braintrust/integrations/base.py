@@ -50,11 +50,19 @@ class FunctionWrapperPatcher(BasePatcher):
     different module than the one provided by the integration (e.g. a deep
     submodule that may or may not be installed).  The module is imported lazily
     when the patcher is evaluated.
+
+    Set ``superseded_by`` to a tuple of other ``FunctionWrapperPatcher``
+    subclasses that take priority over this patcher.  If any of them apply
+    (i.e. their target exists), this patcher yields — both in the
+    ``setup()`` path (via ``applies()``) and in the manual ``wrap_target()``
+    path.  This is useful for version-conditional mutual exclusion, e.g.
+    wrapping a public ``run()`` only when the private ``_run()`` is absent.
     """
 
     target_path: ClassVar[str]
     wrapper: ClassVar[Any]
     target_module: ClassVar[str | None] = None
+    superseded_by: ClassVar[tuple[type["FunctionWrapperPatcher"], ...]] = ()
 
     @classmethod
     def resolve_root(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
@@ -83,11 +91,18 @@ class FunctionWrapperPatcher(BasePatcher):
 
     @classmethod
     def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
-        """Return whether the target exists and this patcher's version gate passes."""
-        return (
-            super().applies(module, version, target=target)
-            and cls.resolve_target(module, version, target=target) is not None
-        )
+        """Return whether the target exists and this patcher's version gate passes.
+
+        Returns ``False`` if any patcher listed in ``superseded_by`` applies.
+        """
+        if not super().applies(module, version, target=target):
+            return False
+        if cls.resolve_target(module, version, target=target) is None:
+            return False
+        for superior in cls.superseded_by:
+            if superior.applies(module, version, target=target):
+                return False
+        return True
 
     @classmethod
     def patch_marker_attr(cls) -> str:
@@ -135,8 +150,9 @@ class FunctionWrapperPatcher(BasePatcher):
         whether the patch has already been applied.
 
         Returns *target* unchanged if the leaf attribute does not exist on
-        *target* or the patch has already been applied.  Returns *target*
-        for convenient chaining.
+        *target*, the patch has already been applied, or a patcher in
+        ``superseded_by`` has a target that exists on *target*.  Returns
+        *target* for convenient chaining.
         """
         marker = cls.patch_marker_attr()
         if getattr(target, marker, False):
@@ -144,6 +160,11 @@ class FunctionWrapperPatcher(BasePatcher):
         attr = cls.target_path.rsplit(".", 1)[-1]
         if _resolve_attr_path(target, attr) is None:
             return target
+        # Check superseded_by against the target object directly.
+        for superior in cls.superseded_by:
+            superior_attr = superior.target_path.rsplit(".", 1)[-1]
+            if _resolve_attr_path(target, superior_attr) is not None:
+                return target
         wrap_function_wrapper(target, attr, cls.wrapper)
         cls.mark_patched(target)
         return target
