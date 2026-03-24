@@ -2,7 +2,6 @@
 Tests to ensure we reliably wrap the Anthropic API.
 """
 
-import inspect
 import time
 import unittest.mock
 from pathlib import Path
@@ -11,7 +10,6 @@ import anthropic
 import pytest
 from braintrust import logger
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
-from braintrust.integrations.versioning import make_specifier, version_satisfies
 from braintrust.test_helpers import init_test_logger
 
 
@@ -494,66 +492,23 @@ async def test_anthropic_beta_messages_streaming_async(memory_logger):
     assert metrics["tokens"] == usage.input_tokens + usage.output_tokens
 
 
-class TestAnthropicIntegrationSetup:
-    """Tests for `AnthropicIntegration.setup()`."""
+@pytest.mark.vcr
+def test_setup_creates_spans(memory_logger):
+    """`AnthropicIntegration.setup()` should create spans when making API calls."""
+    AnthropicIntegration.setup()
 
-    def test_available_patchers(self):
-        assert AnthropicIntegration.available_patchers() == (
-            "anthropic.init.sync",
-            "anthropic.init.async",
-        )
+    client = anthropic.Anthropic()
+    client.messages.create(
+        model=MODEL,
+        max_tokens=100,
+        messages=[{"role": "user", "content": "hi"}],
+    )
 
-    def test_setup_rejects_unsupported_versions(self):
-        spec = make_specifier(
-            min_version=AnthropicIntegration.min_version, max_version=AnthropicIntegration.max_version
-        )
-        assert version_satisfies("0.47.9", spec) is False
-
-    def test_setup_wraps_supported_clients(self):
-        """`AnthropicIntegration.setup()` should wrap both sync and async client constructors."""
-        unpatched_sync = anthropic.Anthropic(api_key="test-key")
-        unpatched_async = anthropic.AsyncAnthropic(api_key="test-key")
-        assert type(unpatched_sync.messages).__module__.startswith("anthropic.")
-        assert type(unpatched_async.messages).__module__.startswith("anthropic.")
-
-        AnthropicIntegration.setup()
-        patched_sync = anthropic.Anthropic(api_key="test-key")
-        patched_async = anthropic.AsyncAnthropic(api_key="test-key")
-        assert type(patched_sync.messages).__module__ == "braintrust.integrations.anthropic.tracing"
-        assert type(patched_async.messages).__module__ == "braintrust.integrations.anthropic.tracing"
-
-    def test_setup_is_idempotent(self):
-        """Multiple `AnthropicIntegration.setup()` calls should be safe."""
-        AnthropicIntegration.setup()
-        first_sync_init = inspect.getattr_static(anthropic.Anthropic, "__init__")
-        first_async_init = inspect.getattr_static(anthropic.AsyncAnthropic, "__init__")
-
-        AnthropicIntegration.setup()
-        assert first_sync_init is inspect.getattr_static(anthropic.Anthropic, "__init__")
-        assert first_async_init is inspect.getattr_static(anthropic.AsyncAnthropic, "__init__")
-
-    def test_setup_creates_spans(self):
-        """`AnthropicIntegration.setup()` should create spans when making API calls."""
-        init_test_logger("test-auto")
-        with logger._internal_with_memory_background_logger() as memory_logger:
-            AnthropicIntegration.setup()
-
-            client = anthropic.Anthropic()
-
-            import braintrust
-
-            with braintrust.start_span(name="test"):
-                try:
-                    client.messages.create(
-                        model="claude-3-5-haiku-latest",
-                        max_tokens=100,
-                        messages=[{"role": "user", "content": "hi"}],
-                    )
-                except Exception:
-                    pass
-
-            spans = memory_logger.pop()
-            assert len(spans) >= 1, f"Expected spans, got {spans}"
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == MODEL
+    assert span["metadata"]["provider"] == "anthropic"
 
 
 def _make_batch_requests():

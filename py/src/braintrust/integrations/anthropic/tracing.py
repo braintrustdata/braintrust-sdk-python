@@ -467,8 +467,18 @@ def _catch_exceptions():
         log.warning("swallowing exception in tracing code", exc_info=e)
 
 
+_BRAINTRUST_TRACED = "__braintrust_traced__"
+
+
 def _wrap_anthropic(client):
-    """Wrap an Anthropic object (or AsyncAnthropic) to add tracing."""
+    """Wrap an Anthropic object (or AsyncAnthropic) to add tracing.
+
+    If the client is already traced (e.g. via ``AnthropicIntegration.setup()``),
+    it is returned unchanged to avoid double-wrapping.
+    """
+    if getattr(client, _BRAINTRUST_TRACED, False):
+        return client
+
     type_name = getattr(type(client), "__name__")
     if "AsyncAnthropic" in type_name:
         return TracedAsyncAnthropic(client)
@@ -482,17 +492,23 @@ wrap_anthropic = _wrap_anthropic
 
 
 def _apply_anthropic_wrapper(client):
+    if getattr(client, _BRAINTRUST_TRACED, False):
+        return
     wrapped = _wrap_anthropic(client)
     client.messages = wrapped.messages
     if hasattr(wrapped, "beta"):
         client.beta = wrapped.beta
+    setattr(client, _BRAINTRUST_TRACED, True)
 
 
 def _apply_async_anthropic_wrapper(client):
+    if getattr(client, _BRAINTRUST_TRACED, False):
+        return
     wrapped = _wrap_anthropic(client)
     client.messages = wrapped.messages
     if hasattr(wrapped, "beta"):
         client.beta = wrapped.beta
+    setattr(client, _BRAINTRUST_TRACED, True)
 
 
 def _anthropic_init_wrapper(wrapped, instance, args, kwargs):
