@@ -512,18 +512,6 @@ class TestAnthropicIntegrationSetup:
             "anthropic.init.async",
         )
 
-    def test_resolve_patchers_honors_enable_disable_filters(self):
-        selected = AnthropicIntegration.resolve_patchers(
-            enabled_patchers={"anthropic.init.sync", "anthropic.init.async"},
-            disabled_patchers={"anthropic.init.async"},
-        )
-
-        assert tuple(patcher.identifier() for patcher in selected) == ("anthropic.init.sync",)
-
-    def test_resolve_patchers_rejects_unknown_patchers(self):
-        with pytest.raises(ValueError, match="Unknown patchers"):
-            AnthropicIntegration.resolve_patchers(enabled_patchers={"anthropic.init.unknown"})
-
     def test_setup_rejects_unsupported_versions(self):
         spec = make_specifier(
             min_version=AnthropicIntegration.min_version, max_version=AnthropicIntegration.max_version

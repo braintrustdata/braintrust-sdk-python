@@ -4,18 +4,15 @@ Auto-instrumentation for AI/ML libraries.
 Provides one-line instrumentation for supported libraries.
 """
 
-from __future__ import annotations
-
 import logging
 from contextlib import contextmanager
 
-from braintrust.integrations import ADKIntegration, AnthropicIntegration, IntegrationPatchConfig
+from braintrust.integrations import ADKIntegration, AnthropicIntegration
 
 
 __all__ = ["auto_instrument"]
 
 logger = logging.getLogger(__name__)
-InstrumentOption = bool | IntegrationPatchConfig
 
 
 @contextmanager
@@ -32,14 +29,14 @@ def _try_patch():
 def auto_instrument(
     *,
     openai: bool = True,
-    anthropic: InstrumentOption = True,
+    anthropic: bool = True,
     litellm: bool = True,
     pydantic_ai: bool = True,
     google_genai: bool = True,
     agno: bool = True,
     claude_agent_sdk: bool = True,
     dspy: bool = True,
-    adk: InstrumentOption = True,
+    adk: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -52,8 +49,7 @@ def auto_instrument(
 
     Args:
         openai: Enable OpenAI instrumentation (default: True)
-        anthropic: Enable Anthropic instrumentation (default: True), or pass an
-            IntegrationPatchConfig to select Anthropic patchers explicitly.
+        anthropic: Enable Anthropic instrumentation (default: True)
         litellm: Enable LiteLLM instrumentation (default: True)
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
@@ -108,34 +104,24 @@ def auto_instrument(
     """
     results = {}
 
-    openai_enabled = _normalize_bool_option("openai", openai)
-    anthropic_enabled, anthropic_config = _normalize_instrument_option("anthropic", anthropic)
-    litellm_enabled = _normalize_bool_option("litellm", litellm)
-    pydantic_ai_enabled = _normalize_bool_option("pydantic_ai", pydantic_ai)
-    google_genai_enabled = _normalize_bool_option("google_genai", google_genai)
-    agno_enabled = _normalize_bool_option("agno", agno)
-    claude_agent_sdk_enabled = _normalize_bool_option("claude_agent_sdk", claude_agent_sdk)
-    dspy_enabled = _normalize_bool_option("dspy", dspy)
-    adk_enabled, adk_config = _normalize_instrument_option("adk", adk)
-
-    if openai_enabled:
+    if openai:
         results["openai"] = _instrument_openai()
-    if anthropic_enabled:
-        results["anthropic"] = _instrument_integration(AnthropicIntegration, patch_config=anthropic_config)
-    if litellm_enabled:
+    if anthropic:
+        results["anthropic"] = _instrument_integration(AnthropicIntegration)
+    if litellm:
         results["litellm"] = _instrument_litellm()
-    if pydantic_ai_enabled:
+    if pydantic_ai:
         results["pydantic_ai"] = _instrument_pydantic_ai()
-    if google_genai_enabled:
+    if google_genai:
         results["google_genai"] = _instrument_google_genai()
-    if agno_enabled:
+    if agno:
         results["agno"] = _instrument_agno()
-    if claude_agent_sdk_enabled:
+    if claude_agent_sdk:
         results["claude_agent_sdk"] = _instrument_claude_agent_sdk()
-    if dspy_enabled:
+    if dspy:
         results["dspy"] = _instrument_dspy()
-    if adk_enabled:
-        results["adk"] = _instrument_integration(ADKIntegration, patch_config=adk_config)
+    if adk:
+        results["adk"] = _instrument_integration(ADKIntegration)
 
     return results
 
@@ -148,32 +134,10 @@ def _instrument_openai() -> bool:
     return False
 
 
-def _instrument_integration(integration, *, patch_config: IntegrationPatchConfig | None = None) -> bool:
+def _instrument_integration(integration) -> bool:
     with _try_patch():
-        return integration.setup(
-            enabled_patchers=patch_config.enabled_patchers if patch_config is not None else None,
-            disabled_patchers=patch_config.disabled_patchers if patch_config is not None else None,
-        )
+        return integration.setup()
     return False
-
-
-def _normalize_bool_option(name: str, option: bool) -> bool:
-    if isinstance(option, bool):
-        return option
-
-    raise TypeError(f"auto_instrument option {name!r} must be a bool, got {type(option).__name__}")
-
-
-def _normalize_instrument_option(name: str, option: InstrumentOption) -> tuple[bool, IntegrationPatchConfig | None]:
-    if isinstance(option, bool):
-        return option, None
-
-    if isinstance(option, IntegrationPatchConfig):
-        return True, option
-
-    raise TypeError(
-        f"auto_instrument option {name} must be a bool or IntegrationPatchConfig, got {type(option).__name__}"
-    )
 
 
 def _instrument_litellm() -> bool:

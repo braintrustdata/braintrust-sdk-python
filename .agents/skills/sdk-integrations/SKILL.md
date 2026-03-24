@@ -92,7 +92,7 @@ Patchers must provide:
 - existence checks
 - idempotence through the base patcher marker
 
-Use `IntegrationPatchConfig` only when users need patcher-level selection. Let `BaseIntegration.resolve_patchers()` reject unknown patcher ids instead of silently ignoring them.
+Let `BaseIntegration.resolve_patchers()` reject duplicate patcher ids instead of silently ignoring them.
 
 ## Patching Patterns
 
@@ -116,14 +116,11 @@ Use:
 
 Update `py/src/braintrust/auto.py` only if the integration should be auto-patched.
 
-Use `InstrumentOption` (i.e. `bool | IntegrationPatchConfig`) for all integrations, including those that do not yet use the integrations API. This keeps the signature uniform and avoids a breaking change when the integration is later migrated.
-
-Use `_normalize_instrument_option()` and `_instrument_integration(...)` instead of adding a custom `_instrument_*` function:
+All `auto_instrument()` parameters are plain `bool` flags. Use `_instrument_integration(...)` instead of adding a custom `_instrument_*` function:
 
 ```python
-enabled, config = _normalize_instrument_option("provider", provider)
-if enabled:
-    results["provider"] = _instrument_integration(ProviderIntegration, patch_config=config)
+if provider:
+    results["provider"] = _instrument_integration(ProviderIntegration)
 ```
 
 Add the integration import near the other integration imports in `auto.py`.
@@ -147,7 +144,7 @@ Cover the surfaces that changed:
 - streaming behavior
 - idempotence
 - failure and error logging
-- patcher selection when using `IntegrationPatchConfig`
+- patcher resolution and duplicate detection
 
 Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/`. Re-record them only for intentional behavior changes.
 
@@ -173,8 +170,6 @@ cd py && make lint
 - Moving provider-specific behavior into shared integration code.
 - Combining unrelated targets into one patcher.
 - Forgetting async or streaming coverage.
-- Adding patcher selection without tests for enabled and disabled cases.
 - Re-recording cassettes when behavior did not intentionally change.
-- Using `_normalize_bool_option()` instead of `_normalize_instrument_option()` — all integrations should accept `InstrumentOption`.
 - Adding a custom `_instrument_*` helper where `_instrument_integration()` already fits.
 - Forgetting `target_module` for deep or optional submodule patch targets.

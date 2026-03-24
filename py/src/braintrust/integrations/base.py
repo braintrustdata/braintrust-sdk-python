@@ -4,21 +4,12 @@ import importlib
 import inspect
 import re
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable
-from dataclasses import dataclass
+from collections.abc import Iterable
 from typing import Any, ClassVar
 
 from wrapt import wrap_function_wrapper
 
 from .versioning import detect_module_version, make_specifier, version_satisfies
-
-
-@dataclass(frozen=True)
-class IntegrationPatchConfig:
-    """Per-integration patch selection for instrumentation setup."""
-
-    enabled_patchers: Collection[str] | None = None
-    disabled_patchers: Collection[str] | None = None
 
 
 class BasePatcher(ABC):
@@ -229,13 +220,8 @@ class BaseIntegration(ABC):
         return tuple(patcher.identifier() for patcher in cls.patchers)
 
     @classmethod
-    def resolve_patchers(
-        cls,
-        *,
-        enabled_patchers: Collection[str] | None = None,
-        disabled_patchers: Collection[str] | None = None,
-    ) -> tuple[type[BasePatcher], ...]:
-        """Return the selected patchers after validating explicit selectors."""
+    def resolve_patchers(cls) -> tuple[type[BasePatcher], ...]:
+        """Return all patchers after validating there are no duplicate identifiers."""
         patchers_by_id: dict[str, type[BasePatcher]] = {}
         for patcher in cls.patchers:
             patcher_id = patcher.identifier()
@@ -244,30 +230,13 @@ class BaseIntegration(ABC):
                 raise ValueError(f"Duplicate patcher identifier {patcher_id!r} for integration {cls.name!r}")
             patchers_by_id[patcher_id] = patcher
 
-        enabled = set(enabled_patchers) if enabled_patchers is not None else None
-        disabled = set(disabled_patchers or ())
-        requested = disabled if enabled is None else enabled | disabled
-        unknown = requested - set(patchers_by_id)
-        if unknown:
-            available = ", ".join(sorted(patchers_by_id))
-            unknown_display = ", ".join(sorted(unknown))
-            raise ValueError(
-                f"Unknown patchers for integration {cls.name!r}: {unknown_display}. Available patchers: {available}"
-            )
-
-        return tuple(
-            patcher
-            for patcher in cls.patchers
-            if (enabled is None or patcher.identifier() in enabled) and patcher.identifier() not in disabled
-        )
+        return cls.patchers
 
     @classmethod
     def setup(
         cls,
         *,
         target: Any | None = None,
-        enabled_patchers: Collection[str] | None = None,
-        disabled_patchers: Collection[str] | None = None,
     ) -> bool:
         """Apply all applicable patchers for this integration."""
         module = _import_first_available(cls.import_names)
@@ -278,10 +247,7 @@ class BaseIntegration(ABC):
             return False
 
         success = False
-        selected_patchers = cls.resolve_patchers(
-            enabled_patchers=enabled_patchers,
-            disabled_patchers=disabled_patchers,
-        )
+        selected_patchers = cls.resolve_patchers()
         for patcher in sorted(selected_patchers, key=lambda patcher: patcher.priority):
             if not patcher.applies(module, version, target=target):
                 continue
