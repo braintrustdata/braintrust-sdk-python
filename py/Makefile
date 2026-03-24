@@ -60,7 +60,7 @@ install-dev: install-build-deps
 	$(UV) pip install -r requirements-dev.txt
 
 install-optional: install-dev
-	$(UV) pip install anthropic openai pydantic_ai litellm agno google-genai google-adk dspy langsmith
+	$(UV) pip install anthropic openai pydantic_ai agno google-genai google-adk dspy langsmith
 	$(UV) pip install -e .[temporal,otel]
 
 .DEFAULT_GOAL := help
