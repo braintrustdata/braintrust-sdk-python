@@ -7,7 +7,7 @@ Provides one-line instrumentation for supported libraries.
 import logging
 from contextlib import contextmanager
 
-from braintrust.integrations import ADKIntegration, AgnoIntegration, AnthropicIntegration
+from braintrust.integrations import ADKIntegration, AgnoIntegration, AnthropicIntegration, ClaudeAgentSDKIntegration
 
 
 __all__ = ["auto_instrument"]
@@ -117,7 +117,7 @@ def auto_instrument(
     if agno:
         results["agno"] = _instrument_integration(AgnoIntegration)
     if claude_agent_sdk:
-        results["claude_agent_sdk"] = _instrument_claude_agent_sdk()
+        results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
     if dspy:
         results["dspy"] = _instrument_dspy()
     if adk:
@@ -161,14 +161,6 @@ def _instrument_google_genai() -> bool:
         from braintrust.wrappers.google_genai import setup_genai
 
         return setup_genai()
-    return False
-
-
-def _instrument_claude_agent_sdk() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.claude_agent_sdk import setup_claude_agent_sdk
-
-        return setup_claude_agent_sdk()
     return False
 
 

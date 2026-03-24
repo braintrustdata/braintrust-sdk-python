@@ -48,7 +48,7 @@ def get_record_mode() -> str:
 def _require_sdk() -> None:
     if _CLAUDE_AGENT_SDK_IMPORT_ERROR is not None:
         raise ImportError(
-            "claude_agent_sdk is required to use braintrust.wrappers.claude_agent_sdk._test_transport"
+            "claude_agent_sdk is required to use braintrust.integrations.claude_agent_sdk._test_transport"
         ) from _CLAUDE_AGENT_SDK_IMPORT_ERROR
 
 

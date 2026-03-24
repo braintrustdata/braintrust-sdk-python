@@ -8,9 +8,7 @@ from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any
 
 from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage, finalize_anthropic_tokens
-from braintrust.logger import start_span
-from braintrust.span_types import SpanTypeAttribute
-from braintrust.wrappers.claude_agent_sdk._constants import (
+from braintrust.integrations.claude_agent_sdk._constants import (
     ANTHROPIC_MESSAGES_CREATE_SPAN_NAME,
     CLAUDE_AGENT_TASK_SPAN_NAME,
     DEFAULT_TOOL_NAME,
@@ -24,6 +22,8 @@ from braintrust.wrappers.claude_agent_sdk._constants import (
     MessageClassName,
     SerializedContentType,
 )
+from braintrust.logger import start_span
+from braintrust.span_types import SpanTypeAttribute
 
 
 _thread_local = threading.local()

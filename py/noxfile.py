@@ -156,7 +156,7 @@ def test_claude_agent_sdk(session, version):
     # while still exercising the real Claude Agent SDK control protocol.
     _install_test_deps(session)
     _install(session, "claude_agent_sdk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/claude_agent_sdk/test_wrapper.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py")
     _run_core_tests(session)
 
 

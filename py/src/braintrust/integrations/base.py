@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import re
+import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Any, ClassVar
@@ -168,6 +169,84 @@ class FunctionWrapperPatcher(BasePatcher):
         wrap_function_wrapper(target, attr, cls.wrapper)
         cls.mark_patched(target)
         return target
+
+
+class ClassReplacementPatcher(BasePatcher):
+    """Base patcher for replacing an exported class with a tracing wrapper class.
+
+    Use this when instrumentation cannot be expressed as wrapping one stable
+    function or method in place. Typical cases are integrations that need to:
+
+    - replace constructor behavior before the SDK stores callbacks or handlers
+    - preserve per-instance state across multiple methods
+    - keep ``from provider import Client`` aliases working after setup by
+      propagating the replacement to modules that already imported the class
+
+    Prefer ``FunctionWrapperPatcher`` when a stable attribute can be instrumented
+    in place with ``wrap_function_wrapper(...)`` and class identity does not need
+    to change.
+    """
+
+    target_attr: ClassVar[str]
+    propagate_imported_aliases: ClassVar[bool] = True
+    # Factory that takes the original exported class and returns the replacement class.
+    replacement_factory: ClassVar[Any]
+
+    @classmethod
+    def resolve_target(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
+        """Return the exported class object that this patcher replaces."""
+        root = target if target is not None else module
+        if root is None:
+            return None
+        return getattr(root, cls.target_attr, None)
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether the target class exists and the version gate passes."""
+        return super().applies(module, version, target=target) and (
+            cls.resolve_target(module, version, target=target) is not None
+        )
+
+    @classmethod
+    def patch_marker_attr(cls) -> str:
+        """Return the sentinel attribute used to mark the replacement class as patched."""
+        suffix = re.sub(r"\W+", "_", cls.name).strip("_")
+        return f"__braintrust_patched_{suffix}__"
+
+    @classmethod
+    def mark_patched(cls, obj: Any) -> None:
+        """Mark a replacement class so future patch attempts are idempotent."""
+        setattr(obj, cls.patch_marker_attr(), True)
+
+    @classmethod
+    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether this patcher's replacement class is already installed."""
+        resolved_target = cls.resolve_target(module, version, target=target)
+        return bool(resolved_target is not None and getattr(resolved_target, cls.patch_marker_attr(), False))
+
+    @classmethod
+    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Replace the exported class and optionally propagate the new binding."""
+        root = target if target is not None else module
+        if root is None or not cls.applies(module, version, target=target):
+            return False
+
+        original_class = cls.resolve_target(module, version, target=target)
+        if original_class is None:
+            return False
+
+        replacement_class = cls.replacement_factory(original_class)
+        cls.mark_patched(replacement_class)
+        setattr(root, cls.target_attr, replacement_class)
+
+        if cls.propagate_imported_aliases and target is None:
+            for mod in list(sys.modules.values()):
+                if mod is None or not hasattr(mod, cls.target_attr):
+                    continue
+                if getattr(mod, cls.target_attr, None) is original_class:
+                    setattr(mod, cls.target_attr, replacement_class)
+
+        return True
 
 
 class CompositeFunctionWrapperPatcher(BasePatcher):

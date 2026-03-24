@@ -24,12 +24,9 @@ except ImportError:
     print("Claude Agent SDK not installed, skipping integration tests")
 
 from braintrust import logger
-from braintrust.logger import start_span
-from braintrust.span_types import SpanTypeAttribute
-from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.claude_agent_sdk import setup_claude_agent_sdk
-from braintrust.wrappers.claude_agent_sdk._test_transport import make_cassette_transport
-from braintrust.wrappers.claude_agent_sdk._wrapper import (
+from braintrust.integrations.claude_agent_sdk import setup_claude_agent_sdk
+from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
+from braintrust.integrations.claude_agent_sdk.tracing import (
     ToolSpanTracker,
     _build_llm_input,
     _create_client_wrapper_class,
@@ -41,12 +38,15 @@ from braintrust.wrappers.claude_agent_sdk._wrapper import (
     _serialize_tool_result_output,
     _thread_local,
 )
+from braintrust.logger import start_span
+from braintrust.span_types import SpanTypeAttribute
+from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
 
 PROJECT_NAME = "test-claude-agent-sdk"
 TEST_MODEL = "claude-haiku-4-5-20251001"
-REPO_ROOT = Path(__file__).resolve().parents[5]
+REPO_ROOT = Path(__file__).resolve().parents[5]  # py/src/braintrust/integrations/claude_agent_sdk -> repo root
 
 
 @pytest.fixture
