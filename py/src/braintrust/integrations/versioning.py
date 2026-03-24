@@ -43,11 +43,17 @@ def make_specifier(*, min_version: str | None = None, max_version: str | None = 
 
 
 def version_satisfies(version: str | None, spec: str | SpecifierSet | None) -> bool:
-    """Return True if *version* satisfies the PEP 440 *spec*."""
+    """Return True if *version* satisfies the PEP 440 *spec*.
+
+    When *version* is ``None`` (i.e. we could not detect the installed
+    version), we optimistically return ``True`` so that patching still
+    proceeds.  A failed detection should not silently disable
+    instrumentation.
+    """
     if spec is None:
         return True
     if version is None:
-        return False
+        return True
     try:
         ss = spec if isinstance(spec, SpecifierSet) else SpecifierSet(spec, prereleases=True)
         return Version(version) in ss

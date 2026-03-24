@@ -109,21 +109,16 @@ Prefer feature detection first and version checks second.
 Use:
 
 - `detect_module_version(...)`
-- `version_in_range(...)`
-- `version_matches_spec(...)`
-
-Do not add `packaging` just for integration routing.
+- `version_satisfies(...)`
+- `make_specifier(...)`
 
 ## `auto_instrument()`
 
 Update `py/src/braintrust/auto.py` only if the integration should be auto-patched.
 
-Match the existing option shape:
+Use `InstrumentOption` (i.e. `bool | IntegrationPatchConfig`) for all integrations, including those that do not yet use the integrations API. This keeps the signature uniform and avoids a breaking change when the integration is later migrated.
 
-- use plain `bool` for simple on/off integrations that do not use the integrations API
-- use `InstrumentOption` for integrations API providers that support `IntegrationPatchConfig`
-
-For integrations API providers, use `_normalize_instrument_option()` and `_instrument_integration(...)` instead of adding a custom `_instrument_*` function:
+Use `_normalize_instrument_option()` and `_instrument_integration(...)` instead of adding a custom `_instrument_*` function:
 
 ```python
 enabled, config = _normalize_instrument_option("provider", provider)
@@ -180,6 +175,6 @@ cd py && make lint
 - Forgetting async or streaming coverage.
 - Adding patcher selection without tests for enabled and disabled cases.
 - Re-recording cassettes when behavior did not intentionally change.
-- Using `_normalize_bool_option()` for an integrations API provider.
+- Using `_normalize_bool_option()` instead of `_normalize_instrument_option()` — all integrations should accept `InstrumentOption`.
 - Adding a custom `_instrument_*` helper where `_instrument_integration()` already fits.
 - Forgetting `target_module` for deep or optional submodule patch targets.

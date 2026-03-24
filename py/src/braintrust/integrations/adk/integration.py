@@ -21,6 +21,7 @@ class ADKIntegration(BaseIntegration):
 
     name = "adk"
     import_names = ("google.adk",)
+    min_version = "1.14.1"
     patchers = (
         ThreadBridgePatcher,
         AgentRunAsyncPatcher,

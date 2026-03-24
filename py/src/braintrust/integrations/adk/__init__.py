@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "ADKIntegration",
-    "_create_thread_wrapper",
     "setup_adk",
     "setup_braintrust",
     "wrap_agent",

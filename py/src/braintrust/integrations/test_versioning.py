@@ -26,8 +26,9 @@ def test_version_satisfies_none_handling():
     assert version_satisfies("1.0", None)
     assert version_satisfies(None, None)
 
-    # No version with a spec means incompatible.
-    assert not version_satisfies(None, ">=1.0")
+    # No version with a spec — optimistically allow so patching still proceeds
+    # when version detection fails.
+    assert version_satisfies(None, ">=1.0")
 
 
 def test_version_satisfies_invalid_version():
