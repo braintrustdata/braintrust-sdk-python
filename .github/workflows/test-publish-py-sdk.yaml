@@ -112,7 +112,7 @@ jobs:
             const response = await github.rest.actions.listWorkflowRuns({
               owner,
               repo,
-              workflow_id: "py.yaml",
+              workflow_id: "checks.yaml",
               branch: process.env.TARGET_BRANCH,
               status: "completed",
               per_page: 1,
@@ -121,7 +121,7 @@ jobs:
             const run = response.data.workflow_runs[0];
             if (!run) {
               core.setOutput("should_publish", "false");
-              core.setOutput("reason", `No completed py.yaml run found on ${process.env.TARGET_BRANCH}.`);
+              core.setOutput("reason", `No completed checks.yaml run found on ${process.env.TARGET_BRANCH}.`);
               return;
             }
 
@@ -129,7 +129,7 @@ jobs:
               core.setOutput("should_publish", "false");
               core.setOutput(
                 "reason",
-                `Latest completed py.yaml run on ${process.env.TARGET_BRANCH} concluded with ${run.conclusion} (${run.html_url}).`,
+                `Latest completed checks.yaml run on ${process.env.TARGET_BRANCH} concluded with ${run.conclusion} (${run.html_url}).`,
               );
               return;
             }
@@ -137,7 +137,7 @@ jobs:
             core.setOutput("should_publish", "true");
             core.setOutput(
               "reason",
-              `Latest completed py.yaml run on ${process.env.TARGET_BRANCH} succeeded (${run.html_url}).`,
+              `Latest completed checks.yaml run on ${process.env.TARGET_BRANCH} succeeded (${run.html_url}).`,
             );
       - name: Build and verify
         if: env.RELEASE_TYPE != 'canary' || (steps.should_publish.outputs.should_publish == 'true' && steps.ci_status.outputs.should_publish == 'true')

@@ -153,10 +153,9 @@ GitHub Actions workflows live in `.github/workflows/`.
 
 Main workflows:
 
-- `py.yaml`: SDK test matrix
+- `checks.yaml`: merged SDK checks workflow, including lint, pinned-action validation, the Python test matrix, wheel build, and the `checks-passed` required-check aggregator
 - `langchain-py-test.yaml`: LangChain integration tests
 - `adk-py-test.yaml`: ADK integration tests
-- `lint.yaml`: pre-commit and formatting checks
 - `publish-py-sdk.yaml`: PyPI release
 - `test-publish-py-sdk.yaml`: TestPyPI release validation
 

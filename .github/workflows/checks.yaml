@@ -1,18 +1,38 @@
-name: py
+name: checks
 
 on:
   pull_request:
-    paths:
-      - "py/**"
-      - "integrations/langchain-py/**"
-      - "integrations/adk-py/**"
-      - ".github/workflows/py.yaml"
-      - ".github/workflows/adk-py-test.yaml"
-      - ".github/workflows/langchain-py-test.yaml"
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0 # Fetch full history for proper diff
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        with:
+          cache: true
+          experimental: true
+      - name: Run pre-commit
+        run: |
+          mise exec -- pre-commit run --from-ref origin/${{ github.base_ref || 'main' }} --to-ref HEAD
+
+  ensure-pinned-actions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Ensure SHA pinned actions
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@70c4af2ed5282c51ba40566d026d6647852ffa3e # v5.0.1
+
   build:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -82,3 +102,44 @@ jobs:
           name: python-wheel
           path: py/dist/*.whl
           retention-days: 5
+
+  checks-passed:
+    name: checks-passed
+    needs:
+      - lint
+      - ensure-pinned-actions
+      - build
+      - adk-py
+      - langchain-py
+      - upload-wheel
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    steps:
+      - name: Verify all required checks passed
+        run: |
+          FAILED=0
+
+          check_result() {
+            local job_name="$1"
+            local job_result="$2"
+
+            if [ "$job_result" != "success" ] && [ "$job_result" != "skipped" ]; then
+              echo "Job '$job_name' finished with result: $job_result"
+              FAILED=1
+            fi
+          }
+
+          check_result "lint" "${{ needs.lint.result }}"
+          check_result "ensure-pinned-actions" "${{ needs.ensure-pinned-actions.result }}"
+          check_result "build" "${{ needs.build.result }}"
+          check_result "adk-py" "${{ needs.adk-py.result }}"
+          check_result "langchain-py" "${{ needs.langchain-py.result }}"
+          check_result "upload-wheel" "${{ needs.upload-wheel.result }}"
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "One or more required checks failed"
+            exit 1
+          fi
+
+          echo "All required checks passed"
