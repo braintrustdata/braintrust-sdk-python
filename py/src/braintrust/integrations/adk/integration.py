@@ -10,6 +10,7 @@ from .patchers import (
     McpToolPatcher,
     RunnerRunSyncPatcher,
     ThreadBridgePatcher,
+    ToolCallAsyncPatcher,
 )
 
 
@@ -27,5 +28,6 @@ class ADKIntegration(BaseIntegration):
         AgentRunAsyncPatcher,
         RunnerRunSyncPatcher,
         FlowRunAsyncPatcher,
+        ToolCallAsyncPatcher,
         McpToolPatcher,
     )

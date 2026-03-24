@@ -12,6 +12,7 @@ from .tracing import (
     _mcp_tool_run_async_wrapper_async,
     _runner_run_async_wrapper,
     _runner_run_wrapper,
+    _tool_call_async_wrapper,
 )
 
 
@@ -87,6 +88,20 @@ class FlowRunAsyncPatcher(CompositeFunctionWrapperPatcher):
 
     name = "adk.flow.run_async"
     sub_patchers = (_FlowRunAsyncSubPatcher, _FlowCallLlmAsyncSubPatcher)
+
+
+# ---------------------------------------------------------------------------
+# Tool patcher
+# ---------------------------------------------------------------------------
+
+
+class ToolCallAsyncPatcher(FunctionWrapperPatcher):
+    """Patch ADK's central async tool execution helper for tracing."""
+
+    name = "adk.tool.call_async"
+    target_module = "google.adk.flows.llm_flows.functions"
+    target_path = "__call_tool_async"
+    wrapper = _tool_call_async_wrapper
 
 
 # ---------------------------------------------------------------------------

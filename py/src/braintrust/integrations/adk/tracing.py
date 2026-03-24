@@ -548,6 +548,31 @@ async def _runner_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwar
             yield event
 
 
+async def _tool_call_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    tool = args[0] if len(args) > 0 else kwargs.get("tool")
+    tool_args = args[1] if len(args) > 1 else kwargs.get("args", {})
+
+    # MCP tools already have a dedicated wrapper. Skip here to avoid duplicate tool spans.
+    if tool is not None and getattr(tool.__class__, "__module__", "").startswith("google.adk.tools.mcp_tool"):
+        return await wrapped(*args, **kwargs)
+
+    tool_name = getattr(tool, "name", tool.__class__.__name__ if tool is not None else "unknown")
+
+    with start_span(
+        name=f"tool [{tool_name}]",
+        type=SpanTypeAttribute.TOOL,
+        input={"tool_name": tool_name, "arguments": bt_safe_deep_copy(tool_args)},
+        metadata={"tool_class": tool.__class__.__name__ if tool is not None else None},
+    ) as tool_span:
+        try:
+            result = await wrapped(*args, **kwargs)
+            tool_span.log(output=result)
+            return result
+        except Exception as e:
+            tool_span.log(error=str(e))
+            raise
+
+
 async def _mcp_tool_run_async_wrapper_async(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     # Extract tool information
     tool_name = instance.name

@@ -13,7 +13,7 @@ from google.adk import Agent
 
 
 ADK_VERSION = tuple(int(x) for x in pkg_version("google-adk").split(".")[:3])
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
@@ -224,6 +224,69 @@ async def test_adk_braintrust_integration(memory_logger):
     response_output = response_span["output"]["content"]["parts"][0]["text"]
     assert "san francisco" in response_output.lower(), "Response doesn't mention San Francisco"
     assert "72" in response_output, "Response doesn't mention temperature"
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_adk_nested_subagent_tool_calls_are_traced(memory_logger):
+    assert not memory_logger.pop()
+
+    def get_weather(location: str):
+        """Get the weather for a location."""
+        return {
+            "location": location,
+            "temperature": "72°F",
+            "condition": "sunny",
+        }
+
+    leaf_agent = Agent(
+        name="weather_agent",
+        model="gemini-2.0-flash",
+        instruction="You are a helpful weather assistant. Use the get_weather tool to answer questions about weather.",
+        tools=[get_weather],
+    )
+    agent = SequentialAgent(
+        name="root_agent",
+        sub_agents=[
+            ParallelAgent(
+                name="parallel_weather_agent",
+                sub_agents=[leaf_agent],
+            )
+        ],
+    )
+
+    app_name = "nested_weather_app"
+    user_id = "test-user"
+    session_id = "test-session-nested"
+
+    session_service = InMemorySessionService()
+    await session_service.create_session(app_name=app_name, user_id=user_id, session_id=session_id)
+
+    runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
+    user_msg = types.Content(role="user", parts=[types.Part(text="What's the weather in San Francisco?")])
+
+    responses = []
+    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
+        if event.is_final_response():
+            responses.append(event)
+
+    assert responses
+    assert responses[0].content
+    response_text = responses[0].content.parts[0].text
+    assert "san francisco" in response_text.lower()
+
+    spans = memory_logger.pop()
+
+    tool_spans = [row for row in spans if row["span_attributes"]["type"] == "tool"]
+    assert len(tool_spans) == 1, (
+        f"Expected one tool span, got {[row['span_attributes']['name'] for row in tool_spans]}"
+    )
+
+    tool_span = tool_spans[0]
+    assert tool_span["span_attributes"]["name"] == "tool [get_weather]"
+    assert tool_span["input"]["arguments"] == {"location": "San Francisco"}
+    assert tool_span["output"]["location"] == "San Francisco"
+    assert tool_span["output"]["temperature"] == "72°F"
 
 
 @pytest.mark.vcr
