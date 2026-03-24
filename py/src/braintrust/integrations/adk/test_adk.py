@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 
 PROJECT_NAME = "test_adk"
+FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
 
 setup_adk(project_name=PROJECT_NAME)
 
@@ -51,6 +52,22 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+async def _create_runner(agent: Agent, *, app_name: str, user_id: str, session_id: str) -> Runner:
+    session_service = InMemorySessionService()
+    await session_service.create_session(app_name=app_name, user_id=user_id, session_id=session_id)
+    return Runner(agent=agent, app_name=app_name, session_service=session_service)
+
+
+def _extract_text_parts(contents):
+    texts = []
+    for content in contents or []:
+        for part in content.get("parts", []):
+            text = part.get("text")
+            if text is not None:
+                texts.append(text)
+    return texts
 
 
 def test_adk_thread_context_propagation(memory_logger):
@@ -127,6 +144,192 @@ def test_create_thread_wrapper_exception_does_not_double_invoke_target():
         _create_thread_wrapper(create_thread, None, (target,), {})
 
     assert call_count == 1
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_adk_multi_turn_history_is_logged(memory_logger):
+    """Multi-turn session history should be visible in traced LLM requests."""
+    assert not memory_logger.pop()
+
+    app_name = "conversation_app"
+    user_id = "test-user"
+    session_id = "test-session-conversation"
+    agent = Agent(
+        name="conversation_agent",
+        model="gemini-2.0-flash",
+        instruction=(
+            "You are a concise assistant. "
+            "When the user says their name, acknowledge it briefly. "
+            "When later asked to recall it, answer with just the name."
+        ),
+    )
+    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
+
+    async def run_message(text: str) -> str:
+        responses = []
+        user_msg = types.Content(role="user", parts=[types.Part(text=text)])
+        async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
+            if event.is_final_response():
+                responses.append(event)
+        assert responses
+        return responses[0].content.parts[0].text
+
+    first_response_text = await run_message("Hi, my name is Alice.")
+    second_response_text = await run_message("What name did I tell you?")
+
+    memory_logger.flush()
+    spans = memory_logger.pop()
+
+    invocation_spans = [row for row in spans if row["span_attributes"]["name"] == f"invocation [{app_name}]"]
+    assert len(invocation_spans) == 2
+    assert {span["metadata"]["session_id"] for span in invocation_spans} == {session_id}
+    assert {span["input"]["new_message"]["parts"][0]["text"] for span in invocation_spans} == {
+        "Hi, my name is Alice.",
+        "What name did I tell you?",
+    }
+
+    llm_spans = [row for row in spans if row["span_attributes"]["type"] == "llm"]
+    assert len(llm_spans) == 2
+
+    follow_up_span = next(
+        span for span in llm_spans if "What name did I tell you?" in _extract_text_parts(span["input"]["contents"])
+    )
+    follow_up_texts = _extract_text_parts(follow_up_span["input"]["contents"])
+
+    assert "Hi, my name is Alice." in follow_up_texts
+    assert "What name did I tell you?" in follow_up_texts
+    assert first_response_text in follow_up_texts
+    assert "alice" in second_response_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_adk_generation_config_is_logged(memory_logger):
+    """Sampling and stop-sequence config should be captured in the LLM span input."""
+    from google.adk.models.base_llm import BaseLlm
+    from google.adk.models.llm_request import LlmRequest
+    from google.adk.models.llm_response import LlmResponse
+    from google.adk.models.registry import LLMRegistry
+
+    assert not memory_logger.pop()
+
+    class ConfigCaptureLlm(BaseLlm):
+        @classmethod
+        def supported_models(cls) -> list[str]:
+            return [r"test-llm-config-capture"]
+
+        async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False):
+            yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text="configured")]))
+
+    LLMRegistry.register(ConfigCaptureLlm)
+
+    app_name = "config_app"
+    user_id = "test-user"
+    session_id = "test-session-config"
+    agent = LlmAgent(
+        name="config_agent",
+        model="test-llm-config-capture",
+        instruction="Reply with the word configured.",
+        generate_content_config=types.GenerateContentConfig(
+            max_output_tokens=23,
+            temperature=0.7,
+            top_p=0.9,
+            stop_sequences=["END", "\n\n"],
+        ),
+    )
+    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
+
+    user_msg = types.Content(role="user", parts=[types.Part(text="Please answer.")])
+    responses = []
+    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
+        if event.is_final_response():
+            responses.append(event)
+
+    assert responses
+
+    spans = memory_logger.pop()
+    llm_spans = [row for row in spans if row["span_attributes"]["type"] == "llm"]
+    assert llm_spans
+
+    config = llm_spans[0]["input"]["config"]
+    assert config["max_output_tokens"] == 23
+    assert config["temperature"] == 0.7
+    assert config["top_p"] == 0.9
+    assert config["stop_sequences"] == ["END", "\n\n"]
+
+
+@pytest.mark.asyncio
+async def test_adk_document_inline_data_attachment_conversion(memory_logger):
+    """Document bytes should be logged as attachment references, not raw payloads."""
+    from google.adk.models.base_llm import BaseLlm
+    from google.adk.models.llm_request import LlmRequest
+    from google.adk.models.llm_response import LlmResponse
+    from google.adk.models.registry import LLMRegistry
+
+    assert not memory_logger.pop()
+
+    class DocumentCaptureLlm(BaseLlm):
+        @classmethod
+        def supported_models(cls) -> list[str]:
+            return [r"test-llm-document-capture"]
+
+        async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False):
+            yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text="document received")]))
+
+    LLMRegistry.register(DocumentCaptureLlm)
+
+    app_name = "document_app"
+    user_id = "test-user"
+    session_id = "test-session-document"
+    agent = LlmAgent(
+        name="document_agent",
+        model="test-llm-document-capture",
+        instruction="Acknowledge the uploaded document.",
+    )
+    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
+
+    pdf_path = FIXTURES_DIR / "test-document.pdf"
+    with open(pdf_path, "rb") as f:
+        pdf_data = f.read()
+
+    user_msg = types.Content(
+        role="user",
+        parts=[
+            types.Part(inline_data=types.Blob(mime_type="application/pdf", data=pdf_data)),
+            types.Part(text="Summarize this document."),
+        ],
+    )
+
+    responses = []
+    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
+        if event.is_final_response():
+            responses.append(event)
+
+    assert responses
+
+    spans = memory_logger.pop()
+    invocation_span = next(row for row in spans if row["span_attributes"]["name"] == f"invocation [{app_name}]")
+    new_message = invocation_span["input"]["new_message"]
+    assert len(new_message["parts"]) == 2
+
+    document_part = new_message["parts"][0]
+    assert "image_url" in document_part
+    attachment = document_part["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "application/pdf"
+    assert attachment.reference["filename"] == "file.pdf"
+
+    text_part = new_message["parts"][1]
+    assert text_part == {"text": "Summarize this document."}
+
+    logged_payload = str(invocation_span).lower()
+    assert pdf_data[:8].hex() not in logged_payload
+
+    llm_span = next(row for row in spans if row["span_attributes"]["type"] == "llm")
+    llm_contents = llm_span["input"]["contents"]
+    llm_document_part = llm_contents[0]["parts"][0]
+    assert isinstance(llm_document_part["image_url"]["url"], Attachment)
+    assert llm_document_part["image_url"]["url"].reference["content_type"] == "application/pdf"
 
 
 @pytest.mark.vcr
