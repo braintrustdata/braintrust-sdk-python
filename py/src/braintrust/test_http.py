@@ -404,17 +404,12 @@ class TestAdapterCloseAndReuse:
             session.mount("http://", adapter)
 
             errors = []
-            success_count = 0
             lock = threading.Lock()
 
             def make_request(i):
-                nonlocal success_count
                 try:
                     time.sleep(i * 0.005)  # Stagger requests
                     resp = session.get(f"{url}/test{i}")
-                    if resp.status_code == 200:
-                        with lock:
-                            success_count += 1
                     return resp.status_code
                 except Exception as e:
                     with lock:

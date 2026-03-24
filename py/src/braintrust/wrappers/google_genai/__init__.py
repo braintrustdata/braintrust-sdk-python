@@ -531,15 +531,3 @@ def _aggregate_generate_content_chunks(
 
 def clean(obj: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in obj.items() if v is not None}
-
-
-def get_path(obj: dict[str, Any], path: str, default: Any = None) -> Any | None:
-    keys = path.split(".")
-    current = obj
-
-    for key in keys:
-        if not (isinstance(current, dict) and key in current):
-            return default
-        current = current[key]
-
-    return current

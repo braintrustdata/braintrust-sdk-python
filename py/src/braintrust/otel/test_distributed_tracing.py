@@ -123,7 +123,6 @@ def test_bt_to_otel_simple_distributed_trace(otel_fixture):
     assert len(otel_spans) == 1, "Should have 1 OTEL span from Service B"
 
     # Get the spans
-    service_a_exported = bt_spans[0]
     service_b_exported = otel_spans[0]
 
     # Convert OTEL IDs to hex for comparison

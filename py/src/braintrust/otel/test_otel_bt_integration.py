@@ -197,7 +197,6 @@ def test_mixed_otel_bt_tracing_with_otel_first(otel_fixture):
     s1_trace_id = format(s1.context.trace_id, "032x")
     s1_span_id = format(s1.context.span_id, "016x")
     s3_trace_id = format(s3.context.trace_id, "032x")
-    s3_span_id = format(s3.context.span_id, "016x")
 
     assert s1_trace_id == s2["root_span_id"]
     assert s1_trace_id == s3_trace_id
