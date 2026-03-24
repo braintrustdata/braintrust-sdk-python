@@ -2,19 +2,17 @@
 Tests to ensure we reliably wrap the Anthropic API.
 """
 
-import inspect
 import time
+import unittest.mock
 from pathlib import Path
 
 import anthropic
 import pytest
 from braintrust import logger
-from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic, wrap_anthropic_client
-from braintrust.integrations.versioning import make_specifier, version_satisfies
+from braintrust.integrations.anthropic import wrap_anthropic
 from braintrust.test_helpers import init_test_logger
 
 
-TEST_ORG_ID = "test-org-123"
 PROJECT_NAME = "test-anthropic-app"
 MODEL = "claude-3-haiku-20240307"  # use the cheapest model since answers dont matter
 
@@ -71,15 +69,6 @@ def test_anthropic_messages_create_stream_true(memory_logger):
     assert span["output"]
     assert span["output"]["role"] == "assistant"
     assert "12" in span["output"]["content"][0]["text"]
-
-
-def test_wrap_anthropic_client_alias_wraps_client():
-    client = _get_client()
-
-    with pytest.deprecated_call(match="wrap_anthropic_client\\(\\) is deprecated"):
-        wrapped = wrap_anthropic_client(client)
-
-    assert type(wrapped.messages).__module__ == "braintrust.integrations.anthropic.tracing"
 
 
 @pytest.mark.vcr
@@ -503,128 +492,288 @@ async def test_anthropic_beta_messages_streaming_async(memory_logger):
     assert metrics["tokens"] == usage.input_tokens + usage.output_tokens
 
 
-class TestAnthropicIntegrationSetup:
-    """Tests for `AnthropicIntegration.setup()`."""
-
-    def test_available_patchers(self):
-        assert AnthropicIntegration.available_patchers() == (
-            "anthropic.init.sync",
-            "anthropic.init.async",
-        )
-
-    def test_resolve_patchers_honors_enable_disable_filters(self):
-        selected = AnthropicIntegration.resolve_patchers(
-            enabled_patchers={"anthropic.init.sync", "anthropic.init.async"},
-            disabled_patchers={"anthropic.init.async"},
-        )
-
-        assert tuple(patcher.identifier() for patcher in selected) == ("anthropic.init.sync",)
-
-    def test_resolve_patchers_rejects_unknown_patchers(self):
-        with pytest.raises(ValueError, match="Unknown patchers"):
-            AnthropicIntegration.resolve_patchers(enabled_patchers={"anthropic.init.unknown"})
-
-    def test_setup_rejects_unsupported_versions(self):
-        spec = make_specifier(
-            min_version=AnthropicIntegration.min_version, max_version=AnthropicIntegration.max_version
-        )
-        assert version_satisfies("0.47.9", spec) is False
-
-    def test_setup_wraps_supported_clients(self):
-        """`AnthropicIntegration.setup()` should wrap both sync and async client constructors."""
-        unpatched_sync = anthropic.Anthropic(api_key="test-key")
-        unpatched_async = anthropic.AsyncAnthropic(api_key="test-key")
-        assert type(unpatched_sync.messages).__module__.startswith("anthropic.")
-        assert type(unpatched_async.messages).__module__.startswith("anthropic.")
-
-        AnthropicIntegration.setup()
-        patched_sync = anthropic.Anthropic(api_key="test-key")
-        patched_async = anthropic.AsyncAnthropic(api_key="test-key")
-        assert type(patched_sync.messages).__module__ == "braintrust.integrations.anthropic.tracing"
-        assert type(patched_async.messages).__module__ == "braintrust.integrations.anthropic.tracing"
-
-    def test_setup_is_idempotent(self):
-        """Multiple `AnthropicIntegration.setup()` calls should be safe."""
-        AnthropicIntegration.setup()
-        first_sync_init = inspect.getattr_static(anthropic.Anthropic, "__init__")
-        first_async_init = inspect.getattr_static(anthropic.AsyncAnthropic, "__init__")
-
-        AnthropicIntegration.setup()
-        assert first_sync_init is inspect.getattr_static(anthropic.Anthropic, "__init__")
-        assert first_async_init is inspect.getattr_static(anthropic.AsyncAnthropic, "__init__")
-
-    def test_setup_creates_spans(self):
-        """`AnthropicIntegration.setup()` should create spans when making API calls."""
-        init_test_logger("test-auto")
-        with logger._internal_with_memory_background_logger() as memory_logger:
-            AnthropicIntegration.setup()
-
-            client = anthropic.Anthropic()
-
-            import braintrust
-
-            with braintrust.start_span(name="test"):
-                try:
-                    client.messages.create(
-                        model="claude-3-5-haiku-latest",
-                        max_tokens=100,
-                        messages=[{"role": "user", "content": "hi"}],
-                    )
-                except Exception:
-                    pass
-
-            spans = memory_logger.pop()
-            assert len(spans) >= 1, f"Expected spans, got {spans}"
+def _make_batch_requests():
+    return [
+        {
+            "custom_id": "req-1",
+            "params": {
+                "model": MODEL,
+                "max_tokens": 100,
+                "messages": [{"role": "user", "content": "What is 2+2?"}],
+            },
+        },
+        {
+            "custom_id": "req-2",
+            "params": {
+                "model": MODEL,
+                "max_tokens": 100,
+                "messages": [{"role": "user", "content": "What is 3+3?"}],
+            },
+        },
+    ]
 
 
-class TestPatchAnthropicSpans:
-    """VCR-based tests verifying that `AnthropicIntegration.setup()` produces spans."""
+class TestBatchesCreateSpans:
+    """Tests verifying that batches.create() produces correct spans."""
 
     @pytest.mark.vcr
-    def test_patch_anthropic_creates_spans(self, memory_logger):
-        """`AnthropicIntegration.setup()` should create spans when making API calls."""
+    def test_sync_batches_create_produces_span(self, memory_logger):
         assert not memory_logger.pop()
 
-        AnthropicIntegration.setup()
-        client = anthropic.Anthropic()
-        response = client.messages.create(
-            model="claude-3-5-haiku-latest",
-            max_tokens=100,
-            messages=[{"role": "user", "content": "Say hi"}],
-        )
-        assert response.content[0].text
+        client = wrap_anthropic(_get_client())
+        result = client.messages.batches.create(requests=_make_batch_requests())
 
-        # Verify span was created
+        assert result.id
+        assert result.processing_status == "in_progress"
+
         spans = memory_logger.pop()
         assert len(spans) == 1
         span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
+        assert span["span_attributes"]["type"] == "task"
         assert span["metadata"]["provider"] == "anthropic"
-        assert "claude" in span["metadata"]["model"]
-        assert span["input"]
-
-
-class TestPatchAnthropicAsyncSpans:
-    """VCR-based tests verifying that `AnthropicIntegration.setup()` produces spans for async clients."""
+        assert span["metadata"]["num_requests"] == 2
+        assert span["metadata"]["model"] == MODEL
+        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
+        assert span["output"]["id"] == result.id
+        assert span["output"]["processing_status"] == "in_progress"
+        assert span["output"]["request_counts"]["processing"] == 2
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
-    async def test_patch_anthropic_async_creates_spans(self, memory_logger):
-        """`AnthropicIntegration.setup()` should create spans for async API calls."""
+    async def test_async_batches_create_produces_span(self, memory_logger):
         assert not memory_logger.pop()
 
-        AnthropicIntegration.setup()
-        client = anthropic.AsyncAnthropic()
-        response = await client.messages.create(
-            model="claude-3-5-haiku-latest",
-            max_tokens=100,
-            messages=[{"role": "user", "content": "Say hi async"}],
-        )
-        assert response.content[0].text
+        client = wrap_anthropic(_get_async_client())
+        result = await client.messages.batches.create(requests=_make_batch_requests())
 
-        # Verify span was created
+        assert result.id
+        assert result.processing_status == "in_progress"
+
         spans = memory_logger.pop()
         assert len(spans) == 1
         span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
+        assert span["span_attributes"]["type"] == "task"
         assert span["metadata"]["provider"] == "anthropic"
-        assert "claude" in span["metadata"]["model"]
-        assert span["input"]
+        assert span["metadata"]["num_requests"] == 2
+        assert span["metadata"]["model"] == MODEL
+        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
+        assert span["output"]["id"] == result.id
+
+    @pytest.mark.vcr
+    def test_sync_batches_create_logs_error_on_failure(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_client())
+        # Empty requests list triggers a 400 error
+        with pytest.raises(Exception):
+            client.messages.batches.create(requests=[])
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
+        assert span["error"]
+
+    @pytest.mark.vcr
+    def test_sync_batches_create_multi_model_metadata(self, memory_logger):
+        """When batch requests use different models, metadata should include 'models' list."""
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_client())
+
+        requests = [
+            {
+                "custom_id": "req-1",
+                "params": {
+                    "model": "claude-3-haiku-20240307",
+                    "max_tokens": 100,
+                    "messages": [{"role": "user", "content": "Hi"}],
+                },
+            },
+            {
+                "custom_id": "req-2",
+                "params": {
+                    "model": "claude-3-5-haiku-latest",
+                    "max_tokens": 100,
+                    "messages": [{"role": "user", "content": "Hello"}],
+                },
+            },
+        ]
+        result = client.messages.batches.create(requests=requests)
+        assert result.id
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert "model" not in span["metadata"]
+        assert span["metadata"]["models"] == sorted(["claude-3-haiku-20240307", "claude-3-5-haiku-latest"])
+
+
+class TestBatchesResultsSpans:
+    """Tests verifying that batches.results() produces correct spans.
+
+    Mocked because the batch results API requires a completed batch, and batches
+    can take up to 24 hours to finish processing.
+    """
+
+    def test_sync_batches_results_produces_span(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_client())
+        mock_decoder = unittest.mock.MagicMock()
+        with unittest.mock.patch(
+            "anthropic.resources.messages.batches.Batches.results",
+            return_value=mock_decoder,
+        ):
+            result = client.messages.batches.results("msgbatch_abc123")
+
+        assert result is mock_decoder
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
+        assert span["span_attributes"]["type"] == "task"
+        assert span["metadata"]["provider"] == "anthropic"
+        assert span["input"]["message_batch_id"] == "msgbatch_abc123"
+        assert span["output"]["type"] == "jsonl_stream"
+
+    @pytest.mark.asyncio
+    async def test_async_batches_results_produces_span(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_async_client())
+        mock_decoder = unittest.mock.MagicMock()
+        with unittest.mock.patch(
+            "anthropic.resources.messages.batches.AsyncBatches.results",
+            return_value=mock_decoder,
+        ):
+            result = await client.messages.batches.results(message_batch_id="msgbatch_abc456")
+
+        assert result is mock_decoder
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
+        assert span["metadata"]["provider"] == "anthropic"
+        assert span["input"]["message_batch_id"] == "msgbatch_abc456"
+
+    def test_sync_batches_results_logs_error_on_failure(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_client())
+        with unittest.mock.patch(
+            "anthropic.resources.messages.batches.Batches.results",
+            side_effect=Exception("results fetch failed"),
+        ):
+            with pytest.raises(Exception, match="results fetch failed"):
+                client.messages.batches.results("msgbatch_abc123")
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
+        assert "results fetch failed" in span["error"]
+
+
+class TestBetaBatchesCreateSpans:
+    """Tests verifying that beta.messages.batches.create() produces correct spans."""
+
+    @pytest.mark.vcr
+    def test_sync_beta_batches_create_produces_span(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_client())
+        result = client.beta.messages.batches.create(requests=_make_batch_requests())
+
+        assert result.id
+        assert result.processing_status == "in_progress"
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
+        assert span["span_attributes"]["type"] == "task"
+        assert span["metadata"]["provider"] == "anthropic"
+        assert span["metadata"]["num_requests"] == 2
+        assert span["metadata"]["model"] == MODEL
+        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
+        assert span["output"]["id"] == result.id
+        assert span["output"]["processing_status"] == "in_progress"
+        assert span["output"]["request_counts"]["processing"] == 2
+
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    async def test_async_beta_batches_create_produces_span(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_async_client())
+        result = await client.beta.messages.batches.create(requests=_make_batch_requests())
+
+        assert result.id
+        assert result.processing_status == "in_progress"
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.create"
+        assert span["span_attributes"]["type"] == "task"
+        assert span["metadata"]["provider"] == "anthropic"
+        assert span["metadata"]["num_requests"] == 2
+        assert span["metadata"]["model"] == MODEL
+        assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
+        assert span["output"]["id"] == result.id
+
+
+class TestBetaBatchesResultsSpans:
+    """Tests verifying that beta.messages.batches.results() produces correct spans.
+
+    Mocked because the batch results API requires a completed batch, and batches
+    can take up to 24 hours to finish processing.
+    """
+
+    def test_sync_beta_batches_results_produces_span(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_client())
+        mock_decoder = unittest.mock.MagicMock()
+        with unittest.mock.patch(
+            "anthropic.resources.beta.messages.batches.Batches.results",
+            return_value=mock_decoder,
+        ):
+            result = client.beta.messages.batches.results("msgbatch_beta123")
+
+        assert result is mock_decoder
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
+        assert span["span_attributes"]["type"] == "task"
+        assert span["metadata"]["provider"] == "anthropic"
+        assert span["input"]["message_batch_id"] == "msgbatch_beta123"
+        assert span["output"]["type"] == "jsonl_stream"
+
+    @pytest.mark.asyncio
+    async def test_async_beta_batches_results_produces_span(self, memory_logger):
+        assert not memory_logger.pop()
+
+        client = wrap_anthropic(_get_async_client())
+        mock_decoder = unittest.mock.MagicMock()
+        with unittest.mock.patch(
+            "anthropic.resources.beta.messages.batches.AsyncBatches.results",
+            return_value=mock_decoder,
+        ):
+            result = await client.beta.messages.batches.results(message_batch_id="msgbatch_beta456")
+
+        assert result is mock_decoder
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
+        assert span["metadata"]["provider"] == "anthropic"
+        assert span["input"]["message_batch_id"] == "msgbatch_beta456"

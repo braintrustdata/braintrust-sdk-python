@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"max_tokens":100,"messages":[{"role":"user","content":"Say hi"}],"model":"claude-3-5-haiku-latest"}'
+    body: '{"requests":[]}'
     headers:
       Accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '100'
+      - '15'
       Content-Type:
       - application/json
       Host:
@@ -37,16 +37,16 @@ interactions:
       x-stainless-retry-count:
       - '0'
       x-stainless-timeout:
-      - '600'
+      - NOT_GIVEN
     method: POST
-    uri: https://api.anthropic.com/v1/messages
+    uri: https://api.anthropic.com/v1/messages/batches
   response:
     body:
-      string: '{"type":"error","error":{"type":"not_found_error","message":"model:
-        claude-3-5-haiku-latest"},"request_id":"req_011CZLdMYnZkfSiZUydAPCJh"}'
+      string: '{"type":"error","error":{"type":"invalid_request_error","message":"requests:
+        List should have at least 1 item after validation, not 0"},"request_id":"req_011CZNFHwZ7YMN9zyDPHXbmQ"}'
     headers:
       CF-RAY:
-      - 9e101d81485f9e5c-SJC
+      - 9e172a012bf5963f-SJC
       Connection:
       - keep-alive
       Content-Security-Policy:
@@ -54,7 +54,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Mon, 23 Mar 2026 20:16:41 GMT
+      - Tue, 24 Mar 2026 16:48:33 GMT
       Server:
       - cloudflare
       Transfer-Encoding:
@@ -66,23 +66,23 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       content-length:
-      - '138'
+      - '180'
       request-id:
-      - req_011CZLdMYnZkfSiZUydAPCJh
+      - req_011CZNFHwZ7YMN9zyDPHXbmQ
       server-timing:
-      - x-originResponse;dur=33
+      - x-originResponse;dur=67
       set-cookie:
-      - _cfuvid=qjfwtdMQuaH4s2MvMr53WG49MOjmHdRt83XWnDUSnZs-1774297001.1711438-1.0.1.1-6h3vTb4keZZALUiWWbTnUXgtrTuyB4XqC2sFuQc9fQk;
+      - _cfuvid=wf8HdCMhs1UcbQutpPzsJc1I_lzHbLbPsQj6EA0sl4s-1774370913.461001-1.0.1.1-wD9j9Vl_k5M7qG3MI7A3pbi6Q52GLfngLxFm_kctpPo;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       vary:
       - Accept-Encoding
       x-envoy-upstream-service-time:
-      - '31'
+      - '65'
       x-should-retry:
       - 'false'
     status:
-      code: 404
-      message: Not Found
+      code: 400
+      message: Bad Request
 version: 1
