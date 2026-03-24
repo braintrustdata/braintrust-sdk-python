@@ -1,7 +1,7 @@
 [project]
 name = "braintrust-langchain"
 version = "0.2.1"
-description = "Integration for LangChain and Braintrust Tracing"
+description = "DEPRECATED: LangChain integration is now included in the main braintrust package. Install braintrust instead."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -10,9 +10,9 @@ dependencies = [
 ]
 license = "MIT"
 authors = [{ name = "Braintrust", email = "info@braintrust.dev" }]
-keywords = ["braintrust", "langchain", "llm", "tracing", "ai", "agents"]
+keywords = ["braintrust", "langchain", "llm", "tracing", "ai", "agents", "deprecated"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 7 - Inactive",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -73,4 +73,3 @@ known-third-party = ["braintrust", "langchain"]
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
 python_files = ["test_*.py"]
-addopts = "-v"

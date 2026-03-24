@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 
-from braintrust.integrations import AnthropicIntegration, IntegrationPatchConfig
+from braintrust.integrations import AnthropicIntegration, IntegrationPatchConfig, LangChainIntegration
 
 
 __all__ = ["auto_instrument"]
@@ -40,6 +40,7 @@ def auto_instrument(
     claude_agent_sdk: bool = True,
     dspy: bool = True,
     adk: bool = True,
+    langchain: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -61,6 +62,7 @@ def auto_instrument(
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
+        langchain: Enable LangChain instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -117,6 +119,7 @@ def auto_instrument(
     claude_agent_sdk_enabled = _normalize_bool_option("claude_agent_sdk", claude_agent_sdk)
     dspy_enabled = _normalize_bool_option("dspy", dspy)
     adk_enabled = _normalize_bool_option("adk", adk)
+    langchain_enabled = _normalize_bool_option("langchain", langchain)
 
     if openai_enabled:
         results["openai"] = _instrument_openai()
@@ -136,6 +139,8 @@ def auto_instrument(
         results["dspy"] = _instrument_dspy()
     if adk_enabled:
         results["adk"] = _instrument_adk()
+    if langchain_enabled:
+        results["langchain"] = _instrument_integration(LangChainIntegration)
 
     return results
 

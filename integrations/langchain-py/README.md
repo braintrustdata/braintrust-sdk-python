@@ -1,8 +1,34 @@
-# braintrust-langchain
+# braintrust-langchain (DEPRECATED)
 
 [![PyPI version](https://img.shields.io/pypi/v/braintrust-langchain.svg)](https://pypi.org/project/braintrust-langchain/)
 
 SDK for integrating [Braintrust](https://braintrust.dev) with [LangChain](https://langchain.com/). This package provides a callback handler to automatically log LangChain executions to Braintrust.
+
+> **This package is deprecated.** The LangChain integration is now included in the main [`braintrust`](https://pypi.org/project/braintrust/) package.
+
+## Migration
+
+1. Remove `braintrust-langchain` from your dependencies
+2. Install or upgrade `braintrust`:
+   ```bash
+   pip install --upgrade braintrust
+   ```
+3. Update your imports:
+   ```python
+   # Before
+   from braintrust_langchain import BraintrustCallbackHandler, set_global_handler
+
+   # After (option 1: auto-instrument langchain library)
+   import braintrust
+   braintrust.auto_instrument()
+
+   # After (option 2: explicit)
+   from braintrust.wrappers.langchain import BraintrustCallbackHandler, set_global_handler
+   ```
+
+The API is identical - no code changes needed beyond the import path.
+
+---
 
 ## Installation
 

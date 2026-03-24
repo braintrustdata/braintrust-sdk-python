@@ -1,26 +1,18 @@
-from contextvars import ContextVar
+"""
+DEPRECATED: Import from braintrust.wrappers.langchain instead.
+"""
 
-from langchain_core.tracers.context import register_configure_hook
+import warnings
 
-from braintrust_langchain.callbacks import BraintrustCallbackHandler
+warnings.warn(
+    "braintrust_langchain.context is deprecated. Import from 'braintrust.wrappers.langchain' instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from braintrust.integrations.langchain import (  # noqa: F401
+    clear_global_handler,
+    set_global_handler,
+)
 
 __all__ = ["set_global_handler", "clear_global_handler"]
-
-
-braintrust_callback_handler_var: ContextVar[BraintrustCallbackHandler | None] = ContextVar(
-    "braintrust_callback_handler", default=None
-)
-
-
-def set_global_handler(handler: BraintrustCallbackHandler):
-    braintrust_callback_handler_var.set(handler)
-
-
-def clear_global_handler():
-    braintrust_callback_handler_var.set(None)
-
-
-register_configure_hook(
-    context_var=braintrust_callback_handler_var,
-    inheritable=True,
-)
