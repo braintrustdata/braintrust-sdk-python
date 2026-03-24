@@ -147,6 +147,87 @@ Common ones include:
 
 The `memory_logger` fixture from `braintrust.test_helpers` is useful for asserting on logged spans without a real Braintrust backend.
 
+## Benchmarks
+
+The SDK includes local performance benchmarks powered by [pyperf](https://pyperf.readthedocs.io/), located in `py/benchmarks/`. These cover hot paths like serialization and deep-copy routines.
+
+### Running benchmarks
+
+```bash
+cd py
+
+# Run all benchmarks
+make bench
+
+# Quick sanity check (fewer iterations)
+make bench BENCH_ARGS="--fast"
+
+# Save results for later comparison
+make bench BENCH_ARGS="-o /tmp/results.json"
+
+# Run a single benchmark module directly
+python -m benchmarks.benches.bench_bt_json
+```
+
+To benchmark with the optional `orjson` fast-path installed:
+
+```bash
+cd py
+python -m uv pip install -e '.[performance]'
+make bench
+```
+
+### Comparing across branches
+
+```bash
+cd py
+
+git checkout main
+make bench BENCH_ARGS="-o /tmp/main.json"
+
+git checkout my-branch
+make bench BENCH_ARGS="-o /tmp/branch.json"
+
+make bench-compare BENCH_BASE=/tmp/main.json BENCH_NEW=/tmp/branch.json
+```
+
+### Useful pyperf flags
+
+| Flag            | Purpose                                           |
+| --------------- | ------------------------------------------------- |
+| `--fast`        | Fewer iterations — good for a quick sanity check  |
+| `--rigorous`    | More iterations — reduces noise for final numbers |
+| `-o FILE`       | Write results to a JSON file for later comparison |
+| `--append FILE` | Append to an existing results file                |
+
+Run `python -m benchmarks --help` for the full list.
+
+### Adding a new benchmark
+
+Drop a new `bench_<name>.py` file into `py/benchmarks/benches/`. It will be picked up automatically — no registration required.
+
+Your module needs to expose a `main()` function that accepts an optional `pyperf.Runner`:
+
+```python
+import pyperf
+
+from benchmarks._utils import disable_pyperf_psutil
+
+
+def main(runner: pyperf.Runner | None = None) -> None:
+    if runner is None:
+        disable_pyperf_psutil()
+        runner = pyperf.Runner()
+
+    runner.bench_func("my_benchmark", my_func, my_arg)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+If your benchmark needs reusable test data, add builder functions to `py/benchmarks/fixtures.py`.
+
 ## CI
 
 GitHub Actions workflows live in `.github/workflows/`.

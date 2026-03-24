@@ -12,6 +12,7 @@ Guide for contributing to the Braintrust Python SDK repository.
 ## Repo Map
 
 - `py/`: main Python package, tests, examples, nox sessions, release build
+- `py/benchmarks/`: pyperf performance benchmarks
 - `integrations/`: separate integration packages
 - `internal/golden/`: compatibility and golden projects
 - `docs/`: supporting docs
@@ -121,6 +122,25 @@ BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest
 ```
 
 Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If in doubt, ask the user.
+
+## Benchmarks
+
+Run `cd py && make bench` when touching hot-path code (serialization, deep-copy, span creation, logging). Not required for every change.
+
+Benchmarks use pyperf. All `bench_*.py` files in `py/benchmarks/benches/` are auto-discovered — no registration needed.
+
+Key commands:
+
+```bash
+cd py
+make bench                                   # run all benchmarks
+make bench BENCH_ARGS="--fast"               # quick sanity check
+make bench BENCH_ARGS="-o /tmp/before.json"  # save baseline before a change
+make bench BENCH_ARGS="-o /tmp/after.json"   # save after a change
+make bench-compare BENCH_BASE=/tmp/before.json BENCH_NEW=/tmp/after.json
+```
+
+New benchmark files go in `py/benchmarks/benches/bench_<name>.py`. Each must expose `main(runner: pyperf.Runner | None = None)`. Shared payload builders go in `py/benchmarks/fixtures.py`. See existing `bench_bt_json.py` for the pattern.
 
 ## Build Notes
 
