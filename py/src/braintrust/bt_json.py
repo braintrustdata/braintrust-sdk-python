@@ -133,6 +133,16 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
         if depth >= max_depth:
             return "<max depth exceeded>"
 
+        if isinstance(v, (str, bool, int)) or v is None:
+            return v
+
+        if isinstance(v, float):
+            if math.isnan(v):
+                return "NaN"
+            if math.isinf(v):
+                return "Infinity" if v > 0 else "-Infinity"
+            return v
+
         # Check for circular references in mutable containers
         # Use id() to track object identity
         if isinstance(v, (Mapping, list, tuple, set)):
@@ -148,13 +158,13 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                     # cut out all the references to user objects synchronously in this
                     # function.
                     result = {}
-                    for k in v:
+                    for k, value in v.items():
                         try:
                             key_str = str(k)
                         except Exception:
                             # If str() fails on the key, use a fallback representation
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                        result[key_str] = _deep_copy_object(v[k], depth + 1)
+                        result[key_str] = _deep_copy_object(value, depth + 1)
                     return result
                 elif isinstance(v, (list, tuple, set)):
                     return [_deep_copy_object(x, depth + 1) for x in v]
