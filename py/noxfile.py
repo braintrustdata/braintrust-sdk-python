@@ -62,6 +62,7 @@ BASE_TEST_DEPS = ("pytest", "pytest-asyncio", "pytest-vcr")
 # validate things work with or without them.
 VENDOR_PACKAGES = (
     "agno",
+    "agentscope",
     "anthropic",
     "dspy",
     "openai",
@@ -89,6 +90,7 @@ CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
 # Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
 # to internals we leverage for instrumentation.
 AGNO_VERSIONS = (LATEST, "2.4.0", "2.1.0")
+AGENTSCOPE_VERSIONS = (LATEST, "1.0.0")
 # pydantic_ai 1.x requires Python >= 3.10
 # Two test suites with different version requirements:
 # 1. wrap_openai approach: works with older versions (0.1.9+)
@@ -169,6 +171,16 @@ def test_agno(session, version):
     _install(session, "fastapi")  # Required for agno.workflow
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py")
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py")
+    _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", AGENTSCOPE_VERSIONS, ids=AGENTSCOPE_VERSIONS)
+def test_agentscope(session, version):
+    _install_test_deps(session)
+    _install(session, "agentscope", version)
+    _install(session, "openai")
+    _run_tests(session, f"{INTEGRATION_DIR}/agentscope/test_agentscope.py")
     _run_core_tests(session)
 
 

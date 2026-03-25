@@ -7,7 +7,13 @@ Provides one-line instrumentation for supported libraries.
 import logging
 from contextlib import contextmanager
 
-from braintrust.integrations import ADKIntegration, AgnoIntegration, AnthropicIntegration, ClaudeAgentSDKIntegration
+from braintrust.integrations import (
+    ADKIntegration,
+    AgentScopeIntegration,
+    AgnoIntegration,
+    AnthropicIntegration,
+    ClaudeAgentSDKIntegration,
+)
 
 
 __all__ = ["auto_instrument"]
@@ -34,6 +40,7 @@ def auto_instrument(
     pydantic_ai: bool = True,
     google_genai: bool = True,
     agno: bool = True,
+    agentscope: bool = True,
     claude_agent_sdk: bool = True,
     dspy: bool = True,
     adk: bool = True,
@@ -54,6 +61,7 @@ def auto_instrument(
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
         agno: Enable Agno instrumentation (default: True)
+        agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
@@ -116,6 +124,8 @@ def auto_instrument(
         results["google_genai"] = _instrument_google_genai()
     if agno:
         results["agno"] = _instrument_integration(AgnoIntegration)
+    if agentscope:
+        results["agentscope"] = _instrument_integration(AgentScopeIntegration)
     if claude_agent_sdk:
         results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
     if dspy:
