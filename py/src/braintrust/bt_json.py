@@ -61,26 +61,6 @@ def _to_bt_safe(v: Any) -> Any:
 
         return "Infinity" if v > 0 else "-Infinity"
 
-    Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment = _get_bt_safe_special_types()
-
-    if isinstance(v, Span):
-        return "<span>"
-
-    if isinstance(v, Experiment):
-        return "<experiment>"
-
-    if isinstance(v, Dataset):
-        return "<dataset>"
-
-    if isinstance(v, Logger):
-        return "<logger>"
-
-    if isinstance(v, BaseAttachment):
-        return v
-
-    if isinstance(v, ReadonlyAttachment):
-        return v.reference
-
     dataclass_fields = getattr(v_type, "__dataclass_fields__", None)
     if dataclass_fields is not None:
         # Use manual field iteration instead of dataclasses.asdict() because
@@ -92,12 +72,13 @@ def _to_bt_safe(v: Any) -> Any:
         return {f.name: _to_bt_safe(getattr(v, f.name)) for f in dataclass_fields.values()}
 
     # Pydantic model classes (not instances) with model_json_schema
-    model_json_schema = getattr(v, "model_json_schema", None)
-    if isinstance(v, type) and callable(model_json_schema):
-        try:
-            return model_json_schema()
-        except Exception:
-            pass
+    if isinstance(v, type):
+        model_json_schema = getattr(v, "model_json_schema", None)
+        if callable(model_json_schema):
+            try:
+                return model_json_schema()
+            except Exception:
+                pass
 
     # Attempt to dump a Pydantic v2 `BaseModel`.
     # Suppress Pydantic serializer warnings that arise from generic/discriminated-union
@@ -121,6 +102,26 @@ def _to_bt_safe(v: Any) -> Any:
             return dict_method(v, exclude_none=True)
         except TypeError:
             pass
+
+    Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment = _get_bt_safe_special_types()
+
+    if isinstance(v, Span):
+        return "<span>"
+
+    if isinstance(v, Experiment):
+        return "<experiment>"
+
+    if isinstance(v, Dataset):
+        return "<dataset>"
+
+    if isinstance(v, Logger):
+        return "<logger>"
+
+    if isinstance(v, BaseAttachment):
+        return v
+
+    if isinstance(v, ReadonlyAttachment):
+        return v.reference
 
     # Note: we avoid using copy.deepcopy, because it's difficult to
     # guarantee the independence of such copied types from their origin.
