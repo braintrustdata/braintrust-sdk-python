@@ -49,18 +49,6 @@ def _to_bt_safe(v: Any) -> Any:
 
         return "Infinity" if v > 0 else "-Infinity"
 
-    if isinstance(v, (str, bool, int)):
-        return v
-
-    if isinstance(v, float):
-        if math.isfinite(v):
-            return v
-
-        if math.isnan(v):
-            return "NaN"
-
-        return "Infinity" if v > 0 else "-Infinity"
-
     dataclass_fields = getattr(v_type, "__dataclass_fields__", None)
     if dataclass_fields is not None:
         # Use manual field iteration instead of dataclasses.asdict() because
@@ -102,6 +90,18 @@ def _to_bt_safe(v: Any) -> Any:
             return dict_method(v, exclude_none=True)
         except TypeError:
             pass
+
+    if isinstance(v, (str, bool, int)):
+        return v
+
+    if isinstance(v, float):
+        if math.isfinite(v):
+            return v
+
+        if math.isnan(v):
+            return "NaN"
+
+        return "Infinity" if v > 0 else "-Infinity"
 
     Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment = _get_bt_safe_special_types()
 
