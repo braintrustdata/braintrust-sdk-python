@@ -255,7 +255,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 # Remove from visited set after processing to allow the same object
                 # to appear in different branches of the tree
                 if added_to_visited:
-                    visited.discard(obj_id)
+                    visited.remove(obj_id)
 
         if v_type is list:
             obj_id = id(v)
@@ -344,13 +344,13 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                             result.append(nested_result)
                         finally:
                             if added_to_visited:
-                                visited.discard(value_id)
+                                visited.remove(value_id)
                         continue
 
                     result.append(_deep_copy_object(value, next_depth))
                 return result
             finally:
-                visited.discard(obj_id)
+                visited.remove(obj_id)
 
         if v_type is tuple or v_type is set:
             obj_id = id(v)
@@ -361,7 +361,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 next_depth = depth + 1
                 return [_deep_copy_object(x, next_depth) for x in v]
             finally:
-                visited.discard(obj_id)
+                visited.remove(obj_id)
 
         if v_type is str or v_type is int or v_type is bool or v is None:
             return v
@@ -402,7 +402,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                     result[key_str] = _deep_copy_object(value, next_depth)
                 return result
             finally:
-                visited.discard(obj_id)
+                visited.remove(obj_id)
 
         if isinstance(v, list):
             obj_id = id(v)
@@ -413,7 +413,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 next_depth = depth + 1
                 return [_deep_copy_object(x, next_depth) for x in v]
             finally:
-                visited.discard(obj_id)
+                visited.remove(obj_id)
 
         if isinstance(v, (tuple, set)):
             obj_id = id(v)
@@ -424,7 +424,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 next_depth = depth + 1
                 return [_deep_copy_object(x, next_depth) for x in v]
             finally:
-                visited.discard(obj_id)
+                visited.remove(obj_id)
 
         if isinstance(v, Mapping):
             obj_id = id(v)
@@ -445,7 +445,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                     result[key_str] = _deep_copy_object(value, next_depth)
                 return result
             finally:
-                visited.discard(obj_id)
+                visited.remove(obj_id)
 
         try:
             return _to_bt_safe(v)
