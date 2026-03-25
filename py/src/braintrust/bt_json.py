@@ -269,7 +269,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 next_depth = depth + 1
                 result = []
                 for value in v:
-                    if type(value) is dict:
+                    value_type = type(value)
+                    if value_type is dict:
                         value_id: int | None = None
                         added_to_visited = False
                         is_circular = False
@@ -350,7 +351,6 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                                 visited.remove(value_id)
                         continue
 
-                    value_type = type(value)
                     if value_type is str or value_type is int or value_type is bool or value is None:
                         result.append(value)
                         continue
