@@ -21,13 +21,20 @@ from agentscope.formatter import OpenAIChatFormatter
 from agentscope.memory import InMemoryMemory
 from agentscope.message import Msg
 from agentscope.model import OpenAIChatModel
-from agentscope.pipeline import fanout_pipeline, sequential_pipeline
+from agentscope.pipeline import sequential_pipeline
 from agentscope.tool import Toolkit
+
+
+try:
+    from agentscope.pipeline import fanout_pipeline
+except ImportError:
+    fanout_pipeline = None
 
 
 assert hasattr(AgentBase.__call__, "__wrapped__"), "AgentBase.__call__ should be wrapped"
 assert hasattr(sequential_pipeline, "__wrapped__"), "sequential_pipeline should be wrapped"
-assert hasattr(fanout_pipeline, "__wrapped__"), "fanout_pipeline should be wrapped"
+if fanout_pipeline is not None:
+    assert hasattr(fanout_pipeline, "__wrapped__"), "fanout_pipeline should be wrapped"
 assert hasattr(Toolkit.call_tool_function, "__wrapped__"), "Toolkit.call_tool_function should be wrapped"
 assert hasattr(OpenAIChatModel.__call__, "__wrapped__"), "OpenAIChatModel.__call__ should be wrapped"
 
@@ -44,7 +51,10 @@ with autoinstrument_test_context("test_auto_agentscope") as memory_logger:
         toolkit=Toolkit(),
         memory=InMemoryMemory(),
     )
-    agent.set_console_output_enabled(False)
+    if hasattr(agent, "set_console_output_enabled"):
+        agent.set_console_output_enabled(False)
+    elif hasattr(agent, "disable_console_output"):
+        agent.disable_console_output()
 
     response = agent(
         Msg(
