@@ -25,11 +25,9 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
 # Import internals used by the test suite for mocking.
-from braintrust import logger as _logger
 from braintrust.logger import (
     NOOP_SPAN,
     BraintrustState,
-    ParentSpanIds,
     SpanImpl,
     _MemoryBackgroundLogger,
 )
