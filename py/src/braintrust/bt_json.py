@@ -68,16 +68,18 @@ def _to_bt_safe(v: Any) -> Any:
     if isinstance(v, ReadonlyAttachment):
         return v.reference
 
-    if dataclasses.is_dataclass(v) and not isinstance(v, type):
+    dataclass_fields = getattr(v, "__dataclass_fields__", None)
+    if dataclass_fields is not None and not isinstance(v, type):
         # Use manual field iteration instead of dataclasses.asdict() because
         # asdict() deep-copies values, which breaks objects like Attachment
         # that contain non-copyable items (thread locks, file handles, etc.)
-        return {f.name: _to_bt_safe(getattr(v, f.name)) for f in dataclasses.fields(v)}
+        return {f.name: _to_bt_safe(getattr(v, f.name)) for f in dataclass_fields.values()}
 
     # Pydantic model classes (not instances) with model_json_schema
-    if isinstance(v, type) and hasattr(v, "model_json_schema") and callable(cast(Any, v).model_json_schema):
+    model_json_schema = getattr(v, "model_json_schema", None)
+    if isinstance(v, type) and callable(model_json_schema):
         try:
-            return cast(Any, v).model_json_schema()
+            return model_json_schema()
         except Exception:
             pass
 
@@ -85,18 +87,22 @@ def _to_bt_safe(v: Any) -> Any:
     # Suppress Pydantic serializer warnings that arise from generic/discriminated-union
     # models (e.g. OpenAI's ParsedResponse[T]).  See
     # https://github.com/braintrustdata/braintrust-sdk-python/issues/60
-    try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
-            return cast(Any, v).model_dump(exclude_none=True)
-    except (AttributeError, TypeError):
-        pass
+    model_dump = getattr(v, "model_dump", None)
+    if callable(model_dump):
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+                return model_dump(exclude_none=True)
+        except TypeError:
+            pass
 
     # Attempt to dump a Pydantic v1 `BaseModel`.
-    try:
-        return cast(Any, v).dict(exclude_none=True)
-    except (AttributeError, TypeError):
-        pass
+    dict_method = getattr(v, "dict", None)
+    if callable(dict_method):
+        try:
+            return dict_method(exclude_none=True)
+        except TypeError:
+            pass
 
     # Note: we avoid using copy.deepcopy, because it's difficult to
     # guarantee the independence of such copied types from their origin.
