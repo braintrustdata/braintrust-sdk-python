@@ -1,4 +1,5 @@
 from .adk import ADKIntegration
+from .agentscope import AgentScopeIntegration
 from .agno import AgnoIntegration
 from .anthropic import AnthropicIntegration
 from .claude_agent_sdk import ClaudeAgentSDKIntegration
@@ -8,6 +9,7 @@ from .google_genai import GoogleGenAIIntegration
 
 __all__ = [
     "ADKIntegration",
+    "AgentScopeIntegration",
     "AgnoIntegration",
     "AnthropicIntegration",
     "ClaudeAgentSDKIntegration",

@@ -31,6 +31,7 @@ def vcr_config():
         "record_mode": record_mode,
         "filter_headers": [
             "authorization",
+            "Authorization",
             "x-api-key",
             "x-goog-api-key",
         ],

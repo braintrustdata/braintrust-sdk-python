@@ -41,6 +41,7 @@ def vcr_config():
         "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
         "filter_headers": [
             "authorization",
+            "Authorization",
             "x-goog-api-key",
         ],
         "before_record_request": before_record_request,
