@@ -16,6 +16,20 @@ except ImportError:
     _HAS_ORJSON = False
 
 
+_BT_SAFE_SPECIAL_TYPES: tuple[type[Any], type[Any], type[Any], type[Any], type[Any], type[Any]] | None = None
+
+
+def _get_bt_safe_special_types() -> tuple[type[Any], type[Any], type[Any], type[Any], type[Any], type[Any]]:
+    global _BT_SAFE_SPECIAL_TYPES
+    if _BT_SAFE_SPECIAL_TYPES is None:
+        # avoid circular imports
+        from braintrust.logger import BaseAttachment, Dataset, Experiment, Logger, ReadonlyAttachment, Span
+
+        _BT_SAFE_SPECIAL_TYPES = (Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment)
+
+    return _BT_SAFE_SPECIAL_TYPES
+
+
 def _to_bt_safe(v: Any) -> Any:
     """
     Converts the object to a Braintrust-safe representation (i.e. Attachment objects are safe (specially handled by background logger)).
@@ -47,8 +61,7 @@ def _to_bt_safe(v: Any) -> Any:
 
         return v
 
-    # avoid circular imports
-    from braintrust.logger import BaseAttachment, Dataset, Experiment, Logger, ReadonlyAttachment, Span
+    Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment = _get_bt_safe_special_types()
 
     if isinstance(v, Span):
         return "<span>"
