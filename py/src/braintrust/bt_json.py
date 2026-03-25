@@ -350,6 +350,20 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                                 visited.remove(value_id)
                         continue
 
+                    value_type = type(value)
+                    if value_type is str or value_type is int or value_type is bool or value is None:
+                        result.append(value)
+                        continue
+
+                    if value_type is float:
+                        if math.isfinite(value):
+                            result.append(value)
+                        elif math.isnan(value):
+                            result.append("NaN")
+                        else:
+                            result.append("Infinity" if value > 0 else "-Infinity")
+                        continue
+
                     result.append(_deep_copy_object(value, next_depth))
                 return result
             finally:
