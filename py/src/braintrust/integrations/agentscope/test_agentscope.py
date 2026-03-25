@@ -56,7 +56,10 @@ def _make_agent(name: str, sys_prompt: str, *, toolkit=None, multi_agent: bool =
         toolkit=toolkit or Toolkit(),
         memory=InMemoryMemory(),
     )
-    agent.set_console_output_enabled(False)
+    if hasattr(agent, "set_console_output_enabled"):
+        agent.set_console_output_enabled(False)
+    elif hasattr(agent, "disable_console_output"):
+        agent.disable_console_output()
     return agent
 
 
