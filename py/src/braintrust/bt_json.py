@@ -164,19 +164,9 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 return "Infinity" if v > 0 else "-Infinity"
             return v
 
-        if isinstance(v, (str, bool, int)):
-            return v
-
-        if isinstance(v, float):
-            if math.isnan(v):
-                return "NaN"
-            if math.isinf(v):
-                return "Infinity" if v > 0 else "-Infinity"
-            return v
-
         # Check for circular references in mutable containers.
         # Fast-path the built-in container types we expect most often.
-        if v_type is dict or isinstance(v, dict):
+        if v_type is dict:
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
@@ -204,7 +194,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 # to appear in different branches of the tree
                 visited.discard(obj_id)
 
-        if v_type is list or isinstance(v, list):
+        if v_type is list:
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
@@ -214,7 +204,57 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             finally:
                 visited.discard(obj_id)
 
-        if v_type is tuple or v_type is set or isinstance(v, (tuple, set)):
+        if v_type is tuple or v_type is set:
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited.add(obj_id)
+            try:
+                return [_deep_copy_object(x, depth + 1) for x in v]
+            finally:
+                visited.discard(obj_id)
+
+        if isinstance(v, (str, bool, int)):
+            return v
+
+        if isinstance(v, float):
+            if math.isnan(v):
+                return "NaN"
+            if math.isinf(v):
+                return "Infinity" if v > 0 else "-Infinity"
+            return v
+
+        if isinstance(v, dict):
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited.add(obj_id)
+            try:
+                result = {}
+                for k, value in v.items():
+                    if isinstance(k, str):
+                        key_str = k
+                    else:
+                        try:
+                            key_str = str(k)
+                        except Exception:
+                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                    result[key_str] = _deep_copy_object(value, depth + 1)
+                return result
+            finally:
+                visited.discard(obj_id)
+
+        if isinstance(v, list):
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited.add(obj_id)
+            try:
+                return [_deep_copy_object(x, depth + 1) for x in v]
+            finally:
+                visited.discard(obj_id)
+
+        if isinstance(v, (tuple, set)):
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"

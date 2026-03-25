@@ -1,0 +1,1 @@
+- Extract a shared recursive container sanitizer for `_to_bt_safe` dataclass/model outputs so nested `dict`/`list` fields can avoid `bt_dumps()`/`bt_loads()` roundtrips without regressing the already-optimized `bt_safe_deep_copy()` hot path.
