@@ -275,35 +275,56 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 next_depth = depth + 1
                 result = []
                 for value in v:
-                    if type(value) is not dict:
-                        result.append(_deep_copy_object(value, next_depth))
-                        continue
+                    if type(value) is dict:
+                        value_id: int | None = None
+                        added_to_visited = False
+                        is_circular = False
+                        try:
+                            nested_result = {}
+                            if next_depth >= max_depth:
+                                for k in value:
+                                    if type(k) is str:
+                                        key_str = k
+                                    else:
+                                        try:
+                                            key_str = str(k)
+                                        except Exception:
+                                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                                    nested_result[key_str] = "<max depth exceeded>"
+                                result.append(nested_result)
+                                continue
 
-                    value_id: int | None = None
-                    added_to_visited = False
-                    is_circular = False
-                    try:
-                        nested_result = {}
-                        if next_depth >= max_depth:
-                            for k in value:
-                                if type(k) is str:
-                                    key_str = k
-                                else:
+                            items = iter(value.items())
+                            for k, nested_value in items:
+                                if type(k) is not str:
                                     try:
                                         key_str = str(k)
                                     except Exception:
                                         key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                                nested_result[key_str] = "<max depth exceeded>"
-                            result.append(nested_result)
-                            continue
+                                    value_id = id(value)
+                                    if value_id in visited:
+                                        result.append("<circular reference>")
+                                        is_circular = True
+                                        break
+                                    visited.add(value_id)
+                                    added_to_visited = True
+                                    nested_result[key_str] = _deep_copy_object(nested_value, next_depth)
+                                    break
 
-                        items = iter(value.items())
-                        for k, nested_value in items:
-                            if type(k) is not str:
-                                try:
-                                    key_str = str(k)
-                                except Exception:
-                                    key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                                nested_value_type = type(nested_value)
+                                if nested_value_type is str or nested_value_type is int or nested_value_type is bool or nested_value is None:
+                                    nested_result[k] = nested_value
+                                    continue
+
+                                if nested_value_type is float:
+                                    if math.isfinite(nested_value):
+                                        nested_result[k] = nested_value
+                                    elif math.isnan(nested_value):
+                                        nested_result[k] = "NaN"
+                                    else:
+                                        nested_result[k] = "Infinity" if nested_value > 0 else "-Infinity"
+                                    continue
+
                                 value_id = id(value)
                                 if value_id in visited:
                                     result.append("<circular reference>")
@@ -311,52 +332,31 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                                     break
                                 visited.add(value_id)
                                 added_to_visited = True
-                                nested_result[key_str] = _deep_copy_object(nested_value, next_depth)
+                                nested_result[k] = _deep_copy_object(nested_value, next_depth)
                                 break
-
-                            nested_value_type = type(nested_value)
-                            if nested_value_type is str or nested_value_type is int or nested_value_type is bool or nested_value is None:
-                                nested_result[k] = nested_value
-                                continue
-
-                            if nested_value_type is float:
-                                if math.isfinite(nested_value):
-                                    nested_result[k] = nested_value
-                                elif math.isnan(nested_value):
-                                    nested_result[k] = "NaN"
-                                else:
-                                    nested_result[k] = "Infinity" if nested_value > 0 else "-Infinity"
-                                continue
-
-                            value_id = id(value)
-                            if value_id in visited:
-                                result.append("<circular reference>")
-                                is_circular = True
-                                break
-                            visited.add(value_id)
-                            added_to_visited = True
-                            nested_result[k] = _deep_copy_object(nested_value, next_depth)
-                            break
-                        else:
-                            result.append(nested_result)
-                            continue
-
-                        if is_circular:
-                            continue
-
-                        for k, nested_value in items:
-                            if type(k) is str:
-                                key_str = k
                             else:
-                                try:
-                                    key_str = str(k)
-                                except Exception:
-                                    key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                            nested_result[key_str] = _deep_copy_object(nested_value, next_depth)
-                        result.append(nested_result)
-                    finally:
-                        if added_to_visited:
-                            visited.discard(value_id)
+                                result.append(nested_result)
+                                continue
+
+                            if is_circular:
+                                continue
+
+                            for k, nested_value in items:
+                                if type(k) is str:
+                                    key_str = k
+                                else:
+                                    try:
+                                        key_str = str(k)
+                                    except Exception:
+                                        key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                                nested_result[key_str] = _deep_copy_object(nested_value, next_depth)
+                            result.append(nested_result)
+                        finally:
+                            if added_to_visited:
+                                visited.discard(value_id)
+                        continue
+
+                    result.append(_deep_copy_object(value, next_depth))
                 return result
             finally:
                 visited.discard(obj_id)
