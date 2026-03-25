@@ -194,7 +194,50 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 # function.
                 result = {}
                 next_depth = depth + 1
-                for k, value in v.items():
+                if next_depth >= max_depth:
+                    for k in v:
+                        if type(k) is str:
+                            key_str = k
+                        else:
+                            try:
+                                key_str = str(k)
+                            except Exception:
+                                # If str() fails on the key, use a fallback representation
+                                key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                        result[key_str] = "<max depth exceeded>"
+                    return result
+
+                items = iter(v.items())
+                for k, value in items:
+                    if type(k) is str:
+                        key_str = k
+                    else:
+                        try:
+                            key_str = str(k)
+                        except Exception:
+                            # If str() fails on the key, use a fallback representation
+                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+
+                    value_type = type(value)
+                    if value is None or value_type is str or value_type is bool or value_type is int:
+                        result[key_str] = value
+                        continue
+
+                    if value_type is float:
+                        if math.isnan(value):
+                            result[key_str] = "NaN"
+                        elif math.isinf(value):
+                            result[key_str] = "Infinity" if value > 0 else "-Infinity"
+                        else:
+                            result[key_str] = value
+                        continue
+
+                    result[key_str] = _deep_copy_object(value, next_depth)
+                    break
+                else:
+                    return result
+
+                for k, value in items:
                     if type(k) is str:
                         key_str = k
                     else:
