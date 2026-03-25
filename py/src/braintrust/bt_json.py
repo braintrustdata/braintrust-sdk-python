@@ -86,6 +86,9 @@ def _to_bt_safe(v: Any) -> Any:
         # Use manual field iteration instead of dataclasses.asdict() because
         # asdict() deep-copies values, which breaks objects like Attachment
         # that contain non-copyable items (thread locks, file handles, etc.)
+        instance_dict = getattr(v, "__dict__", None)
+        if instance_dict is not None and len(instance_dict) == len(dataclass_fields):
+            return bt_safe_deep_copy(instance_dict)
         return {f.name: _to_bt_safe(getattr(v, f.name)) for f in dataclass_fields.values()}
 
     # Pydantic model classes (not instances) with model_json_schema
