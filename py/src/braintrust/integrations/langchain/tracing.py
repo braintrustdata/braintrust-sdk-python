@@ -11,11 +11,9 @@ import re
 import time
 from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
-from re import Pattern
 from typing import (
     Any,
     TypedDict,
-    Union,
 )
 from uuid import UUID
 
@@ -90,7 +88,7 @@ class BraintrustCallbackHandler:
         self,
         logger: Logger | Span | None = None,
         debug: bool = False,
-        exclude_metadata_props: Pattern[str] | None = None,
+        exclude_metadata_props: re.Pattern[str] | None = None,
     ):
         self.logger = logger
         self.spans: dict[UUID, Span] = {}
@@ -561,7 +559,7 @@ class BraintrustCallbackHandler:
         self,
         token: str,
         *,
-        chunk: Union[Any, None] = None,
+        chunk: Any | None = None,
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,

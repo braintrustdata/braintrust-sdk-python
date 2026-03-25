@@ -1,6 +1,6 @@
 # pyright: reportTypedDictNotRequiredAccess=none
 import uuid
-from typing import Any, Dict, List, Union, cast
+from typing import Any, cast
 from unittest.mock import ANY
 
 import pytest
@@ -59,7 +59,7 @@ def assert_matches_object(actual: Any, expected: Any, ignore_order: bool = False
         assert actual == expected, f"Expected {expected} but got {actual}"
 
 
-def find_spans_by_attributes(spans: List[Any], **attributes: Any) -> List[Any]:
+def find_spans_by_attributes(spans: list[Any], **attributes: Any) -> list[Any]:
     """Find all spans matching the given span_attributes."""
     matching = []
     for span in spans:
@@ -90,7 +90,7 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
         presence_penalty=0,
         n=1,
     )
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
     chain.invoke({"number": "2"}, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
 
     spans = memory_logger.pop()
@@ -225,7 +225,7 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
         presence_penalty=0,
         n=1,
     )
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
     message = chain.invoke({"number": "2"})
 
@@ -350,7 +350,7 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
     handler = BraintrustCallbackHandler(logger=logger)
     prompt = ChatPromptTemplate.from_template("{history} User: {input}")
     model = ChatOpenAI(model="gpt-4o-mini")
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
     memory = {"history": "Assistant: Hello! How can I assist you today?"}
     chain.invoke(
@@ -695,16 +695,16 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
         n=1,
     )
 
-    def say_hello(state: Dict[str, str]):
+    def say_hello(state: dict[str, str]):
         response = model.invoke("Say hello")
-        return cast(Union[str, List[str], Dict[str, str]], response.content)
+        return cast(str | list[str] | dict[str, str], response.content)
 
-    def say_bye(state: Dict[str, str]):
+    def say_bye(state: dict[str, str]):
         print("From the 'sayBye' node: Bye world!")
         return "Bye"
 
     workflow = (
-        StateGraph(state_schema=Dict[str, str])
+        StateGraph(state_schema=dict[str, str])
         .add_node("sayHello", say_hello)
         .add_node("sayBye", say_bye)
         .add_edge(START, "sayHello")
@@ -1033,9 +1033,9 @@ def test_streaming_ttft(logger_memory_logger: LoggerMemoryLogger):
         max_completion_tokens=50,
         streaming=True,
     )
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
-    chunks: List[str] = []
+    chunks: list[str] = []
     for chunk in chain.stream({}, config={"callbacks": [cast(BaseCallbackHandler, handler)]}):
         if chunk.content:
             chunks.append(str(chunk.content))
