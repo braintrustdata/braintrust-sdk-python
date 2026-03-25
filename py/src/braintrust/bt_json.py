@@ -266,15 +266,18 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
 
         if v_type is list:
             obj_id = id(v)
-            if obj_id in visited:
-                return "<circular reference>"
-            visited.add(obj_id)
+            added_to_visited = False
             try:
                 next_depth = depth + 1
                 result = []
                 for value in v:
                     value_type = type(value)
                     if value_type is dict:
+                        if not added_to_visited:
+                            if obj_id in visited:
+                                return "<circular reference>"
+                            visited.add(obj_id)
+                            added_to_visited = True
                         nested_result = {}
                         if next_depth >= max_depth:
                             for k in value:
@@ -368,10 +371,16 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                             result.append("Infinity" if value > 0 else "-Infinity")
                         continue
 
+                    if not added_to_visited:
+                        if obj_id in visited:
+                            return "<circular reference>"
+                        visited.add(obj_id)
+                        added_to_visited = True
                     result.append(_deep_copy_object(value, next_depth))
                 return result
             finally:
-                visited.remove(obj_id)
+                if added_to_visited:
+                    visited.remove(obj_id)
 
         if v_type is tuple or v_type is set:
             obj_id = id(v)
