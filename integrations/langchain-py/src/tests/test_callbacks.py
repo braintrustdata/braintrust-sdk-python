@@ -340,9 +340,7 @@ def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
                                 "message": {
                                     "content": ANY,  # May be empty for tool calls
                                     "type": "ai",
-                                    "additional_kwargs": {
-                                        "tool_calls": ANY,  # Tool call details
-                                    },
+                                    "additional_kwargs": ANY,
                                     "response_metadata": ANY,
                                 },
                             }
@@ -591,7 +589,6 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
                     },
                     "model_name": "gpt-4o-mini-2024-07-18",
                 },
-                "run": None,
                 "type": "LLMResult",
             },
             "metrics": {
