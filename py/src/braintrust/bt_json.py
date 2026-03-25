@@ -193,7 +193,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 result = {}
                 next_depth = depth + 1
                 for k, value in v.items():
-                    if isinstance(k, str):
+                    if type(k) is str:
                         key_str = k
                     else:
                         try:
@@ -249,7 +249,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 result = {}
                 next_depth = depth + 1
                 for k, value in v.items():
-                    if isinstance(k, str):
+                    if type(k) is str:
                         key_str = k
                     else:
                         try:
@@ -292,7 +292,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 result = {}
                 next_depth = depth + 1
                 for k, value in v.items():
-                    if isinstance(k, str):
+                    if type(k) is str:
                         key_str = k
                     else:
                         try:
