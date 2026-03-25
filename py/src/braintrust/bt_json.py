@@ -186,9 +186,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
         # Check for circular references in mutable containers.
         # Fast-path the built-in container types we expect most often.
         if v_type is dict:
-            obj_id = id(v)
-            if obj_id in visited:
-                return "<circular reference>"
+            obj_id: int | None = None
             added_to_visited = False
             try:
                 # Prevent dict keys from holding references to user data. Note that
@@ -219,6 +217,9 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                         except Exception:
                             # If str() fails on the key, use a fallback representation
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                        obj_id = id(v)
+                        if obj_id in visited:
+                            return "<circular reference>"
                         visited.add(obj_id)
                         added_to_visited = True
                         result[key_str] = _deep_copy_object(value, next_depth)
@@ -238,6 +239,9 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                             result[k] = "Infinity" if value > 0 else "-Infinity"
                         continue
 
+                    obj_id = id(v)
+                    if obj_id in visited:
+                        return "<circular reference>"
                     visited.add(obj_id)
                     added_to_visited = True
                     result[k] = _deep_copy_object(value, next_depth)
@@ -275,12 +279,9 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                         result.append(_deep_copy_object(value, next_depth))
                         continue
 
-                    value_id = id(value)
-                    if value_id in visited:
-                        result.append("<circular reference>")
-                        continue
-
+                    value_id: int | None = None
                     added_to_visited = False
+                    is_circular = False
                     try:
                         nested_result = {}
                         if next_depth >= max_depth:
@@ -303,6 +304,11 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                                     key_str = str(k)
                                 except Exception:
                                     key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                                value_id = id(value)
+                                if value_id in visited:
+                                    result.append("<circular reference>")
+                                    is_circular = True
+                                    break
                                 visited.add(value_id)
                                 added_to_visited = True
                                 nested_result[key_str] = _deep_copy_object(nested_value, next_depth)
@@ -322,12 +328,20 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                                     nested_result[k] = "Infinity" if nested_value > 0 else "-Infinity"
                                 continue
 
+                            value_id = id(value)
+                            if value_id in visited:
+                                result.append("<circular reference>")
+                                is_circular = True
+                                break
                             visited.add(value_id)
                             added_to_visited = True
                             nested_result[k] = _deep_copy_object(nested_value, next_depth)
                             break
                         else:
                             result.append(nested_result)
+                            continue
+
+                        if is_circular:
                             continue
 
                         for k, nested_value in items:
