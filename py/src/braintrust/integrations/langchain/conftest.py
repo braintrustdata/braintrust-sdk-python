@@ -43,7 +43,6 @@ def vcr_config():
         "record_mode": record_mode,
         "match_on": ["uri", "method", "body"],
         "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
-        "path_transformer": lambda path: path.replace(".yaml", ""),
     }
 
 
