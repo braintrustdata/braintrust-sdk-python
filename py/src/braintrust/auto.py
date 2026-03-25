@@ -7,7 +7,13 @@ Provides one-line instrumentation for supported libraries.
 import logging
 from contextlib import contextmanager
 
-from braintrust.integrations import ADKIntegration, AgnoIntegration, AnthropicIntegration, ClaudeAgentSDKIntegration
+from braintrust.integrations import (
+    ADKIntegration,
+    AgnoIntegration,
+    AnthropicIntegration,
+    ClaudeAgentSDKIntegration,
+    LangChainIntegration,
+)
 
 
 __all__ = ["auto_instrument"]

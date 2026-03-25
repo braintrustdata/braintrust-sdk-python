@@ -1142,7 +1142,11 @@ class _HTTPBackgroundLogger:
                 if isinstance(limit, (int, float)) and int(limit) > 0:
                     server_limit = int(limit)
             except Exception as e:
-                print(f"Failed to fetch version info for payload limit: {e}", file=self.outfile)
+                try:
+                    print(f"Failed to fetch version info for payload limit: {e}", file=self.outfile)
+                except ValueError as ve:
+                    if "operation on closed file" not in str(ve):
+                        raise
             valid_server_limit = server_limit if server_limit is not None and server_limit > 0 else None
             can_use_overflow = valid_server_limit is not None
             max_request_size = DEFAULT_MAX_REQUEST_SIZE
@@ -1266,17 +1270,26 @@ class _HTTPBackgroundLogger:
                 if not is_retrying and self.sync_flush:
                     raise Exception(errmsg) from e
                 else:
-                    print(errmsg, file=self.outfile)
-                    traceback.print_exc(file=self.outfile)
+                    try:
+                        print(errmsg, file=self.outfile)
+                        traceback.print_exc(file=self.outfile)
+                        if is_retrying:
+                            sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
+                            print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
+                    except ValueError as ve:
+                        if "operation on closed file" not in str(ve):
+                            raise
                     if is_retrying:
-                        sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
-                        print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
                         time.sleep(sleep_time_s)
 
-        print(
-            f"Failed to construct log records to flush after {self.num_tries} attempts. Dropping batch",
-            file=self.outfile,
-        )
+        try:
+            print(
+                f"Failed to construct log records to flush after {self.num_tries} attempts. Dropping batch",
+                file=self.outfile,
+            )
+        except ValueError as ve:
+            if "operation on closed file" not in str(ve):
+                raise
         return [], []
 
     def _request_logs3_overflow_upload(
@@ -1403,13 +1416,22 @@ class _HTTPBackgroundLogger:
             if not is_retrying and self.sync_flush:
                 raise Exception(errmsg)
             else:
-                print(errmsg, file=self.outfile)
+                try:
+                    print(errmsg, file=self.outfile)
+                    if is_retrying:
+                        sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
+                        print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
+                except ValueError as ve:
+                    if "operation on closed file" not in str(ve):
+                        raise
                 if is_retrying:
-                    sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
-                    print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
                     time.sleep(sleep_time_s)
 
-        print(f"log request failed after {self.num_tries} retries. Dropping batch", file=self.outfile)
+        try:
+            print(f"log request failed after {self.num_tries} retries. Dropping batch", file=self.outfile)
+        except ValueError as ve:
+            if "operation on closed file" not in str(ve):
+                raise
 
     def _dump_dropped_events(self, wrapped_items):
         publish_payloads_dir = [x for x in [self.all_publish_payloads_dir, self.failed_publish_payloads_dir] if x]
@@ -1455,7 +1477,11 @@ class _HTTPBackgroundLogger:
             eprint(f"Failed to write failed payload to output file {payload_file}:\n", e)
 
     def _log_failed_payloads_dir(self):
-        print(f"Logging failed payloads to {self.failed_publish_payloads_dir}", file=self.outfile)
+        try:
+            print(f"Logging failed payloads to {self.failed_publish_payloads_dir}", file=self.outfile)
+        except ValueError as ve:
+            if "operation on closed file" not in str(ve):
+                raise
 
     # Should only be called by BraintrustState.
     def internal_replace_api_conn(self, api_conn: HTTPConnection):
