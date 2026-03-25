@@ -61,9 +61,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                     "additional_kwargs": ANY,
                     "response_metadata": ANY,
                     "type": "ai",
-                    "name": ANY,
-                    "id": ANY,
-                    "example": ANY,
                     "tool_calls": ANY,
                     "invalid_tool_calls": ANY,
                     "usage_metadata": ANY,
@@ -82,8 +79,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
                         }
                     ]
                 },
@@ -100,9 +95,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -118,8 +110,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                                     "additional_kwargs": ANY,
                                     "response_metadata": ANY,
                                     "type": "ai",
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
@@ -132,7 +122,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                         },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {

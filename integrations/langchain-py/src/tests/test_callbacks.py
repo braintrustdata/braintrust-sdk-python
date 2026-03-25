@@ -58,9 +58,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                     "additional_kwargs": ANY,
                     "response_metadata": ANY,
                     "type": "ai",
-                    "name": ANY,
-                    "id": ANY,
-                    "example": ANY,
                     "tool_calls": ANY,
                     "invalid_tool_calls": ANY,
                     "usage_metadata": ANY,
@@ -79,8 +76,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
                         }
                     ]
                 },
@@ -97,9 +92,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -115,8 +107,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                                     "additional_kwargs": ANY,
                                     "response_metadata": ANY,
                                     "type": "ai",
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
@@ -129,7 +119,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                         },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {
@@ -200,8 +189,6 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
                         }
                     ]
                 },
@@ -218,9 +205,6 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -236,8 +220,6 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
                                     "additional_kwargs": ANY,
                                     "response_metadata": ANY,
                                     "type": "ai",
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
@@ -250,7 +232,6 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
                         },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {
@@ -331,9 +312,6 @@ def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -366,8 +344,6 @@ def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
                                         "tool_calls": ANY,  # Tool call details
                                     },
                                     "response_metadata": ANY,
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
@@ -380,7 +356,6 @@ def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
                         },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {
@@ -585,9 +560,6 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
                         "additional_kwargs": {},
                         "response_metadata": {},
                         "type": "human",
-                        "name": None,
-                        "id": None,
-                        "example": ANY,
                     }
                 ]
             ],
@@ -607,8 +579,6 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
                                 "additional_kwargs": ANY,
                                 "response_metadata": ANY,
                                 "type": "ai",
-                                "name": None,
-                                "id": ANY,
                             },
                         }
                     ]
@@ -910,9 +880,6 @@ def test_streaming_ttft(logger_memory_logger: LoggerMemoryLogger):
                         {
                             "additional_kwargs": {},
                             "content": "Count from 1 to 5.",
-                            "example": False,
-                            "id": None,
-                            "name": None,
                             "response_metadata": {},
                             "type": "human",
                         }
