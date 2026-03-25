@@ -63,7 +63,6 @@ if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"
 
 from .audit import *
 from .auto import (
-    IntegrationPatchConfig,  # noqa: F401 # type: ignore[reportUnusedImport]
     auto_instrument,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
 from .framework import *

@@ -81,7 +81,7 @@ Run `Publish Python SDK to TestPyPI` with:
 - Only publish to TestPyPI; there is no matching canary mode in the real PyPI workflow
 - Do not create a git tag or GitHub Release
 - Skip publishing if the current `HEAD` commit matches the latest published TestPyPI artifact marked with release channel `canary`
-- Skip publishing unless the latest completed `py.yaml` run on the target branch succeeded
+- Skip publishing unless the latest completed `checks.yaml` run on the target branch succeeded
 
 install canaries like so:
 

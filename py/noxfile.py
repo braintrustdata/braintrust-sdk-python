@@ -86,7 +86,8 @@ VENDOR_PACKAGES = (
 ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
 OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
 # litellm latest requires Python >= 3.10
-LITELLM_VERSIONS = (LATEST, "1.74.0")
+# Pin litellm because 1.82.7-1.82.8 are compromised: https://github.com/BerriAI/litellm/issues/24512
+LITELLM_VERSIONS = ("1.82.0", "1.74.0")
 # CLI bundling started in 0.1.10 - older versions require external Claude Code installation
 CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
 # Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
@@ -165,7 +166,7 @@ def test_claude_agent_sdk(session, version):
     # while still exercising the real Claude Agent SDK control protocol.
     _install_test_deps(session)
     _install(session, "claude_agent_sdk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/claude_agent_sdk/test_wrapper.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py")
     _run_core_tests(session)
 
 
@@ -176,8 +177,8 @@ def test_agno(session, version):
     _install(session, "agno", version)
     _install(session, "openai")  # Required for agno.models.openai
     _install(session, "fastapi")  # Required for agno.workflow
-    _run_tests(session, f"{WRAPPER_DIR}/agno/test_agno.py")
-    _run_tests(session, f"{WRAPPER_DIR}/agno/test_workflow.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py")
     _run_core_tests(session)
 
 
@@ -220,8 +221,8 @@ def test_google_adk(session, version):
     """Test Google ADK integration."""
     _install_test_deps(session)
     _install(session, "google-adk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk.py")
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk_mcp_tool.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk_mcp_tool.py")
     _run_core_tests(session)
 
 
@@ -234,6 +235,16 @@ def test_openai(session, version):
     _install(session, "openai-agents")
     _run_tests(session, f"{WRAPPER_DIR}/test_openai.py")
     _run_core_tests(session)
+
+
+@nox.session()
+def test_openai_http2_streaming(session):
+    _install_test_deps(session)
+    _install(session, "openai")
+    # h2 is isolated to this session because it's only needed to force the
+    # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
+    session.install("h2")
+    _run_tests(session, f"{WRAPPER_DIR}/test_openai_http2.py")
 
 
 @nox.session()
@@ -437,6 +448,7 @@ def _run_core_tests(session):
             INTEGRATION_AUTO_TEST_DIR,
             ANTHROPIC_INTEGRATION_DIR,
             LANGCHAIN_INTEGRATION_DIR,
+            INTEGRATION_DIR,
             CONTRIB_DIR,
             DEVSERVER_DIR,
         ],

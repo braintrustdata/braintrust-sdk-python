@@ -4,8 +4,6 @@ These test files validate the Braintrust SDK's integration with different AI pro
 
 ## Test Files
 
-- `genai-py-v1/google_genai.py` - Tests for Google Generative AI integration
-
 Each test suite validates:
 
 - Basic and multi-turn completions

@@ -19,7 +19,13 @@ X_CACHED_HEADER = "x-bt-cached"
 
 class NamedWrapper:
     def __init__(self, wrapped: Any):
+        # Keep the legacy mangled attribute for existing wrapped-client checks
+        # that introspect `_NamedWrapper__wrapped` directly.
         self.__wrapped = wrapped
+
+    @property
+    def _wrapped(self) -> Any:
+        return self.__wrapped
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.__wrapped, name)
@@ -33,8 +39,8 @@ class AsyncResponseWrapper:
 
     async def __aenter__(self):
         if hasattr(self._response, "__aenter__"):
-            return await self._response.__aenter__()
-        return self._response
+            await self._response.__aenter__()
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if hasattr(self._response, "__aexit__"):
@@ -188,7 +194,7 @@ class ChatCompletionWrapper:
                         span.end()
 
                 should_end = False
-                return gen()
+                return _TracedStream(raw_response, gen())
             else:
                 log_response = _try_to_dict(raw_response)
                 metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
@@ -244,7 +250,7 @@ class ChatCompletionWrapper:
 
                 should_end = False
                 streamer = gen()
-                return AsyncResponseWrapper(streamer)
+                return _AsyncTracedStream(raw_response, streamer)
             else:
                 log_response = _try_to_dict(raw_response)
                 metrics = _parse_metrics_from_usage(log_response.get("usage"))
@@ -365,6 +371,16 @@ class _TracedStream(NamedWrapper):
     def __next__(self) -> Any:
         return next(self._traced_generator)
 
+    def __enter__(self) -> Any:
+        if hasattr(self._wrapped, "__enter__"):
+            self._wrapped.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> Any:
+        if hasattr(self._wrapped, "__exit__"):
+            return self._wrapped.__exit__(exc_type, exc_val, exc_tb)
+        return None
+
 
 class _AsyncTracedStream(NamedWrapper):
     """Traced async stream. Iterates via the traced generator while delegating
@@ -379,6 +395,16 @@ class _AsyncTracedStream(NamedWrapper):
 
     async def __anext__(self) -> Any:
         return await self._traced_generator.__anext__()
+
+    async def __aenter__(self) -> Any:
+        if hasattr(self._wrapped, "__aenter__"):
+            await self._wrapped.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> Any:
+        if hasattr(self._wrapped, "__aexit__"):
+            return await self._wrapped.__aexit__(exc_type, exc_val, exc_tb)
+        return None
 
 
 class _RawResponseWithTracedStream(NamedWrapper):
@@ -445,7 +471,7 @@ class ResponseWrapper:
                 should_end = False
                 if self.return_raw and hasattr(create_response, "parse"):
                     return _RawResponseWithTracedStream(create_response, _TracedStream(raw_response, gen()))
-                return gen()
+                return _TracedStream(raw_response, gen())
             else:
                 log_response = _try_to_dict(raw_response)
                 event_data = self._parse_event_from_result(log_response)
@@ -498,7 +524,7 @@ class ResponseWrapper:
                 streamer = gen()
                 if self.return_raw and hasattr(create_response, "parse"):
                     return _RawResponseWithTracedStream(create_response, _AsyncTracedStream(raw_response, streamer))
-                return AsyncResponseWrapper(streamer)
+                return _AsyncTracedStream(raw_response, streamer)
             else:
                 log_response = _try_to_dict(raw_response)
                 event_data = self._parse_event_from_result(log_response)

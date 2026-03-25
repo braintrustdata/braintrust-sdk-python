@@ -1,7 +1,7 @@
 """Test auto_instrument for Claude Agent SDK (no uninstrument available)."""
 
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.claude_agent_sdk._test_transport import make_cassette_transport
+from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
 

@@ -42,7 +42,9 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
     # Pass cassettes dir to subprocess since it may use installed package
     env = os.environ.copy()
     env["BRAINTRUST_CASSETTES_DIR"] = str(_SOURCE_DIR / "cassettes")
-    env["BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR"] = str(_SOURCE_DIR / "claude_agent_sdk" / "cassettes")
+    env["BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR"] = str(
+        _SOURCE_DIR.parent / "integrations" / "claude_agent_sdk" / "cassettes"
+    )
     result = subprocess.run(
         [sys.executable, str(script_path)],
         capture_output=True,

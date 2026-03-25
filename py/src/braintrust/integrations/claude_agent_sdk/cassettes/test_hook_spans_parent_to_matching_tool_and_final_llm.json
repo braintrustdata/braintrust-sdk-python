@@ -1,0 +1,1074 @@
+{
+  "cassette_name": "test_hook_spans_parent_to_matching_tool_and_final_llm",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "PostToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_1"
+                  ],
+                  "matcher": "Bash|Read"
+                }
+              ],
+              "PreToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": "Bash|Read"
+                }
+              ],
+              "Stop": [
+                {
+                  "hookCallbackIds": [
+                    "hook_2"
+                  ],
+                  "matcher": null
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_2ccab2db",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_2ccab2db",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Use Bash to run pwd and ls in the workspace, then use Read on trip_notes.md and summarize the current budget and hotel status.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.81",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "skills": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "schedule",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "schedule",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "RemoteTrigger",
+          "ToolSearch"
+        ],
+        "type": "system",
+        "uuid": "56072b97-88ab-4844-b3db-6fc497879759"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user wants me to:\n1. Run `pwd` and `ls` in the workspace using Bash\n2. Read the `trip_notes.md` file\n3. Summarize the current budget and hotel status\n\nLet me start by running the bash commands and reading the file.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01TXZ7JW8vmNuya6XzmC2xvB",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 5524
+            },
+            "cache_creation_input_tokens": 5524,
+            "cache_read_input_tokens": 13663,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "87b81674-ee3f-488d-9ec9-6c937b445a48"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01DXtfkyrCHrZNGfcyXbgb28",
+              "input": {
+                "command": "pwd && echo \"---\" && ls",
+                "description": "Show current directory and list files"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01TXZ7JW8vmNuya6XzmC2xvB",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 5524
+            },
+            "cache_creation_input_tokens": 5524,
+            "cache_read_input_tokens": 13663,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "a930d3f2-05b6-47ec-9970-cd7138f96e5e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "tool_input": {
+              "command": "pwd && echo \"---\" && ls",
+              "description": "Show current directory and list files"
+            },
+            "tool_name": "Bash",
+            "tool_use_id": "toolu_01DXtfkyrCHrZNGfcyXbgb28",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01DXtfkyrCHrZNGfcyXbgb28"
+        },
+        "request_id": "4b7bbf02-6613-436f-bb2d-2520aabe4ebd",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "4b7bbf02-6613-436f-bb2d-2520aabe4ebd",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01Hgz5wUoxjXLZKopmM5SoVz",
+              "input": {
+                "file_path": "/trip_notes.md"
+              },
+              "name": "Read",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01TXZ7JW8vmNuya6XzmC2xvB",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 5524
+            },
+            "cache_creation_input_tokens": 5524,
+            "cache_read_input_tokens": 13663,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "de604622-0f92-44dc-8428-ae4e8703fc58"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "tool_input": {
+              "file_path": "/trip_notes.md"
+            },
+            "tool_name": "Read",
+            "tool_use_id": "toolu_01Hgz5wUoxjXLZKopmM5SoVz",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01Hgz5wUoxjXLZKopmM5SoVz"
+        },
+        "request_id": "91975d64-dad8-4e4e-b212-0c6b84e4e3af",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "91975d64-dad8-4e4e-b212-0c6b84e4e3af",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "File does not exist. Note: your current working directory is <REDACTED_PATH>",
+              "is_error": true,
+              "tool_use_id": "toolu_01Hgz5wUoxjXLZKopmM5SoVz",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "timestamp": "2026-03-25T17:57:31.643Z",
+        "tool_use_result": "Error: File does not exist. Note: your current working directory is <REDACTED_PATH>",
+        "type": "user",
+        "uuid": "50e62ab9-04e4-4df9-bb01-e526cfb187ff"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "tool_input": {
+              "command": "pwd && echo \"---\" && ls",
+              "description": "Show current directory and list files"
+            },
+            "tool_name": "Bash",
+            "tool_response": {
+              "interrupted": false,
+              "isImage": false,
+              "noOutputExpected": false,
+              "stderr": "",
+              "stdout": "<REDACTED_PATH>\n---\nAGENTS.md\nCLAUDE.md\nCODEOWNERS\nCONTRIBUTING.md\nDockerfile\nLICENSE\nMakefile\nREADME.md\ndocker-compose.yml\ndocs\nenv.sh\ngenerated_types.json\nimported_types.json\nintegrations\ninternal\nmise.toml\npy\npyproject.toml\npyrightconfig.json\nscripts\nvenv"
+            },
+            "tool_use_id": "toolu_01DXtfkyrCHrZNGfcyXbgb28",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01DXtfkyrCHrZNGfcyXbgb28"
+        },
+        "request_id": "9a530a3d-03ef-462b-8bd7-baf6a8b93a57",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "9a530a3d-03ef-462b-8bd7-baf6a8b93a57",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "<REDACTED_PATH>\n---\nAGENTS.md\nCLAUDE.md\nCODEOWNERS\nCONTRIBUTING.md\nDockerfile\nLICENSE\nMakefile\nREADME.md\ndocker-compose.yml\ndocs\nenv.sh\ngenerated_types.json\nimported_types.json\nintegrations\ninternal\nmise.toml\npy\npyproject.toml\npyrightconfig.json\nscripts\nvenv",
+              "is_error": false,
+              "tool_use_id": "toolu_01DXtfkyrCHrZNGfcyXbgb28",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "timestamp": "2026-03-25T17:57:31.776Z",
+        "tool_use_result": {
+          "interrupted": false,
+          "isImage": false,
+          "noOutputExpected": false,
+          "stderr": "",
+          "stdout": "<REDACTED_PATH>\n---\nAGENTS.md\nCLAUDE.md\nCODEOWNERS\nCONTRIBUTING.md\nDockerfile\nLICENSE\nMakefile\nREADME.md\ndocker-compose.yml\ndocs\nenv.sh\ngenerated_types.json\nimported_types.json\nintegrations\ninternal\nmise.toml\npy\npyproject.toml\npyrightconfig.json\nscripts\nvenv"
+        },
+        "type": "user",
+        "uuid": "ab983b63-bf32-4909-832d-d1d81c800af2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The file `trip_notes.md` doesn't exist in the current directory. The user asked me to read `trip_notes.md`, but it's not in the workspace directory `<REDACTED_PATH> \n\nLet me check if maybe the file is in a different location or if I need to look elsewhere. Let me search for it in the workspace.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_015MCDznTfi9vk7twpU5RKCA",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 338
+            },
+            "cache_creation_input_tokens": 338,
+            "cache_read_input_tokens": 19187,
+            "inference_geo": "not_available",
+            "input_tokens": 68,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "3c6288c5-b121-4162-ac0d-c9fc2e601689"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "I see that I'm in the `<REDACTED_PATH> directory, but the `trip_notes.md` file doesn't exist there. Let me search for it:",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_015MCDznTfi9vk7twpU5RKCA",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 338
+            },
+            "cache_creation_input_tokens": 338,
+            "cache_read_input_tokens": 19187,
+            "inference_geo": "not_available",
+            "input_tokens": 68,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "f3511f38-8946-4833-b848-11193adabb52"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01FvkuCMS9iHCdniGqDkjz6o",
+              "input": {
+                "command": "find ~ -name \"trip_notes.md\" 2>/dev/null | head -10",
+                "description": "Search for trip_notes.md in home directory"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_015MCDznTfi9vk7twpU5RKCA",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 338
+            },
+            "cache_creation_input_tokens": 338,
+            "cache_read_input_tokens": 19187,
+            "inference_geo": "not_available",
+            "input_tokens": 68,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "2f1105c9-8dec-4e4a-b68e-082bb3aa55a6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "tool_input": {
+              "command": "find ~ -name \"trip_notes.md\" 2>/dev/null | head -10",
+              "description": "Search for trip_notes.md in home directory"
+            },
+            "tool_name": "Bash",
+            "tool_use_id": "toolu_01FvkuCMS9iHCdniGqDkjz6o",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01FvkuCMS9iHCdniGqDkjz6o"
+        },
+        "request_id": "be344e9b-dbfa-4078-a733-4c077b0a45b8",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "be344e9b-dbfa-4078-a733-4c077b0a45b8",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "tool_input": {
+              "command": "find ~ -name \"trip_notes.md\" 2>/dev/null | head -10",
+              "description": "Search for trip_notes.md in home directory"
+            },
+            "tool_name": "Bash",
+            "tool_response": {
+              "interrupted": false,
+              "isImage": false,
+              "noOutputExpected": false,
+              "stderr": "",
+              "stdout": "<REDACTED_PATH>"
+            },
+            "tool_use_id": "toolu_01FvkuCMS9iHCdniGqDkjz6o",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01FvkuCMS9iHCdniGqDkjz6o"
+        },
+        "request_id": "1c79827d-58e5-4db2-837f-c9ca2666a3e2",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "1c79827d-58e5-4db2-837f-c9ca2666a3e2",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "<REDACTED_PATH>",
+              "is_error": false,
+              "tool_use_id": "toolu_01FvkuCMS9iHCdniGqDkjz6o",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "timestamp": "2026-03-25T17:58:28.587Z",
+        "tool_use_result": {
+          "interrupted": false,
+          "isImage": false,
+          "noOutputExpected": false,
+          "stderr": "",
+          "stdout": "<REDACTED_PATH>"
+        },
+        "type": "user",
+        "uuid": "47d093a8-5dac-42c8-a74f-25f9830c403a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Found it! The file is at `<REDACTED_PATH> Let me read it now.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01RpLeoWPJ5Kn82F1f876nWa",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 356
+            },
+            "cache_creation_input_tokens": 356,
+            "cache_read_input_tokens": 19525,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "a8135043-51d4-4d09-b536-eacaf011e366"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Found it! Let me read the file:",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01RpLeoWPJ5Kn82F1f876nWa",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 356
+            },
+            "cache_creation_input_tokens": 356,
+            "cache_read_input_tokens": 19525,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "a72c7749-099d-43de-9499-7b0599bfd019"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01MiLGk9Wxhe1umFZHVCQmde",
+              "input": {
+                "file_path": "<REDACTED_PATH>"
+              },
+              "name": "Read",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01RpLeoWPJ5Kn82F1f876nWa",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 356
+            },
+            "cache_creation_input_tokens": 356,
+            "cache_read_input_tokens": 19525,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "4ac56750-0967-4e00-93d8-ec9b7f42238f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "tool_input": {
+              "file_path": "<REDACTED_PATH>"
+            },
+            "tool_name": "Read",
+            "tool_use_id": "toolu_01MiLGk9Wxhe1umFZHVCQmde",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01MiLGk9Wxhe1umFZHVCQmde"
+        },
+        "request_id": "44a35f11-fadd-4297-aa4c-0babb6748255",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "44a35f11-fadd-4297-aa4c-0babb6748255",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "tool_input": {
+              "file_path": "<REDACTED_PATH>"
+            },
+            "tool_name": "Read",
+            "tool_response": {
+              "file": {
+                "content": "# Tokyo Trip Notes\n\n- Budget: 1500 USD\n- Hotel: Park Hotel Tokyo\n- Transit plan: TBD\n- Reminder: buy JR Pass\n\nSummary: still rough, needs cleanup.\n",
+                "filePath": "<REDACTED_PATH>",
+                "numLines": 9,
+                "startLine": 1,
+                "totalLines": 9
+              },
+              "type": "text"
+            },
+            "tool_use_id": "toolu_01MiLGk9Wxhe1umFZHVCQmde",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01MiLGk9Wxhe1umFZHVCQmde"
+        },
+        "request_id": "d50fd986-1779-42e4-b41b-886a94614b0c",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "d50fd986-1779-42e4-b41b-886a94614b0c",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "     1\u2192# Tokyo Trip Notes\n     2\u2192\n     3\u2192- Budget: 1500 USD\n     4\u2192- Hotel: Park Hotel Tokyo\n     5\u2192- Transit plan: TBD\n     6\u2192- Reminder: buy JR Pass\n     7\u2192\n     8\u2192Summary: still rough, needs cleanup.\n     9\u2192\n\n<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n",
+              "tool_use_id": "toolu_01MiLGk9Wxhe1umFZHVCQmde",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "timestamp": "2026-03-25T17:58:29.703Z",
+        "tool_use_result": {
+          "file": {
+            "content": "# Tokyo Trip Notes\n\n- Budget: 1500 USD\n- Hotel: Park Hotel Tokyo\n- Transit plan: TBD\n- Reminder: buy JR Pass\n\nSummary: still rough, needs cleanup.\n",
+            "filePath": "<REDACTED_PATH>",
+            "numLines": 9,
+            "startLine": 1,
+            "totalLines": 9
+          },
+          "type": "text"
+        },
+        "type": "user",
+        "uuid": "c753d9d1-19eb-4975-b6c6-1bc9ac618cc1"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Great! I found and read the trip_notes.md file. Now I can summarize the budget and hotel status as requested.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01Vgm1twGmxEdKf7L4L7z1qt",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 323
+            },
+            "cache_creation_input_tokens": 323,
+            "cache_read_input_tokens": 19881,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "f53b081e-f911-4d63-b2f7-b5047fa35f0a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "## Summary\n\n**Current Directory:** `<REDACTED_PATH>\n\n**Budget Status:** \n- **Total Budget:** $1,500 USD\n\n**Hotel Status:**\n- **Hotel:** Park Hotel Tokyo\n\nThe trip notes indicate this is for a Tokyo trip that's still in rough planning stages and needs cleanup. The note also includes a reminder to purchase a JR Pass. The transit plan is marked as \"TBD\" (to be determined).",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01Vgm1twGmxEdKf7L4L7z1qt",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 323
+            },
+            "cache_creation_input_tokens": 323,
+            "cache_read_input_tokens": 19881,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "type": "assistant",
+        "uuid": "afe8e9a6-c2f4-4683-8973-c87aa91b0412"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_2",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "Stop",
+            "last_assistant_message": "## Summary\n\n**Current Directory:** `<REDACTED_PATH>\n\n**Budget Status:** \n- **Total Budget:** $1,500 USD\n\n**Hotel Status:**\n- **Hotel:** Park Hotel Tokyo\n\nThe trip notes indicate this is for a Tokyo trip that's still in rough planning stages and needs cleanup. The note also includes a reminder to purchase a JR Pass. The transit plan is marked as \"TBD\" (to be determined).",
+            "permission_mode": "bypassPermissions",
+            "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+            "stop_hook_active": false,
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "e6fce4e5-1539-434f-8ed3-bfd263a49a23"
+        },
+        "request_id": "ba44c948-ea07-482e-bfff-73e0795b2d59",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "ba44c948-ea07-482e-bfff-73e0795b2d59",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 7030,
+        "duration_ms": 61937,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 6541,
+            "cacheReadInputTokens": 72256,
+            "contextWindow": 200000,
+            "costUSD": 0.019160850000000004,
+            "inputTokens": 94,
+            "maxOutputTokens": 32000,
+            "outputTokens": 733,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 5,
+        "permission_denials": [],
+        "result": "## Summary\n\n**Current Directory:** `<REDACTED_PATH>\n\n**Budget Status:** \n- **Total Budget:** $1,500 USD\n\n**Hotel Status:**\n- **Hotel:** Park Hotel Tokyo\n\nThe trip notes indicate this is for a Tokyo trip that's still in rough planning stages and needs cleanup. The note also includes a reminder to purchase a JR Pass. The transit plan is marked as \"TBD\" (to be determined).",
+        "session_id": "acb219b2-6f7d-4475-826f-6eb04b901373",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "total_cost_usd": 0.019160850000000004,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 6541
+          },
+          "cache_creation_input_tokens": 6541,
+          "cache_read_input_tokens": 72256,
+          "inference_geo": "",
+          "input_tokens": 94,
+          "iterations": [],
+          "output_tokens": 733,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "066466f2-7a0e-4871-800e-3900466a8d72"
+      }
+    }
+  ],
+  "sdk_version": "0.1.50"
+}
