@@ -1270,16 +1270,16 @@ class _HTTPBackgroundLogger:
                 if not is_retrying and self.sync_flush:
                     raise Exception(errmsg) from e
                 else:
+                    sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i) if is_retrying else None
                     try:
                         print(errmsg, file=self.outfile)
                         traceback.print_exc(file=self.outfile)
-                        if is_retrying:
-                            sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
+                        if sleep_time_s is not None:
                             print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
                     except ValueError as ve:
                         if "operation on closed file" not in str(ve):
                             raise
-                    if is_retrying:
+                    if sleep_time_s is not None:
                         time.sleep(sleep_time_s)
 
         try:
@@ -1416,15 +1416,15 @@ class _HTTPBackgroundLogger:
             if not is_retrying and self.sync_flush:
                 raise Exception(errmsg)
             else:
+                sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i) if is_retrying else None
                 try:
                     print(errmsg, file=self.outfile)
-                    if is_retrying:
-                        sleep_time_s = BACKGROUND_LOGGER_BASE_SLEEP_TIME_S * (2**i)
+                    if sleep_time_s is not None:
                         print(f"Sleeping for {sleep_time_s}s", file=self.outfile)
                 except ValueError as ve:
                     if "operation on closed file" not in str(ve):
                         raise
-                if is_retrying:
+                if sleep_time_s is not None:
                     time.sleep(sleep_time_s)
 
         try:
