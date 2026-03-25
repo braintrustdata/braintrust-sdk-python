@@ -103,8 +103,12 @@ AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
 GENAI_VERSIONS = (LATEST,)
 DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
-LANGCHAIN_VERSIONS = (LATEST, "0.3.83")
-LANGCHAIN_VERSION_IDS = (LATEST, "langchain-core-0.3.83")
+LANGCHAIN_VERSIONS = (
+    ("langchain-core", LATEST),
+    ("langchain-core", "0.3.83"),
+    ("langchain", "0.3.28"),
+)
+LANGCHAIN_VERSION_IDS = (LATEST, "langchain-core-0.3.83", "langchain-0.3.28")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
 PYTEST_VERSIONS = (LATEST, "8.4.2")
@@ -200,8 +204,9 @@ def test_google_genai(session, version):
 @nox.parametrize("version", LANGCHAIN_VERSIONS, ids=LANGCHAIN_VERSION_IDS)
 def test_langchain(session, version):
     """Test LangChain integration."""
+    pkg, version = version
     _install_test_deps(session)
-    _install(session, "langchain-core", version)
+    _install(session, pkg, version)
     _install(session, "langchain-openai")
     _install(session, "langchain-anthropic")
     _install(session, "langgraph")
