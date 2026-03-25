@@ -191,6 +191,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 # cut out all the references to user objects synchronously in this
                 # function.
                 result = {}
+                next_depth = depth + 1
                 for k, value in v.items():
                     if isinstance(k, str):
                         key_str = k
@@ -200,7 +201,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                         except Exception:
                             # If str() fails on the key, use a fallback representation
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                    result[key_str] = _deep_copy_object(value, depth + 1)
+                    result[key_str] = _deep_copy_object(value, next_depth)
                 return result
             finally:
                 # Remove from visited set after processing to allow the same object
@@ -213,7 +214,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 return "<circular reference>"
             visited.add(obj_id)
             try:
-                return [_deep_copy_object(x, depth + 1) for x in v]
+                next_depth = depth + 1
+                return [_deep_copy_object(x, next_depth) for x in v]
             finally:
                 visited.discard(obj_id)
 
@@ -223,7 +225,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 return "<circular reference>"
             visited.add(obj_id)
             try:
-                return [_deep_copy_object(x, depth + 1) for x in v]
+                next_depth = depth + 1
+                return [_deep_copy_object(x, next_depth) for x in v]
             finally:
                 visited.discard(obj_id)
 
@@ -244,6 +247,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             visited.add(obj_id)
             try:
                 result = {}
+                next_depth = depth + 1
                 for k, value in v.items():
                     if isinstance(k, str):
                         key_str = k
@@ -252,7 +256,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                             key_str = str(k)
                         except Exception:
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                    result[key_str] = _deep_copy_object(value, depth + 1)
+                    result[key_str] = _deep_copy_object(value, next_depth)
                 return result
             finally:
                 visited.discard(obj_id)
@@ -263,7 +267,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 return "<circular reference>"
             visited.add(obj_id)
             try:
-                return [_deep_copy_object(x, depth + 1) for x in v]
+                next_depth = depth + 1
+                return [_deep_copy_object(x, next_depth) for x in v]
             finally:
                 visited.discard(obj_id)
 
@@ -273,7 +278,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 return "<circular reference>"
             visited.add(obj_id)
             try:
-                return [_deep_copy_object(x, depth + 1) for x in v]
+                next_depth = depth + 1
+                return [_deep_copy_object(x, next_depth) for x in v]
             finally:
                 visited.discard(obj_id)
 
@@ -284,6 +290,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             visited.add(obj_id)
             try:
                 result = {}
+                next_depth = depth + 1
                 for k, value in v.items():
                     if isinstance(k, str):
                         key_str = k
@@ -292,7 +299,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                             key_str = str(k)
                         except Exception:
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                    result[key_str] = _deep_copy_object(value, depth + 1)
+                    result[key_str] = _deep_copy_object(value, next_depth)
                 return result
             finally:
                 visited.discard(obj_id)
