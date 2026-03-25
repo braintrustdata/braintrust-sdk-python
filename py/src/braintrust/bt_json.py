@@ -20,12 +20,25 @@ def _to_bt_safe(v: Any) -> Any:
     """
     Converts the object to a Braintrust-safe representation (i.e. Attachment objects are safe (specially handled by background logger)).
     """
-    if isinstance(v, (str, bool, int)) or v is None:
+    v_type = type(v)
+    if v is None or v_type is str or v_type is bool or v_type is int:
         # Skip all richer object checks for primitive scalar values.
         return v
 
-    if isinstance(v, float):
+    if v_type is float:
         # Handle NaN and Infinity for JSON compatibility
+        if math.isnan(v):
+            return "NaN"
+
+        if math.isinf(v):
+            return "Infinity" if v > 0 else "-Infinity"
+
+        return v
+
+    if isinstance(v, (str, bool, int)):
+        return v
+
+    if isinstance(v, float):
         if math.isnan(v):
             return "NaN"
 
@@ -134,7 +147,18 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
         if depth >= max_depth:
             return "<max depth exceeded>"
 
-        if isinstance(v, (str, bool, int)) or v is None:
+        v_type = type(v)
+        if v is None or v_type is str or v_type is bool or v_type is int:
+            return v
+
+        if v_type is float:
+            if math.isnan(v):
+                return "NaN"
+            if math.isinf(v):
+                return "Infinity" if v > 0 else "-Infinity"
+            return v
+
+        if isinstance(v, (str, bool, int)):
             return v
 
         if isinstance(v, float):
@@ -146,7 +170,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
 
         # Check for circular references in mutable containers.
         # Fast-path the built-in container types we expect most often.
-        if isinstance(v, dict):
+        if v_type is dict or isinstance(v, dict):
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
@@ -174,7 +198,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 # to appear in different branches of the tree
                 visited.discard(obj_id)
 
-        if isinstance(v, list):
+        if v_type is list or isinstance(v, list):
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
@@ -184,7 +208,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             finally:
                 visited.discard(obj_id)
 
-        if isinstance(v, (tuple, set)):
+        if v_type is tuple or v_type is set or isinstance(v, (tuple, set)):
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
