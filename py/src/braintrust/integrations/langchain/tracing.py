@@ -18,7 +18,7 @@ from typing import (
 from uuid import UUID
 
 import braintrust
-from braintrust import NOOP_SPAN, Logger, Span, SpanAttributes, SpanTypeAttribute, current_span, init_logger
+from braintrust.logger import NOOP_SPAN, Logger, Span, SpanAttributes, SpanTypeAttribute, current_span, init_logger
 from braintrust.version import VERSION as sdk_version
 from typing_extensions import NotRequired
 

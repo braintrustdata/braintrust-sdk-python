@@ -106,7 +106,6 @@ def auto_instrument(
     """
     results = {}
 
-
     if openai:
         results["openai"] = _instrument_openai()
     if anthropic:
