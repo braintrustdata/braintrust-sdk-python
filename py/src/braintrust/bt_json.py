@@ -35,7 +35,7 @@ def _to_bt_safe(v: Any) -> Any:
     Converts the object to a Braintrust-safe representation (i.e. Attachment objects are safe (specially handled by background logger)).
     """
     v_type = type(v)
-    if v is None or v_type is str or v_type is bool or v_type is int:
+    if v_type is str or v_type is int or v_type is bool or v is None:
         # Skip all richer object checks for primitive scalar values.
         return v
 
@@ -169,7 +169,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             return "<max depth exceeded>"
 
         v_type = type(v)
-        if v is None or v_type is str or v_type is bool or v_type is int:
+        if v_type is str or v_type is int or v_type is bool or v is None:
             return v
 
         if v_type is float:
@@ -219,7 +219,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
 
                     value_type = type(value)
-                    if value is None or value_type is str or value_type is bool or value_type is int:
+                    if value_type is str or value_type is int or value_type is bool or value is None:
                         result[key_str] = value
                         continue
 
