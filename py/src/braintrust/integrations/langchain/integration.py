@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from braintrust.integrations.base import BasePatcher, BaseIntegration
+from braintrust.integrations.base import BaseIntegration, BasePatcher
 
 
 class LangChainCallbackPatcher(BasePatcher):

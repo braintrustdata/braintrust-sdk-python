@@ -43,6 +43,7 @@ WRAPPER_DIR = "braintrust/wrappers"
 INTEGRATION_DIR = "braintrust/integrations"
 INTEGRATION_AUTO_TEST_DIR = "braintrust/integrations/auto_test_scripts"
 ANTHROPIC_INTEGRATION_DIR = "braintrust/integrations/anthropic"
+LANGCHAIN_INTEGRATION_DIR = "braintrust/integrations/langchain"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
 
@@ -102,7 +103,7 @@ AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
 GENAI_VERSIONS = (LATEST,)
 DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
-LANGCHAIN_VERSIONS = (LATEST,)
+LANGCHAIN_VERSIONS = (LATEST, "0.3.83")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
 PYTEST_VERSIONS = (LATEST, "8.4.2")
@@ -425,7 +426,14 @@ def _run_core_tests(session):
     _run_tests(
         session,
         SRC_DIR,
-        ignore_paths=[WRAPPER_DIR, INTEGRATION_AUTO_TEST_DIR, ANTHROPIC_INTEGRATION_DIR, CONTRIB_DIR, DEVSERVER_DIR],
+        ignore_paths=[
+            WRAPPER_DIR,
+            INTEGRATION_AUTO_TEST_DIR,
+            ANTHROPIC_INTEGRATION_DIR,
+            LANGCHAIN_INTEGRATION_DIR,
+            CONTRIB_DIR,
+            DEVSERVER_DIR,
+        ],
     )
 
 

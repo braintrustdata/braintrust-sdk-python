@@ -1,10 +1,12 @@
 # pyright: reportTypedDictNotRequiredAccess=none
 import uuid
-from typing import Any, Dict, List, Sequence, Union, cast
+from typing import Any, Dict, List, Union, cast
 from unittest.mock import ANY
 
 import pytest
+from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
 from braintrust.logger import flush
+from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from langchain_anthropic import ChatAnthropic
 from langchain_core.callbacks import BaseCallbackHandler, CallbackManager
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -15,10 +17,8 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
-from braintrust.wrappers.test_utils import verify_autoinstrument_script
-
 from .conftest import LoggerMemoryLogger
+
 
 # ---------------------------------------------------------------------------
 # Helpers (inlined from the integration package)
@@ -44,9 +44,7 @@ def assert_matches_object(actual: Any, expected: Any, ignore_order: bool = False
                         matched = True
                     except Exception:
                         pass
-                assert matched, (
-                    f"Expected {expected_item} in unordered sequence but couldn't find match in {actual}"
-                )
+                assert matched, f"Expected {expected_item} in unordered sequence but couldn't find match in {actual}"
     elif isinstance(expected, dict):
         assert isinstance(actual, dict), f"Expected dict but got {type(actual)}"
         for k, v in expected.items():

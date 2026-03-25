@@ -11,6 +11,7 @@ from braintrust.integrations.langchain import (
     setup_langchain,
 )
 
+
 __all__ = [
     "BraintrustCallbackHandler",
     "BraintrustTracer",

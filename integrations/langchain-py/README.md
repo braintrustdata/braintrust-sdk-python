@@ -23,7 +23,7 @@ SDK for integrating [Braintrust](https://braintrust.dev) with [LangChain](https:
    braintrust.auto_instrument()
 
    # After (option 2: explicit)
-   from braintrust.wrappers.langchain import BraintrustCallbackHandler, set_global_handler
+   from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
    ```
 
 The API is identical - no code changes needed beyond the import path.

@@ -24,6 +24,7 @@ from braintrust import NOOP_SPAN, Logger, Span, SpanAttributes, SpanTypeAttribut
 from braintrust.version import VERSION as sdk_version
 from typing_extensions import NotRequired
 
+
 _logger = logging.getLogger(__name__)
 
 # integration_name stays "langchain-py" for backward compatibility with existing traces
@@ -611,7 +612,7 @@ class BraintrustTracer(BraintrustCallbackHandler):
     def __init__(self, *args: Any, **kwargs: Any):
         _logger.warning(
             "BraintrustTracer is deprecated. Use BraintrustCallbackHandler from "
-            "braintrust.wrappers.langchain instead."
+            "braintrust.integrations.langchain instead."
         )
         super().__init__(*args, **kwargs)
 

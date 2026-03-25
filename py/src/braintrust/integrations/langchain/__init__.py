@@ -21,7 +21,9 @@ def setup_langchain() -> bool:
 
 # Lazily imported to avoid circular imports at module load time
 # (tracing.py imports from braintrust, which must be fully initialized first)
-_LAZY_ATTRS = frozenset(["BraintrustCallbackHandler", "BraintrustTracer", "set_global_handler", "clear_global_handler"])
+_LAZY_ATTRS = frozenset(
+    ["BraintrustCallbackHandler", "BraintrustTracer", "set_global_handler", "clear_global_handler"]
+)
 
 
 def __getattr__(name: str):

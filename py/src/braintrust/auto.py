@@ -4,8 +4,6 @@ Auto-instrumentation for AI/ML libraries.
 Provides one-line instrumentation for supported libraries.
 """
 
-from __future__ import annotations
-
 import logging
 from contextlib import contextmanager
 

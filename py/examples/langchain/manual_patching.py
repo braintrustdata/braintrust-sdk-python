@@ -7,7 +7,7 @@ Usage:
 """
 
 from braintrust import init_logger
-from braintrust.wrappers.langchain import set_global_handler, BraintrustCallbackHandler
+from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
 
 
 # Setup LangChain tracing with a specific project
