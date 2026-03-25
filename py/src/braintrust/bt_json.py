@@ -185,7 +185,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
-            visited.add(obj_id)
+            added_to_visited = False
             try:
                 # Prevent dict keys from holding references to user data. Note that
                 # `bt_json` already coerces keys to string, a behavior that comes from
@@ -215,6 +215,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                         except Exception:
                             # If str() fails on the key, use a fallback representation
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                        visited.add(obj_id)
+                        added_to_visited = True
                         result[key_str] = _deep_copy_object(value, next_depth)
                         break
 
@@ -232,6 +234,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                             result[k] = value
                         continue
 
+                    visited.add(obj_id)
+                    added_to_visited = True
                     result[k] = _deep_copy_object(value, next_depth)
                     break
                 else:
@@ -251,7 +255,8 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             finally:
                 # Remove from visited set after processing to allow the same object
                 # to appear in different branches of the tree
-                visited.discard(obj_id)
+                if added_to_visited:
+                    visited.discard(obj_id)
 
         if v_type is list:
             obj_id = id(v)
