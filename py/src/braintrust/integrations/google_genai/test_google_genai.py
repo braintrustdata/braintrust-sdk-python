@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 from braintrust import logger
+from braintrust.integrations.google_genai import setup_genai
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.google_genai import setup_genai
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from google.genai import types
 from google.genai.client import Client

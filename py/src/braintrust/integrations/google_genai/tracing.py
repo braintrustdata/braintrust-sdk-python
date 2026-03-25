@@ -1,9 +1,13 @@
+"""Google GenAI-specific span creation, metadata extraction, stream handling, and output normalization."""
+
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
 from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
+from braintrust.logger import Attachment, start_span
+from braintrust.span_types import SpanTypeAttribute
 
 
 if TYPE_CHECKING:
@@ -12,140 +16,16 @@ if TYPE_CHECKING:
         GenerateContentResponse,
         GenerateContentResponseUsageMetadata,
     )
-from braintrust.logger import NOOP_SPAN, Attachment, current_span, init_logger, start_span
-from braintrust.span_types import SpanTypeAttribute
-from wrapt import wrap_function_wrapper
-
 
 logger = logging.getLogger(__name__)
 
 
-def setup_genai(
-    api_key: str | None = None,
-    project_id: str | None = None,
-    project_name: str | None = None,
-) -> bool:
-    """
-    Setup Braintrust integration with Google GenAI.
-
-    Returns:
-        True if setup was successful, False if google-genai is not installed.
-    """
-    span = current_span()
-    if span == NOOP_SPAN:
-        init_logger(project=project_name, api_key=api_key, project_id=project_id)
-
-    try:
-        import google.genai as genai  # pyright: ignore
-        from google.genai import models
-
-        genai.Client = wrap_client(genai.Client)
-        models.Models = wrap_models(models.Models)
-        models.AsyncModels = wrap_async_models(models.AsyncModels)
-        return True
-    except ImportError:
-        return False
+# ---------------------------------------------------------------------------
+# Serialization helpers
+# ---------------------------------------------------------------------------
 
 
-def wrap_client(Client: Any):
-    if is_patched(Client):
-        return Client
-
-    # noop for now, but may be useful in the future
-
-    mark_patched(Client)
-    return Client
-
-
-def wrap_models(Models: Any):
-    if is_patched(Models):
-        return Models
-
-    def wrap_generate_content(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        return _run_traced_call(
-            instance._api_client,
-            args,
-            kwargs,
-            name="generate_content",
-            invoke=lambda: wrapped(*args, **kwargs),
-            process_result=_gc_process_result,
-        )
-
-    wrap_function_wrapper(Models, "_generate_content", wrap_generate_content)
-
-    def wrap_generate_content_stream(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        return _run_stream_traced_call(
-            instance._api_client,
-            args,
-            kwargs,
-            name="generate_content_stream",
-            invoke=lambda: wrapped(*args, **kwargs),
-            aggregate=_aggregate_generate_content_chunks,
-        )
-
-    wrap_function_wrapper(Models, "generate_content_stream", wrap_generate_content_stream)
-
-    def wrap_embed_content(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        return _run_traced_call(
-            instance._api_client,
-            args,
-            kwargs,
-            name="embed_content",
-            invoke=lambda: wrapped(*args, **kwargs),
-            process_result=_embed_process_result,
-        )
-
-    wrap_function_wrapper(Models, "embed_content", wrap_embed_content)
-
-    mark_patched(Models)
-    return Models
-
-
-def wrap_async_models(AsyncModels: Any):
-    if is_patched(AsyncModels):
-        return AsyncModels
-
-    async def wrap_generate_content(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        return await _run_async_traced_call(
-            instance._api_client,
-            args,
-            kwargs,
-            name="generate_content",
-            invoke=lambda: wrapped(*args, **kwargs),
-            process_result=_gc_process_result,
-        )
-
-    wrap_function_wrapper(AsyncModels, "generate_content", wrap_generate_content)
-
-    async def wrap_generate_content_stream(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        return _run_async_stream_traced_call(
-            instance._api_client,
-            args,
-            kwargs,
-            name="generate_content_stream",
-            invoke=lambda: wrapped(*args, **kwargs),
-            aggregate=_aggregate_generate_content_chunks,
-        )
-
-    wrap_function_wrapper(AsyncModels, "generate_content_stream", wrap_generate_content_stream)
-
-    async def wrap_embed_content(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-        return await _run_async_traced_call(
-            instance._api_client,
-            args,
-            kwargs,
-            name="embed_content",
-            invoke=lambda: wrapped(*args, **kwargs),
-            process_result=_embed_process_result,
-        )
-
-    wrap_function_wrapper(AsyncModels, "embed_content", wrap_embed_content)
-
-    mark_patched(AsyncModels)
-    return AsyncModels
-
-
-def _serialize_input(api_client: Any, input: dict[str, Any]):
+def _serialize_input(api_client: Any, input: dict[str, Any]) -> dict[str, Any]:
     config = bt_safe_deep_copy(input.get("config"))
 
     if config is not None:
@@ -161,113 +41,6 @@ def _serialize_input(api_client: Any, input: dict[str, Any]):
         input["contents"] = _serialize_contents(input["contents"])
 
     return input
-
-
-def _gc_process_result(result: "GenerateContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
-    return result, _extract_generate_content_metrics(result, start)
-
-
-def _embed_process_result(result: "EmbedContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
-    return _extract_embed_content_output(result), _extract_embed_content_metrics(result, start)
-
-
-def _prepare_traced_call(
-    api_client: Any, args: list[Any], kwargs: dict[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    input, clean_kwargs = get_args_kwargs(args, kwargs, ["model", "contents", "config"], ["contents", "config"])
-    return _serialize_input(api_client, input), clean_kwargs
-
-
-def _run_traced_call(
-    api_client: Any,
-    args: list[Any],
-    kwargs: dict[str, Any],
-    *,
-    name: str,
-    invoke: Callable[[], Any],
-    process_result: Callable[[Any, float], tuple[Any, dict[str, Any]]],
-):
-    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
-
-    start = time.time()
-    with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
-        result = invoke()
-        output, metrics = process_result(result, start)
-        span.log(output=output, metrics=metrics)
-        return result
-
-
-async def _run_async_traced_call(
-    api_client: Any,
-    args: list[Any],
-    kwargs: dict[str, Any],
-    *,
-    name: str,
-    invoke: Callable[[], Awaitable[Any]],
-    process_result: Callable[[Any, float], tuple[Any, dict[str, Any]]],
-):
-    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
-
-    start = time.time()
-    with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
-        result = await invoke()
-        output, metrics = process_result(result, start)
-        span.log(output=output, metrics=metrics)
-        return result
-
-
-def _run_stream_traced_call(
-    api_client: Any,
-    args: list[Any],
-    kwargs: dict[str, Any],
-    *,
-    name: str,
-    invoke: Callable[[], Any],
-    aggregate: Callable[[list[Any], float, float | None], tuple[Any, dict[str, Any]]],
-):
-    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
-
-    start = time.time()
-    first_token_time = None
-    with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
-        chunks = []
-        for chunk in invoke():
-            if first_token_time is None:
-                first_token_time = time.time()
-            chunks.append(chunk)
-            yield chunk
-
-        output, metrics = aggregate(chunks, start, first_token_time)
-        span.log(output=output, metrics=metrics)
-        return output
-
-
-def _run_async_stream_traced_call(
-    api_client: Any,
-    args: list[Any],
-    kwargs: dict[str, Any],
-    *,
-    name: str,
-    invoke: Callable[[], Awaitable[Any]],
-    aggregate: Callable[[list[Any], float, float | None], tuple[Any, dict[str, Any]]],
-):
-    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
-
-    async def stream_generator():
-        start = time.time()
-        first_token_time = None
-        with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
-            chunks = []
-            async for chunk in await invoke():
-                if first_token_time is None:
-                    first_token_time = time.time()
-                chunks.append(chunk)
-                yield chunk
-
-            output, metrics = aggregate(chunks, start, first_token_time)
-            span.log(output=output, metrics=metrics)
-
-    return stream_generator()
 
 
 def _serialize_contents(contents: Any) -> Any:
@@ -327,7 +100,7 @@ def _serialize_content_item(item: Any) -> Any:
     return item
 
 
-def _serialize_tools(api_client: Any, input: Any | None):
+def _serialize_tools(api_client: Any, input: Any | None) -> Any | None:
     try:
         from google.genai.models import (
             _GenerateContentParameters_to_mldev,  # pyright: ignore [reportPrivateUsage]
@@ -346,22 +119,35 @@ def _serialize_tools(api_client: Any, input: Any | None):
         return None
 
 
-def omit(obj: dict[str, Any], keys: Iterable[str]):
+# ---------------------------------------------------------------------------
+# Argument extraction helpers
+# ---------------------------------------------------------------------------
+
+
+def _omit(obj: dict[str, Any], keys: Iterable[str]) -> dict[str, Any]:
     return {k: v for k, v in obj.items() if k not in keys}
 
 
-def is_patched(obj: Any):
-    return getattr(obj, "_braintrust_patched", False)
-
-
-def mark_patched(obj: Any):
-    return setattr(obj, "_braintrust_patched", True)
-
-
-def get_args_kwargs(
+def _get_args_kwargs(
     args: list[str], kwargs: dict[str, Any], keys: Iterable[str], omit_keys: Iterable[str] | None = None
-):
-    return {k: args[i] if args else kwargs.get(k) for i, k in enumerate(keys)}, omit(kwargs, omit_keys or keys)
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    return {k: args[i] if args else kwargs.get(k) for i, k in enumerate(keys)}, _omit(kwargs, omit_keys or keys)
+
+
+def _clean(obj: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in obj.items() if v is not None}
+
+
+def _prepare_traced_call(
+    api_client: Any, args: list[Any], kwargs: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    input, clean_kwargs = _get_args_kwargs(args, kwargs, ["model", "contents", "config"], ["contents", "config"])
+    return _serialize_input(api_client, input), clean_kwargs
+
+
+# ---------------------------------------------------------------------------
+# Metric extraction helpers
+# ---------------------------------------------------------------------------
 
 
 def _extract_usage_metadata_metrics(
@@ -392,7 +178,7 @@ def _extract_generate_content_metrics(response: "GenerateContentResponse", start
     if hasattr(response, "usage_metadata") and response.usage_metadata:
         _extract_usage_metadata_metrics(response.usage_metadata, metrics)
 
-    return clean(dict(metrics))
+    return _clean(dict(metrics))
 
 
 def _extract_embed_content_output(response: "EmbedContentResponse") -> dict[str, Any]:
@@ -400,7 +186,7 @@ def _extract_embed_content_output(response: "EmbedContentResponse") -> dict[str,
     first_embedding = embeddings[0] if embeddings else None
     first_values = getattr(first_embedding, "values", None) or []
 
-    return clean(
+    return _clean(
         {
             "embedding_length": len(first_values) if first_values else None,
             "embeddings_count": len(embeddings) if embeddings else None,
@@ -433,7 +219,25 @@ def _extract_embed_content_metrics(response: "EmbedContentResponse", start: floa
     if billable_character_count is not None:
         metrics["billable_characters"] = billable_character_count
 
-    return clean(metrics)
+    return _clean(metrics)
+
+
+# ---------------------------------------------------------------------------
+# Result processing helpers
+# ---------------------------------------------------------------------------
+
+
+def _gc_process_result(result: "GenerateContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
+    return result, _extract_generate_content_metrics(result, start)
+
+
+def _embed_process_result(result: "EmbedContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
+    return _extract_embed_content_output(result), _extract_embed_content_metrics(result, start)
+
+
+# ---------------------------------------------------------------------------
+# Stream aggregation
+# ---------------------------------------------------------------------------
 
 
 def _aggregate_generate_content_chunks(
@@ -524,22 +328,174 @@ def _aggregate_generate_content_chunks(
     if text:
         aggregated["text"] = text
 
-    clean_metrics = clean(dict(metrics))
+    clean_metrics = _clean(dict(metrics))
 
     return aggregated, clean_metrics
 
 
-def clean(obj: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in obj.items() if v is not None}
+# ---------------------------------------------------------------------------
+# Traced call orchestration
+# ---------------------------------------------------------------------------
 
 
-def get_path(obj: dict[str, Any], path: str, default: Any = None) -> Any | None:
-    keys = path.split(".")
-    current = obj
+def _run_traced_call(
+    api_client: Any,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    *,
+    name: str,
+    invoke: Callable[[], Any],
+    process_result: Callable[[Any, float], tuple[Any, dict[str, Any]]],
+) -> Any:
+    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
 
-    for key in keys:
-        if not (isinstance(current, dict) and key in current):
-            return default
-        current = current[key]
+    start = time.time()
+    with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
+        result = invoke()
+        output, metrics = process_result(result, start)
+        span.log(output=output, metrics=metrics)
+        return result
 
-    return current
+
+async def _run_async_traced_call(
+    api_client: Any,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    *,
+    name: str,
+    invoke: Callable[[], Awaitable[Any]],
+    process_result: Callable[[Any, float], tuple[Any, dict[str, Any]]],
+) -> Any:
+    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
+
+    start = time.time()
+    with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
+        result = await invoke()
+        output, metrics = process_result(result, start)
+        span.log(output=output, metrics=metrics)
+        return result
+
+
+def _run_stream_traced_call(
+    api_client: Any,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    *,
+    name: str,
+    invoke: Callable[[], Any],
+    aggregate: Callable[[list[Any], float, float | None], tuple[Any, dict[str, Any]]],
+) -> Any:
+    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
+
+    start = time.time()
+    first_token_time = None
+    with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
+        chunks = []
+        for chunk in invoke():
+            if first_token_time is None:
+                first_token_time = time.time()
+            chunks.append(chunk)
+            yield chunk
+
+        output, metrics = aggregate(chunks, start, first_token_time)
+        span.log(output=output, metrics=metrics)
+        return output
+
+
+def _run_async_stream_traced_call(
+    api_client: Any,
+    args: list[Any],
+    kwargs: dict[str, Any],
+    *,
+    name: str,
+    invoke: Callable[[], Awaitable[Any]],
+    aggregate: Callable[[list[Any], float, float | None], tuple[Any, dict[str, Any]]],
+) -> Any:
+    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
+
+    async def stream_generator():
+        start = time.time()
+        first_token_time = None
+        with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
+            chunks = []
+            async for chunk in await invoke():
+                if first_token_time is None:
+                    first_token_time = time.time()
+                chunks.append(chunk)
+                yield chunk
+
+            output, metrics = aggregate(chunks, start, first_token_time)
+            span.log(output=output, metrics=metrics)
+
+    return stream_generator()
+
+
+# ---------------------------------------------------------------------------
+# wrapt wrapper functions (used by patchers)
+# ---------------------------------------------------------------------------
+
+
+def _generate_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return _run_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="generate_content",
+        invoke=lambda: wrapped(*args, **kwargs),
+        process_result=_gc_process_result,
+    )
+
+
+def _generate_content_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return _run_stream_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="generate_content_stream",
+        invoke=lambda: wrapped(*args, **kwargs),
+        aggregate=_aggregate_generate_content_chunks,
+    )
+
+
+def _embed_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return _run_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="embed_content",
+        invoke=lambda: wrapped(*args, **kwargs),
+        process_result=_embed_process_result,
+    )
+
+
+async def _async_generate_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return await _run_async_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="generate_content",
+        invoke=lambda: wrapped(*args, **kwargs),
+        process_result=_gc_process_result,
+    )
+
+
+async def _async_generate_content_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return _run_async_stream_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="generate_content_stream",
+        invoke=lambda: wrapped(*args, **kwargs),
+        aggregate=_aggregate_generate_content_chunks,
+    )
+
+
+async def _async_embed_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return await _run_async_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="embed_content",
+        invoke=lambda: wrapped(*args, **kwargs),
+        process_result=_embed_process_result,
+    )
