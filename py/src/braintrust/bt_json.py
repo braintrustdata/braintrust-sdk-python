@@ -209,30 +209,30 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
 
                 items = iter(v.items())
                 for k, value in items:
-                    if type(k) is str:
-                        key_str = k
-                    else:
+                    if type(k) is not str:
                         try:
                             key_str = str(k)
                         except Exception:
                             # If str() fails on the key, use a fallback representation
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                        result[key_str] = _deep_copy_object(value, next_depth)
+                        break
 
                     value_type = type(value)
                     if value_type is str or value_type is int or value_type is bool or value is None:
-                        result[key_str] = value
+                        result[k] = value
                         continue
 
                     if value_type is float:
                         if math.isnan(value):
-                            result[key_str] = "NaN"
+                            result[k] = "NaN"
                         elif math.isinf(value):
-                            result[key_str] = "Infinity" if value > 0 else "-Infinity"
+                            result[k] = "Infinity" if value > 0 else "-Infinity"
                         else:
-                            result[key_str] = value
+                            result[k] = value
                         continue
 
-                    result[key_str] = _deep_copy_object(value, next_depth)
+                    result[k] = _deep_copy_object(value, next_depth)
                     break
                 else:
                     return result
