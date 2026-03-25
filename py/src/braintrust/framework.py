@@ -69,10 +69,8 @@ class bcolors:
     WARNING = "\033[93m"
     FAIL = "\033[91m"
     ENDC = "\033[0m"
-
-
-#     BOLD = "\033[1m"
-#     UNDERLINE = "\033[4m"
+    # BOLD = "\033[1m"
+    # UNDERLINE = "\033[4m"
 
 
 @dataclasses.dataclass
@@ -228,6 +226,17 @@ class EvalHooks(abc.ABC, Generic[Output]):
         The parameters for the current evaluation. These are the validated parameter values
         that were passed to the evaluator.
         """
+
+
+class EvalScorerArgs(SerializableDataClass, Generic[Input, Output]):
+    """
+    Arguments passed to an evaluator scorer. This includes the input, expected output, actual output, and metadata.
+    """
+
+    input: Input
+    output: Output
+    expected: Output | None = None
+    metadata: Metadata | None = None
 
 
 OneOrMoreScores = Union[float, int, bool, None, Score, list[Score]]
