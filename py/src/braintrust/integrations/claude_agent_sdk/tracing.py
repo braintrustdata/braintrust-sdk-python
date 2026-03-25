@@ -165,6 +165,54 @@ def _serialize_system_message(message: Any) -> dict[str, Any]:
     return serialized
 
 
+_HOOK_REDACTED_FIELDS = frozenset({"cwd", "transcript_path", "agent_transcript_path"})
+
+
+def _serialize_hook_value(value: Any) -> Any:
+    if dataclasses.is_dataclass(value):
+        return _serialize_hook_value(dataclasses.asdict(value))
+    if isinstance(value, dict):
+        return {
+            str(key): _serialize_hook_value(item)
+            for key, item in value.items()
+            if str(key) not in _HOOK_REDACTED_FIELDS
+        }
+    if isinstance(value, (list, tuple)):
+        return [_serialize_hook_value(item) for item in value]
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+def _hook_event_name(input_data: Any) -> str:
+    if isinstance(input_data, dict) and input_data.get("hook_event_name"):
+        return str(input_data["hook_event_name"])
+    return "Hook"
+
+
+def _hook_callback_name(callback: Any) -> str:
+    name = getattr(callback, "__name__", None) or getattr(callback, "__qualname__", None)
+    return name if isinstance(name, str) and name else "hook_callback"
+
+
+def _hook_metadata(callback: Any, input_data: Any, tool_use_id: str | None) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "claude_agent_sdk.hook.event_name": _hook_event_name(input_data),
+        "claude_agent_sdk.hook.callback_name": _hook_callback_name(callback),
+    }
+
+    if tool_use_id is not None:
+        metadata["claude_agent_sdk.hook.tool_use_id"] = str(tool_use_id)
+
+    if isinstance(input_data, dict):
+        for key in ("tool_name", "session_id", "agent_id", "agent_type"):
+            value = input_data.get(key)
+            if value is not None:
+                metadata[f"claude_agent_sdk.hook.{key}"] = value
+
+    return metadata
+
+
 def _create_tool_wrapper_class(original_tool_class: Any) -> Any:
     """Creates a wrapper class for SdkMcpTool that re-enters active TOOL spans."""
 
@@ -226,6 +274,7 @@ def _make_dispatch_key(tool_name: str, tool_input: Any) -> tuple[str, str]:
 class ToolSpanTracker:
     def __init__(self):
         self._active_spans: dict[str, _ActiveToolSpan] = {}
+        self._completed_span_exports: dict[str, str] = {}
         # Per-(tool_name, input_signature) FIFO queue of tool_use_ids.
         # Used by acquire_span_for_handler to disambiguate identical concurrent
         # tool calls (same name + same input) from sibling subagents.
@@ -374,6 +423,8 @@ class ToolSpanTracker:
         if active_tool_span is None:
             return
 
+        self._completed_span_exports[tool_use_id] = active_tool_span.span.export()
+
         # Remove from dispatch queue so stale entries don't accumulate.
         dispatch_key = _make_dispatch_key(active_tool_span.raw_name, active_tool_span.input)
         queue = self._dispatch_queues.get(dispatch_key)
@@ -402,7 +453,7 @@ class ToolSpanTracker:
 
         active_tool_span = self._active_spans.get(str(tool_use_id))
         if active_tool_span is None:
-            return None
+            return self._completed_span_exports.get(str(tool_use_id))
 
         return active_tool_span.span.export()
 
@@ -514,11 +565,7 @@ class _AgentContext:
 
 
 class ContextTracker:
-    """Single consumer of the raw SDK message stream.
-
-    Replaces LLMSpanTracker + TaskEventSpanTracker with unified per-subagent
-    context tracking.  Owns a private ToolSpanTracker instance.
-    """
+    """Single consumer of the raw SDK message stream. Maintains state and spans for the root agent context and any number of nested subagent contexts."""
 
     def __init__(
         self,
@@ -584,6 +631,41 @@ class ContextTracker:
         self._tool_tracker.cleanup_all()
         if hasattr(_thread_local, "tool_span_tracker"):
             delattr(_thread_local, "tool_span_tracker")
+
+    def get_tool_span_export(self, tool_use_id: str | None) -> str | None:
+        return self._tool_tracker.get_span_export(tool_use_id)
+
+    def current_llm_export(self) -> str | None:
+        active_ctx = self._contexts.get(self._active_key)
+        if active_ctx is not None and active_ctx.llm_span is not None:
+            return active_ctx.llm_span.export()
+
+        root_ctx = self._contexts.get(None)
+        if root_ctx is not None and root_ctx.llm_span is not None:
+            return root_ctx.llm_span.export()
+
+        for key in reversed(self._task_order):
+            ctx = self._contexts.get(key)
+            if ctx is not None and ctx.llm_span is not None:
+                return ctx.llm_span.export()
+
+        for ctx in self._contexts.values():
+            if ctx.llm_span is not None:
+                return ctx.llm_span.export()
+
+        return None
+
+    def current_task_export(self) -> str | None:
+        active_ctx = self._contexts.get(self._active_key)
+        if active_ctx is not None and active_ctx.task_span is not None:
+            return active_ctx.task_span.export()
+
+        for key in reversed(self._task_order):
+            ctx = self._contexts.get(key)
+            if ctx is not None and ctx.task_span is not None:
+                return ctx.task_span.export()
+
+        return None
 
     # -- internal handlers --
 
@@ -780,6 +862,88 @@ class ContextTracker:
             self._task_order = [k for k in self._task_order if k != tool_use_id_str]
 
 
+class RequestTracker:
+    """Request-scoped tracker for hook callbacks and message-stream tracing."""
+
+    def __init__(
+        self,
+        *,
+        prompt: Any,
+        query_start_time: float | None = None,
+        captured_messages: list[dict[str, Any]] | None = None,
+    ) -> None:
+        self._root_span = start_span(
+            name=CLAUDE_AGENT_TASK_SPAN_NAME,
+            span_attributes={"type": SpanTypeAttribute.TASK},
+            input=prompt or None,
+            start_time=query_start_time,
+        )
+        self._context_tracker = ContextTracker(
+            root_span=self._root_span,
+            prompt=prompt,
+            query_start_time=query_start_time,
+            captured_messages=captured_messages,
+        )
+        self._finished = False
+
+    def add_message(self, message: Any) -> None:
+        self._context_tracker.add(message)
+
+    def log_error(self, exc: Exception) -> None:
+        self._root_span.log(error=str(exc))
+
+    async def trace_hook_callback(
+        self,
+        callback: Any,
+        input_data: Any,
+        tool_use_id: str | None,
+        context: Any,
+    ) -> Any:
+        parent_export = self._hook_parent_export(tool_use_id)
+
+        with start_span(
+            name=f"{_hook_event_name(input_data)} hook",
+            span_attributes={"type": SpanTypeAttribute.FUNCTION},
+            input=_serialize_hook_value(input_data),
+            metadata=_hook_metadata(callback, input_data, tool_use_id),
+            parent=parent_export,
+        ) as span:
+            try:
+                result = await callback(input_data, tool_use_id, context)
+            except Exception as exc:
+                span.log(error=str(exc))
+                raise
+
+            span.log(output=_serialize_hook_value(result))
+            return result
+
+    def finish(self, *, log_output: bool = False) -> None:
+        if self._finished:
+            return
+
+        if log_output:
+            self._context_tracker.log_output()
+        self._context_tracker.log_tasks()
+        self._context_tracker.cleanup()
+        self._root_span.end()
+        self._finished = True
+
+    def _hook_parent_export(self, tool_use_id: str | None) -> str:
+        tool_export = self._context_tracker.get_tool_span_export(tool_use_id)
+        if tool_export is not None:
+            return tool_export
+
+        llm_export = self._context_tracker.current_llm_export()
+        if llm_export is not None:
+            return llm_export
+
+        task_export = self._context_tracker.current_task_export()
+        if task_export is not None:
+            return task_export
+
+        return self._root_span.export()
+
+
 def _create_client_wrapper_class(original_client_class: Any) -> Any:
     """Creates a wrapper class for ClaudeSDKClient that wraps query and receive_response."""
 
@@ -792,6 +956,63 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             self.__last_prompt: str | None = None
             self.__query_start_time: float | None = None
             self.__captured_messages: list[dict[str, Any]] | None = None
+            self.__request_tracker: RequestTracker | None = None
+            self.__instrumented_hook_callbacks: set[tuple[int, str]] = set()
+
+        def __instrument_hook_callbacks(self) -> None:
+            query = getattr(self.__client, "_query", None)
+            hook_callbacks = getattr(query, "hook_callbacks", None)
+            if not isinstance(hook_callbacks, dict):
+                return
+
+            for callback_id, callback in list(hook_callbacks.items()):
+                marker = (id(query), str(callback_id))
+                if marker in self.__instrumented_hook_callbacks:
+                    continue
+
+                async def wrapped_callback(
+                    input_data: Any,
+                    tool_use_id: str | None,
+                    context: Any,
+                    *,
+                    _callback: Any = callback,
+                ) -> Any:
+                    request_tracker = self.__request_tracker
+                    if request_tracker is None:
+                        return await _callback(input_data, tool_use_id, context)
+                    return await request_tracker.trace_hook_callback(
+                        _callback,
+                        input_data,
+                        tool_use_id,
+                        context,
+                    )
+
+                hook_callbacks[callback_id] = wrapped_callback
+                self.__instrumented_hook_callbacks.add(marker)
+
+        def __start_request_tracker(self) -> RequestTracker:
+            if self.__request_tracker is not None:
+                self.__finish_request_tracker()
+
+            self.__request_tracker = RequestTracker(
+                prompt=self.__last_prompt,
+                query_start_time=self.__query_start_time,
+                captured_messages=self.__captured_messages,
+            )
+            return self.__request_tracker
+
+        def __finish_request_tracker(self, *, log_output: bool = False) -> None:
+            request_tracker = self.__request_tracker
+            if request_tracker is None:
+                return
+
+            request_tracker.finish(log_output=log_output)
+            self.__request_tracker = None
+
+        async def connect(self, *args: Any, **kwargs: Any) -> Any:
+            result = await self.__client.connect(*args, **kwargs)
+            self.__instrument_hook_callbacks()
+            return result
 
         async def query(self, *args: Any, **kwargs: Any) -> Any:
             """Wrap query to capture the prompt and start time for tracing."""
@@ -824,47 +1045,51 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 else:
                     self.__last_prompt = str(prompt)
 
-            return await self.__client.query(*args, **kwargs)
+            self.__instrument_hook_callbacks()
+            self.__start_request_tracker()
+
+            try:
+                return await self.__client.query(*args, **kwargs)
+            except Exception as exc:
+                if self.__request_tracker is not None:
+                    self.__request_tracker.log_error(exc)
+                self.__finish_request_tracker()
+                raise
 
         async def receive_response(self) -> AsyncGenerator[Any, None]:
             """Wrap receive_response to add tracing via ContextTracker."""
             generator = self.__client.receive_response()
+            request_tracker = self.__request_tracker or self.__start_request_tracker()
 
-            with start_span(
-                name=CLAUDE_AGENT_TASK_SPAN_NAME,
-                span_attributes={"type": SpanTypeAttribute.TASK},
-                input=self.__last_prompt or None,
-            ) as span:
-                context_tracker = ContextTracker(
-                    root_span=span,
-                    prompt=self.__last_prompt,
-                    query_start_time=self.__query_start_time,
-                    captured_messages=self.__captured_messages,
-                )
-
-                try:
-                    async for message in generator:
-                        context_tracker.add(message)
-                        yield message
-                except asyncio.CancelledError:
-                    # The CancelledError may come from the subprocess transport
-                    # (e.g., anyio internal cleanup when subagents complete) rather
-                    # than a genuine external cancellation. We suppress it here so
-                    # the response stream ends cleanly. If the caller genuinely
-                    # cancelled the task, they still have pending cancellation
-                    # requests that will fire at their next await point.
-                    context_tracker.log_output()
-                else:
-                    context_tracker.log_output()
-                finally:
-                    context_tracker.log_tasks()
-                    context_tracker.cleanup()
+            try:
+                async for message in generator:
+                    request_tracker.add_message(message)
+                    yield message
+            except asyncio.CancelledError:
+                # The CancelledError may come from the subprocess transport
+                # (e.g., anyio internal cleanup when subagents complete) rather
+                # than a genuine external cancellation. We suppress it here so
+                # the response stream ends cleanly. If the caller genuinely
+                # cancelled the task, they still have pending cancellation
+                # requests that will fire at their next await point.
+                self.__finish_request_tracker(log_output=True)
+            else:
+                self.__finish_request_tracker(log_output=True)
+            finally:
+                if self.__request_tracker is not None:
+                    self.__finish_request_tracker()
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
             await self.__client.__aenter__()
+            self.__instrument_hook_callbacks()
             return self
 
+        async def disconnect(self) -> None:
+            self.__finish_request_tracker()
+            await self.__client.disconnect()
+
         async def __aexit__(self, *args: Any) -> None:
+            self.__finish_request_tracker()
             await self.__client.__aexit__(*args)
 
     return WrappedClaudeSDKClient
