@@ -41,25 +41,25 @@ def _to_bt_safe(v: Any) -> Any:
 
     if v_type is float:
         # Handle NaN and Infinity for JSON compatibility
+        if math.isfinite(v):
+            return v
+
         if math.isnan(v):
             return "NaN"
 
-        if math.isinf(v):
-            return "Infinity" if v > 0 else "-Infinity"
-
-        return v
+        return "Infinity" if v > 0 else "-Infinity"
 
     if isinstance(v, (str, bool, int)):
         return v
 
     if isinstance(v, float):
+        if math.isfinite(v):
+            return v
+
         if math.isnan(v):
             return "NaN"
 
-        if math.isinf(v):
-            return "Infinity" if v > 0 else "-Infinity"
-
-        return v
+        return "Infinity" if v > 0 else "-Infinity"
 
     Span, Experiment, Dataset, Logger, BaseAttachment, ReadonlyAttachment = _get_bt_safe_special_types()
 
@@ -176,11 +176,11 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             return v
 
         if v_type is float:
+            if math.isfinite(v):
+                return v
             if math.isnan(v):
                 return "NaN"
-            if math.isinf(v):
-                return "Infinity" if v > 0 else "-Infinity"
-            return v
+            return "Infinity" if v > 0 else "-Infinity"
 
         # Check for circular references in mutable containers.
         # Fast-path the built-in container types we expect most often.
@@ -229,12 +229,12 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                         continue
 
                     if value_type is float:
-                        if math.isnan(value):
-                            result[k] = "NaN"
-                        elif math.isinf(value):
-                            result[k] = "Infinity" if value > 0 else "-Infinity"
-                        else:
+                        if math.isfinite(value):
                             result[k] = value
+                        elif math.isnan(value):
+                            result[k] = "NaN"
+                        else:
+                            result[k] = "Infinity" if value > 0 else "-Infinity"
                         continue
 
                     visited.add(obj_id)
@@ -287,11 +287,11 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             return v
 
         if isinstance(v, float):
+            if math.isfinite(v):
+                return v
             if math.isnan(v):
                 return "NaN"
-            if math.isinf(v):
-                return "Infinity" if v > 0 else "-Infinity"
-            return v
+            return "Infinity" if v > 0 else "-Infinity"
 
         if isinstance(v, dict):
             obj_id = id(v)
