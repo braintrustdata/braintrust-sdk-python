@@ -1437,9 +1437,6 @@ def test_span_set_current(with_memory_logger):
     """Test that span.set_current() makes the span accessible via current_span()."""
     init_test_logger(__name__)
 
-    # Store initial current span
-    initial_current = braintrust.current_span()
-
     # Start a span that can be set as current (default behavior)
     span1 = logger.start_span(name="test-span-1")
 

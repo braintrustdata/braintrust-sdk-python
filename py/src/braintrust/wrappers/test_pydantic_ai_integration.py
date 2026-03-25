@@ -325,15 +325,13 @@ async def test_multiple_sequential_streams(memory_logger):
 
         # First stream
         async with agent1.run_stream("Count from 1 to 3.") as result1:
-            full_text1 = ""
-            async for text in result1.stream_text(delta=True):
-                full_text1 += text
+            async for _ in result1.stream_text(delta=True):
+                pass
 
         # Second stream
         async with agent2.run_stream("Count from 1 to 3.") as result2:
-            full_text2 = ""
-            async for text in result2.stream_text(delta=True):
-                full_text2 += text
+            async for _ in result2.stream_text(delta=True):
+                pass
 
         return start
 

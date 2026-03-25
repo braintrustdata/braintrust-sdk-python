@@ -896,8 +896,6 @@ async def test_async_generator_finalization(test_logger, with_memory_logger):
             yield 1
             yield 2
         finally:
-            # What context do we have during cleanup?
-            cleanup_span = current_span()
             gen_span.end()
 
     # Consumer
@@ -1152,14 +1150,11 @@ def test_nested_spans_same_thread(test_logger, with_memory_logger):
 
         # Child span
         with start_span(name="child") as child_span:
-            child_id = child_span.id
-
             # Verify child is now current
             assert current_span().id == child_span.id
 
             # Grandchild span
             with start_span(name="grandchild") as grandchild_span:
-                grandchild_id = grandchild_span.id
                 assert current_span().id == grandchild_span.id
 
             # After grandchild closes, child should be current
@@ -1227,13 +1222,10 @@ def test_context_with_exception_propagation(test_logger, with_memory_logger):
     """
     Test that context is properly maintained during exception propagation.
     """
-    fail_span_id = None
 
     def failing_function():
-        nonlocal fail_span_id
         # Use context manager for proper span lifecycle
         with start_span(name="failing_span") as fail_span:
-            fail_span_id = fail_span.id
             # During this context, fail_span should be current
             assert current_span().id == fail_span.id
             raise ValueError("Expected error")

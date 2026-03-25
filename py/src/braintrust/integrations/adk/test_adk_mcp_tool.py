@@ -146,9 +146,6 @@ async def test_mcp_tool_error_handling():
 
         # Verify error was logged to span
         assert mock_span.log.called
-        # Check if error was logged
-        log_calls = [call for call in mock_span.log.call_args_list]
-        # Should have logged the error
 
 
 @pytest.mark.asyncio
@@ -309,9 +306,6 @@ async def test_real_context_loss_with_braintrust_spans():
 
     # Initialize a test logger
     logger = init_logger(project="test-context-loss")
-
-    # Track if we hit the context error
-    context_error_occurred = False
 
     async def problematic_generator():
         """Generator that creates a span and yields, simulating the Flow behavior."""
