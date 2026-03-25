@@ -144,34 +144,74 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 return "Infinity" if v > 0 else "-Infinity"
             return v
 
-        # Check for circular references in mutable containers
-        # Use id() to track object identity
-        if isinstance(v, (Mapping, list, tuple, set)):
+        # Check for circular references in mutable containers.
+        # Fast-path the built-in container types we expect most often.
+        if isinstance(v, dict):
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
             visited.add(obj_id)
             try:
-                if isinstance(v, Mapping):
-                    # Prevent dict keys from holding references to user data. Note that
-                    # `bt_json` already coerces keys to string, a behavior that comes from
-                    # `json.dumps`. However, that runs at log upload time, while we want to
-                    # cut out all the references to user objects synchronously in this
-                    # function.
-                    result = {}
-                    for k, value in v.items():
+                # Prevent dict keys from holding references to user data. Note that
+                # `bt_json` already coerces keys to string, a behavior that comes from
+                # `json.dumps`. However, that runs at log upload time, while we want to
+                # cut out all the references to user objects synchronously in this
+                # function.
+                result = {}
+                for k, value in v.items():
+                    if isinstance(k, str):
+                        key_str = k
+                    else:
                         try:
                             key_str = str(k)
                         except Exception:
                             # If str() fails on the key, use a fallback representation
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                        result[key_str] = _deep_copy_object(value, depth + 1)
-                    return result
-                elif isinstance(v, (list, tuple, set)):
-                    return [_deep_copy_object(x, depth + 1) for x in v]
+                    result[key_str] = _deep_copy_object(value, depth + 1)
+                return result
             finally:
                 # Remove from visited set after processing to allow the same object
                 # to appear in different branches of the tree
+                visited.discard(obj_id)
+
+        if isinstance(v, list):
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited.add(obj_id)
+            try:
+                return [_deep_copy_object(x, depth + 1) for x in v]
+            finally:
+                visited.discard(obj_id)
+
+        if isinstance(v, (tuple, set)):
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited.add(obj_id)
+            try:
+                return [_deep_copy_object(x, depth + 1) for x in v]
+            finally:
+                visited.discard(obj_id)
+
+        if isinstance(v, Mapping):
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited.add(obj_id)
+            try:
+                result = {}
+                for k, value in v.items():
+                    if isinstance(k, str):
+                        key_str = k
+                    else:
+                        try:
+                            key_str = str(k)
+                        except Exception:
+                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                    result[key_str] = _deep_copy_object(value, depth + 1)
+                return result
+            finally:
                 visited.discard(obj_id)
 
         try:
