@@ -19,8 +19,8 @@ def setup_braintrust_langchain():
     os.environ["BRAINTRUST_API_URL"] = "http://localhost:8000"
     os.environ["BRAINTRUST_APP_URL"] = "http://localhost:3000"
     os.environ["BRAINTRUST_API_KEY"] = TEST_API_KEY
-    os.environ["ANTHROPIC_API_KEY"] = "your_anthropic_api_key_here"
-    os.environ["OPENAI_API_KEY"] = "your_openai_api_key_here"
+    os.environ.setdefault("ANTHROPIC_API_KEY", "your_anthropic_api_key_here")
+    os.environ.setdefault("OPENAI_API_KEY", "your_openai_api_key_here")
     os.environ["OPENAI_BASE_URL"] = "http://localhost:8000/v1/proxy"
 
     _internal_reset_global_state()

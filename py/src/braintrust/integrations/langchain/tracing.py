@@ -84,6 +84,17 @@ class BraintrustCallbackHandler:
 
     root_run_id: UUID | None = None
 
+    # Duck-typing attributes required by LangChain's callback manager.
+    # These mirror BaseCallbackHandler without requiring inheritance.
+    raise_error: bool = False
+    ignore_llm: bool = False
+    ignore_retry: bool = False
+    ignore_chain: bool = False
+    ignore_agent: bool = False
+    ignore_retriever: bool = False
+    ignore_chat_model: bool = False
+    ignore_custom_event: bool = False
+
     def __init__(
         self,
         logger: Logger | Span | None = None,
@@ -97,8 +108,8 @@ class BraintrustCallbackHandler:
             r"^(l[sc]_|langgraph_|__pregel_|checkpoint_ns)"
         )
         self.skipped_runs: set[UUID] = set()
-        # Set run_inline=True to avoid thread executor in async contexts
-        # This ensures memory logger context is preserved
+        # run_inline=True avoids thread executor in async contexts,
+        # ensuring the ContextVar state is preserved across callbacks.
         self.run_inline = True
 
         self._start_times: dict[UUID, float] = {}
@@ -686,11 +697,18 @@ def _get_metrics_from_response(response: Any) -> dict[str, Any]:
             input_token_details = usage_metadata.get("input_token_details")
             if input_token_details and isinstance(input_token_details, dict):
                 cache_read = input_token_details.get("cache_read")
-                cache_creation = input_token_details.get("cache_creation")
+                # langchain-anthropic >=1.4 sets cache_creation=0 when ephemeral
+                # breakdown keys are present, so sum those up as the true total.
+                cache_creation = input_token_details.get("cache_creation") or 0
+                cache_creation += sum(
+                    v
+                    for k, v in input_token_details.items()
+                    if k.startswith("ephemeral_") and k.endswith("_input_tokens") and v
+                )
 
                 if cache_read is not None:
                     metrics["prompt_cached_tokens"] = cache_read
-                if cache_creation is not None:
+                if cache_creation:
                     metrics["prompt_cache_creation_tokens"] = cache_creation
 
     if not metrics or not any(metrics.values()):
