@@ -19,6 +19,20 @@ def _to_bt_safe(v: Any) -> Any:
     """
     Converts the object to a Braintrust-safe representation (i.e. Attachment objects are safe (specially handled by background logger)).
     """
+    if isinstance(v, (str, bool, int)) or v is None:
+        # Skip all richer object checks for primitive scalar values.
+        return v
+
+    if isinstance(v, float):
+        # Handle NaN and Infinity for JSON compatibility
+        if math.isnan(v):
+            return "NaN"
+
+        if math.isinf(v):
+            return "Infinity" if v > 0 else "-Infinity"
+
+        return v
+
     # avoid circular imports
     from braintrust.logger import BaseAttachment, Dataset, Experiment, Logger, ReadonlyAttachment, Span
 
@@ -69,20 +83,6 @@ def _to_bt_safe(v: Any) -> Any:
         return cast(Any, v).dict(exclude_none=True)
     except (AttributeError, TypeError):
         pass
-
-    if isinstance(v, float):
-        # Handle NaN and Infinity for JSON compatibility
-        if math.isnan(v):
-            return "NaN"
-
-        if math.isinf(v):
-            return "Infinity" if v > 0 else "-Infinity"
-
-        return v
-
-    if isinstance(v, (int, str, bool)) or v is None:
-        # Skip roundtrip for primitive types.
-        return v
 
     # Note: we avoid using copy.deepcopy, because it's difficult to
     # guarantee the independence of such copied types from their origin.
