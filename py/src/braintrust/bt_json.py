@@ -173,15 +173,6 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
             return "<max depth exceeded>"
 
         v_type = type(v)
-        if v_type is str or v_type is int or v_type is bool or v is None:
-            return v
-
-        if v_type is float:
-            if math.isfinite(v):
-                return v
-            if math.isnan(v):
-                return "NaN"
-            return "Infinity" if v > 0 else "-Infinity"
 
         # Check for circular references in mutable containers.
         # Fast-path the built-in container types we expect most often.
@@ -371,6 +362,16 @@ def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
                 return [_deep_copy_object(x, next_depth) for x in v]
             finally:
                 visited.discard(obj_id)
+
+        if v_type is str or v_type is int or v_type is bool or v is None:
+            return v
+
+        if v_type is float:
+            if math.isfinite(v):
+                return v
+            if math.isnan(v):
+                return "NaN"
+            return "Infinity" if v > 0 else "-Infinity"
 
         if isinstance(v, (str, bool, int)):
             return v
