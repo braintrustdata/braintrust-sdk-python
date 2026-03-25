@@ -103,9 +103,11 @@ def _to_bt_safe(v: Any) -> Any:
     model_dump = getattr(v_type, "model_dump", None)
     if callable(model_dump):
         try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
-                return model_dump(v, exclude_none=True)
+            if hasattr(v_type, "__pydantic_serializer__"):
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+                    return model_dump(v, exclude_none=True)
+            return model_dump(v, exclude_none=True)
         except TypeError:
             pass
 
