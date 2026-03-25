@@ -49,6 +49,9 @@ def _to_bt_safe(v: Any) -> Any:
 
         return "Infinity" if v > 0 else "-Infinity"
 
+    if isinstance(v, str):
+        return v
+
     dataclass_fields = getattr(v_type, "__dataclass_fields__", None)
     if dataclass_fields is not None:
         # Use manual field iteration instead of dataclasses.asdict() because
