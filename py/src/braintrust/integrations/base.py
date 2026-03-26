@@ -337,6 +337,7 @@ class BaseIntegration(ABC):
         cls,
         *,
         target: Any | None = None,
+        patchers: tuple[type[BasePatcher], ...] | None = None,
     ) -> bool:
         """Apply all applicable patchers for this integration."""
         module = _import_first_available(cls.import_names)
@@ -347,7 +348,7 @@ class BaseIntegration(ABC):
             return False
 
         success = False
-        selected_patchers = cls.resolve_patchers()
+        selected_patchers = cls.resolve_patchers() if patchers is None else patchers
         for patcher in sorted(selected_patchers, key=lambda patcher: patcher.priority):
             if not patcher.applies(module, version, target=target):
                 continue

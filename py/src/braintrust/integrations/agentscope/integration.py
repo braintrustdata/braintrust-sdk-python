@@ -6,7 +6,11 @@ from .patchers import (
     AgentCallPatcher,
     ChatModelPatcher,
     FanoutPipelinePatcher,
+    GeneralEvaluatorPatcher,
+    MetricCallPatcher,
+    RayEvaluatorRunPatcher,
     SequentialPipelinePatcher,
+    TaskEvaluatePatcher,
     ToolkitCallToolFunctionPatcher,
 )
 
@@ -23,4 +27,25 @@ class AgentScopeIntegration(BaseIntegration):
         FanoutPipelinePatcher,
         ToolkitCallToolFunctionPatcher,
         ChatModelPatcher,
+        GeneralEvaluatorPatcher,
+        RayEvaluatorRunPatcher,
+        TaskEvaluatePatcher,
+        MetricCallPatcher,
     )
+
+    eval_patchers = (
+        GeneralEvaluatorPatcher,
+        RayEvaluatorRunPatcher,
+        TaskEvaluatePatcher,
+        MetricCallPatcher,
+    )
+
+    @classmethod
+    def setup(
+        cls,
+        *,
+        target=None,
+        instrument_evals: bool = True,
+    ) -> bool:
+        patchers = cls.patchers if instrument_evals else tuple(p for p in cls.patchers if p not in cls.eval_patchers)
+        return super().setup(target=target, patchers=patchers)

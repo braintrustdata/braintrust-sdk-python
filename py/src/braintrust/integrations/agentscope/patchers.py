@@ -5,8 +5,14 @@ from braintrust.integrations.base import CompositeFunctionWrapperPatcher, Functi
 from .tracing import (
     _agent_call_wrapper,
     _fanout_pipeline_wrapper,
+    _general_evaluator_run_evaluation_wrapper,
+    _general_evaluator_run_solution_wrapper,
+    _general_evaluator_run_wrapper,
+    _metric_call_wrapper,
     _model_call_wrapper,
+    _ray_evaluator_run_wrapper,
     _sequential_pipeline_wrapper,
+    _task_evaluate_wrapper,
     _toolkit_call_tool_function_wrapper,
 )
 
@@ -101,3 +107,68 @@ class ChatModelPatcher(CompositeFunctionWrapperPatcher):
         _GeminiChatModelPatcher,
         _TrinityChatModelPatcher,
     )
+
+
+class _GeneralEvaluatorRunPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope GeneralEvaluator root execution."""
+
+    name = "agentscope.evaluate.general.run"
+    target_module = "agentscope.evaluate"
+    target_path = "GeneralEvaluator.run"
+    wrapper = _general_evaluator_run_wrapper
+
+
+class _GeneralEvaluatorRunSolutionPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope GeneralEvaluator solution execution."""
+
+    name = "agentscope.evaluate.general.run_solution"
+    target_module = "agentscope.evaluate"
+    target_path = "GeneralEvaluator.run_solution"
+    wrapper = _general_evaluator_run_solution_wrapper
+
+
+class _GeneralEvaluatorRunEvaluationPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope GeneralEvaluator evaluation execution."""
+
+    name = "agentscope.evaluate.general.run_evaluation"
+    target_module = "agentscope.evaluate"
+    target_path = "GeneralEvaluator.run_evaluation"
+    wrapper = _general_evaluator_run_evaluation_wrapper
+
+
+class GeneralEvaluatorPatcher(CompositeFunctionWrapperPatcher):
+    """Patch AgentScope GeneralEvaluator for Braintrust eval tracing."""
+
+    name = "agentscope.evaluate.general"
+    sub_patchers = (
+        _GeneralEvaluatorRunPatcher,
+        _GeneralEvaluatorRunSolutionPatcher,
+        _GeneralEvaluatorRunEvaluationPatcher,
+    )
+
+
+class RayEvaluatorRunPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope RayEvaluator root execution."""
+
+    name = "agentscope.evaluate.ray"
+    target_module = "agentscope.evaluate"
+    target_path = "RayEvaluator.run"
+    wrapper = _ray_evaluator_run_wrapper
+
+
+class TaskEvaluatePatcher(FunctionWrapperPatcher):
+    """Patch AgentScope task evaluation."""
+
+    name = "agentscope.evaluate.task"
+    target_module = "agentscope.evaluate"
+    target_path = "Task.evaluate"
+    wrapper = _task_evaluate_wrapper
+
+
+class MetricCallPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope metric execution."""
+
+    name = "agentscope.evaluate.metric"
+    target_module = "agentscope.evaluate"
+    target_path = "MetricBase.__call__"
+    wrapper = _metric_call_wrapper

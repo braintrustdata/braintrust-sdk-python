@@ -1,8 +1,19 @@
+import sys
+from dataclasses import dataclass
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 from braintrust import logger
-from braintrust.integrations.agentscope import setup_agentscope
+from braintrust.integrations.agentscope import setup_agentscope, wrap_evaluator
+from braintrust.integrations.agentscope.patchers import (
+    AgentCallPatcher,
+    MetricCallPatcher,
+    TaskEvaluatePatcher,
+    _GeneralEvaluatorRunEvaluationPatcher,
+    _GeneralEvaluatorRunPatcher,
+    _GeneralEvaluatorRunSolutionPatcher,
+)
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
@@ -217,6 +228,245 @@ async def test_model_call_wrapper_stream_logs_final_output_and_metrics(memory_lo
     assert llm_span["metrics"]["prompt_tokens"] == 29
     assert llm_span["metrics"]["completion_tokens"] == 3
     assert llm_span["metrics"]["tokens"] == 32
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agentscope_general_evaluator_creates_eval_spans(memory_logger, tmp_path):
+    from agentscope.evaluate import (
+        BenchmarkBase,
+        FileEvaluatorStorage,
+        GeneralEvaluator,
+        MetricBase,
+        MetricResult,
+        MetricType,
+        SolutionOutput,
+        Task,
+    )
+    from agentscope.message import Msg
+
+    assert not memory_logger.pop()
+
+    class ExactMatchMetric(MetricBase):
+        def __init__(self, ground_truth: str):
+            super().__init__(
+                name="exact_match",
+                metric_type=MetricType.NUMERICAL,
+                description="Check whether the model answer exactly matches the ground truth.",
+                categories=[],
+            )
+            self.ground_truth = ground_truth
+
+        async def __call__(self, solution: SolutionOutput) -> MetricResult:
+            is_match = solution.output == self.ground_truth
+            return MetricResult(
+                name=self.name,
+                result=1.0 if is_match else 0.0,
+                message="Correct" if is_match else "Incorrect",
+            )
+
+    class ToyBenchmark(BenchmarkBase):
+        def __init__(self, tasks):
+            super().__init__(
+                name="Toy benchmark",
+                description="A one-task benchmark for AgentScope eval instrumentation.",
+            )
+            self.tasks = tasks
+
+        def __iter__(self):
+            yield from self.tasks
+
+        def __len__(self):
+            return len(self.tasks)
+
+        def __getitem__(self, index):
+            return self.tasks[index]
+
+    task = Task(
+        id="hello-task",
+        input="Say hello in exactly two words.",
+        ground_truth="Hello there.",
+        metrics=[ExactMatchMetric("Hello there.")],
+        tags={"difficulty": "easy", "category": "greeting"},
+        metadata={"suite": "toy"},
+    )
+    evaluator = GeneralEvaluator(
+        name="Toy benchmark evaluation",
+        benchmark=ToyBenchmark([task]),
+        n_repeat=1,
+        storage=FileEvaluatorStorage(save_dir=str(tmp_path / "agentscope-eval")),
+        n_workers=1,
+    )
+
+    async def solution(eval_task: Task, pre_hook):
+        agent = _make_agent(
+            "Friday",
+            "You are a concise assistant. Answer in one sentence.",
+        )
+        if hasattr(agent, "register_instance_hook"):
+            agent.register_instance_hook("pre_print", "save_logging", pre_hook)
+
+        response = await agent(
+            Msg(
+                name="user",
+                content=eval_task.input,
+                role="user",
+            )
+        )
+
+        content = response.content
+        if isinstance(content, list):
+            output = next(
+                (item["text"] for item in content if isinstance(item, dict) and item.get("type") == "text"),
+                None,
+            )
+            trajectory = content
+        else:
+            output = content
+            trajectory = [content]
+
+        return SolutionOutput(
+            success=True,
+            output=output,
+            trajectory=trajectory,
+            meta={"agent": "Friday"},
+        )
+
+    await evaluator.run(solution)
+
+    spans = memory_logger.pop()
+    root_span = next(span for span in spans if span["span_attributes"]["name"] == "agentscope.evaluate.run")
+    solution_span = next(span for span in spans if span["span_attributes"]["name"] == "hello-task.solution")
+    evaluation_span = next(span for span in spans if span["span_attributes"]["name"] == "hello-task.evaluate")
+    metric_span = next(span for span in spans if span["span_attributes"]["name"] == "exact_match")
+    agent_span = next(span for span in spans if span["span_attributes"]["name"] == "Friday.reply")
+
+    assert _span_type(root_span) == "eval"
+    assert root_span["metadata"]["benchmark_name"] == "Toy benchmark"
+    assert root_span["metadata"]["task_count"] == 1
+    assert root_span["output"]["status"] == "completed"
+
+    assert _span_type(solution_span) == "task"
+    assert solution_span["input"] == "Say hello in exactly two words."
+    assert solution_span["expected"] == "Hello there."
+    assert solution_span["tags"] == ["category:greeting", "difficulty:easy"]
+    assert solution_span["metadata"]["repeat_id"] == "0"
+    assert solution_span["metadata"]["metric_names"] == ["exact_match"]
+    assert solution_span["metadata"]["task_tags"] == {"difficulty": "easy", "category": "greeting"}
+    assert solution_span["output"]["output"] == "Hello there."
+    assert solution_span["span_id"] in agent_span["span_parents"]
+
+    assert _span_type(evaluation_span) == "eval"
+    assert evaluation_span["span_id"] in metric_span["span_parents"]
+    assert solution_span["span_id"] in evaluation_span["span_parents"]
+    assert root_span["span_id"] in solution_span["span_parents"]
+    assert evaluation_span["output"][0]["result"] == 1.0
+    assert evaluation_span["output"][0]["message"] == "Correct"
+
+    assert _span_type(metric_span) == "score"
+    assert metric_span["scores"]["exact_match"] == 1.0
+    assert metric_span["output"]["result"] == 1.0
+    assert metric_span["output"]["message"] == "Correct"
+
+
+@dataclass
+class _FakeAgentscopeModules:
+    AgentBase: type
+    GeneralEvaluator: type
+    MetricBase: type
+    Task: type
+
+
+@pytest.fixture
+def fake_agentscope_modules(monkeypatch):
+    agentscope_module = ModuleType("agentscope")
+    agentscope_module.__path__ = []
+    agentscope_module.__version__ = "1.0.0"
+
+    agent_module = ModuleType("agentscope.agent")
+    evaluate_module = ModuleType("agentscope.evaluate")
+
+    class AgentBase:
+        async def __call__(self, *_args, **_kwargs):
+            return "ok"
+
+    class Task:
+        async def evaluate(self, *_args, **_kwargs):
+            return []
+
+    class MetricBase:
+        async def __call__(self, *_args, **_kwargs):
+            return None
+
+    class GeneralEvaluator:
+        async def run(self, *_args, **_kwargs):
+            return None
+
+        async def run_solution(self, *_args, **_kwargs):
+            return None
+
+        async def run_evaluation(self, *_args, **_kwargs):
+            return None
+
+    agent_module.AgentBase = AgentBase
+    evaluate_module.GeneralEvaluator = GeneralEvaluator
+    evaluate_module.Task = Task
+    evaluate_module.MetricBase = MetricBase
+
+    agentscope_module.agent = agent_module
+    agentscope_module.evaluate = evaluate_module
+
+    monkeypatch.setitem(sys.modules, "agentscope", agentscope_module)
+    monkeypatch.setitem(sys.modules, "agentscope.agent", agent_module)
+    monkeypatch.setitem(sys.modules, "agentscope.evaluate", evaluate_module)
+
+    return _FakeAgentscopeModules(
+        AgentBase=AgentBase,
+        GeneralEvaluator=GeneralEvaluator,
+        MetricBase=MetricBase,
+        Task=Task,
+    )
+
+
+def test_setup_agentscope_can_skip_eval_patchers(fake_agentscope_modules):
+    result = setup_agentscope(project_name=PROJECT_NAME, instrument_evals=False)
+
+    assert result is True
+    assert getattr(fake_agentscope_modules.AgentBase.__call__, AgentCallPatcher.patch_marker_attr(), False)
+    assert not getattr(
+        fake_agentscope_modules.GeneralEvaluator, _GeneralEvaluatorRunPatcher.patch_marker_attr(), False
+    )
+    assert not getattr(
+        fake_agentscope_modules.GeneralEvaluator,
+        _GeneralEvaluatorRunSolutionPatcher.patch_marker_attr(),
+        False,
+    )
+    assert not getattr(
+        fake_agentscope_modules.GeneralEvaluator,
+        _GeneralEvaluatorRunEvaluationPatcher.patch_marker_attr(),
+        False,
+    )
+    assert not getattr(fake_agentscope_modules.Task, TaskEvaluatePatcher.patch_marker_attr(), False)
+    assert not getattr(fake_agentscope_modules.MetricBase, MetricCallPatcher.patch_marker_attr(), False)
+
+
+def test_wrap_evaluator_patches_evaluator_and_eval_types(fake_agentscope_modules):
+    wrapped = wrap_evaluator(fake_agentscope_modules.GeneralEvaluator)
+    wrapped_again = wrap_evaluator(fake_agentscope_modules.GeneralEvaluator)
+
+    assert wrapped is fake_agentscope_modules.GeneralEvaluator
+    assert wrapped_again is fake_agentscope_modules.GeneralEvaluator
+    assert getattr(fake_agentscope_modules.GeneralEvaluator, _GeneralEvaluatorRunPatcher.patch_marker_attr(), False)
+    assert getattr(
+        fake_agentscope_modules.GeneralEvaluator, _GeneralEvaluatorRunSolutionPatcher.patch_marker_attr(), False
+    )
+    assert getattr(
+        fake_agentscope_modules.GeneralEvaluator,
+        _GeneralEvaluatorRunEvaluationPatcher.patch_marker_attr(),
+        False,
+    )
+    assert getattr(fake_agentscope_modules.Task, TaskEvaluatePatcher.patch_marker_attr(), False)
+    assert getattr(fake_agentscope_modules.MetricBase, MetricCallPatcher.patch_marker_attr(), False)
 
 
 class TestAutoInstrumentAgentScope:
