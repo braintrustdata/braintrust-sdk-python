@@ -1,10 +1,25 @@
-from typing import Any, Dict, List
+from typing import Any, Sequence
 from unittest.mock import ANY
 
 
+# Base types that can appear in values
+PrimitiveValue = str | int | float | bool | None
+RecursiveValue = PrimitiveValue | dict[str, Any] | Sequence[Any]
+
+
+def deep_hashable_dict(d: RecursiveValue):
+    """Recursively convert a dictionary into a hashable representation, handling nested values."""
+    if isinstance(d, dict):
+        return frozenset((k, deep_hashable_dict(v)) for k, v in d.items())
+    elif isinstance(d, Sequence) and not isinstance(d, str):
+        return frozenset(deep_hashable_dict(x) for x in d)
+    else:
+        return d
+
+
 def assert_matches_object(
-    actual: Any,
-    expected: Any,
+    actual: RecursiveValue,
+    expected: RecursiveValue,
     ignore_order: bool = False,
 ) -> None:
     """Assert that actual contains all key-value pairs from expected.
@@ -34,7 +49,7 @@ def assert_matches_object(
 
     elif isinstance(expected, dict):
         assert isinstance(actual, dict), f"Expected dict but got {type(actual)}"
-        actual_dict: Dict[str, Any] = actual
+        actual_dict: dict[str, Any] = actual
         for k, v in expected.items():
             assert k in actual_dict, f"Missing key {k}"
             if v is ANY:
@@ -47,9 +62,9 @@ def assert_matches_object(
         assert actual == expected, f"Expected {expected} but got {actual}"
 
 
-def find_spans_by_attributes(spans: List[Any], **attributes: Any) -> List[Any]:
+def find_spans_by_attributes(spans: list[Any], **attributes: Any) -> list[Any]:
     """Find all spans that match the given attributes."""
-    matching_spans: List[Any] = []
+    matching_spans: list[Any] = []
     for span in spans:
         matches = True
         if "span_attributes" not in span:

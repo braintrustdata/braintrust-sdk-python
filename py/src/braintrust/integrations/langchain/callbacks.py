@@ -641,21 +641,11 @@ def _get_metrics_from_response(response: LLMResult):
             input_token_details = usage_metadata.get("input_token_details")
             if input_token_details and isinstance(input_token_details, dict):
                 cache_read = input_token_details.get("cache_read")
-                cache_creation = input_token_details.get("cache_creation") or 0
-
-                # langchain-anthropic may zero out cache_creation and use granular
-                # ephemeral keys (ephemeral_5m_input_tokens, ephemeral_1h_input_tokens)
-                # to avoid double-counting; sum them as the canonical cache_creation value.
-                if not cache_creation:
-                    cache_creation = sum(
-                        v
-                        for k, v in input_token_details.items()
-                        if k.startswith("ephemeral_") and isinstance(v, (int, float))
-                    )
+                cache_creation = input_token_details.get("cache_creation")
 
                 if cache_read is not None:
                     metrics["prompt_cached_tokens"] = cache_read
-                if cache_creation:
+                if cache_creation is not None:
                     metrics["prompt_cache_creation_tokens"] = cache_creation
 
     if not metrics or not any(metrics.values()):

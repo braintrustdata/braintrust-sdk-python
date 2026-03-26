@@ -1,14 +1,7 @@
 from contextvars import ContextVar
 
-
-try:
-    from langchain_core.tracers.context import register_configure_hook
-except ImportError:
-    raise ImportError(
-        "langchain-core is required to use set_global_handler. Install it with: pip install langchain-core"
-    )
-
 from braintrust.integrations.langchain.callbacks import BraintrustCallbackHandler
+from langchain_core.tracers.context import register_configure_hook
 
 
 __all__ = ["set_global_handler", "clear_global_handler"]

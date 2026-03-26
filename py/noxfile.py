@@ -356,8 +356,8 @@ def pylint(session):
     session.install("google-adk")
     session.install("opentelemetry.instrumentation.openai")
     # langsmith is needed for the langsmith_wrapper module but not in VENDOR_PACKAGES
-    # langchain-core, langchain-openai, langchain-anthropic, and tenacity are needed for the langchain integration
-    session.install("langsmith", "langchain-core", "langchain-openai", "langchain-anthropic", "tenacity")
+    # langchain-core, langchain-openai, langchain-anthropic are needed for the langchain integration
+    session.install("langsmith", "langchain-core", "langchain-openai", "langchain-anthropic")
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
