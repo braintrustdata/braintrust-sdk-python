@@ -1,26 +1,53 @@
 # pyright: reportTypedDictNotRequiredAccess=none
+from pathlib import Path
 from typing import Dict
 from unittest.mock import ANY
 
 import pytest
+from braintrust import logger
+from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
+from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableSerializable
 from langchain_openai import ChatOpenAI
 
-from braintrust_langchain import BraintrustCallbackHandler, set_global_handler
-
-from .conftest import LoggerMemoryLogger
 from .helpers import assert_matches_object
 
 
+PROJECT_NAME = "langchain-py"
+
+
+@pytest.fixture(scope="module")
+def vcr_config():
+    return {
+        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
+    }
+
+
+@pytest.fixture
+def logger_memory_logger():
+    test_logger = init_test_logger(PROJECT_NAME)
+    with logger._internal_with_memory_background_logger() as bgl:
+        yield (test_logger, bgl)
+
+
+@pytest.fixture(autouse=True)
+def clear_handler():
+    from braintrust.integrations.langchain import clear_global_handler
+
+    clear_global_handler()
+    yield
+    clear_global_handler()
+
+
 @pytest.mark.vcr
-def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_global_handler(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger, debug=True)
+    handler = BraintrustCallbackHandler(logger=test_logger, debug=True)
     set_global_handler(handler)
 
     # Make sure the handler is registered in the LangChain library
@@ -61,12 +88,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                     "additional_kwargs": ANY,
                     "response_metadata": ANY,
                     "type": "ai",
-                    "name": ANY,
-                    "id": ANY,
-                    "example": ANY,
-                    "tool_calls": ANY,
-                    "invalid_tool_calls": ANY,
-                    "usage_metadata": ANY,
                 },
                 "metadata": {"tags": []},
                 "span_id": root_span_id,
@@ -82,8 +103,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
                         }
                     ]
                 },
@@ -100,9 +119,6 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -118,21 +134,13 @@ def test_global_handler(logger_memory_logger: LoggerMemoryLogger):
                                     "additional_kwargs": ANY,
                                     "response_metadata": ANY,
                                     "type": "ai",
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
                     ],
                     "llm_output": {
-                        "token_usage": {
-                            "completion_tokens": ANY,
-                            "prompt_tokens": ANY,
-                            "total_tokens": ANY,
-                        },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {

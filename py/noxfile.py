@@ -100,6 +100,7 @@ AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
 GENAI_VERSIONS = (LATEST,)
 DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
+LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
 PYTEST_VERSIONS = (LATEST, "8.4.2")
@@ -199,6 +200,24 @@ def test_google_adk(session, version):
     _install(session, "google-adk", version)
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py")
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk_mcp_tool.py")
+    _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", LANGCHAIN_VERSIONS, ids=LANGCHAIN_VERSIONS)
+def test_langchain(session, version):
+    """Test LangChain integration."""
+    # langchain requires Python >= 3.10
+    if sys.version_info < (3, 10):
+        session.skip("langchain requires Python >= 3.10")
+    _install_test_deps(session)
+    _install(session, "langchain-core", version)
+    _install(session, "langchain-openai")
+    _install(session, "langchain-anthropic")
+    _install(session, "langgraph")
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_callbacks.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_context.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py")
     _run_core_tests(session)
 
 
@@ -336,8 +355,9 @@ def pylint(session):
     session.install("pydantic_ai>=1.10.0")
     session.install("google-adk")
     session.install("opentelemetry.instrumentation.openai")
-    # langsmith is needed for the wrapper module but not in VENDOR_PACKAGES
-    session.install("langsmith")
+    # langsmith is needed for the langsmith_wrapper module but not in VENDOR_PACKAGES
+    # langchain-core, langchain-openai, langchain-anthropic, and tenacity are needed for the langchain integration
+    session.install("langsmith", "langchain-core", "langchain-openai", "langchain-anthropic", "tenacity")
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]

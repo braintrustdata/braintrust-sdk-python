@@ -1,27 +1,52 @@
+from pathlib import Path
+from typing import Any
 from unittest.mock import ANY
 
 import pytest
-from braintrust import flush
+from braintrust import flush, logger
+from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
+from braintrust.test_helpers import init_test_logger
 from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 
-from braintrust_langchain import BraintrustCallbackHandler
-from braintrust_langchain.context import set_global_handler
-from tests.conftest import LoggerMemoryLogger
-from tests.helpers import assert_matches_object
+from .helpers import assert_matches_object
+
 
 PROJECT_NAME = "langchain-anthropic"
 MODEL = "claude-sonnet-4-20250514"
 
 
+@pytest.fixture(scope="module")
+def vcr_config():
+    return {
+        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
+    }
+
+
+@pytest.fixture
+def logger_memory_logger():
+    test_logger = init_test_logger(PROJECT_NAME)
+    with logger._internal_with_memory_background_logger() as bgl:
+        yield (test_logger, bgl)
+
+
+@pytest.fixture(autouse=True)
+def clear_handler():
+    from braintrust.integrations.langchain import clear_global_handler
+
+    clear_global_handler()
+    yield
+    clear_global_handler()
+
+
 @pytest.mark.vcr
 def test_langchain_anthropic_integration(
-    logger_memory_logger: LoggerMemoryLogger,
+    logger_memory_logger,
 ):
-    logger, memory_logger = logger_memory_logger
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
     set_global_handler(handler)
 
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
@@ -63,27 +88,28 @@ def test_langchain_anthropic_integration(
     else:
         assert False, "No LLM span contained the expected answer '3'"
 
+    expected_metrics: dict[str, Any] = {
+        "completion_tokens": 13,
+        "end": ANY,
+        "prompt_tokens": 16,
+        "start": ANY,
+        "total_tokens": 29,
+    }
     assert_matches_object(
         llm_span["metrics"],
-        {
-            "completion_tokens": 13,
-            "end": ANY,
-            "prompt_tokens": 16,
-            "start": ANY,
-            "total_tokens": 29,
-        },
+        expected_metrics,
     )
 
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_async_langchain_invoke(
-    logger_memory_logger: LoggerMemoryLogger,
+    logger_memory_logger,
 ):
-    logger, memory_logger = logger_memory_logger
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
     set_global_handler(handler)
 
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")

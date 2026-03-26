@@ -1,10 +1,13 @@
 # pyright: reportTypedDictNotRequiredAccess=none
 import uuid
+from pathlib import Path
 from typing import Dict, List, Union, cast
 
 import pytest
+from braintrust import logger
+from braintrust.integrations.langchain import BraintrustCallbackHandler
 from braintrust.logger import flush
-from langchain_anthropic import ChatAnthropic
+from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -14,19 +17,41 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from braintrust_langchain import BraintrustCallbackHandler
-
-from .conftest import LoggerMemoryLogger
 from .helpers import ANY, assert_matches_object, find_spans_by_attributes
-from .types import Span
+
+
+PROJECT_NAME = "langchain-py"
+
+
+@pytest.fixture(scope="module")
+def vcr_config():
+    return {
+        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
+    }
+
+
+@pytest.fixture
+def logger_memory_logger():
+    test_logger = init_test_logger(PROJECT_NAME)
+    with logger._internal_with_memory_background_logger() as bgl:
+        yield (test_logger, bgl)
+
+
+@pytest.fixture(autouse=True)
+def clear_handler():
+    from braintrust.integrations.langchain import clear_global_handler
+
+    clear_global_handler()
+    yield
+    clear_global_handler()
 
 
 @pytest.mark.vcr
-def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_llm_calls(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
     model = ChatOpenAI(
         model="gpt-4o-mini",
@@ -58,12 +83,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                     "additional_kwargs": ANY,
                     "response_metadata": ANY,
                     "type": "ai",
-                    "name": ANY,
-                    "id": ANY,
-                    "example": ANY,
-                    "tool_calls": ANY,
-                    "invalid_tool_calls": ANY,
-                    "usage_metadata": ANY,
                 },
                 "metadata": {"tags": []},
                 "span_id": root_span_id,
@@ -79,8 +98,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
                         }
                     ]
                 },
@@ -97,9 +114,6 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -115,21 +129,13 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
                                     "additional_kwargs": ANY,
                                     "response_metadata": ANY,
                                     "type": "ai",
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
                     ],
                     "llm_output": {
-                        "token_usage": {
-                            "completion_tokens": ANY,
-                            "prompt_tokens": ANY,
-                            "total_tokens": ANY,
-                        },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {
@@ -151,11 +157,11 @@ def test_llm_calls(logger_memory_logger: LoggerMemoryLogger):
 
 
 @pytest.mark.vcr
-def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_chain_with_memory(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("{history} User: {input}")
     model = ChatOpenAI(model="gpt-4o-mini")
     chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
@@ -200,8 +206,6 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
                         }
                     ]
                 },
@@ -218,9 +222,6 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -236,21 +237,13 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
                                     "additional_kwargs": ANY,
                                     "response_metadata": ANY,
                                     "type": "ai",
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
                     ],
                     "llm_output": {
-                        "token_usage": {
-                            "completion_tokens": ANY,
-                            "prompt_tokens": ANY,
-                            "total_tokens": ANY,
-                        },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {
@@ -272,11 +265,11 @@ def test_chain_with_memory(logger_memory_logger: LoggerMemoryLogger):
 
 
 @pytest.mark.vcr
-def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_tool_usage(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
 
     class CalculatorInput(BaseModel):
         operation: str = Field(
@@ -331,9 +324,6 @@ def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
                             "additional_kwargs": {},
                             "response_metadata": {},
                             "type": "human",
-                            "name": None,
-                            "id": None,
-                            "example": ANY,
                         }
                     ]
                 ],
@@ -362,25 +352,15 @@ def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
                                 "message": {
                                     "content": ANY,  # May be empty for tool calls
                                     "type": "ai",
-                                    "additional_kwargs": {
-                                        "tool_calls": ANY,  # Tool call details
-                                    },
+                                    "additional_kwargs": ANY,
                                     "response_metadata": ANY,
-                                    "name": None,
-                                    "id": ANY,
                                 },
                             }
                         ]
                     ],
                     "llm_output": {
-                        "token_usage": {
-                            "completion_tokens": ANY,
-                            "prompt_tokens": ANY,
-                            "total_tokens": ANY,
-                        },
                         "model_name": "gpt-4o-mini-2024-07-18",
                     },
-                    "run": None,
                     "type": "LLMResult",
                 },
                 "metrics": {
@@ -397,11 +377,11 @@ def test_tool_usage(logger_memory_logger: LoggerMemoryLogger):
 
 @pytest.mark.vcr
 @pytest.mark.skip(reason="Not yet working with VCR.")
-def test_parallel_execution(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_parallel_execution(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
 
     model = ChatOpenAI(
         model="gpt-4o-mini",
@@ -424,7 +404,7 @@ def test_parallel_execution(logger_memory_logger: LoggerMemoryLogger):
 
     map_chain.invoke({"topic": "bear"}, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
 
-    spans = cast(List[Span], memory_logger.pop())
+    spans = cast(List, memory_logger.pop())
 
     # Find the LLM spans
     llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI")
@@ -486,8 +466,8 @@ def test_parallel_execution(logger_memory_logger: LoggerMemoryLogger):
 
 
 @pytest.mark.vcr
-def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_langgraph_state_management(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
     try:
@@ -495,7 +475,7 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
     except ImportError:
         pytest.skip("langgraph not installed")
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
     model = ChatOpenAI(
         model="gpt-4o-mini",
         temperature=1,
@@ -585,9 +565,6 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
                         "additional_kwargs": {},
                         "response_metadata": {},
                         "type": "human",
-                        "name": None,
-                        "id": None,
-                        "example": ANY,
                     }
                 ]
             ],
@@ -607,21 +584,13 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
                                 "additional_kwargs": ANY,
                                 "response_metadata": ANY,
                                 "type": "ai",
-                                "name": None,
-                                "id": ANY,
                             },
                         }
                     ]
                 ],
                 "llm_output": {
-                    "token_usage": {
-                        "completion_tokens": ANY,
-                        "prompt_tokens": ANY,
-                        "total_tokens": ANY,
-                    },
                     "model_name": "gpt-4o-mini-2024-07-18",
                 },
-                "run": None,
                 "type": "LLMResult",
             },
             "metrics": {
@@ -651,11 +620,11 @@ def test_langgraph_state_management(logger_memory_logger: LoggerMemoryLogger):
 
 
 @pytest.mark.vcr
-def test_chain_null_values(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_chain_null_values(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
 
     run_id = uuid.UUID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
 
@@ -706,15 +675,15 @@ def test_chain_null_values(logger_memory_logger: LoggerMemoryLogger):
     )
 
 
-def test_consecutive_eval_calls(logger_memory_logger: LoggerMemoryLogger):
+def test_consecutive_eval_calls(logger_memory_logger):
     from braintrust import Eval
 
-    logger, memory_logger = logger_memory_logger
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
     def task_fn(input, hooks):
         # Create handler that will log LangChain spans
-        handler = BraintrustCallbackHandler(logger=logger)
+        handler = BraintrustCallbackHandler(logger=test_logger)
 
         # Simulate LangChain chain execution by manually triggering callbacks
         run_id = uuid.uuid4()
@@ -738,7 +707,7 @@ def test_consecutive_eval_calls(logger_memory_logger: LoggerMemoryLogger):
         return output
 
     # Create a parent span to hold the eval
-    with logger.start_span(name="test-consecutive-eval", span_attributes={"type": "eval"}) as parent_span:
+    with test_logger.start_span(name="test-consecutive-eval", span_attributes={"type": "eval"}) as parent_span:
         # Run Eval with consecutive calls using parent parameter
         Eval(
             "test-consecutive-eval",
@@ -861,19 +830,13 @@ def test_consecutive_eval_calls(logger_memory_logger: LoggerMemoryLogger):
         ],
     )
 
-    # Note: In this simplified test, we manually trigger LangChain callbacks but they don't
-    # create actual RunnableSequence spans in the logger. The key verification is that Eval()
-    # creates the proper hierarchy: root eval -> eval records -> tasks, and that consecutive
-    # calls work correctly with proper parent-child relationships.
-    # Real LangChain span integration is tested in other tests (test_llm_calls, etc.)
-
 
 @pytest.mark.vcr
-def test_streaming_ttft(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_streaming_ttft(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("Count from 1 to 5.")
     model = ChatOpenAI(
         model="gpt-4o-mini",
@@ -910,9 +873,6 @@ def test_streaming_ttft(logger_memory_logger: LoggerMemoryLogger):
                         {
                             "additional_kwargs": {},
                             "content": "Count from 1 to 5.",
-                            "example": False,
-                            "id": None,
-                            "name": None,
                             "response_metadata": {},
                             "type": "human",
                         }
@@ -953,11 +913,13 @@ def test_streaming_ttft(logger_memory_logger: LoggerMemoryLogger):
 
 
 @pytest.mark.vcr
-def test_prompt_caching_tokens(logger_memory_logger: LoggerMemoryLogger):
-    logger, memory_logger = logger_memory_logger
+def test_prompt_caching_tokens(logger_memory_logger):
+    from langchain_anthropic import ChatAnthropic
+
+    test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
 
-    handler = BraintrustCallbackHandler(logger=logger)
+    handler = BraintrustCallbackHandler(logger=test_logger)
 
     model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 

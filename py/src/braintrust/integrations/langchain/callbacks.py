@@ -14,17 +14,25 @@ from uuid import UUID
 import braintrust
 from braintrust import NOOP_SPAN, Logger, Span, SpanAttributes, SpanTypeAttribute, current_span, init_logger
 from braintrust.version import VERSION as sdk_version
-from langchain_core.agents import AgentAction, AgentFinish
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.documents import Document
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs.llm_result import LLMResult
-from tenacity import RetryCallState
 from typing_extensions import NotRequired
 
-from braintrust_langchain.version import version
 
-_logger = logging.getLogger("braintrust_langchain")
+try:
+    from langchain_core.agents import AgentAction, AgentFinish
+    from langchain_core.callbacks.base import BaseCallbackHandler
+    from langchain_core.documents import Document
+    from langchain_core.messages import BaseMessage
+    from langchain_core.outputs.llm_result import LLMResult
+    from tenacity import RetryCallState
+except ImportError:
+    raise ImportError(
+        "langchain-core and tenacity are required to use BraintrustCallbackHandler. "
+        "Install them with: pip install langchain-core tenacity"
+    )
+
+_logger = logging.getLogger("braintrust.wrappers.langchain")
+
+_INTEGRATION_NAME = "langchain-py"
 
 
 class LogEvent(TypedDict):
@@ -75,7 +83,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         set_current: bool | None = None,
         parent: str | None = None,
         event: LogEvent | None = None,
-    ) -> Any:
+    ) -> Span | None:
         if run_id in self.spans:
             # XXX: See graph test case of an example where this _may_ be intended.
             _logger.warning(f"Span already exists for run_id {run_id} (this is likely a bug)")
@@ -108,8 +116,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
                 "run_id": run_id,
                 "parent_run_id": parent_run_id,
                 "braintrust": {
-                    "integration_name": "langchain-py",
-                    "integration_version": version,
+                    "integration_name": _INTEGRATION_NAME,
                     "sdk_version": sdk_version,
                     "language": "python",
                 },
@@ -158,7 +165,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         metadata: Mapping[str, Any] | None = None,
         metrics: Mapping[str, int | float] | None = None,
         dataset_record_id: str | None = None,
-    ) -> Any:
+    ) -> None:
         if run_id not in self.spans:
             return
 
@@ -207,7 +214,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,  # TODO: response=
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, error=str(error), metadata={**kwargs})
 
         self._start_times.pop(run_id, None)
@@ -221,7 +228,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,  # TODO: some metadata
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, error=str(error), metadata={**kwargs})
 
     def on_tool_error(
@@ -231,7 +238,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, error=str(error), metadata={**kwargs})
 
     def on_retriever_error(
@@ -241,7 +248,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, error=str(error), metadata={**kwargs})
 
     # Agent Methods
@@ -252,7 +259,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._start_span(
             parent_run_id,
             run_id,
@@ -268,7 +275,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, output=finish, metadata={**kwargs})
 
     def on_chain_start(
@@ -282,7 +289,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         name: str | None = None,
         metadata: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         tags = tags or []
 
         # avoids extra logs that seem not as useful esp. with langgraph
@@ -323,7 +330,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         tags: list[str] | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, output=outputs, tags=tags, metadata={**kwargs})
 
     def on_llm_start(
@@ -337,7 +344,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         metadata: dict[str, Any] | None = None,
         name: str | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._start_times[run_id] = time.perf_counter()
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
@@ -372,7 +379,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         name: str | None = None,
         invocation_params: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._start_times[run_id] = time.perf_counter()
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
@@ -406,7 +413,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         tags: list[str] | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         if run_id not in self.spans:
             return
 
@@ -444,7 +451,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         inputs: dict[str, Any] | None = None,
         name: str | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._start_span(
             parent_run_id,
             run_id,
@@ -472,7 +479,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, output=output, metadata={**kwargs})
 
     def on_retriever_start(
@@ -486,7 +493,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         metadata: dict[str, Any] | None = None,
         name: str | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._start_span(
             parent_run_id,
             run_id,
@@ -511,7 +518,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         self._end_span(run_id, output=documents, metadata={**kwargs})
 
     def on_llm_new_token(
@@ -522,7 +529,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         if run_id not in self._first_token_times:
             now = time.perf_counter()
             self._first_token_times[run_id] = now
@@ -537,7 +544,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         pass
 
     def on_retry(
@@ -547,7 +554,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         pass
 
     def on_custom_event(
@@ -559,7 +566,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         tags: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         pass
 
 
@@ -574,7 +581,7 @@ def clean_object(obj: dict[str, Any]) -> dict[str, Any]:
 def safe_parse_serialized_json(input_str: str) -> Any:
     try:
         return json.loads(input_str)
-    except:
+    except Exception:
         return input_str
 
 
@@ -634,11 +641,21 @@ def _get_metrics_from_response(response: LLMResult):
             input_token_details = usage_metadata.get("input_token_details")
             if input_token_details and isinstance(input_token_details, dict):
                 cache_read = input_token_details.get("cache_read")
-                cache_creation = input_token_details.get("cache_creation")
+                cache_creation = input_token_details.get("cache_creation") or 0
+
+                # langchain-anthropic may zero out cache_creation and use granular
+                # ephemeral keys (ephemeral_5m_input_tokens, ephemeral_1h_input_tokens)
+                # to avoid double-counting; sum them as the canonical cache_creation value.
+                if not cache_creation:
+                    cache_creation = sum(
+                        v
+                        for k, v in input_token_details.items()
+                        if k.startswith("ephemeral_") and isinstance(v, (int, float))
+                    )
 
                 if cache_read is not None:
                     metrics["prompt_cached_tokens"] = cache_read
-                if cache_creation is not None:
+                if cache_creation:
                     metrics["prompt_cache_creation_tokens"] = cache_creation
 
     if not metrics or not any(metrics.values()):

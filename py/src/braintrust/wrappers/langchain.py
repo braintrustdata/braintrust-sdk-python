@@ -1,3 +1,7 @@
+# The LangChain integration has moved to braintrust.integrations.langchain.
+# Update your imports to: from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
+# This module is kept for backward compatibility.
+
 import contextvars
 import logging
 from typing import Any
@@ -27,7 +31,10 @@ langchain_parent = contextvars.ContextVar("langchain_current_span", default=None
 
 class BraintrustTracer(BaseCallbackHandler):
     def __init__(self, logger=None):
-        _logger.warning("BraintrustTracer is deprecated, use `pip install braintrust-langchain` instead")
+        _logger.warning(
+            "BraintrustTracer is deprecated, use BraintrustCallbackHandler instead. "
+            "Update your imports to: from braintrust.integrations.langchain import BraintrustCallbackHandler"
+        )
         self.logger = logger
         self.spans = {}
 
