@@ -8,10 +8,12 @@ from braintrust.wrappers.test_utils import autoinstrument_test_context
 # 1. Verify not patched initially
 assert not getattr(openai, "__braintrust_wrapped__", False)
 
+
 # 2. Instrument
 results = auto_instrument()
 assert results.get("openai") == True
 assert getattr(openai, "__braintrust_wrapped__", False)
+
 
 # 3. Idempotent
 results2 = auto_instrument()

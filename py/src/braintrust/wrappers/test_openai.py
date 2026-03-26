@@ -2172,6 +2172,10 @@ class TestAutoInstrumentOpenAI:
         """Test auto_instrument patches OpenAI, creates spans, and uninstrument works."""
         verify_autoinstrument_script("test_auto_openai.py")
 
+    def test_auto_instrument_openai_agents_sdk(self):
+        """Test auto_instrument patches OpenAI, creates spans, and uninstrument works."""
+        verify_autoinstrument_script("test_auto_openai_agents_sdk.py")
+
 
 class TestZAICompatibleOpenAI:
     """Tests for validating some ZAI compatibility with OpenAI wrapper."""

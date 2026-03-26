@@ -41,6 +41,7 @@ def auto_instrument(
     google_genai: bool = True,
     agno: bool = True,
     claude_agent_sdk: bool = True,
+    openai_agent_sdk: bool = True,
     dspy: bool = True,
     adk: bool = True,
 ) -> dict[str, bool]:
@@ -61,6 +62,7 @@ def auto_instrument(
         google_genai: Enable Google GenAI instrumentation (default: True)
         agno: Enable Agno instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
+        openai_agent_sdk: Enable OpenAI Agent SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
 
@@ -124,6 +126,8 @@ def auto_instrument(
         results["agno"] = _instrument_integration(AgnoIntegration)
     if claude_agent_sdk:
         results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
+    if openai_agent_sdk:
+        results["openai_agent_sdk"] = _instrument_openai_agent_sdk()
     if dspy:
         results["dspy"] = _instrument_dspy()
     if adk:
@@ -137,6 +141,16 @@ def _instrument_openai() -> bool:
         from braintrust.oai import patch_openai
 
         return patch_openai()
+    return False
+
+
+def _instrument_openai_agent_sdk() -> bool:
+    with _try_patch():
+        from agents import set_trace_processors
+        from braintrust.wrappers.openai import BraintrustTracingProcessor
+
+        set_trace_processors([BraintrustTracingProcessor()])
+        return True
     return False
 
 
