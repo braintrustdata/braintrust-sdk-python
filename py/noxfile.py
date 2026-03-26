@@ -70,6 +70,7 @@ VENDOR_PACKAGES = (
     "autoevals",
     "braintrust_core",
     "litellm",
+    "openrouter",
     "opentelemetry-api",
     "opentelemetry-sdk",
     "opentelemetry-exporter-otlp-proto-http",
@@ -100,6 +101,7 @@ AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
 GENAI_VERSIONS = (LATEST,)
 DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
+OPENROUTER_VERSIONS = (LATEST, "0.6.0")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
 PYTEST_VERSIONS = (LATEST, "8.4.2")
@@ -210,6 +212,7 @@ def test_openai(session, version):
     # openai-agents requires Python >= 3.10
     _install(session, "openai-agents")
     _run_tests(session, f"{WRAPPER_DIR}/test_openai.py")
+    _run_tests(session, f"{WRAPPER_DIR}/test_openai_openrouter_gateway.py")
     _run_core_tests(session)
 
 
@@ -224,11 +227,12 @@ def test_openai_http2_streaming(session):
 
 
 @nox.session()
-def test_openrouter(session):
-    """Test wrap_openai with OpenRouter. Requires OPENROUTER_API_KEY env var."""
+@nox.parametrize("version", OPENROUTER_VERSIONS, ids=OPENROUTER_VERSIONS)
+def test_openrouter(session, version):
+    """Test the native OpenRouter SDK integration."""
     _install_test_deps(session)
-    _install(session, "openai")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openrouter.py")
+    _install(session, "openrouter", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openrouter/test_openrouter.py")
 
 
 @nox.session()

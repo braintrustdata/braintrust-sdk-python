@@ -73,6 +73,9 @@ from .generated_types import *
 from .integrations.anthropic import (
     wrap_anthropic,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
+from .integrations.openrouter import (
+    wrap_openrouter,  # noqa: F401 # type: ignore[reportUnusedImport]
+)
 from .logger import *
 from .logger import (
     _internal_get_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
