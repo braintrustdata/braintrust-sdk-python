@@ -219,6 +219,85 @@ async def test_model_call_wrapper_stream_logs_final_output_and_metrics(memory_lo
     assert llm_span["metrics"]["tokens"] == 32
 
 
+@pytest.mark.asyncio
+async def test_model_call_wrapper_stream_span_covers_full_stream_duration(memory_logger):
+    """Span end timestamp must be recorded after the stream is fully consumed, not before."""
+    import asyncio
+
+    from braintrust.integrations.agentscope.tracing import _model_call_wrapper
+
+    assert not memory_logger.pop()
+
+    class FakeModel:
+        model_name = "gpt-4o-mini"
+
+    async def wrapped(*_args, **_kwargs):
+        async def _stream():
+            for i in range(3):
+                await asyncio.sleep(0.1)
+                yield {"content": [{"type": "text", "text": f"chunk-{i}"}]}
+
+        return _stream()
+
+    stream = await _model_call_wrapper(
+        wrapped,
+        FakeModel(),
+        args=([{"role": "user", "content": "hi"}],),
+        kwargs={},
+    )
+    async for _ in stream:
+        pass
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    m = span.get("metrics", {})
+    duration_ms = (m["end"] - m["start"]) * 1000
+    # Stream takes ~300ms (3 chunks × 100ms). The span duration must reflect that.
+    assert duration_ms >= 200, f"Span duration {duration_ms:.0f}ms is too short; span ended before stream was consumed"
+
+
+@pytest.mark.asyncio
+async def test_toolkit_call_tool_function_wrapper_stream_span_covers_full_stream_duration(memory_logger):
+    """Tool span end timestamp must be recorded after the stream is fully consumed, not before."""
+    import asyncio
+
+    from braintrust.integrations.agentscope.tracing import _toolkit_call_tool_function_wrapper
+
+    assert not memory_logger.pop()
+
+    class FakeToolkit:
+        pass
+
+    class FakeToolCall:
+        name = "my_tool"
+
+    async def wrapped(*_args, **_kwargs):
+        async def _stream():
+            for i in range(3):
+                await asyncio.sleep(0.1)
+                yield f"chunk-{i}"
+
+        return _stream()
+
+    stream = await _toolkit_call_tool_function_wrapper(
+        wrapped,
+        FakeToolkit(),
+        args=(FakeToolCall(),),
+        kwargs={},
+    )
+    async for _ in stream:
+        pass
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    m = span.get("metrics", {})
+    duration_ms = (m["end"] - m["start"]) * 1000
+    # Stream takes ~300ms (3 chunks × 100ms). The span duration must reflect that.
+    assert duration_ms >= 200, f"Span duration {duration_ms:.0f}ms is too short; span ended before stream was consumed"
+
+
 class TestAutoInstrumentAgentScope:
     def test_auto_instrument_agentscope(self):
         verify_autoinstrument_script("test_auto_agentscope.py")

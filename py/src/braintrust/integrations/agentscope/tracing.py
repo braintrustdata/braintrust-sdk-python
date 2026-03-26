@@ -1,5 +1,6 @@
 """AgentScope-specific span creation and stream aggregation."""
 
+import contextlib
 from contextlib import aclosing
 from typing import Any
 
@@ -200,29 +201,34 @@ async def _fanout_pipeline_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
 async def _toolkit_call_tool_function_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
     tool_call = args[0] if args else kwargs.get("tool_call")
     tool_name = _tool_name(tool_call)
-    with start_span(
-        name=f"{tool_name}.execute",
-        type=SpanTypeAttribute.TOOL,
-        input=_clean(
-            {
-                "tool_name": tool_name,
-                "tool_call": tool_call,
-            }
-        ),
-        metadata=_clean({"toolkit_class": instance.__class__.__name__}),
-    ) as span:
+    with contextlib.ExitStack() as stack:
+        span = stack.enter_context(
+            start_span(
+                name=f"{tool_name}.execute",
+                type=SpanTypeAttribute.TOOL,
+                input=_clean(
+                    {
+                        "tool_name": tool_name,
+                        "tool_call": tool_call,
+                    }
+                ),
+                metadata=_clean({"toolkit_class": instance.__class__.__name__}),
+            )
+        )
         try:
             result = await wrapped(*args, **kwargs)
             if _is_async_iterator(result):
+                deferred = stack.pop_all()
 
                 async def _trace():
-                    last_chunk = None
-                    async with aclosing(result) as agen:
-                        async for chunk in agen:
-                            last_chunk = chunk
-                            yield chunk
-                    if last_chunk is not None:
-                        span.log(output=last_chunk)
+                    with deferred:
+                        last_chunk = None
+                        async with aclosing(result) as agen:
+                            async for chunk in agen:
+                                last_chunk = chunk
+                                yield chunk
+                        if last_chunk is not None:
+                            span.log(output=last_chunk)
 
                 return _trace()
 
@@ -241,24 +247,29 @@ def _is_async_iterator(value: Any) -> bool:
 
 
 async def _model_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
-    with start_span(
-        name=f"{_model_provider_name(instance)}.call",
-        type=SpanTypeAttribute.LLM,
-        input=_model_call_input(args, kwargs),
-        metadata=_model_call_metadata(instance, kwargs),
-    ) as span:
+    with contextlib.ExitStack() as stack:
+        span = stack.enter_context(
+            start_span(
+                name=f"{_model_provider_name(instance)}.call",
+                type=SpanTypeAttribute.LLM,
+                input=_model_call_input(args, kwargs),
+                metadata=_model_call_metadata(instance, kwargs),
+            )
+        )
         try:
             result = await wrapped(*args, **kwargs)
             if _is_async_iterator(result):
+                deferred = stack.pop_all()
 
                 async def _trace():
-                    last_chunk = None
-                    async with aclosing(result) as agen:
-                        async for chunk in agen:
-                            last_chunk = chunk
-                            yield chunk
-                    if last_chunk is not None:
-                        span.log(output=_model_call_output(last_chunk), metrics=_extract_metrics(last_chunk))
+                    with deferred:
+                        last_chunk = None
+                        async with aclosing(result) as agen:
+                            async for chunk in agen:
+                                last_chunk = chunk
+                                yield chunk
+                        if last_chunk is not None:
+                            span.log(output=_model_call_output(last_chunk), metrics=_extract_metrics(last_chunk))
 
                 return _trace()
 
