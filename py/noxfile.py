@@ -255,7 +255,7 @@ def test_dspy(session, version):
         session.skip("dspy latest requires Python >= 3.10 (litellm dependency)")
     _install_test_deps(session)
     _install(session, "dspy", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_dspy.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py")
 
 
 @nox.session()

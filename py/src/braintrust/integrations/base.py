@@ -114,13 +114,27 @@ class FunctionWrapperPatcher(BasePatcher):
     @classmethod
     def mark_patched(cls, obj: Any) -> None:
         """Mark a wrapped target so future patch attempts are idempotent."""
-        setattr(obj, cls.patch_marker_attr(), True)
+        try:
+            setattr(obj, cls.patch_marker_attr(), True)
+        except AttributeError:
+            # Some objects (e.g. bound methods) don't support setattr.
+            # Callers that need a fallback location (like ``patch()``) handle
+            # this by catching the failure and storing the marker elsewhere.
+            pass
 
     @classmethod
     def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
         """Return whether this patcher's target has already been instrumented."""
+        marker = cls.patch_marker_attr()
         resolved_target = cls.resolve_target(module, version, target=target)
-        return bool(resolved_target is not None and getattr(resolved_target, cls.patch_marker_attr(), False))
+        if resolved_target is not None and getattr(resolved_target, marker, False):
+            return True
+        # Fall back to checking the root — the marker may live there when the
+        # resolved target does not support setattr (e.g. bound methods).
+        root = cls.resolve_root(module, version, target=target)
+        if root is not None and root is not resolved_target and getattr(root, marker, False):
+            return True
+        return False
 
     @classmethod
     def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
@@ -130,11 +144,16 @@ class FunctionWrapperPatcher(BasePatcher):
             return False
 
         wrap_function_wrapper(root, cls.target_path, cls.wrapper)
-        resolved_target = cls.resolve_target(module, version, target=target)
+        resolved_target = _resolve_attr_path(root, cls.target_path)
         if resolved_target is None:
             return False
 
+        marker = cls.patch_marker_attr()
         cls.mark_patched(resolved_target)
+        # If mark_patched could not store the marker on the target (e.g. bound
+        # methods), store it on the root so is_patched() can still find it.
+        if not getattr(resolved_target, marker, False):
+            setattr(root, marker, True)
         return True
 
     @classmethod

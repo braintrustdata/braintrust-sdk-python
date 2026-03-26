@@ -12,6 +12,7 @@ from braintrust.integrations import (
     AgnoIntegration,
     AnthropicIntegration,
     ClaudeAgentSDKIntegration,
+    DSPyIntegration,
     GoogleGenAIIntegration,
 )
 
@@ -125,7 +126,7 @@ def auto_instrument(
     if claude_agent_sdk:
         results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
     if dspy:
-        results["dspy"] = _instrument_dspy()
+        results["dspy"] = _instrument_integration(DSPyIntegration)
     if adk:
         results["adk"] = _instrument_integration(ADKIntegration)
 
@@ -159,12 +160,4 @@ def _instrument_pydantic_ai() -> bool:
         from braintrust.wrappers.pydantic_ai import setup_pydantic_ai
 
         return setup_pydantic_ai()
-    return False
-
-
-def _instrument_dspy() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.dspy import patch_dspy
-
-        return patch_dspy()
     return False

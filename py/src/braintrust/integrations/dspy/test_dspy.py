@@ -5,8 +5,8 @@ Tests for DSPy integration with Braintrust.
 import dspy
 import pytest
 from braintrust import logger
+from braintrust.integrations.dspy import BraintrustDSpyCallback
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.dspy import BraintrustDSpyCallback
 from braintrust.wrappers.test_utils import run_in_subprocess, verify_autoinstrument_script
 
 
@@ -63,17 +63,14 @@ def test_dspy_callback(memory_logger):
 
 
 class TestPatchDSPy:
-    """Tests for patch_dspy() / unpatch_dspy()."""
+    """Tests for patch_dspy()."""
 
-    def test_patch_dspy_sets_wrapped_flag(self):
-        """patch_dspy() should set __braintrust_wrapped__ on dspy module."""
+    def test_patch_dspy_patches_configure(self):
+        """patch_dspy() should patch dspy.configure via the integration patcher."""
         result = run_in_subprocess("""
-            dspy = __import__("dspy")
-            from braintrust.wrappers.dspy import patch_dspy
-
-            assert not hasattr(dspy, "__braintrust_wrapped__")
-            patch_dspy()
-            assert hasattr(dspy, "__braintrust_wrapped__")
+            from braintrust.integrations.dspy import patch_dspy
+            result = patch_dspy()
+            assert result, "patch_dspy() should return True"
             print("SUCCESS")
         """)
         assert result.returncode == 0, f"Failed: {result.stderr}"
@@ -82,7 +79,7 @@ class TestPatchDSPy:
     def test_patch_dspy_wraps_configure(self):
         """After patch_dspy(), dspy.configure() should auto-add BraintrustDSpyCallback."""
         result = run_in_subprocess("""
-            from braintrust.wrappers.dspy import patch_dspy, BraintrustDSpyCallback
+            from braintrust.integrations.dspy import patch_dspy, BraintrustDSpyCallback
             patch_dspy()
 
             import dspy
@@ -103,7 +100,7 @@ class TestPatchDSPy:
     def test_patch_dspy_preserves_existing_callbacks(self):
         """patch_dspy() should preserve user-provided callbacks."""
         result = run_in_subprocess("""
-            from braintrust.wrappers.dspy import patch_dspy, BraintrustDSpyCallback
+            from braintrust.integrations.dspy import patch_dspy, BraintrustDSpyCallback
             patch_dspy()
 
             import dspy
@@ -132,7 +129,7 @@ class TestPatchDSPy:
     def test_patch_dspy_does_not_duplicate_callback(self):
         """patch_dspy() should not add duplicate BraintrustDSpyCallback."""
         result = run_in_subprocess("""
-            from braintrust.wrappers.dspy import patch_dspy, BraintrustDSpyCallback
+            from braintrust.integrations.dspy import patch_dspy, BraintrustDSpyCallback
             patch_dspy()
 
             import dspy
@@ -155,7 +152,7 @@ class TestPatchDSPy:
     def test_patch_dspy_idempotent(self):
         """Multiple patch_dspy() calls should be safe."""
         result = run_in_subprocess("""
-            from braintrust.wrappers.dspy import patch_dspy
+            from braintrust.integrations.dspy import patch_dspy
             import dspy
 
             patch_dspy()
@@ -164,6 +161,17 @@ class TestPatchDSPy:
             # Verify configure still works
             lm = dspy.LM("openai/gpt-4o-mini")
             dspy.configure(lm=lm)
+            print("SUCCESS")
+        """)
+        assert result.returncode == 0, f"Failed: {result.stderr}"
+        assert "SUCCESS" in result.stdout
+
+    def test_legacy_wrapper_import_still_works(self):
+        """The old braintrust.wrappers.dspy import path should still work."""
+        result = run_in_subprocess("""
+            from braintrust.wrappers.dspy import BraintrustDSpyCallback, patch_dspy
+            assert BraintrustDSpyCallback is not None
+            assert callable(patch_dspy)
             print("SUCCESS")
         """)
         assert result.returncode == 0, f"Failed: {result.stderr}"

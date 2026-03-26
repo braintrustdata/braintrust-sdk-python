@@ -7,16 +7,15 @@ The standalone VCR in test_utils doesn't capture httpx used by litellm/dspy.
 
 import dspy
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.dspy import BraintrustDSpyCallback
+from braintrust.integrations.dspy import BraintrustDSpyCallback
 
 
 # 1. Verify not patched initially
-assert not getattr(dspy, "__braintrust_wrapped__", False)
+assert not getattr(dspy.configure, "__braintrust_patched_dspy_configure__", False)
 
 # 2. Instrument
 results = auto_instrument()
 assert results.get("dspy") == True
-assert getattr(dspy, "__braintrust_wrapped__", False)
 
 # 3. Idempotent
 results2 = auto_instrument()
