@@ -314,6 +314,11 @@ def _aggregate_generate_content_chunks(
                 candidate_dict["finish_reason"] = candidate.finish_reason
             if hasattr(candidate, "safety_ratings"):
                 candidate_dict["safety_ratings"] = candidate.safety_ratings
+            if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
+                gm = candidate.grounding_metadata
+                candidate_dict["grounding_metadata"] = (
+                    gm.model_dump(exclude_none=True) if hasattr(gm, "model_dump") else gm
+                )
 
             candidates.append(candidate_dict)
 

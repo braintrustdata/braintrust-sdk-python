@@ -715,6 +715,151 @@ def test_attachment_with_pydantic_model(memory_logger):
     assert copied["context_file"] is attachment
 
 
+GROUNDING_MODEL = "gemini-2.0-flash-001"
+
+
+def _assert_grounding_metadata(span_output):
+    """Assert that grounding metadata is present and well-structured in span output."""
+    # The grounding_metadata should be present on the first candidate
+    candidates = span_output.get("candidates", [])
+    assert candidates, "Expected candidates in span output"
+
+    first_candidate = candidates[0]
+    grounding = first_candidate.get("grounding_metadata")
+    assert grounding is not None, (
+        f"Expected grounding_metadata on first candidate, got keys: {list(first_candidate.keys())}"
+    )
+
+    # web_search_queries should be a non-empty list of strings
+    web_search_queries = grounding.get("web_search_queries")
+    assert web_search_queries, "Expected web_search_queries in grounding_metadata"
+    assert isinstance(web_search_queries, list)
+    assert all(isinstance(q, str) for q in web_search_queries)
+
+    # grounding_chunks should contain search result snippets
+    grounding_chunks = grounding.get("grounding_chunks")
+    assert grounding_chunks, "Expected grounding_chunks in grounding_metadata"
+    assert isinstance(grounding_chunks, list)
+
+    # grounding_supports should link response segments to chunks
+    grounding_supports = grounding.get("grounding_supports")
+    assert grounding_supports, "Expected grounding_supports in grounding_metadata"
+    assert isinstance(grounding_supports, list)
+
+
+# Test: Google Search Grounding (Sync)
+@pytest.mark.vcr
+@pytest.mark.parametrize(
+    "mode",
+    ["sync", "stream"],
+)
+def test_google_search_grounding(memory_logger, mode):
+    """Test that Google Search grounding metadata is captured in span output."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    if mode == "sync":
+        response = client.models.generate_content(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = response.text
+    elif mode == "stream":
+        stream = client.models.generate_content_stream(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = ""
+        for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+
+    end = time.time()
+
+    # Verify response contains expected content
+    assert text
+    assert len(text) > 0
+
+    # Verify logging
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == GROUNDING_MODEL
+    assert "population" in str(span["input"]).lower() or "Tokyo" in str(span["input"])
+    assert span["output"]
+    _assert_metrics_are_valid(span["metrics"], start, end)
+
+    # Verify grounding metadata is captured
+    _assert_grounding_metadata(span["output"])
+
+
+# Test: Google Search Grounding (Async)
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mode",
+    ["async", "async_stream"],
+)
+async def test_google_search_grounding_async(memory_logger, mode):
+    """Test that Google Search grounding metadata is captured in async span output."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    if mode == "async":
+        response = await client.aio.models.generate_content(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = response.text
+    elif mode == "async_stream":
+        stream = await client.aio.models.generate_content_stream(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = ""
+        async for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+
+    end = time.time()
+
+    # Verify response contains expected content
+    assert text
+    assert len(text) > 0
+
+    # Verify logging
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == GROUNDING_MODEL
+    assert "population" in str(span["input"]).lower() or "Tokyo" in str(span["input"])
+    assert span["output"]
+    _assert_metrics_are_valid(span["metrics"], start, end)
+
+    # Verify grounding metadata is captured
+    _assert_grounding_metadata(span["output"])
+
+
 class TestAutoInstrumentGoogleGenAI:
     """Tests for auto_instrument() with Google GenAI."""
 
