@@ -1,13 +1,17 @@
 """Test that patch_litellm() patches responses."""
 
+from pathlib import Path
+
 import litellm
-from braintrust.wrappers.litellm import patch_litellm
+from braintrust.integrations.litellm import patch_litellm
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
 
+_CASSETTES_DIR = Path(__file__).resolve().parent.parent / "litellm" / "cassettes"
+
 patch_litellm()
 
-with autoinstrument_test_context("test_patch_litellm_responses") as memory_logger:
+with autoinstrument_test_context("test_patch_litellm_responses", cassettes_dir=_CASSETTES_DIR) as memory_logger:
     response = litellm.responses(
         model="gpt-4o-mini",
         input="What's 12 + 12?",

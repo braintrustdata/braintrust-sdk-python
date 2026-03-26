@@ -73,6 +73,9 @@ from .generated_types import *
 from .integrations.anthropic import (
     wrap_anthropic,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
+from .integrations.litellm import (
+    wrap_litellm,  # noqa: F401 # type: ignore[reportUnusedImport]
+)
 from .integrations.openrouter import (
     wrap_openrouter,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
@@ -97,7 +100,4 @@ from .sandbox import (
 from .util import (
     BT_IS_ASYNC_ATTRIBUTE,  # noqa: F401 # type: ignore[reportUnusedImport]
     MarkAsyncWrapper,  # noqa: F401 # type: ignore[reportUnusedImport]
-)
-from .wrappers.litellm import (
-    wrap_litellm,  # noqa: F401 # type: ignore[reportUnusedImport]
 )

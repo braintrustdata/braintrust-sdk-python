@@ -15,6 +15,7 @@ from braintrust.integrations import (
     ClaudeAgentSDKIntegration,
     DSPyIntegration,
     GoogleGenAIIntegration,
+    LiteLLMIntegration,
     OpenRouterIntegration,
     PydanticAIIntegration,
 )
@@ -123,7 +124,7 @@ def auto_instrument(
     if anthropic:
         results["anthropic"] = _instrument_integration(AnthropicIntegration)
     if litellm:
-        results["litellm"] = _instrument_litellm()
+        results["litellm"] = _instrument_integration(LiteLLMIntegration)
     if pydantic_ai:
         results["pydantic_ai"] = _instrument_integration(PydanticAIIntegration)
     if google_genai:
@@ -157,10 +158,3 @@ def _instrument_integration(integration) -> bool:
         return integration.setup()
     return False
 
-
-def _instrument_litellm() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.litellm import patch_litellm
-
-        return patch_litellm()
-    return False

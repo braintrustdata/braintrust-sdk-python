@@ -4,8 +4,8 @@ import time
 import litellm
 import pytest
 from braintrust import logger
+from braintrust.integrations.litellm import patch_litellm
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
-from braintrust.wrappers.litellm import wrap_litellm
 from braintrust.wrappers.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 
 
@@ -14,6 +14,11 @@ PROJECT_NAME = "test-project-litellm-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
 TEST_PROMPT = "What's 12 + 12?"
 TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
+
+
+@pytest.fixture(autouse=True)
+def _patch():
+    patch_litellm()
 
 
 @pytest.fixture
@@ -27,27 +32,14 @@ def memory_logger():
 def test_litellm_completion_metrics(memory_logger) -> None:
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    response = litellm.completion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
-    assert response
-    assert response.choices[0].message.content
-    assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = wrapped_litellm.completion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
+    response = litellm.completion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
     end = time.time()
 
     assert response
     assert response.choices[0].message.content
     assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
 
-    # Verify spans were created with wrapped client
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -64,17 +56,14 @@ def test_litellm_completion_metrics(memory_logger) -> None:
 async def test_litellm_acompletion_metrics(memory_logger):
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = await wrapped_litellm.acompletion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
+    response = await litellm.acompletion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
     end = time.time()
 
     assert response
     assert response.choices[0].message.content
     assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
 
-    # Verify spans were created with wrapped client
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -90,38 +79,8 @@ async def test_litellm_acompletion_metrics(memory_logger):
 def test_litellm_completion_streaming_sync(memory_logger):
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    stream = litellm.completion(
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": TEST_PROMPT}],
-        stream=True,
-    )
-
-    chunks = []
-    for chunk in stream:
-        chunks.append(chunk)
-
-    # Verify streaming works
-    assert chunks
-    assert len(chunks) > 1
-
-    # Concatenate content from chunks to verify
-    content = ""
-    for chunk in chunks:
-        if chunk.choices and chunk.choices[0].delta.content:
-            content += chunk.choices[0].delta.content
-
-    # Make sure we got a valid answer in the content
-    assert "24" in content or "twenty-four" in content.lower()
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    stream = wrapped_litellm.completion(
+    stream = litellm.completion(
         model=TEST_MODEL,
         messages=[{"role": "user", "content": TEST_PROMPT}],
         stream=True,
@@ -145,7 +104,7 @@ def test_litellm_completion_streaming_sync(memory_logger):
     # Make sure we got a valid answer in the content
     assert "24" in content or "twenty-four" in content.lower()
 
-    # Verify spans were created with wrapped client
+    # Verify spans were created
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -163,10 +122,8 @@ def test_litellm_completion_streaming_sync(memory_logger):
 async def test_litellm_acompletion_streaming_async(memory_logger):
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    stream = await wrapped_litellm.acompletion(
+    stream = await litellm.acompletion(
         model=TEST_MODEL,
         messages=[{"role": "user", "content": TEST_PROMPT}],
         stream=True,
@@ -181,7 +138,7 @@ async def test_litellm_acompletion_streaming_async(memory_logger):
     assert chunks
     assert len(chunks) > 1
 
-    # Verify spans were created with wrapped client
+    # Verify spans were created
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -197,25 +154,8 @@ async def test_litellm_acompletion_streaming_async(memory_logger):
 def test_litellm_responses_metrics(memory_logger):
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    response = litellm.responses(
-        model=TEST_MODEL,
-        input=TEST_PROMPT,
-        instructions="Just the number please",
-    )
-    assert response
-    assert response.output
-    assert len(response.output) > 0
-    unwrapped_content = response.output[0].content[0].text
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = wrapped_litellm.responses(
+    response = litellm.responses(
         model=TEST_MODEL,
         input=TEST_PROMPT,
         instructions="Just the number please",
@@ -225,13 +165,10 @@ def test_litellm_responses_metrics(memory_logger):
     assert response
     assert response.output
     assert len(response.output) > 0
-    wrapped_content = response.output[0].content[0].text
+    content = response.output[0].content[0].text
+    assert "24" in content or "twenty-four" in content.lower()
 
-    # Both should contain a numeric response for the math question
-    assert "24" in unwrapped_content or "twenty-four" in unwrapped_content.lower()
-    assert "24" in wrapped_content or "twenty-four" in wrapped_content.lower()
-
-    # Verify spans were created with wrapped client
+    # Verify spans were created
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -248,10 +185,8 @@ def test_litellm_responses_metrics(memory_logger):
 async def test_litellm_aresponses_metrics(memory_logger):
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = await wrapped_litellm.aresponses(
+    response = await litellm.aresponses(
         model=TEST_MODEL,
         input=TEST_PROMPT,
         instructions="Just the number please",
@@ -261,11 +196,10 @@ async def test_litellm_aresponses_metrics(memory_logger):
     assert response
     assert response.output
     assert len(response.output) > 0
-    wrapped_content = response.output[0].content[0].text
+    content = response.output[0].content[0].text
+    assert "24" in content or "twenty-four" in content.lower()
 
-    assert "24" in wrapped_content or "twenty-four" in wrapped_content.lower()
-
-    # Verify spans were created with wrapped client
+    # Verify spans were created
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -281,27 +215,15 @@ async def test_litellm_aresponses_metrics(memory_logger):
 def test_litellm_embeddings(memory_logger):
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    response = litellm.embedding(model="text-embedding-ada-002", input="This is a test")
-    assert response
-    assert response.data
-    assert response.data[0]["embedding"]
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = wrapped_litellm.embedding(model="text-embedding-ada-002", input="This is a test")
+    response = litellm.embedding(model="text-embedding-ada-002", input="This is a test")
     end = time.time()
 
     assert response
     assert response.data
     assert response.data[0]["embedding"]
 
-    # Verify spans were created with wrapped client
+    # Verify spans were created
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
@@ -315,30 +237,18 @@ def test_litellm_embeddings(memory_logger):
 def test_litellm_moderation(memory_logger):
     assert not memory_logger.pop()
 
-    # Test unwrapped client first
-    response = litellm.moderation(model="text-moderation-latest", input="This is a test message")
-    assert response
-    assert response.results
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()
-
-    # Now test with wrapped client
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = wrapped_litellm.moderation(model="text-moderation-latest", input="This is a test message")
+    response = litellm.moderation(model="text-moderation-latest", input="This is a test message")
     end = time.time()
 
     assert response
     assert response.results
 
-    # Verify spans were created with wrapped client
+    # Verify spans were created
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
     assert span
-    metrics = span["metrics"]
     assert span["metadata"]["model"] == "text-moderation-latest"
     assert span["metadata"]["provider"] == "litellm"
     assert "This is a test message" in str(span["input"])
@@ -348,9 +258,7 @@ def test_litellm_moderation(memory_logger):
 def test_litellm_completion_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
-    response = wrapped_litellm.completion(
+    response = litellm.completion(
         model=TEST_MODEL,
         messages=[{"role": "system", "content": TEST_SYSTEM_PROMPT}, {"role": "user", "content": TEST_PROMPT}],
     )
@@ -375,9 +283,7 @@ def test_litellm_completion_with_system_prompt(memory_logger):
 async def test_litellm_acompletion_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
-    response = await wrapped_litellm.acompletion(
+    response = await litellm.acompletion(
         model=TEST_MODEL,
         messages=[{"role": "system", "content": TEST_SYSTEM_PROMPT}, {"role": "user", "content": TEST_PROMPT}],
     )
@@ -401,13 +307,11 @@ async def test_litellm_acompletion_with_system_prompt(memory_logger):
 def test_litellm_completion_error(memory_logger):
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     # Use a non-existent model to force an error
     fake_model = "non-existent-model"
 
     try:
-        wrapped_litellm.completion(model=fake_model, messages=[{"role": "user", "content": TEST_PROMPT}])
+        litellm.completion(model=fake_model, messages=[{"role": "user", "content": TEST_PROMPT}])
         pytest.fail("Expected an exception but none was raised")
     except Exception:
         # We expect an error here
@@ -426,13 +330,11 @@ def test_litellm_completion_error(memory_logger):
 async def test_litellm_acompletion_error(memory_logger):
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     # Use a non-existent model to force an error
     fake_model = "non-existent-model"
 
     try:
-        await wrapped_litellm.acompletion(model=fake_model, messages=[{"role": "user", "content": TEST_PROMPT}])
+        await litellm.acompletion(model=fake_model, messages=[{"role": "user", "content": TEST_PROMPT}])
         pytest.fail("Expected an exception but none was raised")
     except Exception:
         # We expect an error here
@@ -449,18 +351,15 @@ async def test_litellm_acompletion_error(memory_logger):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_litellm_async_parallel_requests(memory_logger):
-    """Test multiple parallel async requests with the wrapped client."""
+    """Test multiple parallel async requests."""
     assert not memory_logger.pop()
-
-    wrapped_litellm = wrap_litellm(litellm)
 
     # Create multiple prompts
     prompts = [f"What is {i} + {i}?" for i in range(3, 6)]
 
     # Run requests in parallel
     tasks = [
-        wrapped_litellm.acompletion(model=TEST_MODEL, messages=[{"role": "user", "content": prompt}])
-        for prompt in prompts
+        litellm.acompletion(model=TEST_MODEL, messages=[{"role": "user", "content": prompt}]) for prompt in prompts
     ]
 
     # Wait for all to complete
@@ -504,10 +403,8 @@ def test_litellm_tool_calls(memory_logger):
         },
     ]
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = wrapped_litellm.completion(
+    response = litellm.completion(
         model=TEST_MODEL,
         messages=[{"role": "user", "content": "What's the weather in New York?"}],
         tools=tools,
@@ -546,10 +443,8 @@ def test_litellm_responses_streaming_sync(memory_logger):
     """Test the responses API with streaming."""
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    stream = wrapped_litellm.responses(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
+    stream = litellm.responses(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
 
     chunks = []
     for chunk in stream:
@@ -568,7 +463,7 @@ def test_litellm_responses_streaming_sync(memory_logger):
     span = spans[0]
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["stream"] == True
+    assert span["metadata"]["stream"] is True
     assert "What's 12 + 12?" in str(span["input"])
     assert "24" in str(span["output"])
 
@@ -579,10 +474,8 @@ async def test_litellm_aresponses_streaming_async(memory_logger):
     """Test the async responses API with streaming."""
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    stream = await wrapped_litellm.aresponses(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
+    stream = await litellm.aresponses(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
 
     chunks = []
     async for chunk in stream:
@@ -598,7 +491,7 @@ async def test_litellm_aresponses_streaming_async(memory_logger):
     span = spans[0]
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["stream"] == True
+    assert span["metadata"]["stream"] is True
     assert "What's 12 + 12?" in str(span["input"])
 
 
@@ -608,10 +501,8 @@ async def test_litellm_async_streaming_with_break(memory_logger):
     """Test breaking out of the async streaming loop early."""
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    stream = await wrapped_litellm.acompletion(
+    stream = await litellm.acompletion(
         model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}], stream=True
     )
 
@@ -665,7 +556,7 @@ def test_litellm_parse_metrics_excludes_booleans():
     When OpenRouter returns usage data with `is_byok: true`, the metrics parser
     should filter it out rather than passing it through to the API.
     """
-    from braintrust.wrappers.litellm import _parse_metrics_from_usage
+    from braintrust.integrations.litellm.tracing import _parse_metrics_from_usage
 
     usage = {
         "prompt_tokens": 10,
@@ -695,10 +586,8 @@ def test_litellm_openrouter_no_booleans_in_metrics(memory_logger):
 
     assert not memory_logger.pop()
 
-    wrapped_litellm = wrap_litellm(litellm)
-
     start = time.time()
-    response = wrapped_litellm.completion(
+    response = litellm.completion(
         model="openrouter/openai/gpt-4o-mini",
         messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
         max_tokens=10,

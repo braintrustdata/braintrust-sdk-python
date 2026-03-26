@@ -50,7 +50,7 @@ class BraintrustDSpyCallback(BaseCallback):
         and disable DSPy's disk cache:
 
         ```python
-        from braintrust.wrappers.litellm import patch_litellm
+        from braintrust.integrations.litellm import patch_litellm
         patch_litellm()
 
         import dspy
