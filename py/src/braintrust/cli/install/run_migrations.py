@@ -3,6 +3,7 @@ import logging
 # pylint: disable=no-name-in-module
 from ...aws import LazyClient, cloudformation
 
+
 _logger = logging.getLogger("braintrust.install.logs")
 
 

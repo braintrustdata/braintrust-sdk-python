@@ -3,6 +3,7 @@
 from braintrust import init_logger, traced, wrap_openai
 from openai import OpenAI
 
+
 logger = init_logger(project="example-openai-project")
 client = wrap_openai(OpenAI())
 

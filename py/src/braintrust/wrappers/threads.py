@@ -7,6 +7,7 @@ from typing import Any, TypeVar
 
 from wrapt import wrap_function_wrapper  # pyright: ignore[reportUnknownVariableType, reportMissingTypeStubs]
 
+
 logger = logging.getLogger(__name__)
 
 __all__ = ["setup_threads", "patch_thread", "patch_thread_pool_executor"]

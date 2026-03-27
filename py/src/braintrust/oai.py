@@ -2,6 +2,7 @@ import abc
 import base64
 import re
 import time
+import warnings
 from collections.abc import Callable
 from typing import Any
 
@@ -11,13 +12,20 @@ from .logger import Attachment, Span, start_span
 from .span_types import SpanTypeAttribute
 from .util import is_numeric, merge_dicts
 
+
 X_LEGACY_CACHED_HEADER = "x-cached"
 X_CACHED_HEADER = "x-bt-cached"
 
 
 class NamedWrapper:
     def __init__(self, wrapped: Any):
+        # Keep the legacy mangled attribute for existing wrapped-client checks
+        # that introspect `_NamedWrapper__wrapped` directly.
         self.__wrapped = wrapped
+
+    @property
+    def _wrapped(self) -> Any:
+        return self.__wrapped
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.__wrapped, name)
@@ -31,8 +39,8 @@ class AsyncResponseWrapper:
 
     async def __aenter__(self):
         if hasattr(self._response, "__aenter__"):
-            return await self._response.__aenter__()
-        return self._response
+            await self._response.__aenter__()
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if hasattr(self._response, "__aexit__"):
@@ -186,7 +194,7 @@ class ChatCompletionWrapper:
                         span.end()
 
                 should_end = False
-                return gen()
+                return _TracedStream(raw_response, gen())
             else:
                 log_response = _try_to_dict(raw_response)
                 metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
@@ -242,7 +250,7 @@ class ChatCompletionWrapper:
 
                 should_end = False
                 streamer = gen()
-                return AsyncResponseWrapper(streamer)
+                return _AsyncTracedStream(raw_response, streamer)
             else:
                 log_response = _try_to_dict(raw_response)
                 metrics = _parse_metrics_from_usage(log_response.get("usage"))
@@ -349,19 +357,86 @@ class ChatCompletionWrapper:
         }
 
 
+class _TracedStream(NamedWrapper):
+    """Traced sync stream. Iterates via the traced generator while delegating
+    SDK-specific attributes (e.g. .close(), .response) to the original stream."""
+
+    def __init__(self, original_stream: Any, traced_generator: Any) -> None:
+        self._traced_generator = traced_generator
+        super().__init__(original_stream)
+
+    def __iter__(self) -> Any:
+        return self._traced_generator
+
+    def __next__(self) -> Any:
+        return next(self._traced_generator)
+
+    def __enter__(self) -> Any:
+        if hasattr(self._wrapped, "__enter__"):
+            self._wrapped.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> Any:
+        if hasattr(self._wrapped, "__exit__"):
+            return self._wrapped.__exit__(exc_type, exc_val, exc_tb)
+        return None
+
+
+class _AsyncTracedStream(NamedWrapper):
+    """Traced async stream. Iterates via the traced generator while delegating
+    SDK-specific attributes (e.g. .close(), .response) to the original stream."""
+
+    def __init__(self, original_stream: Any, traced_generator: Any) -> None:
+        self._traced_generator = traced_generator
+        super().__init__(original_stream)
+
+    def __aiter__(self) -> Any:
+        return self._traced_generator
+
+    async def __anext__(self) -> Any:
+        return await self._traced_generator.__anext__()
+
+    async def __aenter__(self) -> Any:
+        if hasattr(self._wrapped, "__aenter__"):
+            await self._wrapped.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> Any:
+        if hasattr(self._wrapped, "__aexit__"):
+            return await self._wrapped.__aexit__(exc_type, exc_val, exc_tb)
+        return None
+
+
+class _RawResponseWithTracedStream(NamedWrapper):
+    """Proxy for LegacyAPIResponse that replaces parse() with a traced stream,
+    so that with_raw_response + stream=True preserves both headers and tracing."""
+
+    def __init__(self, raw_response: Any, traced_stream: Any) -> None:
+        self._traced_stream = traced_stream
+        super().__init__(raw_response)
+
+    def parse(self, *args: Any, **kwargs: Any) -> Any:
+        return self._traced_stream
+
+
 class ResponseWrapper:
-    def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None, name: str = "openai.responses.create"):
+    def __init__(
+        self,
+        create_fn: Callable[..., Any] | None,
+        acreate_fn: Callable[..., Any] | None,
+        name: str = "openai.responses.create",
+        return_raw: bool = False,
+    ):
         self.create_fn = create_fn
         self.acreate_fn = acreate_fn
         self.name = name
+        self.return_raw = return_raw
 
     def create(self, *args: Any, **kwargs: Any) -> Any:
         params = self._parse_params(kwargs)
         stream = kwargs.get("stream", False)
 
-        span = start_span(
-            **merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params)
-        )
+        span = start_span(**merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params))
         should_end = True
 
         try:
@@ -373,6 +448,7 @@ class ResponseWrapper:
             else:
                 raw_response = create_response
             if stream:
+
                 def gen():
                     try:
                         first = True
@@ -393,7 +469,9 @@ class ResponseWrapper:
                         span.end()
 
                 should_end = False
-                return gen()
+                if self.return_raw and hasattr(create_response, "parse"):
+                    return _RawResponseWithTracedStream(create_response, _TracedStream(raw_response, gen()))
+                return _TracedStream(raw_response, gen())
             else:
                 log_response = _try_to_dict(raw_response)
                 event_data = self._parse_event_from_result(log_response)
@@ -401,7 +479,7 @@ class ResponseWrapper:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
                 span.log(**event_data)
-                return raw_response
+                return create_response if (self.return_raw and hasattr(create_response, "parse")) else raw_response
         finally:
             if should_end:
                 span.end()
@@ -410,9 +488,7 @@ class ResponseWrapper:
         params = self._parse_params(kwargs)
         stream = kwargs.get("stream", False)
 
-        span = start_span(
-            **merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params)
-        )
+        span = start_span(**merge_dicts(dict(name=self.name, span_attributes={"type": SpanTypeAttribute.LLM}), params))
         should_end = True
 
         try:
@@ -424,6 +500,7 @@ class ResponseWrapper:
             else:
                 raw_response = create_response
             if stream:
+
                 async def gen():
                     try:
                         first = True
@@ -445,7 +522,9 @@ class ResponseWrapper:
 
                 should_end = False
                 streamer = gen()
-                return AsyncResponseWrapper(streamer)
+                if self.return_raw and hasattr(create_response, "parse"):
+                    return _RawResponseWithTracedStream(create_response, _AsyncTracedStream(raw_response, streamer))
+                return _AsyncTracedStream(raw_response, streamer)
             else:
                 log_response = _try_to_dict(raw_response)
                 event_data = self._parse_event_from_result(log_response)
@@ -453,7 +532,7 @@ class ResponseWrapper:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
                 span.log(**event_data)
-                return raw_response
+                return create_response if (self.return_raw and hasattr(create_response, "parse")) else raw_response
         finally:
             if should_end:
                 span.end()
@@ -506,7 +585,12 @@ class ResponseWrapper:
 
         for result in all_results:
             usage = getattr(result, "usage", None)
-            if not usage and hasattr(result, "type") and result.type == "response.completed" and hasattr(result, "response"):
+            if (
+                not usage
+                and hasattr(result, "type")
+                and result.type == "response.completed"
+                and hasattr(result, "response")
+            ):
                 # Handle summaries from completed response if present
                 if hasattr(result.response, "output") and result.response.output:
                     for output_item in result.response.output:
@@ -787,29 +871,43 @@ class ChatV1Wrapper(NamedWrapper):
 
 
 class ResponsesV1Wrapper(NamedWrapper):
-    def __init__(self, responses: Any):
+    def __init__(self, responses: Any, return_raw: bool = False) -> None:
         self.__responses = responses
+        self.__return_raw = return_raw
+        if not return_raw:
+            self.with_raw_response = ResponsesV1Wrapper(responses, return_raw=True)
         super().__init__(responses)
 
     def create(self, *args: Any, **kwargs: Any) -> Any:
-        return ResponseWrapper(self.__responses.with_raw_response.create, None).create(*args, **kwargs)
+        return ResponseWrapper(self.__responses.with_raw_response.create, None, return_raw=self.__return_raw).create(
+            *args, **kwargs
+        )
 
     def parse(self, *args: Any, **kwargs: Any) -> Any:
-        return ResponseWrapper(self.__responses.with_raw_response.parse, None, "openai.responses.parse").create(*args, **kwargs)
+        return ResponseWrapper(
+            self.__responses.with_raw_response.parse, None, "openai.responses.parse", return_raw=self.__return_raw
+        ).create(*args, **kwargs)
 
 
 class AsyncResponsesV1Wrapper(NamedWrapper):
-    def __init__(self, responses: Any):
+    def __init__(self, responses: Any, return_raw: bool = False) -> None:
         self.__responses = responses
+        self.__return_raw = return_raw
+        if not return_raw:
+            self.with_raw_response = AsyncResponsesV1Wrapper(responses, return_raw=True)
         super().__init__(responses)
 
     async def create(self, *args: Any, **kwargs: Any) -> Any:
-        response = await ResponseWrapper(None, self.__responses.with_raw_response.create).acreate(*args, **kwargs)
-        return AsyncResponseWrapper(response)
+        response = await ResponseWrapper(
+            None, self.__responses.with_raw_response.create, return_raw=self.__return_raw
+        ).acreate(*args, **kwargs)
+        return response if self.__return_raw else AsyncResponseWrapper(response)
 
     async def parse(self, *args: Any, **kwargs: Any) -> Any:
-        response = await ResponseWrapper(None, self.__responses.with_raw_response.parse, "openai.responses.parse").acreate(*args, **kwargs)
-        return AsyncResponseWrapper(response)
+        response = await ResponseWrapper(
+            None, self.__responses.with_raw_response.parse, "openai.responses.parse", return_raw=self.__return_raw
+        ).acreate(*args, **kwargs)
+        return response if self.__return_raw else AsyncResponseWrapper(response)
 
 
 class BetaCompletionsV1Wrapper(NamedWrapper):
@@ -878,7 +976,7 @@ class OpenAIV1Wrapper(NamedWrapper):
 
 def wrap_openai(openai: Any):
     """
-    Wrap the openai module (pre v1) or OpenAI instance (post v1) to add tracing.
+    Wrap the openai module (pre v1) or OpenAI instance (v1.* or v2.*) to add tracing.
     If Braintrust is not configured, nothing will be traced. If this is not an
     `OpenAI` object, this function is a no-op.
 
@@ -938,7 +1036,6 @@ def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
     return metrics
 
 
-
 def prettify_params(params: dict[str, Any]) -> dict[str, Any]:
     # Filter out NOT_GIVEN parameters
     # https://linear.app/braintrustdata/issue/BRA-2467
@@ -953,9 +1050,14 @@ def _try_to_dict(obj: Any) -> dict[str, Any]:
     if isinstance(obj, dict):
         return obj
     # convert a pydantic object to a dict
+    # Suppress Pydantic serializer warnings from generic/discriminated-union models
+    # (e.g. OpenAI's ParsedResponse[T]).  See
+    # https://github.com/braintrustdata/braintrust-sdk-python/issues/60
     if hasattr(obj, "model_dump") and callable(obj.model_dump):
         try:
-            return obj.model_dump()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+                return obj.model_dump()
         except Exception:
             pass
     # deprecated pydantic method, try model_dump first.

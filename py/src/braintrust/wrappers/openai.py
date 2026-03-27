@@ -217,7 +217,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             "output": span.span_data.result,
             "metadata": {
                 "server": span.span_data.server,
-            }
+            },
         }
 
     def _transcription_log_data(self, span: tracing.Span[tracing.TranscriptionSpanData]) -> dict[str, Any]:
@@ -227,7 +227,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             "metadata": {
                 "model": span.span_data.model,
                 "model_config": span.span_data.model_config,
-            }
+            },
         }
 
     def _speech_log_data(self, span: tracing.Span[tracing.SpeechSpanData]) -> dict[str, Any]:
@@ -237,7 +237,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             "metadata": {
                 "model": span.span_data.model,
                 "model_config": span.span_data.model_config,
-            }
+            },
         }
 
     def _speech_group_log_data(self, span: tracing.Span[tracing.SpeechGroupSpanData]) -> dict[str, Any]:

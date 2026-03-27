@@ -13,6 +13,7 @@ from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic_ai import Agent, ModelSettings
 
+
 PROJECT_NAME = "test-pydantic-ai-logfire"
 MODEL = "openai:gpt-4o-mini"
 TEST_PROMPT = "What is 2+2? Answer with just the number."

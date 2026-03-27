@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import logging
 import sys
 import time
@@ -9,6 +10,7 @@ from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.logger import NOOP_SPAN, Attachment, current_span, init_logger, start_span
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,16 @@ def setup_pydantic_ai(
         )
 
         wrap_model_classes()
+
+        # Patch StreamedResponseSync to propagate context to background threads
+        try:
+            if hasattr(direct_module, "StreamedResponseSync"):
+                wrap_function_wrapper(
+                    direct_module.StreamedResponseSync, "_start_producer", _create_start_producer_wrapper()
+                )
+                logger.debug("Pydantic AI StreamedResponseSync context propagation patching successful")
+        except Exception as e:
+            logger.warning(f"Failed to patch StreamedResponseSync context propagation: {e}")
 
         return True
     except ImportError:
@@ -115,6 +127,26 @@ def wrap_agent(Agent: Any) -> Any:
             return result
 
     wrap_function_wrapper(Agent, "run_sync", agent_run_sync_wrapper)
+
+    def agent_to_cli_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+        _ensure_model_wrapped(instance)
+        input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
+
+        with start_span(
+            name=f"agent_to_cli_sync [{instance.name}]"
+            if hasattr(instance, "name") and instance.name
+            else "agent_to_cli_sync",
+            type=SpanTypeAttribute.LLM,
+            input=input_data if input_data else None,
+            metadata=metadata,
+        ) as agent_span:
+            start_time = time.time()
+            result = wrapped(*args, **kwargs)
+            end_time = time.time()
+            agent_span.log(metrics={"start": start_time, "end": end_time, "duration": end_time - start_time})
+            return result
+
+    wrap_function_wrapper(Agent, "to_cli_sync", agent_to_cli_sync_wrapper)
 
     def agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         _ensure_model_wrapped(instance)
@@ -1228,6 +1260,30 @@ def _extract_response_metrics(
                 metrics["completion_reasoning_tokens"] = float(usage.details.reasoning_tokens)
 
     return metrics if metrics else None
+
+
+def _create_start_producer_wrapper():
+    """Create wrapper for StreamedResponseSync._start_producer to propagate context.
+
+    StreamedResponseSync._start_producer creates a background thread that doesn't
+    inherit contextvars. This wrapper ensures Braintrust context flows to that thread
+    so nested instrumentation (like wrap_openai) creates properly parented spans.
+    """
+
+    def wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> None:
+        ctx = contextvars.copy_context()
+        original_async_producer = instance._async_producer
+
+        def _context_wrapped_async_producer() -> None:
+            ctx.run(original_async_producer)
+
+        instance._async_producer = _context_wrapped_async_producer
+        try:
+            return wrapped(*args, **kwargs)
+        finally:
+            instance._async_producer = original_async_producer
+
+    return wrapper
 
 
 def _is_patched(obj: Any) -> bool:

@@ -1,0 +1,210 @@
+{
+  "cassette_name": "test_auto_claude_agent_sdk",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_352812de",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_352812de",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Say hi",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.71",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [],
+        "model": "claude-3-5-haiku-20241022",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "715aa7ea-4a5b-4189-ba6d-289eb5cbc314",
+        "skills": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "keybindings-help",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "ToolSearch"
+        ],
+        "type": "system",
+        "uuid": "04580fb4-5ab0-4597-a527-a77f1235c768"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "error": "invalid_request",
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "There's an issue with the selected model (claude-3-5-haiku-20241022). It may not exist or you may not have access to it. Run --model to pick a different model.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "35b7f708-5311-4ecc-b95f-ec16a0fa5cc0",
+          "model": "<synthetic>",
+          "role": "assistant",
+          "stop_reason": "stop_sequence",
+          "stop_sequence": "",
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "inference_geo": null,
+            "input_tokens": 0,
+            "iterations": null,
+            "output_tokens": 0,
+            "server_tool_use": {
+              "web_fetch_requests": 0,
+              "web_search_requests": 0
+            },
+            "service_tier": null,
+            "speed": null
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "715aa7ea-4a5b-4189-ba6d-289eb5cbc314",
+        "type": "assistant",
+        "uuid": "1b1fdd63-27cd-40b9-999e-05773744c670"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 0,
+        "duration_ms": 424,
+        "fast_mode_state": "off",
+        "is_error": true,
+        "modelUsage": {},
+        "num_turns": 1,
+        "permission_denials": [],
+        "result": "There's an issue with the selected model (claude-3-5-haiku-20241022). It may not exist or you may not have access to it. Run --model to pick a different model.",
+        "session_id": "715aa7ea-4a5b-4189-ba6d-289eb5cbc314",
+        "stop_reason": "stop_sequence",
+        "subtype": "success",
+        "total_cost_usd": 0,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "inference_geo": "",
+          "input_tokens": 0,
+          "iterations": [],
+          "output_tokens": 0,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "c4f6b54e-7792-4bf6-80b6-47133b56d787"
+      }
+    }
+  ],
+  "sdk_version": "0.1.48"
+}

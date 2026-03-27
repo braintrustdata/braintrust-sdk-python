@@ -12,16 +12,35 @@ works with and without different dependencies. A few commands to check out:
 
 import glob
 import os
+import pathlib
+import re
 import sys
 import tempfile
 
 import nox
+
+
+def _pinned_python_version():
+    """Return the (major, minor) Python version pinned in ../.tool-versions, or None."""
+    tool_versions = pathlib.Path(__file__).parent.parent / ".tool-versions"
+    try:
+        for line in tool_versions.read_text().splitlines():
+            m = re.match(r"^python\s+(\d+)\.(\d+)", line)
+            if m:
+                return (int(m.group(1)), int(m.group(2)))
+    except OSError:
+        pass
+    return None
+
+
+_PINNED_PYTHON = _pinned_python_version()
 
 # much faster than pip
 nox.options.default_venv_backend = "uv"
 
 SRC_DIR = "braintrust"
 WRAPPER_DIR = "braintrust/wrappers"
+INTEGRATION_DIR = "braintrust/integrations"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
 
@@ -29,6 +48,11 @@ DEVSERVER_DIR = "braintrust/devserver"
 SILENT_INSTALLS = True
 LATEST = "latest"
 ERROR_CODES = tuple(range(1, 256))
+INTERNAL_TEST_FLAGS = {"--wheel", "--disable-vcr"}
+GENERATED_LINT_EXCLUDES = {
+    "src/braintrust/_generated_types.py",
+    "src/braintrust/generated_types.py",
+}
 
 
 # The minimal set of dependencies we need to run tests.
@@ -58,10 +82,13 @@ VENDOR_PACKAGES = (
 ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
 OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
 # litellm latest requires Python >= 3.10
-LITELLM_VERSIONS = (LATEST, "1.74.0")
+# Pin litellm because 1.82.7-1.82.8 are compromised: https://github.com/BerriAI/litellm/issues/24512
+LITELLM_VERSIONS = ("1.82.0", "1.74.0")
 # CLI bundling started in 0.1.10 - older versions require external Claude Code installation
 CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
-AGNO_VERSIONS = (LATEST, "2.1.0")
+# Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
+# to internals we leverage for instrumentation.
+AGNO_VERSIONS = (LATEST, "2.4.0", "2.1.0")
 # pydantic_ai 1.x requires Python >= 3.10
 # Two test suites with different version requirements:
 # 1. wrap_openai approach: works with older versions (0.1.9+)
@@ -75,6 +102,7 @@ DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
+PYTEST_VERSIONS = (LATEST, "8.4.2")
 
 
 @nox.session()
@@ -124,9 +152,11 @@ def test_pydantic_ai_logfire(session):
 @nox.parametrize("version", CLAUDE_AGENT_SDK_VERSIONS, ids=CLAUDE_AGENT_SDK_VERSIONS)
 def test_claude_agent_sdk(session, version):
     # claude_agent_sdk requires Python >= 3.10
+    # These tests use subprocess-transport cassettes, so they can replay in CI
+    # while still exercising the real Claude Agent SDK control protocol.
     _install_test_deps(session)
     _install(session, "claude_agent_sdk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/claude_agent_sdk/test_wrapper.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py")
     _run_core_tests(session)
 
 
@@ -136,7 +166,9 @@ def test_agno(session, version):
     _install_test_deps(session)
     _install(session, "agno", version)
     _install(session, "openai")  # Required for agno.models.openai
-    _run_tests(session, f"{WRAPPER_DIR}/test_agno.py")
+    _install(session, "fastapi")  # Required for agno.workflow
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py")
     _run_core_tests(session)
 
 
@@ -146,6 +178,7 @@ def test_anthropic(session, version):
     _install_test_deps(session)
     _install(session, "anthropic", version)
     _run_tests(session, f"{WRAPPER_DIR}/test_anthropic.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py")
     _run_core_tests(session)
 
 
@@ -154,7 +187,7 @@ def test_anthropic(session, version):
 def test_google_genai(session, version):
     _install_test_deps(session)
     _install(session, "google-genai", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_google_genai.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/google_genai/test_google_genai.py")
     _run_core_tests(session)
 
 
@@ -164,8 +197,8 @@ def test_google_adk(session, version):
     """Test Google ADK integration."""
     _install_test_deps(session)
     _install(session, "google-adk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk.py")
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk_mcp_tool.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk_mcp_tool.py")
     _run_core_tests(session)
 
 
@@ -178,6 +211,16 @@ def test_openai(session, version):
     _install(session, "openai-agents")
     _run_tests(session, f"{WRAPPER_DIR}/test_openai.py")
     _run_core_tests(session)
+
+
+@nox.session()
+def test_openai_http2_streaming(session):
+    _install_test_deps(session)
+    _install(session, "openai")
+    # h2 is isolated to this session because it's only needed to force the
+    # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
+    session.install("h2")
+    _run_tests(session, f"{WRAPPER_DIR}/test_openai_http2.py")
 
 
 @nox.session()
@@ -212,7 +255,7 @@ def test_dspy(session, version):
         session.skip("dspy latest requires Python >= 3.10 (litellm dependency)")
     _install_test_deps(session)
     _install(session, "dspy", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_dspy.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py")
 
 
 @nox.session()
@@ -243,6 +286,14 @@ def test_cli(session):
     session.install(".[cli]")
     session.install("httpx")  # Required for starlette.testclient
     _run_tests(session, "braintrust/devserver/test_server_integration.py")
+
+
+@nox.session()
+@nox.parametrize("version", PYTEST_VERSIONS, ids=PYTEST_VERSIONS)
+def test_pytest_plugin(session, version):
+    _install_test_deps(session)
+    _install(session, "pytest", version)
+    _run_tests(session, f"{WRAPPER_DIR}/pytest_plugin/test_plugin.py")
 
 
 @nox.session()
@@ -277,9 +328,6 @@ def test_otel_not_installed(session):
 @nox.session()
 def pylint(session):
     # pylint needs everything so we don't trigger missing import errors
-    # Skip on Python < 3.10 because some deps (like temporalio 1.19+) require 3.10+
-    if sys.version_info < (3, 10):
-        session.skip("pylint requires Python >= 3.10 for full dependency support")
     session.install(".[all]")
     session.install("-r", "requirements-dev.txt")
     session.install(*VENDOR_PACKAGES)
@@ -292,15 +340,21 @@ def pylint(session):
     session.install("langsmith")
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
-    files = result.strip().splitlines()
+    files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
     if not files:
         return
+    # scripts/ may use APIs only available in the latest pinned Python version
+    # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
+    if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
+        files = [f for f in files if not f.startswith("scripts/")]
     session.run("pylint", "--errors-only", *files)
 
 
 @nox.session()
 def test_latest_wrappers_novcr(session):
     """Run the latest wrapper tests without vcrpy."""
+    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
+        session.skip("Skipping novcr tests in CI (no real API keys available)")
     # every test run we hit openai, anthropic,  at least once so we balance CI speed (with vcrpy)
     # with testing reality.
     args = session.posargs.copy()
@@ -359,7 +413,16 @@ def _get_braintrust_wheel():
 
 def _run_core_tests(session):
     """Run all tests which don't require optional dependencies."""
-    _run_tests(session, SRC_DIR, ignore_paths=[WRAPPER_DIR, CONTRIB_DIR, DEVSERVER_DIR])
+    _run_tests(
+        session,
+        SRC_DIR,
+        ignore_paths=[
+            WRAPPER_DIR,
+            INTEGRATION_DIR,
+            CONTRIB_DIR,
+            DEVSERVER_DIR,
+        ],
+    )
 
 
 def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
@@ -367,6 +430,7 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
     env = env.copy() if env else {}
     wheel_flag = "--wheel" in session.posargs
     common_args = ["--disable-vcr"] if "--disable-vcr" in session.posargs else []
+    pytest_posargs = [arg for arg in session.posargs if arg not in INTERNAL_TEST_FLAGS]
 
     # Support both ignore_path (for backward compatibility) and ignore_paths
     paths_to_ignore = []
@@ -379,11 +443,16 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
         # Run the tests in the src directory
         test_args = [
             "pytest",
+            # Disable the braintrust pytest plugin (registered via pytest11 entry
+            # point) to avoid ImportPathMismatchError when the installed package
+            # and the source tree both contain braintrust/conftest.py.
+            "-p",
+            "no:braintrust",
             f"src/{test_path}",
         ]
         for path in paths_to_ignore:
             test_args.append(f"--ignore=src/{path}")
-        session.run(*test_args, *common_args, env=env)
+        session.run(*test_args, *common_args, *pytest_posargs, env=env)
         return
 
     # Running the tests from the wheel involves a bit of gymnastics to ensure we don't import
@@ -406,7 +475,7 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
         # It proved very helpful because it's very easy
         # to accidentally import local modules from the source directory.
         env["BRAINTRUST_TESTING_WHEEL"] = "1"
-        session.run(pytest_path, abs_test_path, *ignore_args, *common_args, env=env)
+        session.run(pytest_path, abs_test_path, *ignore_args, *common_args, *pytest_posargs, env=env)
 
     # And a final note ... if it's not clear from above, we include test files in our wheel, which
     # is perhaps not ideal?

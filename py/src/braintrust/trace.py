@@ -10,6 +10,7 @@ from typing import Any, Awaitable, Callable, Optional, Protocol, TypedDict
 
 from braintrust.functions.invoke import invoke
 from braintrust.logger import BraintrustState, ObjectFetcher
+from braintrust.types import Metadata
 
 
 class SpanData:
@@ -19,7 +20,7 @@ class SpanData:
         self,
         input: Optional[Any] = None,
         output: Optional[Any] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: Metadata | None = None,
         span_id: Optional[str] = None,
         span_parents: Optional[list[str]] = None,
         span_attributes: Optional[dict[str, Any]] = None,
@@ -154,7 +155,9 @@ class CachedSpanFetcher:
         else:
             # Standard constructor with SpanFetcher
             if object_type is None or object_id is None or root_span_id is None or get_state is None:
-                raise ValueError("Must provide either fetch_fn or all of object_type, object_id, root_span_id, get_state")
+                raise ValueError(
+                    "Must provide either fetch_fn or all of object_type, object_id, root_span_id, get_state"
+                )
 
             async def _fetch_fn(span_type: Optional[list[str]]) -> list[SpanData]:
                 state = await get_state()
@@ -307,13 +310,15 @@ class LocalTrace(dict):
         state: BraintrustState,
     ):
         # Initialize dict with trace_ref for JSON serialization
-        super().__init__({
-            "trace_ref": {
-                "object_type": object_type,
-                "object_id": object_id,
-                "root_span_id": root_span_id,
+        super().__init__(
+            {
+                "trace_ref": {
+                    "object_type": object_type,
+                    "object_id": object_id,
+                    "root_span_id": root_span_id,
+                }
             }
-        })
+        )
 
         self._object_type = object_type
         self._object_id = object_id

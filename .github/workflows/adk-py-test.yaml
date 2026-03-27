@@ -4,50 +4,41 @@ on:
   workflow_call:
     inputs:
       python-version:
-        required: true
-        type: string
-      os:
-        required: true
+        required: false
         type: string
 
 jobs:
   test:
-    runs-on: ${{ inputs.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
-    defaults:
-      run:
-        working-directory: integrations/adk-py
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v3
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
         with:
-          enable-cache: true
-          cache-dependency-glob: |
-            integrations/adk-py/pyproject.toml
-            integrations/adk-py/uv.lock
+          cache: true
+          experimental: true
+          install_args: uv
 
-      - name: Install dependencies
+      - name: Install deprecated package compatibility dependencies
+        working-directory: integrations/adk-py
         run: |
-          uv python install ${{ inputs.python-version }}
-          uv sync
+          mise exec -- uv sync
 
-      - name: Lint with ruff
-        if: ${{ inputs.os == 'ubuntu-latest' }}
+      - name: Lint deprecated compatibility package
+        working-directory: integrations/adk-py
         run: |
-          uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
+          mise exec -- uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
 
-      - name: Run tests
+      - name: Run deprecated compatibility tests
+        working-directory: integrations/adk-py
         run: |
-          uv run pytest
+          mise exec -- uv run pytest src/tests/test_reexports.py
 
-      - name: Test import
+      - name: Test deprecated package import
+        working-directory: integrations/adk-py
         run: |
-          uv run python -c "import braintrust_adk; print('braintrust_adk imported successfully')"
-          uv run python -c "from braintrust_adk import setup_braintrust; print('setup_braintrust imported successfully')"
+          mise exec -- uv run python -c "import braintrust_adk; print('braintrust_adk imported successfully')"
+          mise exec -- uv run python -c "from braintrust_adk import setup_braintrust; print('setup_braintrust imported successfully')"

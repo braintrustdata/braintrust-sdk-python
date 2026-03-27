@@ -1,5 +1,4 @@
 from contextvars import ContextVar
-from typing import Optional
 
 from langchain_core.tracers.context import register_configure_hook
 

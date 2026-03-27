@@ -11,6 +11,7 @@ from braintrust.wrappers.google_genai import setup_genai
 from google.genai import types
 from google.genai.client import Client
 
+
 setup_genai(project_name="golden-py-genai")
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"

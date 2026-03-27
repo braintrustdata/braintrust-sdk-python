@@ -52,6 +52,7 @@ BRAINTRUST_API_KEY=<YOUR_BRAINTRUST_API_KEY> braintrust eval eval_hello.py
 # Check env var at import time for auto-instrumentation
 import os
 
+
 if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"):
     try:
         from .wrappers.threads import setup_threads
@@ -69,6 +70,9 @@ from .framework2 import *
 from .functions.invoke import *
 from .functions.stream import *
 from .generated_types import *
+from .integrations.anthropic import (
+    wrap_anthropic,  # noqa: F401 # type: ignore[reportUnusedImport]
+)
 from .logger import *
 from .logger import (
     _internal_get_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
@@ -78,12 +82,15 @@ from .logger import (
 from .oai import (
     wrap_openai,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
+from .sandbox import (
+    RegisteredSandboxFunction,  # noqa: F401 # type: ignore[reportUnusedImport]
+    RegisterSandboxResult,  # noqa: F401 # type: ignore[reportUnusedImport]
+    SandboxConfig,  # noqa: F401 # type: ignore[reportUnusedImport]
+    register_sandbox,  # noqa: F401 # type: ignore[reportUnusedImport]
+)
 from .util import (
     BT_IS_ASYNC_ATTRIBUTE,  # noqa: F401 # type: ignore[reportUnusedImport]
     MarkAsyncWrapper,  # noqa: F401 # type: ignore[reportUnusedImport]
-)
-from .wrappers.anthropic import (
-    wrap_anthropic,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
 from .wrappers.litellm import (
     wrap_litellm,  # noqa: F401 # type: ignore[reportUnusedImport]

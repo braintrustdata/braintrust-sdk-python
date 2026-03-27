@@ -21,6 +21,7 @@ from pydantic_ai.messages import (
 )
 from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModel, OpenAIResponsesModelSettings
 
+
 setup_pydantic_ai(project_name="golden-py-pydantic_ai")
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"

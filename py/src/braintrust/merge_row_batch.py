@@ -3,8 +3,10 @@ from typing import Any, Optional, TypeVar
 
 from .db_fields import IS_MERGE_FIELD
 
+
 T = TypeVar("T")
 from .util import merge_dicts
+
 
 _MergedRowKey = tuple[Optional[Any], ...]
 

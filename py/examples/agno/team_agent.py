@@ -1,5 +1,6 @@
 from braintrust.wrappers.agno import setup_agno
 
+
 # Set up Braintrust observability
 setup_agno(project_name="team-agent-project")
 
@@ -7,6 +8,7 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.team import Team
 from agno.tools.yfinance import YFinanceTools
+
 
 # Create specialized agents for the team
 research_agent = Agent(

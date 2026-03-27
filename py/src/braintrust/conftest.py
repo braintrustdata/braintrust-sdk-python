@@ -1,10 +1,12 @@
 import os
+from unittest.mock import MagicMock
 
 import pytest
+from braintrust.framework2 import ProjectIdCache
 
 
 def _patch_vcr_aiohttp_stubs():
-    """Patch VCR.py's aiohttp stubs to fix bugs with google-genai >= 1.64.0.
+    """Patch VCR.py's aiohttp stubs to fix bugs with google-genai >= 1.64.0 and litellm.
 
     Problems fixed:
     1. Infinite loop: VCR's MockClientResponse.content is a @property that creates
@@ -21,6 +23,12 @@ def _patch_vcr_aiohttp_stubs():
        stream, which then raises on subsequent reads. Fix: no-op set_exception on
        MockStream.
 
+    4. Body consumed during recording: VCR's record_response() calls
+       `await response.read()` which consumes the real response body. When
+       litellm's aiohttp transport then tries to stream the response, the body
+       is empty. Fix: after reading the body for recording, reset the response's
+       content stream so it can be read again by the caller.
+
     See: https://github.com/kevin1024/vcrpy/issues/927
     """
     try:
@@ -31,7 +39,10 @@ def _patch_vcr_aiohttp_stubs():
     if getattr(aiohttp_stubs.MockClientResponse, "_bt_patched", False):
         return
 
+    import asyncio
     import gzip
+
+    from aiohttp import ClientConnectionError, streams
 
     def _decompress_body(body):
         """Decompress gzip body if needed."""
@@ -63,8 +74,47 @@ def _patch_vcr_aiohttp_stubs():
     aiohttp_stubs.MockClientResponse.content = cached_content
     aiohttp_stubs.MockClientResponse._bt_patched = True
 
+    # Patch record_response to not consume the response body. VCR's original
+    # implementation calls `await response.read()` which exhausts the body,
+    # making it unavailable for the actual caller (e.g. litellm's aiohttp
+    # transport). We read the body, record it, then reset the content stream
+    # so downstream consumers can still read it.
+    _original_record_response = aiohttp_stubs.record_response
+
+    async def _patched_record_response(cassette, vcr_request, response):
+        try:
+            body_bytes = await response.read()
+        except ClientConnectionError:
+            body_bytes = b""
+
+        vcr_response = {
+            "status": {"code": response.status, "message": response.reason},
+            "headers": aiohttp_stubs._serialize_headers(response.headers),
+            "body": {"string": body_bytes} if body_bytes else {},
+        }
+        cassette.append(vcr_request, vcr_response)
+
+        # Reset the response content stream so the caller can still read it.
+        # aiohttp's ClientResponse stores the payload in response.content which
+        # is a StreamReader. After read() exhausts it, we replace it with a new
+        # stream containing the same data.
+        new_stream = streams.StreamReader(response._protocol, 2**16, loop=asyncio.get_event_loop())
+        new_stream.feed_data(body_bytes)
+        new_stream.feed_eof()
+        response.content = new_stream
+
+    aiohttp_stubs.record_response = _patched_record_response
+
 
 _patch_vcr_aiohttp_stubs()
+
+
+@pytest.fixture
+def mock_project_ids():
+    mock = MagicMock(spec=ProjectIdCache)
+    mock.get.return_value = "project-123"
+    mock.get_by_name.return_value = "project-123"
+    return mock
 
 
 @pytest.fixture(autouse=True)
@@ -101,6 +151,7 @@ def override_app_url_for_tests():
 def setup_braintrust():
     os.environ.setdefault("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", "your_google_api_key_here"))
     os.environ.setdefault("OPENAI_API_KEY", "sk-test-dummy-api-key-for-vcr-tests")
+    os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test-dummy-api-key-for-vcr-tests")
 
 
 @pytest.fixture(autouse=True)

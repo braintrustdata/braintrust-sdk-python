@@ -3,6 +3,7 @@ import os
 import warnings
 from urllib.parse import urljoin
 
+
 INSTALL_ERR_MSG = (
     "OpenTelemetry packages are not installed. "
     "Install optional OpenTelemetry dependencies with: pip install braintrust[otel]"
@@ -43,6 +44,18 @@ except ImportError:
 FILTER_PREFIXES = ("gen_ai.", "braintrust.", "llm.", "ai.", "traceloop.")
 
 
+def _forward_on_ending(processor, span) -> None:
+    """
+    Forward OpenTelemetry's optional _on_ending hook when available.
+
+    Newer OpenTelemetry SDK versions call _on_ending before on_end. Older SDK
+    versions may not implement the hook on wrapped processors.
+    """
+    on_ending = getattr(processor, "_on_ending", None)
+    if callable(on_ending):
+        on_ending(span)
+
+
 class AISpanProcessor:
     """
     A span processor that filters spans to only export filtered telemetry.
@@ -78,6 +91,13 @@ class AISpanProcessor:
         """Apply filtering logic and conditionally forward span end events."""
         if self._should_keep_filtered_span(span):
             self._processor.on_end(span)
+
+    def _on_ending(self, span):
+        """
+        Forward pre-end hook for kept spans when the wrapped processor supports it.
+        """
+        if self._should_keep_filtered_span(span):
+            _forward_on_ending(self._processor, span)
 
     def shutdown(self):
         """Shutdown the inner processor."""
@@ -322,6 +342,10 @@ class BraintrustSpanProcessor:
         """Forward span end events to the inner processor."""
         self._processor.on_end(span)
 
+    def _on_ending(self, span):
+        """Forward pre-end hook when the wrapped processor supports it."""
+        _forward_on_ending(self._processor, span)
+
     def shutdown(self):
         """Shutdown the inner processor."""
         self._processor.shutdown()
@@ -379,9 +403,11 @@ def _get_braintrust_parent(object_type, object_id: str | None = None, compute_ar
 
     return None
 
+
 def is_root_span(span) -> bool:
     """Returns True if the span is a root span (no parent span)."""
     return getattr(span, "parent", None) is None
+
 
 def context_from_span_export(export_str: str):
     """

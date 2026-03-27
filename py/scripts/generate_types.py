@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 OPENAPI_SPEC_PATH = os.path.join(SCRIPT_DIR, "../../generated_types.json")
 INTERNAL_TYPES_OUTPUT_PATH = os.path.join(SCRIPT_DIR, "../src/braintrust/_generated_types.py")
@@ -61,7 +62,9 @@ def cleanup_internal_types():
     # optional-but-not-nullable TypedDicts.
     contents = re.sub(
         r"(\s[A-Za-z0-9_]+: NotRequired\[)(.+?)(\])\n",
-        lambda m: m.group(0) if m.group(2).rstrip().endswith("None") else f"{m.group(1)}{m.group(2)} | None{m.group(3)}\n",
+        lambda m: m.group(0)
+        if m.group(2).rstrip().endswith("None")
+        else f"{m.group(1)}{m.group(2)} | None{m.group(3)}\n",
         contents,
     )
 

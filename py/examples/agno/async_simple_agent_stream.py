@@ -2,6 +2,7 @@ import asyncio
 
 from braintrust.wrappers.agno import setup_agno
 
+
 setup_agno(project_name="simple-agent-project")
 
 from agno.agent import Agent

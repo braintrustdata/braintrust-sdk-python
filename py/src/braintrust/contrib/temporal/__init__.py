@@ -94,6 +94,7 @@ from temporalio.plugin import SimplePlugin
 from temporalio.worker import WorkflowRunner
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 
+
 # Braintrust dynamically chooses its context implementation at runtime based on
 # BRAINTRUST_OTEL_COMPAT environment variable. When first accessed, it reads
 # os.environ which is restricted in the sandbox. Therefore if the first use

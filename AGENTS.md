@@ -1,0 +1,167 @@
+# Braintrust SDK Agent Guide
+
+Guide for contributing to the Braintrust Python SDK repository.
+
+## Defaults
+
+- Use `mise` as the source of truth for tools and environment.
+- Prefer `py/` commands over root `make` targets when working on the SDK itself.
+- Keep changes narrow and run the smallest relevant test session first.
+- Do not rely on optional provider packages being installed unless the active nox session installs them.
+
+## Repo Map
+
+- `py/`: main Python package, tests, examples, nox sessions, release build
+- `py/benchmarks/`: pyperf performance benchmarks
+- `integrations/`: separate integration packages
+- `internal/golden/`: compatibility and golden projects
+- `docs/`: supporting docs
+
+Important code areas in `py/src/braintrust/`:
+
+- core SDK modules: top-level package files
+- wrappers/integrations: `wrappers/`
+- temporal: `contrib/temporal/`
+- CLI/devserver: `cli/`, `devserver/`
+- tests: colocated `test_*.py`
+
+## Setup
+
+Preferred repo bootstrap:
+
+```bash
+mise install
+make develop
+```
+
+Package-focused setup:
+
+```bash
+cd py
+make install-dev
+```
+
+Install optional provider dependencies only if needed:
+
+```bash
+cd py
+make install-optional
+```
+
+## Commands
+
+Preferred SDK workflow:
+
+```bash
+cd py
+make lint
+make test-core
+nox -l
+```
+
+For larger or cross-cutting changes, also run `make pylint` from `py/` before handing work off.
+
+Targeted wrapper/session runs:
+
+```bash
+cd py
+nox -s "test_openai(latest)"
+nox -s "test_openai(latest)" -- -k "test_chat_metrics"
+```
+
+Root `Makefile` exists as a convenience wrapper. The authoritative SDK workflow is in `py/Makefile` and `py/noxfile.py`.
+
+## Tests
+
+`py/noxfile.py` is the source of truth for compatibility coverage.
+
+Key facts:
+
+- `test_core` runs without optional vendor packages.
+- wrapper coverage is split across dedicated nox sessions by provider/version.
+- `pylint` installs the broad dependency surface before checking files.
+- `cd py && make pylint` runs only `pylint`; `cd py && make lint` runs pre-commit hooks first and then `pylint`.
+- `test-wheel` is a wheel sanity check and requires a built wheel first.
+
+When changing behavior, run the narrowest affected session first, then expand only if needed.
+
+## VCR
+
+VCR cassette directories:
+
+- `py/src/braintrust/cassettes/`
+- `py/src/braintrust/wrappers/cassettes/`
+- `py/src/braintrust/devserver/cassettes/`
+- `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/` for Claude Agent SDK subprocess transport recordings
+
+Behavior from `py/src/braintrust/conftest.py`:
+
+- local default: `record_mode="once"`
+- CI default: `record_mode="none"`
+- wheel-mode skips VCR-marked tests
+- test fixtures inject dummy API keys and reset global state
+
+Common commands:
+
+```bash
+cd py
+nox -s "test_openai(latest)"
+nox -s "test_openai(latest)" -- --disable-vcr
+nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
+```
+
+Claude Agent SDK does not use VCR because the SDK talks to the bundled `claude` subprocess over stdin/stdout. Those tests use a transport-level cassette helper instead.
+
+Common Claude Agent SDK cassette commands:
+
+```bash
+cd py
+nox -s "test_claude_agent_sdk(latest)"
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)"
+BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
+```
+
+Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If in doubt, ask the user.
+
+## Benchmarks
+
+Run `cd py && make bench` when touching hot-path code (serialization, deep-copy, span creation, logging). Not required for every change.
+
+Benchmarks use pyperf. All `bench_*.py` files in `py/benchmarks/benches/` are auto-discovered — no registration needed.
+
+Key commands:
+
+```bash
+cd py
+make bench                                   # run all benchmarks
+make bench BENCH_ARGS="--fast"               # quick sanity check
+make bench BENCH_ARGS="-o /tmp/before.json"  # save baseline before a change
+make bench BENCH_ARGS="-o /tmp/after.json"   # save after a change
+make bench-compare BENCH_BASE=/tmp/before.json BENCH_NEW=/tmp/after.json
+```
+
+New benchmark files go in `py/benchmarks/benches/bench_<name>.py`. Each must expose `main(runner: pyperf.Runner | None = None)`. Shared payload builders go in `py/benchmarks/fixtures.py`. See existing `bench_bt_json.py` for the pattern.
+
+## Build Notes
+
+Build from `py/`:
+
+```bash
+cd py
+make build
+```
+
+Important caveat:
+
+- `py/scripts/template-version.py` rewrites `py/src/braintrust/version.py` during build.
+- `py/Makefile` restores that file afterward with `git checkout`.
+
+Avoid editing `py/src/braintrust/version.py` while also running build commands.
+
+## Editing Guidance
+
+- Keep tests near the code they cover.
+- Reuse existing fixtures and cassette patterns.
+- If a change affects examples or integrations, update the nearest example or focused test.
+- For CLI/devserver changes, consider whether wheel-mode behavior also needs coverage.
+- Do **not** add `from __future__ import annotations` unless it is absolutely required (e.g., a genuine forward-reference that cannot be resolved any other way). This import changes annotation evaluation semantics at runtime and can silently break `get_type_hints()`, Pydantic models, and other runtime introspection. Prefer quoted string literals (`"MyClass"`) or `TYPE_CHECKING` guards for forward references instead.

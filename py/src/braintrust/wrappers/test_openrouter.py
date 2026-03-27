@@ -15,6 +15,7 @@ from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import assert_metrics_are_valid
 from openai import AsyncOpenAI, OpenAI
 
+
 PROJECT_NAME = "test-openrouter"
 TEST_MODEL = "openai/gpt-4o-mini"
 

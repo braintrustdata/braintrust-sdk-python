@@ -3,6 +3,7 @@ import re
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+
 # CORS configuration
 ALLOWED_ORIGINS: list[str | re.Pattern] = [
     "https://www.braintrust.dev",
@@ -22,6 +23,7 @@ ALLOWED_HEADERS = [
     "x-bt-project-id",
     "x-bt-stream-fmt",
     "x-bt-use-cache",
+    "x-bt-use-gateway",
     "x-stainless-os",
     "x-stainless-lang",
     "x-stainless-package-version",

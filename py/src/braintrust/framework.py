@@ -42,12 +42,19 @@ from .logger import (
     stringify_exception,
 )
 from .logger import init as _init_experiment
-from .parameters import EvalParameters
+from .parameters import (
+    EvalParameters,
+    RemoteEvalParameters,
+    ValidatedParameters,
+    is_eval_parameter_schema,
+    validate_parameters,
+)
 from .resource_manager import ResourceManager
 from .score import Score, is_score, is_scorer
 from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
 from .util import bt_iscoroutinefunction, eprint, merge_dicts
+
 
 Input = TypeVar("Input")
 Output = TypeVar("Output")
@@ -162,7 +169,7 @@ class EvalHooks(abc.ABC, Generic[Output]):
 
     @property
     @abc.abstractmethod
-    def metadata(self) -> Metadata:
+    def metadata(self) -> Metadata | None:
         """
         The metadata object for the current evaluation. You can mutate this object to add or remove metadata.
         """
@@ -214,7 +221,7 @@ class EvalHooks(abc.ABC, Generic[Output]):
 
     @property
     @abc.abstractmethod
-    def parameters(self) -> dict[str, Any] | None:
+    def parameters(self) -> ValidatedParameters | None:
         """
         The parameters for the current evaluation. These are the validated parameter values
         that were passed to the evaluator.
@@ -438,11 +445,13 @@ class Evaluator(Generic[Input, Output]):
     Whether to summarize the scores of the experiment after it has run.
     """
 
-    parameters: EvalParameters | None = None
+    parameters: EvalParameters | RemoteEvalParameters | None = None
     """
     A set of parameters that will be passed to the evaluator.
     Can be used to define prompts or other configurable values.
     """
+
+    parameter_values: dict[str, Any] | None = None
 
 
 @dataclasses.dataclass
@@ -674,7 +683,7 @@ def _EvalCommon(
     summarize_scores: bool,
     no_send_logs: bool,
     error_score_handler: ErrorScoreHandler | None = None,
-    parameters: EvalParameters | None = None,
+    parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
@@ -740,6 +749,12 @@ def _EvalCommon(
         if isinstance(evaluator.data, Dataset):
             dataset = evaluator.data
 
+        experiment_parameters = None
+        if isinstance(evaluator.parameters, RemoteEvalParameters) and evaluator.parameters.id is not None:
+            experiment_parameters = {"id": evaluator.parameters.id}
+            if evaluator.parameters.version is not None:
+                experiment_parameters["version"] = evaluator.parameters.version
+
         # NOTE: This code is duplicated with run_evaluator_task in py/src/braintrust/cli/eval.py.
         # Make sure to update those arguments if you change this.
         experiment = None
@@ -758,6 +773,7 @@ def _EvalCommon(
                 git_metadata_settings=evaluator.git_metadata_settings,
                 repo_info=evaluator.repo_info,
                 dataset=dataset,
+                parameters=experiment_parameters,
                 state=state,
             )
 
@@ -803,7 +819,7 @@ async def EvalAsync(
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,
-    parameters: EvalParameters | None = None,
+    parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
@@ -930,7 +946,7 @@ def Eval(
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,
-    parameters: EvalParameters | None = None,
+    parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
@@ -1147,12 +1163,12 @@ def evaluate_filter(object, filter: Filter):
 class DictEvalHooks(dict[str, Any]):
     def __init__(
         self,
-        metadata: Any | None = None,
+        metadata: Metadata | None = None,
         expected: Any | None = None,
         trial_index: int = 0,
         tags: Sequence[str] | None = None,
         report_progress: Callable[[TaskProgressEvent], None] = None,
-        parameters: dict[str, Any] | None = None,
+        parameters: ValidatedParameters | None = None,
     ):
         if metadata is not None:
             self.update({"metadata": metadata})
@@ -1169,7 +1185,7 @@ class DictEvalHooks(dict[str, Any]):
         self._parameters = parameters
 
     @property
-    def metadata(self):
+    def metadata(self) -> Metadata | None:
         return self.get("metadata")
 
     @property
@@ -1210,7 +1226,7 @@ class DictEvalHooks(dict[str, Any]):
             return self._report_progress(event)
 
     @property
-    def parameters(self) -> dict[str, Any] | None:
+    def parameters(self) -> ValidatedParameters | None:
         return self._parameters
 
 
@@ -1276,7 +1292,8 @@ async def run_evaluator(
 ) -> EvalResultWithSummary[Input, Output]:
     """Wrapper on _run_evaluator_internal that times out execution after evaluator.timeout."""
     results = await asyncio.wait_for(
-        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache), evaluator.timeout
+        _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache),
+        evaluator.timeout,
     )
 
     if experiment:
@@ -1390,6 +1407,15 @@ async def _run_evaluator_internal_impl(
     scorer_names = [_scorer_name(scorer, i) for i, scorer in enumerate(scorers)]
     unhandled_scores = scorer_names
 
+    if evaluator.parameter_values is not None:
+        resolved_evaluator_parameters = evaluator.parameter_values
+    elif isinstance(evaluator.parameters, RemoteEvalParameters):
+        resolved_evaluator_parameters = validate_parameters({}, evaluator.parameters)
+    elif is_eval_parameter_schema(evaluator.parameters):
+        resolved_evaluator_parameters = validate_parameters({}, evaluator.parameters)
+    else:
+        resolved_evaluator_parameters = evaluator.parameters
+
     async def run_evaluator_task(datum, trial_index=0):
         if isinstance(datum, dict):
             datum = EvalCase.from_dict(datum)
@@ -1449,7 +1475,7 @@ async def _run_evaluator_internal_impl(
                     trial_index=trial_index,
                     tags=tags,
                     report_progress=report_progress,
-                    parameters=evaluator.parameters,
+                    parameters=resolved_evaluator_parameters,
                 )
 
                 # Check if the task takes a hooks argument
@@ -1473,9 +1499,7 @@ async def _run_evaluator_internal_impl(
                 async def ensure_spans_flushed():
                     # Flush native Braintrust spans
                     if experiment:
-                        await asyncio.get_event_loop().run_in_executor(
-                            None, lambda: experiment.state.flush()
-                        )
+                        await asyncio.get_event_loop().run_in_executor(None, lambda: experiment.state.flush())
                     elif state:
                         await asyncio.get_event_loop().run_in_executor(None, lambda: state.flush())
                     else:
@@ -1670,6 +1694,11 @@ async def _run_evaluator_internal_impl(
         async for datum in pbar:
             for trial_index in range(evaluator.trial_count):
                 tasks.append(asyncio.create_task(with_max_concurrency(run_evaluator_task(datum, trial_index))))
+
+    if not tasks:
+        eprint(
+            f"{bcolors.WARNING}Warning: no data rows found for evaluator '{evaluator.eval_name}'. The experiment will be empty.{bcolors.ENDC}"
+        )
 
     results = []
     for task in std_tqdm(tasks, desc=f"{evaluator.eval_name} (tasks)", position=position, disable=position is None):

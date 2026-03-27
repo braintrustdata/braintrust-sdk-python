@@ -2,6 +2,7 @@ import os
 
 import setuptools
 
+
 dir_name = os.path.abspath(os.path.dirname(__file__))
 
 version_contents = {}
@@ -17,6 +18,8 @@ install_requires = [
     "chevron",
     "tqdm",
     "exceptiongroup>=1.2.0",
+    "jsonschema",
+    "packaging",
     "python-dotenv",
     "sseclient-py",
     "python-slugify",
@@ -29,6 +32,8 @@ extras_require = {
     "doc": ["pydoc-markdown"],
     "openai-agents": ["openai-agents"],
     "otel": ["opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp-proto-http"],
+    # orjson is not compatible with PyPy, so we exclude it for that platform
+    "performance": ["orjson; platform_python_implementation != 'PyPy'"],
     "temporal": ["temporalio>=1.19.0; python_version>='3.10'"],
 }
 
@@ -56,7 +61,10 @@ setuptools.setup(
     packages=setuptools.find_packages(where="src"),
     package_data={"braintrust": ["py.typed"]},
     python_requires=">=3.10.0",
-    entry_points={"console_scripts": ["braintrust = braintrust.cli.__main__:main"]},
+    entry_points={
+        "console_scripts": ["braintrust = braintrust.cli.__main__:main"],
+        "pytest11": ["braintrust = braintrust.wrappers.pytest_plugin.plugin"],
+    },
     install_requires=install_requires,
     extras_require=extras_require,
 )
