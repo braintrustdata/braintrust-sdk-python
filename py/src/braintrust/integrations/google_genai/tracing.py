@@ -145,6 +145,16 @@ def _prepare_traced_call(
     return _serialize_input(api_client, input), clean_kwargs
 
 
+def _prepare_generate_images_traced_call(
+    api_client: Any, args: list[Any], kwargs: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    del api_client
+    input, clean_kwargs = _get_args_kwargs(args, kwargs, ["model", "prompt", "config"], ["prompt", "config"])
+    if input.get("config") is not None:
+        input["config"] = bt_safe_deep_copy(input["config"])
+    return _clean(input), clean_kwargs
+
+
 # ---------------------------------------------------------------------------
 # Metric extraction helpers
 # ---------------------------------------------------------------------------
@@ -222,6 +232,71 @@ def _extract_embed_content_metrics(response: "EmbedContentResponse", start: floa
     return _clean(metrics)
 
 
+def _extract_generate_images_output(response: Any) -> dict[str, Any]:
+    generated_images = getattr(response, "generated_images", None) or []
+    serialized_images = []
+
+    for i, generated_image in enumerate(generated_images):
+        image = getattr(generated_image, "image", None)
+        image_bytes = getattr(image, "image_bytes", None)
+        mime_type = getattr(image, "mime_type", None)
+        safety_attributes = getattr(generated_image, "safety_attributes", None)
+
+        image_entry: dict[str, Any] = _clean(
+            {
+                "mime_type": mime_type,
+                "gcs_uri": getattr(image, "gcs_uri", None),
+                "image_size_bytes": len(image_bytes) if image_bytes is not None else None,
+                "rai_filtered_reason": getattr(generated_image, "rai_filtered_reason", None),
+                "enhanced_prompt": getattr(generated_image, "enhanced_prompt", None),
+                "safety_categories": getattr(safety_attributes, "categories", None),
+                "safety_scores": getattr(safety_attributes, "scores", None),
+                "safety_content_type": getattr(safety_attributes, "content_type", None),
+            }
+        )
+
+        # Convert image bytes to an Attachment so the SDK uploads them to
+        # object storage and the Braintrust UI can render the image.
+        if isinstance(image_bytes, bytes) and mime_type:
+            extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
+            filename = f"generated_image_{i}.{extension}"
+            attachment = Attachment(data=image_bytes, filename=filename, content_type=mime_type)
+            image_entry["image_url"] = {"url": attachment}
+
+        serialized_images.append(image_entry)
+
+    positive_prompt_safety_attributes = getattr(response, "positive_prompt_safety_attributes", None)
+    positive_prompt_summary = None
+    if positive_prompt_safety_attributes is not None:
+        positive_prompt_summary = _clean(
+            {
+                "categories": getattr(positive_prompt_safety_attributes, "categories", None),
+                "scores": getattr(positive_prompt_safety_attributes, "scores", None),
+                "content_type": getattr(positive_prompt_safety_attributes, "content_type", None),
+            }
+        )
+
+    return _clean(
+        {
+            "generated_images_count": len(generated_images),
+            "generated_images": serialized_images,
+            "has_positive_prompt_safety_attributes": positive_prompt_safety_attributes is not None,
+            "positive_prompt_safety_attributes": positive_prompt_summary,
+        }
+    )
+
+
+def _extract_generate_images_metrics(start: float) -> dict[str, Any]:
+    end_time = time.time()
+    return _clean(
+        dict(
+            start=start,
+            end=end_time,
+            duration=end_time - start,
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # Result processing helpers
 # ---------------------------------------------------------------------------
@@ -233,6 +308,10 @@ def _gc_process_result(result: "GenerateContentResponse", start: float) -> tuple
 
 def _embed_process_result(result: "EmbedContentResponse", start: float) -> tuple[Any, dict[str, Any]]:
     return _extract_embed_content_output(result), _extract_embed_content_metrics(result, start)
+
+
+def _generate_images_process_result(result: Any, start: float) -> tuple[Any, dict[str, Any]]:
+    return _extract_generate_images_output(result), _extract_generate_images_metrics(start)
 
 
 # ---------------------------------------------------------------------------
@@ -346,8 +425,11 @@ def _run_traced_call(
     name: str,
     invoke: Callable[[], Any],
     process_result: Callable[[Any, float], tuple[Any, dict[str, Any]]],
+    prepare_call: Callable[
+        [Any, list[Any], dict[str, Any]], tuple[dict[str, Any], dict[str, Any]]
+    ] = _prepare_traced_call,
 ) -> Any:
-    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
+    input, clean_kwargs = prepare_call(api_client, args, kwargs)
 
     start = time.time()
     with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
@@ -365,8 +447,11 @@ async def _run_async_traced_call(
     name: str,
     invoke: Callable[[], Awaitable[Any]],
     process_result: Callable[[Any, float], tuple[Any, dict[str, Any]]],
+    prepare_call: Callable[
+        [Any, list[Any], dict[str, Any]], tuple[dict[str, Any], dict[str, Any]]
+    ] = _prepare_traced_call,
 ) -> Any:
-    input, clean_kwargs = _prepare_traced_call(api_client, args, kwargs)
+    input, clean_kwargs = prepare_call(api_client, args, kwargs)
 
     start = time.time()
     with start_span(name=name, type=SpanTypeAttribute.LLM, input=input, metadata=clean_kwargs) as span:
@@ -468,6 +553,18 @@ def _embed_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) 
     )
 
 
+def _generate_images_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return _run_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="generate_images",
+        invoke=lambda: wrapped(*args, **kwargs),
+        process_result=_generate_images_process_result,
+        prepare_call=_prepare_generate_images_traced_call,
+    )
+
+
 async def _async_generate_content_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
     return await _run_async_traced_call(
         instance._api_client,
@@ -498,4 +595,16 @@ async def _async_embed_content_wrapper(wrapped: Any, instance: Any, args: Any, k
         name="embed_content",
         invoke=lambda: wrapped(*args, **kwargs),
         process_result=_embed_process_result,
+    )
+
+
+async def _async_generate_images_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    return await _run_async_traced_call(
+        instance._api_client,
+        args,
+        kwargs,
+        name="generate_images",
+        invoke=lambda: wrapped(*args, **kwargs),
+        process_result=_generate_images_process_result,
+        prepare_call=_prepare_generate_images_traced_call,
     )

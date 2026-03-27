@@ -1,3 +1,5 @@
+import gzip
+import json
 import os
 import time
 from pathlib import Path
@@ -5,6 +7,7 @@ from pathlib import Path
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
+from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from google.genai import types
@@ -14,7 +17,59 @@ from google.genai.client import Client
 PROJECT_NAME = "test-genai-app"
 MODEL = "gemini-2.0-flash-001"
 EMBEDDING_MODEL = "gemini-embedding-001"
+IMAGE_MODEL = "imagen-4.0-fast-generate-001"
 FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent / "internal/golden/fixtures"
+TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+
+
+def _sanitize_generate_images_body(value):
+    if isinstance(value, dict):
+        return {
+            key: (
+                TINY_PNG_BASE64
+                if key == "bytesBase64Encoded" and isinstance(val, str)
+                else _sanitize_generate_images_body(val)
+            )
+            for key, val in value.items()
+        }
+    if isinstance(value, list):
+        return [_sanitize_generate_images_body(item) for item in value]
+    return value
+
+
+def _sanitize_generate_images_response(response):
+    body = response.get("body", {})
+    payload = body.get("string")
+    if not payload:
+        return response
+
+    is_bytes = isinstance(payload, bytes)
+    is_gzipped = False
+
+    if is_bytes:
+        raw_payload = payload
+        if raw_payload[:2] == b"\x1f\x8b":
+            raw_payload = gzip.decompress(raw_payload)
+            is_gzipped = True
+        payload = raw_payload.decode("utf-8")
+
+    try:
+        parsed = json.loads(payload)
+    except Exception:
+        return response
+
+    sanitized = _sanitize_generate_images_body(parsed)
+    if sanitized == parsed:
+        return response
+
+    sanitized_payload = json.dumps(sanitized)
+    if is_bytes:
+        body["string"] = (
+            gzip.compress(sanitized_payload.encode("utf-8")) if is_gzipped else sanitized_payload.encode("utf-8")
+        )
+    else:
+        body["string"] = sanitized_payload
+    return response
 
 
 @pytest.fixture(scope="module")
@@ -27,14 +82,19 @@ def vcr_config():
         request.method = request.method.upper()
         return request
 
+    def before_record_response(response):
+        return _sanitize_generate_images_response(response)
+
     return {
         "record_mode": record_mode,
+        "decode_compressed_response": True,
         "filter_headers": [
             "authorization",
             "x-api-key",
             "x-goog-api-key",
         ],
         "before_record_request": before_record_request,
+        "before_record_response": before_record_response,
     }
 
 
@@ -667,6 +727,105 @@ def test_attachment_in_config(memory_logger):
     copied = bt_safe_deep_copy(config)
     assert copied["context_file"] is attachment
     assert copied["temperature"] == 0.5
+
+
+@pytest.mark.vcr
+def test_generate_images(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    response = client.models.generate_images(
+        model=IMAGE_MODEL,
+        prompt="A watercolor fox in a forest",
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio="1:1",
+            safety_filter_level="BLOCK_LOW_AND_ABOVE",
+            include_rai_reason=True,
+        ),
+    )
+    end = time.time()
+
+    assert len(response.generated_images) == 1
+    assert response.generated_images[0].image
+    assert response.generated_images[0].image.image_bytes
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == IMAGE_MODEL
+    assert span["input"]["prompt"] == "A watercolor fox in a forest"
+    assert span["input"]["config"]["number_of_images"] == 1
+    assert span["input"]["config"]["aspect_ratio"] == "1:1"
+    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
+    assert span["input"]["config"]["include_rai_reason"] is True
+    assert span["output"]["generated_images_count"] == 1
+    generated_image = span["output"]["generated_images"][0]
+    assert generated_image["image_size_bytes"] > 0
+    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
+
+    # Verify the image bytes are stored as an Attachment for upload to object storage
+    assert "image_url" in generated_image
+    attachment = generated_image["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["type"] == "braintrust_attachment"
+    assert attachment.reference["content_type"] == generated_image["mime_type"]
+    assert attachment.reference["filename"].startswith("generated_image_")
+    assert attachment.reference["key"]
+
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_generate_images_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    response = await client.aio.models.generate_images(
+        model=IMAGE_MODEL,
+        prompt="A watercolor fox in a forest",
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio="1:1",
+            safety_filter_level="BLOCK_LOW_AND_ABOVE",
+            include_rai_reason=True,
+        ),
+    )
+    end = time.time()
+
+    assert len(response.generated_images) == 1
+    assert response.generated_images[0].image
+    assert response.generated_images[0].image.image_bytes
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == IMAGE_MODEL
+    assert span["input"]["prompt"] == "A watercolor fox in a forest"
+    assert span["input"]["config"]["number_of_images"] == 1
+    assert span["input"]["config"]["aspect_ratio"] == "1:1"
+    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
+    assert span["input"]["config"]["include_rai_reason"] is True
+    assert span["output"]["generated_images_count"] == 1
+    generated_image = span["output"]["generated_images"][0]
+    assert generated_image["image_size_bytes"] > 0
+    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
+
+    # Verify the image bytes are stored as an Attachment for upload to object storage
+    assert "image_url" in generated_image
+    attachment = generated_image["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["type"] == "braintrust_attachment"
+    assert attachment.reference["content_type"] == generated_image["mime_type"]
+    assert attachment.reference["filename"].startswith("generated_image_")
+    assert attachment.reference["key"]
+
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
 
 
 def test_nested_attachments_in_contents(memory_logger):

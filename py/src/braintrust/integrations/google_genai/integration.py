@@ -8,9 +8,11 @@ from .patchers import (
     AsyncModelsEmbedContentPatcher,
     AsyncModelsGenerateContentPatcher,
     AsyncModelsGenerateContentStreamPatcher,
+    AsyncModelsGenerateImagesPatcher,
     ModelsEmbedContentPatcher,
     ModelsGenerateContentPatcher,
     ModelsGenerateContentStreamPatcher,
+    ModelsGenerateImagesPatcher,
 )
 
 
@@ -26,7 +28,9 @@ class GoogleGenAIIntegration(BaseIntegration):
         ModelsGenerateContentPatcher,
         ModelsGenerateContentStreamPatcher,
         ModelsEmbedContentPatcher,
+        ModelsGenerateImagesPatcher,
         AsyncModelsGenerateContentPatcher,
         AsyncModelsGenerateContentStreamPatcher,
         AsyncModelsEmbedContentPatcher,
+        AsyncModelsGenerateImagesPatcher,
     )
