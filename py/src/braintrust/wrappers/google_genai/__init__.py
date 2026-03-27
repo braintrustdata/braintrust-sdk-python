@@ -325,7 +325,9 @@ def _serialize_tool(tool: Any) -> Any:
         decls = _get_attr_or_key(serialized, "functionDeclarations", "function_declarations")
         if decls is not None:
             result = {
-                k: v for k, v in serialized.items() if k not in ("functionDeclarations", "function_declarations") and v is not None
+                k: v
+                for k, v in serialized.items()
+                if k not in ("functionDeclarations", "function_declarations") and v is not None
             }
             result["functionDeclarations"] = [_serialize_function_declaration(decl) for decl in _ensure_list(decls)]
             return result
@@ -343,7 +345,9 @@ def _serialize_tool(tool: Any) -> Any:
 
 def _looks_like_function_declaration(obj: Any) -> bool:
     if isinstance(obj, dict):
-        return "name" in obj and any(k in obj for k in ("description", "parameters", "parameters_json_schema", "parametersJsonSchema"))
+        return "name" in obj and any(
+            k in obj for k in ("description", "parameters", "parameters_json_schema", "parametersJsonSchema")
+        )
 
     return hasattr(obj, "name") and any(
         hasattr(obj, attr) for attr in ("description", "parameters", "parameters_json_schema", "parametersJsonSchema")
