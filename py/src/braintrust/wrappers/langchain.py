@@ -11,7 +11,6 @@ _logger = logging.getLogger("braintrust.wrappers.langchain")
 try:
     from langchain_classic.callbacks.base import BaseCallbackHandler
     from langchain_classic.schema import Document
-    from langchain_classic.schema.agent import AgentAction
     from langchain_classic.schema.messages import BaseMessage
     from langchain_classic.schema.output import LLMResult
 except ImportError:
