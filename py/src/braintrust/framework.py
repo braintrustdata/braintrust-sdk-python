@@ -62,15 +62,15 @@ Output = TypeVar("Output")
 
 # https://stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
 class bcolors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
+#     HEADER = "\033[95m"
+#     OKBLUE = "\033[94m"
+#     OKCYAN = "\033[96m"
+#     OKGREEN = "\033[92m"
     WARNING = "\033[93m"
     FAIL = "\033[91m"
     ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
+#     BOLD = "\033[1m"
+#     UNDERLINE = "\033[4m"
 
 
 @dataclasses.dataclass
@@ -226,17 +226,6 @@ class EvalHooks(abc.ABC, Generic[Output]):
         The parameters for the current evaluation. These are the validated parameter values
         that were passed to the evaluator.
         """
-
-
-class EvalScorerArgs(SerializableDataClass, Generic[Input, Output]):
-    """
-    Arguments passed to an evaluator scorer. This includes the input, expected output, actual output, and metadata.
-    """
-
-    input: Input
-    output: Output
-    expected: Output | None = None
-    metadata: Metadata | None = None
 
 
 OneOrMoreScores = Union[float, int, bool, None, Score, list[Score]]
@@ -850,7 +839,7 @@ async def EvalAsync(
     :param data: Returns an iterator over the evaluation dataset. Each element of the iterator should be a `EvalCase`.
     :param task: Runs the evaluation task on a single input. The `hooks` object can be used to add metadata to the evaluation.
     :param scores: A list of scorers to evaluate the results of the task. Each scorer can be a Scorer object or a function
-    that takes an `EvalScorerArgs` object and returns a `Score` object.
+    that takes `(input, output, expected)` arguments and returns a `Score` object.
     :param experiment_name: (Optional) Experiment name. If not specified, a name will be generated automatically.
     :param trial_count: The number of times to run the evaluator per input. This is useful for evaluating applications that
     have non-deterministic behavior and gives you both a stronger aggregate measure and a sense of the variance in the results.
@@ -977,7 +966,7 @@ def Eval(
     :param data: Returns an iterator over the evaluation dataset. Each element of the iterator should be a `EvalCase`.
     :param task: Runs the evaluation task on a single input. The `hooks` object can be used to add metadata to the evaluation.
     :param scores: A list of scorers to evaluate the results of the task. Each scorer can be a Scorer object or a function
-    that takes an `EvalScorerArgs` object and returns a `Score` object.
+    that takes `(input, output, expected)` arguments and returns a `Score` object.
     :param experiment_name: (Optional) Experiment name. If not specified, a name will be generated automatically.
     :param trial_count: The number of times to run the evaluator per input. This is useful for evaluating applications that
     have non-deterministic behavior and gives you both a stronger aggregate measure and a sense of the variance in the results.

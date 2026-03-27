@@ -246,7 +246,7 @@ def check_match(path_input, include_patterns, exclude_patterns):
 
 def collect_files(input_path):
     if os.path.isdir(input_path):
-        for root, dirs, files in os.walk(input_path):
+        for root, _, files in os.walk(input_path):
             for file in files:
                 fname = os.path.join(root, file)
                 if check_match(fname, INCLUDE, EXCLUDE):

@@ -63,13 +63,6 @@ class RemoteEvalParameters(SerializableDataClass):
             data=function_data.get("data") or {},
         )
 
-    def validate(self, data: Any) -> bool:
-        try:
-            validate_json_schema(data, self.schema)
-            return True
-        except ValueError:
-            return False
-
 
 def _pydantic_to_json_schema(model: Any) -> dict[str, Any]:
     """Convert a pydantic model to JSON schema."""

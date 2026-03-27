@@ -1068,9 +1068,6 @@ class _HTTPBackgroundLogger:
         self.logger = logging.getLogger("braintrust")
         self.queue: "LogQueue[LazyValue[Dict[str, Any]]]" = LogQueue(maxsize=self.queue_maxsize)
 
-        # Counter for tracking overflow uploads (useful for testing)
-        self._overflow_upload_count = 0
-
         if not disable_atexit_flush:
             atexit.register(self._finalize)
 
@@ -1382,8 +1379,6 @@ class _HTTPBackgroundLogger:
             except Exception as e:
                 error = e
             if error is None and resp is not None and resp.ok:
-                if overflow_rows:
-                    self._overflow_upload_count += 1
                 return
             if error is None and resp is not None:
                 resp_errmsg = f"{resp.status_code}: {resp.text}"

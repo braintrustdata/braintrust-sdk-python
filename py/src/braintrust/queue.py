@@ -32,7 +32,6 @@ class LogQueue:
         self._mutex = threading.Lock()
         self._queue: deque[T] = deque(maxlen=maxsize)
         self._has_items_event = threading.Event()
-        self._total_dropped = 0
         self._enforce_size_limit = False
 
     def enforce_queue_size_limit(self, enforce: bool) -> None:
@@ -68,7 +67,6 @@ class LogQueue:
                 while len(self._queue) >= self.maxsize:
                     dropped_item = self._queue.popleft()
                     dropped.append(dropped_item)
-                    self._total_dropped += 1
                 self._queue.append(item)
 
             # Signal that items are available if queue was not empty before or item was added

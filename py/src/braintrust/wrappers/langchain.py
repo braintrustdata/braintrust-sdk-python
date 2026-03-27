@@ -18,7 +18,6 @@ except ImportError:
     _logger.warning("Failed to import langchain, using stubs")
     BaseCallbackHandler = object
     Document = object
-    AgentAction = object
     BaseMessage = object
     LLMResult = object
 

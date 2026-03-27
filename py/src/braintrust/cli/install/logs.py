@@ -88,7 +88,6 @@ def main(args):
         with ThreadPoolExecutor(8) as executor:
             events = executor.map(get_events, all_streams)
 
-        last_ts = None
         for stream, log in zip(all_streams, events):
             print(f"---- LOG STREAM: {stream['logStreamName']}")
             for event in log["events"]:
