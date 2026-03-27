@@ -436,7 +436,11 @@ def _postprocess_responses_streaming_results(all_results: list[Any]) -> dict[str
 
 
 def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "input") -> dict[str, Any]:
-    """Updates the span payload with the parameters into LiteLLM's completion/acompletion methods."""
+    """Updates the span payload with the parameters into LiteLLM's completion/acompletion methods.
+
+    Works on a shallow copy so the caller's kwargs dict is never mutated.
+    """
+    params = params.copy()
     span_info_d = params.pop("span_info", {})
 
     params = prettify_params(params)
