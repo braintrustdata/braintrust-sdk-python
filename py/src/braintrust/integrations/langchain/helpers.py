@@ -26,6 +26,13 @@ def assert_matches_object(
 
     For lists, each item in expected must match the corresponding item in actual.
     For dicts, all key-value pairs in expected must exist in actual.
+
+    Args:
+        actual: The actual value to check
+        expected: The expected value to match against
+
+    Raises:
+        AssertionError: If the actual value doesn't match the expected value
     """
     if isinstance(expected, (list, tuple)):
         assert isinstance(actual, (list, tuple)), f"Expected sequence but got {type(actual)}"
