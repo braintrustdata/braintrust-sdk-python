@@ -634,7 +634,13 @@ def _get_metrics_from_response(response: LLMResult):
             input_token_details = usage_metadata.get("input_token_details")
             if input_token_details and isinstance(input_token_details, dict):
                 cache_read = input_token_details.get("cache_read")
-                cache_creation = input_token_details.get("cache_creation")
+                # langchain-anthropic >= 1.4.0 maps cache_creation_input_tokens to
+                # ephemeral tier fields (ephemeral_5m_input_tokens, ephemeral_1h_input_tokens)
+                # rather than the top-level cache_creation field. Sum both for compat.
+                cache_creation = input_token_details.get("cache_creation") or (
+                    input_token_details.get("ephemeral_5m_input_tokens", 0)
+                    + input_token_details.get("ephemeral_1h_input_tokens", 0)
+                )
 
                 if cache_read is not None:
                     metrics["prompt_cached_tokens"] = cache_read

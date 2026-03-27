@@ -1,5 +1,4 @@
 # pyright: reportTypedDictNotRequiredAccess=none
-from pathlib import Path
 from typing import Dict
 from unittest.mock import ANY
 
@@ -17,13 +16,6 @@ from .helpers import assert_matches_object
 
 
 PROJECT_NAME = "langchain-py"
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {
-        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
-    }
 
 
 @pytest.fixture

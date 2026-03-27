@@ -1,6 +1,5 @@
 # pyright: reportTypedDictNotRequiredAccess=none
 import uuid
-from pathlib import Path
 from typing import Dict, List, Union, cast
 
 import pytest
@@ -21,13 +20,6 @@ from .helpers import ANY, assert_matches_object, find_spans_by_attributes
 
 
 PROJECT_NAME = "langchain-py"
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {
-        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
-    }
 
 
 @pytest.fixture
