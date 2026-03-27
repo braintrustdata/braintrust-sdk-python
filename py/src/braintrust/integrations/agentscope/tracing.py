@@ -150,52 +150,70 @@ def _tool_name(tool_call: Any) -> str:
     return str(getattr(tool_call, "name", "unknown_tool"))
 
 
-async def _agent_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
-    with start_span(
-        name=f"{_agent_name(instance)}.reply",
-        type=SpanTypeAttribute.TASK,
-        input=_args_kwargs_input(args, kwargs),
-        metadata=_clean({"agent_class": instance.__class__.__name__}),
-    ) as span:
-        try:
-            result = await wrapped(*args, **kwargs)
-            span.log(output=result)
-            return result
-        except Exception as exc:
-            span.log(error=str(exc))
-            raise
+def _make_task_wrapper(
+    *,
+    name_fn: Any,
+    metadata_fn: Any,
+    input_fn: Any = _args_kwargs_input,
+) -> Any:
+    """Build a simple async wrapper that creates a TASK span and logs the result."""
+
+    async def _wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
+        with start_span(
+            name=name_fn(instance, args, kwargs),
+            type=SpanTypeAttribute.TASK,
+            input=input_fn(args, kwargs),
+            metadata=metadata_fn(instance, args, kwargs),
+        ) as span:
+            try:
+                result = await wrapped(*args, **kwargs)
+                span.log(output=result)
+                return result
+            except Exception as exc:
+                span.log(error=str(exc))
+                raise
+
+    return _wrapper
 
 
-async def _sequential_pipeline_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
-    with start_span(
-        name="sequential_pipeline.run",
-        type=SpanTypeAttribute.TASK,
-        input=_args_kwargs_input(args, kwargs),
-        metadata=_pipeline_metadata(args, kwargs),
-    ) as span:
-        try:
-            result = await wrapped(*args, **kwargs)
-            span.log(output=result)
-            return result
-        except Exception as exc:
-            span.log(error=str(exc))
-            raise
+_agent_call_wrapper = _make_task_wrapper(
+    name_fn=lambda instance, _a, _k: f"{_agent_name(instance)}.reply",
+    metadata_fn=lambda instance, _a, _k: _clean({"agent_class": instance.__class__.__name__}),
+)
+
+_sequential_pipeline_wrapper = _make_task_wrapper(
+    name_fn=lambda _i, _a, _k: "sequential_pipeline.run",
+    metadata_fn=lambda _i, args, kwargs: _pipeline_metadata(args, kwargs),
+)
+
+_fanout_pipeline_wrapper = _make_task_wrapper(
+    name_fn=lambda _i, _a, _k: "fanout_pipeline.run",
+    metadata_fn=lambda _i, args, kwargs: _pipeline_metadata(args, kwargs),
+)
 
 
-async def _fanout_pipeline_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
-    with start_span(
-        name="fanout_pipeline.run",
-        type=SpanTypeAttribute.TASK,
-        input=_args_kwargs_input(args, kwargs),
-        metadata=_pipeline_metadata(args, kwargs),
-    ) as span:
-        try:
-            result = await wrapped(*args, **kwargs)
-            span.log(output=result)
-            return result
-        except Exception as exc:
-            span.log(error=str(exc))
-            raise
+def _is_async_iterator(value: Any) -> bool:
+    try:
+        return getattr(value, "__aiter__", None) is not None and getattr(value, "__anext__", None) is not None
+    except Exception:
+        return False
+
+
+def _deferred_stream_trace(result: Any, span: Any, stack: contextlib.ExitStack, log_fn: Any) -> Any:
+    """Wrap an async iterator so the span stays open until the stream is consumed."""
+    deferred = stack.pop_all()
+
+    async def _trace():
+        with deferred:
+            last_chunk = None
+            async with aclosing(result) as agen:
+                async for chunk in agen:
+                    last_chunk = chunk
+                    yield chunk
+            if last_chunk is not None:
+                log_fn(span, last_chunk)
+
+    return _trace()
 
 
 async def _toolkit_call_tool_function_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
@@ -218,32 +236,13 @@ async def _toolkit_call_tool_function_wrapper(wrapped: Any, instance: Any, args:
         try:
             result = await wrapped(*args, **kwargs)
             if _is_async_iterator(result):
-                deferred = stack.pop_all()
-
-                async def _trace():
-                    with deferred:
-                        last_chunk = None
-                        async with aclosing(result) as agen:
-                            async for chunk in agen:
-                                last_chunk = chunk
-                                yield chunk
-                        if last_chunk is not None:
-                            span.log(output=last_chunk)
-
-                return _trace()
+                return _deferred_stream_trace(result, span, stack, lambda s, chunk: s.log(output=chunk))
 
             span.log(output=result)
             return result
         except Exception as exc:
             span.log(error=str(exc))
             raise
-
-
-def _is_async_iterator(value: Any) -> bool:
-    try:
-        return getattr(value, "__aiter__", None) is not None and getattr(value, "__anext__", None) is not None
-    except Exception:
-        return False
 
 
 async def _model_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
@@ -259,19 +258,12 @@ async def _model_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: di
         try:
             result = await wrapped(*args, **kwargs)
             if _is_async_iterator(result):
-                deferred = stack.pop_all()
-
-                async def _trace():
-                    with deferred:
-                        last_chunk = None
-                        async with aclosing(result) as agen:
-                            async for chunk in agen:
-                                last_chunk = chunk
-                                yield chunk
-                        if last_chunk is not None:
-                            span.log(output=_model_call_output(last_chunk), metrics=_extract_metrics(last_chunk))
-
-                return _trace()
+                return _deferred_stream_trace(
+                    result,
+                    span,
+                    stack,
+                    lambda s, chunk: s.log(output=_model_call_output(chunk), metrics=_extract_metrics(chunk)),
+                )
 
             span.log(output=_model_call_output(result), metrics=_extract_metrics(result))
             return result
