@@ -1,7 +1,9 @@
+import enum
+import inspect
 import logging
 import time
-from collections.abc import Iterable
-from typing import Any
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, get_args, get_origin
 
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.logger import NOOP_SPAN, Attachment, current_span, init_logger, start_span
@@ -185,65 +187,346 @@ def _serialize_contents(contents: Any) -> Any:
 
 def _serialize_content_item(item: Any) -> Any:
     """Serialize a single content item, handling binary data."""
-    # If it's already a dict, return as-is
-    if isinstance(item, dict):
+    if item is None or isinstance(item, (str, int, float, bool)):
         return item
 
-    # Handle Part objects from google.genai
-    if hasattr(item, "__class__") and item.__class__.__name__ == "Part":
-        # Try to extract the data from the Part
-        if hasattr(item, "text") and item.text is not None:
-            return {"text": item.text}
-        elif hasattr(item, "inline_data"):
-            # Handle binary data (e.g., images)
-            inline_data = item.inline_data
-            if hasattr(inline_data, "data") and hasattr(inline_data, "mime_type"):
-                # Convert bytes to Attachment
-                data = inline_data.data
-                mime_type = inline_data.mime_type
+    if _is_content_like(item):
+        return _serialize_content(item)
 
-                # Ensure data is bytes
-                if isinstance(data, bytes):
-                    # Determine file extension from mime type
-                    extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
-                    filename = f"file.{extension}"
+    return _serialize_part(item)
 
-                    # Create an Attachment object
-                    attachment = Attachment(data=data, filename=filename, content_type=mime_type)
 
-                    # Return the attachment object in image_url format
-                    # The SDK's _extract_attachments will replace it with its reference when logging
-                    return {"image_url": {"url": attachment}}
+def _is_content_like(item: Any) -> bool:
+    if isinstance(item, dict):
+        return "parts" in item
+    return getattr(getattr(item, "__class__", None), "__name__", None) != "Part" and hasattr(item, "parts")
 
-        # Try to use built-in serialization if available
-        if hasattr(item, "model_dump"):
-            return item.model_dump()
-        elif hasattr(item, "dump"):
-            return item.dump()
-        elif hasattr(item, "to_dict"):
-            return item.to_dict()
 
-    # Return the item as-is if we can't serialize it
-    return item
+def _serialize_content(content: Any) -> Any:
+    if isinstance(content, dict):
+        result = {}
+        for key, value in content.items():
+            if key == "parts" and isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+                result[key] = [_serialize_part(part) for part in value]
+            else:
+                result[key] = bt_safe_deep_copy(value)
+        return result
+
+    serialized = _generic_serialize(content)
+    result = dict(serialized) if isinstance(serialized, dict) else {}
+
+    result["parts"] = [_serialize_part(part) for part in _ensure_list(_get_attr_or_key(content, "parts"))]
+
+    role = _get_attr_or_key(content, "role")
+    if role is not None:
+        result["role"] = role
+
+    return result
+
+
+def _serialize_part(part: Any) -> Any:
+    if part is None or isinstance(part, (str, int, float, bool)):
+        return part
+
+    if isinstance(part, dict):
+        serialized_part = {}
+        for key, value in part.items():
+            if key in ("inline_data", "inlineData"):
+                inline_data = _serialize_inline_data(value)
+                if inline_data is not None:
+                    serialized_part.update(inline_data)
+                else:
+                    serialized_part[key] = bt_safe_deep_copy(value)
+            else:
+                serialized_part[key] = bt_safe_deep_copy(value)
+        return serialized_part
+
+    if hasattr(part, "text") and part.text is not None:
+        result = {"text": part.text}
+        if hasattr(part, "thought") and part.thought:
+            result["thought"] = part.thought
+        return result
+
+    inline_data = _serialize_inline_data(_get_attr_or_key(part, "inline_data", "inlineData"))
+    if inline_data is not None:
+        return inline_data
+
+    return _generic_serialize(part)
+
+
+def _serialize_inline_data(inline_data: Any) -> dict[str, Any] | None:
+    if inline_data is None:
+        return None
+
+    data = _get_attr_or_key(inline_data, "data")
+    mime_type = _get_attr_or_key(inline_data, "mime_type", "mimeType")
+    if not isinstance(data, bytes) or not isinstance(mime_type, str):
+        return None
+
+    extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
+    attachment = Attachment(data=data, filename=f"file.{extension}", content_type=mime_type)
+    return {"image_url": {"url": attachment}}
+
+
+def _generic_serialize(item: Any) -> Any:
+    if item is None or isinstance(item, (str, int, float, bool)):
+        return item
+
+    if hasattr(item, "model_dump") and callable(item.model_dump):
+        return item.model_dump()
+    if hasattr(item, "dump") and callable(item.dump):
+        return item.dump()
+    if hasattr(item, "to_dict") and callable(item.to_dict):
+        return item.to_dict()
+
+    return bt_safe_deep_copy(item)
 
 
 def _serialize_tools(api_client: Any, input: Any | None):
     try:
-        from google.genai.models import (
-            _GenerateContentParameters_to_mldev,  # pyright: ignore [reportPrivateUsage]
-            _GenerateContentParameters_to_vertex,  # pyright: ignore [reportPrivateUsage]
-        )
-
-        # cheat by reusing genai library's serializers (they deal with interpreting a function signature etc.)
-        if api_client.vertexai:
-            serialized = _GenerateContentParameters_to_vertex(api_client, input)
-        else:
-            serialized = _GenerateContentParameters_to_mldev(api_client, input)
-
-        tools = serialized.get("tools")
-        return tools
+        return _serialize_tools_with_google(api_client, input)
     except Exception:
+        backend = "vertex" if getattr(api_client, "vertexai", False) else "mldev"
+        logger.debug("Failed to serialize tools via Google SDK for %s", backend, exc_info=True)
+        return _serialize_tools_fallback(input)
+
+
+def _serialize_tools_with_google(api_client: Any, input: Any | None):
+    from google.genai.models import (
+        _GenerateContentParameters_to_mldev,  # pyright: ignore [reportPrivateUsage]
+        _GenerateContentParameters_to_vertex,  # pyright: ignore [reportPrivateUsage]
+    )
+
+    # Reuse the SDK's serializer when it works because it knows how to interpret callable tools.
+    if api_client.vertexai:
+        serialized = _GenerateContentParameters_to_vertex(api_client, input)
+    else:
+        serialized = _GenerateContentParameters_to_mldev(api_client, input)
+
+    return serialized.get("tools")
+
+
+def _serialize_tools_fallback(input: Any | None):
+    config = _get_attr_or_key(input, "config")
+    tools = _get_attr_or_key(config, "tools")
+    if not tools:
         return None
+
+    serialized_tools = [_serialize_tool(tool) for tool in _ensure_list(tools)]
+    return serialized_tools or None
+
+
+def _serialize_tool(tool: Any) -> Any:
+    if callable(tool):
+        return {"functionDeclarations": [_serialize_callable_function_declaration(tool)]}
+
+    serialized = _generic_serialize(tool)
+    if isinstance(serialized, dict):
+        decls = _get_attr_or_key(serialized, "functionDeclarations", "function_declarations")
+        if decls is not None:
+            result = {
+                k: v for k, v in serialized.items() if k not in ("functionDeclarations", "function_declarations") and v is not None
+            }
+            result["functionDeclarations"] = [_serialize_function_declaration(decl) for decl in _ensure_list(decls)]
+            return result
+
+        if _looks_like_function_declaration(serialized):
+            return {"functionDeclarations": [_serialize_function_declaration(serialized)]}
+
+        return serialized
+
+    if _looks_like_function_declaration(tool):
+        return {"functionDeclarations": [_serialize_function_declaration(tool)]}
+
+    return bt_safe_deep_copy(tool)
+
+
+def _looks_like_function_declaration(obj: Any) -> bool:
+    if isinstance(obj, dict):
+        return "name" in obj and any(k in obj for k in ("description", "parameters", "parameters_json_schema", "parametersJsonSchema"))
+
+    return hasattr(obj, "name") and any(
+        hasattr(obj, attr) for attr in ("description", "parameters", "parameters_json_schema", "parametersJsonSchema")
+    )
+
+
+def _serialize_function_declaration(declaration: Any) -> dict[str, Any]:
+    serialized = declaration if isinstance(declaration, dict) else _generic_serialize(declaration)
+    result = {k: v for k, v in serialized.items() if v is not None} if isinstance(serialized, dict) else {}
+
+    name = _get_attr_or_key(declaration, "name")
+    if name is None:
+        name = _get_attr_or_key(serialized, "name")
+    if name is not None:
+        result["name"] = name
+
+    description = _get_attr_or_key(declaration, "description")
+    if description is None:
+        description = _get_attr_or_key(serialized, "description")
+    if description:
+        result["description"] = description
+
+    parameters = _get_attr_or_key(declaration, "parameters")
+    if parameters is None:
+        parameters = _get_attr_or_key(declaration, "parameters_json_schema", "parametersJsonSchema")
+    if parameters is None:
+        parameters = _get_attr_or_key(serialized, "parameters")
+    if parameters is None:
+        parameters = _get_attr_or_key(serialized, "parameters_json_schema", "parametersJsonSchema")
+    if parameters is not None:
+        result["parameters"] = bt_safe_deep_copy(parameters)
+
+    result.pop("parameters_json_schema", None)
+    result.pop("parametersJsonSchema", None)
+    return result
+
+
+def _serialize_callable_function_declaration(tool: Any) -> dict[str, Any]:
+    declaration: dict[str, Any] = {"name": getattr(tool, "__name__", type(tool).__name__)}
+
+    description = inspect.getdoc(tool)
+    if description:
+        declaration["description"] = description
+
+    try:
+        signature = inspect.signature(tool)
+    except (TypeError, ValueError):
+        return declaration
+
+    try:
+        type_hints = inspect.get_annotations(tool, eval_str=True)
+    except Exception:
+        type_hints = getattr(tool, "__annotations__", {})
+
+    properties = {}
+    required = []
+
+    for param_name, param in signature.parameters.items():
+        if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+            continue
+        if param_name in ("self", "cls"):
+            continue
+
+        schema = _annotation_to_google_schema(type_hints.get(param_name, param.annotation), param.default)
+        if param.default is not inspect.Signature.empty:
+            schema["default"] = _serialize_schema_default(param.default)
+        else:
+            required.append(param_name)
+
+        properties[param_name] = schema
+
+    if properties:
+        declaration["parameters"] = {"type": "OBJECT", "properties": properties}
+        if required:
+            declaration["parameters"]["required"] = required
+
+    return declaration
+
+
+def _annotation_to_google_schema(annotation: Any, default: Any) -> dict[str, Any]:
+    if annotation is inspect.Signature.empty:
+        return _value_to_google_schema(default)
+
+    origin = get_origin(annotation)
+    if origin is not None:
+        if str(origin) == "typing.Annotated":
+            return _annotation_to_google_schema(get_args(annotation)[0], default)
+
+        if origin in (list, tuple, set, frozenset, Sequence):
+            schema = {"type": "ARRAY"}
+            args = get_args(annotation)
+            if args:
+                items_schema = _annotation_to_google_schema(args[0], inspect.Signature.empty)
+                if items_schema:
+                    schema["items"] = items_schema
+            return schema
+
+        if origin in (dict, Mapping):
+            return {"type": "OBJECT"}
+
+        if str(origin) in ("typing.Union", "types.UnionType"):
+            args = [arg for arg in get_args(annotation) if arg is not type(None)]
+            if len(args) == 1:
+                return _annotation_to_google_schema(args[0], default)
+            return _value_to_google_schema(default)
+
+        if str(origin) == "typing.Literal":
+            literal_values = list(get_args(annotation))
+            schema = _value_to_google_schema(literal_values[0] if literal_values else default)
+            schema["enum"] = literal_values
+            return schema
+
+    if inspect.isclass(annotation) and issubclass(annotation, enum.Enum):
+        enum_values = [member.value for member in annotation]
+        schema = _value_to_google_schema(enum_values[0] if enum_values else default)
+        if enum_values:
+            schema["enum"] = enum_values
+        return schema
+
+    if inspect.isclass(annotation):
+        if hasattr(annotation, "model_json_schema") and callable(annotation.model_json_schema):
+            return annotation.model_json_schema()
+        if hasattr(annotation, "schema") and callable(annotation.schema):
+            return annotation.schema()
+
+    primitive_types = {
+        str: "STRING",
+        int: "INTEGER",
+        float: "NUMBER",
+        bool: "BOOLEAN",
+    }
+    if annotation in primitive_types:
+        return {"type": primitive_types[annotation]}
+
+    return _value_to_google_schema(default)
+
+
+def _value_to_google_schema(value: Any) -> dict[str, Any]:
+    if isinstance(value, bool):
+        return {"type": "BOOLEAN"}
+    if isinstance(value, int):
+        return {"type": "INTEGER"}
+    if isinstance(value, float):
+        return {"type": "NUMBER"}
+    if isinstance(value, str):
+        return {"type": "STRING"}
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return {"type": "ARRAY"}
+    if isinstance(value, dict):
+        return {"type": "OBJECT"}
+    return {}
+
+
+def _serialize_schema_default(value: Any) -> Any:
+    if isinstance(value, enum.Enum):
+        return value.value
+    return bt_safe_deep_copy(value)
+
+
+def _get_attr_or_key(obj: Any, *names: str) -> Any:
+    if obj is None:
+        return None
+
+    if isinstance(obj, dict):
+        for name in names:
+            if name in obj:
+                return obj[name]
+        return None
+
+    for name in names:
+        if hasattr(obj, name):
+            return getattr(obj, name)
+    return None
+
+
+def _ensure_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, tuple):
+        return list(value)
+    return [value]
 
 
 def omit(obj: dict[str, Any], keys: Iterable[str]):

@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from pathlib import Path
@@ -638,6 +639,112 @@ def test_attachment_with_pydantic_model(memory_logger):
 
     # Attachment should be preserved
     assert copied["context_file"] is attachment
+
+
+def test_serialize_content_item_with_content_and_binary_part():
+    from braintrust.logger import Attachment
+    from braintrust.wrappers.google_genai import _serialize_content_item
+
+    image_data = b"\x89PNG\r\n\x1a\n"
+    content = types.Content(
+        role="user",
+        parts=[
+            types.Part.from_bytes(data=image_data, mime_type="image/png"),
+            types.Part.from_text(text="What color is this image?"),
+        ],
+    )
+
+    serialized = _serialize_content_item(content)
+
+    assert serialized["role"] == "user"
+    assert len(serialized["parts"]) == 2
+    assert serialized["parts"][1] == {"text": "What color is this image?"}
+
+    attachment = serialized["parts"][0]["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "image/png"
+    assert attachment.reference["filename"] == "file.png"
+
+
+def test_serialize_tools_fallback_for_callable(monkeypatch, caplog):
+    from braintrust.wrappers import google_genai as google_genai_wrapper
+
+    class MockApiClient:
+        vertexai = False
+
+    def get_weather(location: str, unit: str = "celsius") -> str:
+        """Get the current weather for a location."""
+
+        return f"22 degrees {unit} and sunny in {location}"
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("serializer broke")
+
+    monkeypatch.setattr(google_genai_wrapper, "_serialize_tools_with_google", _raise)
+
+    config = types.GenerateContentConfig(tools=[get_weather], max_output_tokens=100)
+    with caplog.at_level(logging.DEBUG, logger=google_genai_wrapper.__name__):
+        serialized = google_genai_wrapper._serialize_tools(MockApiClient(), {"config": config})
+
+    assert serialized is not None
+    declaration = serialized[0]["functionDeclarations"][0]
+    assert declaration["name"] == "get_weather"
+    assert declaration["description"] == "Get the current weather for a location."
+    assert declaration["parameters"]["type"] == "OBJECT"
+    assert declaration["parameters"]["required"] == ["location"]
+    assert declaration["parameters"]["properties"]["location"]["type"] == "STRING"
+    assert declaration["parameters"]["properties"]["unit"]["type"] == "STRING"
+    assert declaration["parameters"]["properties"]["unit"]["default"] == "celsius"
+    assert any("Failed to serialize tools via Google SDK" in message for message in caplog.messages)
+
+
+def test_serialize_tools_fallback_for_declared_tool(monkeypatch):
+    from braintrust.wrappers import google_genai as google_genai_wrapper
+
+    class MockApiClient:
+        vertexai = False
+
+    function = types.FunctionDeclaration(
+        name="calculate",
+        description="Perform a mathematical calculation",
+        parameters_json_schema={
+            "type": "object",
+            "properties": {
+                "a": {"type": "number"},
+                "b": {"type": "number"},
+            },
+            "required": ["a", "b"],
+        },
+    )
+    tool = types.Tool(function_declarations=[function])
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("serializer broke")
+
+    monkeypatch.setattr(google_genai_wrapper, "_serialize_tools_with_google", _raise)
+
+    serialized = google_genai_wrapper._serialize_tools(
+        MockApiClient(), {"config": types.GenerateContentConfig(tools=[tool], max_output_tokens=100)}
+    )
+
+    assert serialized == [
+        {
+            "functionDeclarations": [
+                {
+                    "name": "calculate",
+                    "description": "Perform a mathematical calculation",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "a": {"type": "number"},
+                            "b": {"type": "number"},
+                        },
+                        "required": ["a", "b"],
+                    },
+                }
+            ]
+        }
+    ]
 
 
 class TestAutoInstrumentGoogleGenAI:
