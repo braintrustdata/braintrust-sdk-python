@@ -430,7 +430,7 @@ class BraintrustPlugin(SimplePlugin):
                 workflow_runner=_modify_workflow_runner,
             )
         else:
-            super().__init__(
+            super().__init__(  # pylint: disable=unexpected-keyword-arg
                 name="braintrust",
                 client_interceptors=[interceptor],
                 worker_interceptors=[interceptor],
