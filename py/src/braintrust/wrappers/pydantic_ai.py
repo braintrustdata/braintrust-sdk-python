@@ -7,7 +7,7 @@ from contextlib import AbstractAsyncContextManager
 from typing import Any
 
 from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.logger import NOOP_SPAN, Attachment, current_span, init_logger, start_span
+from braintrust.logger import NOOP_SPAN, Attachment, current_logger, current_span, init_logger, start_span
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
 
@@ -34,7 +34,7 @@ def setup_pydantic_ai(
         bool: True if setup was successful, False otherwise.
     """
     span = current_span()
-    if span == NOOP_SPAN:
+    if span == NOOP_SPAN and current_logger() is None:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 
     try:

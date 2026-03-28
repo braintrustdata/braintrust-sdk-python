@@ -2,7 +2,7 @@
 
 import logging
 
-from braintrust.logger import NOOP_SPAN, current_span, init_logger
+from braintrust.logger import NOOP_SPAN, current_logger, current_span, init_logger
 
 from .integration import AgnoIntegration
 from .patchers import (
@@ -44,7 +44,7 @@ def setup_agno(
         True if setup was successful, False otherwise
     """
     span = current_span()
-    if span == NOOP_SPAN:
+    if span == NOOP_SPAN and current_logger() is None:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 
     return AgnoIntegration.setup()

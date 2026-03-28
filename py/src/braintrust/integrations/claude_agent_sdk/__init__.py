@@ -16,7 +16,7 @@ Usage (imports can be before or after setup):
 
 import logging
 
-from braintrust.logger import NOOP_SPAN, current_span, init_logger
+from braintrust.logger import NOOP_SPAN, current_logger, current_span, init_logger
 
 from .integration import ClaudeAgentSDKIntegration
 
@@ -58,7 +58,7 @@ def setup_claude_agent_sdk(
         ```
     """
     span = current_span()
-    if span == NOOP_SPAN:
+    if span == NOOP_SPAN and current_logger() is None:
         init_logger(project=project, api_key=api_key, project_id=project_id)
 
     return ClaudeAgentSDKIntegration.setup()

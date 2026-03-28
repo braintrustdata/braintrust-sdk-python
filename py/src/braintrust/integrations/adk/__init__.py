@@ -3,7 +3,7 @@
 import logging
 import warnings
 
-from braintrust.logger import NOOP_SPAN, current_span, init_logger
+from braintrust.logger import NOOP_SPAN, current_logger, current_span, init_logger
 
 from .integration import ADKIntegration
 from .patchers import (
@@ -56,7 +56,7 @@ def setup_adk(
         warnings.warn("SpanProcessor parameter is deprecated and will be ignored", DeprecationWarning, stacklevel=2)
 
     span = current_span()
-    if span == NOOP_SPAN:
+    if span == NOOP_SPAN and current_logger() is None:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 
     return ADKIntegration.setup()

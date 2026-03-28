@@ -2,7 +2,7 @@
 
 import logging
 
-from braintrust.logger import NOOP_SPAN, current_span, init_logger
+from braintrust.logger import NOOP_SPAN, current_logger, current_span, init_logger
 
 from .integration import GoogleGenAIIntegration
 
@@ -33,7 +33,7 @@ def setup_genai(
         True if setup was successful, False if google-genai is not installed.
     """
     span = current_span()
-    if span == NOOP_SPAN:
+    if span == NOOP_SPAN and current_logger() is None:
         init_logger(project=project_name, api_key=api_key, project_id=project_id)
 
     return GoogleGenAIIntegration.setup()
