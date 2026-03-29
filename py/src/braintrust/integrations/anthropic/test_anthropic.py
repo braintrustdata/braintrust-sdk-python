@@ -366,6 +366,57 @@ def _assert_metrics_are_valid(metrics, start, end):
 
 
 @pytest.mark.vcr
+def test_anthropic_count_tokens(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+
+    msg_in = {"role": "user", "content": "what's 2+2?"}
+    response = client.messages.count_tokens(model=MODEL, messages=[msg_in])
+
+    assert getattr(response, "input_tokens", None) is not None
+
+    # verify we generated the right spans.
+    logs = memory_logger.pop()
+
+    assert len(logs) == 1
+    log = logs[0]
+    assert "2+2" in str(log["input"])
+    assert "input_tokens" in log["output"] and log["output"]["input_tokens"] != 0
+    assert log["project_id"] == PROJECT_NAME
+    assert log["span_id"]
+    assert log["root_span_id"]
+    assert log["metadata"]["model"] == MODEL
+    assert "request_duration_seconds" in log["metrics"]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_anthropic_count_tokens_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(anthropic.AsyncAnthropic())
+
+    msg_in = {"role": "user", "content": "what's 2+2?"}
+    response = await client.messages.count_tokens(model=MODEL, messages=[msg_in])
+
+    assert getattr(response, "input_tokens", None) is not None
+
+    # verify we generated the right spans.
+    logs = memory_logger.pop()
+
+    assert len(logs) == 1
+    log = logs[0]
+    assert "2+2" in str(log["input"])
+    assert "input_tokens" in log["output"] and log["output"]["input_tokens"] != 0
+    assert log["project_id"] == PROJECT_NAME
+    assert log["span_id"]
+    assert log["root_span_id"]
+    assert log["metadata"]["model"] == MODEL
+    assert "request_duration_seconds" in log["metrics"]
+
+
+@pytest.mark.vcr
 def test_anthropic_beta_messages_sync(memory_logger):
     assert not memory_logger.pop()
 

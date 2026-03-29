@@ -122,6 +122,21 @@ class AsyncMessages(Wrapper):
         stream = self.__messages.stream(*args, **kwargs)
         return TracedMessageStreamManager(stream, span, request_start_time)
 
+    async def count_tokens(self, **kwargs):
+        span = _start_span("anthropic.messages.count_tokens", kwargs)
+        request_start_time = time.time()
+        try:
+            result = await self.__messages.count_tokens(**kwargs)
+            ttcr = time.time() - request_start_time
+            _log_count_tokens_to_span(result, span, ttcr)
+            return result
+        except Exception as e:
+            with _catch_exceptions():
+                span.log(error=e)
+            raise
+        finally:
+            span.end()
+
 
 class AsyncBeta(Wrapper):
     def __init__(self, beta):
@@ -170,6 +185,20 @@ class Messages(Wrapper):
             ttft = time.time() - request_start_time
             _log_message_to_span(msg, span, time_to_first_token=ttft)
             return msg
+        except Exception as e:
+            span.log(error=e)
+            raise
+        finally:
+            span.end()
+
+    def count_tokens(self, **kwargs):
+        span = _start_span("anthropic.messages.count_tokens", kwargs)
+        request_start_time = time.time()
+        try:
+            result = self.__messages.count_tokens(**kwargs)
+            ttcr = time.time() - request_start_time
+            _log_count_tokens_to_span(result, span, ttcr)
+            return result
         except Exception as e:
             span.log(error=e)
             raise
@@ -455,6 +484,15 @@ def _log_message_to_span(message, span, time_to_first_token: float | None = None
             for k, v in {"role": getattr(message, "role", None), "content": getattr(message, "content", None)}.items()
             if v
         } or None
+
+        span.log(output=output, metrics=metrics)
+
+
+def _log_count_tokens_to_span(result, span, ttcr):
+    with _catch_exceptions():
+        input_tokens = getattr(result, "input_tokens", 0)
+        output = {"input_tokens": input_tokens}
+        metrics = {"request_duration_seconds": ttcr}
 
         span.log(output=output, metrics=metrics)
 
