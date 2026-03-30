@@ -50,7 +50,13 @@ def _assert_metrics_are_valid(metrics, start, end):
     assert "end" in metrics
     assert "duration" in metrics
     assert start <= metrics["start"] <= metrics["end"] <= end
-    assert metrics["duration"] > 0
+    assert metrics["duration"] >= 0
+    assert metrics["duration"] == pytest.approx(metrics["end"] - metrics["start"], abs=1e-9)
+
+    # Windows can report identical timestamps for very fast synchronous operations,
+    # so duration may legitimately be 0.0 for those spans.
+    if metrics["end"] > metrics["start"]:
+        assert metrics["duration"] > 0
 
     # Token metrics (if present)
     if "tokens" in metrics:
