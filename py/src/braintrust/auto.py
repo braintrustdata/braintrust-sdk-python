@@ -157,4 +157,3 @@ def _instrument_integration(integration) -> bool:
     with _try_patch():
         return integration.setup()
     return False
-
