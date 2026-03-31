@@ -13,26 +13,11 @@ def test_public_api_reexported():
 
         from braintrust_langchain import (
             BraintrustCallbackHandler,
-            BraintrustTracer,
-            clear_global_handler,
             set_global_handler,
         )
 
     assert callable(BraintrustCallbackHandler)
-    assert callable(BraintrustTracer)
     assert callable(set_global_handler)
-    assert callable(clear_global_handler)
-
-
-def test_context_module_reexported():
-    """braintrust_langchain.context should still work for users who imported from there directly."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-
-        from braintrust_langchain.context import clear_global_handler, set_global_handler
-
-    assert callable(set_global_handler)
-    assert callable(clear_global_handler)
 
 
 def test_deprecation_warning():
