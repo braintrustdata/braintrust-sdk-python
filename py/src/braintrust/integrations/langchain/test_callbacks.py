@@ -31,7 +31,7 @@ def logger_memory_logger():
 
 @pytest.fixture(autouse=True)
 def clear_handler():
-    from braintrust.integrations.langchain import clear_global_handler
+    from braintrust.integrations.langchain.context import clear_global_handler
 
     clear_global_handler()
     yield
