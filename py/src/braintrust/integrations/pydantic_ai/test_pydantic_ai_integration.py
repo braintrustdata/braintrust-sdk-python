@@ -5,6 +5,7 @@
 import asyncio
 import inspect
 import time
+from pathlib import Path
 
 import pytest
 from braintrust import logger, setup_pydantic_ai, traced
@@ -20,6 +21,11 @@ from pydantic_ai.usage import UsageLimits
 PROJECT_NAME = "test-pydantic-ai-integration"
 MODEL = "openai:gpt-4o-mini"  # Use cheaper model for tests
 TEST_PROMPT = "What is 2+2? Answer with just the number."
+
+
+@pytest.fixture(scope="module")
+def vcr_cassette_dir():
+    return str(Path(__file__).resolve().parent / "cassettes")
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -65,6 +71,36 @@ def _assert_metrics_are_valid(metrics, start, end):
         assert metrics["prompt_tokens"] > 0
     if "completion_tokens" in metrics:
         assert metrics["completion_tokens"] > 0
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_direct_model_request_creates_nested_chat_span_without_class_scan(memory_logger, direct):
+    """Direct calls should resolve and wrap models via _prepare_model, not class scanning."""
+    assert not memory_logger.pop()
+
+    messages = [ModelRequest(parts=[UserPromptPart(content=TEST_PROMPT)])]
+
+    start = time.time()
+    response = await direct.model_request(model=MODEL, messages=messages)
+    end = time.time()
+
+    assert response.parts
+    assert "4" in str(response.parts[0].content)
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 2, f"Expected at least 2 spans (model_request + chat), got {len(spans)}"
+
+    direct_span = next((s for s in spans if s["span_attributes"]["name"] == "model_request"), None)
+    chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
+
+    assert direct_span is not None, "model_request span not found"
+    assert chat_span is not None, "chat span not found"
+    assert chat_span["span_parents"] == [direct_span["span_id"]]
+    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
+    assert chat_span["metadata"]["provider"] == "openai"
+    _assert_metrics_are_valid(direct_span["metrics"], start, end)
+    _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -115,6 +151,37 @@ async def test_agent_run_async(memory_logger):
     assert "completion_tokens" in agent_span["metrics"]
     assert agent_span["metrics"]["prompt_tokens"] > 0
     assert agent_span["metrics"]["completion_tokens"] > 0
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_wrapper_agent_run_is_traced(memory_logger):
+    """WrapperAgent inherits AbstractAgent methods and should be traced by setup()."""
+    from pydantic_ai.agent.wrapper import WrapperAgent
+
+    assert not memory_logger.pop()
+
+    wrapped = WrapperAgent(Agent(MODEL, name="wrapped-agent", model_settings=ModelSettings(max_tokens=50)))
+
+    start = time.time()
+    result = await wrapped.run(TEST_PROMPT)
+    end = time.time()
+
+    assert result.output
+    assert "4" in str(result.output)
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
+
+    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
+
+    assert agent_span is not None, "agent_run span not found"
+    assert chat_span is not None, "chat span not found"
+    assert agent_span["span_attributes"]["name"] == "agent_run [wrapped-agent]"
+    assert chat_span["span_parents"] == [agent_span["span_id"]]
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
+    _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -701,270 +768,6 @@ async def test_direct_model_request_stream_complete_output(memory_logger, direct
     # Check spans were created
     spans = memory_logger.pop()
     assert len(spans) >= 1
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_direct_api_streaming_call_3(memory_logger, direct):
-    """Test direct API streaming (call 3) - should output complete '1, 2, 3, 4, 5'."""
-    assert not memory_logger.pop()
-
-    IDENTICAL_PROMPT = "Count from 1 to 5."
-    messages = [ModelRequest(parts=[UserPromptPart(content=IDENTICAL_PROMPT)])]
-
-    collected_text = ""
-    async with direct.model_request_stream(
-        model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)
-    ) as stream:
-        async for chunk in stream:
-            # FIX: Handle PartStartEvent which contains initial text
-            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
-                collected_text += str(chunk.part.content)
-            # Handle PartDeltaEvent with delta content
-            elif hasattr(chunk, "delta") and chunk.delta:
-                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
-                    collected_text += chunk.delta.content_delta
-
-    # Now this should pass!
-    assert "1" in collected_text, f"Expected '1' in output but got: {collected_text}"
-    assert "2" in collected_text
-    assert "3" in collected_text
-    assert "4" in collected_text
-    assert "5" in collected_text
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_direct_api_streaming_call_4(memory_logger, direct):
-    """Test direct API streaming (call 4) - identical to call 3."""
-    assert not memory_logger.pop()
-
-    IDENTICAL_PROMPT = "Count from 1 to 5."
-    messages = [ModelRequest(parts=[UserPromptPart(content=IDENTICAL_PROMPT)])]
-
-    collected_text = ""
-    async with direct.model_request_stream(
-        model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)
-    ) as stream:
-        async for chunk in stream:
-            # FIX: Handle PartStartEvent which contains initial text
-            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
-                collected_text += str(chunk.part.content)
-            # Handle PartDeltaEvent with delta content
-            elif hasattr(chunk, "delta") and chunk.delta:
-                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
-                    collected_text += chunk.delta.content_delta
-
-    # Now this should pass!
-    assert "1" in collected_text, f"Expected '1' in output but got: {collected_text}"
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_direct_api_streaming_early_break_call_5(memory_logger, direct):
-    """Test direct API streaming with early break (call 5) - should still get first few chars including '1'."""
-    assert not memory_logger.pop()
-
-    IDENTICAL_PROMPT = "Count from 1 to 5."
-    messages = [ModelRequest(parts=[UserPromptPart(content=IDENTICAL_PROMPT)])]
-
-    collected_text = ""
-    i = 0
-    async with direct.model_request_stream(
-        model="openai:gpt-4o", messages=messages, model_settings=ModelSettings(max_tokens=100)
-    ) as stream:
-        async for chunk in stream:
-            # FIX: Handle PartStartEvent which contains initial text
-            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
-                collected_text += str(chunk.part.content)
-            # Handle PartDeltaEvent with delta content
-            elif hasattr(chunk, "delta") and chunk.delta:
-                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
-                    collected_text += chunk.delta.content_delta
-
-            i += 1
-            if i >= 3:
-                break
-
-    # Even with early break after 3 chunks, we should capture text from PartStartEvent (chunk 1)
-    print(f"Collected text: '{collected_text}'")
-    assert len(collected_text) > 0, f"Expected some text even with early break but got empty string"
-    # Verify we're capturing PartStartEvent by checking we got text before breaking at chunk 3
-    assert collected_text, f"Should have captured text from PartStartEvent or first delta"
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_direct_api_streaming_no_duplication(memory_logger, direct):
-    """Test that direct API streaming doesn't duplicate output and captures all text in span."""
-    assert not memory_logger.pop()
-
-    collected_text = ""
-    chunk_count = 0
-
-    # Use direct API streaming
-    messages = [ModelRequest(parts=[UserPromptPart(content="Count from 1 to 5, separated by commas.")])]
-    async with direct.model_request_stream(
-        messages=messages,
-        model_settings=ModelSettings(max_tokens=100),
-        model="openai:gpt-4o",
-    ) as response:
-        async for chunk in response:
-            chunk_count += 1
-            # Extract text from chunk
-            text = None
-            if hasattr(chunk, "part") and hasattr(chunk.part, "content"):
-                text = str(chunk.part.content)
-            elif hasattr(chunk, "delta") and chunk.delta:
-                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
-                    text = chunk.delta.content_delta
-
-            if text:
-                collected_text += text
-
-    print(f"Collected text from stream: '{collected_text}'")
-    print(f"Total chunks: {chunk_count}")
-
-    # Verify we collected complete text
-    assert len(collected_text) > 0, "Should have collected text from stream"
-    assert "1" in collected_text, "Should have '1' in output"
-
-    # Check span captured the full output
-    spans = memory_logger.pop()
-    assert len(spans) >= 1, f"Expected at least 1 span, got {len(spans)}"
-
-    # Find the model_request_stream span
-    stream_span = next((s for s in spans if "model_request_stream" in s["span_attributes"]["name"]), None)
-    assert stream_span is not None, "model_request_stream span not found"
-
-    # Check that span output contains the full text, not just "1,"
-    span_output = stream_span.get("output", {})
-    print(f"Span output: {span_output}")
-
-    # The span should capture the full response
-    if "response" in span_output and "parts" in span_output["response"]:
-        parts = span_output["response"]["parts"]
-        span_text = "".join(str(p.get("content", "")) for p in parts if isinstance(p, dict))
-        print(f"Span captured text: '{span_text}'")
-        # Should have more than just "1,"
-        assert len(span_text) > 2, f"Span should capture more than just '1,', got: '{span_text}'"
-        assert "1" in span_text, "Span should contain '1'"
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_direct_api_streaming_no_duplication_comprehensive(memory_logger, direct):
-    """Comprehensive test matching golden test setup to verify no duplication and full output capture."""
-    assert not memory_logger.pop()
-
-    # Match golden test exactly
-    IDENTICAL_PROMPT = "Count from 1 to 5."
-    IDENTICAL_SETTINGS = ModelSettings(max_tokens=100)
-
-    messages = [ModelRequest(parts=[UserPromptPart(content=IDENTICAL_PROMPT)])]
-
-    collected_text = ""
-    chunk_types = []
-    seen_delta = False
-
-    async with direct.model_request_stream(
-        messages=messages, model_settings=IDENTICAL_SETTINGS, model="openai:gpt-4o"
-    ) as stream:
-        async for chunk in stream:
-            # Track chunk types
-            if hasattr(chunk, "part") and hasattr(chunk.part, "content") and not seen_delta:
-                chunk_types.append(("PartStartEvent", str(chunk.part.content)))
-                text = str(chunk.part.content)
-                collected_text += text
-            elif hasattr(chunk, "delta") and chunk.delta:
-                seen_delta = True
-                if hasattr(chunk.delta, "content_delta") and chunk.delta.content_delta:
-                    chunk_types.append(("PartDeltaEvent", chunk.delta.content_delta))
-                    text = chunk.delta.content_delta
-                    collected_text += text
-
-    print(f"\nCollected text: '{collected_text}'")
-    print(f"Total chunks received: {len(chunk_types)}")
-    print(f"All chunk types:")
-    for i, (chunk_type, content) in enumerate(chunk_types):
-        print(f"  {i}: {chunk_type} = {content!r}")
-
-    # Verify no duplication in collected text
-    # Expected: "Sure! Here you go:\n\n1, 2, 3, 4, 5." or similar (length ~30)
-    # Should NOT be duplicated
-    assert len(collected_text) < 60, (
-        f"Text seems duplicated (too long): '{collected_text}' (len={len(collected_text)})"
-    )
-    assert collected_text.count("1, 2, 3") == 1, f"Text should appear once, not duplicated: '{collected_text}'"
-
-    # Check span
-    spans = memory_logger.pop()
-    print(f"Number of spans: {len(spans)}")
-    for i, s in enumerate(spans):
-        print(f"Span {i}: {s['span_attributes']['name']} (type: {s['span_attributes'].get('type', 'N/A')})")
-        if "span_parents" in s and s["span_parents"]:
-            print(f"  Parents: {s['span_parents']}")
-
-    # Should have 1 or 2 spans (direct API wrapper + potentially model wrapper)
-    assert len(spans) >= 1, f"Expected at least 1 span, got {len(spans)}"
-
-    # Find the model_request_stream span
-    stream_span = next((s for s in spans if "model_request_stream" in s["span_attributes"]["name"]), None)
-    assert stream_span is not None, "model_request_stream span not found"
-
-    # Check that span output is not empty and captures reasonable amount of text
-    span_output = stream_span.get("output", {})
-    print(f"Span output keys: {span_output.keys() if span_output else 'None'}")
-
-    if "parts" in span_output:
-        parts = span_output.get("parts", [])
-        print(f"Span parts: {parts}")
-        if parts and len(parts) > 0:
-            first_part = parts[0]
-            print(f"First part type: {type(first_part)}")
-            print(f"First part: {first_part}")
-            if isinstance(first_part, dict):
-                part_content = first_part.get("content", "")
-                print(f"Part content: '{part_content}'")
-                print(f"Part content length: {len(part_content)}")
-                # The span should capture the FULL text, not just "1,"
-                assert len(part_content) > 5, f"Span should capture full text, got: '{part_content}'"
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_async_generator_pattern_call_6(memory_logger):
-    """Test async generator pattern (call 6) - wrapping stream in async generator."""
-    assert not memory_logger.pop()
-
-    IDENTICAL_PROMPT = "Count from 1 to 5."
-
-    async def stream_with_async_generator(prompt: str):
-        """Wrap the stream in an async generator (customer pattern)."""
-        agent = Agent("openai:gpt-4o", model_settings=ModelSettings(max_tokens=100))
-        async for event in agent.run_stream_events(prompt):
-            yield event
-
-    collected_text = ""
-    i = 0
-    async for event in stream_with_async_generator(IDENTICAL_PROMPT):
-        # run_stream_events returns ResultEvent objects with different structure
-        # Try to extract text from whatever event type we get
-        if hasattr(event, "content") and event.content:
-            collected_text += str(event.content)
-        elif hasattr(event, "part") and hasattr(event.part, "content"):
-            collected_text += str(event.part.content)
-        elif hasattr(event, "delta") and event.delta:
-            if hasattr(event.delta, "content_delta") and event.delta.content_delta:
-                collected_text += event.delta.content_delta
-
-        i += 1
-        if i >= 3:
-            break
-
-    # This should capture something
-    print(f"Collected text from generator: '{collected_text}'")
-    assert len(collected_text) > 0, f"Expected some text from async generator but got empty string"
 
 
 @pytest.mark.vcr
@@ -1960,6 +1763,42 @@ async def test_agent_with_tool_execution(memory_logger):
 
 
 @pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_tool_execution_tracing_does_not_depend_on_message_reconstruction(memory_logger, monkeypatch):
+    """Real tool execution spans should be emitted even if message reconstruction is unavailable."""
+    from braintrust.integrations.pydantic_ai import tracing as pydantic_ai_tracing
+
+    assert not memory_logger.pop()
+
+    def fail_if_called(result):
+        raise AssertionError("message-based tool span reconstruction should not run")
+
+    monkeypatch.setattr(pydantic_ai_tracing, "_create_tool_spans_from_messages_impl", fail_if_called)
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
+
+    @agent.tool_plain
+    def get_weather(city: str) -> str:
+        return f"It's sunny in {city}"
+
+    result = await agent.run("What's the weather in Paris?")
+
+    assert result.output
+    assert "Paris" in str(result.output) or "sunny" in str(result.output)
+
+    spans = memory_logger.pop()
+    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    tool_span = next((s for s in spans if s["span_attributes"].get("name") == "get_weather"), None)
+
+    assert agent_span is not None, "agent_run span not found"
+    assert tool_span is not None, "runtime tool span not found"
+    assert tool_span["span_attributes"]["type"] == SpanTypeAttribute.TOOL
+    assert tool_span["span_parents"] == [agent_span["span_id"]]
+    assert tool_span["metadata"].get("tool_call_id")
+    assert tool_span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.vcr
 def test_tool_execution_creates_spans(memory_logger):
     """Test that executing tools with agents works and creates traced spans."""
     assert not memory_logger.pop()
@@ -2029,7 +1868,7 @@ def test_agent_tool_metadata_extraction(memory_logger):
 
     Principle: If agent.run() accepts it, it goes in input only.
     """
-    from braintrust.wrappers.pydantic_ai import _build_agent_input_and_metadata
+    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
 
     agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
 
@@ -2110,7 +1949,7 @@ def test_agent_tool_metadata_extraction(memory_logger):
 
 def test_agent_without_tools_metadata():
     """Test metadata extraction for agent without tools."""
-    from braintrust.wrappers.pydantic_ai import _build_agent_input_and_metadata
+    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
 
     # Agent with no tools
     agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
@@ -2127,7 +1966,7 @@ def test_agent_without_tools_metadata():
 
 def test_agent_tool_with_custom_name():
     """Test that tools with custom names are properly extracted with schemas in input."""
-    from braintrust.wrappers.pydantic_ai import _build_agent_input_and_metadata
+    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
 
     agent = Agent(MODEL)
 
@@ -2162,7 +2001,7 @@ def test_agent_tool_with_custom_name():
 
 def test_explicit_toolsets_kwarg_in_input():
     """Test that explicitly passed toolsets kwarg goes to input (not just metadata)."""
-    from braintrust.wrappers.pydantic_ai import _build_agent_input_and_metadata
+    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
 
     agent = Agent(MODEL)
 
@@ -2216,7 +2055,7 @@ def test_reasoning_tokens_extraction(memory_logger):
     mock_response.usage.details.reasoning_tokens = 128
 
     # Test the metric extraction function directly
-    from braintrust.wrappers.pydantic_ai import _extract_response_metrics
+    from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
 
     start_time = time.time()
     end_time = start_time + 5.0
@@ -2359,14 +2198,85 @@ async def test_model_class_span_names(memory_logger):
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
 
+def test_model_classes_patcher_marker_check_is_mro_safe():
+    from braintrust.integrations.pydantic_ai.patchers import ModelClassesPatcher
+
+    class WrapperModel:
+        pass
+
+    class InstrumentedModel(WrapperModel):
+        pass
+
+    ModelClassesPatcher.mark_patched(WrapperModel)
+
+    assert ModelClassesPatcher.has_patch_marker(WrapperModel) is True
+    assert ModelClassesPatcher.has_patch_marker(InstrumentedModel) is False
+
+
+def test_wrap_model_class_is_idempotent():
+    from braintrust.integrations.pydantic_ai.patchers import ModelClassesPatcher, wrap_model_class
+
+    class DummyModel:
+        async def request(self, *args, **kwargs):
+            return None
+
+        def request_stream(self, *args, **kwargs):
+            return iter(())
+
+    with pytest.deprecated_call(match=r"wrap_model_class\(\) is deprecated"):
+        wrap_model_class(DummyModel)
+    first_request = DummyModel.__dict__["request"]
+    first_request_stream = DummyModel.__dict__["request_stream"]
+
+    assert ModelClassesPatcher.has_patch_marker(DummyModel) is True
+
+    with pytest.deprecated_call(match=r"wrap_model_class\(\) is deprecated"):
+        wrap_model_class(DummyModel)
+
+    assert DummyModel.__dict__["request"] is first_request
+    assert DummyModel.__dict__["request_stream"] is first_request_stream
+
+
+def test_wrap_model_classes_is_deprecated(monkeypatch):
+    from braintrust.integrations.pydantic_ai.patchers import wrap_model_classes
+
+    monkeypatch.setattr(
+        "braintrust.integrations.pydantic_ai.patchers.ModelClassesPatcher.applies", lambda *_args, **_kwargs: False
+    )
+
+    with pytest.deprecated_call(match=r"wrap_model_classes\(\) is deprecated"):
+        assert wrap_model_classes() is False
+
+
+def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
+    import pydantic_ai._tool_manager as tool_manager_module
+    import pydantic_ai.direct as direct_module
+    from braintrust.integrations.pydantic_ai.integration import PydanticAIIntegration
+    from pydantic_ai.agent.abstract import AbstractAgent
+
+    run = AbstractAgent.__dict__["run"]
+    prepare_model = direct_module.__dict__["_prepare_model"]
+    tool_method_name = (
+        "_execute_function_tool_call"
+        if "_execute_function_tool_call" in tool_manager_module.ToolManager.__dict__
+        else "_call_function_tool"
+    )
+    tool_method = tool_manager_module.ToolManager.__dict__[tool_method_name]
+
+    assert PydanticAIIntegration.setup() is True
+    assert AbstractAgent.__dict__["run"] is run
+    assert direct_module.__dict__["_prepare_model"] is prepare_model
+    assert tool_manager_module.ToolManager.__dict__[tool_method_name] is tool_method
+
+
 def test_serialize_content_part_with_binary_content():
     """Unit test to verify _serialize_content_part handles BinaryContent correctly.
 
     This tests the direct serialization of BinaryContent objects and verifies
     they are converted to Braintrust Attachment objects.
     """
+    from braintrust.integrations.pydantic_ai.tracing import _serialize_content_part
     from braintrust.logger import Attachment
-    from braintrust.wrappers.pydantic_ai import _serialize_content_part
     from pydantic_ai.models.function import BinaryContent
 
     # Test 1: Direct BinaryContent serialization
@@ -2389,8 +2299,8 @@ def test_serialize_content_part_with_user_prompt_part():
     containing BinaryContent, we need to recursively serialize the content items
     so that BinaryContent is converted to Braintrust Attachment.
     """
+    from braintrust.integrations.pydantic_ai.tracing import _serialize_content_part
     from braintrust.logger import Attachment
-    from braintrust.wrappers.pydantic_ai import _serialize_content_part
     from pydantic_ai.messages import UserPromptPart
     from pydantic_ai.models.function import BinaryContent
 
@@ -2430,8 +2340,8 @@ def test_serialize_messages_with_binary_content():
     This tests the full message serialization path that's used for the chat span,
     ensuring that nested BinaryContent in UserPromptPart is properly converted.
     """
+    from braintrust.integrations.pydantic_ai.tracing import _serialize_messages
     from braintrust.logger import Attachment
-    from braintrust.wrappers.pydantic_ai import _serialize_messages
     from pydantic_ai.messages import ModelRequest, UserPromptPart
     from pydantic_ai.models.function import BinaryContent
 
@@ -2488,7 +2398,7 @@ async def test_streaming_wrappers_capture_time_to_first_token():
     """
     from unittest.mock import AsyncMock, MagicMock, Mock
 
-    from braintrust.wrappers.pydantic_ai import (
+    from braintrust.integrations.pydantic_ai.tracing import (
         _AgentStreamResultSyncProxy,
         _AgentStreamWrapper,
         _DirectStreamIteratorProxy,
@@ -2846,7 +2756,7 @@ def test_model_request_stream_sync_thread_context_propagation(memory_logger, dir
 
 def test_start_producer_wrapper_exception_does_not_double_invoke_producer():
     """Regression test: producer exceptions must not trigger a second producer call."""
-    from braintrust.wrappers.pydantic_ai import _create_start_producer_wrapper
+    from braintrust.integrations.pydantic_ai.tracing import _create_start_producer_wrapper
 
     class StreamLike:
         def __init__(self):

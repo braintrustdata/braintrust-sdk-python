@@ -20,6 +20,31 @@ class BasePatcher(ABC):
     patch_id: ClassVar[str | None] = None
     version_spec: ClassVar[str | None] = None
     priority: ClassVar[int] = 100
+    rescan_on_setup: ClassVar[bool] = False
+
+    @classmethod
+    def patch_marker_attr(cls) -> str:
+        """Return the sentinel attribute used to mark this patcher as applied."""
+        suffix = re.sub(r"\W+", "_", cls.identifier()).strip("_")
+        return f"__braintrust_patched_{suffix}__"
+
+    @classmethod
+    def has_patch_marker(cls, obj: Any) -> bool:
+        """Return whether *obj* is marked as patched by this patcher.
+
+        For classes, read ``__dict__`` directly so markers inherited via the
+        MRO do not make subclasses appear locally patched.
+        """
+        if obj is None:
+            return False
+        if isinstance(obj, type):
+            return bool(obj.__dict__.get(cls.patch_marker_attr(), False))
+        return bool(getattr(obj, cls.patch_marker_attr(), False))
+
+    @classmethod
+    def mark_patched(cls, obj: Any) -> None:
+        """Mark an object as patched by this patcher."""
+        setattr(obj, cls.patch_marker_attr(), True)
 
     @classmethod
     def identifier(cls) -> str:
@@ -42,6 +67,115 @@ class BasePatcher(ABC):
     def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
         """Apply instrumentation for this patcher."""
         raise NotImplementedError
+
+
+class ClassScanPatcher(BasePatcher):
+    """Base patcher for rescanning and patching discovered class hierarchies."""
+
+    rescan_on_setup: ClassVar[bool] = True
+    include_abstract_classes: ClassVar[bool] = False
+    target_module: ClassVar[str | None] = None
+    root_class_path: ClassVar[str | None] = None
+
+    @classmethod
+    def resolve_scan_root(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
+        """Return the object from which this patcher resolves its root class."""
+        if target is not None:
+            return target
+        if cls.target_module is not None:
+            try:
+                return importlib.import_module(cls.target_module)
+            except ImportError:
+                return None
+        return module
+
+    @classmethod
+    def iter_root_classes(
+        cls,
+        module: Any | None,
+        version: str | None,
+        *,
+        target: Any | None = None,
+    ) -> Iterable[type[Any]]:
+        """Yield root classes whose subclass trees should be scanned."""
+        if cls.root_class_path is None:
+            return ()
+        root = cls.resolve_scan_root(module, version, target=target)
+        if root is None:
+            return ()
+        root_class = _resolve_attr_path(root, cls.root_class_path)
+        if root_class is None:
+            return ()
+        return (root_class,)
+
+    @classmethod
+    def resolve_root_classes(
+        cls,
+        module: Any | None,
+        version: str | None,
+        *,
+        target: Any | None = None,
+    ) -> tuple[type[Any], ...]:
+        """Return the currently discoverable root classes for this patcher."""
+        try:
+            return tuple(cls.iter_root_classes(module, version, target=target))
+        except ImportError:
+            return ()
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether any root classes are currently discoverable."""
+        return super().applies(module, version, target=target) and bool(
+            cls.resolve_root_classes(module, version, target=target)
+        )
+
+    @classmethod
+    @abstractmethod
+    def patch_class(cls, target_class: type[Any]) -> bool | None:
+        """Patch one discovered class.
+
+        Return ``False`` to skip marking the class as patched. Any other return
+        value is treated as a successful patch.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def iter_classes(
+        cls,
+        module: Any | None,
+        version: str | None,
+        *,
+        target: Any | None = None,
+    ) -> Iterable[type[Any]]:
+        """Yield discovered subclasses under the configured root classes."""
+
+        def walk(base_class: type[Any]) -> Iterable[type[Any]]:
+            for subclass in base_class.__subclasses__():
+                if cls.include_abstract_classes or not getattr(subclass, "__abstractmethods__", None):
+                    yield subclass
+                yield from walk(subclass)
+
+        for root_class in cls.resolve_root_classes(module, version, target=target):
+            yield from walk(root_class)
+
+    @classmethod
+    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return ``True`` when every currently discovered class is patched."""
+        classes = tuple(cls.iter_classes(module, version, target=target))
+        return bool(classes) and all(cls.has_patch_marker(class_) for class_ in classes)
+
+    @classmethod
+    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Patch all newly discovered classes under the configured roots."""
+        success = False
+        for class_ in cls.iter_classes(module, version, target=target):
+            if cls.has_patch_marker(class_):
+                continue
+            if cls.patch_class(class_) is False:
+                continue
+            cls.mark_patched(class_)
+            success = True
+        return success
 
 
 class FunctionWrapperPatcher(BasePatcher):
@@ -125,14 +259,13 @@ class FunctionWrapperPatcher(BasePatcher):
     @classmethod
     def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
         """Return whether this patcher's target has already been instrumented."""
-        marker = cls.patch_marker_attr()
         resolved_target = cls.resolve_target(module, version, target=target)
-        if resolved_target is not None and getattr(resolved_target, marker, False):
+        if cls.has_patch_marker(resolved_target):
             return True
         # Fall back to checking the root — the marker may live there when the
         # resolved target does not support setattr (e.g. bound methods).
         root = cls.resolve_root(module, version, target=target)
-        if root is not None and root is not resolved_target and getattr(root, marker, False):
+        if root is not None and root is not resolved_target and cls.has_patch_marker(root):
             return True
         return False
 
@@ -152,7 +285,7 @@ class FunctionWrapperPatcher(BasePatcher):
         cls.mark_patched(resolved_target)
         # If mark_patched could not store the marker on the target (e.g. bound
         # methods), store it on the root so is_patched() can still find it.
-        if not getattr(resolved_target, marker, False):
+        if not cls.has_patch_marker(resolved_target):
             setattr(root, marker, True)
         return True
 
@@ -174,8 +307,7 @@ class FunctionWrapperPatcher(BasePatcher):
         ``superseded_by`` has a target that exists on *target*.  Returns
         *target* for convenient chaining.
         """
-        marker = cls.patch_marker_attr()
-        if getattr(target, marker, False):
+        if cls.has_patch_marker(target):
             return target
         attr = cls.target_path.rsplit(".", 1)[-1]
         if _resolve_attr_path(target, attr) is None:
@@ -241,7 +373,7 @@ class ClassReplacementPatcher(BasePatcher):
     def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
         """Return whether this patcher's replacement class is already installed."""
         resolved_target = cls.resolve_target(module, version, target=target)
-        return bool(resolved_target is not None and getattr(resolved_target, cls.patch_marker_attr(), False))
+        return bool(resolved_target is not None and cls.has_patch_marker(resolved_target))
 
     @classmethod
     def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
@@ -370,7 +502,7 @@ class BaseIntegration(ABC):
         for patcher in sorted(selected_patchers, key=lambda patcher: patcher.priority):
             if not patcher.applies(module, version, target=target):
                 continue
-            if patcher.is_patched(module, version, target=target):
+            if not patcher.rescan_on_setup and patcher.is_patched(module, version, target=target):
                 success = True
                 continue
             success = patcher.patch(module, version, target=target) or success

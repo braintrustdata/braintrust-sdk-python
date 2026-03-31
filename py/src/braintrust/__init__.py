@@ -76,6 +76,9 @@ from .integrations.anthropic import (
 from .integrations.openrouter import (
     wrap_openrouter,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
+from .integrations.pydantic_ai import (
+    setup_pydantic_ai,  # noqa: F401 # type: ignore[reportUnusedImport]
+)
 from .logger import *
 from .logger import (
     _internal_get_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
@@ -97,7 +100,4 @@ from .util import (
 )
 from .wrappers.litellm import (
     wrap_litellm,  # noqa: F401 # type: ignore[reportUnusedImport]
-)
-from .wrappers.pydantic_ai import (
-    setup_pydantic_ai,  # noqa: F401 # type: ignore[reportUnusedImport]
 )

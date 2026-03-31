@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from typing import Any, Dict
 
 import pytest
@@ -25,6 +26,11 @@ from pydantic_ai.providers.openai import OpenAIProvider  # pylint: disable=impor
 PROJECT_NAME = "test-pydantic-ai"
 MODEL = "gpt-3.5-turbo"  # Use a cheaper model for testing
 TEST_PROMPT = "What is the capital of Italy?"
+
+
+@pytest.fixture(scope="module")
+def vcr_cassette_dir():
+    return str(Path(__file__).resolve().parent / "cassettes")
 
 
 def get_pydantic_agents_client(model_name: str, client: AsyncOpenAI):

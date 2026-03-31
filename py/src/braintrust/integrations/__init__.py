@@ -6,6 +6,7 @@ from .claude_agent_sdk import ClaudeAgentSDKIntegration
 from .dspy import DSPyIntegration
 from .google_genai import GoogleGenAIIntegration
 from .openrouter import OpenRouterIntegration
+from .pydantic_ai import PydanticAIIntegration
 
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "DSPyIntegration",
     "GoogleGenAIIntegration",
     "OpenRouterIntegration",
+    "PydanticAIIntegration",
 ]

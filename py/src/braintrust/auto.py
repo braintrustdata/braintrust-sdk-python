@@ -16,6 +16,7 @@ from braintrust.integrations import (
     DSPyIntegration,
     GoogleGenAIIntegration,
     OpenRouterIntegration,
+    PydanticAIIntegration,
 )
 
 
@@ -124,7 +125,7 @@ def auto_instrument(
     if litellm:
         results["litellm"] = _instrument_litellm()
     if pydantic_ai:
-        results["pydantic_ai"] = _instrument_pydantic_ai()
+        results["pydantic_ai"] = _instrument_integration(PydanticAIIntegration)
     if google_genai:
         results["google_genai"] = _instrument_integration(GoogleGenAIIntegration)
     if openrouter:
@@ -162,12 +163,4 @@ def _instrument_litellm() -> bool:
         from braintrust.wrappers.litellm import patch_litellm
 
         return patch_litellm()
-    return False
-
-
-def _instrument_pydantic_ai() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.pydantic_ai import setup_pydantic_ai
-
-        return setup_pydantic_ai()
     return False
