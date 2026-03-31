@@ -4,8 +4,9 @@ from unittest.mock import ANY
 
 import pytest
 from braintrust import logger
-from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
+from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler, setup_langchain
 from braintrust.test_helpers import init_test_logger
+from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -153,3 +154,26 @@ def test_global_handler(logger_memory_logger):
     )
 
     assert message.content == "1 + 2 equals 3."
+
+
+def test_setup_langchain_installs_default_handler():
+    from braintrust.integrations.langchain.context import get_global_handler
+
+    manager = CallbackManager.configure()
+    assert next((h for h in manager.handlers if isinstance(h, BraintrustCallbackHandler)), None) is None
+    assert get_global_handler() is None
+
+    assert setup_langchain()
+    handler = get_global_handler()
+    assert isinstance(handler, BraintrustCallbackHandler)
+
+    manager = CallbackManager.configure()
+    assert next((h for h in manager.handlers if isinstance(h, BraintrustCallbackHandler)), None) is handler
+
+    assert setup_langchain()
+    assert get_global_handler() is handler
+
+
+class TestAutoInstrumentLangChain:
+    def test_auto_instrument_langchain(self):
+        verify_autoinstrument_script("test_auto_langchain.py")

@@ -224,6 +224,8 @@ Use `CompositeFunctionWrapperPatcher` when several closely related targets shoul
 - sync and async variants of the same method
 - the same logical surface patched across multiple modules
 
+Use `CallbackPatcher` when the integration only needs a setup side effect after applicability succeeds, not in-place wrapping or class replacement. Good fits include registering a global callback handler, invoking a provider-owned configure hook, or installing default integration state. Gate it with `target_module` when the side effect depends on an optional module, and use `state_getter` when idempotence should be derived from integration-managed state instead of a marker on the imported root.
+
 Set `target_module` when the patch target lives outside the module named by `import_names`, especially for optional or deep submodules. Failed `target_module` imports should make the patcher skip cleanly through `applies()`.
 
 Use `superseded_by` for version-conditional mutual exclusion. Express fallback relationships declaratively instead of reproducing `hasattr` logic in custom `applies()` methods whenever possible.

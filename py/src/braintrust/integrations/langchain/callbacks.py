@@ -11,8 +11,9 @@ from typing import (
 )
 from uuid import UUID
 
-import braintrust
-from braintrust import NOOP_SPAN, Logger, Span, SpanAttributes, SpanTypeAttribute, current_span, init_logger
+from braintrust.generated_types import SpanAttributes
+from braintrust.logger import NOOP_SPAN, Logger, Span, current_span, init_logger, start_span
+from braintrust.span_types import SpanTypeAttribute
 from braintrust.version import VERSION as sdk_version
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks.base import BaseCallbackHandler
@@ -93,8 +94,6 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             parent_span = current_parent
         elif self.logger is not None:
             parent_span = self.logger
-        else:
-            parent_span = braintrust
 
         if event is None:
             event = {}
@@ -116,15 +115,26 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             },
         }
 
-        span = parent_span.start_span(
-            name=name,
-            type=type,
-            span_attributes=span_attributes,
-            start_time=start_time,
-            set_current=set_current,
-            parent=parent,
-            **event,
-        )
+        if parent_span is None:
+            span = start_span(
+                name=name,
+                type=type,
+                span_attributes=span_attributes,
+                start_time=start_time,
+                set_current=set_current,
+                parent=parent,
+                **event,
+            )
+        else:
+            span = parent_span.start_span(
+                name=name,
+                type=type,
+                span_attributes=span_attributes,
+                start_time=start_time,
+                set_current=set_current,
+                parent=parent,
+                **event,
+            )
 
         if self.logger != NOOP_SPAN and span == NOOP_SPAN:
             _logger.warning(

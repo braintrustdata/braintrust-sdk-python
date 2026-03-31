@@ -69,6 +69,69 @@ class BasePatcher(ABC):
         raise NotImplementedError
 
 
+class CallbackPatcher(BasePatcher):
+    """Base patcher for integration setup steps that only execute a callback.
+
+    Use this for integrations that do not need in-place wrapping or class
+    replacement, but still need an idempotent setup action once a target module
+    is available — for example, registering a global callback handler.
+
+    Set ``target_module`` when the callback should only run if a particular
+    optional module can be imported. Provide ``state_getter`` when patch state
+    should be derived from integration-owned state instead of a marker stored on
+    the resolved root object.
+    """
+
+    target_module: ClassVar[str | None] = None
+    callback: ClassVar[Any]
+    state_getter: ClassVar[Any | None] = None
+
+    @classmethod
+    def resolve_root(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> Any | None:
+        """Return the object whose availability gates this callback patcher."""
+        if target is not None:
+            return target
+        if cls.target_module is not None:
+            try:
+                return importlib.import_module(cls.target_module)
+            except ImportError:
+                return None
+        return module
+
+    @classmethod
+    def applies(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether the callback should run for the given module/version."""
+        return (
+            super().applies(module, version, target=target)
+            and cls.resolve_root(module, version, target=target) is not None
+        )
+
+    @classmethod
+    def is_patched(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Return whether this callback patcher has already been applied."""
+        if cls.state_getter is not None:
+            return bool(cls.state_getter())
+        root = cls.resolve_root(module, version, target=target)
+        return bool(root is not None and cls.has_patch_marker(root))
+
+    @classmethod
+    def patch(cls, module: Any | None, version: str | None, *, target: Any | None = None) -> bool:
+        """Execute the callback and mark the root as patched when needed."""
+        root = cls.resolve_root(module, version, target=target)
+        if root is None or not cls.applies(module, version, target=target):
+            return False
+
+        result = cls.callback()
+        if result is False:
+            return False
+
+        if cls.state_getter is not None:
+            return cls.is_patched(module, version, target=target)
+
+        cls.mark_patched(root)
+        return True
+
+
 class ClassScanPatcher(BasePatcher):
     """Base patcher for rescanning and patching discovered class hierarchies."""
 
