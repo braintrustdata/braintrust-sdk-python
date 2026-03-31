@@ -1,0 +1,52 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"What is 2+2? Reply with just the
+      number."}],"model":"openai/gpt-4o-mini","max_tokens":10.0,"stream":false,"temperature":1.0,"top_p":1.0}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '175'
+      Host:
+      - openrouter.ai
+      content-type:
+      - application/json
+      user-agent:
+      - speakeasy-sdk/python 0.7.11 2.768.0 1.0.0 openrouter
+    method: POST
+    uri: https://openrouter.ai/api/v1/chat/completions
+  response:
+    body:
+      string: "\n         \n{\"id\":\"gen-1774558371-5zRtxWOSxSfpEfdFoe85\",\"object\":\"chat.completion\",\"created\":1774558371,\"model\":\"openai/gpt-4o-mini\",\"provider\":\"OpenAI\",\"system_fingerprint\":\"fp_f85b8886b6\",\"choices\":[{\"index\":0,\"logprobs\":null,\"finish_reason\":\"stop\",\"native_finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"content\":\"4\",\"refusal\":null,\"reasoning\":null}}],\"usage\":{\"prompt_tokens\":20,\"completion_tokens\":1,\"total_tokens\":21,\"cost\":0.0000036,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0.0000036,\"upstream_inference_prompt_cost\":0.000003,\"upstream_inference_completions_cost\":6e-7},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"image_tokens\":0,\"audio_tokens\":0}}}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-RAY:
+      - 9e290aa09c520b82-SJC
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 26 Mar 2026 20:52:52 GMT
+      Permissions-Policy:
+      - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
+        "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
+      Referrer-Policy:
+      - no-referrer, strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '785'
+    status:
+      code: 200
+      message: OK
+version: 1

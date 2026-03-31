@@ -1,0 +1,451 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '897'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.29.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.29.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdfELyKxINAYAAAD//41TXW+bMBR951cgP21T
+        mICSklTawzZtUvuwTZ32sI7Kcs0NeDM2tU3TKMp/n20SIGkmjQcE99xzfD+ObxT9unj88PPmS5as
+        85q+v9usSYVmjiEffgM1B9ZbKi0PDJOih6kCYsCpJnmeZXmaL5ceaGQJ3NGq1kSZjBomWJTGaRbF
+        eZQs9uxaMgrapv2yv2G49W9Xpyjh2Ybj2SHSgNakAhs7JNmgktxFENGaaUOEQbMRpFIYEK500XE+
+        AYyUHFPC+Xhw/2wn3+OwbCI2Fx8vmutvn0hbPz3yz3fXvLldf/+xmJzXS29aX9CqE3QY0gQf4lcn
+        h1lMkMZz4RloZwC3G1NLgakd5ImMTSaq6hrbnWsBbQvksgp0VSAFuuMmfBdehm/CvChEq5gwr/rw
+        6wLt0JHULjj3fT+ZloJVpwl/OUYihDTEdePneL9HdsPKuKxaJR/0CRWtrBV0ja1ztJ/EdCHBoRBf
+        AuqOdo6sXNMabOQf8Icm87RXRaMvRzSd70Fj6+QTVp7PzujhEgxh3hSDDymhNZQjdfQj6UomJ0Aw
+        6f1lNee0+/6ZqP5HfgQohdbeONwqKBk97nhMU+Cu7b/Shin7gpEG9WTvITYMlNtHCSti3dLfUb3R
+        Bhpsl1aB8mbyBm9xHM/LyyRe5gsU7IK/crsEFF8EAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9e20e16f0b9aaf0d-SJC
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Mar 2026 21:06:40 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '1239'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=ncH1zypNLZZs6ohCgRXU6EAQ0iJm0PqJ2cW8rY7HVI8-1774472798.5665667-1.0.1.1-k0DS.3SU2tAkF.r3ZjBzLnG4fwZB2Fu5meB0y3aUWpZtAKeGqa66nGagt.hDaY2vSKIEbmMrwf7bozk5KFrU29xqoOc0X32xTuik1N0lOr3jOPFP1_u5ceUvxEjzvGTM;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
+        21:36:40 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999962'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_02a17794efcb4607a4ef7c7281e6d187
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '897'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.29.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.29.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAA/4xTXWvbMBR9968wetpGPBzj1ElgD2NlHSsrhY21tC5ClW9sdbJkJDkkDfnvk+Qk
+        dtIM5gdj33PP0f042gRhiFiB5iGiFTG0bnh0eXP78uP2Cyw+x79urq713e9LU94v5fr+q6jRyDHk
+        8wtQs2d9pNLywDApOpgqIAac6jjL0jRLpknqgVoWwB2tbEyUyqhmgkVJnKRRnEXj6Y5dSUZB27RH
+        +xuGG/92dYoCVjYcj/aRGrQmJdjYPskGleQugojWTBsiDBr1IJXCgHCli5bzAWCk5JgSzvuDu2cz
+        +O6HZRPx3Wv6IK+vxvKbjOPlagbVKjM/Z98H53XS68YXtGgFPQxpgB/i85PDLCZI7bmwAtoawM3a
+        VFJgagd5ImOTiSrb2nbnWkCbHLmsHM1zpEC33ISfwovwQ5jluWgUE+ZdF36foy06ktoG576fBtNS
+        sGg14W/HSISQhrhu/Byfdsj2sDIuy0bJZ31CRQtrBV1h6xztJzFcSLAvxJeA2qOdIytXNwYb+Qf8
+        oeNJ0qmi3pc9mkx2oLF18gEry0Zn9HABhjBvioMPKaEVFD219yNpCyYHQDDo/W0157S7/pko/0e+
+        ByiFxt443CgoGD3uuE9T4K7tv9IOU/YFIw1qae8hNgyU20cBC2Ld0t1RvdYGamyXVoLyZvIGb3Ac
+        T4qLcTzLpijYBn8BAAD//wMAHPLnAF8EAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9e20e212f84f7e56-SJC
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Mar 2026 21:07:05 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '760'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=cEkxxhx5PI02Ywh8nf.Xs6jrFBlPOsqdtqnmu2dQoUs-1774472824.7966123-1.0.1.1-l8rKWW5YXcEa4qiqAmWX7gYkTwxcPBKKDdUiau.bKkThNBJdZMRBk8E6aelB55XL8mGvLIuOpvyEL1u_F6R5238q7PZg1iu7hVZPFcKKIeqC1cnWzWuetLrt0ahyQJcC;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
+        21:37:05 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999965'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_5e3d6b5e29b545dc85b5ddedeb732996
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '897'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.29.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.29.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdfELyDYtDwEAAAD//4xTXW+bMBR951cgP21T
+        mADR0FTaw6ZuL6m2h+WlHZXlmBvi1tjMNmmzKP99tkmApJk0HhDcc8/x/Tguk+dGP8hNJedPt2Jz
+        //B1/rKYo4ljyOUTUHNkfaTS8sAwKTqYKiAGnGqS51mWp9fTmQdqWQJ3tKoxUSajmgkWpXGaRXEe
+        JdcH9loyCtqm/bK/Ybjzb1enKOHVhuPJMVKD1qQCGzsm2aCS3EUQ0ZppQ4RBkwGkUhgQrnTRcj4C
+        jJQcU8L5cHD37Ebfw7BsIs7n2Uv14/Zukc9+t1/ufork23fx+c9idF4nvW18QatW0H5II7yP35wd
+        ZjFBas+FV6CtAdxszVoKTO0gz2RsMlFVW9vuXAtoVyCXVaCbAinQLTfhp3AafgjzohCNYsK868Lv
+        C7RHJ1L74NL342haClatJvztGIkQ0hDXjZ/j4wHZ9yvjsmqUXOozKlpZK+g1ts7RfhLjhQTHQnwJ
+        qD3ZObJydWOwkc/gD02u0k4VDb4c0PTqABpbJx+x8nxyQQ+XYAjzpuh9SAldQzlQBz+StmRyBASj
+        3t9Wc0m765+J6n/kB4BSaOyNw42CktHTjoc0Be7a/iutn7IvGGlQG3sPsWGg3D5KWBHrlu6O6q02
+        UGO7tAqUN5M3eIOzlKbTeJnHMxTsg78AAAD//wMAxy9FZF8EAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9e20e3264eb7f005-SJC
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Mar 2026 21:07:49 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '724'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=0XpUc1fNMZh7X5an8o2lKE5Me2U0kr5yZMBg0xANHr0-1774472868.8462937-1.0.1.1-dprcxP4hyQ0IPDL_vk1NK7FsJ11DyabA3P8I942JNvTn7zKho4A0pRDev9WYlxrW1LwDshBeG3MLMUsQs5Y9hxWVr.Wu3JoHqUF6i2Ho7_hr0NaKJDRn8f.qyG5mv6hc;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
+        21:37:49 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999962'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_4413081d046145c59f7df6e62731b407
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]},{"role":"assistant","name":"Jarvis","content":null,"tool_calls":[{"id":"call_7K4wgODLT79quBLSn1FNnAzT","type":"function","function":{"name":"execute_python_code","arguments":"{\"code\":
+      \"result = 6 * 7\\nprint(result)\"}"}}]},{"role":"tool","tool_call_id":"call_7K4wgODLT79quBLSn1FNnAzT","content":"<returncode>0</returncode><stdout>42\n</stdout><stderr></stderr>","name":"execute_python_code"}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1293'
+      Content-Type:
+      - application/json
+      Cookie:
+      - __cf_bm=0XpUc1fNMZh7X5an8o2lKE5Me2U0kr5yZMBg0xANHr0-1774472868.8462937-1.0.1.1-dprcxP4hyQ0IPDL_vk1NK7FsJ11DyabA3P8I942JNvTn7zKho4A0pRDev9WYlxrW1LwDshBeG3MLMUsQs5Y9hxWVr.Wu3JoHqUF6i2Ho7_hr0NaKJDRn8f.qyG5mv6hc
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.29.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.29.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdfELyDZzdwUAAAD//41SwW6cMBC971dYPqXS
+        EgGiC7lGinLLKbcmQo4ZwAnYyDO0Sav9947NJpB2K/Vi7c6b93jzZp4r3/rsZ3t9c3Orf3RV22d3
+        RSH3geGenkHTO+tSO+YBGWcXWHtQBEE1K8uiKPOqTCMwugaGQOsmSgqXjMaaJE/zIknLJKtO7N4Z
+        Dcht3/ivEL/iG3zaBl65HLViZQRE1QHX3pu46N0QKlIhGiRlSe5XUDtLYKP1+x6EB5wHEq4VDw8X
+        4sAvGRYVJf/6IgyKIr/c0j20M6owgp2HYQMoax2pEEE0/nhCjh9WB9dN3j3hH1TZcgTY15wYcnxs
+        C8lNMqJHfh9jJPOnKSULjRPV5F4gfi5PrxY9uW5iRbPyBBI7HDas/LA/o1c3QMoMuAlVaqV7aFbq
+        ugE1N8ZtgN1m6r/dnNNeJje2+x/5FdAaJr6xevLQGP154rXNQzjUf7V9pBwNSwT/nS+vJgM+bKKB
+        VvF1LFeJb0gw1ryuDvzkzXJD7VSn6dfmkKVXZSV3x91vPJeasFEDAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9e20e32d6800f95b-SJC
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 25 Mar 2026 21:07:51 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '642'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999947'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_962b361c03444494ac60f59571e1d91c
+    status:
+      code: 200
+      message: OK
+version: 1

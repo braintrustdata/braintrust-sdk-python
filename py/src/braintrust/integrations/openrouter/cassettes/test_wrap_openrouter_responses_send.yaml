@@ -1,0 +1,53 @@
+interactions:
+- request:
+    body: '{"input":"Say one short sentence about observability.","model":"openai/gpt-4o-mini","max_output_tokens":16.0,"temperature":0.0,"store":false,"service_tier":"auto","stream":false}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '178'
+      Host:
+      - openrouter.ai
+      content-type:
+      - application/json
+      user-agent:
+      - speakeasy-sdk/python 0.7.11 2.768.0 1.0.0 openrouter
+    method: POST
+    uri: https://openrouter.ai/api/v1/responses
+  response:
+    body:
+      string: "\n         \n{\"id\":\"gen-1774558314-oKq2CwgV9UxzPe1GiLSd\",\"object\":\"response\",\"created_at\":1774558314,\"model\":\"openai/gpt-4o-mini\",\"status\":\"completed\",\"completed_at\":1774558314,\"output\":[{\"id\":\"msg_tmp_xayda62t7g\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Observability
+        enables organizations to understand and monitor the internal state of complex
+        systems through external\",\"annotations\":[],\"logprobs\":[]}]}],\"error\":null,\"incomplete_details\":null,\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":16,\"temperature\":0,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"auto\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":null,\"safety_identifier\":null,\"prompt_cache_key\":null,\"usage\":{\"input_tokens\":15,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":16,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":31,\"cost\":0.00001185,\"is_byok\":false,\"cost_details\":{\"upstream_inference_cost\":0.00001185,\"upstream_inference_input_cost\":0.00000225,\"upstream_inference_output_cost\":0.0000096}}}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-RAY:
+      - 9e290937cbd9888e-SJC
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 26 Mar 2026 20:51:54 GMT
+      Permissions-Policy:
+      - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
+        "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
+      Referrer-Policy:
+      - no-referrer, strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '1262'
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -9,11 +9,13 @@ from contextlib import contextmanager
 
 from braintrust.integrations import (
     ADKIntegration,
+    AgentScopeIntegration,
     AgnoIntegration,
     AnthropicIntegration,
     ClaudeAgentSDKIntegration,
     DSPyIntegration,
     GoogleGenAIIntegration,
+    OpenRouterIntegration,
 )
 
 
@@ -40,7 +42,9 @@ def auto_instrument(
     litellm: bool = True,
     pydantic_ai: bool = True,
     google_genai: bool = True,
+    openrouter: bool = True,
     agno: bool = True,
+    agentscope: bool = True,
     claude_agent_sdk: bool = True,
     dspy: bool = True,
     adk: bool = True,
@@ -60,7 +64,9 @@ def auto_instrument(
         litellm: Enable LiteLLM instrumentation (default: True)
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
+        openrouter: Enable OpenRouter instrumentation (default: True)
         agno: Enable Agno instrumentation (default: True)
+        agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
@@ -121,8 +127,12 @@ def auto_instrument(
         results["pydantic_ai"] = _instrument_pydantic_ai()
     if google_genai:
         results["google_genai"] = _instrument_integration(GoogleGenAIIntegration)
+    if openrouter:
+        results["openrouter"] = _instrument_integration(OpenRouterIntegration)
     if agno:
         results["agno"] = _instrument_integration(AgnoIntegration)
+    if agentscope:
+        results["agentscope"] = _instrument_integration(AgentScopeIntegration)
     if claude_agent_sdk:
         results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
     if dspy:

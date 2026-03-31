@@ -191,6 +191,7 @@ def get_vcr_config():
         "decode_compressed_response": True,
         "filter_headers": [
             "authorization",
+            "Authorization",
             "openai-organization",
             "x-api-key",
             "api-key",

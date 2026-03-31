@@ -6,9 +6,11 @@ from .tracing import (
     _async_embed_content_wrapper,
     _async_generate_content_stream_wrapper,
     _async_generate_content_wrapper,
+    _async_generate_images_wrapper,
     _embed_content_wrapper,
     _generate_content_stream_wrapper,
     _generate_content_wrapper,
+    _generate_images_wrapper,
 )
 
 
@@ -44,6 +46,15 @@ class ModelsEmbedContentPatcher(FunctionWrapperPatcher):
     wrapper = _embed_content_wrapper
 
 
+class ModelsGenerateImagesPatcher(FunctionWrapperPatcher):
+    """Patch ``Models.generate_images`` for tracing."""
+
+    name = "google_genai.models.generate_images"
+    target_module = "google.genai.models"
+    target_path = "Models.generate_images"
+    wrapper = _generate_images_wrapper
+
+
 # ---------------------------------------------------------------------------
 # Async Models patchers
 # ---------------------------------------------------------------------------
@@ -74,3 +85,12 @@ class AsyncModelsEmbedContentPatcher(FunctionWrapperPatcher):
     target_module = "google.genai.models"
     target_path = "AsyncModels.embed_content"
     wrapper = _async_embed_content_wrapper
+
+
+class AsyncModelsGenerateImagesPatcher(FunctionWrapperPatcher):
+    """Patch ``AsyncModels.generate_images`` for tracing."""
+
+    name = "google_genai.async_models.generate_images"
+    target_module = "google.genai.models"
+    target_path = "AsyncModels.generate_images"
+    wrapper = _async_generate_images_wrapper

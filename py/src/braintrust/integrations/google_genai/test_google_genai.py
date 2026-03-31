@@ -1,3 +1,5 @@
+import gzip
+import json
 import os
 import time
 from pathlib import Path
@@ -5,6 +7,7 @@ from pathlib import Path
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
+from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from google.genai import types
@@ -14,7 +17,59 @@ from google.genai.client import Client
 PROJECT_NAME = "test-genai-app"
 MODEL = "gemini-2.0-flash-001"
 EMBEDDING_MODEL = "gemini-embedding-001"
+IMAGE_MODEL = "imagen-4.0-fast-generate-001"
 FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent / "internal/golden/fixtures"
+TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+
+
+def _sanitize_generate_images_body(value):
+    if isinstance(value, dict):
+        return {
+            key: (
+                TINY_PNG_BASE64
+                if key == "bytesBase64Encoded" and isinstance(val, str)
+                else _sanitize_generate_images_body(val)
+            )
+            for key, val in value.items()
+        }
+    if isinstance(value, list):
+        return [_sanitize_generate_images_body(item) for item in value]
+    return value
+
+
+def _sanitize_generate_images_response(response):
+    body = response.get("body", {})
+    payload = body.get("string")
+    if not payload:
+        return response
+
+    is_bytes = isinstance(payload, bytes)
+    is_gzipped = False
+
+    if is_bytes:
+        raw_payload = payload
+        if raw_payload[:2] == b"\x1f\x8b":
+            raw_payload = gzip.decompress(raw_payload)
+            is_gzipped = True
+        payload = raw_payload.decode("utf-8")
+
+    try:
+        parsed = json.loads(payload)
+    except Exception:
+        return response
+
+    sanitized = _sanitize_generate_images_body(parsed)
+    if sanitized == parsed:
+        return response
+
+    sanitized_payload = json.dumps(sanitized)
+    if is_bytes:
+        body["string"] = (
+            gzip.compress(sanitized_payload.encode("utf-8")) if is_gzipped else sanitized_payload.encode("utf-8")
+        )
+    else:
+        body["string"] = sanitized_payload
+    return response
 
 
 @pytest.fixture(scope="module")
@@ -27,14 +82,20 @@ def vcr_config():
         request.method = request.method.upper()
         return request
 
+    def before_record_response(response):
+        return _sanitize_generate_images_response(response)
+
     return {
         "record_mode": record_mode,
+        "decode_compressed_response": True,
         "filter_headers": [
             "authorization",
+            "Authorization",
             "x-api-key",
             "x-goog-api-key",
         ],
         "before_record_request": before_record_request,
+        "before_record_response": before_record_response,
     }
 
 
@@ -669,6 +730,105 @@ def test_attachment_in_config(memory_logger):
     assert copied["temperature"] == 0.5
 
 
+@pytest.mark.vcr
+def test_generate_images(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    response = client.models.generate_images(
+        model=IMAGE_MODEL,
+        prompt="A watercolor fox in a forest",
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio="1:1",
+            safety_filter_level="BLOCK_LOW_AND_ABOVE",
+            include_rai_reason=True,
+        ),
+    )
+    end = time.time()
+
+    assert len(response.generated_images) == 1
+    assert response.generated_images[0].image
+    assert response.generated_images[0].image.image_bytes
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == IMAGE_MODEL
+    assert span["input"]["prompt"] == "A watercolor fox in a forest"
+    assert span["input"]["config"]["number_of_images"] == 1
+    assert span["input"]["config"]["aspect_ratio"] == "1:1"
+    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
+    assert span["input"]["config"]["include_rai_reason"] is True
+    assert span["output"]["generated_images_count"] == 1
+    generated_image = span["output"]["generated_images"][0]
+    assert generated_image["image_size_bytes"] > 0
+    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
+
+    # Verify the image bytes are stored as an Attachment for upload to object storage
+    assert "image_url" in generated_image
+    attachment = generated_image["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["type"] == "braintrust_attachment"
+    assert attachment.reference["content_type"] == generated_image["mime_type"]
+    assert attachment.reference["filename"].startswith("generated_image_")
+    assert attachment.reference["key"]
+
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_generate_images_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    response = await client.aio.models.generate_images(
+        model=IMAGE_MODEL,
+        prompt="A watercolor fox in a forest",
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio="1:1",
+            safety_filter_level="BLOCK_LOW_AND_ABOVE",
+            include_rai_reason=True,
+        ),
+    )
+    end = time.time()
+
+    assert len(response.generated_images) == 1
+    assert response.generated_images[0].image
+    assert response.generated_images[0].image.image_bytes
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == IMAGE_MODEL
+    assert span["input"]["prompt"] == "A watercolor fox in a forest"
+    assert span["input"]["config"]["number_of_images"] == 1
+    assert span["input"]["config"]["aspect_ratio"] == "1:1"
+    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
+    assert span["input"]["config"]["include_rai_reason"] is True
+    assert span["output"]["generated_images_count"] == 1
+    generated_image = span["output"]["generated_images"][0]
+    assert generated_image["image_size_bytes"] > 0
+    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
+
+    # Verify the image bytes are stored as an Attachment for upload to object storage
+    assert "image_url" in generated_image
+    attachment = generated_image["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["type"] == "braintrust_attachment"
+    assert attachment.reference["content_type"] == generated_image["mime_type"]
+    assert attachment.reference["filename"].startswith("generated_image_")
+    assert attachment.reference["key"]
+
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+
+
 def test_nested_attachments_in_contents(memory_logger):
     """Test that nested attachments in contents are preserved."""
     from braintrust.bt_json import bt_safe_deep_copy
@@ -713,6 +873,151 @@ def test_attachment_with_pydantic_model(memory_logger):
 
     # Attachment should be preserved
     assert copied["context_file"] is attachment
+
+
+GROUNDING_MODEL = "gemini-2.0-flash-001"
+
+
+def _assert_grounding_metadata(span_output):
+    """Assert that grounding metadata is present and well-structured in span output."""
+    # The grounding_metadata should be present on the first candidate
+    candidates = span_output.get("candidates", [])
+    assert candidates, "Expected candidates in span output"
+
+    first_candidate = candidates[0]
+    grounding = first_candidate.get("grounding_metadata")
+    assert grounding is not None, (
+        f"Expected grounding_metadata on first candidate, got keys: {list(first_candidate.keys())}"
+    )
+
+    # web_search_queries should be a non-empty list of strings
+    web_search_queries = grounding.get("web_search_queries")
+    assert web_search_queries, "Expected web_search_queries in grounding_metadata"
+    assert isinstance(web_search_queries, list)
+    assert all(isinstance(q, str) for q in web_search_queries)
+
+    # grounding_chunks should contain search result snippets
+    grounding_chunks = grounding.get("grounding_chunks")
+    assert grounding_chunks, "Expected grounding_chunks in grounding_metadata"
+    assert isinstance(grounding_chunks, list)
+
+    # grounding_supports should link response segments to chunks
+    grounding_supports = grounding.get("grounding_supports")
+    assert grounding_supports, "Expected grounding_supports in grounding_metadata"
+    assert isinstance(grounding_supports, list)
+
+
+# Test: Google Search Grounding (Sync)
+@pytest.mark.vcr
+@pytest.mark.parametrize(
+    "mode",
+    ["sync", "stream"],
+)
+def test_google_search_grounding(memory_logger, mode):
+    """Test that Google Search grounding metadata is captured in span output."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    if mode == "sync":
+        response = client.models.generate_content(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = response.text
+    elif mode == "stream":
+        stream = client.models.generate_content_stream(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = ""
+        for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+
+    end = time.time()
+
+    # Verify response contains expected content
+    assert text
+    assert len(text) > 0
+
+    # Verify logging
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == GROUNDING_MODEL
+    assert "population" in str(span["input"]).lower() or "Tokyo" in str(span["input"])
+    assert span["output"]
+    _assert_metrics_are_valid(span["metrics"], start, end)
+
+    # Verify grounding metadata is captured
+    _assert_grounding_metadata(span["output"])
+
+
+# Test: Google Search Grounding (Async)
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mode",
+    ["async", "async_stream"],
+)
+async def test_google_search_grounding_async(memory_logger, mode):
+    """Test that Google Search grounding metadata is captured in async span output."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    start = time.time()
+
+    if mode == "async":
+        response = await client.aio.models.generate_content(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = response.text
+    elif mode == "async_stream":
+        stream = await client.aio.models.generate_content_stream(
+            model=GROUNDING_MODEL,
+            contents="What is the current population of Tokyo, Japan?",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        text = ""
+        async for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+
+    end = time.time()
+
+    # Verify response contains expected content
+    assert text
+    assert len(text) > 0
+
+    # Verify logging
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == GROUNDING_MODEL
+    assert "population" in str(span["input"]).lower() or "Tokyo" in str(span["input"])
+    assert span["output"]
+    _assert_metrics_are_valid(span["metrics"], start, end)
+
+    # Verify grounding metadata is captured
+    _assert_grounding_metadata(span["output"])
 
 
 class TestAutoInstrumentGoogleGenAI:
