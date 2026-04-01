@@ -68,6 +68,7 @@ class BraintrustDSpyCallback(BaseCallback):
 
     The callback creates Braintrust spans for:
     - DSPy module executions (Predict, ChainOfThought, ReAct, etc.)
+    - Adapter formatting and parsing steps
     - LLM calls with latency metrics
     - Tool calls
     - Evaluation runs
@@ -121,19 +122,13 @@ class BraintrustDSpyCallback(BaseCallback):
         span.set_current()
         self._spans[call_id] = span
 
-    def on_lm_end(
+    def _end_span(
         self,
         call_id: str,
-        outputs: dict[str, Any] | None,
+        outputs: Any | None,
         exception: Exception | None = None,
     ):
-        """Log the end of a language model call.
-
-        Args:
-            call_id: Unique identifier for this call
-            outputs: Output from the LM, or None if there was an exception
-            exception: Exception raised during execution, if any
-        """
+        """Pop span by call_id, log outputs/exception, and end it."""
         span = self._spans.pop(call_id, None)
         if not span:
             return
@@ -150,6 +145,21 @@ class BraintrustDSpyCallback(BaseCallback):
         finally:
             span.unset_current()
             span.end()
+
+    def on_lm_end(
+        self,
+        call_id: str,
+        outputs: dict[str, Any] | None,
+        exception: Exception | None = None,
+    ):
+        """Log the end of a language model call.
+
+        Args:
+            call_id: Unique identifier for this call
+            outputs: Output from the LM, or None if there was an exception
+            exception: Exception raised during execution, if any
+        """
+        self._end_span(call_id, outputs, exception)
 
     def on_module_start(
         self,
@@ -193,28 +203,95 @@ class BraintrustDSpyCallback(BaseCallback):
             outputs: Output from the module, or None if there was an exception
             exception: Exception raised during execution, if any
         """
-        span = self._spans.pop(call_id, None)
-        if not span:
-            return
+        if outputs is not None:
+            if hasattr(outputs, "toDict"):
+                outputs = outputs.toDict()
+            elif hasattr(outputs, "__dict__"):
+                outputs = outputs.__dict__
+        self._end_span(call_id, outputs, exception)
 
-        try:
-            log_data = {}
-            if exception:
-                log_data["error"] = exception
-            if outputs is not None:
-                if hasattr(outputs, "toDict"):
-                    output_dict = outputs.toDict()
-                elif hasattr(outputs, "__dict__"):
-                    output_dict = outputs.__dict__
-                else:
-                    output_dict = outputs
-                log_data["output"] = output_dict
+    def _start_adapter_span(
+        self,
+        call_id: str,
+        instance: Any,
+        inputs: dict[str, Any],
+        span_name: str,
+    ):
+        """Create and store a span for an adapter format/parse call."""
+        cls = instance.__class__
+        metadata = {"adapter_class": f"{cls.__module__}.{cls.__name__}"}
 
-            if log_data:
-                span.log(**log_data)
-        finally:
-            span.unset_current()
-            span.end()
+        parent = current_span()
+        parent_export = parent.export() if parent else None
+
+        span = start_span(
+            name=span_name,
+            input=inputs,
+            metadata=metadata,
+            parent=parent_export,
+        )
+        span.set_current()
+        self._spans[call_id] = span
+
+    def on_adapter_format_start(
+        self,
+        call_id: str,
+        instance: Any,
+        inputs: dict[str, Any],
+    ):
+        """Log the start of an adapter format call.
+
+        Args:
+            call_id: Unique identifier for this call
+            instance: The Adapter instance being called
+            inputs: Input parameters to the adapter's format() method
+        """
+        self._start_adapter_span(call_id, instance, inputs, "dspy.adapter.format")
+
+    def on_adapter_format_end(
+        self,
+        call_id: str,
+        outputs: list[dict[str, Any]] | None,
+        exception: Exception | None = None,
+    ):
+        """Log the end of an adapter format call.
+
+        Args:
+            call_id: Unique identifier for this call
+            outputs: Output from the adapter's format() method, or None if there was an exception
+            exception: Exception raised during execution, if any
+        """
+        self._end_span(call_id, outputs, exception)
+
+    def on_adapter_parse_start(
+        self,
+        call_id: str,
+        instance: Any,
+        inputs: dict[str, Any],
+    ):
+        """Log the start of an adapter parse call.
+
+        Args:
+            call_id: Unique identifier for this call
+            instance: The Adapter instance being called
+            inputs: Input parameters to the adapter's parse() method
+        """
+        self._start_adapter_span(call_id, instance, inputs, "dspy.adapter.parse")
+
+    def on_adapter_parse_end(
+        self,
+        call_id: str,
+        outputs: dict[str, Any] | None,
+        exception: Exception | None = None,
+    ):
+        """Log the end of an adapter parse call.
+
+        Args:
+            call_id: Unique identifier for this call
+            outputs: Output from the adapter's parse() method, or None if there was an exception
+            exception: Exception raised during execution, if any
+        """
+        self._end_span(call_id, outputs, exception)
 
     def on_tool_start(
         self,
@@ -262,22 +339,7 @@ class BraintrustDSpyCallback(BaseCallback):
             outputs: Output from the tool, or None if there was an exception
             exception: Exception raised during execution, if any
         """
-        span = self._spans.pop(call_id, None)
-        if not span:
-            return
-
-        try:
-            log_data = {}
-            if exception:
-                log_data["error"] = exception
-            if outputs is not None:
-                log_data["output"] = outputs
-
-            if log_data:
-                span.log(**log_data)
-        finally:
-            span.unset_current()
-            span.end()
+        self._end_span(call_id, outputs, exception)
 
     def on_evaluate_start(
         self,
