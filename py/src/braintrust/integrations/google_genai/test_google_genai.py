@@ -18,7 +18,8 @@ PROJECT_NAME = "test-genai-app"
 MODEL = "gemini-2.0-flash-001"
 EMBEDDING_MODEL = "gemini-embedding-001"
 IMAGE_MODEL = "imagen-4.0-fast-generate-001"
-FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent / "internal/golden/fixtures"
+REASONING_MODEL = "gemini-2.5-flash"
+FIXTURES_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent.parent / "internal/golden/fixtures"
 TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 
 
@@ -129,6 +130,24 @@ def _assert_timing_metrics_are_valid(metrics, start=None, end=None):
         assert start <= metrics["start"] <= metrics["end"] <= end
     else:
         assert metrics["start"] <= metrics["end"]
+
+
+def _assert_attachment_part(part, *, content_type, filename):
+    assert "image_url" in part
+    assert "url" in part["image_url"]
+
+    attachment = part["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["type"] == "braintrust_attachment"
+    assert attachment.reference["content_type"] == content_type
+    assert attachment.reference["filename"] == filename
+    assert attachment.reference["key"]
+    return attachment
+
+
+def _assert_binary_not_logged(span, binary_data):
+    span_str = str(span).lower()
+    assert binary_data[:8].hex() not in span_str
 
 
 # Test 1: Basic Completion (Sync)
@@ -299,133 +318,74 @@ async def test_embed_content_async(memory_logger):
     _assert_timing_metrics_are_valid(span["metrics"], start, end)
 
 
-# Test 2: Mixed Content (Sync)
-@pytest.mark.skip
 @pytest.mark.vcr
-@pytest.mark.parametrize(
-    "mode",
-    ["sync", "stream"],
-)
-def test_mixed_content(memory_logger, mode):
-    """Test mixed content types (text and image) in sync modes."""
+def test_image_input(memory_logger):
+    """Verify image inputs are traced as attachments instead of raw bytes."""
     assert not memory_logger.pop()
 
-    # Load test image
-    image_path = FIXTURES_DIR / "test-image.png"
-    with open(image_path, "rb") as f:
-        image_data = f.read()
+    image_data = (FIXTURES_DIR / "test-image.png").read_bytes()
 
     client = Client()
     start = time.time()
-
-    if mode == "sync":
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=[
-                types.Part.from_text(text="First, look at this image:"),
-                types.Part.from_bytes(data=image_data, mime_type="image/png"),
-                types.Part.from_text(text="What color is this image?"),
-            ],
-            config=types.GenerateContentConfig(
-                max_output_tokens=200,
-            ),
-        )
-        text = response.text
-    elif mode == "stream":
-        stream = client.models.generate_content_stream(
-            model=MODEL,
-            contents=[
-                types.Part.from_text(text="First, look at this image:"),
-                types.Part.from_bytes(data=image_data, mime_type="image/png"),
-                types.Part.from_text(text="What color is this image?"),
-            ],
-            config=types.GenerateContentConfig(
-                max_output_tokens=200,
-            ),
-        )
-        text = ""
-        for chunk in stream:
-            if chunk.text:
-                text += chunk.text
-
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=[
+            types.Part.from_bytes(data=image_data, mime_type="image/png"),
+            types.Part.from_text(text="What color is this image?"),
+        ],
+        config=types.GenerateContentConfig(
+            max_output_tokens=150,
+        ),
+    )
     end = time.time()
 
-    # Verify response
-    assert text
-    assert len(text) > 0
+    assert response.text
 
-    # Verify logging
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == MODEL
-    assert span["input"]
+    contents = span["input"]["contents"]
+    assert len(contents) == 2
+    _assert_attachment_part(contents[0], content_type="image/png", filename="file.png")
+    assert contents[1] == {"text": "What color is this image?"}
+    _assert_binary_not_logged(span, image_data)
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
 
 
-# Test 2b: Mixed Content (Async)
-@pytest.mark.skip
 @pytest.mark.vcr
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "mode",
-    ["async", "async_stream"],
-)
-async def test_mixed_content_async(memory_logger, mode):
-    """Test mixed content types (text and image) in async modes."""
+def test_document_input(memory_logger):
+    """Verify document inputs are traced as attachments instead of raw bytes."""
     assert not memory_logger.pop()
 
-    # Load test image
-    image_path = FIXTURES_DIR / "test-image.png"
-    with open(image_path, "rb") as f:
-        image_data = f.read()
+    pdf_data = (FIXTURES_DIR / "test-document.pdf").read_bytes()
 
     client = Client()
     start = time.time()
-
-    if mode == "async":
-        response = await client.aio.models.generate_content(
-            model=MODEL,
-            contents=[
-                types.Part.from_text(text="First, look at this image:"),
-                types.Part.from_bytes(data=image_data, mime_type="image/png"),
-                types.Part.from_text(text="What color is this image?"),
-            ],
-            config=types.GenerateContentConfig(
-                max_output_tokens=200,
-            ),
-        )
-        text = response.text
-    elif mode == "async_stream":
-        stream = await client.aio.models.generate_content_stream(
-            model=MODEL,
-            contents=[
-                types.Part.from_text(text="First, look at this image:"),
-                types.Part.from_bytes(data=image_data, mime_type="image/png"),
-                types.Part.from_text(text="What color is this image?"),
-            ],
-            config=types.GenerateContentConfig(
-                max_output_tokens=200,
-            ),
-        )
-        text = ""
-        async for chunk in stream:
-            if chunk.text:
-                text += chunk.text
-
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=[
+            types.Part.from_bytes(data=pdf_data, mime_type="application/pdf"),
+            types.Part.from_text(text="What is in this document?"),
+        ],
+        config=types.GenerateContentConfig(
+            max_output_tokens=150,
+        ),
+    )
     end = time.time()
 
-    # Verify response
-    assert text
-    assert len(text) > 0
+    assert response.text
 
-    # Verify logging
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == MODEL
-    assert span["input"]
+    contents = span["input"]["contents"]
+    assert len(contents) == 2
+    _assert_attachment_part(contents[0], content_type="application/pdf", filename="file.pdf")
+    assert contents[1] == {"text": "What is in this document?"}
+    _assert_binary_not_logged(span, pdf_data)
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
 
@@ -712,6 +672,191 @@ def test_stop_sequences(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == MODEL
+
+
+@pytest.mark.vcr
+def test_prefill(memory_logger):
+    """Verify prefilled model context is preserved in traced input."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=[
+            types.Content(role="user", parts=[types.Part.from_text(text="Write a haiku about coding.")]),
+            types.Content(role="model", parts=[types.Part.from_text(text="Here is a haiku:")]),
+        ],
+        config=types.GenerateContentConfig(
+            max_output_tokens=200,
+        ),
+    )
+
+    assert response.text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == MODEL
+    assert span["input"]["contents"] == [
+        {"role": "user", "parts": [{"text": "Write a haiku about coding."}]},
+        {"role": "model", "parts": [{"text": "Here is a haiku:"}]},
+    ]
+    assert span["output"]
+
+
+@pytest.mark.vcr
+def test_short_max_tokens(memory_logger):
+    """Verify truncated responses still log useful output and request config."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.models.generate_content(
+        model=MODEL,
+        contents="What is AI?",
+        config=types.GenerateContentConfig(
+            max_output_tokens=5,
+        ),
+    )
+
+    assert response.text
+    assert response.candidates
+    assert response.candidates[0].finish_reason == types.FinishReason.MAX_TOKENS
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == MODEL
+    assert span["input"]["config"]["max_output_tokens"] == 5
+    assert span["output"]
+
+
+@pytest.mark.vcr
+def test_tool_use_with_result(memory_logger):
+    """Verify function-response turns are captured in traced conversation history."""
+    assert not memory_logger.pop()
+
+    client = Client()
+
+    function = types.FunctionDeclaration(
+        name="calculate",
+        description="Perform a mathematical calculation",
+        parameters_json_schema={
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "type": "string",
+                    "enum": ["add", "subtract", "multiply", "divide"],
+                    "description": "The mathematical operation",
+                },
+                "a": {"type": "number", "description": "First number"},
+                "b": {"type": "number", "description": "Second number"},
+            },
+            "required": ["operation", "a", "b"],
+        },
+    )
+    tool = types.Tool(function_declarations=[function])
+
+    first_response = client.models.generate_content(
+        model=MODEL,
+        contents="What is 127 multiplied by 49?",
+        config=types.GenerateContentConfig(
+            tools=[tool],
+            max_output_tokens=500,
+        ),
+    )
+
+    assert first_response.candidates
+    assert first_response.function_calls
+    tool_call = first_response.function_calls[0]
+    assert tool_call.name == "calculate"
+
+    second_response = client.models.generate_content(
+        model=MODEL,
+        contents=[
+            types.Content(role="user", parts=[types.Part.from_text(text="What is 127 multiplied by 49?")]),
+            first_response.candidates[0].content,
+            types.Content(
+                role="user",
+                parts=[
+                    types.Part.from_function_response(
+                        name=tool_call.name,
+                        response={"result": 127 * 49},
+                    )
+                ],
+            ),
+        ],
+        config=types.GenerateContentConfig(
+            tools=[tool],
+            max_output_tokens=500,
+        ),
+    )
+
+    assert second_response.text
+    assert "6223" in second_response.text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 2
+
+    first_span, second_span = spans
+    assert first_span["metadata"]["model"] == MODEL
+    assert "calculate" in str(first_span["input"])
+    assert first_span["output"]
+
+    assert second_span["metadata"]["model"] == MODEL
+    assert "function_response" in str(second_span["input"])
+    assert "6223" in str(second_span["input"])
+    assert "6223" in str(second_span["output"])
+
+
+@pytest.mark.vcr
+def test_reasoning(memory_logger):
+    """Verify reasoning-enabled responses log reasoning metrics across follow-up calls."""
+    assert not memory_logger.pop()
+
+    client = Client()
+
+    first_prompt = (
+        "Look at this sequence: 2, 6, 12, 20, 30. What is the pattern and what would be the formula for the nth term?"
+    )
+    follow_up_prompt = "Using the pattern you discovered, what would be the 10th term? And can you find the sum of the first 10 terms?"
+    reasoning_config = types.GenerateContentConfig(
+        max_output_tokens=512,
+        thinking_config=types.ThinkingConfig(include_thoughts=True, thinking_budget=128),
+    )
+
+    first_response = client.models.generate_content(
+        model=REASONING_MODEL,
+        contents=first_prompt,
+        config=reasoning_config,
+    )
+    assert first_response.candidates
+
+    follow_up_response = client.models.generate_content(
+        model=REASONING_MODEL,
+        contents=[
+            types.Content(role="user", parts=[types.Part.from_text(text=first_prompt)]),
+            first_response.candidates[0].content,
+            types.Content(role="user", parts=[types.Part.from_text(text=follow_up_prompt)]),
+        ],
+        config=reasoning_config,
+    )
+
+    assert follow_up_response.text
+    assert "110" in follow_up_response.text
+    assert "sum" in follow_up_response.text.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 2
+
+    first_span, second_span = spans
+    for span in spans:
+        assert span["metadata"]["model"] == REASONING_MODEL
+        assert span["input"]["config"]["thinking_config"]["include_thoughts"] is True
+        assert span["metrics"]["completion_reasoning_tokens"] > 0
+        assert span["output"]
+
+    assert first_prompt in str(first_span["input"])
+    assert follow_up_prompt in str(second_span["input"])
 
 
 def test_attachment_in_config(memory_logger):
