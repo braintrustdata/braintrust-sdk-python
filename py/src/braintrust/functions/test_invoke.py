@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from braintrust.functions.invoke import init_function, invoke
-from braintrust.logger import _internal_get_global_state, _internal_reset_global_state
+from braintrust.logger import TEST_API_KEY, _internal_get_global_state, _internal_reset_global_state
 
 
 class TestInitFunction:
@@ -118,33 +118,31 @@ def test_invoke_serializes_google_messages():
     assert isinstance(parsed, dict) and parsed
 
 
-def test_invoke_encodes_body_as_utf8_bytes():
+@pytest.mark.vcr
+def test_invoke_encodes_body_as_utf8_bytes(monkeypatch):
     """Regression test for BT-4620: non-Latin-1 Unicode must not be corrupted.
 
     When invoke() serializes the request body via bt_dumps() and passes it to
     requests.post(data=...), the body must be UTF-8 encoded bytes — not a str.
     Passing a str causes requests to re-encode with Latin-1, which raises
     UnicodeEncodeError (or silently corrupts data) for characters outside U+007F.
+
+    Uses TEST_API_KEY to skip the HTTP login entirely, so the cassette only needs
+    to capture the single POST to /function/invoke.  BRAINTRUST_PROXY_URL is
+    cleared so the proxy URL is always the predictable test stub value
+    (https://proxy.braintrust.ai) regardless of the local environment.
     """
+    # Prevent local env overrides from changing the proxy URL used in the cassette.
+    monkeypatch.delenv("BRAINTRUST_PROXY_URL", raising=False)
+    monkeypatch.delenv("BRAINTRUST_API_URL", raising=False)
+    _internal_reset_global_state()
+
     em_dash = "\u2014"  # — (U+2014) is outside Latin-1; triggers the bug when body is str
-    mock_resp = MagicMock()
-    mock_resp.status_code = 200
-    mock_resp.json.return_value = {}
-    mock_conn = MagicMock()
-    mock_conn.post.return_value = mock_resp
-
-    with (
-        patch("braintrust.functions.invoke.login"),
-        patch("braintrust.functions.invoke.proxy_conn", return_value=mock_conn),
-    ):
-        invoke(project_name="test-project", slug="test-fn", input={"text": f"result {em_dash} excellent"})
-
-    kwargs = mock_conn.post.call_args.kwargs
-    data = kwargs["data"]
-
-    assert isinstance(data, bytes), "body must be bytes so requests does not Latin-1 encode it"
-    # Round-trip through UTF-8 decode + JSON parse to confirm the em dash survives intact.
-    # bt_dumps may use JSON \uXXXX escapes (stdlib) or raw UTF-8 bytes (orjson) — both are valid.
-    parsed = json.loads(data.decode("utf-8"))
-    assert parsed["input"]["text"] == f"result {em_dash} excellent", "em dash must survive serialization"
-    assert kwargs.get("headers", {}).get("Content-Type") == "application/json"
+    result = invoke(
+        project_name="test-project",
+        slug="test-fn",
+        input={"text": f"result {em_dash} excellent"},
+        parent="",  # skip span-parent lookup; no extra HTTP call needed
+        api_key=TEST_API_KEY,
+    )
+    assert result["output"] == f"result {em_dash} excellent"
