@@ -22,7 +22,7 @@ from braintrust.framework import _evals, _scorer_name, _set_lazy_load
 from .. import api_conn, login, org_id, proxy_conn
 from ..framework2 import ProjectIdCache, global_
 from ..generated_types import IfExists
-from ..parameters import parameters_to_json_schema
+from ..parameters import serialize_remote_eval_parameters_container
 from ..util import add_azure_blob_headers
 
 
@@ -289,7 +289,7 @@ def _collect_evaluator_defs(
         scores = [{"name": _scorer_name(scorer, i)} for i, scorer in enumerate(evaluator.scores)]
         evaluator_definition: dict[str, Any] = {"scores": scores}
         if evaluator.parameters is not None:
-            evaluator_definition["parameters"] = parameters_to_json_schema(evaluator.parameters)
+            evaluator_definition["parameters"] = serialize_remote_eval_parameters_container(evaluator.parameters)
 
         functions.append(
             {
