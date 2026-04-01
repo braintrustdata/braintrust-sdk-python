@@ -7,7 +7,7 @@ import time
 from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any
 
-from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage, finalize_anthropic_tokens
+from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk._constants import (
     ANTHROPIC_MESSAGES_CREATE_SPAN_NAME,
     CLAUDE_AGENT_TASK_SPAN_NAME,
@@ -711,10 +711,10 @@ class ContextTracker:
     def _handle_result(self, message: Any) -> None:
         self._active_key = None
         if hasattr(message, "usage"):
-            usage_metrics = _extract_usage_from_result_message(message)
+            usage_metrics, usage_metadata = extract_anthropic_usage(message.usage)
             ctx = self._get_context(None)
-            if ctx.llm_span and usage_metrics:
-                ctx.llm_span.log(metrics=usage_metrics)
+            if ctx.llm_span and (usage_metrics or usage_metadata):
+                ctx.llm_span.log(metrics=usage_metrics or None, metadata=usage_metadata or None)
         result_metadata = {
             k: v
             for k, v in {
@@ -1201,25 +1201,6 @@ def _serialize_content_blocks(content: Any) -> Any:
             result.append(serialized)
         return result
     return content
-
-
-def _extract_usage_from_result_message(result_message: Any) -> dict[str, float]:
-    """Extracts and normalizes usage metrics from a ResultMessage.
-
-    Uses shared Anthropic utilities for consistent metric extraction.
-    """
-    if not hasattr(result_message, "usage"):
-        return {}
-
-    usage = result_message.usage
-    if not usage:
-        return {}
-
-    metrics = extract_anthropic_usage(usage)
-    if metrics:
-        metrics = finalize_anthropic_tokens(metrics)
-
-    return metrics
 
 
 def _build_llm_input(prompt: Any, conversation_history: list[dict[str, Any]]) -> list[dict[str, Any]] | None:

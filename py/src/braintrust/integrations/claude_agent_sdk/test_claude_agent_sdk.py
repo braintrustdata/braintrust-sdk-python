@@ -24,6 +24,7 @@ except ImportError:
     print("Claude Agent SDK not installed, skipping integration tests")
 
 from braintrust import logger
+from braintrust.integrations.anthropic._utils import extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk import setup_claude_agent_sdk
 from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
 from braintrust.integrations.claude_agent_sdk.tracing import (
@@ -31,7 +32,6 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
     _build_llm_input,
     _create_client_wrapper_class,
     _create_tool_wrapper_class,
-    _extract_usage_from_result_message,
     _parse_tool_name,
     _serialize_content_blocks,
     _serialize_system_message,
@@ -184,6 +184,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
         for metric_name in ("prompt_tokens", "completion_tokens", "tokens"):
             if metric_name in llm_span.get("metrics", {}):
                 assert llm_span["metrics"][metric_name] > 0
+    assert any(llm_span.get("metadata", {}).get("usage_service_tier") == "standard" for llm_span in llm_spans)
+    assert any("usage_inference_geo" in llm_span.get("metadata", {}) for llm_span in llm_spans)
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
     for tool_span in tool_spans:
         assert tool_span["span_attributes"]["name"] == "calculator"
@@ -1828,9 +1830,9 @@ def test_serialize_system_message_extracts_known_fields(message, expected):
     assert _serialize_system_message(message) == expected
 
 
-def test_extract_usage_from_result_message_normalizes_anthropic_tokens():
-    metrics = _extract_usage_from_result_message(
-        ResultMessage(input_tokens=5, output_tokens=3, cache_creation_input_tokens=2)
+def test_extract_anthropic_usage_normalizes_claude_result_message_usage():
+    metrics, metadata = extract_anthropic_usage(
+        ResultMessage(input_tokens=5, output_tokens=3, cache_creation_input_tokens=2).usage
     )
 
     assert metrics == {
@@ -1839,6 +1841,7 @@ def test_extract_usage_from_result_message_normalizes_anthropic_tokens():
         "prompt_cache_creation_tokens": 2.0,
         "tokens": 10.0,
     }
+    assert metadata == {}
 
 
 @pytest.mark.parametrize(

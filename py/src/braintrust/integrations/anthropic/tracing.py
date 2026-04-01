@@ -3,7 +3,7 @@ import time
 import warnings
 from contextlib import contextmanager
 
-from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage, finalize_anthropic_tokens
+from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
 from braintrust.logger import NOOP_SPAN, log_exc_info_to_span, start_span
 
 
@@ -445,7 +445,7 @@ def _start_span(name, kwargs):
 def _log_message_to_span(message, span, time_to_first_token: float | None = None):
     with _catch_exceptions():
         usage = getattr(message, "usage", {})
-        metrics = finalize_anthropic_tokens(extract_anthropic_usage(usage))
+        metrics, metadata = extract_anthropic_usage(usage)
 
         if time_to_first_token is not None:
             metrics["time_to_first_token"] = time_to_first_token
@@ -462,7 +462,7 @@ def _log_message_to_span(message, span, time_to_first_token: float | None = None
             if v is not None
         } or None
 
-        span.log(output=output, metrics=metrics)
+        span.log(output=output, metrics=metrics, metadata=metadata)
 
 
 @contextmanager
