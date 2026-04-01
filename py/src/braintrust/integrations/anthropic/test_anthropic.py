@@ -548,6 +548,13 @@ def test_setup_creates_spans(memory_logger):
     )
 
     usage = message.usage
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == MODEL
+    assert span["metadata"]["provider"] == "anthropic"
+
     cache_creation = getattr(usage, "cache_creation", None)
     if cache_creation is None:
         pytest.skip("Anthropic SDK version does not expose nested cache_creation usage fields")
@@ -559,11 +566,6 @@ def test_setup_creates_spans(memory_logger):
         ephemeral_5m = cache_creation.ephemeral_5m_input_tokens
         ephemeral_1h = cache_creation.ephemeral_1h_input_tokens
 
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-    assert span["metadata"]["provider"] == "anthropic"
     assert span["metadata"]["usage_service_tier"] == usage.service_tier
     assert span["metadata"]["usage_inference_geo"] == usage.inference_geo
     metrics = span["metrics"]
@@ -607,6 +609,13 @@ def test_extract_anthropic_usage_preserves_nested_numeric_fields():
         "usage_service_tier": "standard",
         "usage_inference_geo": "not_available",
     }
+
+
+def test_extract_anthropic_usage_skips_empty_usage():
+    metrics, metadata = extract_anthropic_usage(SimpleNamespace())
+
+    assert metrics == {}
+    assert metadata == {}
 
 
 def _make_batch_requests():

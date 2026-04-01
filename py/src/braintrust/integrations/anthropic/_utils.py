@@ -101,13 +101,14 @@ def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any
     if "prompt_cache_creation_tokens" not in metrics and cache_creation_breakdown:
         metrics["prompt_cache_creation_tokens"] = sum(cache_creation_breakdown)
 
-    total_prompt_tokens = (
-        metrics.get("prompt_tokens", 0)
-        + metrics.get("prompt_cached_tokens", 0)
-        + metrics.get("prompt_cache_creation_tokens", 0)
-    )
-    metrics["prompt_tokens"] = total_prompt_tokens
-    metrics["tokens"] = total_prompt_tokens + metrics.get("completion_tokens", 0)
+    if metrics:
+        total_prompt_tokens = (
+            metrics.get("prompt_tokens", 0)
+            + metrics.get("prompt_cached_tokens", 0)
+            + metrics.get("prompt_cache_creation_tokens", 0)
+        )
+        metrics["prompt_tokens"] = total_prompt_tokens
+        metrics["tokens"] = total_prompt_tokens + metrics.get("completion_tokens", 0)
 
     metadata = {
         f"usage_{name}": value
