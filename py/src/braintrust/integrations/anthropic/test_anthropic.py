@@ -5,11 +5,13 @@ Tests to ensure we reliably wrap the Anthropic API.
 import time
 import unittest.mock
 from pathlib import Path
+from types import SimpleNamespace
 
 import anthropic
 import pytest
 from braintrust import logger
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
+from braintrust.integrations.anthropic.tracing import _log_message_to_span
 from braintrust.test_helpers import init_test_logger
 
 
@@ -35,6 +37,43 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
+    span = unittest.mock.MagicMock()
+    message = SimpleNamespace(
+        role="assistant",
+        content=[{"type": "text", "text": "done"}],
+        model=MODEL,
+        stop_reason="stop_sequence",
+        stop_sequence="DONE",
+        usage={
+            "input_tokens": 11,
+            "output_tokens": 7,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+        },
+    )
+
+    _log_message_to_span(message, span, time_to_first_token=0.123)
+
+    span.log.assert_called_once_with(
+        output={
+            "role": "assistant",
+            "content": [{"type": "text", "text": "done"}],
+            "model": MODEL,
+            "stop_reason": "stop_sequence",
+            "stop_sequence": "DONE",
+        },
+        metrics={
+            "prompt_tokens": 11.0,
+            "completion_tokens": 7.0,
+            "prompt_cached_tokens": 0.0,
+            "prompt_cache_creation_tokens": 0.0,
+            "tokens": 18.0,
+            "time_to_first_token": 0.123,
+        },
+    )
 
 
 @pytest.mark.vcr
@@ -351,6 +390,8 @@ def test_anthropic_messages_sync(memory_logger):
     metrics = log["metrics"]
     _assert_metrics_are_valid(metrics, start, end)
     assert log["metadata"]["model"] == MODEL
+    assert log["output"]["model"] == msg.model
+    assert log["output"]["stop_reason"] == msg.stop_reason
 
 
 def _assert_metrics_are_valid(metrics, start, end):

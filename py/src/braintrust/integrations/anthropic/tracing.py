@@ -452,8 +452,14 @@ def _log_message_to_span(message, span, time_to_first_token: float | None = None
 
         output = {
             k: v
-            for k, v in {"role": getattr(message, "role", None), "content": getattr(message, "content", None)}.items()
-            if v
+            for k, v in {
+                "role": getattr(message, "role", None),
+                "content": getattr(message, "content", None),
+                "model": getattr(message, "model", None),
+                "stop_reason": getattr(message, "stop_reason", None),
+                "stop_sequence": getattr(message, "stop_sequence", None),
+            }.items()
+            if v is not None
         } or None
 
         span.log(output=output, metrics=metrics)
