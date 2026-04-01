@@ -53,6 +53,10 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
             "output_tokens": 7,
             "cache_read_input_tokens": 0,
             "cache_creation_input_tokens": 0,
+            "server_tool_use": {
+                "web_search_requests": 2,
+                "web_fetch_requests": 1,
+            },
         },
     )
 
@@ -71,11 +75,41 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
             "completion_tokens": 7.0,
             "prompt_cached_tokens": 0.0,
             "prompt_cache_creation_tokens": 0.0,
+            "server_tool_use_web_search_requests": 2.0,
+            "server_tool_use_web_fetch_requests": 1.0,
             "tokens": 18.0,
             "time_to_first_token": 0.123,
         },
         metadata={},
     )
+
+
+def test_extract_anthropic_usage_includes_server_tool_use_metrics_from_objects():
+    usage = SimpleNamespace(
+        input_tokens=11,
+        output_tokens=7,
+        cache_read_input_tokens=3,
+        cache_creation_input_tokens=2,
+        server_tool_use=SimpleNamespace(
+            web_search_requests=2,
+            web_fetch_requests=1,
+            code_execution_requests=4,
+        ),
+    )
+
+    metrics, metadata = extract_anthropic_usage(usage)
+
+    assert metrics == {
+        "prompt_tokens": 16.0,
+        "completion_tokens": 7.0,
+        "prompt_cached_tokens": 3.0,
+        "prompt_cache_creation_tokens": 2.0,
+        "server_tool_use_web_search_requests": 2.0,
+        "server_tool_use_web_fetch_requests": 1.0,
+        "server_tool_use_code_execution_requests": 4.0,
+        "tokens": 23.0,
+    }
+    assert metadata == {}
 
 
 @pytest.mark.vcr

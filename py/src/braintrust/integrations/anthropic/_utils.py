@@ -27,11 +27,6 @@ _ANTHROPIC_CACHE_CREATION_METRIC_FIELDS = (
     ("ephemeral_1h_input_tokens", "prompt_cache_creation_ephemeral_1h_tokens"),
 )
 
-_ANTHROPIC_SERVER_TOOL_USE_METRIC_FIELDS = (
-    ("web_search_requests", "server_tool_use_web_search_requests"),
-    ("web_fetch_requests", "server_tool_use_web_fetch_requests"),
-)
-
 _ANTHROPIC_USAGE_METADATA_FIELDS = frozenset(
     {
         "service_tier",
@@ -95,8 +90,8 @@ def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any
 
     server_tool_use = _try_to_dict(usage.get("server_tool_use"))
     if server_tool_use is not None:
-        for source_name, metric_name in _ANTHROPIC_SERVER_TOOL_USE_METRIC_FIELDS:
-            _set_numeric_metric(metrics, metric_name, server_tool_use.get(source_name))
+        for source_name, value in server_tool_use.items():
+            _set_numeric_metric(metrics, f"server_tool_use_{source_name}", value)
 
     if "prompt_cache_creation_tokens" not in metrics and cache_creation_breakdown:
         metrics["prompt_cache_creation_tokens"] = sum(cache_creation_breakdown)
