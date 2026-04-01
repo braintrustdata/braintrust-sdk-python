@@ -83,7 +83,9 @@ def _invoke_with_messages(messages):
     kwargs = mock_conn.post.call_args.kwargs
     assert "data" in kwargs, "invoke must use data= (bt_dumps) not json= (json.dumps) (see issue 38)"
     assert "json" not in kwargs
-    return json.loads(kwargs["data"])
+    data = kwargs["data"]
+    assert isinstance(data, bytes), "body must be bytes so requests does not re-encode as Latin-1"
+    return json.loads(data.decode("utf-8"))
 
 
 def test_invoke_serializes_openai_messages():
@@ -114,3 +116,35 @@ def test_invoke_serializes_google_messages():
     msg = google_types.Content(role="model", parts=[google_types.Part(text="The answer is X.")])
     parsed = _invoke_with_messages([msg])
     assert isinstance(parsed, dict) and parsed
+
+
+def test_invoke_encodes_body_as_utf8_bytes():
+    """Regression test for BT-4620: non-Latin-1 Unicode must not be corrupted.
+
+    When invoke() serializes the request body via bt_dumps() and passes it to
+    requests.post(data=...), the body must be UTF-8 encoded bytes — not a str.
+    Passing a str causes requests to re-encode with Latin-1, which raises
+    UnicodeEncodeError (or silently corrupts data) for characters outside U+007F.
+    """
+    em_dash = "\u2014"  # — (U+2014) is outside Latin-1; triggers the bug when body is str
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {}
+    mock_conn = MagicMock()
+    mock_conn.post.return_value = mock_resp
+
+    with (
+        patch("braintrust.functions.invoke.login"),
+        patch("braintrust.functions.invoke.proxy_conn", return_value=mock_conn),
+    ):
+        invoke(project_name="test-project", slug="test-fn", input={"text": f"result {em_dash} excellent"})
+
+    kwargs = mock_conn.post.call_args.kwargs
+    data = kwargs["data"]
+
+    assert isinstance(data, bytes), "body must be bytes so requests does not Latin-1 encode it"
+    # Round-trip through UTF-8 decode + JSON parse to confirm the em dash survives intact.
+    # bt_dumps may use JSON \uXXXX escapes (stdlib) or raw UTF-8 bytes (orjson) — both are valid.
+    parsed = json.loads(data.decode("utf-8"))
+    assert parsed["input"]["text"] == f"result {em_dash} excellent", "em dash must survive serialization"
+    assert kwargs.get("headers", {}).get("Content-Type") == "application/json"
