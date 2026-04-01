@@ -289,6 +289,24 @@ def _embedding_wrapper(wrapped, instance, args, kwargs):
         return embedding_response
 
 
+async def _aembedding_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.aembedding."""
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
+
+    with start_span(
+        **merge_dicts(dict(name="Embedding", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
+    ) as span:
+        embedding_response = await wrapped(*args, **kwargs)
+        log_response = _try_to_dict(embedding_response)
+        usage = log_response.get("usage")
+        metrics = _parse_metrics_from_usage(usage)
+        span.log(
+            metrics=metrics,
+            output={"embedding_length": len(log_response["data"][0]["embedding"])},
+        )
+        return embedding_response
+
+
 def _moderation_wrapper(wrapped, instance, args, kwargs):
     """wrapt wrapper for litellm.moderation."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")

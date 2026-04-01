@@ -234,6 +234,26 @@ def test_litellm_embeddings(memory_logger):
 
 
 @pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_litellm_aembedding(memory_logger):
+    assert not memory_logger.pop()
+
+    response = await litellm.aembedding(model="text-embedding-ada-002", input="This is a test")
+
+    assert response
+    assert response.data
+    assert response.data[0]["embedding"]
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span
+    assert span["metadata"]["model"] == "text-embedding-ada-002"
+    assert span["metadata"]["provider"] == "litellm"
+    assert "This is a test" in str(span["input"])
+
+
+@pytest.mark.vcr
 def test_litellm_moderation(memory_logger):
     assert not memory_logger.pop()
 

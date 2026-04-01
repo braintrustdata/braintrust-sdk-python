@@ -6,6 +6,7 @@ from braintrust.integrations.base import FunctionWrapperPatcher
 
 from .tracing import (
     _acompletion_wrapper_async,
+    _aembedding_wrapper_async,
     _aresponses_wrapper_async,
     _completion_wrapper,
     _embedding_wrapper,
@@ -49,6 +50,12 @@ class LiteLLMEmbeddingPatcher(FunctionWrapperPatcher):
     wrapper = _embedding_wrapper
 
 
+class LiteLLMAembeddingPatcher(FunctionWrapperPatcher):
+    name = "litellm.aembedding"
+    target_path = "aembedding"
+    wrapper = _aembedding_wrapper_async
+
+
 class LiteLLMModerationPatcher(FunctionWrapperPatcher):
     name = "litellm.moderation"
     target_path = "moderation"
@@ -65,6 +72,7 @@ _ALL_LITELLM_PATCHERS = (
     LiteLLMResponsesPatcher,
     LiteLLMAresponsesPatcher,
     LiteLLMEmbeddingPatcher,
+    LiteLLMAembeddingPatcher,
     LiteLLMModerationPatcher,
 )
 
@@ -80,8 +88,9 @@ def wrap_litellm(litellm: Any) -> Any:
     Unlike :func:`patch_litellm`, which patches the globally-imported ``litellm``
     module, this function instruments a specific module object (or any object
     that exposes the same top-level callables such as ``completion``,
-    ``acompletion``, ``responses``, ``aresponses``, ``embedding``, and
-    ``moderation``).  Each patcher is applied idempotently — calling
+    ``acompletion``, ``responses``, ``aresponses``, ``embedding``,
+    ``aembedding``, and ``moderation``).  Each patcher is applied
+    idempotently — calling
     ``wrap_litellm`` twice on the same object is safe.
 
     Args:
