@@ -79,7 +79,7 @@ def test_dspy_adapter_callbacks(memory_logger):
 
     dspy.configure(callbacks=[BraintrustDSpyCallback()])
 
-    signature = dspy.Signature("question -> answer")
+    signature = dspy.make_signature("question -> answer")
     adapter = dspy.ChatAdapter()
     formatted = adapter.format(
         signature,
