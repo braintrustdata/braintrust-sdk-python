@@ -71,6 +71,7 @@ VENDOR_PACKAGES = (
     "autoevals",
     "braintrust_core",
     "litellm",
+    "mistralai",
     "openrouter",
     "opentelemetry-api",
     "opentelemetry-sdk",
@@ -105,6 +106,7 @@ DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
 OPENROUTER_VERSIONS = (LATEST, "0.6.0")
+MISTRAL_VERSIONS = (LATEST, "1.12.4")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
 PYTEST_VERSIONS = (LATEST, "8.4.2")
@@ -264,6 +266,16 @@ def test_openrouter(session, version):
     _install_test_deps(session)
     _install(session, "openrouter", version)
     _run_tests(session, f"{INTEGRATION_DIR}/openrouter/test_openrouter.py")
+
+
+@nox.session()
+@nox.parametrize("version", MISTRAL_VERSIONS, ids=MISTRAL_VERSIONS)
+def test_mistral(session, version):
+    """Test the native Mistral SDK integration."""
+    _install_test_deps(session)
+    _install(session, "mistralai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/mistral/test_mistral.py")
+    _run_core_tests(session)
 
 
 @nox.session()

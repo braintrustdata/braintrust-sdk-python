@@ -17,6 +17,7 @@ from braintrust.integrations import (
     GoogleGenAIIntegration,
     LangChainIntegration,
     LiteLLMIntegration,
+    MistralIntegration,
     OpenRouterIntegration,
     PydanticAIIntegration,
 )
@@ -46,6 +47,7 @@ def auto_instrument(
     pydantic_ai: bool = True,
     google_genai: bool = True,
     openrouter: bool = True,
+    mistral: bool = True,
     agno: bool = True,
     agentscope: bool = True,
     claude_agent_sdk: bool = True,
@@ -69,6 +71,7 @@ def auto_instrument(
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
         openrouter: Enable OpenRouter instrumentation (default: True)
+        mistral: Enable Mistral instrumentation (default: True)
         agno: Enable Agno instrumentation (default: True)
         agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
@@ -134,6 +137,8 @@ def auto_instrument(
         results["google_genai"] = _instrument_integration(GoogleGenAIIntegration)
     if openrouter:
         results["openrouter"] = _instrument_integration(OpenRouterIntegration)
+    if mistral:
+        results["mistral"] = _instrument_integration(MistralIntegration)
     if agno:
         results["agno"] = _instrument_integration(AgnoIntegration)
     if agentscope:

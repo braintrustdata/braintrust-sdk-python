@@ -7,6 +7,7 @@ from .dspy import DSPyIntegration
 from .google_genai import GoogleGenAIIntegration
 from .langchain import LangChainIntegration
 from .litellm import LiteLLMIntegration
+from .mistral import MistralIntegration
 from .openrouter import OpenRouterIntegration
 from .pydantic_ai import PydanticAIIntegration
 
@@ -21,6 +22,7 @@ __all__ = [
     "GoogleGenAIIntegration",
     "LiteLLMIntegration",
     "LangChainIntegration",
+    "MistralIntegration",
     "OpenRouterIntegration",
     "PydanticAIIntegration",
 ]
