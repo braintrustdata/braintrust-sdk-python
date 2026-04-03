@@ -16,6 +16,7 @@ from braintrust.integrations import (
     DSPyIntegration,
     GoogleGenAIIntegration,
     LangChainIntegration,
+    LangSmithIntegration,
     LiteLLMIntegration,
     OpenRouterIntegration,
     PydanticAIIntegration,
@@ -52,6 +53,7 @@ def auto_instrument(
     dspy: bool = True,
     adk: bool = True,
     langchain: bool = True,
+    langsmith: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -75,6 +77,7 @@ def auto_instrument(
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
         langchain: Enable LangChain instrumentation (default: True)
+        langsmith: Enable LangSmith instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -146,6 +149,8 @@ def auto_instrument(
         results["adk"] = _instrument_integration(ADKIntegration)
     if langchain:
         results["langchain"] = _instrument_integration(LangChainIntegration)
+    if langsmith:
+        results["langsmith"] = _instrument_integration(LangSmithIntegration)
 
     return results
 

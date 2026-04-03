@@ -77,6 +77,7 @@ VENDOR_PACKAGES = (
     "opentelemetry-exporter-otlp-proto-http",
     "google.genai",
     "google.adk",
+    "langsmith",
     "temporalio",
 )
 
@@ -104,6 +105,7 @@ GENAI_VERSIONS = (LATEST,)
 DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
+LANGSMITH_VERSIONS = (LATEST, "0.7.12")
 OPENROUTER_VERSIONS = (LATEST, "0.6.0")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
@@ -233,6 +235,17 @@ def test_langchain(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_context.py")
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py")
     _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", LANGSMITH_VERSIONS, ids=LANGSMITH_VERSIONS)
+def test_langsmith(session, version):
+    """Test LangSmith integration."""
+    _install_test_deps(session)
+    _install(session, "langsmith", version)
+    _install(session, "langchain-core")
+    _install(session, "langchain-openai")
+    _run_tests(session, f"{INTEGRATION_DIR}/langsmith/test_langsmith.py")
 
 
 @nox.session()
@@ -371,9 +384,8 @@ def pylint(session):
     session.install("pydantic_ai>=1.10.0")
     session.install("google-adk")
     session.install("opentelemetry.instrumentation.openai")
-    # langsmith is needed for the langsmith_wrapper module but not in VENDOR_PACKAGES
     # langchain-core, langchain-openai, langchain-anthropic are needed for the langchain integration
-    session.install("langsmith", "langchain-core", "langchain-openai", "langchain-anthropic")
+    session.install("langchain-core", "langchain-openai", "langchain-anthropic")
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
