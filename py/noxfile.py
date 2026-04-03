@@ -320,7 +320,7 @@ def test_cli(session):
     _install_test_deps(session)
     session.install(".[cli]")
     session.install("httpx")  # Required for starlette.testclient
-    _run_tests(session, "braintrust/devserver/test_server_integration.py")
+    _run_tests(session, DEVSERVER_DIR)
 
 
 @nox.session()
