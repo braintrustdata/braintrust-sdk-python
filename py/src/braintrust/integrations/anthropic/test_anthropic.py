@@ -608,8 +608,8 @@ def test_setup_creates_spans(memory_logger):
     )
     assert metrics["completion_tokens"] == usage.output_tokens
     assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
-    assert metrics["prompt_cache_creation_ephemeral_5m_tokens"] == ephemeral_5m
-    assert metrics["prompt_cache_creation_ephemeral_1h_tokens"] == ephemeral_1h
+    assert span["metadata"]["cache_creation_ephemeral_5m_input_tokens"] == ephemeral_5m
+    assert span["metadata"]["cache_creation_ephemeral_1h_input_tokens"] == ephemeral_1h
     assert "service_tier" not in metrics
 
 
@@ -634,12 +634,14 @@ def test_extract_anthropic_usage_preserves_nested_numeric_fields():
     assert metrics["completion_tokens"] == 12
     assert metrics["tokens"] == 27
     assert metrics["prompt_cache_creation_tokens"] == 7
-    assert metrics["prompt_cache_creation_ephemeral_5m_tokens"] == 3
-    assert metrics["prompt_cache_creation_ephemeral_1h_tokens"] == 4
+    assert metadata["cache_creation_ephemeral_5m_input_tokens"] == 3
+    assert metadata["cache_creation_ephemeral_1h_input_tokens"] == 4
     assert metrics["server_tool_use_web_search_requests"] == 2
     assert metrics["server_tool_use_web_fetch_requests"] == 1
     assert "service_tier" not in metrics
     assert metadata == {
+        "cache_creation_ephemeral_5m_input_tokens": 3,
+        "cache_creation_ephemeral_1h_input_tokens": 4,
         "usage_service_tier": "standard",
         "usage_inference_geo": "not_available",
     }
