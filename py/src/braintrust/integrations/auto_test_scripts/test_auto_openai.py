@@ -1,24 +1,36 @@
 """Test auto_instrument for OpenAI."""
 
+import inspect
+from pathlib import Path
+
 import openai
 from braintrust.auto import auto_instrument
 from braintrust.wrappers.test_utils import autoinstrument_test_context
+from wrapt import FunctionWrapper
+
+
+_CASSETTES_DIR = Path(__file__).resolve().parent.parent / "openai" / "cassettes"
+
+
+def _is_braintrust_wrapped() -> bool:
+    attr = inspect.getattr_static(openai.resources.chat.completions.Completions, "create", None)
+    return isinstance(attr, FunctionWrapper)
 
 
 # 1. Verify not patched initially
-assert not getattr(openai, "__braintrust_wrapped__", False)
+assert not _is_braintrust_wrapped()
 
 # 2. Instrument
 results = auto_instrument()
 assert results.get("openai") == True
-assert getattr(openai, "__braintrust_wrapped__", False)
+assert _is_braintrust_wrapped()
 
 # 3. Idempotent
 results2 = auto_instrument()
 assert results2.get("openai") == True
 
 # 4. Make API call and verify span
-with autoinstrument_test_context("test_auto_openai") as memory_logger:
+with autoinstrument_test_context("test_auto_openai", cassettes_dir=_CASSETTES_DIR) as memory_logger:
     client = openai.OpenAI()
     response = client.chat.completions.create(
         model="gpt-4o-mini",

@@ -1,13 +1,13 @@
 import asyncio
 import time
 
-import braintrust
 import openai
 import pytest
 from braintrust import logger, wrap_openai
-from braintrust.oai import ChatCompletionWrapper
+from braintrust.integrations.openai import OpenAIIntegration
+from braintrust.integrations.openai.tracing import RAW_RESPONSE_HEADER, ChatCompletionWrapper
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
-from braintrust.wrappers.test_utils import assert_metrics_are_valid, run_in_subprocess, verify_autoinstrument_script
+from braintrust.wrappers.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from openai import AsyncOpenAI
 from openai._types import NOT_GIVEN
 from pydantic import BaseModel
@@ -27,56 +27,31 @@ def memory_logger():
         yield bgl
 
 
-def test_tracing_processor_sets_current_span(memory_logger):
-    """Ensure that on_trace_start sets the span as current so nested spans work."""
-    pytest.importorskip("agents", reason="agents package not available")
-    from braintrust.wrappers.openai import BraintrustTracingProcessor
-
-    assert not memory_logger.pop()
-    processor = BraintrustTracingProcessor()
-
-    class DummyTrace:
-        def __init__(self):
-            self.trace_id = "test-trace-id"
-            self.name = "test-trace"
-
-        def export(self):
-            return {"group_id": "group", "metadata": {"foo": "bar"}}
-
-    trace = DummyTrace()
-
-    with braintrust.start_span(name="parent-span") as parent_span:
-        assert braintrust.current_span() == parent_span
-        processor.on_trace_start(trace)
-        created_span = processor._spans[trace.trace_id]
-        assert braintrust.current_span() == created_span
-
-        processor.on_trace_end(trace)
-        assert braintrust.current_span() == parent_span
-
-    spans = memory_logger.pop()
-    assert spans
-    assert any(span.get("span_attributes", {}).get("name") == trace.name for span in spans)
-
-
 @pytest.mark.vcr
 def test_openai_chat_metrics(memory_logger):
     assert not memory_logger.pop()
 
-    client = openai.OpenAI()
-    clients = [client, wrap_openai(client)]
+    unwrapped_client = openai.OpenAI()
+    wrapped_client = wrap_openai(openai.OpenAI())
+    clients = [unwrapped_client, wrapped_client]
 
     for client in clients:
         start = time.time()
         response = client.chat.completions.create(
-            model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}]
+            model=TEST_MODEL,
+            messages=[{"role": "user", "content": TEST_PROMPT}],
+            extra_headers={RAW_RESPONSE_HEADER: "true"},
         )
         end = time.time()
 
         assert response
-        assert response.choices[0].message.content
+        assert response.headers
+
+        parsed_response = response.parse()
+        assert parsed_response.choices[0].message.content
         assert (
-            "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
+            "24" in parsed_response.choices[0].message.content
+            or "twenty-four" in parsed_response.choices[0].message.content.lower()
         )
 
         if not _is_wrapped(client):
@@ -276,111 +251,6 @@ def test_openai_responses_metadata_preservation(memory_logger):
 
 
 @pytest.mark.vcr
-def test_openai_responses_sparse_indices(memory_logger):
-    """Test that streaming responses with sparse/out-of-order indices are handled correctly."""
-    assert not memory_logger.pop()
-
-    from braintrust.oai import ResponseWrapper
-
-    # Create a mock response with sparse content indices (e.g., indices 0, 2, 5)
-    # This simulates a streaming response where items arrive out of order or with gaps
-    class MockResult:
-        def __init__(
-            self,
-            type,
-            content_index=None,
-            delta=None,
-            annotation_index=None,
-            annotation=None,
-            output_index=None,
-            item=None,
-        ):
-            self.type = type
-            if content_index is not None:
-                self.content_index = content_index
-            if delta is not None:
-                self.delta = delta
-            if annotation_index is not None:
-                self.annotation_index = annotation_index
-            if annotation is not None:
-                self.annotation = annotation
-            if output_index is not None:
-                self.output_index = output_index
-            if item is not None:
-                self.item = item
-
-    class MockItem:
-        def __init__(self, id="test_id", type="message"):
-            self.id = id
-            self.type = type
-
-    # Test sparse content indices
-    all_results = [
-        MockResult("response.output_item.added", item=MockItem()),
-        MockResult("response.output_text.delta", content_index=0, delta="First", output_index=0),
-        MockResult("response.output_text.delta", content_index=2, delta="Third", output_index=0),  # Gap at index 1
-        MockResult("response.output_text.delta", content_index=5, delta="Sixth", output_index=0),  # Gap at indices 3,4
-    ]
-
-    # Process the results
-    wrapper = ResponseWrapper(None, None)
-    output = [{}]  # Initialize with one output item
-    result = wrapper._postprocess_streaming_results(all_results)
-
-    # Verify the output was built correctly with gaps filled
-    assert "output" in result
-    assert len(result["output"]) == 1
-    content = result["output"][0].get("content", [])
-
-    # Should have 6 items (indices 0-5)
-    assert len(content) >= 6
-    assert content[0].get("text") == "First"
-    assert content[1].get("text", "") == ""  # Gap should be empty
-    assert content[2].get("text") == "Third"
-    assert content[3].get("text", "") == ""  # Gap should be empty
-    assert content[4].get("text", "") == ""  # Gap should be empty
-    assert content[5].get("text") == "Sixth"
-
-    # Test sparse annotation indices
-    all_results_with_annotations = [
-        MockResult("response.output_item.added", item=MockItem()),
-        MockResult("response.output_text.delta", content_index=0, delta="Text", output_index=0),
-        MockResult(
-            "response.output_text.annotation.added",
-            content_index=0,
-            annotation_index=1,
-            annotation={"text": "Second annotation"},
-            output_index=0,
-        ),
-        MockResult(
-            "response.output_text.annotation.added",
-            content_index=0,
-            annotation_index=3,
-            annotation={"text": "Fourth annotation"},
-            output_index=0,
-        ),
-    ]
-
-    result = wrapper._postprocess_streaming_results(all_results_with_annotations)
-
-    # Verify annotations were built correctly with gaps filled
-    assert "output" in result
-    content = result["output"][0].get("content", [])
-    assert len(content) >= 1
-    annotations = content[0].get("annotations", [])
-
-    # Should have 4 items (indices 0-3)
-    assert len(annotations) >= 4
-    assert annotations[0] == {}  # Gap should be empty dict
-    assert annotations[1] == {"text": "Second annotation"}
-    assert annotations[2] == {}  # Gap should be empty dict
-    assert annotations[3] == {"text": "Fourth annotation"}
-
-    # No spans should be generated from this unit test
-    assert not memory_logger.pop()
-
-
-@pytest.mark.vcr
 def test_openai_embeddings(memory_logger):
     assert not memory_logger.pop()
 
@@ -416,8 +286,7 @@ def test_openai_embeddings(memory_logger):
 def test_openai_chat_streaming_sync(memory_logger):
     assert not memory_logger.pop()
 
-    client = openai.OpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
 
     for client, is_wrapped in clients:
         start = time.time()
@@ -468,8 +337,7 @@ def test_openai_chat_streaming_sync(memory_logger):
 def test_openai_chat_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 
-    client = openai.OpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
 
     for client, is_wrapped in clients:
         response = client.chat.completions.create(
@@ -502,8 +370,7 @@ def test_openai_client_comparison(memory_logger):
     assert not memory_logger.pop()
 
     # Get regular and wrapped clients
-    client = openai.OpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
 
     for client, is_wrapped in clients:
         response = client.chat.completions.create(
@@ -555,12 +422,18 @@ async def test_openai_chat_async(memory_logger):
 
     # First test with an unwrapped async client
     client = AsyncOpenAI()
-    resp = await client.chat.completions.create(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
+    resp = await client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        extra_headers={RAW_RESPONSE_HEADER: "true"},
+    )
 
     assert resp
-    assert resp.choices
-    assert resp.choices[0].message.content
-    content = resp.choices[0].message.content
+    assert resp.headers
+    parsed_response = resp.parse()
+    assert parsed_response.choices
+    assert parsed_response.choices[0].message.content
+    content = parsed_response.choices[0].message.content
 
     # Verify it contains a correct response
     assert "24" in content or "twenty-four" in content.lower()
@@ -573,14 +446,18 @@ async def test_openai_chat_async(memory_logger):
 
     start = time.time()
     resp2 = await client2.chat.completions.create(
-        model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}]
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        extra_headers={RAW_RESPONSE_HEADER: "true"},
     )
     end = time.time()
 
     assert resp2
-    assert resp2.choices
-    assert resp2.choices[0].message.content
-    content2 = resp2.choices[0].message.content
+    assert resp2.headers
+    parsed_response2 = resp2.parse()
+    assert parsed_response2.choices
+    assert parsed_response2.choices[0].message.content
+    content2 = parsed_response2.choices[0].message.content
 
     # Verify the wrapped client also gives correct responses
     assert "24" in content2 or "twenty-four" in content2.lower()
@@ -602,8 +479,7 @@ async def test_openai_chat_async(memory_logger):
 async def test_openai_responses_async(memory_logger):
     assert not memory_logger.pop()
 
-    client = AsyncOpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
         start = time.time()
@@ -697,8 +573,7 @@ async def test_openai_responses_async(memory_logger):
 async def test_openai_embeddings_async(memory_logger):
     assert not memory_logger.pop()
 
-    client = AsyncOpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
         start = time.time()
@@ -729,8 +604,7 @@ async def test_openai_embeddings_async(memory_logger):
 async def test_openai_chat_streaming_async(memory_logger):
     assert not memory_logger.pop()
 
-    client = AsyncOpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
         start = time.time()
@@ -782,8 +656,7 @@ async def test_openai_chat_streaming_async(memory_logger):
 async def test_openai_chat_async_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 
-    client = AsyncOpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
         response = await client.chat.completions.create(
@@ -875,8 +748,7 @@ async def test_openai_chat_async_context_manager(memory_logger):
     """Test async context manager behavior for chat completions streams."""
     assert not memory_logger.pop()
 
-    client = AsyncOpenAI()
-    clients = [(client, False), (wrap_openai(client), True)]
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
         start = time.time()
@@ -991,8 +863,9 @@ async def test_openai_response_streaming_async(memory_logger):
     """Test the newer responses API with streaming."""
     assert not memory_logger.pop()
 
-    client = openai.AsyncOpenAI()
-    clients = [client, wrap_openai(client)]
+    unwrapped_client = openai.AsyncOpenAI()
+    wrapped_client = wrap_openai(openai.AsyncOpenAI())
+    clients = [unwrapped_client, wrapped_client]
 
     for client in clients:
         start = time.time()
@@ -1321,6 +1194,9 @@ def test_openai_responses_with_raw_response_parse(memory_logger):
         reasoning: str
 
     unwrapped_client = openai.OpenAI()
+    if not hasattr(unwrapped_client.responses.with_raw_response, "parse"):
+        pytest.skip("openai.responses.with_raw_response.parse is not available in this SDK version")
+
     raw_parse = unwrapped_client.responses.with_raw_response.parse(
         model=TEST_MODEL, input=TEST_PROMPT, text_format=NumberAnswer
     )
@@ -1480,8 +1356,9 @@ def test_openai_parallel_tool_calls(memory_logger):
         },
     ]
 
-    client = openai.OpenAI()
-    clients = [client, wrap_openai(client)]
+    unwrapped_client = openai.OpenAI()
+    wrapped_client = wrap_openai(openai.OpenAI())
+    clients = [unwrapped_client, wrapped_client]
 
     for stream in [False, True]:
         for client in clients:
@@ -1552,575 +1429,27 @@ def test_openai_parallel_tool_calls(memory_logger):
 
 
 def _is_wrapped(client):
-    return hasattr(client, "_NamedWrapper__wrapped")
+    """Return True if *client* has been instrumented by wrap_openai()."""
+    import inspect
 
+    from wrapt import FunctionWrapper
 
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_braintrust_tracing_processor_current_span_detection(memory_logger):
-    """Test that BraintrustTracingProcessor currentSpan() detection works with OpenAI Agents SDK."""
-    pytest.importorskip("agents", reason="agents package not available")
+    completions = getattr(getattr(client, "chat", None), "completions", None)
+    if completions is None:
+        return False
+    attr = inspect.getattr_static(completions, "create", None)
+    return isinstance(attr, FunctionWrapper)
 
-    import agents
-    import braintrust
-    from agents import Agent
-    from agents.run import AgentRunner
-    from braintrust.wrappers.openai import BraintrustTracingProcessor
 
-    assert not memory_logger.pop()
-
-    @braintrust.traced(name="parent_span_test")
-    async def test_function(instructions: str):
-        # Verify we're in a traced context
-        detected_parent = braintrust.current_span()
-        assert detected_parent is not None, "Parent span should exist in traced context"
-        assert detected_parent != braintrust.logger.NOOP_SPAN, "Should not be NOOP span"
-
-        # Create processor WITHOUT parentSpan - should auto-detect via current_span()
-        processor = BraintrustTracingProcessor()
-
-        # Set up tracing
-        agents.set_tracing_disabled(False)
-        agents.add_trace_processor(processor)
-
-        try:
-            # Create a simple agent
-            agent = Agent(
-                name="test-agent",
-                model=TEST_MODEL,
-                instructions="You are a helpful assistant. Be very concise.",
-            )
-
-            # Run the agent - this should create spans as children of detected parent
-            runner = AgentRunner()
-            result = await runner.run(agent, instructions)
-            assert result is not None, "Agent should return a result"
-            assert hasattr(result, "final_output") or hasattr(result, "output"), "Result should have output"
-
-            return result
-        finally:
-            processor.shutdown()
-
-    # Execute the wrapped function
-    result = await test_function("What is 2+2? Just the number.")
-    assert result is not None, "Test function should return a result"
-
-    # Verify span hierarchy in logged spans
-    spans = memory_logger.pop()
-    assert len(spans) >= 2, f"Should have at least parent and child spans, got {len(spans)}"
-
-    # Find parent and child spans
-    parent_span = None
-    child_spans = []
-
-    for span in spans:
-        if span.get("span_attributes", {}).get("name") == "parent_span_test":
-            parent_span = span
-        elif span.get("span_attributes", {}).get("name") == "Agent workflow":
-            child_spans.append(span)
-
-    assert parent_span is not None, "Should find parent span with name 'parent_span_test'"
-    assert len(child_spans) > 0, "Should find at least one child span with name 'Agent workflow'"
-
-    # Verify the child span has the parent as its parent
-    if child_spans and parent_span:
-        child_span = child_spans[0]
-        # In Braintrust, parent-child relationships are represented by span_parents array
-        child_span_parents = child_span.get("span_parents", [])
-        parent_span_id = parent_span.get("span_id")
-
-        assert parent_span_id is not None, "Parent span should have a span_id"
-        assert isinstance(child_span_parents, list) and len(child_span_parents) > 0, (
-            "Child span should have span_parents array"
-        )
-        assert parent_span_id in child_span_parents, (
-            f"Child span should include parent span_id {parent_span_id} in its span_parents array {child_span_parents} (currentSpan detection)"
-        )
-
-        # Verify both spans have the same root_span_id
-        assert child_span.get("root_span_id") == parent_span.get("root_span_id"), (
-            "Parent and child should share the same root_span_id"
-        )
-
-    # Verify input/output are properly logged on parent span
-    assert parent_span.get("input") is not None, "Parent span should have input logged"
-    assert parent_span.get("output") is not None, "Parent span should have output logged"
-
-    # Verify that we have child spans beyond just "Agent workflow"
-    # The OpenAI SDK should generate multiple span types (generation, response, etc.)
-    parent_span_id = parent_span.get("span_id")
-    assert parent_span_id is not None, "Parent span should have a span_id"
-
-    all_child_spans = [s for s in spans if parent_span_id in (s.get("span_parents") or [])]
-
-    assert len(all_child_spans) >= 1, f"Should have at least 1 child span, but found {len(all_child_spans)}"
-
-    # We should see spans like Generation, Response, etc. from the OpenAI SDK
-    span_types = [s.get("span_attributes", {}).get("type") for s in all_child_spans]
-    has_llm_spans = "llm" in span_types
-    has_task_spans = "task" in span_types
-
-    assert has_llm_spans or has_task_spans, (
-        f"Should have LLM or task type spans from OpenAI SDK, got types: {span_types}"
-    )
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_braintrust_tracing_processor_concurrency_bug(memory_logger):
-    """Test that reproduces the concurrency bug where overlapping traces mix up first_input/last_output."""
-    pytest.importorskip("agents", reason="agents package not available")
-
-    import asyncio
-
-    import agents
-    from agents import Agent
-    from agents.run import AgentRunner
-    from braintrust.wrappers.openai import BraintrustTracingProcessor
-
-    assert not memory_logger.pop()
-
-    # Create a single shared processor instance
-    processor = BraintrustTracingProcessor()
-
-    # Set up tracing
-    agents.set_tracing_disabled(False)
-    agents.add_trace_processor(processor)
-
-    try:
-        # Create agents for testing
-        agent_a = Agent(
-            name="agent-a", model=TEST_MODEL, instructions="You are agent A. Just respond with 'A' and nothing else."
-        )
-
-        agent_b = Agent(
-            name="agent-b", model=TEST_MODEL, instructions="You are agent B. Just respond with 'B' and nothing else."
-        )
-
-        runner = AgentRunner()
-
-        # Define async functions to run agents
-        async def run_agent_a():
-            """Run agent A with a delay to ensure overlap"""
-            result = await runner.run(agent_a, "What's your name?")
-            # Add a small delay to ensure traces overlap
-            await asyncio.sleep(0.1)
-            return result
-
-        async def run_agent_b():
-            """Run agent B immediately"""
-            result = await runner.run(agent_b, "Who are you?")
-            return result
-
-        # Run both agents concurrently to create overlapping traces
-        results = await asyncio.gather(run_agent_a(), run_agent_b())
-
-        result_a, result_b = results
-        assert result_a is not None, "Agent A should return a result"
-        assert result_b is not None, "Agent B should return a result"
-
-    finally:
-        processor.shutdown()
-
-    # Get all spans
-    spans = memory_logger.pop()
-    assert len(spans) >= 2, f"Should have at least 2 trace spans, got {len(spans)}"
-
-    # Find the root trace spans (these are created by on_trace_start/on_trace_end)
-    # These are actually the "Agent workflow" spans, not the agent-a/agent-b spans
-    trace_spans = []
-    for span in spans:
-        span_name = span.get("span_attributes", {}).get("name", "")
-        # The actual traces are "Agent workflow" spans with no parents
-        if span_name == "Agent workflow" and not span.get("span_parents"):
-            trace_spans.append(span)
-
-    # We should have exactly 2 trace spans
-    assert len(trace_spans) == 2, f"Should have exactly 2 trace spans, got {len(trace_spans)}"
-
-    # Identify which trace is for which agent by looking at the input
-    agent_a_trace = None
-    agent_b_trace = None
-    for trace in trace_spans:
-        input_str = str(trace.get("input", ""))
-        if "What's your name?" in input_str:
-            agent_a_trace = trace
-        elif "Who are you?" in input_str:
-            agent_b_trace = trace
-
-    assert agent_a_trace is not None, "Could not find Agent A's trace"
-    assert agent_b_trace is not None, "Could not find Agent B's trace"
-
-    # With the fix, both traces should have their correct input and output
-    # Verify Agent A trace has correct input/output
-    assert agent_a_trace.get("input") is not None, "Agent A trace should have input"
-    assert agent_a_trace.get("output") is not None, "Agent A trace should have output"
-
-    # Verify Agent B trace has correct input/output
-    assert agent_b_trace.get("input") is not None, "Agent B trace should have input"
-    assert agent_b_trace.get("output") is not None, "Agent B trace should have output"
-
-    # Verify the inputs are different (they should be from different prompts)
-    assert agent_a_trace.get("input") != agent_b_trace.get("input"), (
-        "Agent A and B traces should have different inputs"
-    )
-
-    # Verify the outputs are different (agents respond differently)
-    if agent_a_trace.get("output") and agent_b_trace.get("output"):
-        assert agent_a_trace.get("output") != agent_b_trace.get("output"), (
-            "Agent A and B traces should have different outputs"
-        )
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-@pytest.mark.skip(reason="OAI Implementation changed, skipping until update")
-async def test_agents_tool_openai_nested_spans(memory_logger):
-    """Test that OpenAI calls inside agent tools are properly nested under the tool span."""
-    pytest.importorskip("agents", reason="agents package not available")
-
-    from agents import Agent, Runner, function_tool, set_trace_processors
-    from braintrust import current_span, wrap_openai
-    from braintrust.wrappers.openai import BraintrustTracingProcessor
-
-    assert not memory_logger.pop()
-
-    # Create a tool that uses OpenAI within a manual span
-    @function_tool(strict_mode=False)
-    def analyze_text(text: str):
-        """Analyze text and return a structured summary with key points, sentiment, and statistics."""
-        client = wrap_openai(openai.OpenAI())
-        with current_span().start_span(name="text_analysis_tool") as span:
-            span.log(input={"text": text})
-
-            # Use a simple prompt for testing - just like other tests in this file
-            simple_prompt = f"Analyze this text briefly: {text}"
-
-            response = client.chat.completions.create(
-                model=TEST_MODEL,
-                messages=[{"role": "user", "content": simple_prompt}],
-            )
-            result = response.choices[0].message.content
-            span.log(output={"analysis": result})
-            return result
-
-    # Set up tracing
-    set_trace_processors([BraintrustTracingProcessor()])
-
-    # Create agent with the tool
-    agent = Agent(
-        name="Text Analysis Agent",
-        instructions="You are a helpful assistant that analyzes text. When asked to analyze text, you MUST use the analyze_text tool. Always call the tool with the exact text provided by the user. After using the tool, provide a two sentence summary of what the tool returned.",
-        tools=[analyze_text],
-    )
-
-    # Run agent with a specific text to analyze
-    test_text = "Artificial intelligence is transforming industries worldwide. Companies are adopting AI technologies to improve efficiency and innovation. However, challenges like ethics and job displacement remain concerns."
-    result = await Runner.run(
-        agent,
-        f"Please analyze this text: '{test_text}'",
-        max_turns=3,
-    )
-
-    assert result is not None, "Agent should return a result"
-
-    # Verify spans were created
-    spans = memory_logger.pop()
-    assert len(spans) >= 3, f"Should have at least 3 spans (agent workflow, tool, chat completion), got {len(spans)}"
-
-    # Find different types of spans
-    agent_spans = []
-    tool_spans = []
-    chat_spans = []
-
-    for span in spans:
-        span_name = span.get("span_attributes", {}).get("name", "")
-        span_type = span.get("span_attributes", {}).get("type", "")
-
-        if "Agent workflow" in span_name or span_type == "task":
-            agent_spans.append(span)
-        elif span_name == "text_analysis_tool":
-            tool_spans.append(span)
-        elif span_name == "Chat Completion" and span_type == "llm":
-            chat_spans.append(span)
-
-    # Verify we have the expected spans
-    assert len(agent_spans) > 0, "Should have at least one agent workflow span"
-    assert len(tool_spans) == 1, f"Should have exactly one tool span, got {len(tool_spans)}"
-    assert len(chat_spans) == 1, f"Should have exactly one chat completion span, got {len(chat_spans)}"
-
-    tool_span = tool_spans[0]
-    chat_span = chat_spans[0]
-
-    # Verify the chat completion span is nested under the tool span
-    chat_span_parents = chat_span.get("span_parents", [])
-    tool_span_id = tool_span.get("span_id")
-
-    assert tool_span_id is not None, "Tool span should have a span_id"
-    assert isinstance(chat_span_parents, list) and len(chat_span_parents) > 0, (
-        "Chat completion span should have span_parents array"
-    )
-    assert tool_span_id in chat_span_parents, (
-        f"Chat completion span should include tool span_id {tool_span_id} in its span_parents array {chat_span_parents}"
-    )
-
-    # Verify the tool span has input/output logged
-    assert "input" in tool_span, "Tool span should have input logged"
-    assert test_text in str(tool_span["input"]), "Tool span input should contain the test text"
-    assert "output" in tool_span, "Tool span should have output logged"
-
-    # Verify we have chat completion spans
-    assert len(chat_spans) >= 1, f"Should have at least one chat completion span, got {len(chat_spans)}"
-    chat_span = chat_spans[0]
-    chat_span_parents = chat_span.get("span_parents", [])
-
-    # Verify the chat completion span is nested under the tool span
-    assert isinstance(chat_span_parents, list) and len(chat_span_parents) > 0, (
-        "Chat completion span should have span_parents array"
-    )
-    assert tool_span_id in chat_span_parents, (
-        f"Chat completion span should include tool span_id {tool_span_id} in its span_parents array {chat_span_parents}"
-    )
-
-    # Verify the chat completion span has proper LLM data
-    assert "input" in chat_span, "Chat completion span should have input logged"
-    assert "output" in chat_span, "Chat completion span should have output logged"
-    assert chat_span["metadata"]["model"] == TEST_MODEL, "Chat completion should use test model"
-    assert len(str(chat_span["output"])) > 0, "Chat completion should have some output content"
-
-
-def test_braintrust_tracing_processor_trace_metadata_logging(memory_logger):
-    """Test that trace metadata flows through to root span via on_trace_end."""
-    pytest.importorskip("agents", reason="agents package not available")
-
-    from braintrust.wrappers.openai import BraintrustTracingProcessor
-
-    assert not memory_logger.pop()
-
-    processor = BraintrustTracingProcessor()
-
-    # Mock trace with metadata (simulates native trace() API)
-    class MockTrace:
-        def __init__(self, trace_id, name, metadata):
-            self.trace_id = trace_id
-            self.name = name
-            self.metadata = metadata
-
-        def export(self):
-            return {"group_id": self.trace_id, "metadata": self.metadata}
-
-    trace = MockTrace("test-trace", "Test Trace", {"conversation_id": "test-12345"})
-
-    # Execute trace lifecycle
-    processor.on_trace_start(trace)
-    processor.on_trace_end(trace)
-
-    # Verify metadata was logged to root span
-    spans = memory_logger.pop()
-    root_span = spans[0]
-    assert root_span["metadata"]["conversation_id"] == "test-12345", "Should log trace metadata"
-
-
-class TestPatchOpenAI:
-    """Tests for patch_openai()."""
-
-    def test_patch_openai_sets_wrapped_flag(self):
-        """patch_openai() should set __braintrust_wrapped__ on openai module."""
-        result = run_in_subprocess("""
-            from braintrust.oai import patch_openai
-            import openai
-
-            assert not hasattr(openai, "__braintrust_wrapped__")
-            patch_openai()
-            assert hasattr(openai, "__braintrust_wrapped__")
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_openai_wraps_new_clients(self):
-        """After patch_openai(), new OpenAI() clients should be wrapped."""
-        result = run_in_subprocess("""
-            from braintrust.oai import patch_openai
-            patch_openai()
-
-            import openai
-            client = openai.OpenAI(api_key="test-key")
-
-            # Check that chat completions is wrapped (our wrapper adds tracing)
-            # The wrapper replaces client.chat with a wrapped version
-            chat_type = type(client.chat).__name__
-            print(f"chat_type={chat_type}")
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_openai_creates_spans(self):
-        """patch_openai() should create spans when making API calls."""
-        result = run_in_subprocess("""
-            from braintrust.oai import patch_openai
-            from braintrust.test_helpers import init_test_logger
-            from braintrust import logger
-
-            # Set up memory logger
-            init_test_logger("test-auto")
-            with logger._internal_with_memory_background_logger() as memory_logger:
-                patch_openai()
-
-                import openai
-                client = openai.OpenAI()
-
-                # Make a call within a span context
-                import braintrust
-                with braintrust.start_span(name="test") as span:
-                    try:
-                        # This will fail without API key, but span should still be created
-                        client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[{"role": "user", "content": "hi"}],
-                        )
-                    except Exception:
-                        pass  # Expected without API key
-
-                # Check that spans were logged
-                spans = memory_logger.pop()
-                # Should have at least the parent span
-                assert len(spans) >= 1, f"Expected spans, got {spans}"
-                print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_openai_before_import(self):
-        """patch_openai() should work when called before importing openai."""
-        result = run_in_subprocess("""
-            from braintrust.oai import patch_openai
-
-            # Patch BEFORE importing openai
-            patch_openai()
-
-            import openai
-            assert hasattr(openai, "__braintrust_wrapped__")
-
-            client = openai.OpenAI(api_key="test-key")
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_openai_after_import(self):
-        """patch_openai() should work when called after importing openai."""
-        result = run_in_subprocess("""
-            import openai
-            from braintrust.oai import patch_openai
-
-            # Patch AFTER importing openai
-            patch_openai()
-
-            assert hasattr(openai, "__braintrust_wrapped__")
-
-            client = openai.OpenAI(api_key="test-key")
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_openai_idempotent(self):
-        """Multiple patch_openai() calls should be safe."""
-        result = run_in_subprocess("""
-            from braintrust.oai import patch_openai
-            import openai
-
-            patch_openai()
-            patch_openai()  # Second call - should be no-op, not double-wrap
-
-            # Verify we can still create clients
-            client = openai.OpenAI(api_key="test-key")
-            assert hasattr(client, "chat")
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_openai_chains_with_other_patches(self):
-        """patch_openai() should chain with other libraries that patch OpenAI."""
-        result = run_in_subprocess("""
-            import openai
-
-            # Simulate another library (like Datadog) patching OpenAI first
-            other_library_init_called = []
-
-            class OtherLibraryOpenAI(openai.OpenAI):
-                def __init__(self, *args, **kwargs):
-                    other_library_init_called.append(True)
-                    super().__init__(*args, **kwargs)
-
-            openai.OpenAI = OtherLibraryOpenAI
-
-            # Now apply our patch - should subclass OtherLibraryOpenAI
-            from braintrust.oai import patch_openai
-            patch_openai()
-
-            # Create a client - both patches should run
-            client = openai.OpenAI(api_key="test-key")
-
-            # Verify other library's __init__ was called (chaining works)
-            assert len(other_library_init_called) == 1, "Other library's patch should have run"
-
-            # Verify our patch was applied (client has wrapped chat)
-            assert hasattr(client, "chat"), "Client should have chat attribute"
-
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-    def test_patch_openai_chains_async_client(self):
-        """patch_openai() should chain with other libraries for AsyncOpenAI too."""
-        result = run_in_subprocess("""
-            import openai
-
-            # Simulate another library patching AsyncOpenAI first
-            other_library_init_called = []
-
-            class OtherLibraryAsyncOpenAI(openai.AsyncOpenAI):
-                def __init__(self, *args, **kwargs):
-                    other_library_init_called.append(True)
-                    super().__init__(*args, **kwargs)
-
-            openai.AsyncOpenAI = OtherLibraryAsyncOpenAI
-
-            # Now apply our patch
-            from braintrust.oai import patch_openai
-            patch_openai()
-
-            # Create an async client - both patches should run
-            client = openai.AsyncOpenAI(api_key="test-key")
-
-            # Verify other library's __init__ was called
-            assert len(other_library_init_called) == 1, "Other library's patch should have run"
-
-            # Verify our patch was applied
-            assert hasattr(client, "chat"), "Client should have chat attribute"
-
-            print("SUCCESS")
-        """)
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
-
-
-class TestPatchOpenAISpans:
-    """VCR-based tests verifying that patch_openai() produces spans."""
+class TestOpenAIIntegrationSetupSpans:
+    """VCR-based tests verifying that OpenAIIntegration.setup() produces spans."""
 
     @pytest.mark.vcr
-    def test_patch_openai_creates_spans(self, memory_logger):
-        """patch_openai() should create spans when making API calls."""
-        from braintrust.oai import patch_openai
-
+    def test_setup_creates_spans(self, memory_logger):
+        """OpenAIIntegration.setup() should create spans when making API calls."""
         assert not memory_logger.pop()
 
-        patch_openai()
+        OpenAIIntegration.setup()
         client = openai.OpenAI()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -2137,18 +1466,16 @@ class TestPatchOpenAISpans:
         assert span["input"]
 
 
-class TestPatchOpenAIAsyncSpans:
-    """VCR-based tests verifying that patch_openai() produces spans for async clients."""
+class TestOpenAIIntegrationSetupAsyncSpans:
+    """VCR-based tests verifying that OpenAIIntegration.setup() produces spans for async clients."""
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
-    async def test_patch_openai_async_creates_spans(self, memory_logger):
-        """patch_openai() should create spans for async API calls."""
-        from braintrust.oai import patch_openai
-
+    async def test_setup_async_creates_spans(self, memory_logger):
+        """OpenAIIntegration.setup() should create spans for async API calls."""
         assert not memory_logger.pop()
 
-        patch_openai()
+        OpenAIIntegration.setup()
         client = openai.AsyncOpenAI()
         response = await client.chat.completions.create(
             model="gpt-4o-mini",
@@ -2171,6 +1498,36 @@ class TestAutoInstrumentOpenAI:
     def test_auto_instrument_openai(self):
         """Test auto_instrument patches OpenAI, creates spans, and uninstrument works."""
         verify_autoinstrument_script("test_auto_openai.py")
+
+
+def test_wrap_openai_and_setup_use_same_wrappers():
+    """Ensure the wrapper functions used by setup() and wrap_openai() stay in sync.
+
+    Both paths should cover the same set of wrapper callables so that the
+    traced span shape is identical regardless of which entry-point the user
+    chooses.  If this test fails, a wrapper was added to one path but not
+    the other.
+    """
+    from braintrust.integrations.openai.integration import OpenAIIntegration
+    from braintrust.integrations.openai.patchers import _WRAP_TARGETS
+
+    # Collect wrapper functions from module-level patchers (setup path).
+    setup_wrappers: set = set()
+    for patcher in OpenAIIntegration.patchers:
+        for sub in patcher.sub_patchers:
+            setup_wrappers.add(sub.wrapper)
+
+    # Collect wrapper functions from instance-level patchers (wrap_openai path).
+    wrap_wrappers: set = set()
+    for _path, patcher in _WRAP_TARGETS:
+        for sub in patcher.sub_patchers:
+            wrap_wrappers.add(sub.wrapper)
+
+    assert setup_wrappers == wrap_wrappers, (
+        f"Wrapper function mismatch between setup() and wrap_openai().\n"
+        f"  Only in setup:       {setup_wrappers - wrap_wrappers}\n"
+        f"  Only in wrap_openai: {wrap_wrappers - setup_wrappers}"
+    )
 
 
 class TestZAICompatibleOpenAI:

@@ -84,6 +84,7 @@ VENDOR_PACKAGES = (
 # Test matrix
 ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
 OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
+OPENAI_AGENTS_VERSIONS = (LATEST, "0.0.19")
 # litellm latest requires Python >= 3.10
 # Pin litellm because 1.82.7-1.82.8 are compromised: https://github.com/BerriAI/litellm/issues/24512
 LITELLM_VERSIONS = ("1.82.0", "1.74.0")
@@ -242,10 +243,21 @@ def test_langchain(session, version):
 def test_openai(session, version):
     _install_test_deps(session)
     _install(session, "openai", version)
-    # openai-agents requires Python >= 3.10
-    _install(session, "openai-agents")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai.py")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai_openrouter_gateway.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_oai_attachments.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py")
+    _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_AGENTS_VERSIONS, ids=OPENAI_AGENTS_VERSIONS)
+def test_openai_agents(session, version):
+    if sys.version_info < (3, 10):
+        session.skip("openai-agents requires Python >= 3.10")
+    _install_test_deps(session)
+    _install(session, "openai")
+    _install(session, "openai-agents", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openai_agents/test_openai_agents.py")
     _run_core_tests(session)
 
 
@@ -256,7 +268,7 @@ def test_openai_http2_streaming(session):
     # h2 is isolated to this session because it's only needed to force the
     # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
     session.install("h2")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai_http2.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py")
 
 
 @nox.session()

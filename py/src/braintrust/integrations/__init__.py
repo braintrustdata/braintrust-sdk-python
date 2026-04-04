@@ -8,6 +8,8 @@ from .google_genai import GoogleGenAIIntegration
 from .langchain import LangChainIntegration
 from .litellm import LiteLLMIntegration
 from .mistral import MistralIntegration
+from .openai import OpenAIIntegration
+from .openai_agents import OpenAIAgentsIntegration
 from .openrouter import OpenRouterIntegration
 from .pydantic_ai import PydanticAIIntegration
 
@@ -23,6 +25,8 @@ __all__ = [
     "LiteLLMIntegration",
     "LangChainIntegration",
     "MistralIntegration",
+    "OpenAIIntegration",
+    "OpenAIAgentsIntegration",
     "OpenRouterIntegration",
     "PydanticAIIntegration",
 ]
