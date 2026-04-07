@@ -24,6 +24,7 @@ class GoogleGenAIIntegration(BaseIntegration):
 
     name = "google_genai"
     import_names = ("google.genai",)
+    min_version = "1.30.0"
     patchers = (
         ModelsGenerateContentPatcher,
         ModelsGenerateContentStreamPatcher,

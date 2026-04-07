@@ -102,8 +102,12 @@ PYDANTIC_AI_WRAP_OPENAI_VERSIONS = (LATEST, "1.0.1", "0.1.9")
 PYDANTIC_AI_INTEGRATION_VERSIONS = (LATEST, "1.10.0")
 
 AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
-GENAI_VERSIONS = (LATEST,)
-DSPY_VERSIONS = (LATEST,)
+# google-genai 1.29.0 has a broken async streaming path unless aiohttp is installed.
+# 1.30.0 is the earliest version that passes our standard integration test session.
+GENAI_VERSIONS = (LATEST, "1.30.0")
+# dspy 2.6.0 is the earliest version that matches the callback/settings APIs our
+# integration and tests rely on.
+DSPY_VERSIONS = (LATEST, "2.6.0")
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
 OPENROUTER_VERSIONS = (LATEST, "0.6.0")
