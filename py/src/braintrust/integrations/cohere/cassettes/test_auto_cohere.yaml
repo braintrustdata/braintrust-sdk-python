@@ -1,0 +1,79 @@
+interactions:
+- request:
+    body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"What
+      is 2+2? Reply with just the number."}],"max_tokens":10,"stream":false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '142'
+      Host:
+      - api.cohere.com
+      User-Agent:
+      - cohere/5.21.1
+      X-Fern-Language:
+      - Python
+      X-Fern-Platform:
+      - darwin/25.2.0
+      X-Fern-Runtime:
+      - python/3.13.3
+      X-Fern-SDK-Name:
+      - cohere
+      X-Fern-SDK-Version:
+      - 5.21.1
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.cohere.com/v2/chat
+  response:
+    body:
+      string: '{"id":"f76fd244-eba2-4270-8c13-5d02e4c727a6","message":{"role":"assistant","content":[{"type":"text","text":"4"}]},"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":13,"output_tokens":1},"tokens":{"input_tokens":508,"output_tokens":4},"cached_tokens":0}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-length:
+      - '271'
+      content-type:
+      - application/json
+      date:
+      - Tue, 07 Apr 2026 22:59:12 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      num_chars:
+      - '2618'
+      num_tokens:
+      - '14'
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      vary:
+      - Origin,Accept-Encoding
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - fafcd67dcebe77d4b9dcda7c83bd75fe
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '211'
+      x-trial-endpoint-call-limit:
+      - '20'
+      x-trial-endpoint-call-remaining:
+      - '14'
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -64,6 +64,7 @@ VENDOR_PACKAGES = (
     "agno",
     "agentscope",
     "anthropic",
+    "cohere",
     "dspy",
     "openai",
     "openai-agents",
@@ -103,6 +104,7 @@ PYDANTIC_AI_INTEGRATION_VERSIONS = (LATEST, "1.10.0")
 
 AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
 GENAI_VERSIONS = (LATEST,)
+COHERE_VERSIONS = (LATEST, "5.10.0")
 DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
@@ -303,6 +305,15 @@ def test_litellm(session, version):
     session.install("openai<=1.99.9", "--force-reinstall", "fastapi", "orjson")
     _install(session, "litellm", version)
     _run_tests(session, f"{INTEGRATION_DIR}/litellm/test_litellm.py")
+    _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", COHERE_VERSIONS, ids=COHERE_VERSIONS)
+def test_cohere(session, version):
+    _install_test_deps(session)
+    _install(session, "cohere", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/cohere/test_cohere.py")
     _run_core_tests(session)
 
 

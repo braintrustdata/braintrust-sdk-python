@@ -1,0 +1,106 @@
+interactions:
+- request:
+    body: '{"model":"command-r-plus-08-2024","messages":[{"role":"user","content":"What
+      is 8+8? Reply with just the number."}],"max_tokens":10,"stream":true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '146'
+      Host:
+      - api.cohere.com
+      User-Agent:
+      - cohere/5.21.1
+      X-Fern-Language:
+      - Python
+      X-Fern-Platform:
+      - darwin/25.2.0
+      X-Fern-Runtime:
+      - python/3.13.3
+      X-Fern-SDK-Name:
+      - cohere
+      X-Fern-SDK-Version:
+      - 5.21.1
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.cohere.com/v2/chat
+  response:
+    body:
+      string: 'event: message-start
+
+        data: {"id":"b2fed6fe-ce1d-4982-9ea0-016fab7cd960","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+
+
+        event: content-start
+
+        data: {"type":"content-start","index":0,"delta":{"message":{"content":{"type":"text","text":""}}}}
+
+
+        event: content-delta
+
+        data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"1"}}}}
+
+
+        event: content-delta
+
+        data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"6"}}}}
+
+
+        event: content-end
+
+        data: {"type":"content-end","index":0}
+
+
+        event: message-end
+
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":13,"output_tokens":2},"tokens":{"input_tokens":214,"output_tokens":2},"cached_tokens":192}}}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-type:
+      - text/event-stream
+      date:
+      - Tue, 07 Apr 2026 22:59:10 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      vary:
+      - Origin
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - f79b417fbea3860786b2d54195c2f820
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '100'
+      x-trial-endpoint-call-limit:
+      - '20'
+      x-trial-endpoint-call-remaining:
+      - '16'
+    status:
+      code: 200
+      message: OK
+version: 1
