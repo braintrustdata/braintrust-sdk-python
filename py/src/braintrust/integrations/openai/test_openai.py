@@ -334,6 +334,56 @@ def test_openai_chat_streaming_sync(memory_logger):
 
 
 @pytest.mark.vcr
+def test_openai_chat_stream_helper_sync(memory_logger):
+    assert not memory_logger.pop()
+
+    if not hasattr(openai.OpenAI().chat.completions, "stream"):
+        pytest.skip("openai.chat.completions.stream is not available in this SDK version")
+
+    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
+
+    for client, is_wrapped in clients:
+        start = time.time()
+
+        with client.chat.completions.stream(
+            model=TEST_MODEL,
+            messages=[{"role": "user", "content": TEST_PROMPT}],
+            stream_options={"include_usage": True},
+        ) as stream:
+            event_types = []
+            content_parts = []
+            for event in stream:
+                event_types.append(event.type)
+                if event.type == "content.delta":
+                    content_parts.append(event.delta)
+            final = stream.get_final_completion()
+        end = time.time()
+
+        content = "".join(content_parts)
+        assert event_types
+        assert "content.delta" in event_types
+        assert final.choices[0].message.content
+        assert "24" in final.choices[0].message.content or "twenty-four" in final.choices[0].message.content.lower()
+        assert "24" in content or "twenty-four" in content.lower()
+
+        if not is_wrapped:
+            assert not memory_logger.pop()
+            continue
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        metrics = span["metrics"]
+        assert_metrics_are_valid(metrics, start, end)
+        assert span["metadata"]["stream"] == True
+        assert span["metadata"]["extra_headers"]["X-Stainless-Helper-Method"] == "chat.completions.stream"
+        assert TEST_MODEL in span["metadata"]["model"]
+        assert span["metadata"]["provider"] == "openai"
+        assert TEST_PROMPT in str(span["input"])
+        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+
+
+@pytest.mark.vcr
 def test_openai_chat_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 
@@ -653,6 +703,57 @@ async def test_openai_chat_streaming_async(memory_logger):
 
 @pytest.mark.asyncio
 @pytest.mark.vcr
+async def test_openai_chat_stream_helper_async(memory_logger):
+    assert not memory_logger.pop()
+
+    if not hasattr(AsyncOpenAI().chat.completions, "stream"):
+        pytest.skip("openai.chat.completions.stream is not available in this SDK version")
+
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
+
+    for client, is_wrapped in clients:
+        start = time.time()
+
+        async with client.chat.completions.stream(
+            model=TEST_MODEL,
+            messages=[{"role": "user", "content": TEST_PROMPT}],
+            stream_options={"include_usage": True},
+        ) as stream:
+            event_types = []
+            content_parts = []
+            async for event in stream:
+                event_types.append(event.type)
+                if event.type == "content.delta":
+                    content_parts.append(event.delta)
+            final = await stream.get_final_completion()
+        end = time.time()
+
+        content = "".join(content_parts)
+        assert event_types
+        assert "content.delta" in event_types
+        assert final.choices[0].message.content
+        assert "24" in final.choices[0].message.content or "twenty-four" in final.choices[0].message.content.lower()
+        assert "24" in content or "twenty-four" in content.lower()
+
+        if not is_wrapped:
+            assert not memory_logger.pop()
+            continue
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        metrics = span["metrics"]
+        assert_metrics_are_valid(metrics, start, end)
+        assert span["metadata"]["stream"] == True
+        assert span["metadata"]["extra_headers"]["X-Stainless-Helper-Method"] == "chat.completions.stream"
+        assert TEST_MODEL in span["metadata"]["model"]
+        assert span["metadata"]["provider"] == "openai"
+        assert TEST_PROMPT in str(span["input"])
+        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
 async def test_openai_chat_async_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 
@@ -896,6 +997,133 @@ async def test_openai_response_streaming_async(memory_logger):
         assert span["metadata"]["stream"] == True
         assert "What's 12 + 12?" in str(span["input"])
         assert "24" in str(span["output"])
+
+
+@pytest.mark.vcr
+def test_openai_responses_stream_helper(memory_logger):
+    """responses.stream() should preserve the helper interface and emit a tracing span."""
+    assert not memory_logger.pop()
+
+    unwrapped_client = openai.OpenAI()
+    if not hasattr(unwrapped_client.responses, "stream"):
+        pytest.skip("openai.responses.stream is not available in this SDK version")
+
+    with unwrapped_client.responses.stream(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    ) as stream:
+        event_types = []
+        chunks = []
+        for event in stream:
+            event_types.append(event.type)
+            if event.type == "response.output_text.delta":
+                chunks.append(event.delta)
+        final_response = stream.get_final_response()
+
+    output = "".join(chunks)
+    assert "response.output_text.delta" in event_types
+    assert final_response.output_text
+    assert "24" in output or "twenty-four" in output.lower()
+    assert "24" in final_response.output_text or "twenty-four" in final_response.output_text.lower()
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    start = time.time()
+    with client.responses.stream(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    ) as stream:
+        event_types = []
+        chunks = []
+        for event in stream:
+            event_types.append(event.type)
+            if event.type == "response.output_text.delta":
+                chunks.append(event.delta)
+        final_response = stream.get_final_response()
+    end = time.time()
+
+    output = "".join(chunks)
+    assert "response.output_text.delta" in event_types
+    assert final_response.output_text
+    assert "24" in output or "twenty-four" in output.lower()
+    assert "24" in final_response.output_text or "twenty-four" in final_response.output_text.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_responses_stream_helper_async(memory_logger):
+    """Async responses.stream() should preserve the helper interface and emit a tracing span."""
+    assert not memory_logger.pop()
+
+    unwrapped_client = AsyncOpenAI()
+    if not hasattr(unwrapped_client.responses, "stream"):
+        pytest.skip("openai.responses.stream is not available in this SDK version")
+
+    async with unwrapped_client.responses.stream(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    ) as stream:
+        event_types = []
+        chunks = []
+        async for event in stream:
+            event_types.append(event.type)
+            if event.type == "response.output_text.delta":
+                chunks.append(event.delta)
+        final_response = await stream.get_final_response()
+
+    output = "".join(chunks)
+    assert "response.output_text.delta" in event_types
+    assert final_response.output_text
+    assert "24" in output or "twenty-four" in output.lower()
+    assert "24" in final_response.output_text or "twenty-four" in final_response.output_text.lower()
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+    start = time.time()
+    async with client.responses.stream(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    ) as stream:
+        event_types = []
+        chunks = []
+        async for event in stream:
+            event_types.append(event.type)
+            if event.type == "response.output_text.delta":
+                chunks.append(event.delta)
+        final_response = await stream.get_final_response()
+    end = time.time()
+
+    output = "".join(chunks)
+    assert "response.output_text.delta" in event_types
+    assert final_response.output_text
+    assert "24" in output or "twenty-four" in output.lower()
+    assert "24" in final_response.output_text or "twenty-four" in final_response.output_text.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["stream"] == True
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert span["metadata"]["provider"] == "openai"
+    assert TEST_PROMPT in str(span["input"])
+    assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
 
 @pytest.mark.asyncio
@@ -1464,6 +1692,42 @@ class TestOpenAIIntegrationSetupSpans:
         assert span["metadata"]["provider"] == "openai"
         assert "gpt-4o-mini" in span["metadata"]["model"]
         assert span["input"]
+
+    @pytest.mark.vcr
+    def test_setup_stream_helper_creates_spans(self, memory_logger):
+        """OpenAIIntegration.setup() should trace chat.completions.stream()."""
+        assert not memory_logger.pop()
+
+        if not hasattr(openai.OpenAI().chat.completions, "stream"):
+            pytest.skip("openai.chat.completions.stream is not available in this SDK version")
+
+        OpenAIIntegration.setup()
+        client = openai.OpenAI()
+
+        start = time.time()
+        with client.chat.completions.stream(
+            model=TEST_MODEL,
+            messages=[{"role": "user", "content": TEST_PROMPT}],
+            stream_options={"include_usage": True},
+        ) as stream:
+            event_types = [event.type for event in stream]
+            final = stream.get_final_completion()
+        end = time.time()
+
+        assert event_types
+        assert "content.delta" in event_types
+        assert final.choices[0].message.content
+        assert "24" in final.choices[0].message.content or "twenty-four" in final.choices[0].message.content.lower()
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert_metrics_are_valid(span["metrics"], start, end)
+        assert span["metadata"]["stream"] == True
+        assert span["metadata"]["extra_headers"]["X-Stainless-Helper-Method"] == "chat.completions.stream"
+        assert span["metadata"]["provider"] == "openai"
+        assert TEST_MODEL in span["metadata"]["model"]
+        assert TEST_PROMPT in str(span["input"])
 
 
 class TestOpenAIIntegrationSetupAsyncSpans:
