@@ -384,6 +384,51 @@ def test_openai_chat_stream_helper_sync(memory_logger):
 
 
 @pytest.mark.vcr
+def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    stream = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[
+            {"role": "system", "content": "Reply with exactly OK and nothing else."},
+            {"role": "user", "content": "Reply with exactly: OK"},
+        ],
+        stream=True,
+        temperature=0,
+        seed=1,
+        logprobs=True,
+        top_logprobs=2,
+    )
+
+    chunk_logprob_tokens = []
+    content = ""
+    for chunk in stream:
+        if not chunk.choices:
+            continue
+
+        choice = chunk.choices[0]
+        if choice.delta.content:
+            content += choice.delta.content
+        if choice.logprobs and choice.logprobs.content:
+            chunk_logprob_tokens.extend(entry.token for entry in choice.logprobs.content)
+
+    assert "OK" in content
+    assert "OK" in "".join(chunk_logprob_tokens)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["output"]
+
+    output_choice = span["output"][0]
+    assert output_choice["finish_reason"] == "stop"
+    assert output_choice["logprobs"] is not None
+    assert output_choice["logprobs"]["content"]
+    assert "OK" in "".join(entry["token"] for entry in output_choice["logprobs"]["content"])
+
+
+@pytest.mark.vcr
 def test_openai_chat_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 

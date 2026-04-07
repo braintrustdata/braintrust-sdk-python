@@ -464,6 +464,9 @@ class ChatCompletionWrapper:
         content = None
         tool_calls: list[Any] | None = None
         finish_reason = None
+        logprobs_content: list[Any] | None = None
+        logprobs_refusal: list[Any] | None = None
+        saw_logprobs = False
         metrics: dict[str, float] = {}
         for result in all_results:
             usage = result.get("usage")
@@ -473,15 +476,34 @@ class ChatCompletionWrapper:
             choices = result["choices"]
             if not choices:
                 continue
-            delta = choices[0]["delta"]
+
+            choice = choices[0]
+            fr = choice.get("finish_reason")
+            if fr is not None:
+                finish_reason = fr
+
+            choice_logprobs = choice.get("logprobs")
+            if choice_logprobs is not None:
+                saw_logprobs = True
+
+                chunk_content_logprobs = choice_logprobs.get("content")
+                if chunk_content_logprobs is not None:
+                    if logprobs_content is None:
+                        logprobs_content = []
+                    logprobs_content.extend(chunk_content_logprobs)
+
+                chunk_refusal_logprobs = choice_logprobs.get("refusal")
+                if chunk_refusal_logprobs is not None:
+                    if logprobs_refusal is None:
+                        logprobs_refusal = []
+                    logprobs_refusal.extend(chunk_refusal_logprobs)
+
+            delta = choice.get("delta")
             if not delta:
                 continue
 
             if role is None and delta.get("role") is not None:
                 role = delta.get("role")
-
-            if delta.get("finish_reason") is not None:
-                finish_reason = delta.get("finish_reason")
 
             if delta.get("content") is not None:
                 content = (content or "") + delta.get("content")
@@ -524,7 +546,14 @@ class ChatCompletionWrapper:
                         "content": content,
                         "tool_calls": tool_calls,
                     },
-                    "logprobs": None,
+                    "logprobs": (
+                        {
+                            "content": logprobs_content,
+                            "refusal": logprobs_refusal,
+                        }
+                        if saw_logprobs
+                        else None
+                    ),
                     "finish_reason": finish_reason,
                 }
             ],
