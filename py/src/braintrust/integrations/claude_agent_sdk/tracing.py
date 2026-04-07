@@ -944,6 +944,80 @@ class RequestTracker:
         return self._root_span.export()
 
 
+def _prepare_prompt_for_tracing(prompt: Any) -> tuple[Any, str | None, list[dict[str, Any]] | None]:
+    if prompt is None:
+        return None, None, None
+
+    if isinstance(prompt, str):
+        return prompt, prompt, None
+
+    if isinstance(prompt, AsyncIterable):
+        captured: list[dict[str, Any]] = []
+
+        async def capturing_wrapper() -> AsyncGenerator[dict[str, Any], None]:
+            async for msg in prompt:
+                captured.append(msg)
+                yield msg
+
+        return capturing_wrapper(), None, captured
+
+    return prompt, str(prompt), None
+
+
+async def _stream_messages_with_tracing(
+    generator: AsyncIterable[Any],
+    *,
+    request_tracker: RequestTracker,
+    finish_request_tracker: Any,
+) -> AsyncGenerator[Any, None]:
+    try:
+        async for message in generator:
+            request_tracker.add_message(message)
+            yield message
+    except asyncio.CancelledError:
+        # The CancelledError may come from the subprocess transport
+        # (e.g., anyio internal cleanup when subagents complete) rather
+        # than a genuine external cancellation. We suppress it here so
+        # the response stream ends cleanly. If the caller genuinely
+        # cancelled the task, they still have pending cancellation
+        # requests that will fire at their next await point.
+        finish_request_tracker(log_output=True)
+    else:
+        finish_request_tracker(log_output=True)
+    finally:
+        finish_request_tracker()
+
+
+def _create_query_wrapper_function(original_query: Any) -> Any:
+    """Create a tracing wrapper for the exported one-shot ``query()`` helper."""
+
+    async def wrapped_query(*args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
+        query_start_time = time.time()
+        prompt = args[0] if args else kwargs.get("prompt")
+        prompt, traced_prompt, captured_messages = _prepare_prompt_for_tracing(prompt)
+
+        if args:
+            args = (prompt,) + args[1:]
+        else:
+            kwargs = dict(kwargs)
+            kwargs["prompt"] = prompt
+
+        request_tracker = RequestTracker(
+            prompt=traced_prompt,
+            query_start_time=query_start_time,
+            captured_messages=captured_messages,
+        )
+
+        async for message in _stream_messages_with_tracing(
+            original_query(*args, **kwargs),
+            request_tracker=request_tracker,
+            finish_request_tracker=request_tracker.finish,
+        ):
+            yield message
+
+    return wrapped_query
+
+
 def _create_client_wrapper_class(original_client_class: Any) -> Any:
     """Creates a wrapper class for ClaudeSDKClient that wraps query and receive_response."""
 
@@ -1018,32 +1092,15 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             """Wrap query to capture the prompt and start time for tracing."""
             # Capture the time when query is called (when LLM call starts)
             self.__query_start_time = time.time()
-            self.__captured_messages = None
 
             # Capture the prompt for use in receive_response
             prompt = args[0] if args else kwargs.get("prompt")
+            prompt, self.__last_prompt, self.__captured_messages = _prepare_prompt_for_tracing(prompt)
 
-            if prompt is not None:
-                if isinstance(prompt, str):
-                    self.__last_prompt = prompt
-                elif isinstance(prompt, AsyncIterable):
-                    # AsyncIterable[dict] - wrap it to capture messages as they're yielded
-                    captured: list[dict[str, Any]] = []
-                    self.__captured_messages = captured
-                    self.__last_prompt = None  # Will be set after messages are captured
-
-                    async def capturing_wrapper() -> AsyncGenerator[dict[str, Any], None]:
-                        async for msg in prompt:
-                            captured.append(msg)
-                            yield msg
-
-                    # Replace the prompt with our capturing wrapper
-                    if args:
-                        args = (capturing_wrapper(),) + args[1:]
-                    else:
-                        kwargs["prompt"] = capturing_wrapper()
-                else:
-                    self.__last_prompt = str(prompt)
+            if args:
+                args = (prompt,) + args[1:]
+            else:
+                kwargs["prompt"] = prompt
 
             self.__instrument_hook_callbacks()
             self.__start_request_tracker()
@@ -1061,23 +1118,12 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             generator = self.__client.receive_response()
             request_tracker = self.__request_tracker or self.__start_request_tracker()
 
-            try:
-                async for message in generator:
-                    request_tracker.add_message(message)
-                    yield message
-            except asyncio.CancelledError:
-                # The CancelledError may come from the subprocess transport
-                # (e.g., anyio internal cleanup when subagents complete) rather
-                # than a genuine external cancellation. We suppress it here so
-                # the response stream ends cleanly. If the caller genuinely
-                # cancelled the task, they still have pending cancellation
-                # requests that will fire at their next await point.
-                self.__finish_request_tracker(log_output=True)
-            else:
-                self.__finish_request_tracker(log_output=True)
-            finally:
-                if self.__request_tracker is not None:
-                    self.__finish_request_tracker()
+            async for message in _stream_messages_with_tracing(
+                generator,
+                request_tracker=request_tracker,
+                finish_request_tracker=self.__finish_request_tracker,
+            ):
+                yield message
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
             await self.__client.__aenter__()

@@ -61,6 +61,7 @@ def memory_logger():
 def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = False):
     original_client = claude_agent_sdk.ClaudeSDKClient
     original_tool_class = claude_agent_sdk.SdkMcpTool
+    original_query = claude_agent_sdk.query
 
     if wrap_client:
         claude_agent_sdk.ClaudeSDKClient = _create_client_wrapper_class(original_client)
@@ -72,6 +73,7 @@ def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = Fa
     finally:
         claude_agent_sdk.ClaudeSDKClient = original_client
         claude_agent_sdk.SdkMcpTool = original_tool_class
+        claude_agent_sdk.query = original_query
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
@@ -2114,6 +2116,51 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
     assert len(task_spans) == 1
     assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
     assert task_spans[0]["input"] == "Say hi"
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_setup_claude_agent_sdk_query_repro_import_before_setup(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    async def fake_query(*, prompt, **kwargs):
+        del kwargs
+        if isinstance(prompt, AsyncIterable):
+            async for _ in prompt:
+                pass
+        yield AssistantMessage(content=[TextBlock("hi")])
+        yield ResultMessage()
+
+    monkeypatch.setattr(claude_agent_sdk, "query", fake_query)
+    original_query = claude_agent_sdk.query
+
+    consumer_module_name = "test_query_import_before_setup_module"
+    consumer_module = types.ModuleType(consumer_module_name)
+    consumer_module.query = original_query
+    monkeypatch.setitem(sys.modules, consumer_module_name, consumer_module)
+
+    received_types = []
+
+    with _patched_claude_sdk():
+        assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+        assert getattr(consumer_module, "query") is not original_query
+        assert claude_agent_sdk.query is not original_query
+
+        async for message in getattr(consumer_module, "query")(prompt="Say hi"):
+            received_types.append(type(message).__name__)
+
+    assert "AssistantMessage" in received_types
+    assert received_types[-1] == "ResultMessage"
+
+    spans = memory_logger.pop()
+    task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
+    llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
+
+    assert len(task_spans) == 1
+    assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
+    assert task_spans[0]["input"] == "Say hi"
+    assert task_spans[0]["output"] is not None
+    assert len(llm_spans) == 1
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
