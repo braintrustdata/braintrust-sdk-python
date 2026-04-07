@@ -1,10 +1,12 @@
+import base64
 import logging
 import time
 import warnings
 from contextlib import contextmanager
 
+from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
-from braintrust.logger import NOOP_SPAN, log_exc_info_to_span, start_span
+from braintrust.logger import NOOP_SPAN, Attachment, log_exc_info_to_span, start_span
 
 
 log = logging.getLogger(__name__)
@@ -414,13 +416,64 @@ def _start_batch_results_span(args, kwargs):
     return NOOP_SPAN
 
 
-def _get_input_from_kwargs(kwargs):
-    msgs = list(kwargs.get("messages", []))
-    kwargs["messages"] = msgs.copy()
+def _attachment_filename_for_media_type(media_type: str, block_type: str) -> str:
+    extension = media_type.split("/", 1)[1] if "/" in media_type else "bin"
+    extension = extension.split("+", 1)[0]
+    prefix = "image" if block_type == "image" else "document"
+    return f"{prefix}.{extension}"
 
-    system = kwargs.get("system", None)
+
+def _convert_base64_source_to_attachment(block_type, source):
+    if not isinstance(source, dict):
+        return None
+    if source.get("type") != "base64":
+        return None
+
+    media_type = source.get("media_type")
+    data = source.get("data")
+    if not isinstance(media_type, str) or not isinstance(data, str):
+        return None
+
+    try:
+        binary_data = base64.b64decode(data, validate=True)
+    except Exception:
+        return None
+
+    return Attachment(
+        data=binary_data,
+        filename=_attachment_filename_for_media_type(media_type, block_type),
+        content_type=media_type,
+    )
+
+
+def _process_input_attachments(value):
+    if isinstance(value, list):
+        return [_process_input_attachments(item) for item in value]
+
+    if isinstance(value, dict):
+        block_type = value.get("type")
+        source = value.get("source")
+
+        if block_type in {"image", "document"} and isinstance(source, dict):
+            attachment = _convert_base64_source_to_attachment(block_type, source)
+            if attachment is not None:
+                processed = {k: _process_input_attachments(v) for k, v in value.items() if k != "source"}
+                processed["source"] = {k: _process_input_attachments(v) for k, v in source.items() if k != "data"}
+                processed["image_url"] = {"url": attachment}
+                return processed
+
+        return {k: _process_input_attachments(v) for k, v in value.items()}
+
+    return value
+
+
+def _get_input_from_kwargs(kwargs):
+    msgs = bt_safe_deep_copy(list(kwargs.get("messages", [])))
+    msgs = _process_input_attachments(msgs)
+
+    system = bt_safe_deep_copy(kwargs.get("system", None))
     if system:
-        msgs.append({"role": "system", "content": system})
+        msgs.append({"role": "system", "content": _process_input_attachments(system)})
     return msgs
 
 
