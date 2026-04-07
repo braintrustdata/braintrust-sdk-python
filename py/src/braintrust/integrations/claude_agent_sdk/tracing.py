@@ -585,6 +585,7 @@ class ContextTracker:
         self._task_order: list[str | None] = []
 
         self._final_results: list[dict[str, Any]] = []
+        self._result_output: Any | None = None
         self._task_events: list[dict[str, Any]] = []
 
         _thread_local.tool_span_tracker = self._tool_tracker
@@ -609,7 +610,11 @@ class ContextTracker:
             self._handle_system(message)
 
     def log_output(self) -> None:
-        """Log the last accumulated assistant message as the root span output."""
+        """Log the canonical root span output for the request."""
+        if self._result_output is not None:
+            self._root_span.log(output=self._result_output)
+            return
+
         if self._final_results:
             self._root_span.log(output=self._final_results[-1])
 
@@ -715,6 +720,11 @@ class ContextTracker:
             ctx = self._get_context(None)
             if ctx.llm_span and (usage_metrics or usage_metadata):
                 ctx.llm_span.log(metrics=usage_metrics or None, metadata=usage_metadata or None)
+
+        result_value = getattr(message, "result", None)
+        if result_value is not None:
+            self._result_output = result_value
+
         result_metadata = {
             k: v
             for k, v in {
