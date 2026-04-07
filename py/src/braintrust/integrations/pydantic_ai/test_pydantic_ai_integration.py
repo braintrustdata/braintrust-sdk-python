@@ -2778,7 +2778,6 @@ def test_start_producer_wrapper_exception_does_not_double_invoke_producer():
     assert instance.call_count == 1
 
 
-
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agent_with_stop_sequences(memory_logger):
