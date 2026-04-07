@@ -58,7 +58,7 @@ def check_origin(origin: str) -> bool:
     for allowed in ALLOWED_ORIGINS:
         if isinstance(allowed, str) and origin == allowed:
             return True
-        elif isinstance(allowed, re.Pattern) and allowed.match(origin):
+        elif isinstance(allowed, re.Pattern) and allowed.fullmatch(origin):
             return True
 
     return False

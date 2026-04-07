@@ -198,14 +198,17 @@ def invoke(
     if strict is not None:
         request["strict"] = strict
 
-    headers = {"Accept": "text/event-stream" if stream else "application/json"}
+    headers = {
+        "Accept": "text/event-stream" if stream else "application/json",
+        "Content-Type": "application/json",
+    }
     if project_id is not None:
         headers["x-bt-project-id"] = project_id
     if org_name is not None:
         headers["x-bt-org-name"] = org_name
 
     request_json = bt_dumps(request)
-    resp = proxy_conn().post("function/invoke", data=request_json, headers=headers, stream=stream)
+    resp = proxy_conn().post("function/invoke", data=request_json.encode("utf-8"), headers=headers, stream=stream)
     if resp.status_code == 500:
         raise BraintrustInvokeError(resp.text)
 

@@ -246,6 +246,28 @@ def validate_json_schema(parameters: dict[str, Any], schema: ParametersSchema) -
     return candidate
 
 
+def _rehydrate_remote_parameters(
+    parameters: dict[str, Any],
+    schema: ParametersSchema,
+) -> ValidatedParameters:
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        return parameters
+
+    result: ValidatedParameters = dict(parameters)
+    for name, property_schema in properties.items():
+        if not isinstance(property_schema, dict) or name not in result:
+            continue
+
+        if property_schema.get("x-bt-type") == "prompt":
+            prompt_data = result[name]
+            if not isinstance(prompt_data, dict):
+                raise ValueError(f"Invalid parameter '{name}': prompt value must be an object")
+            result[name] = _create_prompt(name, prompt_data)
+
+    return result
+
+
 def _validate_local_parameters(
     parameters: dict[str, Any],
     parameter_schema: EvalParameters,
@@ -334,7 +356,8 @@ def validate_parameters(
     if isinstance(parameter_schema, RemoteEvalParameters):
         merged = dict(parameter_schema.data)
         merged.update(parameters)
-        return validate_json_schema(merged, parameter_schema.schema)
+        validated = validate_json_schema(merged, parameter_schema.schema)
+        return _rehydrate_remote_parameters(validated, parameter_schema.schema)
 
     return _validate_local_parameters(parameters, parameter_schema)
 

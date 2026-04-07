@@ -92,8 +92,11 @@ class TestCollectEvaluatorDefs:
         _collect_evaluator_defs(mock_project_ids, functions, "bundle-1", "replace", "eval.py", evaluators)
 
         eval_def = functions[0]["function_data"]["data"]["location"]["evaluator_definition"]
-        assert "parameters" in eval_def
         assert "scores" in eval_def
+        parameters = eval_def["parameters"]
+        assert parameters["type"] == "braintrust.staticParameters"
+        assert parameters["source"] is None
+        assert parameters["schema"]["prompt"]["type"] == "prompt"
 
     def test_slug_from_source_file(self, mock_project_ids):
         evaluators = {"Test Eval": _make_evaluator("test-project", ["accuracy"])}

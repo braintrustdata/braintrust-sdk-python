@@ -1,0 +1,67 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"What is 5+5? Reply with just the
+      number."}],"model":"openai/gpt-4o-mini","max_tokens":10.0,"stream":true,"temperature":1.0,"top_p":1.0}'
+    headers:
+      Accept:
+      - text/event-stream
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '174'
+      Host:
+      - openrouter.ai
+      content-type:
+      - application/json
+      user-agent:
+      - speakeasy-sdk/python 0.7.11 2.768.0 1.0.0 openrouter
+    method: POST
+    uri: https://openrouter.ai/api/v1/chat/completions
+  response:
+    body:
+      string: ': OPENROUTER PROCESSING
+
+
+        data: {"id":"gen-1774558312-UWJRiYAjZxsKV2WOReFJ","object":"chat.completion.chunk","created":1774558312,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_f85b8886b6","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
+
+
+        data: {"id":"gen-1774558312-UWJRiYAjZxsKV2WOReFJ","object":"chat.completion.chunk","created":1774558312,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_f85b8886b6","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
+
+
+        data: {"id":"gen-1774558312-UWJRiYAjZxsKV2WOReFJ","object":"chat.completion.chunk","created":1774558312,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_f85b8886b6","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":1,"total_tokens":21,"cost":0.0000036,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000036,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":6e-7},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-RAY:
+      - 9e29092c8dbc552b-SJC
+      Cache-Control:
+      - no-cache
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream
+      Date:
+      - Thu, 26 Mar 2026 20:51:52 GMT
+      Permissions-Policy:
+      - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
+        "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
+      Referrer-Policy:
+      - no-referrer, strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+version: 1

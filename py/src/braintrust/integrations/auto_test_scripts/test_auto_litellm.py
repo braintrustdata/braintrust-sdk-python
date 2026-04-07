@@ -1,24 +1,32 @@
 """Test auto_instrument for LiteLLM."""
 
+from pathlib import Path
+
 import litellm
 from braintrust.auto import auto_instrument
+from braintrust.integrations.litellm import LiteLLMIntegration
 from braintrust.wrappers.test_utils import autoinstrument_test_context
 
 
+_CASSETTES_DIR = Path(__file__).resolve().parent.parent / "litellm" / "cassettes"
+
 # 1. Verify not patched initially
-assert not hasattr(litellm, "_braintrust_wrapped")
+assert not LiteLLMIntegration.patchers[0].is_patched(litellm, None)
 
 # 2. Instrument
-results = auto_instrument()
+# Disable OpenAI auto-instrumentation here because LiteLLM's OpenAI-backed
+# chat path can otherwise produce both a LiteLLM span and an OpenAI span.
+# This test is meant to validate LiteLLM instrumentation in isolation.
+results = auto_instrument(openai=False)
 assert results.get("litellm") == True
-assert hasattr(litellm, "_braintrust_wrapped")
+assert LiteLLMIntegration.patchers[0].is_patched(litellm, None)
 
 # 3. Idempotent
-results2 = auto_instrument()
+results2 = auto_instrument(openai=False)
 assert results2.get("litellm") == True
 
 # 4. Make API call and verify span
-with autoinstrument_test_context("test_auto_litellm") as memory_logger:
+with autoinstrument_test_context("test_auto_litellm", cassettes_dir=_CASSETTES_DIR) as memory_logger:
     response = litellm.completion(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": "Say hi"}],

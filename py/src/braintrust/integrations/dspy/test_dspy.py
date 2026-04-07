@@ -38,28 +38,73 @@ def test_dspy_callback(memory_logger):
 
     # Check logged spans
     spans = memory_logger.pop()
-    assert len(spans) >= 2  # Should have module span and LM span
+    assert len(spans) >= 4  # Should have module, adapter format, LM, and adapter parse spans
 
-    # Find LM span by checking span_attributes
-    lm_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "dspy.lm"]
-    assert len(lm_spans) >= 1
+    spans_by_name = {span["span_attributes"]["name"]: span for span in spans}
 
-    lm_span = lm_spans[0]
-    # Verify metadata
+    lm_span = spans_by_name["dspy.lm"]
     assert "metadata" in lm_span
     assert "model" in lm_span["metadata"]
     assert MODEL in lm_span["metadata"]["model"]
-
-    # Verify input/output
     assert "input" in lm_span
     assert "output" in lm_span
 
-    # Find module span
-    module_spans = [s for s in spans if "module" in s.get("span_attributes", {}).get("name", "")]
-    assert len(module_spans) >= 1
+    format_span = spans_by_name["dspy.adapter.format"]
+    parse_span = spans_by_name["dspy.adapter.parse"]
 
-    # Verify span parenting (LM span should have parent)
-    assert lm_span.get("span_parents")  # LM span should have parent
+    assert format_span["metadata"]["adapter_class"].endswith("ChatAdapter")
+    assert "signature" in format_span["input"]
+    assert "demos" in format_span["input"]
+    assert "inputs" in format_span["input"]
+    assert isinstance(format_span["output"], list)
+
+    assert parse_span["metadata"]["adapter_class"].endswith("ChatAdapter")
+    assert "signature" in parse_span["input"]
+    assert "completion" in parse_span["input"]
+    assert isinstance(parse_span["output"], dict)
+
+    # Verify spans are nested under the broader DSPy execution
+    span_ids = {span["span_id"] for span in spans}
+    assert lm_span.get("span_parents")
+    assert format_span.get("span_parents")
+    assert parse_span.get("span_parents")
+    assert format_span["span_parents"][0] in span_ids
+    assert lm_span["span_parents"][0] in span_ids
+    assert parse_span["span_parents"][0] in span_ids
+
+
+def test_dspy_adapter_callbacks(memory_logger):
+    """Adapter format/parse callbacks should log spans without an LM call."""
+    assert not memory_logger.pop()
+
+    dspy.configure(callbacks=[BraintrustDSpyCallback()])
+
+    signature = dspy.make_signature("question -> answer")
+    adapter = dspy.ChatAdapter()
+    formatted = adapter.format(
+        signature,
+        demos=[{"question": "1+1", "answer": "2"}],
+        inputs={"question": "2+2"},
+    )
+    parsed = adapter.parse(signature, "[[ ## answer ## ]]\n4")
+
+    assert formatted
+    assert parsed == {"answer": "4"}
+
+    spans = memory_logger.pop()
+    assert len(spans) == 2
+
+    spans_by_name = {span["span_attributes"]["name"]: span for span in spans}
+    format_span = spans_by_name["dspy.adapter.format"]
+    parse_span = spans_by_name["dspy.adapter.parse"]
+
+    assert format_span["metadata"]["adapter_class"].endswith("ChatAdapter")
+    assert format_span["input"]["inputs"] == {"question": "2+2"}
+    assert format_span["output"] == formatted
+
+    assert parse_span["metadata"]["adapter_class"].endswith("ChatAdapter")
+    assert parse_span["input"]["completion"] == "[[ ## answer ## ]]\n4"
+    assert parse_span["output"] == parsed
 
 
 class TestPatchDSPy:

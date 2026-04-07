@@ -71,7 +71,7 @@ def assert_metrics_are_valid(metrics, start=None, end=None):
 
 
 @contextmanager
-def autoinstrument_test_context(cassette_name: str, *, use_vcr: bool = True):
+def autoinstrument_test_context(cassette_name: str, *, use_vcr: bool = True, cassettes_dir: Path | None = None):
     """Context manager for auto_instrument tests.
 
     Sets up the shared memory_logger context and, by default, VCR.
@@ -80,12 +80,16 @@ def autoinstrument_test_context(cassette_name: str, *, use_vcr: bool = True):
     non-VCR mechanism, such as the Claude Agent SDK subprocess cassette
     transport.
 
+    Use ``cassettes_dir`` to override the cassette directory (e.g. when
+    cassettes live next to an integration package rather than in
+    ``wrappers/cassettes/``).
+
     Usage:
         with autoinstrument_test_context("test_auto_openai") as memory_logger:
             # make API call
             spans = memory_logger.pop()
     """
-    cassette_path = CASSETTES_DIR / f"{cassette_name}.yaml"
+    cassette_path = (cassettes_dir or CASSETTES_DIR) / f"{cassette_name}.yaml"
 
     init_test_logger("test-auto-instrument")
 

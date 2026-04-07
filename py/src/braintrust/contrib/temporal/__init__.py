@@ -421,21 +421,21 @@ class BraintrustPlugin(SimplePlugin):
 
         params = inspect.signature(SimplePlugin.__init__).parameters
 
-        # temporalio >= 1.23.0 merged client_interceptors/worker_interceptors
-        # into a single `interceptors` parameter.
+        # temporalio plugin APIs differ by version. Newer releases may expose
+        # a merged `interceptors` kwarg, while older releases keep separate
+        # client/worker interceptor kwargs. Build kwargs dynamically so pylint
+        # does not validate unsupported keywords against the installed version.
+        kwargs: dict[str, Any] = {
+            "name": "braintrust",
+            "workflow_runner": _modify_workflow_runner,
+        }
         if "interceptors" in params:
-            super().__init__(  # pylint: disable=unexpected-keyword-arg
-                name="braintrust",
-                interceptors=[interceptor],
-                workflow_runner=_modify_workflow_runner,
-            )
+            kwargs["interceptors"] = [interceptor]
         else:
-            super().__init__(
-                name="braintrust",
-                client_interceptors=[interceptor],
-                worker_interceptors=[interceptor],
-                workflow_runner=_modify_workflow_runner,
-            )
+            kwargs["client_interceptors"] = [interceptor]
+            kwargs["worker_interceptors"] = [interceptor]
+
+        super().__init__(**kwargs)
 
 
 __all__ = ["BraintrustInterceptor", "BraintrustPlugin"]

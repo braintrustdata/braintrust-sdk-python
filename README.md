@@ -5,7 +5,7 @@
 This repository contains Braintrust's Python SDKs and integrations, including:
 
 - The main `braintrust` SDK package in [`./py`](./py)
-- Integration packages under [`./integrations`](./integrations)
+- Built-in integrations under [`py/src/braintrust/integrations`](py/src/braintrust/integrations) and related compatibility packages under [`./integrations`](./integrations)
 - Examples, tests, and local development tooling for Python SDK development
 
 ## Quickstart
@@ -43,9 +43,25 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 
 | Package | Purpose | PyPI | Docs |
 | --- | --- | --- | --- |
-| `braintrust` | Core Python SDK for logging, tracing, evals, and CLI workflows. | [![PyPI - braintrust](https://img.shields.io/pypi/v/braintrust.svg)](https://pypi.org/project/braintrust/) | [py/README.md](py/README.md) |
-| `braintrust-langchain` | LangChain callback integration for automatic Braintrust logging. | [![PyPI - braintrust-langchain](https://img.shields.io/pypi/v/braintrust-langchain.svg)](https://pypi.org/project/braintrust-langchain/) | [integrations/langchain-py/README.md](integrations/langchain-py/README.md) |
-| `braintrust-adk` | Deprecated Google ADK integration package. New ADK support lives in `braintrust`. | [![PyPI - braintrust-adk](https://img.shields.io/pypi/v/braintrust-adk.svg)](https://pypi.org/project/braintrust-adk/) | [integrations/adk-py/README.md](integrations/adk-py/README.md) |
+| `braintrust` | Core Python SDK for logging, tracing, evals, CLI workflows, and built-in integrations. | [![PyPI - braintrust](https://img.shields.io/pypi/v/braintrust.svg)](https://pypi.org/project/braintrust/) | [py/README.md](py/README.md) |
+
+## Integrations included in `braintrust`
+
+| Integration | Auto-instrumented | Min version |
+| --- | --- | --- |
+| [OpenAI](py/src/braintrust/oai.py) | Yes | `openai>=1.71` |
+| [Anthropic](py/src/braintrust/integrations/anthropic/) | Yes | `anthropic>=0.48.0` |
+| [LiteLLM](py/src/braintrust/integrations/litellm/) | Yes | `litellm>=1.74.0` |
+| [Pydantic AI](py/src/braintrust/integrations/pydantic_ai/) | Yes | `pydantic_ai>=1.10.0` |
+| [Google GenAI](py/src/braintrust/integrations/google_genai/) | Yes | latest tested in CI |
+| [Google ADK](py/src/braintrust/integrations/adk/) | Yes | `google-adk>=1.14.1` |
+| [LangChain](py/src/braintrust/integrations/langchain/) | Yes | `langchain-core>=0.3.28` |
+| [OpenRouter](py/src/braintrust/integrations/openrouter/) | Yes | `openrouter>=0.6.0` |
+| [Agno](py/src/braintrust/integrations/agno/) | Yes | `agno>=2.1.0` |
+| [AgentScope](py/src/braintrust/integrations/agentscope/) | Yes | `agentscope>=1.0.0` |
+| [Claude Agent SDK](py/src/braintrust/integrations/claude_agent_sdk/) | Yes | `claude_agent_sdk>=0.1.10` |
+| [DSPy](py/src/braintrust/integrations/dspy/) | Yes | latest tested in CI |
+| [pytest plugin](py/src/braintrust/wrappers/pytest_plugin/README.md) | No | `pytest>=8` |
 
 ## Documentation
 

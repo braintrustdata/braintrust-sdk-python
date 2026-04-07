@@ -90,7 +90,7 @@ def test_validate_remote_parameters_merges_saved_data_and_runtime_overrides():
     }
 
 
-def test_validate_remote_parameters_keeps_prompt_values_as_dicts():
+def test_validate_remote_parameters_rehydrates_prompt_values():
     parameters = RemoteEvalParameters(
         id="params-123",
         project_id="project-123",
@@ -122,7 +122,61 @@ def test_validate_remote_parameters_keeps_prompt_values_as_dicts():
 
     result = validate_parameters({}, parameters)
 
-    assert isinstance(result["main"], dict)
+    assert hasattr(result["main"], "build")
+    built = result["main"].build(input="test input")
+    assert built["messages"] == [{"role": "user", "content": "test input"}]
+    assert built["model"] == "gpt-5-mini"
+
+
+def test_validate_remote_parameters_allows_prompt_overrides():
+    parameters = RemoteEvalParameters(
+        id="params-123",
+        project_id="project-123",
+        name="Saved parameters",
+        slug="saved-parameters",
+        version="v1",
+        schema={
+            "type": "object",
+            "properties": {
+                "main": {
+                    "type": "object",
+                    "x-bt-type": "prompt",
+                },
+            },
+            "additionalProperties": True,
+        },
+        data={
+            "main": {
+                "prompt": {
+                    "type": "chat",
+                    "messages": [{"role": "user", "content": "{{input}}"}],
+                },
+                "options": {
+                    "model": "gpt-5-mini",
+                },
+            },
+        },
+    )
+
+    result = validate_parameters(
+        {
+            "main": {
+                "prompt": {
+                    "type": "chat",
+                    "messages": [{"role": "user", "content": "override {{input}}"}],
+                },
+                "options": {
+                    "model": "gpt-5-nano",
+                },
+            }
+        },
+        parameters,
+    )
+
+    assert hasattr(result["main"], "build")
+    built = result["main"].build(input="test input")
+    assert built["messages"] == [{"role": "user", "content": "override test input"}]
+    assert built["model"] == "gpt-5-nano"
 
 
 @pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")

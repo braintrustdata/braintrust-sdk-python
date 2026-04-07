@@ -1,0 +1,29 @@
+interactions:
+- request:
+    body: '{"api_version": 1, "input": {"text": "result \u2014 excellent"}, "metadata":
+      null, "parent": "", "project_name": "test-project", "slug": "test-fn", "stream":
+      false, "tags": null}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.5
+    method: POST
+    uri: https://proxy.braintrust.ai/function/invoke
+  response:
+    body:
+      string: '{"output": "result \u2014 excellent"}'
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    status:
+      code: 200
+      message: OK
+version: 1
+

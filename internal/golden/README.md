@@ -17,21 +17,22 @@ Each test suite validates:
 
 ## Running Tests
 
-### Python Tests
+Run a specific golden suite from its directory, for example:
 
 ```bash
-cd genai-py-v1
-python google_genai.py
+cd langchain-py-v1
+python langchain.py
 ```
+
+```bash
+cd pydantic-ai-v1
+python pydantic_ai_test.py
+```
+
 
 ## Requirements
 
-Before running the tests, ensure you have the appropriate API keys set as environment variables:
-
-- `BRAINTRUST_API_KEY` to log to braintrust
-- `GOOGLE_API_KEY` for Google Generative AI tests
-
-The tests will automatically log traces to Braintrust projects named `golden-python-genai`.
+Before running a suite, ensure you have the appropriate API keys set as environment variables for that provider, along with `BRAINTRUST_API_KEY` if you want to log traces to Braintrust.
 
 ## Contributing
 
@@ -39,10 +40,9 @@ The tests will automatically log traces to Braintrust projects named `golden-pyt
 
 To add tests for a new AI provider:
 
-1. Use `google_genai.py` as a reference implementation
-2. Provide it as context to an LLM and ask it to create an equivalent file for the new provider
-3. Ensure all test cases are covered with provider-specific adaptations
-4. Follow the naming convention: `<provider>.py`
+1. Use an existing golden suite as a reference implementation
+2. Ensure all test cases are covered with provider-specific adaptations
+3. Follow the naming convention already used by the surrounding suites
 
 ### Adding New Feature Coverage
 
@@ -52,4 +52,4 @@ When adding a new feature (like reasoning, extended context, or new modalities):
 2. Ensure consistency in test structure and naming across providers
 3. Update this README to document the new feature coverage
 
-This ensures comprehensive validation across all supported providers and maintains test parity.
+This helps maintain broad feature coverage across the remaining golden suites.

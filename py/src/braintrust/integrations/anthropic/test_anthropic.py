@@ -5,11 +5,14 @@ Tests to ensure we reliably wrap the Anthropic API.
 import time
 import unittest.mock
 from pathlib import Path
+from types import SimpleNamespace
 
 import anthropic
 import pytest
 from braintrust import logger
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
+from braintrust.integrations.anthropic._utils import extract_anthropic_usage
+from braintrust.integrations.anthropic.tracing import _log_message_to_span
 from braintrust.test_helpers import init_test_logger
 
 
@@ -35,6 +38,78 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
+    span = unittest.mock.MagicMock()
+    message = SimpleNamespace(
+        role="assistant",
+        content=[{"type": "text", "text": "done"}],
+        model=MODEL,
+        stop_reason="stop_sequence",
+        stop_sequence="DONE",
+        usage={
+            "input_tokens": 11,
+            "output_tokens": 7,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "server_tool_use": {
+                "web_search_requests": 2,
+                "web_fetch_requests": 1,
+            },
+        },
+    )
+
+    _log_message_to_span(message, span, time_to_first_token=0.123)
+
+    span.log.assert_called_once_with(
+        output={
+            "role": "assistant",
+            "content": [{"type": "text", "text": "done"}],
+            "model": MODEL,
+            "stop_reason": "stop_sequence",
+            "stop_sequence": "DONE",
+        },
+        metrics={
+            "prompt_tokens": 11.0,
+            "completion_tokens": 7.0,
+            "prompt_cached_tokens": 0.0,
+            "prompt_cache_creation_tokens": 0.0,
+            "server_tool_use_web_search_requests": 2.0,
+            "server_tool_use_web_fetch_requests": 1.0,
+            "tokens": 18.0,
+            "time_to_first_token": 0.123,
+        },
+        metadata={},
+    )
+
+
+def test_extract_anthropic_usage_includes_server_tool_use_metrics_from_objects():
+    usage = SimpleNamespace(
+        input_tokens=11,
+        output_tokens=7,
+        cache_read_input_tokens=3,
+        cache_creation_input_tokens=2,
+        server_tool_use=SimpleNamespace(
+            web_search_requests=2,
+            web_fetch_requests=1,
+            code_execution_requests=4,
+        ),
+    )
+
+    metrics, metadata = extract_anthropic_usage(usage)
+
+    assert metrics == {
+        "prompt_tokens": 16.0,
+        "completion_tokens": 7.0,
+        "prompt_cached_tokens": 3.0,
+        "prompt_cache_creation_tokens": 2.0,
+        "server_tool_use_web_search_requests": 2.0,
+        "server_tool_use_web_fetch_requests": 1.0,
+        "server_tool_use_code_execution_requests": 4.0,
+        "tokens": 23.0,
+    }
+    assert metadata == {}
 
 
 @pytest.mark.vcr
@@ -351,6 +426,8 @@ def test_anthropic_messages_sync(memory_logger):
     metrics = log["metrics"]
     _assert_metrics_are_valid(metrics, start, end)
     assert log["metadata"]["model"] == MODEL
+    assert log["output"]["model"] == msg.model
+    assert log["output"]["stop_reason"] == msg.stop_reason
 
 
 def _assert_metrics_are_valid(metrics, start, end):
@@ -498,17 +575,83 @@ def test_setup_creates_spans(memory_logger):
     AnthropicIntegration.setup()
 
     client = anthropic.Anthropic()
-    client.messages.create(
+    message = client.messages.create(
         model=MODEL,
         max_tokens=100,
         messages=[{"role": "user", "content": "hi"}],
     )
+
+    usage = message.usage
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == MODEL
     assert span["metadata"]["provider"] == "anthropic"
+
+    cache_creation = getattr(usage, "cache_creation", None)
+    if cache_creation is None:
+        pytest.skip("Anthropic SDK version does not expose nested cache_creation usage fields")
+
+    if isinstance(cache_creation, dict):
+        ephemeral_5m = cache_creation["ephemeral_5m_input_tokens"]
+        ephemeral_1h = cache_creation["ephemeral_1h_input_tokens"]
+    else:
+        ephemeral_5m = cache_creation.ephemeral_5m_input_tokens
+        ephemeral_1h = cache_creation.ephemeral_1h_input_tokens
+
+    assert span["metadata"]["usage_service_tier"] == usage.service_tier
+    assert span["metadata"]["usage_inference_geo"] == usage.inference_geo
+    metrics = span["metrics"]
+    assert metrics["prompt_tokens"] == (
+        usage.input_tokens + usage.cache_read_input_tokens + usage.cache_creation_input_tokens
+    )
+    assert metrics["completion_tokens"] == usage.output_tokens
+    assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+    assert span["metadata"]["cache_creation_ephemeral_5m_input_tokens"] == ephemeral_5m
+    assert span["metadata"]["cache_creation_ephemeral_1h_input_tokens"] == ephemeral_1h
+    assert "service_tier" not in metrics
+
+
+def test_extract_anthropic_usage_preserves_nested_numeric_fields():
+    usage = {
+        "input_tokens": 8,
+        "output_tokens": 12,
+        "cache_creation": {
+            "ephemeral_5m_input_tokens": 3,
+            "ephemeral_1h_input_tokens": 4,
+        },
+        "server_tool_use": {
+            "web_search_requests": 2,
+            "web_fetch_requests": 1,
+        },
+        "service_tier": "standard",
+        "inference_geo": "not_available",
+    }
+    metrics, metadata = extract_anthropic_usage(usage)
+
+    assert metrics["prompt_tokens"] == 15
+    assert metrics["completion_tokens"] == 12
+    assert metrics["tokens"] == 27
+    assert metrics["prompt_cache_creation_tokens"] == 7
+    assert metadata["cache_creation_ephemeral_5m_input_tokens"] == 3
+    assert metadata["cache_creation_ephemeral_1h_input_tokens"] == 4
+    assert metrics["server_tool_use_web_search_requests"] == 2
+    assert metrics["server_tool_use_web_fetch_requests"] == 1
+    assert "service_tier" not in metrics
+    assert metadata == {
+        "cache_creation_ephemeral_5m_input_tokens": 3,
+        "cache_creation_ephemeral_1h_input_tokens": 4,
+        "usage_service_tier": "standard",
+        "usage_inference_geo": "not_available",
+    }
+
+
+def test_extract_anthropic_usage_skips_empty_usage():
+    metrics, metadata = extract_anthropic_usage(SimpleNamespace())
+
+    assert metrics == {}
+    assert metadata == {}
 
 
 def _make_batch_requests():

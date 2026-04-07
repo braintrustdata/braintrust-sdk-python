@@ -62,6 +62,7 @@ BASE_TEST_DEPS = ("pytest", "pytest-asyncio", "pytest-vcr")
 # validate things work with or without them.
 VENDOR_PACKAGES = (
     "agno",
+    "agentscope",
     "anthropic",
     "dspy",
     "openai",
@@ -70,6 +71,8 @@ VENDOR_PACKAGES = (
     "autoevals",
     "braintrust_core",
     "litellm",
+    "mistralai",
+    "openrouter",
     "opentelemetry-api",
     "opentelemetry-sdk",
     "opentelemetry-exporter-otlp-proto-http",
@@ -81,6 +84,7 @@ VENDOR_PACKAGES = (
 # Test matrix
 ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
 OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
+OPENAI_AGENTS_VERSIONS = (LATEST, "0.0.19")
 # litellm latest requires Python >= 3.10
 # Pin litellm because 1.82.7-1.82.8 are compromised: https://github.com/BerriAI/litellm/issues/24512
 LITELLM_VERSIONS = ("1.82.0", "1.74.0")
@@ -89,6 +93,7 @@ CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
 # Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
 # to internals we leverage for instrumentation.
 AGNO_VERSIONS = (LATEST, "2.4.0", "2.1.0")
+AGENTSCOPE_VERSIONS = (LATEST, "1.0.0")
 # pydantic_ai 1.x requires Python >= 3.10
 # Two test suites with different version requirements:
 # 1. wrap_openai approach: works with older versions (0.1.9+)
@@ -100,6 +105,9 @@ AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
 GENAI_VERSIONS = (LATEST,)
 DSPY_VERSIONS = (LATEST,)
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
+LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
+OPENROUTER_VERSIONS = (LATEST, "0.6.0")
+MISTRAL_VERSIONS = (LATEST, "1.12.4")
 # temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
 TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
 PYTEST_VERSIONS = (LATEST, "8.4.2")
@@ -120,7 +128,7 @@ def test_pydantic_ai_wrap_openai(session, version):
     """Test pydantic_ai with wrap_openai() approach - supports older versions."""
     _install_test_deps(session)
     _install(session, "pydantic_ai", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_pydantic_ai_wrap_openai.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_wrap_openai.py")
     _run_core_tests(session)
 
 
@@ -133,7 +141,7 @@ def test_pydantic_ai_integration(session, version):
         session.skip("pydantic_ai integration tests require Python >= 3.10 (pydantic_ai 1.10.0+)")
     _install_test_deps(session)
     _install(session, "pydantic_ai", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_pydantic_ai_integration.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_integration.py")
     _run_core_tests(session)
 
 
@@ -145,7 +153,7 @@ def test_pydantic_ai_logfire(session):
     _install_test_deps(session)
     _install(session, "pydantic_ai")
     _install(session, "logfire")
-    _run_tests(session, f"{WRAPPER_DIR}/test_pydantic_ai_logfire.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_logfire.py")
 
 
 @nox.session()
@@ -169,6 +177,16 @@ def test_agno(session, version):
     _install(session, "fastapi")  # Required for agno.workflow
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py")
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py")
+    _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", AGENTSCOPE_VERSIONS, ids=AGENTSCOPE_VERSIONS)
+def test_agentscope(session, version):
+    _install_test_deps(session)
+    _install(session, "agentscope", version)
+    _install(session, "openai")
+    _run_tests(session, f"{INTEGRATION_DIR}/agentscope/test_agentscope.py")
     _run_core_tests(session)
 
 
@@ -203,13 +221,43 @@ def test_google_adk(session, version):
 
 
 @nox.session()
+@nox.parametrize("version", LANGCHAIN_VERSIONS, ids=LANGCHAIN_VERSIONS)
+def test_langchain(session, version):
+    """Test LangChain integration."""
+    # langchain requires Python >= 3.10
+    if sys.version_info < (3, 10):
+        session.skip("langchain requires Python >= 3.10")
+    _install_test_deps(session)
+    _install(session, "langchain-core", version)
+    _install(session, "langchain-openai")
+    _install(session, "langchain-anthropic")
+    _install(session, "langgraph")
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_callbacks.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_context.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py")
+    _run_core_tests(session)
+
+
+@nox.session()
 @nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
 def test_openai(session, version):
     _install_test_deps(session)
     _install(session, "openai", version)
-    # openai-agents requires Python >= 3.10
-    _install(session, "openai-agents")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_oai_attachments.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py")
+    _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_AGENTS_VERSIONS, ids=OPENAI_AGENTS_VERSIONS)
+def test_openai_agents(session, version):
+    if sys.version_info < (3, 10):
+        session.skip("openai-agents requires Python >= 3.10")
+    _install_test_deps(session)
+    _install(session, "openai")
+    _install(session, "openai-agents", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openai_agents/test_openai_agents.py")
     _run_core_tests(session)
 
 
@@ -220,15 +268,26 @@ def test_openai_http2_streaming(session):
     # h2 is isolated to this session because it's only needed to force the
     # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
     session.install("h2")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai_http2.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py")
 
 
 @nox.session()
-def test_openrouter(session):
-    """Test wrap_openai with OpenRouter. Requires OPENROUTER_API_KEY env var."""
+@nox.parametrize("version", OPENROUTER_VERSIONS, ids=OPENROUTER_VERSIONS)
+def test_openrouter(session, version):
+    """Test the native OpenRouter SDK integration."""
     _install_test_deps(session)
-    _install(session, "openai")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openrouter.py")
+    _install(session, "openrouter", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openrouter/test_openrouter.py")
+
+
+@nox.session()
+@nox.parametrize("version", MISTRAL_VERSIONS, ids=MISTRAL_VERSIONS)
+def test_mistral(session, version):
+    """Test the native Mistral SDK integration."""
+    _install_test_deps(session)
+    _install(session, "mistralai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/mistral/test_mistral.py")
+    _run_core_tests(session)
 
 
 @nox.session()
@@ -243,7 +302,7 @@ def test_litellm(session, version):
     # Install fastapi and orjson as they're required by litellm for proxy/responses operations
     session.install("openai<=1.99.9", "--force-reinstall", "fastapi", "orjson")
     _install(session, "litellm", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_litellm.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/litellm/test_litellm.py")
     _run_core_tests(session)
 
 
@@ -285,7 +344,7 @@ def test_cli(session):
     _install_test_deps(session)
     session.install(".[cli]")
     session.install("httpx")  # Required for starlette.testclient
-    _run_tests(session, "braintrust/devserver/test_server_integration.py")
+    _run_tests(session, DEVSERVER_DIR)
 
 
 @nox.session()
@@ -336,8 +395,9 @@ def pylint(session):
     session.install("pydantic_ai>=1.10.0")
     session.install("google-adk")
     session.install("opentelemetry.instrumentation.openai")
-    # langsmith is needed for the wrapper module but not in VENDOR_PACKAGES
-    session.install("langsmith")
+    # langsmith is needed for the langsmith_wrapper module but not in VENDOR_PACKAGES
+    # langchain-core, langchain-openai, langchain-anthropic are needed for the langchain integration
+    session.install("langsmith", "langchain-core", "langchain-openai", "langchain-anthropic")
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]

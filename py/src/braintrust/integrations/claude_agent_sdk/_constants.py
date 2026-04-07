@@ -16,12 +16,14 @@ class MessageClassName(str, Enum):
 
 class BlockClassName(str, Enum):
     TEXT = "TextBlock"
+    THINKING = "ThinkingBlock"
     TOOL_USE = "ToolUseBlock"
     TOOL_RESULT = "ToolResultBlock"
 
 
 class SerializedContentType(str, Enum):
     TEXT = "text"
+    THINKING = "thinking"
     TOOL_USE = "tool_use"
     TOOL_RESULT = "tool_result"
 
@@ -56,6 +58,7 @@ MCP_TOOL_METADATA: Final[MCPToolMetadataValues] = MCPToolMetadataValues()
 SERIALIZED_CONTENT_TYPE_BY_BLOCK_CLASS: Final[Mapping[str, SerializedContentType]] = MappingProxyType(
     {
         BlockClassName.TEXT: SerializedContentType.TEXT,
+        BlockClassName.THINKING: SerializedContentType.THINKING,
         BlockClassName.TOOL_USE: SerializedContentType.TOOL_USE,
         BlockClassName.TOOL_RESULT: SerializedContentType.TOOL_RESULT,
     }

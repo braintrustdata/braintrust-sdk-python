@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from braintrust.util import is_numeric
+
 
 class Wrapper:
     """Base wrapper class with __getattr__ delegation to preserve original types."""
@@ -13,73 +15,98 @@ class Wrapper:
         return getattr(self.__wrapped, name)
 
 
-def extract_anthropic_usage(usage: Any) -> dict[str, float]:
-    """Extract and normalize usage metrics from Anthropic usage object or dict.
+_ANTHROPIC_USAGE_METRIC_FIELDS = (
+    ("input_tokens", "prompt_tokens"),
+    ("output_tokens", "completion_tokens"),
+    ("cache_read_input_tokens", "prompt_cached_tokens"),
+    ("cache_creation_input_tokens", "prompt_cache_creation_tokens"),
+)
 
-    Converts Anthropic's usage format to Braintrust's standard token metric names.
-    Handles both object attributes and dictionary keys.
+_ANTHROPIC_CACHE_CREATION_METADATA_FIELDS = (
+    ("ephemeral_5m_input_tokens", "cache_creation_ephemeral_5m_input_tokens"),
+    ("ephemeral_1h_input_tokens", "cache_creation_ephemeral_1h_input_tokens"),
+)
 
-    Args:
-        usage: Anthropic usage object (from Message.usage) or dict
-
-    Returns:
-        Dictionary with normalized metric names:
-        - prompt_tokens (from input_tokens)
-        - completion_tokens (from output_tokens)
-        - prompt_cached_tokens (from cache_read_input_tokens)
-        - prompt_cache_creation_tokens (from cache_creation_input_tokens)
-    """
-    metrics: dict[str, float] = {}
-
-    if not usage:
-        return metrics
-
-    def get_value(key: str) -> Any:
-        if isinstance(usage, dict):
-            return usage.get(key)
-        return getattr(usage, key, None)
-
-    input_tokens = get_value("input_tokens")
-    if input_tokens is not None:
-        try:
-            metrics["prompt_tokens"] = float(input_tokens)
-        except (ValueError, TypeError):
-            pass
-
-    output_tokens = get_value("output_tokens")
-    if output_tokens is not None:
-        try:
-            metrics["completion_tokens"] = float(output_tokens)
-        except (ValueError, TypeError):
-            pass
-
-    cache_read_tokens = get_value("cache_read_input_tokens")
-    if cache_read_tokens is not None:
-        try:
-            metrics["prompt_cached_tokens"] = float(cache_read_tokens)
-        except (ValueError, TypeError):
-            pass
-
-    cache_creation_tokens = get_value("cache_creation_input_tokens")
-    if cache_creation_tokens is not None:
-        try:
-            metrics["prompt_cache_creation_tokens"] = float(cache_creation_tokens)
-        except (ValueError, TypeError):
-            pass
-
-    return metrics
-
-
-def finalize_anthropic_tokens(metrics: dict[str, float]) -> dict[str, float]:
-    """Finalize Anthropic token calculations."""
-    total_prompt_tokens = (
-        metrics.get("prompt_tokens", 0)
-        + metrics.get("prompt_cached_tokens", 0)
-        + metrics.get("prompt_cache_creation_tokens", 0)
-    )
-
-    return {
-        **metrics,
-        "prompt_tokens": total_prompt_tokens,
-        "tokens": total_prompt_tokens + metrics.get("completion_tokens", 0),
+_ANTHROPIC_USAGE_METADATA_FIELDS = frozenset(
+    {
+        "service_tier",
+        "inference_geo",
     }
+)
+
+
+def _try_to_dict(obj: Any) -> dict[str, Any] | None:
+    if isinstance(obj, dict):
+        return obj
+
+    if hasattr(obj, "model_dump"):
+        try:
+            candidate = obj.model_dump(mode="python")
+        except TypeError:
+            candidate = obj.model_dump()
+        return candidate if isinstance(candidate, dict) else None
+
+    if hasattr(obj, "to_dict"):
+        candidate = obj.to_dict()
+        return candidate if isinstance(candidate, dict) else None
+
+    if hasattr(obj, "dict"):
+        candidate = obj.dict()
+        return candidate if isinstance(candidate, dict) else None
+
+    if hasattr(obj, "__dict__"):
+        return vars(obj)
+
+    return None
+
+
+def _set_numeric_metric(metrics: dict[str, float], name: str, value: Any) -> None:
+    if is_numeric(value):
+        metrics[name] = float(value)
+
+
+def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any]]:
+    """Extract normalized metrics and allowlisted metadata from Anthropic usage.
+
+    Numeric usage fields are converted into Braintrust metrics. Allowlisted
+    non-numeric fields are attached as span metadata with a ``usage_`` prefix.
+    """
+    usage = _try_to_dict(usage)
+    if usage is None:
+        return {}, {}
+
+    metrics: dict[str, float] = {}
+    metadata: dict[str, Any] = {}
+    for source_name, metric_name in _ANTHROPIC_USAGE_METRIC_FIELDS:
+        _set_numeric_metric(metrics, metric_name, usage.get(source_name))
+
+    cache_creation = _try_to_dict(usage.get("cache_creation"))
+    cache_creation_breakdown: list[float] = []
+    if cache_creation is not None:
+        for source_name, metadata_key in _ANTHROPIC_CACHE_CREATION_METADATA_FIELDS:
+            value = cache_creation.get(source_name)
+            if is_numeric(value):
+                metadata[metadata_key] = int(value)
+                cache_creation_breakdown.append(float(value))
+
+    server_tool_use = _try_to_dict(usage.get("server_tool_use"))
+    if server_tool_use is not None:
+        for source_name, value in server_tool_use.items():
+            _set_numeric_metric(metrics, f"server_tool_use_{source_name}", value)
+
+    if "prompt_cache_creation_tokens" not in metrics and cache_creation_breakdown:
+        metrics["prompt_cache_creation_tokens"] = sum(cache_creation_breakdown)
+
+    if metrics:
+        total_prompt_tokens = (
+            metrics.get("prompt_tokens", 0)
+            + metrics.get("prompt_cached_tokens", 0)
+            + metrics.get("prompt_cache_creation_tokens", 0)
+        )
+        metrics["prompt_tokens"] = total_prompt_tokens
+        metrics["tokens"] = total_prompt_tokens + metrics.get("completion_tokens", 0)
+
+    for name, value in usage.items():
+        if name in _ANTHROPIC_USAGE_METADATA_FIELDS and value is not None:
+            metadata[f"usage_{name}"] = value
+    return metrics, metadata

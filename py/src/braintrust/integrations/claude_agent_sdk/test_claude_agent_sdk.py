@@ -24,6 +24,7 @@ except ImportError:
     print("Claude Agent SDK not installed, skipping integration tests")
 
 from braintrust import logger
+from braintrust.integrations.anthropic._utils import extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk import setup_claude_agent_sdk
 from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
 from braintrust.integrations.claude_agent_sdk.tracing import (
@@ -31,7 +32,6 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
     _build_llm_input,
     _create_client_wrapper_class,
     _create_tool_wrapper_class,
-    _extract_usage_from_result_message,
     _parse_tool_name,
     _serialize_content_blocks,
     _serialize_system_message,
@@ -61,6 +61,7 @@ def memory_logger():
 def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = False):
     original_client = claude_agent_sdk.ClaudeSDKClient
     original_tool_class = claude_agent_sdk.SdkMcpTool
+    original_query = claude_agent_sdk.query
 
     if wrap_client:
         claude_agent_sdk.ClaudeSDKClient = _create_client_wrapper_class(original_client)
@@ -72,6 +73,7 @@ def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = Fa
     finally:
         claude_agent_sdk.ClaudeSDKClient = original_client
         claude_agent_sdk.SdkMcpTool = original_tool_class
+        claude_agent_sdk.query = original_query
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
@@ -184,6 +186,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
         for metric_name in ("prompt_tokens", "completion_tokens", "tokens"):
             if metric_name in llm_span.get("metrics", {}):
                 assert llm_span["metrics"][metric_name] > 0
+    assert any(llm_span.get("metadata", {}).get("usage_service_tier") == "standard" for llm_span in llm_spans)
+    assert any("usage_inference_geo" in llm_span.get("metadata", {}) for llm_span in llm_spans)
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
     for tool_span in tool_spans:
         assert tool_span["span_attributes"]["name"] == "calculator"
@@ -1828,9 +1832,9 @@ def test_serialize_system_message_extracts_known_fields(message, expected):
     assert _serialize_system_message(message) == expected
 
 
-def test_extract_usage_from_result_message_normalizes_anthropic_tokens():
-    metrics = _extract_usage_from_result_message(
-        ResultMessage(input_tokens=5, output_tokens=3, cache_creation_input_tokens=2)
+def test_extract_anthropic_usage_normalizes_claude_result_message_usage():
+    metrics, metadata = extract_anthropic_usage(
+        ResultMessage(input_tokens=5, output_tokens=3, cache_creation_input_tokens=2).usage
     )
 
     assert metrics == {
@@ -1839,6 +1843,7 @@ def test_extract_usage_from_result_message_normalizes_anthropic_tokens():
         "prompt_cache_creation_tokens": 2.0,
         "tokens": 10.0,
     }
+    assert metadata == {}
 
 
 @pytest.mark.parametrize(
@@ -2111,6 +2116,51 @@ async def test_setup_claude_agent_sdk_repro_import_before_setup(memory_logger, m
     assert len(task_spans) == 1
     assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
     assert task_spans[0]["input"] == "Say hi"
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_setup_claude_agent_sdk_query_repro_import_before_setup(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    async def fake_query(*, prompt, **kwargs):
+        del kwargs
+        if isinstance(prompt, AsyncIterable):
+            async for _ in prompt:
+                pass
+        yield AssistantMessage(content=[TextBlock("hi")])
+        yield ResultMessage()
+
+    monkeypatch.setattr(claude_agent_sdk, "query", fake_query)
+    original_query = claude_agent_sdk.query
+
+    consumer_module_name = "test_query_import_before_setup_module"
+    consumer_module = types.ModuleType(consumer_module_name)
+    consumer_module.query = original_query
+    monkeypatch.setitem(sys.modules, consumer_module_name, consumer_module)
+
+    received_types = []
+
+    with _patched_claude_sdk():
+        assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+        assert getattr(consumer_module, "query") is not original_query
+        assert claude_agent_sdk.query is not original_query
+
+        async for message in getattr(consumer_module, "query")(prompt="Say hi"):
+            received_types.append(type(message).__name__)
+
+    assert "AssistantMessage" in received_types
+    assert received_types[-1] == "ResultMessage"
+
+    spans = memory_logger.pop()
+    task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
+    llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
+
+    assert len(task_spans) == 1
+    assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
+    assert task_spans[0]["input"] == "Say hi"
+    assert task_spans[0]["output"] is not None
+    assert len(llm_spans) == 1
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")

@@ -1,0 +1,57 @@
+interactions:
+- request:
+    body: '{"instances": [{"prompt": "A watercolor fox in a forest"}], "parameters":
+      {"sampleCount": 1, "aspectRatio": "1:1", "safetySetting": "BLOCK_LOW_AND_ABOVE",
+      "includeRaiReason": true}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '181'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.66.0 gl-python/3.13.3
+      x-goog-api-client:
+      - google-genai-sdk/1.66.0 gl-python/3.13.3
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict
+  response:
+    body:
+      string: '{"predictions": [{"bytesBase64Encoded": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
+        "mimeType": "image/png"}]}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 27 Mar 2026 01:18:45 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=4159
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '2622509'
+    status:
+      code: 200
+      message: OK
+version: 1
