@@ -681,7 +681,6 @@ class TestEvaluateFilter:
         f = Filter(path=["input", "text"], pattern=re.compile("hello"))
         assert evaluate_filter(datum, f) is True
 
-
     @pytest.mark.asyncio
     async def test_run_evaluator_with_filter_and_evalcase(self):
         data = [
