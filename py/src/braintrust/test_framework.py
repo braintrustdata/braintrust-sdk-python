@@ -633,7 +633,7 @@ async def test_run_evaluator_empty_dataset_warns(capsys):
 
 
 class TestEvaluateFilter:
-    """Tests for evaluate_filter with both dict and EvalCase inputs (issue #207)."""
+    """Regression tests for https://github.com/braintrustdata/braintrust-sdk-python/issues/207."""
 
     @pytest.mark.parametrize(
         "datum",
@@ -682,27 +682,26 @@ class TestEvaluateFilter:
         assert evaluate_filter(datum, f) is True
 
 
-@pytest.mark.asyncio
-async def test_run_evaluator_with_filter_and_evalcase():
-    """Integration test: run_evaluator with filters and EvalCase data (issue #207)."""
-    data = [
-        EvalCase(input="hello", metadata={"name": "foo"}),
-        EvalCase(input="world", metadata={"name": "bar"}),
-    ]
+    @pytest.mark.asyncio
+    async def test_run_evaluator_with_filter_and_evalcase(self):
+        data = [
+            EvalCase(input="hello", metadata={"name": "foo"}),
+            EvalCase(input="world", metadata={"name": "bar"}),
+        ]
 
-    evaluator = Evaluator(
-        project_name="test-project",
-        eval_name="test-filter-evalcase",
-        data=data,
-        task=lambda x: x,
-        scores=[],
-        experiment_name=None,
-        metadata=None,
-    )
+        evaluator = Evaluator(
+            project_name="test-project",
+            eval_name="test-filter-evalcase",
+            data=data,
+            task=lambda x: x,
+            scores=[],
+            experiment_name=None,
+            metadata=None,
+        )
 
-    filters = parse_filters(["metadata.name=foo"])
-    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=filters)
+        filters = parse_filters(["metadata.name=foo"])
+        result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=filters)
 
-    # Only the "foo" case should pass the filter
-    assert len(result.results) == 1
-    assert result.results[0].input == "hello"
+        # Only the "foo" case should pass the filter
+        assert len(result.results) == 1
+        assert result.results[0].input == "hello"
