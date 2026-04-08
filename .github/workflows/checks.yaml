@@ -59,7 +59,7 @@ jobs:
         run: |
           # This is already done by make install-dev, but we're keeping this as a separate step
           # to explicitly verify that installation works
-          mise exec python@${{ matrix.python-version }} -- python -m uv pip install -e ./py[all]
+          mise exec python@${{ matrix.python-version }} -- uv pip install -e ./py[all]
       - name: Test whether the Python SDK can be imported
         run: |
           mise exec python@${{ matrix.python-version }} -- python -c 'import braintrust'
