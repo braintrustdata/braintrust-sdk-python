@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash f3497ec890b91a97) -- do not modify"""
+"""Auto-generated file (content hash 2c789f9d429f1363) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -28,6 +28,7 @@ from ._generated_types import (
     CodeBundle,
     Dataset,
     DatasetEvent,
+    DatasetSnapshot,
     EnvVar,
     EvalStatusPage,
     EvalStatusPageConfig,
@@ -105,6 +106,7 @@ from ._generated_types import (
     TopicAutomationDataScope,
     TopicMapData,
     TopicMapFunctionAutomation,
+    TopicMapGenerationSettings,
     TraceScope,
     TriggeredFunctionState,
     UploadStatus,
@@ -144,6 +146,7 @@ __all__ = [
     "CodeBundle",
     "Dataset",
     "DatasetEvent",
+    "DatasetSnapshot",
     "EnvVar",
     "EvalStatusPage",
     "EvalStatusPageConfig",
@@ -221,6 +224,7 @@ __all__ = [
     "TopicAutomationDataScope",
     "TopicMapData",
     "TopicMapFunctionAutomation",
+    "TopicMapGenerationSettings",
     "TraceScope",
     "TriggeredFunctionState",
     "UploadStatus",
