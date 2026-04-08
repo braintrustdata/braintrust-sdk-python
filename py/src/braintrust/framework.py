@@ -203,7 +203,7 @@ class EvalHooks(abc.ABC, Generic[Output]):
         """
 
     @abc.abstractmethod
-    def report_progress(self, progress: TaskProgressEvent) -> None:
+    def report_progress(self, progress: TaskProgressEvent) -> None:  # noqa: F841
         """
         Report progress that will show up in the playground.
         """
@@ -459,7 +459,7 @@ class EvalResultWithSummary(SerializableDataClass, Generic[Input, Output]):
     summary: ExperimentSummary
     results: list[EvalResult[Input, Output]]
 
-    def _repr_pretty_(self, p, cycle):
+    def _repr_pretty_(self, p, _cycle):
         p.text(f'EvalResultWithSummary(summary="...", results=[...])')
 
 

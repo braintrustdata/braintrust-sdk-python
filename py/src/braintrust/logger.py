@@ -1445,7 +1445,7 @@ class _HTTPBackgroundLogger:
                 self._queue_drop_logging_state["last_logged_timestamp"] = time_now
 
     @staticmethod
-    def _write_payload_to_dir(payload_dir, payload, debug_logging_adjective=None):
+    def _write_payload_to_dir(payload_dir, payload):
         payload_file = os.path.join(payload_dir, f"payload_{time.time()}_{str(uuid.uuid4())[:8]}.json")
         try:
             os.makedirs(payload_dir, exist_ok=True)
@@ -2839,7 +2839,7 @@ def _validate_and_sanitize_experiment_log_partial_args(event: Mapping[str, Any])
 # Note that this only checks properties that are expected of a complete event.
 # _validate_and_sanitize_experiment_log_partial_args should still be invoked
 # (after handling special fields like 'id').
-def _validate_and_sanitize_experiment_log_full_args(event: Mapping[str, Any], has_dataset: bool) -> Mapping[str, Any]:
+def _validate_and_sanitize_experiment_log_full_args(event: Mapping[str, Any]) -> Mapping[str, Any]:
     input = event.get("input")
     inputs = event.get("inputs")
     if (input is not None and inputs is not None) or (input is None and inputs is None):
@@ -3868,8 +3868,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
                 metadata=metadata,
                 metrics=metrics,
                 id=id,
-            ),
-            self.dataset is not None,
+            )
         )
         span = self._start_span_impl(start_time=self.last_start_time, lookup_span_parent=False, **event)
         self.last_start_time = span.end()

@@ -552,7 +552,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
 
     def on_retry(
         self,
-        retry_state: RetryCallState,
+        _retry_state: RetryCallState,
         *,
         run_id: UUID,
         parent_run_id: UUID | None = None,

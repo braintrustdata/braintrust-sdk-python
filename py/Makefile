@@ -2,7 +2,7 @@ PYTHON ?= python
 UV := $(PYTHON) -m uv
 UV_VERSION := $(shell awk '$$1=="uv" { print $$2 }' ../.tool-versions)
 
-.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean bench bench-compare
+.PHONY: lint pylint vulture test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean bench bench-compare
 
 clean:
 	rm -rf build dist
@@ -16,6 +16,9 @@ lint: fixup
 
 pylint:
 	nox -s pylint
+
+vulture:
+	$(PYTHON) -m vulture src/braintrust --min-confidence 100 --exclude "*/test_*.py,*/_test_*.py"
 
 test:
 	nox -x
@@ -58,7 +61,7 @@ _check-git-clean:
 
 verify-build: _check-git-clean build test-wheel
 
-verify: lint test
+verify: lint vulture test
 
 install-build-deps:
 	$(if $(UV_VERSION),,$(error Failed to read uv version from ../.tool-versions))
@@ -85,6 +88,7 @@ help:
 	@echo "  install-dev         - Install package in development mode with all dependencies"
 	@echo "  lint                - Run pylint checks"
 	@echo "  pylint              - Run pylint without pre-commit hooks"
+	@echo "  vulture             - Detect unused/dead code"
 	@echo "  test                - Run all tests"
 	@echo "  test-core           - Run core tests only"
 	@echo "  test-wheel          - Run tests against built wheel"

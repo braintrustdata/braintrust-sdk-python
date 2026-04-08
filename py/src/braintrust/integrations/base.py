@@ -194,7 +194,7 @@ class ClassScanPatcher(BasePatcher):
 
     @classmethod
     @abstractmethod
-    def patch_class(cls, target_class: type[Any]) -> bool | None:
+    def patch_class(cls, target_class: type[Any]) -> bool | None:  # noqa: F841
         """Patch one discovered class.
 
         Return ``False`` to skip marking the class as patched. Any other return

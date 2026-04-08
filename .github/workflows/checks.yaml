@@ -80,6 +80,21 @@ jobs:
         run: |
           mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4
 
+  vulture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Set up mise
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: true
+          experimental: true
+      - name: Install dev dependencies
+        run: mise exec -- make -C py install-dev
+      - name: Run vulture dead-code check
+        run: mise exec -- make -C py vulture
+
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
 
@@ -116,6 +131,7 @@ jobs:
       - ensure-pinned-actions
       - smoke
       - nox
+      - vulture
       - adk-py
       - langchain-py
       - upload-wheel
@@ -141,6 +157,7 @@ jobs:
           check_result "ensure-pinned-actions" "${{ needs.ensure-pinned-actions.result }}"
           check_result "smoke" "${{ needs.smoke.result }}"
           check_result "nox" "${{ needs.nox.result }}"
+          check_result "vulture" "${{ needs.vulture.result }}"
           check_result "adk-py" "${{ needs.adk-py.result }}"
           check_result "langchain-py" "${{ needs.langchain-py.result }}"
           check_result "upload-wheel" "${{ needs.upload-wheel.result }}"
