@@ -10,6 +10,7 @@ _try_to_dict``).
 """
 
 import base64
+import binascii
 import re
 import time
 import warnings
@@ -104,8 +105,8 @@ def _convert_data_url_to_attachment(data_url: str, filename: str | None = None) 
     mime_type, base64_data = match.groups()
 
     try:
-        binary_data = base64.b64decode(base64_data)
-    except Exception:
+        binary_data = base64.b64decode(base64_data, validate=True)
+    except (binascii.Error, ValueError):
         return data_url
 
     if filename is None:

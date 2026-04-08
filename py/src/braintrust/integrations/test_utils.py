@@ -1,5 +1,7 @@
+from braintrust import Attachment
 from braintrust.integrations.utils import (
     _camel_to_snake,
+    _convert_data_url_to_attachment,
     _is_supported_metric_value,
     _merge_timing_and_usage_metrics,
     _parse_openai_usage_metrics,
@@ -66,6 +68,24 @@ def test_prettify_response_params_filters_not_given_without_mutating_input():
         "response_format": original["response_format"],
     }
     assert "optional" in original
+
+
+def test_convert_data_url_to_attachment_converts_valid_base64():
+    data_url = "data:image/png;base64,aGVsbG8="
+
+    attachment = _convert_data_url_to_attachment(data_url)
+
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "image/png"
+    assert attachment.reference["filename"] == "image.png"
+
+
+def test_convert_data_url_to_attachment_preserves_invalid_base64():
+    data_url = "data:image/png;base64,aGVsbG8=!"
+
+    converted = _convert_data_url_to_attachment(data_url)
+
+    assert converted == data_url
 
 
 def test_merge_timing_and_usage_metrics(monkeypatch):
