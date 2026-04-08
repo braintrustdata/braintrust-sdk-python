@@ -987,7 +987,7 @@ class _AudioFileWrapper(BaseWrapper):
         if isinstance(response, dict):
             return response.get("text")
         if isinstance(response, str):
-            return response
+            return response.strip()
         return getattr(response, "text", None)
 
 
