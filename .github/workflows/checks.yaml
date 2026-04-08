@@ -78,7 +78,7 @@ jobs:
       - name: Run nox tests (shard ${{ matrix.shard }}/2)
         shell: bash
         run: |
-          mise exec python@${{ matrix.python-version }} -- bash ./py/scripts/nox-matrix.sh ${{ matrix.shard }} 4
+          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
