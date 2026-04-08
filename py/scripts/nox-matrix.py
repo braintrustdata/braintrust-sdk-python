@@ -52,7 +52,6 @@ def assign_shards(
     default_weight: int,
 ) -> list[list[str]]:
     """Assign sessions to shards using greedy LPT bin-packing."""
-    # Sort by weight descending
     weighted = [(s, weights.get(s, default_weight)) for s in sessions]
     weighted.sort(key=lambda x: -x[1])
 
@@ -64,7 +63,6 @@ def assign_shards(
         shard_assignments[lightest].append(name)
         shard_totals[lightest] += weight
 
-    # Print summary to stderr
     for i in range(total_shards):
         count = len(shard_assignments[i])
         total = shard_totals[i]
@@ -131,7 +129,6 @@ def main() -> None:
         print("\n".join(other_sessions))
         return
 
-    # Run nox with the assigned sessions
     cmd = ["nox", "-f", str(noxfile), "-s", *my_sessions]
 
     if args.output_durations is None:

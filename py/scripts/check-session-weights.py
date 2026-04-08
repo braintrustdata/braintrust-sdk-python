@@ -35,7 +35,6 @@ MIN_DURATION_FOR_DRIFT = 8
 def update_weights(weights_path: Path, weights_data: dict, measured: dict[str, int]) -> None:
     """Overwrite session-weights.json with measured durations."""
     meta_keys = {k for k in weights_data if k.startswith("_")}
-    # Start with metadata keys
     updated = {k: weights_data[k] for k in sorted(meta_keys)}
     # Merge: keep measured values, drop sessions that no longer exist
     all_sessions = sorted(set(weights_data.keys() - meta_keys) | set(measured.keys()))
@@ -89,7 +88,6 @@ def main() -> None:
         update_weights(args.weights, weights_data, measured)
         return
 
-    default_weight = weights_data.get("_default", 15)
     meta_keys = {k for k in weights_data if k.startswith("_")}
 
     drifted: list[str] = []
