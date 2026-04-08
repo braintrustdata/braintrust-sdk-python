@@ -2,6 +2,8 @@
 
 import base64
 import binascii
+import contextvars
+import dataclasses
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
@@ -41,6 +43,17 @@ _TOOL_RESULT_TYPES = {
     "mcp_server_tool_result",
     "file_search_result",
 }
+
+
+@dataclasses.dataclass
+class _ActiveInteractionToolSpan:
+    span: Any
+    is_current: bool = False
+
+
+_interaction_tool_spans: contextvars.ContextVar[dict[str, _ActiveInteractionToolSpan] | None] = contextvars.ContextVar(
+    "braintrust_google_genai_interaction_tool_spans", default=None
+)
 
 
 # ---------------------------------------------------------------------------
@@ -572,7 +585,6 @@ def _interaction_process_result(
     result: "Interaction", start: float
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     outputs_list = _serialize_interaction_outputs(result)
-    _log_interaction_tool_spans_from_outputs(outputs_list)
     return (
         _extract_interaction_output(result, outputs_list),
         _extract_interaction_metrics(result, start),
@@ -737,7 +749,135 @@ def _reconstruct_interaction_outputs_from_events(events: list[Any]) -> list[dict
     return [outputs_by_index[index] for index in sorted(outputs_by_index)]
 
 
-def _log_interaction_tool_spans_from_outputs(outputs: list[dict[str, Any]]) -> None:
+def _get_active_interaction_tool_spans() -> dict[str, _ActiveInteractionToolSpan]:
+    active_tool_spans = _interaction_tool_spans.get()
+    if active_tool_spans is None:
+        active_tool_spans = {}
+        _interaction_tool_spans.set(active_tool_spans)
+    return active_tool_spans
+
+
+def _tool_span_metadata(call_item: dict[str, Any] | None, result_item: dict[str, Any] | None) -> dict[str, Any] | None:
+    return (
+        _clean(
+            {
+                "tool_type": (call_item or result_item or {}).get("type"),
+                "call_id": (call_item or {}).get("id") or (result_item or {}).get("call_id"),
+                "server_name": (call_item or result_item or {}).get("server_name"),
+                "signature": (call_item or result_item or {}).get("signature"),
+            }
+        )
+        or None
+    )
+
+
+def _log_posthoc_interaction_tool_span(call_item: dict[str, Any] | None, result_item: dict[str, Any] | None) -> None:
+    with start_span(
+        name=_tool_span_name(call_item, result_item),
+        type=SpanTypeAttribute.TOOL,
+        input=_tool_span_input(call_item),
+        metadata=_tool_span_metadata(call_item, result_item),
+    ) as tool_span:
+        if not result_item:
+            return
+        if result_item.get("is_error"):
+            tool_span.log(error=_tool_span_output(result_item))
+        else:
+            tool_span.log(output=_tool_span_output(result_item))
+
+
+def _cleanup_interaction_tool_span_state(active_tool_spans: dict[str, _ActiveInteractionToolSpan]) -> None:
+    if active_tool_spans:
+        return
+    _interaction_tool_spans.set(None)
+
+
+def _close_active_interaction_tool_span(
+    call_id: str, result_item: dict[str, Any] | None = None, *, end_time: float | None = None
+) -> bool:
+    active_tool_spans = _get_active_interaction_tool_spans()
+    active_tool_span = active_tool_spans.pop(call_id, None)
+    if active_tool_span is None:
+        return False
+
+    if active_tool_span.is_current:
+        active_tool_span.span.unset_current()
+
+    if result_item is not None:
+        if result_item.get("is_error"):
+            active_tool_span.span.log(error=_tool_span_output(result_item))
+        else:
+            active_tool_span.span.log(output=_tool_span_output(result_item))
+
+    active_tool_span.span.end(end_time=end_time)
+    _cleanup_interaction_tool_span_state(active_tool_spans)
+    return True
+
+
+def _activate_interaction_tool_span(
+    call_item: dict[str, Any], *, parent_export: str, start_time: float | None = None, set_current: bool = False
+) -> None:
+    # Keep the tool span open across local tool execution so any nested spans
+    # started by user code naturally inherit from it until the corresponding
+    # function_result is submitted on a follow-up interactions.create call.
+    call_id = call_item.get("id")
+    if not isinstance(call_id, str):
+        _log_posthoc_interaction_tool_span(call_item, None)
+        return
+
+    active_tool_spans = _get_active_interaction_tool_spans()
+    if call_id in active_tool_spans:
+        return
+
+    tool_span = start_span(
+        name=_tool_span_name(call_item, None),
+        type=SpanTypeAttribute.TOOL,
+        input=_tool_span_input(call_item),
+        metadata=_tool_span_metadata(call_item, None),
+        parent=parent_export,
+        start_time=start_time,
+        set_current=True,
+    )
+    active_tool_spans[call_id] = _ActiveInteractionToolSpan(span=tool_span, is_current=False)
+
+    if set_current:
+        tool_span.set_current()
+        active_tool_spans[call_id].is_current = True
+
+
+def _serialize_interaction_items(value: Any) -> list[dict[str, Any]]:
+    serialized = _serialize_interaction_value(value)
+    if serialized is None:
+        return []
+    items = serialized if isinstance(serialized, list) else [serialized]
+    return [item for item in items if isinstance(item, dict)]
+
+
+def _close_interaction_tool_spans_from_input(input_value: Any) -> None:
+    # Tool spans should end when the client hands the tool result back to the
+    # interactions API, before the follow-up LLM/TASK span begins.
+    end_time = time.time()
+    for item in _serialize_interaction_items(input_value):
+        if item.get("type") not in _TOOL_RESULT_TYPES:
+            continue
+        call_id = item.get("call_id")
+        if isinstance(call_id, str):
+            _close_active_interaction_tool_span(call_id, item, end_time=end_time)
+
+
+def _finalize_interaction_tool_spans(
+    output: Any, metrics: dict[str, Any], metadata: dict[str, Any] | None, parent_export: str
+) -> None:
+    del metadata
+
+    if not isinstance(output, dict):
+        return
+
+    outputs = output.get("outputs")
+    if not isinstance(outputs, list):
+        return
+
+    active_tool_spans = _get_active_interaction_tool_spans()
     calls_by_id: dict[str, dict[str, Any]] = {}
     pending_results: dict[str, list[dict[str, Any]]] = {}
     pairs: list[tuple[dict[str, Any] | None, dict[str, Any] | None]] = []
@@ -756,7 +896,10 @@ def _log_interaction_tool_spans_from_outputs(outputs: list[dict[str, Any]]) -> N
                 pairs.append((item, None))
         elif item_type in _TOOL_RESULT_TYPES:
             call_id = item.get("call_id")
-            if isinstance(call_id, str) and call_id in calls_by_id:
+            if isinstance(call_id, str) and call_id in active_tool_spans:
+                _close_active_interaction_tool_span(call_id, item, end_time=time.time())
+                emitted_call_ids.add(call_id)
+            elif isinstance(call_id, str) and call_id in calls_by_id:
                 pairs.append((calls_by_id[call_id], item))
                 emitted_call_ids.add(call_id)
             elif isinstance(call_id, str):
@@ -771,32 +914,36 @@ def _log_interaction_tool_spans_from_outputs(outputs: list[dict[str, Any]]) -> N
             if call_item is not None:
                 emitted_call_ids.add(call_id)
 
+    unpaired_call_items: list[dict[str, Any]] = []
     for call_id, call_item in calls_by_id.items():
         if call_id not in emitted_call_ids:
-            pairs.append((call_item, None))
+            unpaired_call_items.append(call_item)
 
     for call_item, result_item in pairs:
-        metadata = _clean(
-            {
-                "tool_type": (call_item or result_item or {}).get("type"),
-                "call_id": (call_item or {}).get("id") or (result_item or {}).get("call_id"),
-                "server_name": (call_item or result_item or {}).get("server_name"),
-                "signature": (call_item or result_item or {}).get("signature"),
-            }
-        )
+        _log_posthoc_interaction_tool_span(call_item, result_item)
 
-        with start_span(
-            name=_tool_span_name(call_item, result_item),
-            type=SpanTypeAttribute.TOOL,
-            input=_tool_span_input(call_item),
-            metadata=metadata or None,
-        ) as tool_span:
-            if not result_item:
-                continue
-            if result_item.get("is_error"):
-                tool_span.log(error=_tool_span_output(result_item))
-            else:
-                tool_span.log(output=_tool_span_output(result_item))
+    activatable_call_items = [
+        call_item
+        for call_item in unpaired_call_items
+        if isinstance(call_item.get("id"), str) and call_item.get("id") not in active_tool_spans
+    ]
+    claim_current = len(activatable_call_items) == 1 and not any(
+        active_tool_span.is_current for active_tool_span in active_tool_spans.values()
+    )
+
+    for call_item in unpaired_call_items:
+        call_id = call_item.get("id")
+        if not isinstance(call_id, str):
+            _log_posthoc_interaction_tool_span(call_item, None)
+            continue
+        if call_id in active_tool_spans:
+            continue
+        _activate_interaction_tool_span(
+            call_item,
+            parent_export=parent_export,
+            start_time=metrics.get("end"),
+            set_current=claim_current and call_item is activatable_call_items[0],
+        )
 
 
 def _aggregate_interaction_events(
@@ -819,7 +966,6 @@ def _aggregate_interaction_events(
     )
     if final_interaction is None:
         if reconstructed_outputs:
-            _log_interaction_tool_spans_from_outputs(reconstructed_outputs)
             return (
                 {"outputs": reconstructed_outputs, "text": _extract_interaction_text(reconstructed_outputs)},
                 _clean(metrics),
@@ -838,10 +984,6 @@ def _aggregate_interaction_events(
         return {"events": _serialize_interaction_value(events)}, _clean(metrics), metadata
 
     final_outputs_list = _serialize_interaction_outputs(final_interaction)
-    if final_outputs_list:
-        _log_interaction_tool_spans_from_outputs(final_outputs_list)
-    elif reconstructed_outputs:
-        _log_interaction_tool_spans_from_outputs(reconstructed_outputs)
 
     _extract_interaction_usage_metrics(getattr(final_interaction, "usage", None), metrics)
     metadata.update(_extract_interaction_metadata(final_interaction))
@@ -881,15 +1023,29 @@ def _run_traced_call(
         [Any, list[Any], dict[str, Any]], tuple[dict[str, Any], dict[str, Any]]
     ] = _prepare_traced_call,
     span_type: SpanTypeAttribute = SpanTypeAttribute.LLM,
+    before_invoke: Callable[[], None] | None = None,
+    finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
 
+    if before_invoke is not None:
+        before_invoke()
+
     start = time.time()
+    parent_export = None
+    output = None
+    metrics = None
+    metadata = None
     with start_span(name=name, type=span_type, input=input, metadata=clean_kwargs or None) as span:
         result = invoke()
         output, metrics, metadata = _normalize_logged_result(process_result(result, start))
         span.log(output=output, metrics=metrics, metadata=metadata)
-        return result
+        parent_export = span.export()
+
+    if finalize_logged_output is not None and parent_export is not None and metrics is not None:
+        finalize_logged_output(output, metrics, metadata, parent_export)
+
+    return result
 
 
 async def _run_async_traced_call(
@@ -904,15 +1060,29 @@ async def _run_async_traced_call(
         [Any, list[Any], dict[str, Any]], tuple[dict[str, Any], dict[str, Any]]
     ] = _prepare_traced_call,
     span_type: SpanTypeAttribute = SpanTypeAttribute.LLM,
+    before_invoke: Callable[[], None] | None = None,
+    finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
 
+    if before_invoke is not None:
+        before_invoke()
+
     start = time.time()
+    parent_export = None
+    output = None
+    metrics = None
+    metadata = None
     with start_span(name=name, type=span_type, input=input, metadata=clean_kwargs or None) as span:
         result = await invoke()
         output, metrics, metadata = _normalize_logged_result(process_result(result, start))
         span.log(output=output, metrics=metrics, metadata=metadata)
-        return result
+        parent_export = span.export()
+
+    if finalize_logged_output is not None and parent_export is not None and metrics is not None:
+        finalize_logged_output(output, metrics, metadata, parent_export)
+
+    return result
 
 
 def _run_stream_traced_call(
@@ -930,11 +1100,20 @@ def _run_stream_traced_call(
     prepare_call: Callable[
         [Any, list[Any], dict[str, Any]], tuple[dict[str, Any], dict[str, Any]]
     ] = _prepare_traced_call,
+    before_invoke: Callable[[], None] | None = None,
+    finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
 
+    if before_invoke is not None:
+        before_invoke()
+
     start = time.time()
     first_token_time = None
+    output = None
+    metrics = None
+    metadata = None
+    parent_export = None
     with start_span(name=name, type=span_type, input=input, metadata=clean_kwargs or None) as span:
         chunks = []
         for chunk in invoke():
@@ -947,7 +1126,12 @@ def _run_stream_traced_call(
 
         output, metrics, metadata = _normalize_logged_result(aggregate(chunks, start, first_token_time))
         span.log(output=output, metrics=metrics, metadata=metadata)
-        return output
+        parent_export = span.export()
+
+    if finalize_logged_output is not None and parent_export is not None and metrics is not None:
+        finalize_logged_output(output, metrics, metadata, parent_export)
+
+    return output
 
 
 def _run_async_stream_traced_call(
@@ -965,12 +1149,21 @@ def _run_async_stream_traced_call(
     prepare_call: Callable[
         [Any, list[Any], dict[str, Any]], tuple[dict[str, Any], dict[str, Any]]
     ] = _prepare_traced_call,
+    before_invoke: Callable[[], None] | None = None,
+    finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
 
     async def stream_generator():
+        if before_invoke is not None:
+            before_invoke()
+
         start = time.time()
         first_token_time = None
+        output = None
+        metrics = None
+        metadata = None
+        parent_export = None
         with start_span(name=name, type=span_type, input=input, metadata=clean_kwargs or None) as span:
             chunks = []
             async for chunk in await invoke():
@@ -983,6 +1176,10 @@ def _run_async_stream_traced_call(
 
             output, metrics, metadata = _normalize_logged_result(aggregate(chunks, start, first_token_time))
             span.log(output=output, metrics=metrics, metadata=metadata)
+            parent_export = span.export()
+
+        if finalize_logged_output is not None and parent_export is not None and metrics is not None:
+            finalize_logged_output(output, metrics, metadata, parent_export)
 
     return stream_generator()
 
@@ -1083,6 +1280,8 @@ async def _async_generate_images_wrapper(wrapped: Any, instance: Any, args: Any,
 
 
 def _interactions_create_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    before_invoke = lambda: _close_interaction_tool_spans_from_input(kwargs.get("input"))
+
     if kwargs.get("stream"):
         return _run_stream_traced_call(
             getattr(instance, "_client", None),
@@ -1094,6 +1293,8 @@ def _interactions_create_wrapper(wrapped: Any, instance: Any, args: Any, kwargs:
             first_token_predicate=_is_interaction_content_event,
             prepare_call=_prepare_interaction_create_traced_call,
             span_type=SpanTypeAttribute.LLM,
+            before_invoke=before_invoke,
+            finalize_logged_output=_finalize_interaction_tool_spans,
         )
 
     return _run_traced_call(
@@ -1105,10 +1306,14 @@ def _interactions_create_wrapper(wrapped: Any, instance: Any, args: Any, kwargs:
         process_result=_interaction_process_result,
         prepare_call=_prepare_interaction_create_traced_call,
         span_type=SpanTypeAttribute.LLM,
+        before_invoke=before_invoke,
+        finalize_logged_output=_finalize_interaction_tool_spans,
     )
 
 
 async def _async_interactions_create_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    before_invoke = lambda: _close_interaction_tool_spans_from_input(kwargs.get("input"))
+
     if kwargs.get("stream"):
         return _run_async_stream_traced_call(
             getattr(instance, "_client", None),
@@ -1120,6 +1325,8 @@ async def _async_interactions_create_wrapper(wrapped: Any, instance: Any, args: 
             first_token_predicate=_is_interaction_content_event,
             prepare_call=_prepare_interaction_create_traced_call,
             span_type=SpanTypeAttribute.LLM,
+            before_invoke=before_invoke,
+            finalize_logged_output=_finalize_interaction_tool_spans,
         )
 
     return await _run_async_traced_call(
@@ -1131,6 +1338,8 @@ async def _async_interactions_create_wrapper(wrapped: Any, instance: Any, args: 
         process_result=_interaction_process_result,
         prepare_call=_prepare_interaction_create_traced_call,
         span_type=SpanTypeAttribute.LLM,
+        before_invoke=before_invoke,
+        finalize_logged_output=_finalize_interaction_tool_spans,
     )
 
 
@@ -1146,6 +1355,7 @@ def _interactions_get_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             first_token_predicate=_is_interaction_content_event,
             prepare_call=_prepare_interaction_get_traced_call,
             span_type=SpanTypeAttribute.TASK,
+            finalize_logged_output=_finalize_interaction_tool_spans,
         )
 
     return _run_traced_call(
@@ -1157,6 +1367,7 @@ def _interactions_get_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
         process_result=_interaction_process_result,
         prepare_call=_prepare_interaction_get_traced_call,
         span_type=SpanTypeAttribute.TASK,
+        finalize_logged_output=_finalize_interaction_tool_spans,
     )
 
 
@@ -1172,6 +1383,7 @@ async def _async_interactions_get_wrapper(wrapped: Any, instance: Any, args: Any
             first_token_predicate=_is_interaction_content_event,
             prepare_call=_prepare_interaction_get_traced_call,
             span_type=SpanTypeAttribute.TASK,
+            finalize_logged_output=_finalize_interaction_tool_spans,
         )
 
     return await _run_async_traced_call(
@@ -1183,6 +1395,7 @@ async def _async_interactions_get_wrapper(wrapped: Any, instance: Any, args: Any
         process_result=_interaction_process_result,
         prepare_call=_prepare_interaction_get_traced_call,
         span_type=SpanTypeAttribute.TASK,
+        finalize_logged_output=_finalize_interaction_tool_spans,
     )
 
 

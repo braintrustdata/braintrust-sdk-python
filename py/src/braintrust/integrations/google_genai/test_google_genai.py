@@ -1296,6 +1296,54 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
 
 
 @pytest.mark.vcr
+def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    tool = _interaction_function_tool()
+
+    first_response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="What is the weather like in Paris? Use the tool.",
+        tools=[tool],
+    )
+    tool_call = next(output for output in first_response.outputs if output.type == "function_call")
+
+    with logger.start_span(name="nested_tool_work", type=SpanTypeAttribute.TASK) as nested_tool_work:
+        nested_tool_work.log(output={"forecast": "sunny"})
+
+    second_response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        previous_interaction_id=first_response.id,
+        input=interactions.FunctionResultContent(
+            type="function_result",
+            call_id=tool_call.id,
+            name=tool_call.name,
+            result={"forecast": "sunny"},
+        ),
+        tools=[tool],
+    )
+
+    assert first_response.status == "requires_action"
+    assert second_response.status == "completed"
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    first_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == first_response.id)
+    second_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == second_response.id)
+    tool_span = _find_span_by_name(tool_spans, "get_weather")
+    nested_span = _find_span_by_name(spans, "nested_tool_work")
+
+    assert tool_span["span_parents"] == [first_span["span_id"]]
+    assert nested_span["span_parents"] == [tool_span["span_id"]]
+    assert tool_span["metrics"]["start"] <= nested_span["metrics"]["start"]
+    assert tool_span["metrics"]["end"] >= nested_span["metrics"]["end"]
+    assert second_span.get("span_parents") in (None, [])
+
+
+@pytest.mark.vcr
 def test_interactions_delete(memory_logger):
     assert not memory_logger.pop()
 
