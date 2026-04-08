@@ -1912,8 +1912,8 @@ def test_openai_responses_cancel(memory_logger):
     span = spans[0]
     assert span["span_attributes"]["name"] == "openai.responses.cancel"
     assert span["input"] == response_id
-    metrics = span["metrics"]
-    assert "time_to_first_token" in metrics
+    # Cancelled responses have no usage/token metrics, so only check time_to_first_token.
+    assert "time_to_first_token" in span["metrics"]
     assert span["metadata"]["provider"] == "openai"
 
 
@@ -1952,8 +1952,8 @@ async def test_openai_responses_cancel_async(memory_logger):
     span = spans[0]
     assert span["span_attributes"]["name"] == "openai.responses.cancel"
     assert span["input"] == response_id
-    metrics = span["metrics"]
-    assert "time_to_first_token" in metrics
+    # Cancelled responses have no usage/token metrics, so only check time_to_first_token.
+    assert "time_to_first_token" in span["metrics"]
     assert span["metadata"]["provider"] == "openai"
 
 

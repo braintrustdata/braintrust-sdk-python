@@ -246,107 +246,52 @@ def _moderation_create_wrapper(wrapped, instance, args, kwargs):
     return ModerationWrapper(create_fn, None).create(*args, **kwargs)
 
 
-def _responses_create_wrapper(wrapped, instance, args, kwargs):
-    if _is_async_callable(wrapped):
+def _make_responses_wrapper(
+    span_name: str = "openai.responses.create",
+    *,
+    return_raw: bool = False,
+    inject_response_id: bool = False,
+):
+    """Factory for response wrapper callbacks.
 
-        async def call():
-            response = await ResponseWrapper(None, wrapped).acreate(*args, **kwargs)
-            return AsyncResponseWrapper(response)
+    All response wrappers share the same structure — only the span name,
+    raw-response flag, and whether ``response_id`` is injected as span input
+    differ between them.
+    """
 
-        return call()
-    return ResponseWrapper(wrapped, None).create(*args, **kwargs)
+    def wrapper(wrapped, instance, args, kwargs):
+        if inject_response_id:
+            response_id = args[0] if args else kwargs.get("response_id")
+            span_info = kwargs.pop("span_info", None) or {}
+            span_info["input"] = response_id
+            kwargs["span_info"] = span_info
 
+        if _is_async_callable(wrapped):
 
-def _responses_parse_wrapper(wrapped, instance, args, kwargs):
-    if _is_async_callable(wrapped):
+            async def call():
+                result = await ResponseWrapper(None, wrapped, span_name, return_raw=return_raw).acreate(
+                    *args, **kwargs
+                )
+                return result if return_raw else AsyncResponseWrapper(result)
 
-        async def call():
-            response = await ResponseWrapper(None, wrapped, "openai.responses.parse").acreate(*args, **kwargs)
-            return AsyncResponseWrapper(response)
+            return call()
+        return ResponseWrapper(wrapped, None, span_name, return_raw=return_raw).create(*args, **kwargs)
 
-        return call()
-    return ResponseWrapper(wrapped, None, "openai.responses.parse").create(*args, **kwargs)
-
-
-def _responses_raw_create_wrapper(wrapped, instance, args, kwargs):
-    if _is_async_callable(wrapped):
-
-        async def call():
-            return await ResponseWrapper(None, wrapped, return_raw=True).acreate(*args, **kwargs)
-
-        return call()
-    return ResponseWrapper(wrapped, None, return_raw=True).create(*args, **kwargs)
-
-
-def _responses_raw_parse_wrapper(wrapped, instance, args, kwargs):
-    if _is_async_callable(wrapped):
-
-        async def call():
-            return await ResponseWrapper(
-                None,
-                wrapped,
-                "openai.responses.parse",
-                return_raw=True,
-            ).acreate(*args, **kwargs)
-
-        return call()
-    return ResponseWrapper(wrapped, None, "openai.responses.parse", return_raw=True).create(*args, **kwargs)
+    return wrapper
 
 
-def _inject_response_id_input(args, kwargs):
-    """Extract response_id from args/kwargs and inject it as span input via span_info."""
-    response_id = args[0] if args else kwargs.get("response_id")
-    kwargs["span_info"] = merge_dicts(kwargs.pop("span_info", {}), {"input": response_id})
-
-
-def _responses_retrieve_wrapper(wrapped, instance, args, kwargs):
-    _inject_response_id_input(args, kwargs)
-    if _is_async_callable(wrapped):
-
-        async def call():
-            response = await ResponseWrapper(None, wrapped, "openai.responses.retrieve").acreate(*args, **kwargs)
-            return AsyncResponseWrapper(response)
-
-        return call()
-    return ResponseWrapper(wrapped, None, "openai.responses.retrieve").create(*args, **kwargs)
-
-
-def _responses_raw_retrieve_wrapper(wrapped, instance, args, kwargs):
-    _inject_response_id_input(args, kwargs)
-    if _is_async_callable(wrapped):
-
-        async def call():
-            return await ResponseWrapper(None, wrapped, "openai.responses.retrieve", return_raw=True).acreate(
-                *args, **kwargs
-            )
-
-        return call()
-    return ResponseWrapper(wrapped, None, "openai.responses.retrieve", return_raw=True).create(*args, **kwargs)
-
-
-def _responses_cancel_wrapper(wrapped, instance, args, kwargs):
-    _inject_response_id_input(args, kwargs)
-    if _is_async_callable(wrapped):
-
-        async def call():
-            response = await ResponseWrapper(None, wrapped, "openai.responses.cancel").acreate(*args, **kwargs)
-            return AsyncResponseWrapper(response)
-
-        return call()
-    return ResponseWrapper(wrapped, None, "openai.responses.cancel").create(*args, **kwargs)
-
-
-def _responses_raw_cancel_wrapper(wrapped, instance, args, kwargs):
-    _inject_response_id_input(args, kwargs)
-    if _is_async_callable(wrapped):
-
-        async def call():
-            return await ResponseWrapper(None, wrapped, "openai.responses.cancel", return_raw=True).acreate(
-                *args, **kwargs
-            )
-
-        return call()
-    return ResponseWrapper(wrapped, None, "openai.responses.cancel", return_raw=True).create(*args, **kwargs)
+_responses_create_wrapper = _make_responses_wrapper("openai.responses.create")
+_responses_parse_wrapper = _make_responses_wrapper("openai.responses.parse")
+_responses_raw_create_wrapper = _make_responses_wrapper("openai.responses.create", return_raw=True)
+_responses_raw_parse_wrapper = _make_responses_wrapper("openai.responses.parse", return_raw=True)
+_responses_retrieve_wrapper = _make_responses_wrapper("openai.responses.retrieve", inject_response_id=True)
+_responses_raw_retrieve_wrapper = _make_responses_wrapper(
+    "openai.responses.retrieve", return_raw=True, inject_response_id=True
+)
+_responses_cancel_wrapper = _make_responses_wrapper("openai.responses.cancel", inject_response_id=True)
+_responses_raw_cancel_wrapper = _make_responses_wrapper(
+    "openai.responses.cancel", return_raw=True, inject_response_id=True
+)
 
 
 # ---------------------------------------------------------------------------
