@@ -1,4 +1,5 @@
 import os
+import sysconfig
 
 import setuptools
 
@@ -27,13 +28,18 @@ install_requires = [
     "wrapt",
 ]
 
+is_free_threaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+
+# orjson is not compatible with PyPy or free-threaded Python, so only expose it
+# for standard CPython builds where it is supported.
+performance_require = [] if is_free_threaded else ["orjson; platform_python_implementation != 'PyPy'"]
+
 extras_require = {
     "cli": ["boto3", "uv", "starlette", "uvicorn"],
     "doc": ["pydoc-markdown"],
     "openai-agents": ["openai-agents"],
     "otel": ["opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp-proto-http"],
-    # orjson is not compatible with PyPy, so we exclude it for that platform
-    "performance": ["orjson; platform_python_implementation != 'PyPy'"],
+    "performance": performance_require,
     "temporal": ["temporalio>=1.19.0; python_version>='3.10'"],
 }
 
