@@ -1,5 +1,7 @@
 # pyright: reportTypedDictNotRequiredAccess=none
+import base64
 import uuid
+from pathlib import Path
 from typing import Dict, List, Union, cast
 
 import pytest
@@ -1116,13 +1118,14 @@ def test_image_input(logger_memory_logger):
 
     handler = BraintrustCallbackHandler(logger=test_logger)
 
-    # Minimal 1x1 pixel PNG in base64 for testing multimodal input handling
-    tiny_png_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg=="
+    fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
+    with open(fixtures_dir / "test-image.png", "rb") as f:
+        image_b64 = base64.b64encode(f.read()).decode()
 
     messages = [
         HumanMessage(
             content=[
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{tiny_png_b64}"}},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_b64}"}},
                 {"type": "text", "text": "What color is this image?"},
             ]
         )

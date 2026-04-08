@@ -24,7 +24,6 @@ If you use `mise activate` in your shell, entering the repo will automatically e
 
 - `py/`: main Python SDK
 - `integrations/`: separate integration packages such as LangChain and ADK
-- `internal/golden/`: golden and compatibility projects
 - `docs/`: supporting docs
 
 Most SDK changes should happen under `py/`.

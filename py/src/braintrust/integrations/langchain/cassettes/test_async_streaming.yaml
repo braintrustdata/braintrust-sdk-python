@@ -1,53 +1,5 @@
 interactions:
 - request:
-    body: '{"messages":[{"content":"Count from 1 to 3.","role":"user"}],"model":"gpt-4o-mini","max_completion_tokens":20,"stream":true}'
-    headers:
-      accept:
-      - application/json
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: 'data: {"id":"chatcmpl-async001","object":"chat.completion.chunk","created":1762561362,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
-
-
-        data: {"id":"chatcmpl-async001","object":"chat.completion.chunk","created":1762561362,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"delta":{"content":"1"},"logprobs":null,"finish_reason":null}]}
-
-
-        data: {"id":"chatcmpl-async001","object":"chat.completion.chunk","created":1762561362,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"delta":{"content":",
-        "},"logprobs":null,"finish_reason":null}]}
-
-
-        data: {"id":"chatcmpl-async001","object":"chat.completion.chunk","created":1762561362,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"delta":{"content":"2"},"logprobs":null,"finish_reason":null}]}
-
-
-        data: {"id":"chatcmpl-async001","object":"chat.completion.chunk","created":1762561362,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"delta":{"content":",
-        "},"logprobs":null,"finish_reason":null}]}
-
-
-        data: {"id":"chatcmpl-async001","object":"chat.completion.chunk","created":1762561362,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"delta":{"content":"3"},"logprobs":null,"finish_reason":null}]}
-
-
-        data: {"id":"chatcmpl-async001","object":"chat.completion.chunk","created":1762561362,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":{"prompt_tokens":14,"completion_tokens":8,"total_tokens":22}}
-
-
-        data: [DONE]
-
-
-        '
-    headers:
-      Content-Type:
-      - text/event-stream
-      openai-version:
-      - '2020-10-01'
-    status:
-      code: 200
-      message: OK
-- request:
     body: '{"messages":[{"content":"Count from 1 to 3.","role":"user"}],"model":"gpt-4o-mini","max_completion_tokens":20,"stream":true,"stream_options":{"include_usage":true}}'
     headers:
       Accept:
@@ -154,10 +106,6 @@ interactions:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      set-cookie:
-      - __cf_bm=6NlCAz7lo_TzQN38SX9vNDCzBL0HHNxv_I0TBFwlsK4-1775685389.878023-1.0.1.1-mbJFjQ_s4mD7WF.TET2vV2buICdx3_DI01IoD_ei.T2PMxmHwq5ibCWOHbdPZ.rLyInyGEAkLxiUelTFYjITyeTv1OAjA99xMWQJscQChRqwR_kiZvqzyBPOZWj1F7ob;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026
-        22:26:30 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:

@@ -14,7 +14,6 @@ Guide for contributing to the Braintrust Python SDK repository.
 - `py/`: main Python package, tests, examples, nox sessions, release build
 - `py/benchmarks/`: pyperf performance benchmarks
 - `integrations/`: separate integration packages
-- `internal/golden/`: compatibility and golden projects
 - `docs/`: supporting docs
 
 Important code areas in `py/src/braintrust/`:
