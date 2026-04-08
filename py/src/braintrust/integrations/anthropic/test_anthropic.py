@@ -583,6 +583,87 @@ def test_anthropic_messages_streaming_sync(memory_logger):
 
 
 @pytest.mark.vcr
+def test_anthropic_messages_streaming_sync_text_stream(memory_logger):
+    """time_to_first_token is captured when iterating via .text_stream (BT-4702)."""
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+    msg_in = {"role": "user", "content": "what is 2+2? (just the number)"}
+
+    start = time.time()
+    with client.messages.stream(model=MODEL, max_tokens=300, messages=[msg_in]) as stream:
+        texts = list(stream.text_stream)
+    end = time.time()
+    msg_out = stream.get_final_message()
+    usage = msg_out.usage
+
+    text = "".join(texts)
+    assert "4" in text
+    assert "4" in msg_out.content[0].text
+
+    logs = memory_logger.pop()
+    assert len(logs) == 1
+    log = logs[0]
+    assert "user" in str(log["input"])
+    assert "2+2" in str(log["input"])
+    assert "4" in str(log["output"])
+    assert log["project_id"] == PROJECT_NAME
+    assert log["span_attributes"]["type"] == "llm"
+    assert log["metadata"]["model"] == MODEL
+    assert log["metadata"]["max_tokens"] == 300
+    assert log["output"]["role"] == "assistant"
+    assert log["output"]["model"] == msg_out.model
+    assert log["output"]["stop_reason"] == msg_out.stop_reason
+    _assert_metrics_are_valid(log["metrics"], start, end)
+    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
+    assert log["metrics"]["completion_tokens"] == usage.output_tokens
+    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
+    assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
+    assert log["metrics"]["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_anthropic_messages_streaming_async_text_stream(memory_logger):
+    """time_to_first_token is captured when iterating via .text_stream on async streams (BT-4702)."""
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_async_client())
+    msgs_in = [{"role": "user", "content": "what is 1+1?, just return the number"}]
+
+    start = time.time()
+    async with client.messages.stream(max_tokens=1024, messages=msgs_in, model=MODEL) as stream:
+        texts = [t async for t in stream.text_stream]
+        msg_out = await stream.get_final_message()
+        usage = msg_out.usage
+    end = time.time()
+
+    text = "".join(texts)
+    assert "2" in text
+    assert msg_out.content[0].text == "2"
+
+    logs = memory_logger.pop()
+    assert len(logs) == 1
+    log = logs[0]
+    assert "user" in str(log["input"])
+    assert "1+1" in str(log["input"])
+    assert "2" in str(log["output"])
+    assert log["project_id"] == PROJECT_NAME
+    assert log["span_attributes"]["type"] == "llm"
+    assert log["metadata"]["model"] == MODEL
+    assert log["metadata"]["max_tokens"] == 1024
+    assert log["output"]["role"] == "assistant"
+    assert log["output"]["model"] == msg_out.model
+    assert log["output"]["stop_reason"] == msg_out.stop_reason
+    _assert_metrics_are_valid(log["metrics"], start, end)
+    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
+    assert log["metrics"]["completion_tokens"] == usage.output_tokens
+    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
+    assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
+    assert log["metrics"]["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+
+
+@pytest.mark.vcr
 def test_anthropic_messages_sync(memory_logger):
     assert not memory_logger.pop()
 

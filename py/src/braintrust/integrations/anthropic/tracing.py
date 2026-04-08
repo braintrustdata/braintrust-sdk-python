@@ -331,6 +331,26 @@ class TracedMessageStream(Wrapper):
         self.__process_message(m)
         return m
 
+    @property
+    def text_stream(self):
+        if hasattr(self.__msg_stream, "__aiter__"):
+            return self.__async_text_stream()
+        return self.__sync_text_stream()
+
+    def __sync_text_stream(self):
+        for event in self:
+            if getattr(event, "type", None) == "content_block_delta":
+                delta = getattr(event, "delta", None)
+                if getattr(delta, "type", None) == "text_delta":
+                    yield getattr(delta, "text", "")
+
+    async def __async_text_stream(self):
+        async for event in self:
+            if getattr(event, "type", None) == "content_block_delta":
+                delta = getattr(event, "delta", None)
+                if getattr(delta, "type", None) == "text_delta":
+                    yield getattr(delta, "text", "")
+
     def __process_message(self, m):
         if self.__time_to_first_token is None:
             self.__time_to_first_token = time.time() - self.__request_start_time
