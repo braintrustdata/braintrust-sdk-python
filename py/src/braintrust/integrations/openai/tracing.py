@@ -988,7 +988,7 @@ class _AudioFileWrapper(BaseWrapper):
             return response.get("text")
         if isinstance(response, str):
             return response
-        return str(response)
+        return getattr(response, "text", None)
 
 
 class TranscriptionWrapper(_AudioFileWrapper):

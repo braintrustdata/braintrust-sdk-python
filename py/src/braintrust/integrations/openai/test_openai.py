@@ -1773,7 +1773,33 @@ def test_openai_audio_transcription(memory_logger):
     span = spans[0]
     assert span["metadata"]["model"] == "whisper-1"
     assert span["metadata"]["provider"] == "openai"
-    assert span["output"] is not None
+    assert span["output"] == "you"
+
+
+@pytest.mark.vcr
+def test_openai_audio_transcription_text_format(memory_logger):
+    """When response_format='text', the API returns a plain string (not JSON)."""
+    assert not memory_logger.pop()
+
+    # Unwrapped client should produce no spans
+    client = openai.OpenAI()
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        response = client.audio.transcriptions.create(model="whisper-1", file=f, response_format="text")
+    assert response
+    assert not memory_logger.pop()
+
+    # Wrapped client should produce a span with the plain-text output
+    client2 = wrap_openai(openai.OpenAI())
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        response2 = client2.audio.transcriptions.create(model="whisper-1", file=f, response_format="text")
+    assert response2
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "whisper-1"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["output"] == "you"
 
 
 @pytest.mark.vcr
@@ -1798,7 +1824,7 @@ def test_openai_audio_translation(memory_logger):
     span = spans[0]
     assert span["metadata"]["model"] == "whisper-1"
     assert span["metadata"]["provider"] == "openai"
-    assert span["output"] is not None
+    assert span["output"] == "you"
 
 
 @pytest.mark.asyncio
@@ -1851,7 +1877,7 @@ async def test_openai_audio_transcription_async(memory_logger):
         span = spans[0]
         assert span["metadata"]["model"] == "whisper-1"
         assert span["metadata"]["provider"] == "openai"
-        assert span["output"] is not None
+        assert span["output"] == "you"
 
 
 @pytest.mark.asyncio
@@ -1875,7 +1901,7 @@ async def test_openai_audio_translation_async(memory_logger):
         span = spans[0]
         assert span["metadata"]["model"] == "whisper-1"
         assert span["metadata"]["provider"] == "openai"
-        assert span["output"] is not None
+        assert span["output"] == "you"
 
 
 class TestOpenAIIntegrationSetupSpans:
