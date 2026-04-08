@@ -1864,6 +1864,32 @@ async def test_openai_audio_transcription_async(memory_logger):
         assert span["output"] is not None
 
 
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_audio_translation_async(memory_logger):
+    assert not memory_logger.pop()
+
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
+
+    for client, is_wrapped in clients:
+        start = time.time()
+        with open(TEST_AUDIO_FILE, "rb") as f:
+            response = await client.audio.translations.create(model="whisper-1", file=f)
+        end = time.time()
+        assert response
+
+        if not is_wrapped:
+            assert not memory_logger.pop()
+            continue
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["metadata"]["model"] == "whisper-1"
+        assert span["metadata"]["provider"] == "openai"
+        assert span["output"] is not None
+
+
 class TestOpenAIIntegrationSetupSpans:
     """VCR-based tests verifying that OpenAIIntegration.setup() produces spans."""
 
