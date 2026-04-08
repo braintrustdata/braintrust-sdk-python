@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 
 PROJECT_NAME = "test_adk"
-FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
+FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 
 setup_adk(project_name=PROJECT_NAME)
 

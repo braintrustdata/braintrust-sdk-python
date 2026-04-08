@@ -29,7 +29,7 @@ EMBEDDING_MODEL = "gemini-embedding-001"
 IMAGE_MODEL = "imagen-4.0-fast-generate-001"
 REASONING_MODEL = "gemini-2.5-flash"
 INTERACTIONS_MODEL = "gemini-2.5-flash"
-FIXTURES_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent.parent / "internal/golden/fixtures"
+FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 
 
