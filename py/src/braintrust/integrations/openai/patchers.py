@@ -7,6 +7,9 @@ from braintrust.integrations.base import CompositeFunctionWrapperPatcher, Functi
 from wrapt import BoundFunctionWrapper, FunctionWrapper
 
 from .tracing import (
+    _audio_speech_create_wrapper,
+    _audio_transcription_create_wrapper,
+    _audio_translation_create_wrapper,
     _chat_completion_create_wrapper,
     _chat_completion_parse_wrapper,
     _embedding_create_wrapper,
@@ -183,6 +186,96 @@ class _WrapModerations(CompositeFunctionWrapperPatcher):
 
 
 # ---------------------------------------------------------------------------
+# Audio — Speech
+# ---------------------------------------------------------------------------
+
+_speech_create_sync, _speech_create_async, _wrap_speech_create = _make_method_patchers(
+    name_prefix="openai.audio.speech.create",
+    target_module="openai.resources.audio.speech",
+    sync_class="Speech",
+    async_class="AsyncSpeech",
+    method="create",
+    wrapper=_audio_speech_create_wrapper,
+    wrap_name="openai.wrap.audio.speech.create",
+)
+
+
+class AudioSpeechPatcher(CompositeFunctionWrapperPatcher):
+    """Patch ``openai.resources.audio.speech`` for tracing."""
+
+    name = "openai.audio.speech"
+    sub_patchers = (
+        _speech_create_sync,
+        _speech_create_async,
+    )
+
+
+class _WrapAudioSpeech(CompositeFunctionWrapperPatcher):
+    name = "openai.wrap.audio.speech"
+    sub_patchers = (_wrap_speech_create,)
+
+
+# ---------------------------------------------------------------------------
+# Audio — Transcriptions
+# ---------------------------------------------------------------------------
+
+_transcription_create_sync, _transcription_create_async, _wrap_transcription_create = _make_method_patchers(
+    name_prefix="openai.audio.transcriptions.create",
+    target_module="openai.resources.audio.transcriptions",
+    sync_class="Transcriptions",
+    async_class="AsyncTranscriptions",
+    method="create",
+    wrapper=_audio_transcription_create_wrapper,
+    wrap_name="openai.wrap.audio.transcriptions.create",
+)
+
+
+class AudioTranscriptionsPatcher(CompositeFunctionWrapperPatcher):
+    """Patch ``openai.resources.audio.transcriptions`` for tracing."""
+
+    name = "openai.audio.transcriptions"
+    sub_patchers = (
+        _transcription_create_sync,
+        _transcription_create_async,
+    )
+
+
+class _WrapAudioTranscriptions(CompositeFunctionWrapperPatcher):
+    name = "openai.wrap.audio.transcriptions"
+    sub_patchers = (_wrap_transcription_create,)
+
+
+# ---------------------------------------------------------------------------
+# Audio — Translations
+# ---------------------------------------------------------------------------
+
+_translation_create_sync, _translation_create_async, _wrap_translation_create = _make_method_patchers(
+    name_prefix="openai.audio.translations.create",
+    target_module="openai.resources.audio.translations",
+    sync_class="Translations",
+    async_class="AsyncTranslations",
+    method="create",
+    wrapper=_audio_translation_create_wrapper,
+    wrap_name="openai.wrap.audio.translations.create",
+)
+
+
+class AudioTranslationsPatcher(CompositeFunctionWrapperPatcher):
+    """Patch ``openai.resources.audio.translations`` for tracing."""
+
+    name = "openai.audio.translations"
+    sub_patchers = (
+        _translation_create_sync,
+        _translation_create_async,
+    )
+
+
+class _WrapAudioTranslations(CompositeFunctionWrapperPatcher):
+    name = "openai.wrap.audio.translations"
+    sub_patchers = (_wrap_translation_create,)
+
+
+# ---------------------------------------------------------------------------
 # Responses
 # ---------------------------------------------------------------------------
 
@@ -269,6 +362,9 @@ _WRAP_TARGETS: tuple[tuple[str, type[CompositeFunctionWrapperPatcher]], ...] = (
     ("chat.completions", _WrapChatCompletions),
     ("embeddings", _WrapEmbeddings),
     ("moderations", _WrapModerations),
+    ("audio.speech", _WrapAudioSpeech),
+    ("audio.transcriptions", _WrapAudioTranscriptions),
+    ("audio.translations", _WrapAudioTranslations),
     ("responses", _WrapResponses),
     ("responses.with_raw_response", _WrapResponsesRaw),
     ("beta.chat.completions", _WrapChatCompletions),

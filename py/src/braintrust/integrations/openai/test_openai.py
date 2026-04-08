@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 
 import openai
@@ -1712,6 +1713,165 @@ def _is_wrapped(client):
         return False
     attr = inspect.getattr_static(completions, "create", None)
     return isinstance(attr, FunctionWrapper)
+
+
+TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "test_audio.wav")
+
+
+@pytest.mark.vcr
+def test_openai_audio_speech(memory_logger):
+    assert not memory_logger.pop()
+
+    # Unwrapped client should produce no spans
+    client = openai.OpenAI()
+    response = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input="Hello, this is a test.",
+    )
+    assert response
+    assert not memory_logger.pop()
+
+    # Wrapped client should produce a span
+    client2 = wrap_openai(openai.OpenAI())
+    start = time.time()
+    response2 = client2.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input="Hello, this is a test.",
+    )
+    end = time.time()
+    assert response2
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "tts-1"
+    assert span["metadata"]["voice"] == "alloy"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["input"] == "Hello, this is a test."
+    assert span["output"] == {"type": "audio"}
+
+
+@pytest.mark.vcr
+def test_openai_audio_transcription(memory_logger):
+    assert not memory_logger.pop()
+
+    # Unwrapped client should produce no spans
+    client = openai.OpenAI()
+    response = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=open(TEST_AUDIO_FILE, "rb"),
+    )
+    assert response
+    assert not memory_logger.pop()
+
+    # Wrapped client should produce a span
+    client2 = wrap_openai(openai.OpenAI())
+    start = time.time()
+    response2 = client2.audio.transcriptions.create(
+        model="whisper-1",
+        file=open(TEST_AUDIO_FILE, "rb"),
+    )
+    end = time.time()
+    assert response2
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "whisper-1"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["output"] is not None
+
+
+@pytest.mark.vcr
+def test_openai_audio_translation(memory_logger):
+    assert not memory_logger.pop()
+
+    # Unwrapped client should produce no spans
+    client = openai.OpenAI()
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=open(TEST_AUDIO_FILE, "rb"),
+    )
+    assert response
+    assert not memory_logger.pop()
+
+    # Wrapped client should produce a span
+    client2 = wrap_openai(openai.OpenAI())
+    start = time.time()
+    response2 = client2.audio.translations.create(
+        model="whisper-1",
+        file=open(TEST_AUDIO_FILE, "rb"),
+    )
+    end = time.time()
+    assert response2
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "whisper-1"
+    assert span["metadata"]["provider"] == "openai"
+    assert span["output"] is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_audio_speech_async(memory_logger):
+    assert not memory_logger.pop()
+
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
+
+    for client, is_wrapped in clients:
+        start = time.time()
+        response = await client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input="Hello, this is a test.",
+        )
+        end = time.time()
+        assert response
+
+        if not is_wrapped:
+            assert not memory_logger.pop()
+            continue
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["metadata"]["model"] == "tts-1"
+        assert span["metadata"]["voice"] == "alloy"
+        assert span["metadata"]["provider"] == "openai"
+        assert span["input"] == "Hello, this is a test."
+        assert span["output"] == {"type": "audio"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_audio_transcription_async(memory_logger):
+    assert not memory_logger.pop()
+
+    clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
+
+    for client, is_wrapped in clients:
+        start = time.time()
+        response = await client.audio.transcriptions.create(
+            model="whisper-1",
+            file=open(TEST_AUDIO_FILE, "rb"),
+        )
+        end = time.time()
+        assert response
+
+        if not is_wrapped:
+            assert not memory_logger.pop()
+            continue
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["metadata"]["model"] == "whisper-1"
+        assert span["metadata"]["provider"] == "openai"
+        assert span["output"] is not None
 
 
 class TestOpenAIIntegrationSetupSpans:
