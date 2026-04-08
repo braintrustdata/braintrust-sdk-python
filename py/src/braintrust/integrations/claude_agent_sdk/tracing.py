@@ -730,6 +730,10 @@ class ContextTracker:
             for k, v in {
                 "num_turns": getattr(message, "num_turns", None),
                 "session_id": getattr(message, "session_id", None),
+                "stop_reason": getattr(message, "stop_reason", None),
+                "total_cost_usd": getattr(message, "total_cost_usd", None),
+                "duration_ms": getattr(message, "duration_ms", None),
+                "duration_api_ms": getattr(message, "duration_api_ms", None),
             }.items()
             if v is not None
         }
