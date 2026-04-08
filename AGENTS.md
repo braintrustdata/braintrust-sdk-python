@@ -75,6 +75,12 @@ Root `Makefile` exists as a convenience wrapper. The authoritative SDK workflow 
 
 `py/noxfile.py` is the source of truth for compatibility coverage.
 
+Testing preferences:
+
+- Prefer VCR-backed integration tests with checked-in cassettes whenever practical.
+- Avoid mocks, fakes, and heavily synthetic tests unless there is no reasonable cassette-based alternative or the code under test is truly internal/purely local.
+- When fixing a bug or issue, default to a red/green workflow: first add or update a test that reproduces the problem and fails, then implement the fix, unless the user explicitly asks for a different approach.
+
 Key facts:
 
 - `test_core` runs without optional vendor packages.
@@ -86,6 +92,8 @@ Key facts:
 When changing behavior, run the narrowest affected session first, then expand only if needed.
 
 ## VCR
+
+VCR/cassette coverage is the default and preferred testing strategy for provider and integration behavior in this repo. Reach for cassette-backed tests before introducing mocks or fakes, and keep new coverage aligned with the existing VCR patterns unless there is a strong reason not to.
 
 VCR cassette directories:
 
@@ -162,6 +170,7 @@ Avoid editing `py/src/braintrust/version.py` while also running build commands.
 
 - Keep tests near the code they cover.
 - Reuse existing fixtures and cassette patterns.
+- Prefer extending an existing cassette-backed test over adding a new mock-heavy test.
 - If a change affects examples or integrations, update the nearest example or focused test.
 - For CLI/devserver changes, consider whether wheel-mode behavior also needs coverage.
 - Do **not** add `from __future__ import annotations` unless it is absolutely required (e.g., a genuine forward-reference that cannot be resolved any other way). This import changes annotation evaluation semantics at runtime and can silently break `get_type_hints()`, Pydantic models, and other runtime introspection. Prefer quoted string literals (`"MyClass"`) or `TYPE_CHECKING` guards for forward references instead.
