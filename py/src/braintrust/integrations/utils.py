@@ -28,27 +28,49 @@ def _try_to_dict(obj: Any) -> dict[str, Any] | Any:
     """Best-effort conversion of an SDK response object to a plain dict.
 
     Tries, in order:
-      1. ``model_dump()`` (Pydantic v2)
-      2. ``dict()``       (Pydantic v1 / legacy)
-      3. returns *obj* unchanged
+      1. ``model_dump(mode="python")`` (preferred for Pydantic v2 objects)
+      2. ``model_dump()``               (fallback for SDKs with custom signatures)
+      3. ``to_dict()``                  (used by some provider SDK response objects)
+      4. ``dict()``                     (Pydantic v1 / legacy)
+      5. ``vars(obj)``                  (plain Python attribute bags)
+      6. returns *obj* unchanged
 
     Pydantic serializer warnings (common with generic/discriminated-union
     models such as OpenAI's ``ParsedResponse[T]``) are suppressed.
     """
     if isinstance(obj, dict):
         return obj
-    if hasattr(obj, "model_dump") and callable(obj.model_dump):
+
+    model_dump = getattr(obj, "model_dump", None)
+
+    def _call_model_dump_python() -> Any:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+            return model_dump(mode="python")
+
+    def _call_model_dump() -> Any:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+            return model_dump()
+
+    to_dict = getattr(obj, "to_dict", None)
+    dict_method = getattr(obj, "dict", None)
+
+    converters: list[Callable[[], Any]] = []
+    if callable(model_dump):
+        converters.extend((_call_model_dump_python, _call_model_dump))
+    if callable(to_dict):
+        converters.append(to_dict)
+    if callable(dict_method):
+        converters.append(dict_method)
+    converters.append(lambda: vars(obj))
+
+    for converter in converters:
         try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
-                return obj.model_dump()
+            return converter()
         except Exception:
-            pass
-    if hasattr(obj, "dict") and callable(obj.dict):
-        try:
-            return obj.dict()
-        except Exception:
-            pass
+            continue
+
     return obj
 
 

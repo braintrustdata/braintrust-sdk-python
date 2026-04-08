@@ -166,6 +166,55 @@ def test_extract_anthropic_usage_includes_server_tool_use_metrics_from_objects()
     assert metadata == {}
 
 
+def test_extract_anthropic_usage_supports_to_dict_only_objects():
+    class ToDictOnly:
+        __slots__ = ("_payload",)
+
+        def __init__(self, payload):
+            self._payload = payload
+
+        def to_dict(self):
+            return self._payload
+
+    usage = ToDictOnly(
+        {
+            "input_tokens": 11,
+            "output_tokens": 7,
+            "cache_read_input_tokens": 3,
+            "cache_creation": ToDictOnly(
+                {
+                    "ephemeral_5m_input_tokens": 2,
+                    "ephemeral_1h_input_tokens": 5,
+                }
+            ),
+            "server_tool_use": ToDictOnly(
+                {
+                    "web_search_requests": 2,
+                    "web_fetch_requests": 1,
+                }
+            ),
+            "service_tier": "standard",
+        }
+    )
+
+    metrics, metadata = extract_anthropic_usage(usage)
+
+    assert metrics == {
+        "prompt_tokens": 21.0,
+        "completion_tokens": 7.0,
+        "prompt_cached_tokens": 3.0,
+        "prompt_cache_creation_tokens": 7.0,
+        "server_tool_use_web_search_requests": 2.0,
+        "server_tool_use_web_fetch_requests": 1.0,
+        "tokens": 28.0,
+    }
+    assert metadata == {
+        "cache_creation_ephemeral_5m_input_tokens": 2,
+        "cache_creation_ephemeral_1h_input_tokens": 5,
+        "usage_service_tier": "standard",
+    }
+
+
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
 def test_anthropic_messages_create_with_image_attachment_input(memory_logger):
     assert not memory_logger.pop()
