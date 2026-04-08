@@ -75,10 +75,33 @@ jobs:
         uses: ./.github/actions/setup-python-env
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run nox tests (shard ${{ matrix.shard }}/2)
+      - name: Run nox tests (shard ${{ matrix.shard }}/4)
         shell: bash
         run: |
-          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4
+          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
+            ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13' && format('--output-durations measured-durations-{0}.json', matrix.shard) || '' }}
+      - name: Upload measured durations
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: session-durations-shard-${{ matrix.shard }}
+          path: measured-durations-${{ matrix.shard }}.json
+          retention-days: 5
+
+  check-session-weights:
+    needs: [nox]
+    if: always() && needs.nox.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Download measured durations
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: session-durations-shard-*
+          merge-multiple: true
+      - name: Check session weight drift
+        run: python ./py/scripts/check-session-weights.py measured-durations-*.json
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml

@@ -11,6 +11,7 @@ Usage:
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -81,6 +82,12 @@ def main() -> None:
     parser.add_argument("shard_index", type=int, help="Zero-based shard index")
     parser.add_argument("num_shards", type=int, help="Total number of shards")
     parser.add_argument("--dry-run", action="store_true", help="Print assignment without running nox")
+    parser.add_argument(
+        "--output-durations",
+        type=Path,
+        default=None,
+        help="Write measured session durations (seconds) to a JSON file",
+    )
     args = parser.parse_args()
 
     if args.shard_index >= args.num_shards:
@@ -126,7 +133,30 @@ def main() -> None:
 
     # Run nox with the assigned sessions
     cmd = ["nox", "-f", str(noxfile), "-s", *my_sessions]
-    sys.exit(subprocess.run(cmd).returncode)
+
+    if args.output_durations is None:
+        sys.exit(subprocess.run(cmd).returncode)
+
+    # Stream output while capturing session durations
+    durations: dict[str, int] = {}
+    duration_re = re.compile(r"nox > Session (\S+) was successful in (\d+) seconds\.")
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+    assert process.stdout is not None
+    for line in process.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        m = duration_re.search(line)
+        if m:
+            durations[m.group(1)] = int(m.group(2))
+    process.wait()
+
+    args.output_durations.parent.mkdir(parents=True, exist_ok=True)
+    with open(args.output_durations, "w") as f:
+        json.dump(durations, f, indent=2, sort_keys=True)
+        f.write("\n")
+    print(f"Wrote {len(durations)} session durations to {args.output_durations}", file=sys.stderr)
+
+    sys.exit(process.returncode)
 
 
 if __name__ == "__main__":
