@@ -1715,7 +1715,7 @@ def _is_wrapped(client):
     return isinstance(attr, FunctionWrapper)
 
 
-TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "test_audio.wav")
+TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
 
 
 @pytest.mark.vcr
