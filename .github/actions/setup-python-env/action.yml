@@ -1,0 +1,21 @@
+name: "Setup Python environment"
+description: "Checkout, configure mise, and install dev dependencies for a given Python version"
+
+inputs:
+  python-version:
+    description: "Python version to install (e.g. 3.12)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up mise
+      uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      with:
+        cache: true
+        experimental: true
+        install_args: python@${{ inputs.python-version }}
+    - name: Install dependencies
+      shell: bash
+      run: |
+        mise exec python@${{ inputs.python-version }} -- make -C py install-dev

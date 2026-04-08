@@ -107,6 +107,7 @@ def register_sandbox(
                 "provider": sandbox.provider,
                 "snapshot_ref": sandbox.snapshot_ref,
             },
+            "runtime_context": runtime_context,
             "entrypoints": entrypoints,
             "project_id": project_id,
         },

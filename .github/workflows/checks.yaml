@@ -45,15 +45,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      - name: Set up mise
-        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
         with:
-          cache: true
-          experimental: true
-          install_args: python@${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          mise exec python@${{ matrix.python-version }} -- make -C py install-dev
+          python-version: ${{ matrix.python-version }}
       - name: Test whether the Python SDK can be installed
         run: |
           # This is already done by make install-dev, but we're keeping this as a separate step
@@ -72,23 +67,18 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
-        shard: [0, 1]
+        shard: [0, 1, 2, 3]
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      - name: Set up mise
-        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
         with:
-          cache: true
-          experimental: true
-          install_args: python@${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          mise exec python@${{ matrix.python-version }} -- make -C py install-dev
-      - name: Run nox tests (shard ${{ matrix.shard }}/2)
+          python-version: ${{ matrix.python-version }}
+      - name: Run nox tests (shard ${{ matrix.shard }}/4)
         shell: bash
         run: |
-          mise exec python@${{ matrix.python-version }} -- bash ./py/scripts/nox-matrix.sh ${{ matrix.shard }} 2
+          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
