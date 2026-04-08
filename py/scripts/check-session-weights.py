@@ -6,9 +6,9 @@ Reads one or more measured-duration JSON files (produced by
 whose actual duration drifted significantly from the recorded weight.
 
 Exit codes:
-    0 — all weights are within tolerance
-    1 — at least one weight drifted beyond the threshold, or a new/missing
-        session was detected
+    0 — all weights are within tolerance (new/missing sessions are reported
+        but do not cause a non-zero exit; they receive the default weight)
+    1 — at least one weight drifted beyond the threshold
 
 Usage:
     python check-session-weights.py measured-shard-0.json measured-shard-1.json ...
