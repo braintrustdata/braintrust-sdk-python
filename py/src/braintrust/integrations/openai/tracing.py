@@ -991,9 +991,11 @@ class _AudioFileWrapper(BaseWrapper):
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         ret = params.pop("span_info", {})
-        # Remove the file object before prettifying — it's not serializable.
-        params.pop("file", None)
         params = prettify_params(params)
+        # Remove the file object after prettifying — it's not serializable
+        # and prettify_params already made a copy so the original kwargs
+        # (used by the actual API call) are preserved.
+        params.pop("file", None)
         return merge_dicts(
             ret,
             {
