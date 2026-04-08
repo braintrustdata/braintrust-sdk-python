@@ -29,10 +29,15 @@ install_requires = [
 ]
 
 is_free_threaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+is_windows = os.name == "nt"
 
 # orjson is not compatible with PyPy or free-threaded Python, so only expose it
 # for standard CPython builds where it is supported.
 performance_require = [] if is_free_threaded else ["orjson; platform_python_implementation != 'PyPy'"]
+
+# temporalio does not currently install cleanly on Windows free-threaded Python,
+# so leave the optional integration available everywhere else.
+temporal_require = [] if is_free_threaded and is_windows else ["temporalio>=1.19.0; python_version>='3.10'"]
 
 extras_require = {
     "cli": ["boto3", "uv", "starlette", "uvicorn"],
@@ -40,7 +45,7 @@ extras_require = {
     "openai-agents": ["openai-agents"],
     "otel": ["opentelemetry-api", "opentelemetry-sdk", "opentelemetry-exporter-otlp-proto-http"],
     "performance": performance_require,
-    "temporal": ["temporalio>=1.19.0; python_version>='3.10'"],
+    "temporal": temporal_require,
 }
 
 extras_require["all"] = sorted({package for packages in extras_require.values() for package in packages})
