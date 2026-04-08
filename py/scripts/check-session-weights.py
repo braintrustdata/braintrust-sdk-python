@@ -12,6 +12,9 @@ Exit codes:
 
 Usage:
     python check-session-weights.py measured-shard-0.json measured-shard-1.json ...
+
+To update weights after downloading the measured-durations artifacts from CI:
+    python check-session-weights.py --update measured-shard-0.json measured-shard-1.json ...
 """
 
 import argparse
@@ -29,6 +32,30 @@ DRIFT_THRESHOLD = 0.5
 MIN_DURATION_FOR_DRIFT = 8
 
 
+def update_weights(weights_path: Path, weights_data: dict, measured: dict[str, int]) -> None:
+    """Overwrite session-weights.json with measured durations."""
+    meta_keys = {k for k in weights_data if k.startswith("_")}
+    # Start with metadata keys
+    updated = {k: weights_data[k] for k in sorted(meta_keys)}
+    # Merge: keep measured values, drop sessions that no longer exist
+    all_sessions = sorted(set(weights_data.keys() - meta_keys) | set(measured.keys()))
+    for session in all_sessions:
+        if session in measured:
+            updated[session] = measured[session]
+        else:
+            # Session wasn't measured — keep the old weight (may be platform-specific
+            # or skipped; a full run across all shards would cover everything)
+            updated[session] = weights_data[session]
+    with open(weights_path, "w") as f:
+        json.dump(updated, f, indent=2, sort_keys=True)
+        f.write("\n")
+    n_changed = sum(1 for s in measured if s not in meta_keys and weights_data.get(s) != measured[s])
+    n_new = sum(1 for s in measured if s not in weights_data)
+    print(
+        f"✅ Updated {weights_path} ({n_changed} changed, {n_new} new, {len(updated) - len(meta_keys)} total sessions)"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("measured_files", nargs="+", type=Path, help="JSON files with measured durations")
@@ -37,6 +64,11 @@ def main() -> None:
         type=Path,
         default=Path(__file__).parent / "session-weights.json",
         help="Path to session-weights.json (default: co-located with this script)",
+    )
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Update session-weights.json with measured durations and exit",
     )
     args = parser.parse_args()
 
@@ -52,6 +84,10 @@ def main() -> None:
 
     with open(args.weights) as f:
         weights_data: dict[str, int] = json.load(f)
+
+    if args.update:
+        update_weights(args.weights, weights_data, measured)
+        return
 
     default_weight = weights_data.get("_default", 15)
     meta_keys = {k for k in weights_data if k.startswith("_")}
