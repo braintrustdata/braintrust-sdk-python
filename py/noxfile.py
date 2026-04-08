@@ -86,8 +86,9 @@ ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
 OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
 OPENAI_AGENTS_VERSIONS = (LATEST, "0.0.19")
 # litellm latest requires Python >= 3.10
-# Pin litellm because 1.82.7-1.82.8 are compromised: https://github.com/BerriAI/litellm/issues/24512
-LITELLM_VERSIONS = ("1.82.0", "1.74.0")
+# Pin litellm to a version without the 1.82.7-1.82.8 compromise and with the
+# OIDC userinfo cache key collision fix from 1.83.0+
+LITELLM_VERSIONS = ("1.83.0", "1.74.0")
 # CLI bundling started in 0.1.10 - older versions require external Claude Code installation
 CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
 # Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
