@@ -1759,20 +1759,16 @@ def test_openai_audio_transcription(memory_logger):
 
     # Unwrapped client should produce no spans
     client = openai.OpenAI()
-    response = client.audio.transcriptions.create(
-        model="whisper-1",
-        file=open(TEST_AUDIO_FILE, "rb"),
-    )
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        response = client.audio.transcriptions.create(model="whisper-1", file=f)
     assert response
     assert not memory_logger.pop()
 
     # Wrapped client should produce a span
     client2 = wrap_openai(openai.OpenAI())
     start = time.time()
-    response2 = client2.audio.transcriptions.create(
-        model="whisper-1",
-        file=open(TEST_AUDIO_FILE, "rb"),
-    )
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        response2 = client2.audio.transcriptions.create(model="whisper-1", file=f)
     end = time.time()
     assert response2
 
@@ -1790,20 +1786,16 @@ def test_openai_audio_translation(memory_logger):
 
     # Unwrapped client should produce no spans
     client = openai.OpenAI()
-    response = client.audio.translations.create(
-        model="whisper-1",
-        file=open(TEST_AUDIO_FILE, "rb"),
-    )
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        response = client.audio.translations.create(model="whisper-1", file=f)
     assert response
     assert not memory_logger.pop()
 
     # Wrapped client should produce a span
     client2 = wrap_openai(openai.OpenAI())
     start = time.time()
-    response2 = client2.audio.translations.create(
-        model="whisper-1",
-        file=open(TEST_AUDIO_FILE, "rb"),
-    )
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        response2 = client2.audio.translations.create(model="whisper-1", file=f)
     end = time.time()
     assert response2
 
@@ -1855,10 +1847,8 @@ async def test_openai_audio_transcription_async(memory_logger):
 
     for client, is_wrapped in clients:
         start = time.time()
-        response = await client.audio.transcriptions.create(
-            model="whisper-1",
-            file=open(TEST_AUDIO_FILE, "rb"),
-        )
+        with open(TEST_AUDIO_FILE, "rb") as f:
+            response = await client.audio.transcriptions.create(model="whisper-1", file=f)
         end = time.time()
         assert response
 

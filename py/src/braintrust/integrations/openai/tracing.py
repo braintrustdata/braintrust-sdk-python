@@ -246,40 +246,21 @@ def _moderation_create_wrapper(wrapped, instance, args, kwargs):
     return ModerationWrapper(create_fn, None).create(*args, **kwargs)
 
 
-def _audio_speech_create_wrapper(wrapped, instance, args, kwargs):
-    create_fn = _get_raw_callable(instance, "create") or wrapped
-    if _is_async_callable(wrapped):
+def _make_base_wrapper_callback(wrapper_cls: type["BaseWrapper"]):
+    """Create a wrapt callback that routes through with_raw_response for header capture."""
 
-        async def call():
-            response = await SpeechWrapper(None, create_fn).acreate(*args, **kwargs)
-            return AsyncResponseWrapper(response)
+    def wrapper(wrapped, instance, args, kwargs):
+        create_fn = _get_raw_callable(instance, "create") or wrapped
+        if _is_async_callable(wrapped):
 
-        return call()
-    return SpeechWrapper(create_fn, None).create(*args, **kwargs)
+            async def call():
+                response = await wrapper_cls(None, create_fn).acreate(*args, **kwargs)
+                return AsyncResponseWrapper(response)
 
+            return call()
+        return wrapper_cls(create_fn, None).create(*args, **kwargs)
 
-def _audio_transcription_create_wrapper(wrapped, instance, args, kwargs):
-    create_fn = _get_raw_callable(instance, "create") or wrapped
-    if _is_async_callable(wrapped):
-
-        async def call():
-            response = await TranscriptionWrapper(None, create_fn).acreate(*args, **kwargs)
-            return AsyncResponseWrapper(response)
-
-        return call()
-    return TranscriptionWrapper(create_fn, None).create(*args, **kwargs)
-
-
-def _audio_translation_create_wrapper(wrapped, instance, args, kwargs):
-    create_fn = _get_raw_callable(instance, "create") or wrapped
-    if _is_async_callable(wrapped):
-
-        async def call():
-            response = await TranslationWrapper(None, create_fn).acreate(*args, **kwargs)
-            return AsyncResponseWrapper(response)
-
-        return call()
-    return TranslationWrapper(create_fn, None).create(*args, **kwargs)
+    return wrapper
 
 
 def _responses_create_wrapper(wrapped, instance, args, kwargs):
@@ -981,7 +962,6 @@ class SpeechWrapper(BaseWrapper):
         super().__init__(create_fn, acreate_fn, "Speech")
 
     def process_output(self, response: Any, span: Span):
-        # Speech returns binary audio content; log a summary rather than raw bytes.
         span.log(output={"type": "audio"})
 
 
@@ -992,9 +972,8 @@ class _AudioFileWrapper(BaseWrapper):
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         ret = params.pop("span_info", {})
         params = prettify_params(params)
-        # Remove the file object after prettifying — it's not serializable
-        # and prettify_params already made a copy so the original kwargs
-        # (used by the actual API call) are preserved.
+        # Remove the file object after prettifying — prettify_params already
+        # made a copy so the original kwargs (used by the API call) are preserved.
         params.pop("file", None)
         return merge_dicts(
             ret,
@@ -1002,6 +981,14 @@ class _AudioFileWrapper(BaseWrapper):
                 "metadata": {**params, "provider": "openai"},
             },
         )
+
+    @staticmethod
+    def _extract_text(response: Any) -> str | None:
+        if isinstance(response, dict):
+            return response.get("text")
+        if isinstance(response, str):
+            return response
+        return str(response)
 
 
 class TranscriptionWrapper(_AudioFileWrapper):
@@ -1014,12 +1001,7 @@ class TranscriptionWrapper(_AudioFileWrapper):
             usage = response.get("usage")
             if usage:
                 metrics = _parse_metrics_from_usage(usage)
-            text = response.get("text")
-        elif isinstance(response, str):
-            text = response
-        else:
-            text = str(response)
-        span.log(metrics=metrics, output=text)
+        span.log(metrics=metrics, output=self._extract_text(response))
 
 
 class TranslationWrapper(_AudioFileWrapper):
@@ -1027,13 +1009,12 @@ class TranslationWrapper(_AudioFileWrapper):
         super().__init__(create_fn, acreate_fn, "Translation")
 
     def process_output(self, response: Any, span: Span):
-        if isinstance(response, dict):
-            text = response.get("text")
-        elif isinstance(response, str):
-            text = response
-        else:
-            text = str(response)
-        span.log(output=text)
+        span.log(output=self._extract_text(response))
+
+
+_audio_speech_create_wrapper = _make_base_wrapper_callback(SpeechWrapper)
+_audio_transcription_create_wrapper = _make_base_wrapper_callback(TranscriptionWrapper)
+_audio_translation_create_wrapper = _make_base_wrapper_callback(TranslationWrapper)
 
 
 # OpenAI's representation to Braintrust's representation
