@@ -2248,7 +2248,7 @@ def test_wrap_model_classes_is_deprecated(monkeypatch):
 
 
 def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
-    import pydantic_ai._tool_manager as tool_manager_module
+    import pydantic_ai._agent_graph as agent_graph_module
     import pydantic_ai.direct as direct_module
     from braintrust.integrations.pydantic_ai.integration import PydanticAIIntegration
     from pydantic_ai.agent.abstract import AbstractAgent
@@ -2257,15 +2257,15 @@ def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
     prepare_model = direct_module.__dict__["_prepare_model"]
     tool_method_name = (
         "_execute_function_tool_call"
-        if "_execute_function_tool_call" in tool_manager_module.ToolManager.__dict__
+        if "_execute_function_tool_call" in agent_graph_module.ToolManager.__dict__
         else "_call_function_tool"
     )
-    tool_method = tool_manager_module.ToolManager.__dict__[tool_method_name]
+    tool_method = agent_graph_module.ToolManager.__dict__[tool_method_name]
 
     assert PydanticAIIntegration.setup() is True
     assert AbstractAgent.__dict__["run"] is run
     assert direct_module.__dict__["_prepare_model"] is prepare_model
-    assert tool_manager_module.ToolManager.__dict__[tool_method_name] is tool_method
+    assert agent_graph_module.ToolManager.__dict__[tool_method_name] is tool_method
 
 
 def test_serialize_content_part_with_binary_content():

@@ -134,14 +134,18 @@ class StreamedResponseSyncStartProducerPatcher(FunctionWrapperPatcher):
 
 class _ToolManagerExecuteFunctionToolPatcher(FunctionWrapperPatcher):
     name = "pydantic_ai.tool_manager.execute_function_tool"
-    target_module = "pydantic_ai._tool_manager"
+    # Regression compatibility note: pydantic_ai 1.78.0 moved ToolManager out
+    # of the private ``pydantic_ai._tool_manager`` module into
+    # ``pydantic_ai.tool_manager``. ``pydantic_ai._agent_graph.ToolManager`` is
+    # a stable alias in both the old and new layouts, so patch that seam.
+    target_module = "pydantic_ai._agent_graph"
     target_path = "ToolManager._execute_function_tool_call"
     wrapper = _tool_manager_execute_function_tool_wrapper
 
 
 class _ToolManagerCallFunctionToolPatcher(FunctionWrapperPatcher):
     name = "pydantic_ai.tool_manager.call_function_tool"
-    target_module = "pydantic_ai._tool_manager"
+    target_module = "pydantic_ai._agent_graph"
     target_path = "ToolManager._call_function_tool"
     wrapper = _tool_manager_call_function_tool_wrapper
     superseded_by = (_ToolManagerExecuteFunctionToolPatcher,)
