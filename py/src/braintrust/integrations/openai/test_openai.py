@@ -1734,13 +1734,11 @@ def test_openai_audio_speech(memory_logger):
 
     # Wrapped client should produce a span
     client2 = wrap_openai(openai.OpenAI())
-    start = time.time()
     response2 = client2.audio.speech.create(
         model="tts-1",
         voice="alloy",
         input="Hello, this is a test.",
     )
-    end = time.time()
     assert response2
 
     spans = memory_logger.pop()
@@ -1766,10 +1764,8 @@ def test_openai_audio_transcription(memory_logger):
 
     # Wrapped client should produce a span
     client2 = wrap_openai(openai.OpenAI())
-    start = time.time()
     with open(TEST_AUDIO_FILE, "rb") as f:
         response2 = client2.audio.transcriptions.create(model="whisper-1", file=f)
-    end = time.time()
     assert response2
 
     spans = memory_logger.pop()
@@ -1793,10 +1789,8 @@ def test_openai_audio_translation(memory_logger):
 
     # Wrapped client should produce a span
     client2 = wrap_openai(openai.OpenAI())
-    start = time.time()
     with open(TEST_AUDIO_FILE, "rb") as f:
         response2 = client2.audio.translations.create(model="whisper-1", file=f)
-    end = time.time()
     assert response2
 
     spans = memory_logger.pop()
@@ -1815,13 +1809,11 @@ async def test_openai_audio_speech_async(memory_logger):
     clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
-        start = time.time()
         response = await client.audio.speech.create(
             model="tts-1",
             voice="alloy",
             input="Hello, this is a test.",
         )
-        end = time.time()
         assert response
 
         if not is_wrapped:
@@ -1846,10 +1838,8 @@ async def test_openai_audio_transcription_async(memory_logger):
     clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
-        start = time.time()
         with open(TEST_AUDIO_FILE, "rb") as f:
             response = await client.audio.transcriptions.create(model="whisper-1", file=f)
-        end = time.time()
         assert response
 
         if not is_wrapped:
@@ -1872,10 +1862,8 @@ async def test_openai_audio_translation_async(memory_logger):
     clients = [(AsyncOpenAI(), False), (wrap_openai(AsyncOpenAI()), True)]
 
     for client, is_wrapped in clients:
-        start = time.time()
         with open(TEST_AUDIO_FILE, "rb") as f:
             response = await client.audio.translations.create(model="whisper-1", file=f)
-        end = time.time()
         assert response
 
         if not is_wrapped:
