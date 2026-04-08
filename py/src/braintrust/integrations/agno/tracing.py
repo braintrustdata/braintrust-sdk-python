@@ -2,7 +2,7 @@ import time
 from inspect import isawaitable
 from typing import Any
 
-from braintrust.integrations.utils import _try_to_dict as _shared_try_to_dict
+from braintrust.integrations.utils import _try_to_dict
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import is_numeric
@@ -23,18 +23,6 @@ def clean(obj: dict[str, Any]) -> dict[str, Any]:
 
 def get_args_kwargs(args: list[str], kwargs: dict[str, Any], keys: list[str]):
     return {k: args[i] if args else kwargs.get(k) for i, k in enumerate(keys)}, omit(kwargs, keys)
-
-
-def _try_to_dict(obj: Any) -> Any:
-    """Convert object to dict, handling different object types like OpenAI wrapper."""
-    result = _shared_try_to_dict(obj)
-    # Agno also falls back to __dict__ copy
-    if result is obj and not isinstance(result, dict) and hasattr(obj, "__dict__"):
-        try:
-            return obj.__dict__.copy()
-        except Exception:
-            pass
-    return result
 
 
 def is_sync_iterator(result: Any) -> bool:

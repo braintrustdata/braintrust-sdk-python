@@ -36,6 +36,9 @@ def _try_to_dict(obj: Any) -> dict[str, Any] | Any:
       5. ``vars(obj)``                  (plain Python attribute bags)
       6. returns *obj* unchanged
 
+    Only dict-like conversion results are accepted; non-dict results are
+    ignored so later fallbacks still run.
+
     Pydantic serializer warnings (common with generic/discriminated-union
     models such as OpenAI's ``ParsedResponse[T]``) are suppressed.
     """
@@ -68,9 +71,11 @@ def _try_to_dict(obj: Any) -> dict[str, Any] | Any:
 
     for converter in converters:
         try:
-            return converter()
+            result = converter()
         except Exception:
             continue
+        if isinstance(result, dict):
+            return result
 
     return obj
 

@@ -35,6 +35,18 @@ def test_is_supported_metric_value_excludes_booleans():
     assert not _is_supported_metric_value("1")
 
 
+def test_try_to_dict_uses_pydantic_model_dump_for_basemodel_instances():
+    pydantic = pytest.importorskip("pydantic")
+
+    class Usage(pydantic.BaseModel):
+        tokens: int
+        cached_tokens: int
+
+    result = _try_to_dict(Usage(tokens=3, cached_tokens=1))
+
+    assert result == {"tokens": 3, "cached_tokens": 1}
+
+
 def test_try_to_dict_uses_to_dict_when_available():
     class ToDictOnly:
         __slots__ = ("_payload",)
@@ -46,6 +58,31 @@ def test_try_to_dict_uses_to_dict_when_available():
             return self._payload
 
     result = _try_to_dict(ToDictOnly({"tokens": 3}))
+
+    assert result == {"tokens": 3}
+
+
+def test_try_to_dict_falls_back_from_model_dump_python_to_bare_model_dump():
+    class BareModelDumpOnly:
+        def model_dump(self, mode=None):
+            if mode == "python":
+                raise TypeError("mode not supported")
+            return {"tokens": 3}
+
+    result = _try_to_dict(BareModelDumpOnly())
+
+    assert result == {"tokens": 3}
+
+
+def test_try_to_dict_continues_past_non_dict_converter_results():
+    class MixedConverters:
+        def model_dump(self, mode=None):
+            return [mode]
+
+        def to_dict(self):
+            return {"tokens": 3}
+
+    result = _try_to_dict(MixedConverters())
 
     assert result == {"tokens": 3}
 
@@ -128,6 +165,16 @@ def test_convert_data_url_to_attachment_preserves_invalid_base64():
     converted = _convert_data_url_to_attachment(data_url)
 
     assert converted == data_url
+
+
+def test_convert_data_url_to_attachment_uses_file_prefix_for_non_image_mime_types():
+    data_url = "data:application/pdf;base64,aGVsbG8="
+
+    attachment = _convert_data_url_to_attachment(data_url)
+
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "application/pdf"
+    assert attachment.reference["filename"] == "file.pdf"
 
 
 def test_convert_data_url_to_attachment_preserves_non_data_urls():
