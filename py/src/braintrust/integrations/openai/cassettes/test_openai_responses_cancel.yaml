@@ -1,93 +1,6 @@
 interactions:
 - request:
-    body: '{"background":true,"input":"Write a very long essay about the history of
-      mathematics","model":"gpt-4o-mini"}'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '108'
-      Content-Type:
-      - application/json
-      Host:
-      - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.31.0
-      X-Stainless-Arch:
-      - x64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - Linux
-      X-Stainless-Package-Version:
-      - 2.31.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
-    method: POST
-    uri: https://api.openai.com/v1/responses
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"message\": \"Incorrect API key provided: sk-test-***********************ests.
-        You can find your API key at https://platform.openai.com/account/api-keys.\",\n
-        \   \"type\": \"invalid_request_error\",\n    \"code\": \"invalid_api_key\",\n
-        \   \"param\": null\n  },\n  \"status\": 401\n}"
-    headers:
-      CF-RAY:
-      - 9e94c243fe02d685-CMH
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '281'
-      Content-Type:
-      - text/plain
-      Date:
-      - Wed, 08 Apr 2026 22:37:50 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      X-Content-Type-Options:
-      - nosniff
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      set-cookie:
-      - __cf_bm=FFEHedPkuMD63eCCoIYgUyUw_ytfG4KpaJorWAexPJA-1775687870.0745838-1.0.1.1-0HC9NmV2GaHuuxFjcBh0nm5yMUaz4CggCBnMCTVwxm514QpJfo7c4y0BrjjyKt3yLZWBiYUqHHFRZAczB31s4GzZtc9QuSwzwwhGKLSWVbUfzkjl2tRiA5YQl9HJGT6O;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026
-        23:07:50 GMT
-      - _cfuvid=mXUjW2Z_NNbyRj.ppA1I5cRzkc2MCv2SoUFxfXoW28E-1775687870.0745838-1.0.1.1-gK6_kF3a9CbFZmaSy6ynsAwhaywFcNWeUAZFAAiJQ6w;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com
-      x-error-json:
-      - ewogICJlcnJvciI6IHsKICAgICJtZXNzYWdlIjogIkluY29ycmVjdCBBUEkga2V5IHByb3ZpZGVkOiBzay10ZXN0LSoqKioqKioqKioqKioqKioqKioqKioqZXN0cy4gWW91IGNhbiBmaW5kIHlvdXIgQVBJIGtleSBhdCBodHRwczovL3BsYXRmb3JtLm9wZW5haS5jb20vYWNjb3VudC9hcGkta2V5cy4iLAogICAgInR5cGUiOiAiaW52YWxpZF9yZXF1ZXN0X2Vycm9yIiwKICAgICJjb2RlIjogImludmFsaWRfYXBpX2tleSIsCiAgICAicGFyYW0iOiBudWxsCiAgfSwKICAic3RhdHVzIjogNDAxCn0=
-      x-openai-authorization-error:
-      - '401'
-      x-openai-ide-error-code:
-      - invalid_api_key
-      x-openai-internal-caller:
-      - unknown_through_ide
-      x-openai-proxy-wasm:
-      - v0.1
-      x-request-id:
-      - req_0ebc145f412246f0b7893881185febe5
-    status:
-      code: 401
-      message: Unauthorized
-- request:
-    body: '{"background":true,"input":"Write a very long essay about the history of
-      mathematics","model":"gpt-4o-mini"}'
+    body: '{"background":true,"input":"Write a very long essay about the history of mathematics","model":"gpt-4o-mini"}'
     headers:
       Accept:
       - application/json
@@ -125,20 +38,12 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0b736a6173a247b60069d6da0387cc81a2bc13ab012402eb59\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1775688195,\n  \"status\":
-        \"queued\",\n  \"background\": true,\n  \"completed_at\": null,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"output\": [],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"auto\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\":
-        1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": null,\n  \"user\": null,\n
-        \ \"metadata\": {}\n}"
+      string: "{\n  \"id\": \"resp_0b736a6173a247b60069d6da0387cc81a2bc13ab012402eb59\",\n  \"object\": \"response\",\n  \"created_at\": 1775688195,\n  \"status\": \"queued\",\n  \"background\": true,\n\
+        \  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\": null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n\
+        \  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n \
+        \ \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\": true,\n \
+        \ \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\"\
+        : 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": null,\n  \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       CF-RAY:
       - 9e94ca35d9e6aca0-YYZ
@@ -172,8 +77,7 @@ interactions:
       - '2020-10-01'
       set-cookie:
       - __cf_bm=NkpclqUIqA4xSYjADl3r1MssiehOwlx0ZZexWNiy_gg-1775688195.492259-1.0.1.1-PFNIVv.454p6e.KZgtU2wpdQNETvDNsPKli8kwDaOxVrvz4kFpGlxfJNYyc4bpQtQS6rBodJHhF79dApLEuvH1SJwcl.LSo.MTtH7cPBXqRrzueq43j56Jo6gCEA1MHs;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026
-        23:13:15 GMT
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026 23:13:15 GMT
       x-request-id:
       - req_bb85055d3f9d406db06d70e498627c24
     status:
@@ -220,20 +124,12 @@ interactions:
     uri: https://api.openai.com/v1/responses/resp_0b736a6173a247b60069d6da0387cc81a2bc13ab012402eb59/cancel
   response:
     body:
-      string: "{\n  \"id\": \"resp_0b736a6173a247b60069d6da0387cc81a2bc13ab012402eb59\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1775688195,\n  \"status\":
-        \"cancelled\",\n  \"background\": true,\n  \"completed_at\": null,\n  \"error\":
-        null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"output\": [],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"auto\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\":
-        1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": null,\n  \"user\": null,\n
-        \ \"metadata\": {}\n}"
+      string: "{\n  \"id\": \"resp_0b736a6173a247b60069d6da0387cc81a2bc13ab012402eb59\",\n  \"object\": \"response\",\n  \"created_at\": 1775688195,\n  \"status\": \"cancelled\",\n  \"background\": true,\n\
+        \  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\": null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n\
+        \  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n \
+        \ \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\": true,\n \
+        \ \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\"\
+        : 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": null,\n  \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       CF-RAY:
       - 9e94ca3a3a47ab7b-YYZ

@@ -17,91 +17,6 @@ interactions:
       User-Agent:
       - OpenAI/Python 2.31.0
       X-Stainless-Arch:
-      - x64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - Linux
-      X-Stainless-Package-Version:
-      - 2.31.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
-    method: POST
-    uri: https://api.openai.com/v1/responses
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"message\": \"Incorrect API key provided: sk-test-***********************ests.
-        You can find your API key at https://platform.openai.com/account/api-keys.\",\n
-        \   \"type\": \"invalid_request_error\",\n    \"code\": \"invalid_api_key\",\n
-        \   \"param\": null\n  },\n  \"status\": 401\n}"
-    headers:
-      CF-RAY:
-      - 9e94c21a5d7dad68-CMH
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '281'
-      Content-Type:
-      - text/plain
-      Date:
-      - Wed, 08 Apr 2026 22:37:43 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      X-Content-Type-Options:
-      - nosniff
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      set-cookie:
-      - __cf_bm=duwBhm7ocOUMuybmNnC.nYtt2YH7PKy6.ymPODER8kk-1775687863.4184282-1.0.1.1-1UUb9gvxWJdPCdSjKRjk4L1qIkfbLhNwdkxeox5KiuVlejFB2xKnP92us5G2mFTi02Qt24AeuGVhkhRyfTnrrO01LjIGqmWYZaWqD_NzcqgOLzqCmM04i6ySfMS5dHIu;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026
-        23:07:43 GMT
-      - _cfuvid=SyYrDshSxF3TxbBiEMIu3UMKUq2RtdSledrMoob38ew-1775687863.4184282-1.0.1.1-7HIRouWFd1_ciOw403YCBOBbt0zsM9_B9u_SSfyCWAQ;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com
-      x-error-json:
-      - ewogICJlcnJvciI6IHsKICAgICJtZXNzYWdlIjogIkluY29ycmVjdCBBUEkga2V5IHByb3ZpZGVkOiBzay10ZXN0LSoqKioqKioqKioqKioqKioqKioqKioqZXN0cy4gWW91IGNhbiBmaW5kIHlvdXIgQVBJIGtleSBhdCBodHRwczovL3BsYXRmb3JtLm9wZW5haS5jb20vYWNjb3VudC9hcGkta2V5cy4iLAogICAgInR5cGUiOiAiaW52YWxpZF9yZXF1ZXN0X2Vycm9yIiwKICAgICJjb2RlIjogImludmFsaWRfYXBpX2tleSIsCiAgICAicGFyYW0iOiBudWxsCiAgfSwKICAic3RhdHVzIjogNDAxCn0=
-      x-openai-authorization-error:
-      - '401'
-      x-openai-ide-error-code:
-      - invalid_api_key
-      x-openai-internal-caller:
-      - unknown_through_ide
-      x-openai-proxy-wasm:
-      - v0.1
-      x-request-id:
-      - req_aff247bf398f4d138237ccce358899cd
-    status:
-      code: 401
-      message: Unauthorized
-- request:
-    body: '{"input":"What''s 12 + 12?","instructions":"Just the number please","model":"gpt-4o-mini"}'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '89'
-      Content-Type:
-      - application/json
-      Host:
-      - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.31.0
-      X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
       - 'false'
@@ -123,29 +38,15 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0a99d896e37813380069d6d9fd97a48195a3ca30a701c5ad7d\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1775688189,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1775688190,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0a99d896e37813380069d6d9fe559c819585ee8570f213deb4\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+      string: "{\n  \"id\": \"resp_0a99d896e37813380069d6d9fd97a48195a3ca30a701c5ad7d\",\n  \"object\": \"response\",\n  \"created_at\": 1775688189,\n  \"status\": \"completed\",\n  \"background\": false,\n\
+        \  \"billing\": {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1775688190,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\": \"\
+        Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n      \"id\": \"msg_0a99d896e37813380069d6d9fe559c819585ee8570f213deb4\"\
+        ,\n      \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n          \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":\
+        \ [],\n          \"text\": \"24\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n\
+        \  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"\
+        default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n \
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\": {\n      \"cached_tokens\"\
+        : 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       CF-RAY:
       - 9e94ca10a9525905-YYZ
@@ -179,8 +80,7 @@ interactions:
       - '2020-10-01'
       set-cookie:
       - __cf_bm=ehUpKL9KCifR3RDKTGYHimXnqZWbPJH7YVqchFAoFls-1775688189.549492-1.0.1.1-Tyo4a8LUATM4wAlak_AAeNu3G7lEaNGw7vCzlzoEx.HUTBF0KfQk_cxngjGJe5txJryGR7po7r23SWqPBBa3vPJQsP1xXLxiybsV_dXgnYpB.SLxMiuE7y3zl3OcFNar;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026
-        23:13:10 GMT
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026 23:13:10 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -235,29 +135,15 @@ interactions:
     uri: https://api.openai.com/v1/responses/resp_0a99d896e37813380069d6d9fd97a48195a3ca30a701c5ad7d
   response:
     body:
-      string: "{\n  \"id\": \"resp_0a99d896e37813380069d6d9fd97a48195a3ca30a701c5ad7d\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1775688189,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1775688190,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0a99d896e37813380069d6d9fe559c819585ee8570f213deb4\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+      string: "{\n  \"id\": \"resp_0a99d896e37813380069d6d9fd97a48195a3ca30a701c5ad7d\",\n  \"object\": \"response\",\n  \"created_at\": 1775688189,\n  \"status\": \"completed\",\n  \"background\": false,\n\
+        \  \"billing\": {\n    \"payer\": \"developer\"\n  },\n  \"completed_at\": 1775688190,\n  \"error\": null,\n  \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\": \"\
+        Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n      \"id\": \"msg_0a99d896e37813380069d6d9fe559c819585ee8570f213deb4\"\
+        ,\n      \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n          \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":\
+        \ [],\n          \"text\": \"24\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n\
+        \  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"\
+        default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n \
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\": {\n      \"cached_tokens\"\
+        : 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       CF-RAY:
       - 9e94ca18088aabeb-YYZ
