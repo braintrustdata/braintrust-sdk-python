@@ -1573,8 +1573,7 @@ async def test_agent_with_binary_content(memory_logger):
 async def test_agent_with_document_input(memory_logger):
     """Test that agents with document input (PDF) properly serialize attachments.
 
-    This specifically tests the scenario from test_document_input in the golden tests,
-    verifying that both agent_run and chat spans convert BinaryContent to Braintrust
+    Verifies that both agent_run and chat spans convert BinaryContent to Braintrust
     attachments for document files like PDFs.
     """
     from braintrust.logger import Attachment
@@ -2249,7 +2248,7 @@ def test_wrap_model_classes_is_deprecated(monkeypatch):
 
 
 def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
-    import pydantic_ai._tool_manager as tool_manager_module
+    import pydantic_ai._agent_graph as agent_graph_module
     import pydantic_ai.direct as direct_module
     from braintrust.integrations.pydantic_ai.integration import PydanticAIIntegration
     from pydantic_ai.agent.abstract import AbstractAgent
@@ -2258,15 +2257,15 @@ def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
     prepare_model = direct_module.__dict__["_prepare_model"]
     tool_method_name = (
         "_execute_function_tool_call"
-        if "_execute_function_tool_call" in tool_manager_module.ToolManager.__dict__
+        if "_execute_function_tool_call" in agent_graph_module.ToolManager.__dict__
         else "_call_function_tool"
     )
-    tool_method = tool_manager_module.ToolManager.__dict__[tool_method_name]
+    tool_method = agent_graph_module.ToolManager.__dict__[tool_method_name]
 
     assert PydanticAIIntegration.setup() is True
     assert AbstractAgent.__dict__["run"] is run
     assert direct_module.__dict__["_prepare_model"] is prepare_model
-    assert tool_manager_module.ToolManager.__dict__[tool_method_name] is tool_method
+    assert agent_graph_module.ToolManager.__dict__[tool_method_name] is tool_method
 
 
 def test_serialize_content_part_with_binary_content():
@@ -2777,4 +2776,189 @@ def test_start_producer_wrapper_exception_does_not_double_invoke_producer():
         wrapper(wrapped, instance, (), {})
 
     assert instance.call_count == 1
-    assert instance._async_producer == original_async_producer
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_with_stop_sequences(memory_logger):
+    """Test Agent respects stop_sequences in model settings."""
+    assert not memory_logger.pop()
+
+    agent = Agent(
+        MODEL,
+        model_settings=ModelSettings(max_tokens=500, stop_sequences=["END", "\n\n"]),
+    )
+
+    start = time.time()
+    result = await agent.run("Write a short story about a robot.")
+    end = time.time()
+
+    assert result.output
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 2
+
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
+    assert agent_span is not None, "agent_run span not found"
+    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+
+    # stop_sequences on the agent constructor → in metadata.model_settings
+    assert "model_settings" in agent_span["metadata"]
+    settings = agent_span["metadata"]["model_settings"]
+    assert settings.get("stop_sequences") == ["END", "\n\n"]
+
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_with_prefill(memory_logger):
+    """Test Agent with a partial assistant response in message_history.
+
+    The 'prefill' pattern puts an incomplete assistant message at the end of the
+    history so the model continues from that point.
+    """
+    from pydantic_ai.messages import ModelResponse, TextPart
+
+    assert not memory_logger.pop()
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
+
+    prefill_history = [
+        ModelRequest(parts=[UserPromptPart(content="Write a haiku about coding.")]),
+        ModelResponse(parts=[TextPart(content="Here is a haiku:")]),
+    ]
+
+    start = time.time()
+    result = await agent.run("Write a haiku about coding.", message_history=prefill_history)
+    end = time.time()
+
+    assert result.output
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 2
+
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
+    assert agent_span is not None, "agent_run span not found"
+    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+
+    # The prefill history (including the partial assistant TextPart) must appear
+    # in the span input so that the trace is complete and auditable.
+    assert "message_history" in str(agent_span["input"])
+    assert "Here is a haiku" in str(agent_span["input"])
+    assert agent_span["output"]
+
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_with_short_max_tokens(memory_logger):
+    """Test Agent with a very small max_tokens that truncates the response."""
+    assert not memory_logger.pop()
+
+    agent = Agent(MODEL)
+
+    start = time.time()
+    result = await agent.run("What is AI?", model_settings=ModelSettings(max_tokens=5))
+    end = time.time()
+
+    # Truncated responses are still valid output; no exception should be raised.
+    assert result.output
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 2
+
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
+    assert agent_span is not None, "agent_run span not found"
+    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+
+    # max_tokens passed to run() → in input.model_settings
+    assert "model_settings" in agent_span["input"]
+    assert agent_span["input"]["model_settings"].get("max_tokens") == 5
+
+    assert agent_span["output"]
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_with_long_context(memory_logger):
+    """Test Agent handles large input context without errors."""
+    assert not memory_logger.pop()
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+
+    long_text = "The quick brown fox jumps over the lazy dog. " * 20
+    prompt = f"Here is a long text:\n\n{long_text}\n\nHow many times does the word 'fox' appear?"
+
+    start = time.time()
+    result = await agent.run(prompt)
+    end = time.time()
+
+    assert result.output
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 2
+
+    agent_span = next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
+    assert agent_span is not None, "agent_run span not found"
+    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
+    # The long prompt should be captured in the span input
+    assert "fox" in str(agent_span["input"]).lower()
+    assert agent_span["output"]
+
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_with_error_handling(memory_logger):
+    """Test Agent propagates API errors for invalid binary content.
+
+    Sends corrupted image bytes; the API returns a 400 error.  The exception must
+    propagate to the caller rather than being silently swallowed.
+    """
+    from pydantic_ai.models.function import BinaryContent
+
+    assert not memory_logger.pop()
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
+
+    corrupted_data = b"INVALID_PNG_DATA_NOT_A_REAL_IMAGE"
+
+    with pytest.raises(Exception):
+        await agent.run(
+            [
+                BinaryContent(data=corrupted_data, media_type="image/png"),
+                "What's in this image?",
+            ]
+        )

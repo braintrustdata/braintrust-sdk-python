@@ -18,6 +18,8 @@ from braintrust.integrations import (
     LangChainIntegration,
     LiteLLMIntegration,
     MistralIntegration,
+    OpenAIAgentsIntegration,
+    OpenAIIntegration,
     OpenRouterIntegration,
     PydanticAIIntegration,
 )
@@ -54,6 +56,7 @@ def auto_instrument(
     dspy: bool = True,
     adk: bool = True,
     langchain: bool = True,
+    openai_agents: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -78,6 +81,7 @@ def auto_instrument(
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
         langchain: Enable LangChain instrumentation (default: True)
+        openai_agents: Enable OpenAI Agents SDK instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -126,7 +130,7 @@ def auto_instrument(
     results = {}
 
     if openai:
-        results["openai"] = _instrument_openai()
+        results["openai"] = _instrument_integration(OpenAIIntegration)
     if anthropic:
         results["anthropic"] = _instrument_integration(AnthropicIntegration)
     if litellm:
@@ -151,16 +155,10 @@ def auto_instrument(
         results["adk"] = _instrument_integration(ADKIntegration)
     if langchain:
         results["langchain"] = _instrument_integration(LangChainIntegration)
+    if openai_agents:
+        results["openai_agents"] = _instrument_integration(OpenAIAgentsIntegration)
 
     return results
-
-
-def _instrument_openai() -> bool:
-    with _try_patch():
-        from braintrust.oai import patch_openai
-
-        return patch_openai()
-    return False
 
 
 def _instrument_integration(integration) -> bool:

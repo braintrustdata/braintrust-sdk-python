@@ -24,12 +24,6 @@ cd langchain-py-v1
 python langchain.py
 ```
 
-```bash
-cd pydantic-ai-v1
-python pydantic_ai_test.py
-```
-
-
 ## Requirements
 
 Before running a suite, ensure you have the appropriate API keys set as environment variables for that provider, along with `BRAINTRUST_API_KEY` if you want to log traces to Braintrust.

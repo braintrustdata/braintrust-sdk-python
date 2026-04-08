@@ -10,4 +10,5 @@ class DSPyIntegration(BaseIntegration):
 
     name = "dspy"
     import_names = ("dspy",)
+    min_version = "2.6.0"
     patchers = (DSPyConfigurePatcher,)

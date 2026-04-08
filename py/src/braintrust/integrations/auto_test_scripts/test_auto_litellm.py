@@ -14,12 +14,15 @@ _CASSETTES_DIR = Path(__file__).resolve().parent.parent / "litellm" / "cassettes
 assert not LiteLLMIntegration.patchers[0].is_patched(litellm, None)
 
 # 2. Instrument
-results = auto_instrument()
+# Disable OpenAI auto-instrumentation here because LiteLLM's OpenAI-backed
+# chat path can otherwise produce both a LiteLLM span and an OpenAI span.
+# This test is meant to validate LiteLLM instrumentation in isolation.
+results = auto_instrument(openai=False)
 assert results.get("litellm") == True
 assert LiteLLMIntegration.patchers[0].is_patched(litellm, None)
 
 # 3. Idempotent
-results2 = auto_instrument()
+results2 = auto_instrument(openai=False)
 assert results2.get("litellm") == True
 
 # 4. Make API call and verify span

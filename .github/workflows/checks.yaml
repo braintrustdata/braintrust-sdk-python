@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0 # Fetch full history for proper diff
       - name: Set up mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache: true
           experimental: true
@@ -33,7 +33,37 @@ jobs:
       - name: Ensure SHA pinned actions
         uses: zgosalvez/github-actions-ensure-sha-pinned-actions@70c4af2ed5282c51ba40566d026d6647852ffa3e # v5.0.1
 
-  build:
+  smoke:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Set up mise
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: true
+          experimental: true
+          install_args: python@${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          mise exec python@${{ matrix.python-version }} -- make -C py install-dev
+      - name: Test whether the Python SDK can be installed
+        run: |
+          # This is already done by make install-dev, but we're keeping this as a separate step
+          # to explicitly verify that installation works
+          mise exec python@${{ matrix.python-version }} -- uv pip install -e ./py[all]
+      - name: Test whether the Python SDK can be imported
+        run: |
+          mise exec python@${{ matrix.python-version }} -- uv run --active --no-project python -c 'import braintrust'
+
+  nox:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
@@ -47,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache: true
           experimental: true
@@ -55,14 +85,6 @@ jobs:
       - name: Install dependencies
         run: |
           mise exec python@${{ matrix.python-version }} -- make -C py install-dev
-      - name: Test whether the Python SDK can be installed
-        run: |
-          # This is already done by make install-dev, but we're keeping this as a separate step
-          # to explicitly verify that installation works
-          mise exec python@${{ matrix.python-version }} -- python -m uv pip install -e ./py[all]
-      - name: Test whether the Python SDK can be imported
-        run: |
-          mise exec python@${{ matrix.python-version }} -- python -c 'import braintrust'
       - name: Run nox tests (shard ${{ matrix.shard }}/2)
         shell: bash
         run: |
@@ -75,13 +97,15 @@ jobs:
     uses: ./.github/workflows/langchain-py-test.yaml
 
   upload-wheel:
-    needs: build
+    needs:
+      - smoke
+      - nox
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Set up mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache: true
           experimental: true
@@ -100,7 +124,8 @@ jobs:
     needs:
       - lint
       - ensure-pinned-actions
-      - build
+      - smoke
+      - nox
       - adk-py
       - langchain-py
       - upload-wheel
@@ -124,7 +149,8 @@ jobs:
 
           check_result "lint" "${{ needs.lint.result }}"
           check_result "ensure-pinned-actions" "${{ needs.ensure-pinned-actions.result }}"
-          check_result "build" "${{ needs.build.result }}"
+          check_result "smoke" "${{ needs.smoke.result }}"
+          check_result "nox" "${{ needs.nox.result }}"
           check_result "adk-py" "${{ needs.adk-py.result }}"
           check_result "langchain-py" "${{ needs.langchain-py.result }}"
           check_result "upload-wheel" "${{ needs.upload-wheel.result }}"

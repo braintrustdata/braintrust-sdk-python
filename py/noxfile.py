@@ -84,9 +84,11 @@ VENDOR_PACKAGES = (
 # Test matrix
 ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
 OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
+OPENAI_AGENTS_VERSIONS = (LATEST, "0.0.19")
 # litellm latest requires Python >= 3.10
-# Pin litellm because 1.82.7-1.82.8 are compromised: https://github.com/BerriAI/litellm/issues/24512
-LITELLM_VERSIONS = ("1.82.0", "1.74.0")
+# Pin litellm to a version without the 1.82.7-1.82.8 compromise and with the
+# OIDC userinfo cache key collision fix from 1.83.0+
+LITELLM_VERSIONS = ("1.83.0", "1.74.0")
 # CLI bundling started in 0.1.10 - older versions require external Claude Code installation
 CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
 # Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
@@ -101,8 +103,12 @@ PYDANTIC_AI_WRAP_OPENAI_VERSIONS = (LATEST, "1.0.1", "0.1.9")
 PYDANTIC_AI_INTEGRATION_VERSIONS = (LATEST, "1.10.0")
 
 AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
-GENAI_VERSIONS = (LATEST,)
-DSPY_VERSIONS = (LATEST,)
+# google-genai 1.29.0 has a broken async streaming path unless aiohttp is installed.
+# 1.30.0 is the earliest version that passes our standard integration test session.
+GENAI_VERSIONS = (LATEST, "1.30.0")
+# dspy 2.6.0 is the earliest version that matches the callback/settings APIs our
+# integration and tests rely on.
+DSPY_VERSIONS = (LATEST, "2.6.0")
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
 OPENROUTER_VERSIONS = (LATEST, "0.6.0")
@@ -242,10 +248,21 @@ def test_langchain(session, version):
 def test_openai(session, version):
     _install_test_deps(session)
     _install(session, "openai", version)
-    # openai-agents requires Python >= 3.10
-    _install(session, "openai-agents")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai.py")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai_openrouter_gateway.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_oai_attachments.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py")
+    _run_core_tests(session)
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_AGENTS_VERSIONS, ids=OPENAI_AGENTS_VERSIONS)
+def test_openai_agents(session, version):
+    if sys.version_info < (3, 10):
+        session.skip("openai-agents requires Python >= 3.10")
+    _install_test_deps(session)
+    _install(session, "openai")
+    _install(session, "openai-agents", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openai_agents/test_openai_agents.py")
     _run_core_tests(session)
 
 
@@ -256,7 +273,7 @@ def test_openai_http2_streaming(session):
     # h2 is isolated to this session because it's only needed to force the
     # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
     session.install("h2")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai_http2.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py")
 
 
 @nox.session()
@@ -332,7 +349,7 @@ def test_cli(session):
     _install_test_deps(session)
     session.install(".[cli]")
     session.install("httpx")  # Required for starlette.testclient
-    _run_tests(session, "braintrust/devserver/test_server_integration.py")
+    _run_tests(session, DEVSERVER_DIR)
 
 
 @nox.session()
