@@ -40,6 +40,11 @@ def is_numeric(v):
     return isinstance(v, (int, float, complex)) and not isinstance(v, bool)
 
 
+def clean_nones(obj: dict[str, Any]) -> dict[str, Any]:
+    """Return a shallow copy of *obj* with ``None``-valued keys removed."""
+    return {k: v for k, v in obj.items() if v is not None}
+
+
 def eprint(*args, **kwargs) -> None:
     print(*args, file=sys.stderr, **kwargs)
 

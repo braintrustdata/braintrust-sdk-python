@@ -10,6 +10,7 @@ works with and without different dependencies. A few commands to check out:
     nox -h                     Get help.
 """
 
+import functools
 import glob
 import os
 import pathlib
@@ -476,6 +477,21 @@ def _get_braintrust_wheel():
     return wheels[0]
 
 
+@functools.cache
+def _integration_subdirs_to_ignore() -> list[str]:
+    """Return integration subdirectories that require dedicated sessions.
+
+    Top-level tests in ``src/braintrust/integrations/`` (e.g. shared utils and
+    versioning tests) should still run in ``test_core``.
+    """
+    integrations_root = pathlib.Path("src") / INTEGRATION_DIR
+    return [
+        f"{INTEGRATION_DIR}/{child.name}"
+        for child in integrations_root.iterdir()
+        if child.is_dir() and child.name != "__pycache__"
+    ]
+
+
 def _run_core_tests(session):
     """Run all tests which don't require optional dependencies."""
     _run_tests(
@@ -483,7 +499,7 @@ def _run_core_tests(session):
         SRC_DIR,
         ignore_paths=[
             WRAPPER_DIR,
-            INTEGRATION_DIR,
+            *_integration_subdirs_to_ignore(),
             CONTRIB_DIR,
             DEVSERVER_DIR,
         ],

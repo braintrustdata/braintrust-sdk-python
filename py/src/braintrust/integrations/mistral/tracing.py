@@ -6,17 +6,23 @@ import logging
 import re
 import time
 from collections.abc import AsyncIterator, Iterator
-from numbers import Real
 from typing import Any
 
 from braintrust.bt_json import bt_safe_deep_copy
+from braintrust.integrations.utils import (
+    _camel_to_snake,
+    _convert_data_url_to_attachment,
+    _is_supported_metric_value,
+    _log_and_end_span,
+    _log_error_and_end_span,
+    _merge_timing_and_usage_metrics,
+)
 from braintrust.logger import Attachment, start_span
 from braintrust.span_types import SpanTypeAttribute
 
 
 logger = logging.getLogger(__name__)
 
-_DATA_URL_RE = re.compile(r"^data:([^;]+);base64,(.+)$")
 _BASE64_RE = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
 _TOKEN_NAME_MAP = {
     "total_tokens": "tokens",
@@ -73,42 +79,8 @@ _FIM_METADATA_KEYS = (
 )
 
 
-def _camel_to_snake(value: str) -> str:
-    out = []
-    for char in value:
-        if char.isupper():
-            out.append("_")
-            out.append(char.lower())
-        else:
-            out.append(char)
-    return "".join(out).lstrip("_")
-
-
 def _is_unset(value: Any) -> bool:
     return value.__class__.__name__ == "Unset"
-
-
-def _is_supported_metric_value(value: Any) -> bool:
-    return isinstance(value, Real) and not isinstance(value, bool)
-
-
-def _convert_data_url_to_attachment(data_url: str, filename: str | None = None) -> Attachment | str:
-    match = _DATA_URL_RE.match(data_url)
-    if not match:
-        return data_url
-
-    mime_type, base64_data = match.groups()
-    try:
-        binary_data = base64.b64decode(base64_data, validate=True)
-    except (binascii.Error, ValueError):
-        return data_url
-
-    if filename is None:
-        extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
-        prefix = "image" if mime_type.startswith("image/") else "file"
-        filename = f"{prefix}.{extension}"
-
-    return Attachment(data=binary_data, filename=filename, content_type=mime_type)
 
 
 def _convert_input_audio_to_attachment(value: str) -> Attachment | str:
@@ -237,18 +209,6 @@ def _start_span(name: str, span_input: Any, metadata: dict[str, Any]):
     )
 
 
-def _timing_metrics(start_time: float, first_token_time: float | None = None) -> dict[str, float]:
-    end_time = time.time()
-    metrics = {
-        "start": start_time,
-        "end": end_time,
-        "duration": end_time - start_time,
-    }
-    if first_token_time is not None:
-        metrics["time_to_first_token"] = first_token_time - start_time
-    return metrics
-
-
 def _parse_usage_metrics(usage: Any) -> dict[str, float]:
     usage_data = sanitize_mistral_logged_value(usage)
     if not isinstance(usage_data, dict):
@@ -266,11 +226,13 @@ def _parse_usage_metrics(usage: Any) -> dict[str, float]:
     return metrics
 
 
-def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None = None) -> dict[str, float]:
-    return {
-        **_timing_metrics(start_time, first_token_time),
-        **_parse_usage_metrics(usage),
-    }
+def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None = None) -> dict[str, Any]:
+    return _merge_timing_and_usage_metrics(
+        start_time,
+        usage,
+        _parse_usage_metrics,
+        first_token_time,
+    )
 
 
 def _response_to_metadata(response: Any) -> dict[str, Any]:
@@ -307,35 +269,11 @@ def _embeddings_output(response: Any) -> dict[str, Any]:
     return output
 
 
-def _log_and_end(
-    span: Any,
-    *,
-    output: Any = None,
-    metrics: dict[str, Any] | None = None,
-    metadata: dict[str, Any] | None = None,
-):
-    event = {}
-    if output is not None:
-        event["output"] = output
-    if metrics:
-        event["metrics"] = metrics
-    if metadata:
-        event["metadata"] = metadata
-    if event:
-        span.log(**event)
-    span.end()
-
-
-def _log_error_and_end(span: Any, error: Exception):
-    span.log(error=error)
-    span.end()
-
-
 def _call_with_error_logging(span: Any, wrapped: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     try:
         return wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
 
@@ -345,7 +283,7 @@ async def _call_async_with_error_logging(
     try:
         return await wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
 
@@ -502,7 +440,7 @@ def _aggregate_completion_events(items: list[Any]) -> dict[str, Any]:
 
 def _finalize_completion_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
     response_metadata = _response_to_metadata(response)
-    _log_and_end(
+    _log_and_end_span(
         span,
         output=_completion_response_to_output(response),
         metrics=_merge_metrics(start_time, getattr(response, "usage", None)),
@@ -512,7 +450,7 @@ def _finalize_completion_response(span: Any, request_metadata: dict[str, Any], r
 
 def _finalize_embeddings_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
     response_metadata = _response_to_metadata(response)
-    _log_and_end(
+    _log_and_end_span(
         span,
         output=_embeddings_output(response),
         metrics=_merge_metrics(start_time, getattr(response, "usage", None)),
@@ -570,11 +508,11 @@ class _TracedMistralSyncStream:
         self._closed = True
 
         if error is not None:
-            _log_error_and_end(self._span, error)
+            _log_error_and_end_span(self._span, error)
             return
 
         response = _aggregate_completion_events(self._items)
-        _log_and_end(
+        _log_and_end_span(
             self._span,
             output=response.get("choices"),
             metrics=_merge_metrics(self._start_time, response.get("usage"), self._first_token_time),
@@ -632,11 +570,11 @@ class _TracedMistralAsyncStream:
         self._closed = True
 
         if error is not None:
-            _log_error_and_end(self._span, error)
+            _log_error_and_end_span(self._span, error)
             return
 
         response = _aggregate_completion_events(self._items)
-        _log_and_end(
+        _log_and_end_span(
             self._span,
             output=response.get("choices"),
             metrics=_merge_metrics(self._start_time, response.get("usage"), self._first_token_time),

@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from braintrust.integrations.utils import _try_to_dict as _shared_try_to_dict
 from braintrust.util import is_numeric
 
 
@@ -36,27 +37,14 @@ _ANTHROPIC_USAGE_METADATA_FIELDS = frozenset(
 
 
 def _try_to_dict(obj: Any) -> dict[str, Any] | None:
-    if isinstance(obj, dict):
-        return obj
+    """Anthropic-flavoured object→dict conversion.
 
-    if hasattr(obj, "model_dump"):
-        try:
-            candidate = obj.model_dump(mode="python")
-        except TypeError:
-            candidate = obj.model_dump()
-        return candidate if isinstance(candidate, dict) else None
-
-    if hasattr(obj, "to_dict"):
-        candidate = obj.to_dict()
-        return candidate if isinstance(candidate, dict) else None
-
-    if hasattr(obj, "dict"):
-        candidate = obj.dict()
-        return candidate if isinstance(candidate, dict) else None
-
-    if hasattr(obj, "__dict__"):
-        return vars(obj)
-
+    Delegates to the shared ``_try_to_dict`` first, then returns ``None``
+    (instead of the original object) when conversion fails.
+    """
+    result = _shared_try_to_dict(obj)
+    if isinstance(result, dict):
+        return result
     return None
 
 

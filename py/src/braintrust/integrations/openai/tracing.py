@@ -1,17 +1,20 @@
 """OpenAI-specific tracing wrappers, stream proxies, and serialization helpers."""
 
 import abc
-import base64
 import inspect
-import re
 import time
-import warnings
 from collections.abc import Callable
 from typing import Any
 
-from braintrust.logger import Attachment, Span, start_span
+from braintrust.integrations.utils import (
+    _convert_data_url_to_attachment,
+    _parse_openai_usage_metrics,
+    _prettify_response_params,
+    _try_to_dict,
+)
+from braintrust.logger import Span, start_span
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import is_numeric, merge_dicts
+from braintrust.util import merge_dicts
 from wrapt import FunctionWrapper
 
 
@@ -94,29 +97,6 @@ def _raw_response_requested(kwargs: dict[str, Any]) -> bool:
             return bool(value)
 
     return False
-
-
-def _convert_data_url_to_attachment(data_url: str, filename: str | None = None) -> Attachment | str:
-    """Helper function to convert data URL to an Attachment."""
-    data_url_match = re.match(r"^data:([^;]+);base64,(.+)$", data_url)
-    if not data_url_match:
-        return data_url
-
-    mime_type, base64_data = data_url_match.groups()
-
-    try:
-        binary_data = base64.b64decode(base64_data)
-
-        if filename is None:
-            extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
-            prefix = "image" if mime_type.startswith("image/") else "document"
-            filename = f"{prefix}.{extension}"
-
-        attachment = Attachment(data=binary_data, filename=filename, content_type=mime_type)
-
-        return attachment
-    except Exception:
-        return data_url
 
 
 def _process_attachments_in_input(input_data: Any) -> Any:
@@ -979,92 +959,14 @@ TOKEN_PREFIX_MAP = {
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
-    # For simplicity, this function handles all the different APIs
-    metrics = {}
-
-    if not usage:
-        return metrics
-
-    # This might be a dict or a Usage object that can be cast to a dict
-    # to a dict
-    usage = _try_to_dict(usage)
-    if not isinstance(usage, dict):
-        return metrics  # unexpected
-
-    for oai_name, value in usage.items():
-        if oai_name.endswith("_tokens_details"):
-            # handle `_tokens_detail` dicts
-            if not isinstance(value, dict):
-                continue  # unexpected
-            raw_prefix = oai_name[: -len("_tokens_details")]
-            prefix = TOKEN_PREFIX_MAP.get(raw_prefix, raw_prefix)
-            for k, v in value.items():
-                if is_numeric(v):
-                    metrics[f"{prefix}_{k}"] = v
-        elif is_numeric(value):
-            name = TOKEN_NAME_MAP.get(oai_name, oai_name)
-            metrics[name] = value
-
-    return metrics
+    return _parse_openai_usage_metrics(
+        usage,
+        token_name_map=TOKEN_NAME_MAP,
+        token_prefix_map=TOKEN_PREFIX_MAP,
+    )
 
 
 def prettify_params(params: dict[str, Any]) -> dict[str, Any]:
     # Filter out NOT_GIVEN parameters
     # https://linear.app/braintrustdata/issue/BRA-2467
-    ret = {k: v for k, v in params.items() if not _is_not_given(v)}
-
-    if "response_format" in ret:
-        ret["response_format"] = serialize_response_format(ret["response_format"])
-    return ret
-
-
-def _try_to_dict(obj: Any) -> dict[str, Any]:
-    if isinstance(obj, dict):
-        return obj
-    # convert a pydantic object to a dict
-    # Suppress Pydantic serializer warnings from generic/discriminated-union models
-    # (e.g. OpenAI's ParsedResponse[T]).  See
-    # https://github.com/braintrustdata/braintrust-sdk-python/issues/60
-    if hasattr(obj, "model_dump") and callable(obj.model_dump):
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
-                return obj.model_dump()
-        except Exception:
-            pass
-    # deprecated pydantic method, try model_dump first.
-    if hasattr(obj, "dict") and callable(obj.dict):
-        try:
-            return obj.dict()
-        except Exception:
-            pass
-    return obj
-
-
-def serialize_response_format(response_format: Any) -> Any:
-    try:
-        from pydantic import BaseModel
-    except ImportError:
-        return response_format
-
-    if isinstance(response_format, type) and issubclass(response_format, BaseModel):
-        return dict(
-            type="json_schema",
-            json_schema=dict(
-                name=response_format.__name__,
-                schema=response_format.model_json_schema(),
-            ),
-        )
-    else:
-        return response_format
-
-
-def _is_not_given(value: Any) -> bool:
-    if value is None:
-        return False
-    try:
-        # Check by type name and repr to avoid import dependency
-        type_name = type(value).__name__
-        return type_name == "NotGiven"
-    except Exception:
-        return False
+    return _prettify_response_params(params, drop_not_given=True)
