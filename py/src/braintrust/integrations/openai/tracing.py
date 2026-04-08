@@ -293,6 +293,62 @@ def _responses_raw_parse_wrapper(wrapped, instance, args, kwargs):
     return ResponseWrapper(wrapped, None, "openai.responses.parse", return_raw=True).create(*args, **kwargs)
 
 
+def _inject_response_id_input(args, kwargs):
+    """Extract response_id from args/kwargs and inject it as span input via span_info."""
+    response_id = args[0] if args else kwargs.get("response_id")
+    kwargs["span_info"] = merge_dicts(kwargs.pop("span_info", {}), {"input": response_id})
+
+
+def _responses_retrieve_wrapper(wrapped, instance, args, kwargs):
+    _inject_response_id_input(args, kwargs)
+    if _is_async_callable(wrapped):
+
+        async def call():
+            response = await ResponseWrapper(None, wrapped, "openai.responses.retrieve").acreate(*args, **kwargs)
+            return AsyncResponseWrapper(response)
+
+        return call()
+    return ResponseWrapper(wrapped, None, "openai.responses.retrieve").create(*args, **kwargs)
+
+
+def _responses_raw_retrieve_wrapper(wrapped, instance, args, kwargs):
+    _inject_response_id_input(args, kwargs)
+    if _is_async_callable(wrapped):
+
+        async def call():
+            return await ResponseWrapper(None, wrapped, "openai.responses.retrieve", return_raw=True).acreate(
+                *args, **kwargs
+            )
+
+        return call()
+    return ResponseWrapper(wrapped, None, "openai.responses.retrieve", return_raw=True).create(*args, **kwargs)
+
+
+def _responses_cancel_wrapper(wrapped, instance, args, kwargs):
+    _inject_response_id_input(args, kwargs)
+    if _is_async_callable(wrapped):
+
+        async def call():
+            response = await ResponseWrapper(None, wrapped, "openai.responses.cancel").acreate(*args, **kwargs)
+            return AsyncResponseWrapper(response)
+
+        return call()
+    return ResponseWrapper(wrapped, None, "openai.responses.cancel").create(*args, **kwargs)
+
+
+def _responses_raw_cancel_wrapper(wrapped, instance, args, kwargs):
+    _inject_response_id_input(args, kwargs)
+    if _is_async_callable(wrapped):
+
+        async def call():
+            return await ResponseWrapper(None, wrapped, "openai.responses.cancel", return_raw=True).acreate(
+                *args, **kwargs
+            )
+
+        return call()
+    return ResponseWrapper(wrapped, None, "openai.responses.cancel", return_raw=True).create(*args, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Core tracing wrappers
 # ---------------------------------------------------------------------------
@@ -734,13 +790,11 @@ class ResponseWrapper:
         # Process attachments in input (convert data URLs to Attachment objects)
         processed_input = _process_attachments_in_input(input_data)
 
-        return merge_dicts(
-            ret,
-            {
-                "input": processed_input,
-                "metadata": {**params, "provider": "openai"},
-            },
-        )
+        merge_from: dict[str, Any] = {"metadata": {**params, "provider": "openai"}}
+        if processed_input is not None:
+            merge_from["input"] = processed_input
+
+        return merge_dicts(ret, merge_from)
 
     @classmethod
     def _parse_event_from_result(cls, result: dict[str, Any]) -> dict[str, Any]:

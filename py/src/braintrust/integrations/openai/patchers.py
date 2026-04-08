@@ -11,10 +11,14 @@ from .tracing import (
     _chat_completion_parse_wrapper,
     _embedding_create_wrapper,
     _moderation_create_wrapper,
+    _responses_cancel_wrapper,
     _responses_create_wrapper,
     _responses_parse_wrapper,
+    _responses_raw_cancel_wrapper,
     _responses_raw_create_wrapper,
     _responses_raw_parse_wrapper,
+    _responses_raw_retrieve_wrapper,
+    _responses_retrieve_wrapper,
 )
 
 
@@ -226,6 +230,46 @@ _resp_raw_parse_sync, _resp_raw_parse_async, _wrap_resp_raw_parse = _make_method
     wrap_name="openai.wrap.responses.raw.parse",
 )
 
+_resp_retrieve_sync, _resp_retrieve_async, _wrap_resp_retrieve = _make_method_patchers(
+    name_prefix="openai.responses.retrieve",
+    target_module="openai.resources.responses.responses",
+    sync_class="Responses",
+    async_class="AsyncResponses",
+    method="retrieve",
+    wrapper=_responses_retrieve_wrapper,
+    wrap_name="openai.wrap.responses.retrieve",
+)
+
+_resp_raw_retrieve_sync, _resp_raw_retrieve_async, _wrap_resp_raw_retrieve = _make_method_patchers(
+    name_prefix="openai.responses.raw.retrieve",
+    target_module="openai.resources.responses.responses",
+    sync_class="ResponsesWithRawResponse",
+    async_class="AsyncResponsesWithRawResponse",
+    method="retrieve",
+    wrapper=_responses_raw_retrieve_wrapper,
+    wrap_name="openai.wrap.responses.raw.retrieve",
+)
+
+_resp_cancel_sync, _resp_cancel_async, _wrap_resp_cancel = _make_method_patchers(
+    name_prefix="openai.responses.cancel",
+    target_module="openai.resources.responses.responses",
+    sync_class="Responses",
+    async_class="AsyncResponses",
+    method="cancel",
+    wrapper=_responses_cancel_wrapper,
+    wrap_name="openai.wrap.responses.cancel",
+)
+
+_resp_raw_cancel_sync, _resp_raw_cancel_async, _wrap_resp_raw_cancel = _make_method_patchers(
+    name_prefix="openai.responses.raw.cancel",
+    target_module="openai.resources.responses.responses",
+    sync_class="ResponsesWithRawResponse",
+    async_class="AsyncResponsesWithRawResponse",
+    method="cancel",
+    wrapper=_responses_raw_cancel_wrapper,
+    wrap_name="openai.wrap.responses.raw.cancel",
+)
+
 
 class ResponsesPatcher(CompositeFunctionWrapperPatcher):
     """Patch ``openai.resources.responses`` for tracing."""
@@ -240,17 +284,25 @@ class ResponsesPatcher(CompositeFunctionWrapperPatcher):
         _resp_raw_create_async,
         _resp_raw_parse_sync,
         _resp_raw_parse_async,
+        _resp_retrieve_sync,
+        _resp_retrieve_async,
+        _resp_raw_retrieve_sync,
+        _resp_raw_retrieve_async,
+        _resp_cancel_sync,
+        _resp_cancel_async,
+        _resp_raw_cancel_sync,
+        _resp_raw_cancel_async,
     )
 
 
 class _WrapResponses(CompositeFunctionWrapperPatcher):
     name = "openai.wrap.responses"
-    sub_patchers = (_wrap_resp_create, _wrap_resp_parse)
+    sub_patchers = (_wrap_resp_create, _wrap_resp_parse, _wrap_resp_retrieve, _wrap_resp_cancel)
 
 
 class _WrapResponsesRaw(CompositeFunctionWrapperPatcher):
     name = "openai.wrap.responses.raw"
-    sub_patchers = (_wrap_resp_raw_create, _wrap_resp_raw_parse)
+    sub_patchers = (_wrap_resp_raw_create, _wrap_resp_raw_parse, _wrap_resp_raw_retrieve, _wrap_resp_raw_cancel)
 
 
 # ---------------------------------------------------------------------------

@@ -1801,6 +1801,162 @@ class TestOpenAIIntegrationSetupAsyncSpans:
         assert span["input"]
 
 
+@pytest.mark.vcr
+def test_openai_responses_retrieve(memory_logger):
+    """Test that responses.retrieve() is traced with correct input and metrics."""
+    assert not memory_logger.pop()
+
+    # Create a response first, then retrieve it.
+    client = wrap_openai(openai.OpenAI())
+    create_response = client.responses.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    assert create_response
+    response_id = create_response.id
+
+    # Pop the create span.
+    create_spans = memory_logger.pop()
+    assert len(create_spans) == 1
+
+    # Retrieve the response.
+    start = time.time()
+    retrieved = client.responses.retrieve(response_id)
+    end = time.time()
+
+    assert retrieved
+    assert retrieved.id == response_id
+    assert retrieved.output
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "openai.responses.retrieve"
+    assert span["input"] == response_id
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["provider"] == "openai"
+    assert len(span["output"]) > 0
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_openai_responses_retrieve_async(memory_logger):
+    """Test that async responses.retrieve() is traced."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+    create_response = await client.responses.create(
+        model=TEST_MODEL,
+        input=TEST_PROMPT,
+        instructions="Just the number please",
+    )
+    assert create_response
+    response_id = create_response.id
+
+    # Pop the create span.
+    create_spans = memory_logger.pop()
+    assert len(create_spans) == 1
+
+    start = time.time()
+    retrieved = await client.responses.retrieve(response_id)
+    end = time.time()
+
+    assert retrieved
+    assert retrieved.id == response_id
+    assert retrieved.output
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "openai.responses.retrieve"
+    assert span["input"] == response_id
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["provider"] == "openai"
+    assert len(span["output"]) > 0
+
+
+@pytest.mark.vcr
+def test_openai_responses_cancel(memory_logger):
+    """Test that responses.cancel() is traced with correct input and metrics."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+
+    # Create a background response so we can cancel it.
+    create_response = client.responses.create(
+        model=TEST_MODEL,
+        input="Write a very long essay about the history of mathematics",
+        background=True,
+    )
+    assert create_response
+    response_id = create_response.id
+
+    # Pop the create span.
+    create_spans = memory_logger.pop()
+    assert len(create_spans) == 1
+
+    # Cancel the response.
+    start = time.time()
+    cancelled = client.responses.cancel(response_id)
+    end = time.time()
+
+    assert cancelled
+    assert cancelled.id == response_id
+    assert cancelled.status in ("cancelled", "completed", "failed", "incomplete")
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "openai.responses.cancel"
+    assert span["input"] == response_id
+    metrics = span["metrics"]
+    assert "time_to_first_token" in metrics
+    assert span["metadata"]["provider"] == "openai"
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_openai_responses_cancel_async(memory_logger):
+    """Test that async responses.cancel() is traced."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+
+    # Create a background response so we can cancel it.
+    create_response = await client.responses.create(
+        model=TEST_MODEL,
+        input="Write a very long essay about the history of mathematics",
+        background=True,
+    )
+    assert create_response
+    response_id = create_response.id
+
+    # Pop the create span.
+    create_spans = memory_logger.pop()
+    assert len(create_spans) == 1
+
+    # Cancel the response.
+    start = time.time()
+    cancelled = await client.responses.cancel(response_id)
+    end = time.time()
+
+    assert cancelled
+    assert cancelled.id == response_id
+    assert cancelled.status in ("cancelled", "completed", "failed", "incomplete")
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "openai.responses.cancel"
+    assert span["input"] == response_id
+    metrics = span["metrics"]
+    assert "time_to_first_token" in metrics
+    assert span["metadata"]["provider"] == "openai"
+
+
 class TestAutoInstrumentOpenAI:
     """Tests for auto_instrument() with OpenAI."""
 
