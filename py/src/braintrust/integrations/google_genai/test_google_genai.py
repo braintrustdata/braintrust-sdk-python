@@ -11,7 +11,15 @@ from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
-from google.genai import interactions, types
+from google.genai import types
+
+
+try:
+    from google.genai import interactions
+except ImportError:
+    interactions = None
+
+_needs_interactions = pytest.mark.skipif(interactions is None, reason="google-genai too old for interactions API")
 from google.genai.client import Client
 
 
@@ -1188,6 +1196,7 @@ def _interaction_function_tool():
     )
 
 
+@_needs_interactions
 @pytest.mark.vcr
 def test_interactions_create_and_get(memory_logger):
     assert not memory_logger.pop()
@@ -1221,6 +1230,7 @@ def test_interactions_create_and_get(memory_logger):
     assert "France" in str(get_span["output"]["outputs"])
 
 
+@_needs_interactions
 @pytest.mark.vcr
 def test_interactions_create_stream(memory_logger):
     assert not memory_logger.pop()
@@ -1248,6 +1258,7 @@ def test_interactions_create_stream(memory_logger):
     assert "interaction.complete" in create_span["metadata"]["stream_event_types"]
 
 
+@_needs_interactions
 @pytest.mark.vcr
 def test_interactions_tool_call_and_follow_up(memory_logger):
     assert not memory_logger.pop()
@@ -1295,6 +1306,7 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
     assert tool_span["span_parents"] == [first_span["span_id"]]
 
 
+@_needs_interactions
 @pytest.mark.vcr
 def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logger):
     assert not memory_logger.pop()
@@ -1343,6 +1355,7 @@ def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logge
     assert second_span.get("span_parents") in (None, [])
 
 
+@_needs_interactions
 @pytest.mark.vcr
 def test_interactions_delete(memory_logger):
     assert not memory_logger.pop()
@@ -1368,6 +1381,7 @@ def test_interactions_delete(memory_logger):
     assert delete_span["metrics"]["duration"] >= 0
 
 
+@_needs_interactions
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_interactions_async_round_trip(memory_logger):
@@ -1401,6 +1415,7 @@ async def test_interactions_async_round_trip(memory_logger):
     assert delete_span["output"] == {}
 
 
+@_needs_interactions
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_interactions_async_stream(memory_logger):
