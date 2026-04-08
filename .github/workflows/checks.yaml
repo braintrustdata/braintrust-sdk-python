@@ -61,7 +61,7 @@ jobs:
           mise exec python@${{ matrix.python-version }} -- uv pip install -e ./py[all]
       - name: Test whether the Python SDK can be imported
         run: |
-          mise exec python@${{ matrix.python-version }} -- uv run --active --no-sync python -c 'import braintrust'
+          mise exec python@${{ matrix.python-version }} -- uv run --active --no-project python -c 'import braintrust'
 
   nox:
     runs-on: ${{ matrix.os }}
