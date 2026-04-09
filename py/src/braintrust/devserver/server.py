@@ -50,7 +50,7 @@ from .eval_hooks import SSEQueue
 from .schemas import ValidationError, parse_eval_body
 
 
-_all_evaluators: dict[str, Evaluator[Any, Any]] = {}
+_all_evaluators: dict[str, Evaluator[Any, Any, Any]] = {}
 
 
 class _ParameterOverrideHooks:
@@ -289,7 +289,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
         return JSONResponse({"error": f"Failed to run evaluation: {str(e)}"}, status_code=500)
 
 
-def create_app(evaluators: list[Evaluator[Any, Any]], org_name: str | None = None):
+def create_app(evaluators: list[Evaluator[Any, Any, Any]], org_name: str | None = None):
     """Create and configure the Starlette app for the dev server.
 
     Args:
@@ -318,7 +318,7 @@ def create_app(evaluators: list[Evaluator[Any, Any]], org_name: str | None = Non
 
 
 def run_dev_server(
-    evaluators: list[Evaluator[Any, Any]],
+    evaluators: list[Evaluator[Any, Any, Any]],
     host: str = "localhost",
     port: int = 8300,
     org_name: str | None = None,
@@ -346,7 +346,7 @@ def snake_to_camel(snake_str: str) -> str:
 
 def make_scorer(
     state: BraintrustState, name: str, score: FunctionId, project_id: str | None = None
-) -> EvalScorer[Any, Any]:
+) -> EvalScorer[Any, Any, Any]:
     def scorer_fn(input, output, expected, metadata):
         request = {
             **score,
