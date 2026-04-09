@@ -1,7 +1,5 @@
 """Google GenAI-specific span creation, metadata extraction, stream handling, and output normalization."""
 
-import base64
-import binascii
 import contextvars
 import dataclasses
 import logging
@@ -12,6 +10,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
+from braintrust.integrations.utils import (
+    _attachment_filename_for_mime_type,
+    _attachment_from_base64_data,
+    _attachment_from_bytes,
+    _image_url_payload,
+)
 from braintrust.logger import Attachment, start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones
@@ -114,16 +118,11 @@ def _serialize_content_item(item: Any) -> Any:
 
                 # Ensure data is bytes
                 if isinstance(data, bytes):
-                    # Determine file extension from mime type
-                    extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
-                    filename = f"file.{extension}"
-
-                    # Create an Attachment object
-                    attachment = Attachment(data=data, filename=filename, content_type=mime_type)
+                    attachment = _attachment_from_bytes(data, mime_type)
 
                     # Return the attachment object in image_url format
                     # The SDK's _extract_attachments will replace it with its reference when logging
-                    return {"image_url": {"url": attachment}}
+                    return _image_url_payload(attachment)
 
         # Try to use built-in serialization if available
         if hasattr(item, "model_dump"):
@@ -154,21 +153,6 @@ def _serialize_tools(api_client: Any, input: Any | None) -> Any | None:
         return tools
     except Exception:
         return None
-
-
-def _attachment_from_base64_data(data: str, mime_type: str, *, label: str) -> Attachment | None:
-    raw_data = data
-    if raw_data.startswith("data:"):
-        _, _, encoded = raw_data.partition(",")
-        raw_data = encoded
-
-    try:
-        decoded = base64.b64decode(raw_data, validate=True)
-    except (ValueError, binascii.Error):
-        return None
-
-    extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
-    return Attachment(data=decoded, filename=f"{label}.{extension}", content_type=mime_type)
 
 
 def _serialize_interaction_content_dict(value: dict[str, Any]) -> dict[str, Any]:
@@ -402,10 +386,12 @@ def _extract_generate_images_output(response: Any) -> dict[str, Any]:
         # Convert image bytes to an Attachment so the SDK uploads them to
         # object storage and the Braintrust UI can render the image.
         if isinstance(image_bytes, bytes) and mime_type:
-            extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
-            filename = f"generated_image_{i}.{extension}"
-            attachment = Attachment(data=image_bytes, filename=filename, content_type=mime_type)
-            image_entry["image_url"] = {"url": attachment}
+            attachment = _attachment_from_bytes(
+                image_bytes,
+                mime_type,
+                filename=_attachment_filename_for_mime_type(mime_type, prefix=f"generated_image_{i}"),
+            )
+            image_entry.update(_image_url_payload(attachment))
 
         serialized_images.append(image_entry)
 

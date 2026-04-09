@@ -1,10 +1,14 @@
 import asyncio
+import binascii
 import os
+import struct
+import tempfile
 import time
+import zlib
 
 import openai
 import pytest
-from braintrust import logger, wrap_openai
+from braintrust import Attachment, logger, wrap_openai
 from braintrust.integrations.openai import OpenAIIntegration
 from braintrust.integrations.openai.tracing import RAW_RESPONSE_HEADER, ChatCompletionWrapper
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
@@ -1718,6 +1722,100 @@ def _is_wrapped(client):
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
 
 
+def _write_test_png(path: str, *, width: int = 64, height: int = 64) -> None:
+    """Write a simple opaque red RGBA PNG without external dependencies."""
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return struct.pack("!I", len(data)) + tag + data + struct.pack("!I", binascii.crc32(tag + data) & 0xFFFFFFFF)
+
+    row = b"\x00" + bytes([255, 0, 0, 255]) * width
+    raw_rows = row * height
+    header = struct.pack("!IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(raw_rows)) + chunk(b"IEND", b"")
+
+    with open(path, "wb") as image_file:
+        image_file.write(png)
+
+
+@pytest.mark.vcr
+def test_openai_images_generate(memory_logger):
+    assert not memory_logger.pop()
+
+    prompt = "A tiny red square on a white background"
+    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
+
+    for client, is_wrapped in clients:
+        response = client.images.generate(
+            model="dall-e-2",
+            prompt=prompt,
+            size="256x256",
+            response_format="url",
+        )
+
+        assert response
+        assert response.data
+        assert response.data[0].url
+
+        if not is_wrapped:
+            assert not memory_logger.pop()
+            continue
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        span = spans[0]
+        assert span["metadata"]["model"] == "dall-e-2"
+        assert span["metadata"]["provider"] == "openai"
+        assert span["metadata"]["response_format"] == "url"
+        assert span["input"] == prompt
+        assert span["output"]["images_count"] == 1
+        assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
+        assert span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.vcr
+def test_openai_images_edit(memory_logger):
+    assert not memory_logger.pop()
+
+    prompt = "Add a blue border"
+    with tempfile.TemporaryDirectory() as temp_dir:
+        image_path = os.path.join(temp_dir, "braintrust-test-image.png")
+        _write_test_png(image_path)
+
+        clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
+
+        for client, is_wrapped in clients:
+            with open(image_path, "rb") as image_file:
+                response = client.images.edit(
+                    model="dall-e-2",
+                    prompt=prompt,
+                    image=image_file,
+                    size="256x256",
+                    response_format="url",
+                )
+
+            assert response
+            assert response.data
+            assert response.data[0].url
+
+            if not is_wrapped:
+                assert not memory_logger.pop()
+                continue
+
+            spans = memory_logger.pop()
+            assert len(spans) == 1
+            span = spans[0]
+            assert span["metadata"]["model"] == "dall-e-2"
+            assert span["metadata"]["provider"] == "openai"
+            assert span["metadata"]["response_format"] == "url"
+            assert span["input"]["prompt"] == prompt
+            assert isinstance(span["input"]["image"], Attachment)
+            assert span["input"]["image"].reference["filename"] == "braintrust-test-image.png"
+            assert span["input"]["image"].reference["content_type"] == "image/png"
+            assert span["output"]["images_count"] == 1
+            assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
+            assert span["metrics"]["duration"] >= 0
+
+
 @pytest.mark.vcr
 def test_openai_audio_speech(memory_logger):
     assert not memory_logger.pop()
@@ -1997,6 +2095,35 @@ class TestAutoInstrumentOpenAI:
     def test_auto_instrument_openai(self):
         """Test auto_instrument patches OpenAI, creates spans, and uninstrument works."""
         verify_autoinstrument_script("test_auto_openai.py")
+
+
+def test_wrap_openai_wraps_images_methods():
+    """wrap_openai() should instrument every OpenAI images resource method."""
+    import inspect
+
+    from wrapt import FunctionWrapper
+
+    for client in (wrap_openai(openai.OpenAI()), wrap_openai(openai.AsyncOpenAI())):
+        for method_name in ("generate", "edit", "create_variation"):
+            method = inspect.getattr_static(client.images, method_name, None)
+            assert isinstance(method, FunctionWrapper), f"images.{method_name} was not wrapped"
+
+
+class TestOpenAIIntegrationSetupImages:
+    """Non-network tests for OpenAIIntegration.setup() images patchers."""
+
+    def test_setup_wraps_images_methods(self):
+        import inspect
+
+        from openai.resources.images import AsyncImages, Images
+        from wrapt import FunctionWrapper
+
+        OpenAIIntegration.setup()
+
+        for cls in (Images, AsyncImages):
+            for method_name in ("generate", "edit", "create_variation"):
+                method = inspect.getattr_static(cls, method_name, None)
+                assert isinstance(method, FunctionWrapper), f"{cls.__name__}.{method_name} was not patched"
 
 
 def test_wrap_openai_and_setup_use_same_wrappers():

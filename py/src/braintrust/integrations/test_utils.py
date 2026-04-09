@@ -3,8 +3,13 @@ import unittest.mock
 import pytest
 from braintrust import Attachment
 from braintrust.integrations.utils import (
+    _attachment_filename_for_mime_type,
+    _attachment_from_base64_data,
+    _attachment_from_bytes,
+    _attachment_from_file_input,
     _camel_to_snake,
     _convert_data_url_to_attachment,
+    _image_url_payload,
     _is_supported_metric_value,
     _log_and_end_span,
     _log_error_and_end_span,
@@ -149,6 +154,36 @@ def test_prettify_response_params_filters_not_given_without_mutating_input():
     assert "optional" in original
 
 
+def test_attachment_filename_for_mime_type_handles_suffixes_and_prefixes():
+    assert _attachment_filename_for_mime_type("image/png", prefix="image") == "image.png"
+    assert _attachment_filename_for_mime_type("application/pdf", prefix="document") == "document.pdf"
+    assert _attachment_filename_for_mime_type("image/svg+xml", prefix="file") == "file.svg"
+
+
+def test_attachment_from_bytes_uses_default_filename():
+    attachment = _attachment_from_bytes(b"hello", "image/png")
+
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "image/png"
+    assert attachment.reference["filename"] == "file.png"
+
+
+def test_attachment_from_base64_data_accepts_data_urls_and_custom_filenames():
+    attachment = _attachment_from_base64_data(
+        "data:image/png;base64,aGVsbG8=",
+        "image/png",
+        filename="generated_image_0.png",
+    )
+
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "image/png"
+    assert attachment.reference["filename"] == "generated_image_0.png"
+
+
+def test_attachment_from_base64_data_returns_none_for_invalid_payloads():
+    assert _attachment_from_base64_data("aGVsbG8=!", "image/png") is None
+
+
 def test_convert_data_url_to_attachment_converts_valid_base64():
     data_url = "data:image/png;base64,aGVsbG8="
 
@@ -157,6 +192,56 @@ def test_convert_data_url_to_attachment_converts_valid_base64():
     assert isinstance(attachment, Attachment)
     assert attachment.reference["content_type"] == "image/png"
     assert attachment.reference["filename"] == "image.png"
+
+
+def test_image_url_payload_wraps_attachment_and_string_urls():
+    attachment = _attachment_from_bytes(b"hello", "image/png")
+
+    assert _image_url_payload(attachment) == {"image_url": {"url": attachment}}
+    assert _image_url_payload("https://example.com/image.png") == {
+        "image_url": {"url": "https://example.com/image.png"}
+    }
+
+
+def test_attachment_from_file_input_handles_common_input_shapes(tmp_path):
+    file_path = tmp_path / "example.png"
+    file_path.write_bytes(b"abc")
+
+    class FileLike:
+        def __init__(self):
+            self.name = str(file_path)
+            self._position = 0
+
+        def read(self):
+            self._position = 3
+            return b"abc"
+
+        def tell(self):
+            return 0
+
+        def seek(self, position):
+            self._position = position
+
+    path_attachment = _attachment_from_file_input(file_path)
+    bytes_attachment = _attachment_from_file_input(b"abc", filename="example.png")
+    tuple_attachment = _attachment_from_file_input((str(file_path), b"abc", "image/png"))
+    file_attachment = _attachment_from_file_input(FileLike())
+
+    for attachment in (path_attachment, bytes_attachment, tuple_attachment, file_attachment):
+        assert isinstance(attachment, Attachment)
+        assert attachment.reference["filename"] == "example.png"
+        assert attachment.reference["content_type"] == "image/png"
+
+
+def test_attachment_from_file_input_preserves_file_position(tmp_path):
+    file_path = tmp_path / "example.png"
+    file_path.write_bytes(b"abc")
+
+    with file_path.open("rb") as file_obj:
+        assert file_obj.tell() == 0
+        attachment = _attachment_from_file_input(file_obj)
+        assert isinstance(attachment, Attachment)
+        assert file_obj.tell() == 0
 
 
 def test_convert_data_url_to_attachment_preserves_invalid_base64():

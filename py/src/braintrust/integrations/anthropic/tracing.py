@@ -1,11 +1,15 @@
-import base64
 import logging
 import time
 import warnings
 
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
-from braintrust.logger import Attachment, log_exc_info_to_span, start_span
+from braintrust.integrations.utils import (
+    _attachment_filename_for_mime_type,
+    _attachment_from_base64_data,
+    _image_url_payload,
+)
+from braintrust.logger import log_exc_info_to_span, start_span
 
 
 log = logging.getLogger(__name__)
@@ -410,10 +414,8 @@ def _start_batch_results_span(args, kwargs):
 
 
 def _attachment_filename_for_media_type(media_type: str, block_type: str) -> str:
-    extension = media_type.split("/", 1)[1] if "/" in media_type else "bin"
-    extension = extension.split("+", 1)[0]
     prefix = "image" if block_type == "image" else "document"
-    return f"{prefix}.{extension}"
+    return _attachment_filename_for_mime_type(media_type, prefix=prefix)
 
 
 def _convert_base64_source_to_attachment(block_type, source):
@@ -427,15 +429,10 @@ def _convert_base64_source_to_attachment(block_type, source):
     if not isinstance(media_type, str) or not isinstance(data, str):
         return None
 
-    try:
-        binary_data = base64.b64decode(data, validate=True)
-    except Exception:
-        return None
-
-    return Attachment(
-        data=binary_data,
+    return _attachment_from_base64_data(
+        data,
+        media_type,
         filename=_attachment_filename_for_media_type(media_type, block_type),
-        content_type=media_type,
     )
 
 
@@ -452,7 +449,7 @@ def _process_input_attachments(value):
             if attachment is not None:
                 processed = {k: _process_input_attachments(v) for k, v in value.items() if k != "source"}
                 processed["source"] = {k: _process_input_attachments(v) for k, v in source.items() if k != "data"}
-                processed["image_url"] = {"url": attachment}
+                processed.update(_image_url_payload(attachment))
                 return processed
 
         return {k: _process_input_attachments(v) for k, v in value.items()}

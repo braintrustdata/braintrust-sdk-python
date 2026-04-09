@@ -8,6 +8,7 @@ from .patchers import (
     AudioTranslationsPatcher,
     ChatCompletionsPatcher,
     EmbeddingsPatcher,
+    ImagesPatcher,
     ModerationsPatcher,
     ResponsesPatcher,
 )
@@ -25,5 +26,6 @@ class OpenAIIntegration(BaseIntegration):
         AudioSpeechPatcher,
         AudioTranscriptionsPatcher,
         AudioTranslationsPatcher,
+        ImagesPatcher,
         ResponsesPatcher,
     )

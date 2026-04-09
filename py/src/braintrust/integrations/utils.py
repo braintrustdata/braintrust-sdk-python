@@ -11,6 +11,8 @@ _try_to_dict``).
 
 import base64
 import binascii
+import mimetypes
+import os
 import re
 import time
 import warnings
@@ -97,6 +99,147 @@ def _is_supported_metric_value(value: Any) -> bool:
     return isinstance(value, Real) and not isinstance(value, bool)
 
 
+def _attachment_filename_for_mime_type(mime_type: str, *, prefix: str = "file") -> str:
+    """Return a stable filename for *mime_type* using *prefix*.
+
+    Examples:
+    - ``image/png`` with prefix ``image`` -> ``image.png``
+    - ``application/pdf`` with prefix ``document`` -> ``document.pdf``
+    - ``image/svg+xml`` with prefix ``file`` -> ``file.svg``
+    """
+    extension = mime_type.split("/", 1)[1] if "/" in mime_type else "bin"
+    extension = extension.split("+", 1)[0]
+    return f"{prefix}.{extension}"
+
+
+def _attachment_from_bytes(
+    data: bytes | bytearray,
+    mime_type: str,
+    *,
+    filename: str | None = None,
+    label: str = "file",
+) -> Attachment:
+    """Build an :class:`Attachment` from provider-owned binary data."""
+    resolved_filename = filename or _attachment_filename_for_mime_type(mime_type, prefix=label)
+    return Attachment(
+        data=data if isinstance(data, bytes) else bytes(data), filename=resolved_filename, content_type=mime_type
+    )
+
+
+def _attachment_from_base64_data(
+    data: str,
+    mime_type: str,
+    *,
+    filename: str | None = None,
+    label: str = "file",
+) -> Attachment | None:
+    """Decode base64 or data-URL content into an :class:`Attachment`."""
+    raw_data = data
+    if raw_data.startswith("data:"):
+        _, _, encoded = raw_data.partition(",")
+        raw_data = encoded
+
+    try:
+        decoded = base64.b64decode(raw_data, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+
+    return _attachment_from_bytes(decoded, mime_type, filename=filename, label=label)
+
+
+def _image_url_payload(url: Attachment | str) -> dict[str, Any]:
+    """Return the common Braintrust multimodal image/file payload shape."""
+    return {"image_url": {"url": url}}
+
+
+def _attachment_from_file_input(
+    value: Any,
+    *,
+    filename: str | None = None,
+    content_type: str | None = None,
+    label: str = "file",
+) -> Any:
+    """Convert common provider file-input shapes into :class:`Attachment` objects.
+
+    This is for traced input logging only; callers should pass the original
+    file objects/paths to the provider API unchanged.
+    """
+    if isinstance(value, list):
+        return [
+            _attachment_from_file_input(item, filename=filename, content_type=content_type, label=label)
+            for item in value
+        ]
+
+    if isinstance(value, Attachment) or value is None:
+        return value
+
+    if isinstance(value, tuple):
+        tuple_filename = value[0] if value and isinstance(value[0], (str, os.PathLike)) else None
+        tuple_value = value[1] if len(value) > 1 else None
+        tuple_content_type = value[2] if len(value) > 2 and isinstance(value[2], str) else None
+        return _attachment_from_file_input(
+            tuple_value,
+            filename=filename or (os.path.basename(os.fspath(tuple_filename)) if tuple_filename is not None else None),
+            content_type=content_type or tuple_content_type,
+            label=label,
+        )
+
+    if isinstance(value, (str, os.PathLike)):
+        path = os.fspath(value)
+        try:
+            with open(path, "rb") as file_obj:
+                data = file_obj.read()
+        except OSError:
+            return None
+        resolved_filename = filename or os.path.basename(path)
+        resolved_content_type = (
+            content_type or mimetypes.guess_type(resolved_filename)[0] or "application/octet-stream"
+        )
+        return _attachment_from_bytes(data, resolved_content_type, filename=resolved_filename, label=label)
+
+    if isinstance(value, (bytes, bytearray)):
+        resolved_filename = filename
+        resolved_content_type = (
+            content_type
+            or (mimetypes.guess_type(resolved_filename)[0] if resolved_filename is not None else None)
+            or "application/octet-stream"
+        )
+        return _attachment_from_bytes(value, resolved_content_type, filename=resolved_filename, label=label)
+
+    read = getattr(value, "read", None)
+    if callable(read):
+        file_name_attr = getattr(value, "name", None)
+        resolved_filename = filename or (os.path.basename(file_name_attr) if isinstance(file_name_attr, str) else None)
+        resolved_content_type = (
+            content_type
+            or (mimetypes.guess_type(resolved_filename)[0] if resolved_filename is not None else None)
+            or "application/octet-stream"
+        )
+
+        position = None
+        try:
+            position = value.tell()
+        except Exception:
+            position = None
+
+        try:
+            data = value.read()
+        finally:
+            if position is not None:
+                try:
+                    value.seek(position)
+                except Exception:
+                    pass
+
+        if isinstance(data, str):
+            data = data.encode()
+        if isinstance(data, (bytes, bytearray)):
+            return _attachment_from_bytes(data, resolved_content_type, filename=resolved_filename, label=label)
+        return None
+
+    return None
+
+
 def _convert_data_url_to_attachment(data_url: str, filename: str | None = None) -> Attachment | str:
     """Convert a ``data:<mime>;base64,…`` URL into an :class:`Attachment`.
 
@@ -107,19 +250,14 @@ def _convert_data_url_to_attachment(data_url: str, filename: str | None = None) 
     if not match:
         return data_url
 
-    mime_type, base64_data = match.groups()
-
-    try:
-        binary_data = base64.b64decode(base64_data, validate=True)
-    except (binascii.Error, ValueError):
-        return data_url
-
-    if filename is None:
-        extension = mime_type.split("/")[1] if "/" in mime_type else "bin"
-        prefix = "image" if mime_type.startswith("image/") else "file"
-        filename = f"{prefix}.{extension}"
-
-    return Attachment(data=binary_data, filename=filename, content_type=mime_type)
+    mime_type, _base64_data = match.groups()
+    attachment = _attachment_from_base64_data(
+        data_url,
+        mime_type,
+        filename=filename,
+        label="image" if mime_type.startswith("image/") else "file",
+    )
+    return attachment or data_url
 
 
 def _is_not_given(value: object) -> bool:

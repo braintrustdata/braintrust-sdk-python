@@ -13,6 +13,9 @@ from .tracing import (
     _chat_completion_create_wrapper,
     _chat_completion_parse_wrapper,
     _embedding_create_wrapper,
+    _image_create_variation_wrapper,
+    _image_edit_wrapper,
+    _image_generate_wrapper,
     _moderation_create_wrapper,
     _responses_create_wrapper,
     _responses_parse_wrapper,
@@ -276,6 +279,60 @@ class _WrapAudioTranslations(CompositeFunctionWrapperPatcher):
 
 
 # ---------------------------------------------------------------------------
+# Images
+# ---------------------------------------------------------------------------
+
+_img_generate_sync, _img_generate_async, _wrap_img_generate = _make_method_patchers(
+    name_prefix="openai.images.generate",
+    target_module="openai.resources.images",
+    sync_class="Images",
+    async_class="AsyncImages",
+    method="generate",
+    wrapper=_image_generate_wrapper,
+    wrap_name="openai.wrap.images.generate",
+)
+
+_img_edit_sync, _img_edit_async, _wrap_img_edit = _make_method_patchers(
+    name_prefix="openai.images.edit",
+    target_module="openai.resources.images",
+    sync_class="Images",
+    async_class="AsyncImages",
+    method="edit",
+    wrapper=_image_edit_wrapper,
+    wrap_name="openai.wrap.images.edit",
+)
+
+_img_variation_sync, _img_variation_async, _wrap_img_variation = _make_method_patchers(
+    name_prefix="openai.images.create_variation",
+    target_module="openai.resources.images",
+    sync_class="Images",
+    async_class="AsyncImages",
+    method="create_variation",
+    wrapper=_image_create_variation_wrapper,
+    wrap_name="openai.wrap.images.create_variation",
+)
+
+
+class ImagesPatcher(CompositeFunctionWrapperPatcher):
+    """Patch ``openai.resources.images`` for tracing."""
+
+    name = "openai.images"
+    sub_patchers = (
+        _img_generate_sync,
+        _img_generate_async,
+        _img_edit_sync,
+        _img_edit_async,
+        _img_variation_sync,
+        _img_variation_async,
+    )
+
+
+class _WrapImages(CompositeFunctionWrapperPatcher):
+    name = "openai.wrap.images"
+    sub_patchers = (_wrap_img_generate, _wrap_img_edit, _wrap_img_variation)
+
+
+# ---------------------------------------------------------------------------
 # Responses
 # ---------------------------------------------------------------------------
 
@@ -365,6 +422,7 @@ _WRAP_TARGETS: tuple[tuple[str, type[CompositeFunctionWrapperPatcher]], ...] = (
     ("audio.speech", _WrapAudioSpeech),
     ("audio.transcriptions", _WrapAudioTranscriptions),
     ("audio.translations", _WrapAudioTranslations),
+    ("images", _WrapImages),
     ("responses", _WrapResponses),
     ("responses.with_raw_response", _WrapResponsesRaw),
     ("beta.chat.completions", _WrapChatCompletions),
