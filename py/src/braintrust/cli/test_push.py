@@ -128,6 +128,7 @@ class TestValidatePythonBundleSourcePaths:
         with pytest.raises(ValueError, match="contains whitespace in path component"):
             _validate_python_bundle_source_paths([str(source)], str(tmp_path))
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="tab characters in filenames are not allowed on Windows")
     def test_rejects_tab_in_filename(self, tmp_path):
         self._assert_whitespace_in_filename_rejected(tmp_path, "my\ttool.py")
 
