@@ -395,7 +395,7 @@ def test_otel_not_installed(session):
 def test_types(session):
     """Run type-check tests with pyright, mypy, and pytest."""
     _install_test_deps(session)
-    session.install("pyright", "mypy")
+    session.install("pyright==1.1.408", "mypy==1.20.0")
 
     type_tests_dir = f"src/{TYPE_TESTS_DIR}"
     test_files = glob.glob(os.path.join(type_tests_dir, "test_*.py"))

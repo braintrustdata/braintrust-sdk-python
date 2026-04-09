@@ -10,9 +10,9 @@ Run as pytest:
     pytest src/braintrust/type_tests/test_eval_generics.py
 """
 
-import pytest
 from typing import TypedDict
 
+import pytest
 from braintrust.framework import EvalAsync, EvalCase, EvalResultWithSummary
 from braintrust.score import Score
 
