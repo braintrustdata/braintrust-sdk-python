@@ -505,8 +505,13 @@ def _call_user_fn_args(fn, kwargs):
 
         if name in kwargs:
             final_kwargs[name] = kwargs.pop(name)
-        else:
-            next_arg = list(kwargs.keys())[0]
+        elif param.default is not inspect.Parameter.empty:
+            final_kwargs[name] = param.default
+        elif kwargs:
+            # Legacy positional fallback: assigns the next remaining kwarg to this
+            # param even though names don't match.  Remove in next major version and
+            # require param names to match Braintrust-provided kwarg names.
+            next_arg = next(iter(kwargs))
             final_kwargs[name] = kwargs.pop(next_arg)
 
     if accepts_kwargs:

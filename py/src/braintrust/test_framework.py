@@ -13,6 +13,7 @@ from .framework import (
     EvalResultWithSummary,
     Evaluator,
     Filter,
+    _call_user_fn_args,
     evaluate_filter,
     parse_filters,
     run_evaluator,
@@ -630,6 +631,55 @@ async def test_run_evaluator_empty_dataset_warns(capsys):
     captured = capsys.readouterr()
     assert "Warning" in captured.err
     assert "empty" in captured.err.lower()
+
+
+class TestCallUserFnArgs:
+    """Regression tests for https://github.com/braintrustdata/braintrust-sdk-python/issues/240."""
+
+    def test_preserves_default_for_unmatched_keyword_only_param(self):
+        default_config = object()
+
+        def scorer(input, output, expected, *, config=default_config, **kwargs):
+            return config, kwargs
+
+        positional_args, final_kwargs = _call_user_fn_args(
+            scorer,
+            {
+                "input": "question",
+                "output": "answer",
+                "expected": "answer",
+                "metadata": {"case": 1},
+                "trace": object(),
+            },
+        )
+
+        assert positional_args == []
+        assert final_kwargs["input"] == "question"
+        assert final_kwargs["output"] == "answer"
+        assert final_kwargs["expected"] == "answer"
+        assert final_kwargs["config"] is default_config
+        assert final_kwargs["metadata"] == {"case": 1}
+        assert "trace" in final_kwargs
+
+    def test_keeps_required_unmatched_params_backward_compatible(self):
+        def scorer(input_value, output, expected):
+            return input_value, output, expected
+
+        positional_args, final_kwargs = _call_user_fn_args(
+            scorer,
+            {
+                "input": "question",
+                "output": "answer",
+                "expected": "answer",
+            },
+        )
+
+        assert positional_args == []
+        assert final_kwargs == {
+            "input_value": "question",
+            "output": "answer",
+            "expected": "answer",
+        }
 
 
 class TestEvaluateFilter:
