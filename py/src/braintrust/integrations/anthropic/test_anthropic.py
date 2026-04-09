@@ -2,6 +2,8 @@
 Tests to ensure we reliably wrap the Anthropic API.
 """
 
+import inspect
+import json
 import time
 import unittest.mock
 from pathlib import Path
@@ -12,13 +14,27 @@ import pytest
 from braintrust import Attachment, logger
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
 from braintrust.integrations.anthropic._utils import extract_anthropic_usage
-from braintrust.integrations.anthropic.tracing import _get_input_from_kwargs, _log_message_to_span
+from braintrust.integrations.anthropic.tracing import (
+    _get_input_from_kwargs,
+    _get_metadata_from_kwargs,
+    _log_message_to_span,
+)
 from braintrust.test_helpers import init_test_logger
 
 
 PROJECT_NAME = "test-anthropic-app"
 MODEL = "claude-3-haiku-20240307"  # use the cheapest model since answers dont matter
 MULTIMODAL_MODEL = "claude-haiku-4-5-20251001"
+STRUCTURED_OUTPUT_MODEL = "claude-haiku-4-5"
+STRUCTURED_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "answer": {"type": "integer"},
+        "label": {"type": "string"},
+    },
+    "required": ["answer", "label"],
+    "additionalProperties": False,
+}
 PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 PDF_BASE64 = "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
 
@@ -34,6 +50,29 @@ def _get_client():
 
 def _get_async_client():
     return anthropic.AsyncAnthropic()
+
+
+def _get_supported_structured_output_param():
+    parameter_names = inspect.signature(_get_client().messages.create).parameters
+    if "output_config" in parameter_names:
+        return (
+            "output_config",
+            {
+                "format": {
+                    "type": "json_schema",
+                    "schema": STRUCTURED_OUTPUT_SCHEMA,
+                }
+            },
+        )
+    if "output_format" in parameter_names:
+        return (
+            "output_format",
+            {
+                "type": "json_schema",
+                "schema": STRUCTURED_OUTPUT_SCHEMA,
+            },
+        )
+    pytest.skip("Installed anthropic SDK does not support structured outputs parameters")
 
 
 @pytest.fixture
@@ -92,6 +131,39 @@ def test_get_input_from_kwargs_converts_multimodal_base64_blocks_to_attachments(
     serialized = str(processed_input)
     assert PNG_BASE64 not in serialized
     assert PDF_BASE64 not in serialized
+
+
+def test_get_metadata_from_kwargs_includes_structured_output_params():
+    metadata = _get_metadata_from_kwargs(
+        {
+            "model": MODEL,
+            "output_config": {
+                "format": {
+                    "type": "json_schema",
+                    "schema": STRUCTURED_OUTPUT_SCHEMA,
+                }
+            },
+            "output_format": {
+                "type": "json_schema",
+                "schema": STRUCTURED_OUTPUT_SCHEMA,
+            },
+        }
+    )
+
+    assert metadata == {
+        "provider": "anthropic",
+        "model": MODEL,
+        "output_config": {
+            "format": {
+                "type": "json_schema",
+                "schema": STRUCTURED_OUTPUT_SCHEMA,
+            }
+        },
+        "output_format": {
+            "type": "json_schema",
+            "schema": STRUCTURED_OUTPUT_SCHEMA,
+        },
+    }
 
 
 def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
@@ -331,6 +403,33 @@ def test_anthropic_messages_create_stream_true(memory_logger):
     assert span["output"]
     assert span["output"]["role"] == "assistant"
     assert "12" in span["output"]["content"][0]["text"]
+
+
+@pytest.mark.vcr
+def test_anthropic_messages_create_tracks_structured_outputs_metadata(memory_logger):
+    assert not memory_logger.pop()
+
+    structured_output_param_name, structured_output_param_value = _get_supported_structured_output_param()
+    client = wrap_anthropic(_get_client())
+    response = client.messages.create(
+        model=STRUCTURED_OUTPUT_MODEL,
+        max_tokens=128,
+        messages=[
+            {
+                "role": "user",
+                "content": 'Return a JSON object with answer=2 and label="ok".',
+            }
+        ],
+        **{structured_output_param_name: structured_output_param_value},
+    )
+
+    assert json.loads(response.content[0].text) == {"answer": 2, "label": "ok"}
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == STRUCTURED_OUTPUT_MODEL
+    assert span["metadata"][structured_output_param_name] == structured_output_param_value
 
 
 @pytest.mark.vcr

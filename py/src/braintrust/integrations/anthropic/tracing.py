@@ -38,6 +38,8 @@ METADATA_PARAMS = (
     "tools",
     "stream",
     "thinking",
+    "output_config",
+    "output_format",
 )
 
 
