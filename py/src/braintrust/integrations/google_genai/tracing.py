@@ -158,7 +158,7 @@ def _serialize_tools(api_client: Any, input: Any | None) -> Any | None:
     except Exception:
         backend = "vertex" if getattr(api_client, "vertexai", False) else "mldev"
         logger.debug("Failed to serialize tools via Google SDK for %s", backend, exc_info=True)
-        return _serialize_tools_fallback(input)
+        return _serialize_tools_fallback(api_client, input)
 
 
 def _serialize_tools_with_google(api_client: Any, input: Any | None) -> Any | None:
@@ -175,41 +175,63 @@ def _serialize_tools_with_google(api_client: Any, input: Any | None) -> Any | No
     return serialized.get("tools")
 
 
-def _serialize_tools_fallback(input: Any | None) -> Any | None:
+def _serialize_tools_fallback(api_client: Any, input: Any | None) -> Any | None:
     config = _get_attr_or_key(input, "config")
     tools = _get_attr_or_key(config, "tools")
     if not tools:
         return None
 
-    serialized_tools = [_serialize_tool(tool) for tool in _ensure_list(tools)]
+    serialized_tools = []
+    function_declarations = []
+
+    for tool in _ensure_list(tools):
+        serialized_tool = _serialize_tool(api_client, tool)
+        if not serialized_tool:
+            continue
+
+        declarations = _get_attr_or_key(serialized_tool, "functionDeclarations")
+        if declarations:
+            function_declarations.extend(_ensure_list(declarations))
+        else:
+            serialized_tools.append(serialized_tool)
+
+    if function_declarations:
+        serialized_tools.append({"functionDeclarations": function_declarations})
+
     return serialized_tools or None
 
 
-def _serialize_tool(tool: Any) -> Any:
+def _serialize_tool(api_client: Any, tool: Any) -> Any:
     if callable(tool):
-        return {"functionDeclarations": [_serialize_callable_function_declaration(tool)]}
+        return {"functionDeclarations": [_serialize_callable_function_declaration(api_client, tool)]}
+
+    declarations = _get_attr_or_key(tool, "function_declarations", "functionDeclarations")
+    if declarations is None and _looks_like_function_declaration(tool):
+        declarations = [tool]
 
     serialized = _generic_serialize(tool)
     if isinstance(serialized, dict):
-        declarations = _get_attr_or_key(serialized, "functionDeclarations", "function_declarations")
-        if declarations is not None:
-            result = {
-                key: value
-                for key, value in serialized.items()
-                if key not in ("functionDeclarations", "function_declarations") and value is not None
-            }
-            result["functionDeclarations"] = [
-                _serialize_function_declaration(declaration) for declaration in _ensure_list(declarations)
-            ]
-            return result
+        if declarations is None:
+            declarations = _get_attr_or_key(serialized, "function_declarations", "functionDeclarations")
+        if declarations is None and _looks_like_function_declaration(serialized):
+            declarations = [serialized]
 
-        if _looks_like_function_declaration(serialized):
-            return {"functionDeclarations": [_serialize_function_declaration(serialized)]}
+        result = {
+            _camelize_tool_key(key): bt_safe_deep_copy(value)
+            for key, value in serialized.items()
+            if key not in ("functionDeclarations", "function_declarations") and value is not None
+        }
+        if declarations is not None:
+            result["functionDeclarations"] = [
+                _serialize_function_declaration(api_client, declaration) for declaration in _ensure_list(declarations)
+            ]
+        if result:
+            return result
 
         return serialized
 
     if _looks_like_function_declaration(tool):
-        return {"functionDeclarations": [_serialize_function_declaration(tool)]}
+        return {"functionDeclarations": [_serialize_function_declaration(api_client, tool)]}
 
     return bt_safe_deep_copy(tool)
 
@@ -225,40 +247,94 @@ def _looks_like_function_declaration(obj: Any) -> bool:
     )
 
 
-def _serialize_function_declaration(declaration: Any) -> dict[str, Any]:
+def _serialize_function_declaration(api_client: Any, declaration: Any) -> Any:
+    if getattr(api_client, "vertexai", False):
+        return _serialize_vertex_function_declaration(declaration)
+
+    coerced = _coerce_function_declaration(declaration)
+    if coerced is not None:
+        return coerced
+
+    return _serialize_function_declaration_dict(declaration)
+
+
+def _coerce_function_declaration(declaration: Any) -> Any | None:
+    try:
+        from google.genai import types as google_types
+    except Exception:
+        return None
+
+    if getattr(getattr(declaration, "__class__", None), "__name__", None) == "FunctionDeclaration":
+        return declaration
+
+    if isinstance(declaration, dict):
+        try:
+            return google_types.FunctionDeclaration.model_validate(declaration)
+        except Exception:
+            return None
+
+    serialized = _generic_serialize(declaration)
+    if isinstance(serialized, dict):
+        try:
+            return google_types.FunctionDeclaration.model_validate(serialized)
+        except Exception:
+            return None
+
+    return None
+
+
+def _serialize_function_declaration_dict(declaration: Any) -> dict[str, Any]:
     serialized = declaration if isinstance(declaration, dict) else _generic_serialize(declaration)
-    result = (
-        {key: value for key, value in serialized.items() if value is not None} if isinstance(serialized, dict) else {}
-    )
+    if not isinstance(serialized, dict):
+        return {}
 
-    name = _get_attr_or_key(declaration, "name")
-    if name is None:
-        name = _get_attr_or_key(serialized, "name")
-    if name is not None:
-        result["name"] = name
+    result = {}
+    for key in (
+        "description",
+        "name",
+        "parameters",
+        "parameters_json_schema",
+        "response",
+        "response_json_schema",
+        "behavior",
+    ):
+        value = _get_attr_or_key(declaration, key, _camelize_tool_key(key))
+        if value is None:
+            value = _get_attr_or_key(serialized, key, _camelize_tool_key(key))
+        if value is not None:
+            result[key] = bt_safe_deep_copy(value)
 
-    description = _get_attr_or_key(declaration, "description")
-    if description is None:
-        description = _get_attr_or_key(serialized, "description")
-    if description:
-        result["description"] = description
-
-    parameters = _get_attr_or_key(declaration, "parameters")
-    if parameters is None:
-        parameters = _get_attr_or_key(declaration, "parameters_json_schema", "parametersJsonSchema")
-    if parameters is None:
-        parameters = _get_attr_or_key(serialized, "parameters")
-    if parameters is None:
-        parameters = _get_attr_or_key(serialized, "parameters_json_schema", "parametersJsonSchema")
-    if parameters is not None:
-        result["parameters"] = bt_safe_deep_copy(parameters)
-
-    result.pop("parameters_json_schema", None)
-    result.pop("parametersJsonSchema", None)
     return result
 
 
-def _serialize_callable_function_declaration(tool: Any) -> dict[str, Any]:
+def _serialize_vertex_function_declaration(declaration: Any) -> dict[str, Any]:
+    serialized = _serialize_function_declaration_dict(declaration)
+    return {
+        key: value
+        for key, value in {
+            "description": serialized.get("description"),
+            "name": serialized.get("name"),
+            "parameters": serialized.get("parameters"),
+            "parametersJsonSchema": serialized.get("parameters_json_schema"),
+            "response": serialized.get("response"),
+            "responseJsonSchema": serialized.get("response_json_schema"),
+            "behavior": serialized.get("behavior"),
+        }.items()
+        if value is not None
+    }
+
+
+def _serialize_callable_function_declaration(api_client: Any, tool: Any) -> Any:
+    try:
+        from google.genai import types as google_types
+
+        return google_types.FunctionDeclaration.from_callable(client=api_client, callable=tool)
+    except Exception:
+        logger.debug("Failed to serialize callable tool via public Google types", exc_info=True)
+        return _serialize_callable_function_declaration_fallback(tool)
+
+
+def _serialize_callable_function_declaration_fallback(tool: Any) -> dict[str, Any]:
     declaration: dict[str, Any] = {"name": getattr(tool, "__name__", type(tool).__name__)}
 
     description = inspect.getdoc(tool)
@@ -298,6 +374,14 @@ def _serialize_callable_function_declaration(tool: Any) -> dict[str, Any]:
             declaration["parameters"]["required"] = required
 
     return declaration
+
+
+def _camelize_tool_key(key: str) -> str:
+    if "_" not in key:
+        return key
+
+    first, *rest = key.split("_")
+    return first + "".join(part[:1].upper() + part[1:] for part in rest)
 
 
 def _annotation_to_google_schema(annotation: Any, default: Any) -> dict[str, Any]:

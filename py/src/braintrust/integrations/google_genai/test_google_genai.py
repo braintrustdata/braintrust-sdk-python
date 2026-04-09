@@ -1,6 +1,5 @@
 import gzip
 import json
-import logging
 import os
 import time
 from pathlib import Path
@@ -149,6 +148,38 @@ def _assert_attachment_part(part, *, content_type, filename):
 def _assert_binary_not_logged(span, binary_data):
     span_str = str(span).lower()
     assert binary_data[:8].hex() not in span_str
+
+
+def _normalize_tool_serialization(value):
+    if hasattr(value, "model_dump") and callable(value.model_dump):
+        try:
+            return _normalize_tool_serialization(value.model_dump(exclude_none=True, mode="json"))
+        except TypeError:
+            try:
+                return _normalize_tool_serialization(value.model_dump(exclude_none=True))
+            except TypeError:
+                return _normalize_tool_serialization(value.model_dump())
+
+    if isinstance(value, dict):
+        return {
+            (
+                "parameters_json_schema"
+                if key == "parametersJsonSchema"
+                else "response_json_schema"
+                if key == "responseJsonSchema"
+                else key
+            ): _normalize_tool_serialization(val)
+            for key, val in value.items()
+        }
+
+    if isinstance(value, (list, tuple)):
+        return [_normalize_tool_serialization(item) for item in value]
+
+    enum_value = getattr(value, "value", None)
+    if enum_value is not None:
+        return _normalize_tool_serialization(enum_value)
+
+    return value
 
 
 # Test 1: Basic Completion (Sync)
@@ -1046,43 +1077,38 @@ def test_serialize_content_item_with_content_and_binary_part():
     assert attachment.reference["filename"] == "file.png"
 
 
-def test_serialize_tools_fallback_for_callable(monkeypatch, caplog):
+def test_serialize_tools_fallback_matches_google_for_callable_tools():
     from braintrust.integrations.google_genai import tracing as google_genai_tracing
+    from pydantic import BaseModel
 
-    class MockApiClient:
-        vertexai = False
+    class WeatherArgs(BaseModel):
+        location: str
+        unit: str = "celsius"
 
     def get_weather(location: str, unit: str = "celsius") -> str:
         """Get the current weather for a location."""
 
         return f"22 degrees {unit} and sunny in {location}"
 
-    def _raise(*args, **kwargs):
-        raise RuntimeError("serializer broke")
+    def maybe_count(limit: int | None = None) -> str:
+        return str(limit)
 
-    monkeypatch.setattr(google_genai_tracing, "_serialize_tools_with_google", _raise)
+    def do_math(args: WeatherArgs) -> str:
+        return f"{args.location}:{args.unit}"
 
-    config = types.GenerateContentConfig(tools=[get_weather], max_output_tokens=100)
-    with caplog.at_level(logging.DEBUG, logger=google_genai_tracing.__name__):
-        serialized = google_genai_tracing._serialize_tools(MockApiClient(), {"config": config})
+    client = Client(api_key="test")
+    payload = {"config": types.GenerateContentConfig(tools=[get_weather, maybe_count, do_math], max_output_tokens=100)}
 
-    assert serialized is not None
-    declaration = serialized[0]["functionDeclarations"][0]
-    assert declaration["name"] == "get_weather"
-    assert declaration["description"] == "Get the current weather for a location."
-    assert declaration["parameters"]["type"] == "OBJECT"
-    assert declaration["parameters"]["required"] == ["location"]
-    assert declaration["parameters"]["properties"]["location"]["type"] == "STRING"
-    assert declaration["parameters"]["properties"]["unit"]["type"] == "STRING"
-    assert declaration["parameters"]["properties"]["unit"]["default"] == "celsius"
-    assert any("Failed to serialize tools via Google SDK" in message for message in caplog.messages)
+    google = google_genai_tracing._serialize_tools_with_google(client, payload)
+    fallback = google_genai_tracing._serialize_tools_fallback(client, payload)
+
+    assert fallback is not None
+    assert len(fallback) == 1
+    assert _normalize_tool_serialization(fallback) == _normalize_tool_serialization(google)
 
 
-def test_serialize_tools_fallback_for_declared_tool(monkeypatch):
+def test_serialize_tools_fallback_matches_google_for_declared_tool():
     from braintrust.integrations.google_genai import tracing as google_genai_tracing
-
-    class MockApiClient:
-        vertexai = False
 
     function = types.FunctionDeclaration(
         name="calculate",
@@ -1097,34 +1123,18 @@ def test_serialize_tools_fallback_for_declared_tool(monkeypatch):
         },
     )
     tool = types.Tool(function_declarations=[function])
+    client = Client(api_key="test")
+    payload = {"config": types.GenerateContentConfig(tools=[tool], max_output_tokens=100)}
 
-    def _raise(*args, **kwargs):
-        raise RuntimeError("serializer broke")
+    google = google_genai_tracing._serialize_tools_with_google(client, payload)
+    fallback = google_genai_tracing._serialize_tools_fallback(client, payload)
 
-    monkeypatch.setattr(google_genai_tracing, "_serialize_tools_with_google", _raise)
+    normalized = _normalize_tool_serialization(fallback)
 
-    serialized = google_genai_tracing._serialize_tools(
-        MockApiClient(), {"config": types.GenerateContentConfig(tools=[tool], max_output_tokens=100)}
-    )
-
-    assert serialized == [
-        {
-            "functionDeclarations": [
-                {
-                    "name": "calculate",
-                    "description": "Perform a mathematical calculation",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "a": {"type": "number"},
-                            "b": {"type": "number"},
-                        },
-                        "required": ["a", "b"],
-                    },
-                }
-            ]
-        }
-    ]
+    assert normalized == _normalize_tool_serialization(google)
+    declaration = normalized[0]["functionDeclarations"][0]
+    assert "parameters_json_schema" in declaration
+    assert "parameters" not in declaration
 
 
 GROUNDING_MODEL = "gemini-2.0-flash-001"
