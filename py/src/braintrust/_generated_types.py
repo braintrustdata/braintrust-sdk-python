@@ -2626,6 +2626,7 @@ class ViewOptionsViewOptions1(TypedDict):
     rowHeight: NotRequired[str | None]
     tallGroupRows: NotRequired[bool | None]
     layout: NotRequired[str | None]
+    topicMapReportKey: NotRequired[str | None]
     chartHeight: NotRequired[float | None]
     excludedMeasures: NotRequired[Sequence[ViewOptionsViewOptions1ExcludedMeasure] | None]
     yMetric: NotRequired[ViewOptionsViewOptions1YMetric | None]
@@ -2638,6 +2639,7 @@ class ViewOptionsViewOptions1(TypedDict):
     chartAnnotations: NotRequired[Sequence[ViewOptionsViewOptions1ChartAnnotation] | None]
     timeRangeFilter: NotRequired[str | ViewOptionsViewOptions1TimeRangeFilter | None]
     queryShape: NotRequired[Literal['traces', 'spans'] | None]
+    cluster: NotRequired[str | None]
     freezeColumns: NotRequired[bool | None]
 
 
