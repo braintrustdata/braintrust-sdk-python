@@ -1,5 +1,7 @@
 # pyright: reportTypedDictNotRequiredAccess=none
+import base64
 import uuid
+from pathlib import Path
 from typing import Dict, List, Union, cast
 
 import pytest
@@ -8,7 +10,7 @@ from braintrust.integrations.langchain import BraintrustCallbackHandler
 from braintrust.logger import flush
 from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import RunnableMap, RunnableSerializable
@@ -611,7 +613,6 @@ def test_langgraph_state_management(logger_memory_logger):
     )
 
 
-@pytest.mark.vcr
 def test_chain_null_values(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
@@ -1108,3 +1109,188 @@ Remember: Testing is not just about finding bugs, it's about building confidence
 
     assert "prompt_tokens" in second_metrics
     assert second_metrics["prompt_tokens"] > 0
+
+
+@pytest.mark.vcr
+def test_image_input(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
+    assert not memory_logger.pop()
+
+    handler = BraintrustCallbackHandler(logger=test_logger)
+
+    fixtures_dir = Path(__file__).parent.parent.parent / "fixtures"
+    with open(fixtures_dir / "test-image.png", "rb") as f:
+        image_b64 = base64.b64encode(f.read()).decode()
+
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_b64}"}},
+                {"type": "text", "text": "What color is this image?"},
+            ]
+        )
+    ]
+
+    model = ChatOpenAI(model="gpt-4o-mini")
+    model.invoke(messages, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+
+    llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI", type="llm")
+    assert len(llm_spans) == 1
+    llm_span = llm_spans[0]
+
+    # Verify the span captures multimodal input correctly
+    input_messages = llm_span["input"][0][0]
+    assert input_messages["type"] == "human"
+    content = input_messages["content"]
+    assert isinstance(content, list)
+    assert any(c.get("type") == "image_url" for c in content)
+
+    assert_matches_object(
+        [llm_span],
+        [
+            {
+                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
+                "metrics": {
+                    "start": ANY,
+                    "end": ANY,
+                    "total_tokens": ANY,
+                    "prompt_tokens": ANY,
+                    "completion_tokens": ANY,
+                },
+            }
+        ],
+    )
+
+
+@pytest.mark.vcr
+def test_tool_use_with_result(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
+    assert not memory_logger.pop()
+
+    handler = BraintrustCallbackHandler(logger=test_logger)
+
+    @tool
+    def calculate(operation: str, a: float, b: float) -> float:
+        """Perform a mathematical calculation.
+
+        Args:
+            operation: The mathematical operation (add, subtract, multiply, divide)
+            a: First number
+            b: Second number
+        """
+        if operation == "add":
+            return a + b
+        elif operation == "subtract":
+            return a - b
+        elif operation == "multiply":
+            return a * b
+        elif operation == "divide":
+            return a / b if b != 0 else 0
+        return 0
+
+    model = ChatOpenAI(model="gpt-4o-mini")
+    model_with_tools = model.bind_tools([calculate])
+
+    # First call: model returns a tool call
+    query = "What is 127 multiplied by 49?"
+    first_result = model_with_tools.invoke(
+        query,
+        config={"callbacks": [cast(BaseCallbackHandler, handler)]},
+    )
+
+    first_spans = memory_logger.pop()
+    first_llm_spans = find_spans_by_attributes(first_spans, name="ChatOpenAI", type="llm")
+    assert len(first_llm_spans) == 1
+
+    assert hasattr(first_result, "tool_calls") and first_result.tool_calls
+    tool_call = first_result.tool_calls[0]
+    assert tool_call["name"] == "calculate"
+
+    # Second call: provide the tool result
+    messages = [
+        HumanMessage(content=query),
+        AIMessage(content="", tool_calls=[tool_call]),
+        ToolMessage(content=str(127 * 49), tool_call_id=tool_call["id"]),
+    ]
+    second_result = model_with_tools.invoke(
+        messages,
+        config={"callbacks": [cast(BaseCallbackHandler, handler)]},
+    )
+
+    second_spans = memory_logger.pop()
+    second_llm_spans = find_spans_by_attributes(second_spans, name="ChatOpenAI", type="llm")
+    assert len(second_llm_spans) == 1
+    second_span = second_llm_spans[0]
+
+    assert_matches_object(
+        [second_span],
+        [
+            {
+                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
+                "metrics": {
+                    "start": ANY,
+                    "end": ANY,
+                    "total_tokens": ANY,
+                    "prompt_tokens": ANY,
+                    "completion_tokens": ANY,
+                },
+                "output": {
+                    "generations": [
+                        [
+                            {
+                                "type": "ChatGeneration",
+                                "message": {
+                                    "content": ANY,
+                                    "type": "ai",
+                                },
+                            }
+                        ]
+                    ],
+                    "type": "LLMResult",
+                },
+            }
+        ],
+    )
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_async_streaming(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
+    assert not memory_logger.pop()
+
+    handler = BraintrustCallbackHandler(logger=test_logger)
+    prompt = ChatPromptTemplate.from_template("Count from 1 to 3.")
+    model = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=20, streaming=True)
+    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+
+    chunks: List[str] = []
+    async for chunk in chain.astream({}, config={"callbacks": [cast(BaseCallbackHandler, handler)]}):
+        if chunk.content:
+            chunks.append(str(chunk.content))
+
+    assert len(chunks) > 0
+
+    spans = memory_logger.pop()
+    assert len(spans) == 3  # RunnableSequence + ChatPromptTemplate + ChatOpenAI
+
+    llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI", type="llm")
+    assert len(llm_spans) == 1
+    llm_span = llm_spans[0]
+
+    assert_matches_object(
+        [llm_span],
+        [
+            {
+                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
+                "metrics": {
+                    "start": ANY,
+                    "end": ANY,
+                    "total_tokens": ANY,
+                },
+            }
+        ],
+    )

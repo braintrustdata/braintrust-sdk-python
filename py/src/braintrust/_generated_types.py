@@ -533,6 +533,10 @@ class Dataset(TypedDict):
     """
     Identifies the user who created the dataset
     """
+    tags: NotRequired[Sequence[str] | None]
+    """
+    A list of tags for the dataset
+    """
     metadata: NotRequired[Mapping[str, Any] | None]
     """
     User-controlled metadata about the dataset
@@ -547,6 +551,30 @@ class DatasetEventMetadata(TypedDict):
     model: NotRequired[str | None]
     """
     The model used for this example
+    """
+
+
+class DatasetSnapshot(TypedDict):
+    id: str
+    """
+    Unique identifier for the dataset snapshot
+    """
+    dataset_id: str
+    """
+    Unique identifier for the dataset that this snapshot belongs to
+    """
+    name: str
+    """
+    Name of the dataset snapshot
+    """
+    description: str | None
+    xact_id: str
+    """
+    Transaction id of the brainstore version at the time of the snapshot
+    """
+    created: str | None
+    """
+    Date of dataset snapshot creation
     """
 
 
@@ -2399,34 +2427,6 @@ Optional data scope for topic automation.
 """
 
 
-class TopicMapData(TypedDict):
-    type: Literal['topic_map']
-    source_facet: str
-    """
-    The facet field name to use as input for classification
-    """
-    embedding_model: str
-    """
-    The embedding model to use for embedding facet values
-    """
-    bundle_key: NotRequired[str | None]
-    """
-    Key of the topic map bundle in code_bundles bucket
-    """
-    report_key: NotRequired[str | None]
-    """
-    Key of the clustering report in code_bundles bucket
-    """
-    topic_names: NotRequired[Mapping[str, str] | None]
-    """
-    Mapping from topic_id to topic name
-    """
-    distance_threshold: NotRequired[float | None]
-    """
-    Maximum distance to nearest centroid. If exceeded, returns no_match.
-    """
-
-
 class Function1Function1(TypedDict):
     type: Literal['function']
     id: str
@@ -2463,6 +2463,17 @@ class TopicMapFunctionAutomation(TypedDict):
     """
     Per-topic-map BTQL filter. For trace scope, a topic map runs when max(filter) over the trace is truthy. For span scope, it runs when the current span matches.
     """
+
+
+class TopicMapGenerationSettings(TypedDict):
+    algorithm: Literal['hdbscan', 'kmeans']
+    dimension_reduction: Literal['umap', 'pca', 'none']
+    sample_size: NotRequired[int | None]
+    n_clusters: NotRequired[int | None]
+    min_cluster_size: NotRequired[int | None]
+    min_samples: NotRequired[int | None]
+    hierarchy_threshold: NotRequired[int | None]
+    naming_model: NotRequired[str | None]
 
 
 class TraceScope(TypedDict):
@@ -2541,6 +2552,10 @@ class User(TypedDict):
     created: NotRequired[str | None]
     """
     Date of user creation
+    """
+    last_active_at: NotRequired[float | None]
+    """
+    Unix timestamp in milliseconds of the user's last activity, when available
     """
 
 
@@ -2744,28 +2759,6 @@ class PreprocessorPreprocessor4(PreprocessorPreprocessor1, PreprocessorPreproces
 
 
 Preprocessor: TypeAlias = PreprocessorPreprocessor3 | PreprocessorPreprocessor4
-
-
-class BatchedFacetDataTopicMap(TypedDict):
-    function_name: str
-    """
-    The name of the topic map function
-    """
-    topic_map_id: NotRequired[str | None]
-    """
-    The id of the topic map function
-    """
-    topic_map_data: TopicMapData
-
-
-class BatchedFacetData(TypedDict):
-    type: Literal['batched_facet']
-    preprocessor: NotRequired[Preprocessor | None]
-    facets: Sequence[BatchedFacetDataFacet]
-    topic_maps: NotRequired[Mapping[str, Sequence[BatchedFacetDataTopicMap]] | None]
-    """
-    Topic maps that depend on facets in this batch, keyed by source facet name. Each source facet can have multiple topic maps.
-    """
 
 
 ChatCompletionContentPart: TypeAlias = (
@@ -3357,17 +3350,76 @@ class TopicAutomationConfig(TypedDict):
     """
     Optional BTQL filter applied before topic automation.
     """
+    rerun_seconds: NotRequired[float | None]
+    """
+    How often to recompute topic maps
+    """
+    relabel_overlap_seconds: NotRequired[float | None]
+    """
+    How much recent history to relabel after a new topic map version becomes active
+    """
     backfill_time_range: NotRequired[
         str | TopicAutomationConfigBackfillTimeRange | None
     ]
     """
-    Optional default time range for backfill operations.
+    Topic window used for classification coverage and initial backfill.
+    """
+
+
+class TopicMapData(TypedDict):
+    type: Literal['topic_map']
+    source_facet: str
+    """
+    The facet field name to use as input for classification
+    """
+    embedding_model: str
+    """
+    The embedding model to use for embedding facet values
+    """
+    bundle_key: NotRequired[str | None]
+    """
+    Key of the topic map bundle in code_bundles bucket
+    """
+    report_key: NotRequired[str | None]
+    """
+    Key of the clustering report in code_bundles bucket
+    """
+    topic_names: NotRequired[Mapping[str, str] | None]
+    """
+    Mapping from topic_id to topic name
+    """
+    generation_settings: NotRequired[TopicMapGenerationSettings | None]
+    distance_threshold: NotRequired[float | None]
+    """
+    Maximum distance to nearest centroid. If exceeded, returns no_match.
     """
 
 
 class ViewData(TypedDict):
     search: NotRequired[ViewDataSearch | None]
     custom_charts: NotRequired[Any | None]
+
+
+class BatchedFacetDataTopicMap(TypedDict):
+    function_name: str
+    """
+    The name of the topic map function
+    """
+    topic_map_id: NotRequired[str | None]
+    """
+    The id of the topic map function
+    """
+    topic_map_data: TopicMapData
+
+
+class BatchedFacetData(TypedDict):
+    type: Literal['batched_facet']
+    preprocessor: NotRequired[Preprocessor | None]
+    facets: Sequence[BatchedFacetDataFacet]
+    topic_maps: NotRequired[Mapping[str, Sequence[BatchedFacetDataTopicMap]] | None]
+    """
+    Topic maps that depend on facets in this batch, keyed by source facet name. Each source facet can have multiple topic maps.
+    """
 
 
 class ExperimentEvent(TypedDict):

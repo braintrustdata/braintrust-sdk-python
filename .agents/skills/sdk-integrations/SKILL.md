@@ -105,12 +105,14 @@ Do not start by wiring patchers and only later asking what the logged span shoul
 
 Keep provider-local code inside `py/src/braintrust/integrations/<provider>/`.
 
+If tracing or normalization logic is genuinely shared across multiple integrations, prefer adding it to `py/src/braintrust/integrations/utils.py` instead of copying it into each provider package. Avoid duplicating code between integrations unless there is a clear provider-specific reason the behavior must diverge.
+
 Typical file ownership:
 
 - `__init__.py`: export the integration class, `setup_<provider>()`, and public `wrap_*()` helpers
 - `integration.py`: define the `BaseIntegration` subclass and register patchers
 - `patchers.py`: define patchers and manual `wrap_*()` helpers
-- `tracing.py`: keep provider-specific tracing, stream handling, normalization, and metadata extraction
+- `tracing.py`: keep provider-specific tracing, stream handling, normalization, and metadata extraction; move cross-integration helpers to `py/src/braintrust/integrations/utils.py`
 - `test_*.py`: keep provider behavior tests next to the integration
 - `cassettes/`: keep VCR recordings next to the integration tests when the provider uses HTTP
 

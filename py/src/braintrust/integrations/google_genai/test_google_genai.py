@@ -8,9 +8,18 @@ import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
 from braintrust.logger import Attachment
+from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from google.genai import types
+
+
+try:
+    from google.genai import interactions
+except ImportError:
+    interactions = None
+
+_needs_interactions = pytest.mark.skipif(interactions is None, reason="google-genai too old for interactions API")
 from google.genai.client import Client
 
 
@@ -19,7 +28,8 @@ MODEL = "gemini-2.0-flash-001"
 EMBEDDING_MODEL = "gemini-embedding-001"
 IMAGE_MODEL = "imagen-4.0-fast-generate-001"
 REASONING_MODEL = "gemini-2.5-flash"
-FIXTURES_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent.parent / "internal/golden/fixtures"
+INTERACTIONS_MODEL = "gemini-2.5-flash"
+FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 
 
@@ -1280,6 +1290,275 @@ async def test_google_search_grounding_async(memory_logger, mode):
 
     # Verify grounding metadata is captured
     _assert_grounding_metadata(span["output"])
+
+
+def _find_spans_by_type(spans, span_type):
+    return [span for span in spans if span["span_attributes"]["type"] == span_type]
+
+
+def _find_span_by_name(spans, name):
+    return next(span for span in spans if span["span_attributes"]["name"] == name)
+
+
+def _interaction_function_tool():
+    return interactions.Function(
+        type="function",
+        name="get_weather",
+        description="Get the current weather for a location.",
+        parameters={
+            "type": "object",
+            "properties": {"location": {"type": "string"}},
+            "required": ["location"],
+        },
+    )
+
+
+@_needs_interactions
+@pytest.mark.vcr
+def test_interactions_create_and_get(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="What is the capital of France?",
+    )
+    fetched = client.interactions.get(response.id, include_input=True)
+
+    assert response.status == "completed"
+    assert fetched.id == response.id
+    assert fetched.status == "completed"
+
+    spans = memory_logger.pop()
+    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    get_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
+
+    assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
+    assert create_span["metadata"]["interaction_id"] == response.id
+    assert create_span["output"]["status"] == "completed"
+    assert "Paris" in create_span["output"]["text"]
+    assert create_span["metrics"]["prompt_tokens"] > 0
+    assert create_span["metrics"]["completion_tokens"] > 0
+
+    assert get_span["input"]["id"] == response.id
+    assert get_span["metadata"]["interaction_id"] == response.id
+    assert get_span["output"]["status"] == "completed"
+    assert "Paris" in get_span["output"]["text"]
+    assert "France" in str(get_span["output"]["outputs"])
+
+
+@_needs_interactions
+@pytest.mark.vcr
+def test_interactions_create_stream(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    events = list(
+        client.interactions.create(
+            model=INTERACTIONS_MODEL,
+            input="Say hi in five words or less.",
+            stream=True,
+        )
+    )
+
+    assert events
+
+    spans = memory_logger.pop()
+    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+
+    assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
+    assert create_span["output"]["status"] == "completed"
+    assert create_span["output"]["text"]
+    assert "hi" in create_span["output"]["text"].lower()
+    assert create_span["metrics"]["time_to_first_token"] >= 0
+    assert "content.start" in create_span["metadata"]["stream_event_types"]
+    assert "interaction.complete" in create_span["metadata"]["stream_event_types"]
+
+
+@_needs_interactions
+@pytest.mark.vcr
+def test_interactions_tool_call_and_follow_up(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    tool = _interaction_function_tool()
+
+    first_response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="What is the weather like in Paris? Use the tool.",
+        tools=[tool],
+    )
+    tool_call = next(output for output in first_response.outputs if output.type == "function_call")
+
+    second_response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        previous_interaction_id=first_response.id,
+        input=interactions.FunctionResultContent(
+            type="function_result",
+            call_id=tool_call.id,
+            name=tool_call.name,
+            result={"forecast": "sunny"},
+        ),
+        tools=[tool],
+    )
+
+    assert first_response.status == "requires_action"
+    assert second_response.status == "completed"
+    assert "sunny" in second_response.outputs[-1].text.lower()
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    first_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == first_response.id)
+    second_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == second_response.id)
+    tool_span = _find_span_by_name(tool_spans, "get_weather")
+
+    assert first_span["output"]["status"] == "requires_action"
+    assert second_span["metadata"]["previous_interaction_id"] == first_response.id
+    assert second_span["output"]["status"] == "completed"
+    assert "sunny" in second_span["output"]["text"].lower()
+
+    assert tool_span["input"] == {"location": "Paris"}
+    assert tool_span["span_parents"] == [first_span["span_id"]]
+
+
+@_needs_interactions
+@pytest.mark.vcr
+def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    tool = _interaction_function_tool()
+
+    first_response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="What is the weather like in Paris? Use the tool.",
+        tools=[tool],
+    )
+    tool_call = next(output for output in first_response.outputs if output.type == "function_call")
+
+    with logger.start_span(name="nested_tool_work", type=SpanTypeAttribute.TASK) as nested_tool_work:
+        nested_tool_work.log(output={"forecast": "sunny"})
+
+    second_response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        previous_interaction_id=first_response.id,
+        input=interactions.FunctionResultContent(
+            type="function_result",
+            call_id=tool_call.id,
+            name=tool_call.name,
+            result={"forecast": "sunny"},
+        ),
+        tools=[tool],
+    )
+
+    assert first_response.status == "requires_action"
+    assert second_response.status == "completed"
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    first_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == first_response.id)
+    second_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == second_response.id)
+    tool_span = _find_span_by_name(tool_spans, "get_weather")
+    nested_span = _find_span_by_name(spans, "nested_tool_work")
+
+    assert tool_span["span_parents"] == [first_span["span_id"]]
+    assert nested_span["span_parents"] == [tool_span["span_id"]]
+    assert tool_span["metrics"]["start"] <= nested_span["metrics"]["start"]
+    assert tool_span["metrics"]["end"] >= nested_span["metrics"]["end"]
+    assert second_span.get("span_parents") in (None, [])
+
+
+@_needs_interactions
+@pytest.mark.vcr
+def test_interactions_delete(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="Reply with exactly ok.",
+    )
+    assert response.id
+
+    create_spans = memory_logger.pop()
+    assert create_spans
+
+    delete_response = client.interactions.delete(response.id)
+    assert delete_response == {}
+
+    spans = memory_logger.pop()
+    delete_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
+
+    assert delete_span["input"]["id"] == response.id
+    assert delete_span["output"] == {}
+    assert delete_span["metrics"]["duration"] >= 0
+
+
+@_needs_interactions
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_interactions_async_round_trip(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = await client.aio.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="What is the capital of Italy?",
+    )
+    fetched = await client.aio.interactions.get(response.id, include_input=True)
+    deleted = await client.aio.interactions.delete(response.id)
+
+    assert response.status == "completed"
+    assert fetched.id == response.id
+    assert deleted == {}
+
+    spans = memory_logger.pop()
+    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    get_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
+    delete_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
+
+    assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
+    assert create_span["output"]["status"] == "completed"
+    assert "Rome" in create_span["output"]["text"]
+
+    assert get_span["input"]["id"] == response.id
+    assert "Italy" in str(get_span["output"]["outputs"])
+
+    assert delete_span["input"]["id"] == response.id
+    assert delete_span["output"] == {}
+
+
+@_needs_interactions
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_interactions_async_stream(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    stream = await client.aio.interactions.create(
+        model=INTERACTIONS_MODEL,
+        input="Say hi shortly.",
+        stream=True,
+    )
+
+    events = []
+    async for event in stream:
+        events.append(event)
+
+    assert events
+
+    spans = memory_logger.pop()
+    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+
+    assert create_span["output"]["status"] == "completed"
+    assert create_span["output"]["text"]
+    assert "hi" in create_span["output"]["text"].lower()
+    assert create_span["metrics"]["time_to_first_token"] >= 0
+    assert "content.delta" in create_span["metadata"]["stream_event_types"]
 
 
 class TestAutoInstrumentGoogleGenAI:

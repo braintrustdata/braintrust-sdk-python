@@ -5,10 +5,18 @@ import logging
 from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
+    AsyncInteractionsCancelPatcher,
+    AsyncInteractionsCreatePatcher,
+    AsyncInteractionsDeletePatcher,
+    AsyncInteractionsGetPatcher,
     AsyncModelsEmbedContentPatcher,
     AsyncModelsGenerateContentPatcher,
     AsyncModelsGenerateContentStreamPatcher,
     AsyncModelsGenerateImagesPatcher,
+    InteractionsCancelPatcher,
+    InteractionsCreatePatcher,
+    InteractionsDeletePatcher,
+    InteractionsGetPatcher,
     ModelsEmbedContentPatcher,
     ModelsGenerateContentPatcher,
     ModelsGenerateContentStreamPatcher,
@@ -24,13 +32,22 @@ class GoogleGenAIIntegration(BaseIntegration):
 
     name = "google_genai"
     import_names = ("google.genai",)
+    min_version = "1.30.0"
     patchers = (
         ModelsGenerateContentPatcher,
         ModelsGenerateContentStreamPatcher,
         ModelsEmbedContentPatcher,
         ModelsGenerateImagesPatcher,
+        InteractionsCreatePatcher,
+        InteractionsGetPatcher,
+        InteractionsCancelPatcher,
+        InteractionsDeletePatcher,
         AsyncModelsGenerateContentPatcher,
         AsyncModelsGenerateContentStreamPatcher,
         AsyncModelsEmbedContentPatcher,
         AsyncModelsGenerateImagesPatcher,
+        AsyncInteractionsCreatePatcher,
+        AsyncInteractionsGetPatcher,
+        AsyncInteractionsCancelPatcher,
+        AsyncInteractionsDeletePatcher,
     )

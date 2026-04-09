@@ -5,9 +5,14 @@ from collections.abc import AsyncGenerator, Generator
 from types import TracebackType
 from typing import Any
 
+from braintrust.integrations.utils import (
+    _parse_openai_usage_metrics,
+    _prettify_response_params,
+    _try_to_dict,
+)
 from braintrust.logger import Span, start_span
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import is_numeric, merge_dicts
+from braintrust.util import merge_dicts
 
 
 # LiteLLM's representation to Braintrust's representation
@@ -461,7 +466,7 @@ def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "i
     params = params.copy()
     span_info_d = params.pop("span_info", {})
 
-    params = prettify_params(params)
+    params = _prettify_response_params(params)
     input_data = params.pop(input_key, None)
     model = params.pop("model", None)
 
@@ -473,77 +478,8 @@ def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "i
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
     """Parse usage metrics from API response."""
-    metrics: dict[str, Any] = {}
-
-    if not usage:
-        return metrics
-
-    usage = _try_to_dict(usage)
-    if not isinstance(usage, dict):
-        return metrics
-
-    for oai_name, value in usage.items():
-        if oai_name.endswith("_tokens_details"):
-            if not isinstance(value, dict):
-                continue
-            raw_prefix = oai_name[: -len("_tokens_details")]
-            prefix = TOKEN_PREFIX_MAP.get(raw_prefix, raw_prefix)
-            for k, v in value.items():
-                if is_numeric(v):
-                    metrics[f"{prefix}_{k}"] = v
-        elif is_numeric(value):
-            name = TOKEN_NAME_MAP.get(oai_name, oai_name)
-            metrics[name] = value
-
-    return metrics
-
-
-def prettify_params(params: dict[str, Any]) -> dict[str, Any]:
-    """Return a shallow copy of *params* with response_format serialized for logging."""
-
-    if "response_format" in params:
-        ret = params.copy()
-        ret["response_format"] = serialize_response_format(ret["response_format"])
-        return ret
-
-    return params
-
-
-def _try_to_dict(obj: Any) -> dict[str, Any] | Any:
-    """Try to convert an object to a dictionary."""
-    if isinstance(obj, dict):
-        return obj
-    if hasattr(obj, "model_dump") and callable(obj.model_dump):
-        try:
-            result = obj.model_dump()
-            if isinstance(result, dict):
-                return result
-        except Exception:
-            pass
-    if hasattr(obj, "dict") and callable(obj.dict):
-        try:
-            result = obj.dict()
-            if isinstance(result, dict):
-                return result
-        except Exception:
-            pass
-    return obj
-
-
-def serialize_response_format(response_format: Any) -> Any:
-    """Serialize response format for logging."""
-    try:
-        from pydantic import BaseModel
-    except ImportError:
-        return response_format
-
-    if isinstance(response_format, type) and issubclass(response_format, BaseModel):
-        return dict(
-            type="json_schema",
-            json_schema=dict(
-                name=response_format.__name__,
-                schema=response_format.model_json_schema(),
-            ),
-        )
-    else:
-        return response_format
+    return _parse_openai_usage_metrics(
+        usage,
+        token_name_map=TOKEN_NAME_MAP,
+        token_prefix_map=TOKEN_PREFIX_MAP,
+    )

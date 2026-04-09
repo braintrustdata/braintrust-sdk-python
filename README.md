@@ -53,14 +53,14 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [Anthropic](py/src/braintrust/integrations/anthropic/) | Yes | `anthropic>=0.48.0` |
 | [LiteLLM](py/src/braintrust/integrations/litellm/) | Yes | `litellm>=1.74.0` |
 | [Pydantic AI](py/src/braintrust/integrations/pydantic_ai/) | Yes | `pydantic_ai>=1.10.0` |
-| [Google GenAI](py/src/braintrust/integrations/google_genai/) | Yes | latest tested in CI |
+| [Google GenAI](py/src/braintrust/integrations/google_genai/) | Yes | `google-genai>=1.30.0` |
 | [Google ADK](py/src/braintrust/integrations/adk/) | Yes | `google-adk>=1.14.1` |
 | [LangChain](py/src/braintrust/integrations/langchain/) | Yes | `langchain-core>=0.3.28` |
 | [OpenRouter](py/src/braintrust/integrations/openrouter/) | Yes | `openrouter>=0.6.0` |
 | [Agno](py/src/braintrust/integrations/agno/) | Yes | `agno>=2.1.0` |
 | [AgentScope](py/src/braintrust/integrations/agentscope/) | Yes | `agentscope>=1.0.0` |
 | [Claude Agent SDK](py/src/braintrust/integrations/claude_agent_sdk/) | Yes | `claude_agent_sdk>=0.1.10` |
-| [DSPy](py/src/braintrust/integrations/dspy/) | Yes | latest tested in CI |
+| [DSPy](py/src/braintrust/integrations/dspy/) | Yes | `dspy>=2.6.0` |
 | [pytest plugin](py/src/braintrust/wrappers/pytest_plugin/README.md) | No | `pytest>=8` |
 
 ## Documentation

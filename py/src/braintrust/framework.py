@@ -9,7 +9,7 @@ import sys
 import traceback
 import warnings
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Coroutine, Iterable, Iterator, Sequence
+from collections.abc import Awaitable, Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from multiprocessing import cpu_count
@@ -1154,7 +1154,10 @@ def parse_filters(filters: list[str]) -> list[Filter]:
 def evaluate_filter(object, filter: Filter):
     key = object
     for p in filter.path:
-        key = key.get(p)
+        if isinstance(key, Mapping):
+            key = key.get(p)
+        else:
+            key = getattr(key, p, None)
         if key is None:
             return False
     return filter.pattern.match(serialize_json_with_plain_string(key)) is not None

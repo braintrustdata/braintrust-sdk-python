@@ -3,10 +3,16 @@
 import logging
 import time
 from collections.abc import AsyncIterator, Iterator
-from numbers import Real
 from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
+from braintrust.integrations.utils import (
+    _camel_to_snake,
+    _is_supported_metric_value,
+    _log_and_end_span,
+    _log_error_and_end_span,
+    _merge_timing_and_usage_metrics,
+)
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 
@@ -48,21 +54,6 @@ _TOKEN_DETAIL_PREFIX_MAP = {
     "output_tokens_details": "completion",
     "cost_details": "cost",
 }
-
-
-def _camel_to_snake(value: str) -> str:
-    out = []
-    for char in value:
-        if char.isupper():
-            out.append("_")
-            out.append(char.lower())
-        else:
-            out.append(char)
-    return "".join(out).lstrip("_")
-
-
-def _is_supported_metric_value(value: Any) -> bool:
-    return isinstance(value, Real) and not isinstance(value, bool)
 
 
 def sanitize_openrouter_logged_value(value: Any) -> Any:
@@ -155,23 +146,13 @@ def _parse_openrouter_metrics_from_usage(usage: Any) -> dict[str, float]:
     return metrics
 
 
-def _timing_metrics(start_time: float, first_token_time: float | None = None) -> dict[str, float]:
-    end_time = time.time()
-    metrics = {
-        "start": start_time,
-        "end": end_time,
-        "duration": end_time - start_time,
-    }
-    if first_token_time is not None:
-        metrics["time_to_first_token"] = first_token_time - start_time
-    return metrics
-
-
-def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None = None) -> dict[str, float]:
-    return {
-        **_timing_metrics(start_time, first_token_time),
-        **_parse_openrouter_metrics_from_usage(usage),
-    }
+def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None = None) -> dict[str, Any]:
+    return _merge_timing_and_usage_metrics(
+        start_time,
+        usage,
+        _parse_openrouter_metrics_from_usage,
+        first_token_time,
+    )
 
 
 def _response_to_output(response: Any, *, fallback_output: Any | None = None) -> Any:
@@ -218,26 +199,6 @@ def _start_span(name: str, span_input: Any, metadata: dict[str, Any]):
         input=sanitize_openrouter_logged_value(span_input),
         metadata=metadata,
     )
-
-
-def _log_and_end(
-    span: Any, *, output: Any = None, metrics: dict[str, Any] | None = None, metadata: dict[str, Any] | None = None
-):
-    event = {}
-    if output is not None:
-        event["output"] = output
-    if metrics:
-        event["metrics"] = metrics
-    if metadata:
-        event["metadata"] = metadata
-    if event:
-        span.log(**event)
-    span.end()
-
-
-def _log_error_and_end(span: Any, error: Exception):
-    span.log(error=error)
-    span.end()
 
 
 class _TracedOpenRouterSyncStream:
@@ -288,7 +249,7 @@ class _TracedOpenRouterSyncStream:
         self._closed = True
 
         if error is not None:
-            _log_error_and_end(self._span, error)
+            _log_error_and_end_span(self._span, error)
             return
 
         if self._kind == "chat":
@@ -298,7 +259,7 @@ class _TracedOpenRouterSyncStream:
             output, usage, response_metadata = _aggregate_responses_stream(self._items)
             metadata = {**self._metadata, **response_metadata}
 
-        _log_and_end(
+        _log_and_end_span(
             self._span,
             output=output,
             metrics=_merge_metrics(self._start_time, usage, self._first_token_time),
@@ -354,7 +315,7 @@ class _TracedOpenRouterAsyncStream:
         self._closed = True
 
         if error is not None:
-            _log_error_and_end(self._span, error)
+            _log_error_and_end_span(self._span, error)
             return
 
         if self._kind == "chat":
@@ -364,7 +325,7 @@ class _TracedOpenRouterAsyncStream:
             output, usage, response_metadata = _aggregate_responses_stream(self._items)
             metadata = {**self._metadata, **response_metadata}
 
-        _log_and_end(
+        _log_and_end_span(
             self._span,
             output=output,
             metrics=_merge_metrics(self._start_time, usage, self._first_token_time),
@@ -490,7 +451,7 @@ def _aggregate_responses_stream(chunks: list[Any]) -> tuple[Any, Any, dict[str, 
 
 
 def _finalize_chat_response(span: Any, request_metadata: dict[str, Any], result: Any, start_time: float):
-    _log_and_end(
+    _log_and_end_span(
         span,
         output=_response_to_output(result),
         metrics=_merge_metrics(start_time, getattr(result, "usage", None)),
@@ -499,7 +460,7 @@ def _finalize_chat_response(span: Any, request_metadata: dict[str, Any], result:
 
 
 def _finalize_embeddings_response(span: Any, request_metadata: dict[str, Any], result: Any, start_time: float):
-    _log_and_end(
+    _log_and_end_span(
         span,
         output=_embeddings_output(result),
         metrics=_merge_metrics(start_time, getattr(result, "usage", None)),
@@ -508,7 +469,7 @@ def _finalize_embeddings_response(span: Any, request_metadata: dict[str, Any], r
 
 
 def _finalize_responses_response(span: Any, request_metadata: dict[str, Any], result: Any, start_time: float):
-    _log_and_end(
+    _log_and_end_span(
         span,
         output=_response_to_output(result, fallback_output=getattr(result, "output_text", None)),
         metrics=_merge_metrics(start_time, getattr(result, "usage", None)),
@@ -524,7 +485,7 @@ def _chat_send_wrapper(wrapped, instance, args, kwargs):
     try:
         result = wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
     if kwargs.get("stream"):
@@ -542,7 +503,7 @@ async def _chat_send_async_wrapper(wrapped, instance, args, kwargs):
     try:
         result = await wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
     if kwargs.get("stream"):
@@ -560,7 +521,7 @@ def _embeddings_generate_wrapper(wrapped, instance, args, kwargs):
     try:
         result = wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
     _finalize_embeddings_response(span, request_metadata, result, start_time)
@@ -575,7 +536,7 @@ async def _embeddings_generate_async_wrapper(wrapped, instance, args, kwargs):
     try:
         result = await wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
     _finalize_embeddings_response(span, request_metadata, result, start_time)
@@ -590,7 +551,7 @@ def _responses_send_wrapper(wrapped, instance, args, kwargs):
     try:
         result = wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
     if kwargs.get("stream"):
@@ -608,7 +569,7 @@ async def _responses_send_async_wrapper(wrapped, instance, args, kwargs):
     try:
         result = await wrapped(*args, **kwargs)
     except Exception as error:
-        _log_error_and_end(span, error)
+        _log_error_and_end_span(span, error)
         raise
 
     if kwargs.get("stream"):

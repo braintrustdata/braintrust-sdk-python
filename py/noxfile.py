@@ -10,6 +10,7 @@ works with and without different dependencies. A few commands to check out:
     nox -h                     Get help.
 """
 
+import functools
 import glob
 import os
 import pathlib
@@ -86,8 +87,9 @@ ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
 OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
 OPENAI_AGENTS_VERSIONS = (LATEST, "0.0.19")
 # litellm latest requires Python >= 3.10
-# Pin litellm because 1.82.7-1.82.8 are compromised: https://github.com/BerriAI/litellm/issues/24512
-LITELLM_VERSIONS = ("1.82.0", "1.74.0")
+# Pin litellm to a version without the 1.82.7-1.82.8 compromise and with the
+# OIDC userinfo cache key collision fix from 1.83.0+
+LITELLM_VERSIONS = ("1.83.0", "1.74.0")
 # CLI bundling started in 0.1.10 - older versions require external Claude Code installation
 CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
 # Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
@@ -102,8 +104,12 @@ PYDANTIC_AI_WRAP_OPENAI_VERSIONS = (LATEST, "1.0.1", "0.1.9")
 PYDANTIC_AI_INTEGRATION_VERSIONS = (LATEST, "1.10.0")
 
 AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
-GENAI_VERSIONS = (LATEST,)
-DSPY_VERSIONS = (LATEST,)
+# google-genai 1.29.0 has a broken async streaming path unless aiohttp is installed.
+# 1.30.0 is the earliest version that passes our standard integration test session.
+GENAI_VERSIONS = (LATEST, "1.30.0")
+# dspy 2.6.0 is the earliest version that matches the callback/settings APIs our
+# integration and tests rely on.
+DSPY_VERSIONS = (LATEST, "2.6.0")
 GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
 LANGCHAIN_VERSIONS = (LATEST, "0.3.28")
 OPENROUTER_VERSIONS = (LATEST, "0.6.0")
@@ -471,6 +477,21 @@ def _get_braintrust_wheel():
     return wheels[0]
 
 
+@functools.cache
+def _integration_subdirs_to_ignore() -> list[str]:
+    """Return integration subdirectories that require dedicated sessions.
+
+    Top-level tests in ``src/braintrust/integrations/`` (e.g. shared utils and
+    versioning tests) should still run in ``test_core``.
+    """
+    integrations_root = pathlib.Path("src") / INTEGRATION_DIR
+    return [
+        f"{INTEGRATION_DIR}/{child.name}"
+        for child in integrations_root.iterdir()
+        if child.is_dir() and child.name != "__pycache__"
+    ]
+
+
 def _run_core_tests(session):
     """Run all tests which don't require optional dependencies."""
     _run_tests(
@@ -478,7 +499,7 @@ def _run_core_tests(session):
         SRC_DIR,
         ignore_paths=[
             WRAPPER_DIR,
-            INTEGRATION_DIR,
+            *_integration_subdirs_to_ignore(),
             CONTRIB_DIR,
             DEVSERVER_DIR,
         ],

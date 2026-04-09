@@ -6,14 +6,11 @@ from typing import Any
 
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
-
-
-def _clean(mapping: dict[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in mapping.items() if value is not None}
+from braintrust.util import clean_nones
 
 
 def _args_kwargs_input(args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
-    return _clean(
+    return clean_nones(
         {
             "args": list(args) if args else None,
             "kwargs": kwargs if kwargs else None,
@@ -34,7 +31,7 @@ def _pipeline_metadata(args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
     if agents:
         agent_names = [getattr(agent, "name", agent.__class__.__name__) for agent in agents]
 
-    return _clean({"agent_names": agent_names})
+    return clean_nones({"agent_names": agent_names})
 
 
 def _extract_metrics(*candidates: Any) -> dict[str, float] | None:
@@ -69,7 +66,7 @@ def _model_provider_name(instance: Any) -> str:
 
 
 def _model_metadata(instance: Any) -> dict[str, Any]:
-    return _clean(
+    return clean_nones(
         {
             "model": getattr(instance, "model_name", None),
             "provider": _model_provider_name(instance),
@@ -95,7 +92,7 @@ def _model_call_input(args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
     if structured_model is None and len(args) > 3:
         structured_model = args[3]
 
-    return _clean(
+    return clean_nones(
         {
             "messages": messages,
             "tools": tools,
@@ -125,7 +122,7 @@ def _model_call_output(result: Any) -> Any:
     else:
         return result
 
-    normalized = _clean(
+    normalized = clean_nones(
         {
             "role": "assistant" if data.get("content") is not None else None,
             "content": data.get("content"),
@@ -178,7 +175,7 @@ def _make_task_wrapper(
 
 _agent_call_wrapper = _make_task_wrapper(
     name_fn=lambda instance, _a, _k: f"{_agent_name(instance)}.reply",
-    metadata_fn=lambda instance, _a, _k: _clean({"agent_class": instance.__class__.__name__}),
+    metadata_fn=lambda instance, _a, _k: clean_nones({"agent_class": instance.__class__.__name__}),
 )
 
 _sequential_pipeline_wrapper = _make_task_wrapper(
@@ -224,13 +221,13 @@ async def _toolkit_call_tool_function_wrapper(wrapped: Any, instance: Any, args:
             start_span(
                 name=f"{tool_name}.execute",
                 type=SpanTypeAttribute.TOOL,
-                input=_clean(
+                input=clean_nones(
                     {
                         "tool_name": tool_name,
                         "tool_call": tool_call,
                     }
                 ),
-                metadata=_clean({"toolkit_class": instance.__class__.__name__}),
+                metadata=clean_nones({"toolkit_class": instance.__class__.__name__}),
             )
         )
         try:

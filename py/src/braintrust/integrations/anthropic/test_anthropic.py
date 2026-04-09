@@ -9,15 +9,18 @@ from types import SimpleNamespace
 
 import anthropic
 import pytest
-from braintrust import logger
+from braintrust import Attachment, logger
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
 from braintrust.integrations.anthropic._utils import extract_anthropic_usage
-from braintrust.integrations.anthropic.tracing import _log_message_to_span
+from braintrust.integrations.anthropic.tracing import _get_input_from_kwargs, _log_message_to_span
 from braintrust.test_helpers import init_test_logger
 
 
 PROJECT_NAME = "test-anthropic-app"
 MODEL = "claude-3-haiku-20240307"  # use the cheapest model since answers dont matter
+MULTIMODAL_MODEL = "claude-haiku-4-5-20251001"
+PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+PDF_BASE64 = "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
 
 
 @pytest.fixture(scope="module")
@@ -38,6 +41,57 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+def test_get_input_from_kwargs_converts_multimodal_base64_blocks_to_attachments():
+    kwargs = {
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe these files."},
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": PNG_BASE64,
+                        },
+                    },
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "application/pdf",
+                            "data": PDF_BASE64,
+                        },
+                    },
+                ],
+            }
+        ]
+    }
+
+    processed_input = _get_input_from_kwargs(kwargs)
+
+    content = processed_input[0]["content"]
+    image_block = content[1]
+    document_block = content[2]
+
+    assert image_block["type"] == "image"
+    assert image_block["source"] == {"type": "base64", "media_type": "image/png"}
+    assert isinstance(image_block["image_url"]["url"], Attachment)
+    assert image_block["image_url"]["url"].reference["content_type"] == "image/png"
+    assert image_block["image_url"]["url"].reference["filename"] == "image.png"
+
+    assert document_block["type"] == "document"
+    assert document_block["source"] == {"type": "base64", "media_type": "application/pdf"}
+    assert isinstance(document_block["image_url"]["url"], Attachment)
+    assert document_block["image_url"]["url"].reference["content_type"] == "application/pdf"
+    assert document_block["image_url"]["url"].reference["filename"] == "document.pdf"
+
+    serialized = str(processed_input)
+    assert PNG_BASE64 not in serialized
+    assert PDF_BASE64 not in serialized
 
 
 def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
@@ -110,6 +164,139 @@ def test_extract_anthropic_usage_includes_server_tool_use_metrics_from_objects()
         "tokens": 23.0,
     }
     assert metadata == {}
+
+
+def test_extract_anthropic_usage_supports_to_dict_only_objects():
+    class ToDictOnly:
+        __slots__ = ("_payload",)
+
+        def __init__(self, payload):
+            self._payload = payload
+
+        def to_dict(self):
+            return self._payload
+
+    usage = ToDictOnly(
+        {
+            "input_tokens": 11,
+            "output_tokens": 7,
+            "cache_read_input_tokens": 3,
+            "cache_creation": ToDictOnly(
+                {
+                    "ephemeral_5m_input_tokens": 2,
+                    "ephemeral_1h_input_tokens": 5,
+                }
+            ),
+            "server_tool_use": ToDictOnly(
+                {
+                    "web_search_requests": 2,
+                    "web_fetch_requests": 1,
+                }
+            ),
+            "service_tier": "standard",
+        }
+    )
+
+    metrics, metadata = extract_anthropic_usage(usage)
+
+    assert metrics == {
+        "prompt_tokens": 21.0,
+        "completion_tokens": 7.0,
+        "prompt_cached_tokens": 3.0,
+        "prompt_cache_creation_tokens": 7.0,
+        "server_tool_use_web_search_requests": 2.0,
+        "server_tool_use_web_fetch_requests": 1.0,
+        "tokens": 28.0,
+    }
+    assert metadata == {
+        "cache_creation_ephemeral_5m_input_tokens": 2,
+        "cache_creation_ephemeral_1h_input_tokens": 5,
+        "usage_service_tier": "standard",
+    }
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_messages_create_with_image_attachment_input(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+    response = client.messages.create(
+        model=MULTIMODAL_MODEL,
+        max_tokens=100,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Respond with one word: what color is this image?"},
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": PNG_BASE64,
+                        },
+                    },
+                ],
+            }
+        ],
+    )
+
+    assert response.content[0].text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    content = span["input"][0]["content"]
+    image_block = content[1]
+
+    assert image_block["type"] == "image"
+    assert image_block["source"] == {"type": "base64", "media_type": "image/png"}
+    assert isinstance(image_block["image_url"]["url"], Attachment)
+    assert image_block["image_url"]["url"].reference["content_type"] == "image/png"
+    assert image_block["image_url"]["url"].reference["filename"] == "image.png"
+    assert PNG_BASE64 not in str(span["input"])
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_messages_create_with_document_attachment_input(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+    response = client.messages.create(
+        model=MULTIMODAL_MODEL,
+        max_tokens=100,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What kind of file is this? Keep the answer short."},
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "application/pdf",
+                            "data": PDF_BASE64,
+                        },
+                    },
+                ],
+            }
+        ],
+    )
+
+    assert response.content[0].text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    content = span["input"][0]["content"]
+    document_block = content[1]
+
+    assert document_block["type"] == "document"
+    assert document_block["source"] == {"type": "base64", "media_type": "application/pdf"}
+    assert isinstance(document_block["image_url"]["url"], Attachment)
+    assert document_block["image_url"]["url"].reference["content_type"] == "application/pdf"
+    assert document_block["image_url"]["url"].reference["filename"] == "document.pdf"
+    assert PDF_BASE64 not in str(span["input"])
 
 
 @pytest.mark.vcr
@@ -387,6 +574,87 @@ def test_anthropic_messages_streaming_sync(memory_logger):
     assert "4" in str(log["output"])
     assert log["project_id"] == PROJECT_NAME
     assert log["span_attributes"]["type"] == "llm"
+    _assert_metrics_are_valid(log["metrics"], start, end)
+    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
+    assert log["metrics"]["completion_tokens"] == usage.output_tokens
+    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
+    assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
+    assert log["metrics"]["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+
+
+@pytest.mark.vcr
+def test_anthropic_messages_streaming_sync_text_stream(memory_logger):
+    """time_to_first_token is captured when iterating via .text_stream (BT-4702)."""
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+    msg_in = {"role": "user", "content": "what is 2+2? (just the number)"}
+
+    start = time.time()
+    with client.messages.stream(model=MODEL, max_tokens=300, messages=[msg_in]) as stream:
+        texts = list(stream.text_stream)
+    end = time.time()
+    msg_out = stream.get_final_message()
+    usage = msg_out.usage
+
+    text = "".join(texts)
+    assert "4" in text
+    assert "4" in msg_out.content[0].text
+
+    logs = memory_logger.pop()
+    assert len(logs) == 1
+    log = logs[0]
+    assert "user" in str(log["input"])
+    assert "2+2" in str(log["input"])
+    assert "4" in str(log["output"])
+    assert log["project_id"] == PROJECT_NAME
+    assert log["span_attributes"]["type"] == "llm"
+    assert log["metadata"]["model"] == MODEL
+    assert log["metadata"]["max_tokens"] == 300
+    assert log["output"]["role"] == "assistant"
+    assert log["output"]["model"] == msg_out.model
+    assert log["output"]["stop_reason"] == msg_out.stop_reason
+    _assert_metrics_are_valid(log["metrics"], start, end)
+    assert log["metrics"]["prompt_tokens"] == usage.input_tokens
+    assert log["metrics"]["completion_tokens"] == usage.output_tokens
+    assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
+    assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
+    assert log["metrics"]["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_anthropic_messages_streaming_async_text_stream(memory_logger):
+    """time_to_first_token is captured when iterating via .text_stream on async streams (BT-4702)."""
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_async_client())
+    msgs_in = [{"role": "user", "content": "what is 1+1?, just return the number"}]
+
+    start = time.time()
+    async with client.messages.stream(max_tokens=1024, messages=msgs_in, model=MODEL) as stream:
+        texts = [t async for t in stream.text_stream]
+        msg_out = await stream.get_final_message()
+        usage = msg_out.usage
+    end = time.time()
+
+    text = "".join(texts)
+    assert "2" in text
+    assert msg_out.content[0].text == "2"
+
+    logs = memory_logger.pop()
+    assert len(logs) == 1
+    log = logs[0]
+    assert "user" in str(log["input"])
+    assert "1+1" in str(log["input"])
+    assert "2" in str(log["output"])
+    assert log["project_id"] == PROJECT_NAME
+    assert log["span_attributes"]["type"] == "llm"
+    assert log["metadata"]["model"] == MODEL
+    assert log["metadata"]["max_tokens"] == 1024
+    assert log["output"]["role"] == "assistant"
+    assert log["output"]["model"] == msg_out.model
+    assert log["output"]["stop_reason"] == msg_out.stop_reason
     _assert_metrics_are_valid(log["metrics"], start, end)
     assert log["metrics"]["prompt_tokens"] == usage.input_tokens
     assert log["metrics"]["completion_tokens"] == usage.output_tokens

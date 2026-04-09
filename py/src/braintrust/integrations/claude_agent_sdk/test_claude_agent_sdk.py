@@ -166,6 +166,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
     assert task_span["output"] is not None
 
     assert result_message is not None, "Should have received result message"
+    assert getattr(result_message, "result", None) is not None
+    assert task_span["output"] == result_message.result
     if hasattr(result_message, "num_turns"):
         assert task_span.get("metadata", {}).get("num_turns") is not None
     if hasattr(result_message, "session_id"):

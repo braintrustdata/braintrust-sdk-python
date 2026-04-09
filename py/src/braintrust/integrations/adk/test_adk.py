@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 
 PROJECT_NAME = "test_adk"
-FIXTURES_DIR = Path(__file__).parent.parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
+FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 
 setup_adk(project_name=PROJECT_NAME)
 
@@ -693,11 +693,8 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
 
     runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
 
-    # Load test image from fixtures
-    fixtures_dir = Path(__file__).parent.parent.parent.parent.parent.parent / "internal" / "golden" / "fixtures"
-    image_path = fixtures_dir / "test-image.png"
-    with open(image_path, "rb") as f:
-        image_data = f.read()
+    # Load test image from shared SDK fixtures
+    image_data = (FIXTURES_DIR / "test-image.png").read_bytes()
 
     # Create message with inline binary data
     user_msg = types.Content(

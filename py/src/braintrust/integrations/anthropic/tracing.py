@@ -1,10 +1,11 @@
+import base64
 import logging
 import time
 import warnings
-from contextlib import contextmanager
 
+from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
-from braintrust.logger import NOOP_SPAN, log_exc_info_to_span, start_span
+from braintrust.logger import Attachment, log_exc_info_to_span, start_span
 
 
 log = logging.getLogger(__name__)
@@ -75,12 +76,10 @@ class AsyncMessages(Wrapper):
         try:
             result = await self.__messages.create(*args, **kwargs)
             ttft = time.time() - request_start_time
-            with _catch_exceptions():
-                _log_message_to_span(result, span, time_to_first_token=ttft)
+            _log_message_to_span(result, span, time_to_first_token=ttft)
             return result
         except Exception as e:
-            with _catch_exceptions():
-                span.log(error=e)
+            span.log(error=e)
             raise
         finally:
             span.end()
@@ -91,9 +90,8 @@ class AsyncMessages(Wrapper):
         try:
             stream = await self.__messages.create(*args, **kwargs)
         except Exception as e:
-            with _catch_exceptions():
-                span.log(error=e)
-                span.end()
+            span.log(error=e)
+            span.end()
             raise
 
         traced_stream = TracedMessageStream(stream, span, request_start_time)
@@ -103,16 +101,14 @@ class AsyncMessages(Wrapper):
                 async for msg in traced_stream:
                     yield msg
             except Exception as e:
-                with _catch_exceptions():
-                    span.log(error=e)
+                span.log(error=e)
                 raise
             finally:
-                with _catch_exceptions():
-                    msg = traced_stream._get_final_traced_message()
-                    if msg:
-                        ttft = traced_stream._get_time_to_first_token()
-                        _log_message_to_span(msg, span, time_to_first_token=ttft)
-                    span.end()
+                msg = traced_stream._get_final_traced_message()
+                if msg:
+                    ttft = traced_stream._get_time_to_first_token()
+                    _log_message_to_span(msg, span, time_to_first_token=ttft)
+                span.end()
 
         return async_stream()
 
@@ -204,12 +200,10 @@ class Batches(Wrapper):
         span = _start_batch_create_span(kwargs)
         try:
             result = self.__batches.create(*args, **kwargs)
-            with _catch_exceptions():
-                _log_batch_create_to_span(result, span)
+            _log_batch_create_to_span(result, span)
             return result
         except Exception as e:
-            with _catch_exceptions():
-                span.log(error=e)
+            span.log(error=e)
             raise
         finally:
             span.end()
@@ -218,12 +212,10 @@ class Batches(Wrapper):
         span = _start_batch_results_span(args, kwargs)
         try:
             result = self.__batches.results(*args, **kwargs)
-            with _catch_exceptions():
-                span.log(output={"type": "jsonl_stream"})
+            span.log(output={"type": "jsonl_stream"})
             return result
         except Exception as e:
-            with _catch_exceptions():
-                span.log(error=e)
+            span.log(error=e)
             raise
         finally:
             span.end()
@@ -240,12 +232,10 @@ class AsyncBatches(Wrapper):
         span = _start_batch_create_span(kwargs)
         try:
             result = await self.__batches.create(*args, **kwargs)
-            with _catch_exceptions():
-                _log_batch_create_to_span(result, span)
+            _log_batch_create_to_span(result, span)
             return result
         except Exception as e:
-            with _catch_exceptions():
-                span.log(error=e)
+            span.log(error=e)
             raise
         finally:
             span.end()
@@ -254,12 +244,10 @@ class AsyncBatches(Wrapper):
         span = _start_batch_results_span(args, kwargs)
         try:
             result = await self.__batches.results(*args, **kwargs)
-            with _catch_exceptions():
-                span.log(output={"type": "jsonl_stream"})
+            span.log(output={"type": "jsonl_stream"})
             return result
         except Exception as e:
-            with _catch_exceptions():
-                span.log(error=e)
+            span.log(error=e)
             raise
         finally:
             span.end()
@@ -287,26 +275,23 @@ class TracedMessageStreamManager(Wrapper):
         try:
             return self.__msg_stream_mgr.__aexit__(exc_type, exc_value, traceback)
         finally:
-            with _catch_exceptions():
-                self.__close(exc_type, exc_value, traceback)
+            self.__close(exc_type, exc_value, traceback)
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             return self.__msg_stream_mgr.__exit__(exc_type, exc_value, traceback)
         finally:
-            with _catch_exceptions():
-                self.__close(exc_type, exc_value, traceback)
+            self.__close(exc_type, exc_value, traceback)
 
     def __close(self, exc_type, exc_value, traceback):
-        with _catch_exceptions():
-            tms = self.__traced_message_stream
-            msg = tms._get_final_traced_message()
-            if msg:
-                ttft = tms._get_time_to_first_token()
-                _log_message_to_span(msg, self.__span, time_to_first_token=ttft)
-            if exc_type:
-                log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
-            self.__span.end()
+        tms = self.__traced_message_stream
+        msg = tms._get_final_traced_message()
+        if msg:
+            ttft = tms._get_time_to_first_token()
+            _log_message_to_span(msg, self.__span, time_to_first_token=ttft)
+        if exc_type:
+            log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
+        self.__span.end()
 
 
 class TracedMessageStream(Wrapper):
@@ -338,89 +323,150 @@ class TracedMessageStream(Wrapper):
 
     async def __anext__(self):
         m = await self.__msg_stream.__anext__()
-        with _catch_exceptions():
-            self.__process_message(m)
+        self.__process_message(m)
         return m
 
     def __next__(self):
         m = next(self.__msg_stream)
-        with _catch_exceptions():
-            self.__process_message(m)
+        self.__process_message(m)
         return m
+
+    @property
+    def text_stream(self):
+        if hasattr(self.__msg_stream, "__aiter__"):
+            return self.__async_text_stream()
+        return self.__sync_text_stream()
+
+    def __sync_text_stream(self):
+        for event in self:
+            if getattr(event, "type", None) == "content_block_delta":
+                delta = getattr(event, "delta", None)
+                if getattr(delta, "type", None) == "text_delta":
+                    yield getattr(delta, "text", "")
+
+    async def __async_text_stream(self):
+        async for event in self:
+            if getattr(event, "type", None) == "content_block_delta":
+                delta = getattr(event, "delta", None)
+                if getattr(delta, "type", None) == "text_delta":
+                    yield getattr(delta, "text", "")
 
     def __process_message(self, m):
         if self.__time_to_first_token is None:
             self.__time_to_first_token = time.time() - self.__request_start_time
 
-        with _catch_exceptions():
-            self.__snapshot = accumulate_event(event=m, current_snapshot=self.__snapshot)
+        self.__snapshot = accumulate_event(event=m, current_snapshot=self.__snapshot)
 
 
 def _start_batch_create_span(kwargs):
-    with _catch_exceptions():
-        requests = list(kwargs.get("requests", []))
-        # Extract models from the batch requests for metadata
-        models = set()
-        for req in requests:
-            params = req.get("params", {}) if isinstance(req, dict) else getattr(req, "params", {})
-            model = params.get("model") if isinstance(params, dict) else getattr(params, "model", None)
-            if model:
-                models.add(model)
+    requests = list(kwargs.get("requests", []))
+    # Extract models from the batch requests for metadata
+    models = set()
+    for req in requests:
+        params = req.get("params", {}) if isinstance(req, dict) else getattr(req, "params", {})
+        model = params.get("model") if isinstance(params, dict) else getattr(params, "model", None)
+        if model:
+            models.add(model)
 
-        metadata = {"provider": "anthropic", "num_requests": len(requests)}
-        if len(models) == 1:
-            metadata["model"] = next(iter(models))
-        elif models:
-            metadata["models"] = sorted(models)
+    metadata = {"provider": "anthropic", "num_requests": len(requests)}
+    if len(models) == 1:
+        metadata["model"] = next(iter(models))
+    elif models:
+        metadata["models"] = sorted(models)
 
-        _input = [
-            {"custom_id": req.get("custom_id") if isinstance(req, dict) else getattr(req, "custom_id", None)}
-            for req in requests
-        ]
+    _input = [
+        {"custom_id": req.get("custom_id") if isinstance(req, dict) else getattr(req, "custom_id", None)}
+        for req in requests
+    ]
 
-        return start_span(name="anthropic.messages.batches.create", type="task", metadata=metadata, input=_input)
-
-    return NOOP_SPAN
+    return start_span(name="anthropic.messages.batches.create", type="task", metadata=metadata, input=_input)
 
 
 def _log_batch_create_to_span(result, span):
-    with _catch_exceptions():
-        output = {}
-        if hasattr(result, "id"):
-            output["id"] = result.id
-        if hasattr(result, "processing_status"):
-            output["processing_status"] = result.processing_status
-        if hasattr(result, "request_counts"):
-            rc = result.request_counts
-            output["request_counts"] = {
-                "processing": getattr(rc, "processing", 0),
-                "succeeded": getattr(rc, "succeeded", 0),
-                "errored": getattr(rc, "errored", 0),
-                "canceled": getattr(rc, "canceled", 0),
-                "expired": getattr(rc, "expired", 0),
-            }
+    output = {}
+    if hasattr(result, "id"):
+        output["id"] = result.id
+    if hasattr(result, "processing_status"):
+        output["processing_status"] = result.processing_status
+    if hasattr(result, "request_counts"):
+        rc = result.request_counts
+        output["request_counts"] = {
+            "processing": getattr(rc, "processing", 0),
+            "succeeded": getattr(rc, "succeeded", 0),
+            "errored": getattr(rc, "errored", 0),
+            "canceled": getattr(rc, "canceled", 0),
+            "expired": getattr(rc, "expired", 0),
+        }
 
-        span.log(output=output)
+    span.log(output=output)
 
 
 def _start_batch_results_span(args, kwargs):
-    with _catch_exceptions():
-        # message_batch_id can be passed as first positional arg or as kwarg
-        batch_id = args[0] if args else kwargs.get("message_batch_id")
-        metadata = {"provider": "anthropic"}
-        _input = {"message_batch_id": batch_id}
-        return start_span(name="anthropic.messages.batches.results", type="task", metadata=metadata, input=_input)
+    # message_batch_id can be passed as first positional arg or as kwarg
+    batch_id = args[0] if args else kwargs.get("message_batch_id")
+    metadata = {"provider": "anthropic"}
+    _input = {"message_batch_id": batch_id}
+    return start_span(name="anthropic.messages.batches.results", type="task", metadata=metadata, input=_input)
 
-    return NOOP_SPAN
+
+def _attachment_filename_for_media_type(media_type: str, block_type: str) -> str:
+    extension = media_type.split("/", 1)[1] if "/" in media_type else "bin"
+    extension = extension.split("+", 1)[0]
+    prefix = "image" if block_type == "image" else "document"
+    return f"{prefix}.{extension}"
+
+
+def _convert_base64_source_to_attachment(block_type, source):
+    if not isinstance(source, dict):
+        return None
+    if source.get("type") != "base64":
+        return None
+
+    media_type = source.get("media_type")
+    data = source.get("data")
+    if not isinstance(media_type, str) or not isinstance(data, str):
+        return None
+
+    try:
+        binary_data = base64.b64decode(data, validate=True)
+    except Exception:
+        return None
+
+    return Attachment(
+        data=binary_data,
+        filename=_attachment_filename_for_media_type(media_type, block_type),
+        content_type=media_type,
+    )
+
+
+def _process_input_attachments(value):
+    if isinstance(value, list):
+        return [_process_input_attachments(item) for item in value]
+
+    if isinstance(value, dict):
+        block_type = value.get("type")
+        source = value.get("source")
+
+        if block_type in {"image", "document"} and isinstance(source, dict):
+            attachment = _convert_base64_source_to_attachment(block_type, source)
+            if attachment is not None:
+                processed = {k: _process_input_attachments(v) for k, v in value.items() if k != "source"}
+                processed["source"] = {k: _process_input_attachments(v) for k, v in source.items() if k != "data"}
+                processed["image_url"] = {"url": attachment}
+                return processed
+
+        return {k: _process_input_attachments(v) for k, v in value.items()}
+
+    return value
 
 
 def _get_input_from_kwargs(kwargs):
-    msgs = list(kwargs.get("messages", []))
-    kwargs["messages"] = msgs.copy()
+    msgs = bt_safe_deep_copy(list(kwargs.get("messages", [])))
+    msgs = _process_input_attachments(msgs)
 
-    system = kwargs.get("system", None)
+    system = bt_safe_deep_copy(kwargs.get("system", None))
     if system:
-        msgs.append({"role": "system", "content": system})
+        msgs.append({"role": "system", "content": _process_input_attachments(system)})
     return msgs
 
 
@@ -434,43 +480,31 @@ def _get_metadata_from_kwargs(kwargs):
 
 
 def _start_span(name, kwargs):
-    with _catch_exceptions():
-        _input = _get_input_from_kwargs(kwargs)
-        metadata = _get_metadata_from_kwargs(kwargs)
-        return start_span(name=name, type="llm", metadata=metadata, input=_input)
-
-    return NOOP_SPAN
+    _input = _get_input_from_kwargs(kwargs)
+    metadata = _get_metadata_from_kwargs(kwargs)
+    return start_span(name=name, type="llm", metadata=metadata, input=_input)
 
 
 def _log_message_to_span(message, span, time_to_first_token: float | None = None):
-    with _catch_exceptions():
-        usage = getattr(message, "usage", {})
-        metrics, metadata = extract_anthropic_usage(usage)
+    usage = getattr(message, "usage", {})
+    metrics, metadata = extract_anthropic_usage(usage)
 
-        if time_to_first_token is not None:
-            metrics["time_to_first_token"] = time_to_first_token
+    if time_to_first_token is not None:
+        metrics["time_to_first_token"] = time_to_first_token
 
-        output = {
-            k: v
-            for k, v in {
-                "role": getattr(message, "role", None),
-                "content": getattr(message, "content", None),
-                "model": getattr(message, "model", None),
-                "stop_reason": getattr(message, "stop_reason", None),
-                "stop_sequence": getattr(message, "stop_sequence", None),
-            }.items()
-            if v is not None
-        } or None
+    output = {
+        k: v
+        for k, v in {
+            "role": getattr(message, "role", None),
+            "content": getattr(message, "content", None),
+            "model": getattr(message, "model", None),
+            "stop_reason": getattr(message, "stop_reason", None),
+            "stop_sequence": getattr(message, "stop_sequence", None),
+        }.items()
+        if v is not None
+    } or None
 
-        span.log(output=output, metrics=metrics, metadata=metadata)
-
-
-@contextmanager
-def _catch_exceptions():
-    try:
-        yield
-    except Exception as e:
-        log.warning("swallowing exception in tracing code", exc_info=e)
+    span.log(output=output, metrics=metrics, metadata=metadata)
 
 
 _BRAINTRUST_TRACED = "__braintrust_traced__"
