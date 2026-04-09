@@ -11,15 +11,15 @@ from typing_extensions import NotRequired, TypedDict
 
 
 Input = TypeVar("Input")
-Output = TypeVar("Output")
+Expected = TypeVar("Expected")
 
 
 class EvalCaseDictNoOutput(Generic[Input], TypedDict):
     """
     Workaround for the Pyright type checker handling of generics. Specifically,
     the type checker doesn't know that a dict which is missing the key
-    "expected" can be used to satisfy ``EvalCaseDict[Input, Output]`` for any
-    ``Output`` type.
+    "expected" can be used to satisfy ``EvalCaseDict[Input, Expected]`` for any
+    ``Expected`` type.
     """
 
     input: Input
@@ -30,12 +30,12 @@ class EvalCaseDictNoOutput(Generic[Input], TypedDict):
     _xact_id: NotRequired[str | None]
 
 
-class EvalCaseDict(Generic[Input, Output], EvalCaseDictNoOutput[Input]):
+class EvalCaseDict(Generic[Input, Expected], EvalCaseDictNoOutput[Input]):
     """
     Mirrors EvalCase for callers who pass a dict instead of dataclass.
     """
 
-    expected: NotRequired[Output | None]
+    expected: NotRequired[Expected | None]
 
 
 class ExperimentDatasetEvent(TypedDict):

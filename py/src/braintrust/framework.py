@@ -58,6 +58,7 @@ from .util import bt_iscoroutinefunction, eprint, merge_dicts
 
 Input = TypeVar("Input")
 Output = TypeVar("Output")
+Expected = TypeVar("Expected")
 
 
 # https://stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
@@ -74,14 +75,14 @@ class bcolors:
 
 
 @dataclasses.dataclass
-class EvalCase(SerializableDataClass, Generic[Input, Output]):
+class EvalCase(SerializableDataClass, Generic[Input, Expected]):
     """
     An evaluation case. This is a single input to the evaluation task, along with an optional expected
     output, metadata, and tags.
     """
 
     input: Input
-    expected: Output | None = None
+    expected: Expected | None = None
     metadata: Metadata | None = None
     tags: Sequence[str] | None = None
 
@@ -94,13 +95,13 @@ class EvalCase(SerializableDataClass, Generic[Input, Output]):
 # Inheritance doesn't quite work for dataclasses, so we redefine the fields
 # from EvalCase here.
 @dataclasses.dataclass
-class EvalResult(SerializableDataClass, Generic[Input, Output]):
+class EvalResult(SerializableDataClass, Generic[Input, Output, Expected]):
     """The result of an evaluation. This includes the input, expected output, actual output, and metadata."""
 
     input: Input
     output: Output
     scores: dict[str, float | None]
-    expected: Output | None = None
+    expected: Expected | None = None
     metadata: Metadata | None = None
     tags: list[str] | None = None
     error: Exception | None = None
@@ -138,7 +139,7 @@ class SSEProgressEvent(TaskProgressEvent):
     name: str
 
 
-class EvalHooks(abc.ABC, Generic[Output]):
+class EvalHooks(abc.ABC, Generic[Expected]):
     """
     An object that can be used to add metadata to an evaluation. This is passed to the `task` function.
     """
@@ -152,7 +153,7 @@ class EvalHooks(abc.ABC, Generic[Output]):
 
     @property
     @abc.abstractmethod
-    def expected(self) -> Output | None:
+    def expected(self) -> Expected | None:
         """
         The expected output for the current evaluation.
         """
@@ -204,14 +205,14 @@ class EvalHooks(abc.ABC, Generic[Output]):
         """
 
 
-class EvalScorerArgs(SerializableDataClass, Generic[Input, Output]):
+class EvalScorerArgs(SerializableDataClass, Generic[Input, Output, Expected]):
     """
     Arguments passed to an evaluator scorer. This includes the input, expected output, actual output, and metadata.
     """
 
     input: Input
     output: Output
-    expected: Output | None = None
+    expected: Expected | None = None
     metadata: Metadata | None = None
 
 
@@ -219,35 +220,35 @@ OneOrMoreScores = Union[float, int, bool, None, Score, list[Score]]
 
 
 # Synchronous scorer interface - implements callable
-class SyncScorerLike(Protocol, Generic[Input, Output]):
+class SyncScorerLike(Protocol, Generic[Input, Output, Expected]):
     """
     Protocol for synchronous scorers that implement the callable interface.
     This is the most common interface and is used when no async version is available.
     """
 
     def __call__(
-        self, input: Input, output: Output, expected: Output | None = None, **kwargs: Any
+        self, input: Input, output: Output, expected: Expected | None = None, **kwargs: Any
     ) -> OneOrMoreScores: ...
 
 
 # Asynchronous scorer interface
-class AsyncScorerLike(Protocol, Generic[Input, Output]):
+class AsyncScorerLike(Protocol, Generic[Input, Output, Expected]):
     """
     Protocol for asynchronous scorers that implement the eval_async interface.
     The framework will prefer this interface if available.
     """
 
-    async def eval_async(self, output: Output, expected: Output | None = None, **kwargs: Any) -> OneOrMoreScores: ...
+    async def eval_async(self, output: Output, expected: Expected | None = None, **kwargs: Any) -> OneOrMoreScores: ...
 
 
 # Union type for any kind of scorer (for typing)
-ScorerLike = Union[SyncScorerLike[Input, Output], AsyncScorerLike[Input, Output]]
+ScorerLike = Union[SyncScorerLike[Input, Output, Expected], AsyncScorerLike[Input, Output, Expected]]
 
 EvalScorer = Union[
-    ScorerLike[Input, Output],
-    type[ScorerLike[Input, Output]],
-    Callable[[Input, Output, Output], OneOrMoreScores],
-    Callable[[Input, Output, Output], Awaitable[OneOrMoreScores]],
+    ScorerLike[Input, Output, Expected],
+    type[ScorerLike[Input, Output, Expected]],
+    Callable[[Input, Output, Expected], OneOrMoreScores],
+    Callable[[Input, Output, Expected], Awaitable[OneOrMoreScores]],
 ]
 
 
@@ -267,32 +268,32 @@ class BaseExperiment:
 
 
 _AnyEvalCase = Union[
-    EvalCase[Input, Output],
-    EvalCaseDict[Input, Output],
+    EvalCase[Input, Expected],
+    EvalCaseDict[Input, Expected],
     EvalCaseDictNoOutput[Input],
     ExperimentDatasetEvent,
 ]
 
 _EvalDataObject = Union[
-    Iterable[_AnyEvalCase[Input, Output]],
-    Iterator[_AnyEvalCase[Input, Output]],
-    Awaitable[Iterator[_AnyEvalCase[Input, Output]]],
-    Callable[[], Union[Iterator[_AnyEvalCase[Input, Output]], Awaitable[Iterator[_AnyEvalCase[Input, Output]]]]],
+    Iterable[_AnyEvalCase[Input, Expected]],
+    Iterator[_AnyEvalCase[Input, Expected]],
+    Awaitable[Iterator[_AnyEvalCase[Input, Expected]]],
+    Callable[[], Union[Iterator[_AnyEvalCase[Input, Expected]], Awaitable[Iterator[_AnyEvalCase[Input, Expected]]]]],
     BaseExperiment,
 ]
 
-EvalData = Union[_EvalDataObject[Input, Output], type[_EvalDataObject[Input, Output]], Dataset]
+EvalData = Union[_EvalDataObject[Input, Expected], type[_EvalDataObject[Input, Expected]], Dataset]
 
 EvalTask = Union[
     Callable[[Input], Union[Output, Awaitable[Output]]],
-    Callable[[Input, EvalHooks[Output]], Union[Output, Awaitable[Output]]],
+    Callable[[Input, EvalHooks[Expected]], Union[Output, Awaitable[Output]]],
 ]
 
-ErrorScoreHandler = Callable[[Span, EvalCase[Input, Output], list[str]], Optional[dict[str, float]]]
+ErrorScoreHandler = Callable[[Span, EvalCase[Input, Expected], list[str]], Optional[dict[str, float]]]
 
 
 @dataclasses.dataclass
-class Evaluator(Generic[Input, Output]):
+class Evaluator(Generic[Input, Output, Expected]):
     """
     An evaluator is an abstraction that defines an evaluation dataset, a task to run on the dataset, and a set of
     scorers to evaluate the results of the task. Each method attribute can be synchronous or asynchronous (for
@@ -312,18 +313,18 @@ class Evaluator(Generic[Input, Output]):
     A name that describes the experiment. You do not need to change it each time the experiment runs.
     """
 
-    data: EvalData[Input, Output]
+    data: EvalData[Input, Expected]
     """
     Returns an iterator over the evaluation dataset. Each element of the iterator should be an `EvalCase` or a dict
     with the same fields as an `EvalCase` (`input`, `expected`, `metadata`).
     """
 
-    task: EvalTask[Input, Output]
+    task: EvalTask[Input, Output, Expected]
     """
     Runs the evaluation task on a single input. The `hooks` object can be used to add metadata to the evaluation.
     """
 
-    scores: list[EvalScorer[Input, Output]]
+    scores: list[EvalScorer[Input, Output, Expected]]
     """
     A list of scorers to evaluate the results of the task. Each scorer can be a Scorer object or a function
     that takes `input`, `output`, and `expected` arguments and returns a `Score` object. The function can be async.
@@ -405,7 +406,7 @@ class Evaluator(Generic[Input, Output]):
     takes precedence over `git_metadata_settings` if specified.
     """
 
-    error_score_handler: ErrorScoreHandler[Input, Output] | None = None
+    error_score_handler: ErrorScoreHandler[Input, Expected] | None = None
     """
     Optionally supply a custom function to specifically handle score values when tasks or scoring functions have errored.
     A default implementation is exported as `default_error_score_handler` which will log a 0 score to the root span for any scorer that was not run.
@@ -431,9 +432,9 @@ class Evaluator(Generic[Input, Output]):
 
 
 @dataclasses.dataclass
-class EvalResultWithSummary(SerializableDataClass, Generic[Input, Output]):
+class EvalResultWithSummary(SerializableDataClass, Generic[Input, Output, Expected]):
     summary: ExperimentSummary
-    results: list[EvalResult[Input, Output]]
+    results: list[EvalResult[Input, Output, Expected]]
 
     def _repr_pretty_(self, p, cycle):
         p.text(f'EvalResultWithSummary(summary="...", results=[...])')
@@ -502,7 +503,7 @@ async def call_user_fn(event_loop, fn, **kwargs):
 
 
 @dataclasses.dataclass
-class ReporterDef(SerializableDataClass, Generic[Input, Output, EvalReport]):
+class ReporterDef(SerializableDataClass, Generic[Input, Output, Expected, EvalReport]):
     """
     A reporter takes an evaluator and its result and returns a report.
     """
@@ -513,7 +514,7 @@ class ReporterDef(SerializableDataClass, Generic[Input, Output, EvalReport]):
     """
 
     report_eval: Callable[
-        [Evaluator[Input, Output], EvalResultWithSummary[Input, Output], bool, bool],
+        [Evaluator[Input, Output, Expected], EvalResultWithSummary[Input, Output, Expected], bool, bool],
         EvalReport | Awaitable[EvalReport],
     ]
     """
@@ -528,8 +529,8 @@ class ReporterDef(SerializableDataClass, Generic[Input, Output, EvalReport]):
 
     async def _call_report_eval(
         self,
-        evaluator: Evaluator[Input, Output],
-        result: EvalResultWithSummary[Input, Output],
+        evaluator: Evaluator[Input, Output, Expected],
+        result: EvalResultWithSummary[Input, Output, Expected],
         verbose: bool,
         jsonl: bool,
     ) -> EvalReport | Awaitable[EvalReport]:
@@ -544,9 +545,9 @@ class ReporterDef(SerializableDataClass, Generic[Input, Output, EvalReport]):
 
 
 @dataclasses.dataclass
-class EvaluatorInstance(SerializableDataClass, Generic[Input, Output, EvalReport]):
-    evaluator: Evaluator[Input, Output]
-    reporter: ReporterDef[Input, Output, EvalReport] | str | None
+class EvaluatorInstance(SerializableDataClass, Generic[Input, Output, Expected, EvalReport]):
+    evaluator: Evaluator[Input, Output, Expected]
+    reporter: ReporterDef[Input, Output, Expected, EvalReport] | str | None
 
 
 @dataclasses.dataclass
@@ -643,16 +644,16 @@ def _make_eval_name(name: str, experiment_name: str | None):
 
 def _EvalCommon(
     name: str,
-    data: EvalData[Input, Output],
-    task: EvalTask[Input, Output],
-    scores: Sequence[EvalScorer[Input, Output]],
+    data: EvalData[Input, Expected],
+    task: EvalTask[Input, Output, Expected],
+    scores: Sequence[EvalScorer[Input, Output, Expected]],
     experiment_name: str | None,
     trial_count: int,
     metadata: Metadata | None,
     tags: list[str] | None,
     is_public: bool,
     update: bool,
-    reporter: ReporterDef[Input, Output, EvalReport] | None,
+    reporter: ReporterDef[Input, Output, Expected, EvalReport] | None,
     timeout: float | None,
     max_concurrency: int | None,
     project_id: str | None,
@@ -663,14 +664,14 @@ def _EvalCommon(
     description: str | None,
     summarize_scores: bool,
     no_send_logs: bool,
-    error_score_handler: ErrorScoreHandler[Input, Output] | None = None,
+    error_score_handler: ErrorScoreHandler[Input, Expected] | None = None,
     parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
-) -> Callable[[], Coroutine[Any, Any, EvalResultWithSummary[Input, Output]]]:
+) -> Callable[[], Coroutine[Any, Any, EvalResultWithSummary[Input, Output, Expected]]]:
     """
     This helper is needed because in case of `_lazy_load`, we need to update
     the `_evals` global immediately instead of whenever the coroutine is
@@ -779,16 +780,16 @@ def _EvalCommon(
 
 async def EvalAsync(
     name: str,
-    data: EvalData[Input, Output],
-    task: EvalTask[Input, Output],
-    scores: Sequence[EvalScorer[Input, Output]],
+    data: EvalData[Input, Expected],
+    task: EvalTask[Input, Output, Expected],
+    scores: Sequence[EvalScorer[Input, Output, Expected]],
     experiment_name: str | None = None,
     trial_count: int = 1,
     metadata: Metadata | None = None,
     tags: list[str] | None = None,
     is_public: bool = False,
     update: bool = False,
-    reporter: ReporterDef[Input, Output, EvalReport] | None = None,
+    reporter: ReporterDef[Input, Output, Expected, EvalReport] | None = None,
     timeout: float | None = None,
     max_concurrency: int | None = None,
     project_id: str | None = None,
@@ -796,7 +797,7 @@ async def EvalAsync(
     base_experiment_id: str | None = None,
     git_metadata_settings: GitMetadataSettings | None = None,
     repo_info: RepoInfo | None = None,
-    error_score_handler: ErrorScoreHandler[Input, Output] | None = None,
+    error_score_handler: ErrorScoreHandler[Input, Expected] | None = None,
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,
@@ -806,7 +807,7 @@ async def EvalAsync(
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
-) -> EvalResultWithSummary[Input, Output]:
+) -> EvalResultWithSummary[Input, Output, Expected]:
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
 
@@ -906,16 +907,16 @@ _has_printed_eval_async_warning = False
 
 def Eval(
     name: str,
-    data: EvalData[Input, Output],
-    task: EvalTask[Input, Output],
-    scores: Sequence[EvalScorer[Input, Output]],
+    data: EvalData[Input, Expected],
+    task: EvalTask[Input, Output, Expected],
+    scores: Sequence[EvalScorer[Input, Output, Expected]],
     experiment_name: str | None = None,
     trial_count: int = 1,
     metadata: Metadata | None = None,
     tags: list[str] | None = None,
     is_public: bool = False,
     update: bool = False,
-    reporter: ReporterDef[Input, Output, EvalReport] | None = None,
+    reporter: ReporterDef[Input, Output, Expected, EvalReport] | None = None,
     timeout: float | None = None,
     max_concurrency: int | None = None,
     project_id: str | None = None,
@@ -923,7 +924,7 @@ def Eval(
     base_experiment_id: str | None = None,
     git_metadata_settings: GitMetadataSettings | None = None,
     repo_info: RepoInfo | None = None,
-    error_score_handler: ErrorScoreHandler[Input, Output] | None = None,
+    error_score_handler: ErrorScoreHandler[Input, Expected] | None = None,
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,
@@ -933,7 +934,7 @@ def Eval(
     parent: str | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
-) -> EvalResultWithSummary[Input, Output]:
+) -> EvalResultWithSummary[Input, Output, Expected]:
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
 
@@ -1053,7 +1054,7 @@ def Eval(
 def Reporter(
     name: str,
     report_eval: Callable[
-        [Evaluator[Input, Output], EvalResultWithSummary[Input, Output], bool, bool],
+        [Evaluator[Input, Output, Expected], EvalResultWithSummary[Input, Output, Expected], bool, bool],
         EvalReport | Awaitable[EvalReport],
     ],
     report_run: Callable[[list[EvalReport], bool, bool], bool | Awaitable[bool]],
@@ -1267,13 +1268,13 @@ def _scorer_name(scorer, scorer_idx):
 
 async def run_evaluator(
     experiment: Experiment | None,
-    evaluator: Evaluator[Input, Output],
+    evaluator: Evaluator[Input, Output, Expected],
     position: int | None,
     filters: list[Filter],
     stream: Callable[[SSEProgressEvent], None] | None = None,
     state: BraintrustState | None = None,
     enable_cache: bool = True,
-) -> EvalResultWithSummary[Input, Output]:
+) -> EvalResultWithSummary[Input, Output, Expected]:
     """Wrapper on _run_evaluator_internal that times out execution after evaluator.timeout."""
     results = await asyncio.wait_for(
         _run_evaluator_internal(experiment, evaluator, position, filters, stream, state, enable_cache),
@@ -1290,7 +1291,7 @@ async def run_evaluator(
 
 def default_error_score_handler(
     root_span: Span,
-    data: EvalCase[Input, Output],
+    data: EvalCase[Input, Expected],
     unhandled_scores: list[str],
 ):
     scores = {s: 0 for s in unhandled_scores}
@@ -1691,7 +1692,7 @@ async def _run_evaluator_internal_impl(
 
 
 def build_local_summary(
-    evaluator: Evaluator[Input, Output], results: list[EvalResultWithSummary[Input, Output]]
+    evaluator: Evaluator[Input, Output, Expected], results: list[EvalResultWithSummary[Input, Output, Expected]]
 ) -> ExperimentSummary:
     scores_by_name = defaultdict(lambda: (0, 0))
     for result in results:

@@ -44,6 +44,7 @@ WRAPPER_DIR = "braintrust/wrappers"
 INTEGRATION_DIR = "braintrust/integrations"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
+TYPE_TESTS_DIR = "braintrust/type_tests"
 
 
 SILENT_INSTALLS = True
@@ -391,6 +392,27 @@ def test_otel_not_installed(session):
 
 
 @nox.session()
+def test_types(session):
+    """Run type-check tests with pyright, mypy, and pytest."""
+    _install_test_deps(session)
+    session.install("pyright", "mypy")
+
+    type_tests_dir = f"src/{TYPE_TESTS_DIR}"
+    test_files = glob.glob(os.path.join(type_tests_dir, "test_*.py"))
+    if not test_files:
+        session.skip("No type test files found")
+
+    # Run pyright on each file
+    session.run("pyright", *test_files)
+
+    # Run mypy on each file (only check the test files themselves, not transitive deps)
+    session.run("mypy", "--follow-imports=silent", *test_files)
+
+    # Run pytest for the runtime assertions
+    _run_tests(session, TYPE_TESTS_DIR)
+
+
+@nox.session()
 def pylint(session):
     # pylint needs everything so we don't trigger missing import errors
     session.install(".[all]")
@@ -502,6 +524,7 @@ def _run_core_tests(session):
             *_integration_subdirs_to_ignore(),
             CONTRIB_DIR,
             DEVSERVER_DIR,
+            TYPE_TESTS_DIR,
         ],
     )
 

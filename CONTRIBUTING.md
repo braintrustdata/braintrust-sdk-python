@@ -134,6 +134,17 @@ BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all \
   nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
 ```
 
+### Type Tests
+
+`py/src/braintrust/type_tests/` contains tests that are checked by pyright, mypy, and pytest. The `test_types` nox session runs all three and is included in CI automatically.
+
+When changing generic type signatures (e.g., `Eval`, `EvalCase`, `EvalScorer`, `EvalHooks`), add or update a test file in `type_tests/` to verify the type checker accepts the intended usage patterns. Test files are named `test_*.py`, use absolute imports (`from braintrust.framework import ...`), and double as regular pytest files.
+
+```bash
+cd py
+nox -s test_types
+```
+
 ### Fixtures
 
 Shared test fixtures live in `py/src/braintrust/conftest.py`.

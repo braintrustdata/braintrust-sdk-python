@@ -23,6 +23,7 @@ Important code areas in `py/src/braintrust/`:
 - temporal: `contrib/temporal/`
 - CLI/devserver: `cli/`, `devserver/`
 - tests: colocated `test_*.py`
+- type tests: `type_tests/`
 
 ## Setup
 
@@ -83,12 +84,26 @@ Testing preferences:
 Key facts:
 
 - `test_core` runs without optional vendor packages.
+- `test_types` runs pyright, mypy, and pytest on `py/src/braintrust/type_tests/`. Use this session when changing generic type signatures in the framework.
 - wrapper coverage is split across dedicated nox sessions by provider/version.
 - `pylint` installs the broad dependency surface before checking files.
 - `cd py && make pylint` runs only `pylint`; `cd py && make lint` runs pre-commit hooks first and then `pylint`.
 - `test-wheel` is a wheel sanity check and requires a built wheel first.
 
 When changing behavior, run the narrowest affected session first, then expand only if needed.
+
+## Type Tests
+
+`py/src/braintrust/type_tests/` contains tests that are validated by both static type checkers (pyright, mypy) and pytest at runtime. The `test_types` nox session runs all three checks and is auto-discovered by CI.
+
+When changing generic type signatures (e.g., `Eval`, `EvalCase`, `EvalScorer`, `EvalHooks`), add or update a test in `type_tests/` to verify the type checker accepts the intended usage patterns.
+
+New test files should be named `test_*.py` and use absolute imports (`from braintrust.framework import ...`). They are regular pytest files that also happen to be valid pyright/mypy targets.
+
+```bash
+cd py
+nox -s test_types
+```
 
 ## VCR
 
