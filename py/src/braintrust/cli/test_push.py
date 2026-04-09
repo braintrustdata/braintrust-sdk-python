@@ -118,3 +118,20 @@ class TestValidatePythonBundleSourcePaths:
     @pytest.mark.skipif(sys.platform == "win32", reason="leading-space filenames are not portable on Windows")
     def test_rejects_leading_whitespace_in_filename(self, tmp_path):
         self._assert_whitespace_in_filename_rejected(tmp_path, " tool.py")
+
+    def test_rejects_whitespace_in_directory_name(self, tmp_path):
+        subdir = tmp_path / "my tools"
+        subdir.mkdir()
+        source = subdir / "tool.py"
+        source.write_text("VALUE = 1\n")
+
+        with pytest.raises(ValueError, match="contains whitespace in path component"):
+            _validate_python_bundle_source_paths([str(source)], str(tmp_path))
+
+    def test_rejects_tab_in_filename(self, tmp_path):
+        self._assert_whitespace_in_filename_rejected(tmp_path, "my\ttool.py")
+
+    def test_accepts_valid_path(self, tmp_path):
+        source = tmp_path / "my_tool.py"
+        source.write_text("VALUE = 1\n")
+        _validate_python_bundle_source_paths([str(source)], str(tmp_path))
