@@ -24,7 +24,7 @@ from typing import (
 
 from tqdm.asyncio import tqdm as async_tqdm
 from tqdm.auto import tqdm as std_tqdm
-from typing_extensions import NotRequired, Protocol, TypedDict
+from typing_extensions import Protocol, TypedDict
 
 from .generated_types import FunctionFormat, FunctionOutputType, ObjectReference
 from .git_fields import GitMetadataSettings, RepoInfo
@@ -36,7 +36,6 @@ from .logger import (
     Metadata,
     ScoreSummary,
     Span,
-    _ExperimentDatasetEvent,
     parent_context,
     start_span,
     stringify_exception,
@@ -53,6 +52,7 @@ from .resource_manager import ResourceManager
 from .score import Score, is_score, is_scorer
 from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
+from .types._eval import EvalCaseDict, EvalCaseDictNoOutput, ExperimentDatasetEvent
 from .util import bt_iscoroutinefunction, eprint, merge_dicts
 
 
@@ -89,30 +89,6 @@ class EvalCase(SerializableDataClass, Generic[Input, Output]):
     id: str | None = None
     _xact_id: str | None = None
     created: str | None = None
-
-
-class _EvalCaseDictNoOutput(Generic[Input], TypedDict):
-    """
-    Workaround for the Pyright type checker handling of generics. Specifically,
-    the type checker doesn't know that a dict which is missing the key
-    "expected" can be used to satisfy `_EvalCaseDict[Input, Output]` for any
-    `Output` type.
-    """
-
-    input: Input
-    metadata: NotRequired[Metadata | None]
-    tags: NotRequired[Sequence[str] | None]
-
-    id: NotRequired[str | None]
-    _xact_id: NotRequired[str | None]
-
-
-class _EvalCaseDict(Generic[Input, Output], _EvalCaseDictNoOutput[Input]):
-    """
-    Mirrors EvalCase for callers who pass a dict instead of dataclass.
-    """
-
-    expected: NotRequired[Output | None]
 
 
 # Inheritance doesn't quite work for dataclasses, so we redefine the fields
@@ -292,9 +268,9 @@ class BaseExperiment:
 
 _AnyEvalCase = Union[
     EvalCase[Input, Output],
-    _EvalCaseDict[Input, Output],
-    _EvalCaseDictNoOutput[Input],
-    _ExperimentDatasetEvent,
+    EvalCaseDict[Input, Output],
+    EvalCaseDictNoOutput[Input],
+    ExperimentDatasetEvent,
 ]
 
 _EvalDataObject = Union[
@@ -429,7 +405,7 @@ class Evaluator(Generic[Input, Output]):
     takes precedence over `git_metadata_settings` if specified.
     """
 
-    error_score_handler: ErrorScoreHandler | None = None
+    error_score_handler: ErrorScoreHandler[Input, Output] | None = None
     """
     Optionally supply a custom function to specifically handle score values when tasks or scoring functions have errored.
     A default implementation is exported as `default_error_score_handler` which will log a 0 score to the root span for any scorer that was not run.
@@ -682,7 +658,7 @@ def _EvalCommon(
     description: str | None,
     summarize_scores: bool,
     no_send_logs: bool,
-    error_score_handler: ErrorScoreHandler | None = None,
+    error_score_handler: ErrorScoreHandler[Input, Output] | None = None,
     parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
@@ -815,7 +791,7 @@ async def EvalAsync(
     base_experiment_id: str | None = None,
     git_metadata_settings: GitMetadataSettings | None = None,
     repo_info: RepoInfo | None = None,
-    error_score_handler: ErrorScoreHandler | None = None,
+    error_score_handler: ErrorScoreHandler[Input, Output] | None = None,
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,
@@ -942,7 +918,7 @@ def Eval(
     base_experiment_id: str | None = None,
     git_metadata_settings: GitMetadataSettings | None = None,
     repo_info: RepoInfo | None = None,
-    error_score_handler: ErrorScoreHandler | None = None,
+    error_score_handler: ErrorScoreHandler[Input, Output] | None = None,
     description: str | None = None,
     summarize_scores: bool = True,
     no_send_logs: bool = False,

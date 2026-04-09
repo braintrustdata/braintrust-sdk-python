@@ -79,6 +79,7 @@ from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from .span_identifier_v4 import SpanComponentsV4
 from .span_types import SpanTypeAttribute
 from .types import Metadata
+from .types._eval import ExperimentDatasetEvent
 from .util import (
     GLOBAL_PROJECT,
     AugmentedHTTPError,
@@ -3716,20 +3717,6 @@ class ExperimentIdentifier:
     name: str
 
 
-class _ExperimentDatasetEvent(TypedDict):
-    """
-    TODO: This could be unified with `framework._EvalCaseDict` like we do in the
-    TypeScript SDK, or generated from OpenAPI spec. For now, marking as internal
-    to exclude it from the docs.
-    """
-
-    id: str
-    _xact_id: str
-    input: Any | None
-    expected: Any | None
-    tags: Sequence[str] | None
-
-
 class ExperimentDatasetIterator:
     def __init__(self, iterator: Iterator[ExperimentEvent]):
         self.iterator = iterator
@@ -3737,14 +3724,14 @@ class ExperimentDatasetIterator:
     def __iter__(self):
         return self
 
-    def __next__(self) -> _ExperimentDatasetEvent:
+    def __next__(self) -> ExperimentDatasetEvent:
         while True:
             value = next(self.iterator)
             if value["root_span_id"] != value["span_id"]:
                 continue
 
             output, expected = value.get("output"), value.get("expected")
-            ret: _ExperimentDatasetEvent = {
+            ret: ExperimentDatasetEvent = {
                 "input": value.get("input"),
                 "expected": expected if expected is not None else output,
                 "tags": value.get("tags"),
@@ -4133,7 +4120,7 @@ class ReadonlyExperiment(ObjectFetcher[ExperimentEvent]):
         self._lazy_metadata.get()
         return self.state
 
-    def as_dataset(self, batch_size: int | None = None) -> Iterator[_ExperimentDatasetEvent]:
+    def as_dataset(self, batch_size: int | None = None) -> Iterator[ExperimentDatasetEvent]:
         """
         Return the experiment's data as a dataset iterator.
 
