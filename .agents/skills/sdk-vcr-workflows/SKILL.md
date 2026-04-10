@@ -39,6 +39,7 @@ These rules must stay aligned with `AGENTS.md`:
 - Do not guess nox session names or provider/version coverage.
 - Default bug-fix workflow is red -> green.
 - Prefer VCR-backed provider tests over mocks or fakes whenever practical.
+- Treat mock/fake tests for provider behavior as an exception that requires justification, not as a neutral alternative.
 - Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If unsure, ask the user.
 - Do not assume optional provider packages are installed outside the active nox session.
 
@@ -71,6 +72,8 @@ Implications:
 
 Do not re-record a broad provider suite when one focused test is enough.
 
+Do not default to mocks/fakes just to avoid recording work. Extra setup effort is not, by itself, a good reason to abandon cassette-backed coverage.
+
 ## Choosing The Right Coverage Style
 
 ### Prefer cassette-backed tests when:
@@ -89,6 +92,14 @@ Do not re-record a broad provider suite when one focused test is enough.
 - the code under test is entirely internal and a cassette would add little value
 
 If the task is about provider behavior and you can reasonably record it, prefer VCR.
+
+Do not use mocks/fakes as the primary regression test for provider behavior merely because:
+- the bug appears in local tracing or post-processing code
+- a mock is faster to write
+- recording requires adding a new cassette
+- an existing mock test already exists nearby
+
+In those situations, the right move is usually to add or update a focused cassette-backed test and keep any mock/unit test only as supplemental coverage.
 
 ## Cassette Locations
 
@@ -247,6 +258,7 @@ Do not try to force ordinary HTTP VCR patterns onto Claude Agent SDK subprocess 
 - Reproduce under the exact provider session and version.
 - Use red -> green when fixing a bug.
 - Prefer a focused cassette-backed test over mocks/fakes.
+- If you choose a mock/fake test for provider behavior, be able to state exactly why a cassette-backed test is impractical.
 - Re-record only when behavior intentionally changed.
 - Record the narrowest affected test first.
 - Inspect the cassette diff before finishing.
@@ -262,6 +274,7 @@ Avoid these failures:
 - letting local `record_mode="once"` hide a missing or stale cassette
 - replacing meaningful assertions with cassette churn
 - using mocks for provider behavior that should be validated from real recordings
+- treating local tracing/span-shaping bugs as mock-first when the trigger is a real provider payload
 - forgetting that Claude Agent SDK uses subprocess transport recordings, not HTTP VCR
 - leaving duplicate stale cassettes behind after moving tests or renaming scenarios
 - broad re-records that create unnecessary review noise

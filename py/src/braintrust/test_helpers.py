@@ -115,6 +115,20 @@ def init_test_logger(project_name: str):
     return l
 
 
+def find_spans_by_type(spans, span_type):
+    """Filter spans by their span_attributes type."""
+    return [span for span in spans if span.get("span_attributes", {}).get("type") == span_type]
+
+
+def find_span_by_name(spans, name):
+    """Find a single span by its span_attributes name. Raises AssertionError with available names if not found."""
+    for span in spans:
+        if span["span_attributes"]["name"] == name:
+            return span
+    available_names = [span["span_attributes"]["name"] for span in spans]
+    raise AssertionError(f"Expected span named {name!r}. Available spans: {available_names}")
+
+
 def init_test_exp(experiment_name: str, project_name: str = None):
     """
     Initialize an experiment for testing with fake project and experiment metadata.

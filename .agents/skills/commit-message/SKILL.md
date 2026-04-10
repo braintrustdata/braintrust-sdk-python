@@ -37,7 +37,7 @@ Notes:
 - This repo uses `ref`, not `refactor`.
 - Scope is common and usually names the subsystem, provider, or area being changed.
 - Commits on `main` often include a GitHub squash suffix like `(#245)`. Omit that for a normal local commit unless the user explicitly wants a PR title or squash-merge title.
-- Most commits in this repo are title-only, but the message should still be useful. Prefer a concise subject that makes the main change obvious, and add a short body when the subject alone would feel too vague.
+- This repo commonly uses commit bodies for substantive changes. Prefer a concise subject that makes the main change obvious, and add a short body unless the change is truly trivial and fully explained by the subject.
 
 ## Types
 
@@ -73,7 +73,9 @@ If the change is broad or generated, omit scope instead of forcing one.
 - Describe the primary change, not every file touched.
 - Make the subject specific enough that a reviewer can understand the change without opening the diff.
 - If the diff mixes unrelated concerns, say so instead of forcing one message.
-- Add a short body when non-obvious rationale, behavior changes, or breaking changes would make the message meaningfully clearer.
+- Add a short body by default for feature, fix, perf, or ref commits.
+- The body should briefly capture why the change was made, any important behavioral detail, and key test/coverage notes when they materially help a reviewer.
+- Only omit the body when the change is truly tiny and the subject fully explains it.
 
 ## Workflow
 
@@ -86,6 +88,7 @@ git status --short
 ```
 
 2. Pick the main intent, choose `type` and optional `scope`, then write one useful but concise commit message.
+3. Unless the change is trivial, include a body with 1-3 short paragraphs or bullets covering rationale, behavior, or test coverage.
 
 ## Output
 

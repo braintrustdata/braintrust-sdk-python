@@ -81,7 +81,9 @@ Use this order unless the task is clearly narrower:
 4. Implement or update patchers.
 5. Implement or update tracing helpers.
 6. Add or update focused tests.
-7. Run the narrowest nox session first, then expand only if shared code changed.
+7. For provider-behavior bugs, make the primary regression test cassette-backed when practical, even if the implementation change is in local tracing/span post-processing of the provider response.
+8. Be suspicious of mock/fake coverage for integrations. Do not choose mocks because they are convenient, faster, or easier to control.
+9. Run the narrowest nox session first, then expand only if shared code changed.
 
 Do not start by wiring wrappers and only later decide what the span should contain.
 
@@ -241,11 +243,18 @@ Default bug-fix workflow: red -> green.
 - Then implement the fix.
 - Only skip this when the task explicitly asks for a different approach.
 
-Prefer VCR-backed real provider coverage with `@pytest.mark.vcr`. Use mocks or fakes only for cases that are hard to drive through recordings, such as:
+Prefer VCR-backed real provider coverage with `@pytest.mark.vcr`. This includes span-shaping/tracing bugs where the bad behavior is triggered by a real provider response payload; do not treat those as mock-first just because the code path is local.
+
+Default stance: if the behavior is provider-facing, assume mocks/fakes are the wrong tool until proven otherwise. A mock should need justification, not the other way around.
+
+Use mocks or fakes only for cases that are hard to drive through recordings, such as:
 
 - narrow error injection
-- local version-routing logic
+- purely local version-routing logic
 - patcher existence checks
+- provider-independent helper logic where the provider response shape is not part of the contract being validated
+
+Do not replace or skip a cassette-backed regression with a mock/fake test merely because the implementation change lives in `tracing.py`, a serializer, or another local post-processing layer. If a real provider payload is what triggers the bug, the main regression test should reflect that real payload.
 
 Test emitted spans, not just provider return values.
 

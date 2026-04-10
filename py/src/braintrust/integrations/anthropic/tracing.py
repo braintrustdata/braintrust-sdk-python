@@ -1,11 +1,13 @@
 import logging
 import time
 import warnings
+from typing import Any
 
 from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
+from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import log_exc_info_to_span, start_span
+from braintrust.span_types import SpanTypeAttribute
 
 
 log = logging.getLogger(__name__)
@@ -475,6 +477,179 @@ def _start_span(name, kwargs):
     return start_span(name=name, type="llm", metadata=metadata, input=_input)
 
 
+_SERVER_TOOL_USE_TYPE = "server_tool_use"
+
+
+def _is_server_tool_result_type(item_type: Any) -> bool:
+    return isinstance(item_type, str) and item_type.endswith("_tool_result") and item_type != "tool_result"
+
+
+def _tool_span_name(call_item: dict[str, Any] | None, result_item: dict[str, Any] | None) -> str:
+    if isinstance((call_item or {}).get("name"), str):
+        return call_item["name"]
+
+    result_type = (result_item or {}).get("type")
+    if isinstance(result_type, str) and result_type.endswith("_tool_result"):
+        return result_type.removesuffix("_tool_result")
+
+    return "server_tool"
+
+
+def _tool_span_input(call_item: dict[str, Any] | None) -> Any:
+    if not call_item:
+        return None
+
+    if call_item.get("input") is not None:
+        return call_item["input"]
+
+    return {key: value for key, value in call_item.items() if key not in {"id", "type", "name", "caller"}} or None
+
+
+_SERVER_TOOL_SPAN_REDACTED_KEYS = frozenset({"encrypted_content"})
+
+
+def _redact_server_tool_output(value: Any) -> Any:
+    value = bt_safe_deep_copy(value)
+
+    def _redact(inner: Any) -> Any:
+        if isinstance(inner, list):
+            return [_redact(item) for item in inner]
+        if isinstance(inner, dict):
+            return {
+                key: ("<redacted>" if key in _SERVER_TOOL_SPAN_REDACTED_KEYS else _redact(item))
+                for key, item in inner.items()
+            }
+        return inner
+
+    return _redact(value)
+
+
+def _tool_span_output(result_item: dict[str, Any] | None) -> Any:
+    if not result_item:
+        return None
+
+    if "content" in result_item:
+        return _redact_server_tool_output(result_item.get("content"))
+
+    return (
+        _redact_server_tool_output(
+            {key: value for key, value in result_item.items() if key not in {"tool_use_id", "type", "caller"}}
+        )
+        or None
+    )
+
+
+def _tool_span_error(result_item: dict[str, Any] | None) -> str | None:
+    if not result_item:
+        return None
+
+    content = result_item.get("content")
+    if not isinstance(content, dict):
+        content = _try_to_dict(content)
+    if not isinstance(content, dict):
+        return None
+
+    content_type = content.get("type")
+    if not (isinstance(content_type, str) and content_type.endswith("_error")):
+        return None
+
+    error_message = content.get("error_message")
+    if isinstance(error_message, str) and error_message:
+        return error_message
+
+    error_code = content.get("error_code")
+    if isinstance(error_code, str) and error_code:
+        return error_code
+
+    return content_type
+
+
+def _tool_span_metadata(call_item: dict[str, Any] | None, result_item: dict[str, Any] | None) -> dict[str, Any] | None:
+    metadata = {
+        key: value
+        for key, value in {
+            "tool_use_id": (call_item or {}).get("id") or (result_item or {}).get("tool_use_id"),
+            "tool_call_type": (call_item or {}).get("type"),
+            "tool_result_type": (result_item or {}).get("type"),
+            "caller": (call_item or {}).get("caller") or (result_item or {}).get("caller"),
+        }.items()
+        if value is not None
+    }
+    return metadata or None
+
+
+def _log_server_tool_span(parent_span, call_item: dict[str, Any] | None, result_item: dict[str, Any] | None) -> None:
+    tool_span = start_span(
+        name=_tool_span_name(call_item, result_item),
+        type=SpanTypeAttribute.TOOL,
+        parent=parent_span.export(),
+        input=_tool_span_input(call_item),
+        metadata=_tool_span_metadata(call_item, result_item),
+    )
+    try:
+        output = _tool_span_output(result_item)
+        if output is None:
+            return
+
+        error = _tool_span_error(result_item)
+        if error is not None:
+            tool_span.log(output=output, error=error)
+        else:
+            tool_span.log(output=output)
+    finally:
+        tool_span.end()
+
+
+def _log_server_tool_spans(content: Any, parent_span) -> None:
+    if not isinstance(content, list):
+        return
+
+    calls_by_id: dict[str, dict[str, Any]] = {}
+    pending_results_by_id: dict[str, list[dict[str, Any]]] = {}
+    matched_call_ids: set[str] = set()
+    pairs: list[tuple[dict[str, Any] | None, dict[str, Any] | None]] = []
+
+    for item in content:
+        item = _try_to_dict(item)
+        if not isinstance(item, dict):
+            continue
+
+        item_type = item.get("type")
+        if item_type == _SERVER_TOOL_USE_TYPE:
+            call_id = item.get("id")
+            if isinstance(call_id, str):
+                calls_by_id[call_id] = item
+                for pending_result in pending_results_by_id.pop(call_id, []):
+                    pairs.append((item, pending_result))
+                    matched_call_ids.add(call_id)
+            else:
+                pairs.append((item, None))
+            continue
+
+        if not _is_server_tool_result_type(item_type):
+            continue
+
+        tool_use_id = item.get("tool_use_id")
+        if isinstance(tool_use_id, str) and tool_use_id in calls_by_id:
+            pairs.append((calls_by_id[tool_use_id], item))
+            matched_call_ids.add(tool_use_id)
+        elif isinstance(tool_use_id, str):
+            pending_results_by_id.setdefault(tool_use_id, []).append(item)
+        else:
+            pairs.append((None, item))
+
+    for call_item, result_item in pairs:
+        _log_server_tool_span(parent_span, call_item, result_item)
+
+    for call_id, call_item in calls_by_id.items():
+        if call_id not in matched_call_ids:
+            _log_server_tool_span(parent_span, call_item, None)
+
+    for pending_results in pending_results_by_id.values():
+        for result_item in pending_results:
+            _log_server_tool_span(parent_span, None, result_item)
+
+
 def _log_message_to_span(message, span, time_to_first_token: float | None = None):
     usage = getattr(message, "usage", {})
     metrics, metadata = extract_anthropic_usage(usage)
@@ -482,11 +657,12 @@ def _log_message_to_span(message, span, time_to_first_token: float | None = None
     if time_to_first_token is not None:
         metrics["time_to_first_token"] = time_to_first_token
 
+    content = getattr(message, "content", None)
     output = {
         k: v
         for k, v in {
             "role": getattr(message, "role", None),
-            "content": getattr(message, "content", None),
+            "content": content,
             "model": getattr(message, "model", None),
             "stop_reason": getattr(message, "stop_reason", None),
             "stop_sequence": getattr(message, "stop_sequence", None),
@@ -495,6 +671,7 @@ def _log_message_to_span(message, span, time_to_first_token: float | None = None
     } or None
 
     span.log(output=output, metrics=metrics, metadata=metadata)
+    _log_server_tool_spans(content, span)
 
 
 _BRAINTRUST_TRACED = "__braintrust_traced__"

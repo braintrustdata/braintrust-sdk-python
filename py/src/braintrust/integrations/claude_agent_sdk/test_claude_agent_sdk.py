@@ -40,7 +40,7 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
 )
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.test_helpers import init_test_logger
+from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
 
@@ -382,11 +382,11 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
     assert hook_invocations, "Expected the UserPromptSubmit hook to be invoked"
 
     spans = memory_logger.pop()
-    task_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     function_spans = [
         span
-        for span in _find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
+        for span in find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
         if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") == "UserPromptSubmit"
     ]
 
@@ -472,10 +472,10 @@ async def test_tool_hooks_create_function_spans(memory_logger):
     )
 
     spans = memory_logger.pop()
-    task_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
     hook_spans = [
         span
-        for span in _find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
+        for span in find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
         if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") in {"PreToolUse", "PostToolUse"}
     ]
 
@@ -542,11 +542,11 @@ async def test_hook_spans_parent_to_matching_tool_and_final_llm(memory_logger):
     )
 
     spans = memory_logger.pop()
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     hook_spans = [
         span
-        for span in _find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
+        for span in find_spans_by_type(spans, SpanTypeAttribute.FUNCTION)
         if span.get("metadata", {}).get("claude_agent_sdk.hook.event_name") in {"PreToolUse", "PostToolUse", "Stop"}
     ]
 
@@ -615,7 +615,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
     task_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TASK]
     assert len(task_spans) >= 2, f"Expected root task span and subagent span, got {len(task_spans)}"
 
-    root_task_span = _find_span_by_name(task_spans, "Claude Agent")
+    root_task_span = find_span_by_name(task_spans, "Claude Agent")
     subagent_spans = [s for s in task_spans if s["span_attributes"]["name"] != "Claude Agent"]
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
     assert subagent_spans, "Expected at least one subagent task span"
@@ -707,7 +707,7 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
 
-    root_task_span = _find_span_by_name(task_spans, "Claude Agent")
+    root_task_span = find_span_by_name(task_spans, "Claude Agent")
     subagent_spans = [s for s in task_spans if s["span_attributes"]["name"] != "Claude Agent"]
     assert len(subagent_spans) >= 2, f"Expected at least two delegated task spans, got {len(subagent_spans)}"
 
@@ -773,10 +773,10 @@ async def test_five_parallel_bundled_subagents_preserve_task_parenting(memory_lo
                     break
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
-    root_task_span = _find_span_by_name(task_spans, "Claude Agent")
+    root_task_span = find_span_by_name(task_spans, "Claude Agent")
     subagent_spans = [span for span in task_spans if span["span_id"] != root_task_span["span_id"]]
     assert len(subagent_spans) == 5, f"Expected 5 delegated task spans, got {len(subagent_spans)}"
 
@@ -859,13 +859,13 @@ async def test_delegated_subagent_llm_and_tool_spans_nest_under_task_span(memory
             break
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
-    subagent_task_span = _find_span_by_name(task_spans, "Inspect release notes")
-    agent_tool_span = _find_span_by_name(tool_spans, "Agent")
-    read_tool_span = _find_span_by_name(tool_spans, "Read")
+    subagent_task_span = find_span_by_name(task_spans, "Inspect release notes")
+    agent_tool_span = find_span_by_name(tool_spans, "Agent")
+    read_tool_span = find_span_by_name(tool_spans, "Read")
 
     assert agent_tool_span["span_id"] in subagent_task_span["span_parents"]
 
@@ -977,13 +977,13 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
             break
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
-    root_task_span = _find_span_by_name(task_spans, "Claude Agent")
-    alpha_task_span = _find_span_by_name(task_spans, "Read alpha release notes")
-    beta_task_span = _find_span_by_name(task_spans, "Read beta release notes")
+    root_task_span = find_span_by_name(task_spans, "Claude Agent")
+    alpha_task_span = find_span_by_name(task_spans, "Read alpha release notes")
+    beta_task_span = find_span_by_name(task_spans, "Read beta release notes")
 
     agent_tool_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "Agent"]
     assert len(agent_tool_spans) == 2
@@ -1114,11 +1114,11 @@ async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm
             break
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
-    root_task_span = _find_span_by_name(task_spans, "Claude Agent")
+    root_task_span = find_span_by_name(task_spans, "Claude Agent")
 
     # Both Agent tool spans should exist
     agent_tool_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "Agent"]
@@ -1250,8 +1250,8 @@ async def test_agent_tool_spans_encapsulate_child_task_spans(memory_logger):
             break
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     agent_tool_spans = [s for s in tool_spans if s["span_attributes"]["name"] == "Agent"]
     assert len(agent_tool_spans) == 2, f"Expected 2 Agent tool spans, got {len(agent_tool_spans)}"
@@ -1423,10 +1423,6 @@ class FakeCancelledClaudeSDKClient(FakeClaudeSDKClient):
         raise asyncio.CancelledError
 
 
-def _find_spans_by_type(spans: list[dict[str, Any]], span_type: str) -> list[dict[str, Any]]:
-    return [span for span in spans if span.get("span_attributes", {}).get("type") == span_type]
-
-
 def _make_fake_sdk_mcp_tool_class():
     class FakeSdkMcpTool:
         def __init__(self, name, description, input_schema, handler, **kwargs):
@@ -1437,15 +1433,6 @@ def _make_fake_sdk_mcp_tool_class():
             self.handler = handler
 
     return FakeSdkMcpTool
-
-
-def _find_span_by_name(spans: list[dict[str, Any]], name: str) -> dict[str, Any]:
-    for span in spans:
-        if span["span_attributes"]["name"] == name:
-            return span
-
-    available_names = [span["span_attributes"]["name"] for span in spans]
-    raise AssertionError(f"Expected span named {name!r}. Available spans: {available_names}")
 
 
 def _clear_tool_span_tracker() -> None:
@@ -1470,7 +1457,7 @@ async def test_receive_response_suppresses_unexpected_cancelled_error_empty_stre
     assert received == []
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
     assert len(task_spans) == 1
     assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
     assert task_spans[0].get("error") is None
@@ -1497,7 +1484,7 @@ async def test_receive_response_suppresses_cancelled_error_after_messages(memory
     assert len(received) == 2
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
     assert len(task_spans) == 1
     task_span = task_spans[0]
     assert task_span["span_attributes"]["name"] == "Claude Agent"
@@ -1506,7 +1493,7 @@ async def test_receive_response_suppresses_cancelled_error_after_messages(memory
     assert task_span.get("output") is not None
     assert task_span["output"]["role"] == "assistant"
 
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     assert len(llm_spans) == 1
 
 
@@ -1540,7 +1527,7 @@ async def test_receive_response_suppresses_cancelled_error_mid_stream(memory_log
     assert len(received) == 1
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
     assert len(task_spans) == 1
     task_span = task_spans[0]
     assert task_span.get("error") is None
@@ -1647,8 +1634,8 @@ def test_tool_span_tracker_lifecycle(memory_logger):
         llm_span.end()
 
     spans = memory_logger.pop()
-    llm_span_log = _find_span_by_name(spans, "anthropic.messages.create")
-    tool_span = _find_span_by_name(spans, "calculator")
+    llm_span_log = find_span_by_name(spans, "anthropic.messages.create")
+    tool_span = find_span_by_name(spans, "calculator")
 
     assert tool_span["input"] == {"operation": "multiply", "a": 6, "b": 7}
     assert tool_span["output"] == {"content": "42"}
@@ -1682,7 +1669,7 @@ def test_tool_span_tracker_logs_errors(memory_logger):
         llm_span.end()
 
     spans = memory_logger.pop()
-    tool_span = _find_span_by_name(spans, "calculator")
+    tool_span = find_span_by_name(spans, "calculator")
 
     assert tool_span["output"] == {"content": "Division by zero", "is_error": True}
     assert tool_span["error"] == "Division by zero"
@@ -1707,7 +1694,7 @@ def test_tool_span_tracker_cleanup_closes_unmatched_spans(memory_logger):
         llm_span.end()
 
     spans = memory_logger.pop()
-    tool_span = _find_span_by_name(spans, "weather")
+    tool_span = find_span_by_name(spans, "weather")
 
     assert tool_span["input"] == {"city": "Toronto"}
     assert tool_span.get("output") is None
@@ -1752,7 +1739,7 @@ async def test_wrapped_tool_handler_creates_fallback_tool_span_without_active_st
     assert result == {"content": [{"type": "text", "text": "42"}]}
 
     spans = memory_logger.pop()
-    tool_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TOOL), "calculator")
+    tool_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TOOL), "calculator")
 
     assert tool_span["input"] == {"operation": "multiply", "a": 6, "b": 7}
     assert tool_span["output"] == {"content": [{"type": "text", "text": "42"}]}
@@ -1932,7 +1919,7 @@ def test_tool_span_tracker_records_mcp_metadata(memory_logger):
         llm_span.end()
 
     spans = memory_logger.pop()
-    tool_span = _find_span_by_name(spans, "read_file")
+    tool_span = find_span_by_name(spans, "read_file")
 
     assert tool_span["input"] == {"path": "/tmp/test.txt"}
     assert tool_span["output"] == {"content": "file contents"}
@@ -1992,8 +1979,8 @@ async def test_wrapped_tool_handler_keeps_nested_traces_under_stream_tool_span(m
     assert result == {"content": [{"type": "text", "text": "42"}]}
 
     spans = memory_logger.pop()
-    tool_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TOOL), "calculator")
-    nested_span = _find_span_by_name(spans, "nested_tool_work")
+    tool_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TOOL), "calculator")
+    nested_span = find_span_by_name(spans, "nested_tool_work")
 
     assert tool_span["span_id"] in nested_span["span_parents"]
 
@@ -2053,12 +2040,12 @@ async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory
     spans = memory_logger.pop()
     calculator_spans = [
         span
-        for span in _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+        for span in find_spans_by_type(spans, SpanTypeAttribute.TOOL)
         if span["span_attributes"]["name"] == "calculator"
     ]
     tool_span_by_input = {tuple(sorted(span["input"].items())): span for span in calculator_spans}
-    nested_span_first = _find_span_by_name(spans, "nested_tool_work_2")
-    nested_span_second = _find_span_by_name(spans, "nested_tool_work_10")
+    nested_span_first = find_span_by_name(spans, "nested_tool_work_2")
+    nested_span_second = find_span_by_name(spans, "nested_tool_work_10")
 
     assert (
         tool_span_by_input[(("a", 2), ("b", 3), ("operation", "add"))]["span_id"] in nested_span_first["span_parents"]
@@ -2242,14 +2229,14 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
                     break
 
     spans = memory_logger.pop()
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     all_tools = round1_tools + round2_tools
 
     # --- 1. Root TASK span exists ---
-    _find_span_by_name(task_spans, "Claude Agent")
+    find_span_by_name(task_spans, "Claude Agent")
 
     if not _sdk_version_at_least("0.1.11"):
         # SDK 0.1.10 replays a limited cassette (single assistant + result);
@@ -2259,7 +2246,7 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
     # --- 2. All subagent TASK spans exist ---
     subagent_task_by_label: dict[str, dict[str, Any]] = {}
     for sa in subagents:
-        subagent_task_by_label[sa["label"]] = _find_span_by_name(task_spans, f"Task {sa['label']}")
+        subagent_task_by_label[sa["label"]] = find_span_by_name(task_spans, f"Task {sa['label']}")
 
     task_id_by_span = {t["span_id"]: label for label, t in subagent_task_by_label.items()}
 
@@ -2369,10 +2356,10 @@ async def test_interleaved_subagent_tool_spans_preserve_output(memory_logger):
                     break
 
     spans = memory_logger.pop()
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
-    bash_span = _find_span_by_name(tool_spans, "Bash")
-    read_span = _find_span_by_name(tool_spans, "Read")
+    bash_span = find_span_by_name(tool_spans, "Bash")
+    read_span = find_span_by_name(tool_spans, "Read")
 
     # Both tool spans should have their output recorded
     assert bash_span.get("output") is not None, (
@@ -2420,21 +2407,21 @@ async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logg
                     break
 
     spans = memory_logger.pop()
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
 
-    _find_span_by_name(task_spans, "Claude Agent")
+    find_span_by_name(task_spans, "Claude Agent")
 
     if not _sdk_version_at_least("0.1.11"):
         # SDK 0.1.10 replays a limited cassette; only assert root task span.
         return
 
-    alpha_task = _find_span_by_name(task_spans, "Process alpha file")
-    beta_task = _find_span_by_name(task_spans, "Process beta file")
+    alpha_task = find_span_by_name(task_spans, "Process alpha file")
+    beta_task = find_span_by_name(task_spans, "Process beta file")
 
-    bash_span = _find_span_by_name(tool_spans, "Bash")
-    read_span = _find_span_by_name(tool_spans, "Read")
+    bash_span = find_span_by_name(tool_spans, "Bash")
+    read_span = find_span_by_name(tool_spans, "Read")
 
     # Find each tool's parent LLM span
     bash_parent_llm_id = bash_span["span_parents"][0]
@@ -2499,7 +2486,7 @@ async def test_concurrent_subagent_tool_output_not_silently_dropped(memory_logge
         llm_span.end()
 
     spans = memory_logger.pop()
-    bash_span = _find_span_by_name(
+    bash_span = find_span_by_name(
         [s for s in spans if s.get("span_attributes", {}).get("type") == SpanTypeAttribute.TOOL],
         "Bash",
     )
@@ -2642,7 +2629,7 @@ async def test_identical_concurrent_tool_calls_from_sibling_subagents_disambigua
 
     spans = memory_logger.pop()
     echo_spans = [
-        s for s in _find_spans_by_type(spans, SpanTypeAttribute.TOOL) if s["span_attributes"]["name"] == "echo"
+        s for s in find_spans_by_type(spans, SpanTypeAttribute.TOOL) if s["span_attributes"]["name"] == "echo"
     ]
     assert len(echo_spans) == 2, f"Expected 2 echo tool spans, got {len(echo_spans)}"
 

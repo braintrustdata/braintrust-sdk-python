@@ -9,7 +9,7 @@ from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.test_helpers import init_test_logger
+from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
 from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from google.genai import types
 
@@ -1218,14 +1218,6 @@ async def test_google_search_grounding_async(memory_logger, mode):
     _assert_grounding_metadata(span["output"])
 
 
-def _find_spans_by_type(spans, span_type):
-    return [span for span in spans if span["span_attributes"]["type"] == span_type]
-
-
-def _find_span_by_name(spans, name):
-    return next(span for span in spans if span["span_attributes"]["name"] == name)
-
-
 def _interaction_function_tool():
     return interactions.Function(
         type="function",
@@ -1256,8 +1248,8 @@ def test_interactions_create_and_get(memory_logger):
     assert fetched.status == "completed"
 
     spans = memory_logger.pop()
-    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
-    get_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
+    create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    get_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
 
     assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
     assert create_span["metadata"]["interaction_id"] == response.id
@@ -1290,7 +1282,7 @@ def test_interactions_create_stream(memory_logger):
     assert events
 
     spans = memory_logger.pop()
-    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
 
     assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
     assert create_span["output"]["status"] == "completed"
@@ -1333,12 +1325,12 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
     assert "sunny" in second_response.outputs[-1].text.lower()
 
     spans = memory_logger.pop()
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     first_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == first_response.id)
     second_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == second_response.id)
-    tool_span = _find_span_by_name(tool_spans, "get_weather")
+    tool_span = find_span_by_name(tool_spans, "get_weather")
 
     assert first_span["output"]["status"] == "requires_action"
     assert second_span["metadata"]["previous_interaction_id"] == first_response.id
@@ -1383,13 +1375,13 @@ def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logge
     assert second_response.status == "completed"
 
     spans = memory_logger.pop()
-    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     first_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == first_response.id)
     second_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == second_response.id)
-    tool_span = _find_span_by_name(tool_spans, "get_weather")
-    nested_span = _find_span_by_name(spans, "nested_tool_work")
+    tool_span = find_span_by_name(tool_spans, "get_weather")
+    nested_span = find_span_by_name(spans, "nested_tool_work")
 
     assert tool_span["span_parents"] == [first_span["span_id"]]
     assert nested_span["span_parents"] == [tool_span["span_id"]]
@@ -1417,7 +1409,7 @@ def test_interactions_delete(memory_logger):
     assert delete_response == {}
 
     spans = memory_logger.pop()
-    delete_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
+    delete_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
 
     assert delete_span["input"]["id"] == response.id
     assert delete_span["output"] == {}
@@ -1443,9 +1435,9 @@ async def test_interactions_async_round_trip(memory_logger):
     assert deleted == {}
 
     spans = memory_logger.pop()
-    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
-    get_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
-    delete_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
+    create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    get_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
+    delete_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
 
     assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
     assert create_span["output"]["status"] == "completed"
@@ -1478,7 +1470,7 @@ async def test_interactions_async_stream(memory_logger):
     assert events
 
     spans = memory_logger.pop()
-    create_span = _find_span_by_name(_find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
+    create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
 
     assert create_span["output"]["status"] == "completed"
     assert create_span["output"]["text"]

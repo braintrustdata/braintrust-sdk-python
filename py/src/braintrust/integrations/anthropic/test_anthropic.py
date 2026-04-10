@@ -19,7 +19,8 @@ from braintrust.integrations.anthropic.tracing import (
     _get_metadata_from_kwargs,
     _log_message_to_span,
 )
-from braintrust.test_helpers import init_test_logger
+from braintrust.span_types import SpanTypeAttribute
+from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
 
 
 PROJECT_NAME = "test-anthropic-app"
@@ -73,6 +74,12 @@ def _get_supported_structured_output_param():
             },
         )
     pytest.skip("Installed anthropic SDK does not support structured outputs parameters")
+
+
+def _skip_if_server_tool_content_blocks_unsupported():
+    required_type_names = ("ServerToolUseBlock", "WebSearchToolResultBlock")
+    if not all(hasattr(anthropic.types, type_name) for type_name in required_type_names):
+        pytest.skip("Installed anthropic SDK does not support Anthropic server tool content blocks")
 
 
 @pytest.fixture
@@ -797,6 +804,73 @@ def test_anthropic_messages_sync(memory_logger):
     assert log["metadata"]["model"] == MODEL
     assert log["output"]["model"] == msg.model
     assert log["output"]["stop_reason"] == msg.stop_reason
+
+
+@pytest.mark.vcr
+def test_anthropic_messages_sync_server_tool_spans(memory_logger):
+    _skip_if_server_tool_content_blocks_unsupported()
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+
+    start = time.time()
+    msg = client.messages.create(
+        model=MULTIMODAL_MODEL,
+        max_tokens=256,
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Use the web_search tool to find the Braintrust docs homepage. "
+                    "Then answer with exactly the homepage URL and no other text."
+                ),
+            }
+        ],
+        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 1}],
+        tool_choice={"type": "tool", "name": "web_search", "disable_parallel_tool_use": True},
+    )
+    end = time.time()
+
+    tool_use_block = next(block for block in msg.content if block.type == "server_tool_use")
+    result_block = next(block for block in msg.content if block.type == "web_search_tool_result")
+    text_block = next(block for block in msg.content if block.type == "text")
+
+    assert text_block.text == "https://www.braintrust.dev/docs"
+
+    spans = memory_logger.pop()
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    assert len(llm_spans) == 1
+    assert len(tool_spans) == 1
+
+    llm_span = find_span_by_name(llm_spans, "anthropic.messages.create")
+    tool_span = find_span_by_name(tool_spans, "web_search")
+
+    _assert_metrics_are_valid(llm_span["metrics"], start, end)
+    assert llm_span["metadata"]["model"] == MULTIMODAL_MODEL
+    assert llm_span["metrics"]["server_tool_use_web_search_requests"] == 1
+    assert llm_span["output"]["model"] == msg.model
+    assert llm_span["output"]["stop_reason"] == msg.stop_reason
+
+    llm_result_block = next(
+        block for block in llm_span["output"]["content"] if block["type"] == "web_search_tool_result"
+    )
+    assert "encrypted_content" in llm_result_block["content"][0]
+
+    assert tool_span["input"] == tool_use_block.input
+    assert isinstance(tool_span["output"], list)
+    assert tool_span["output"][0]["type"] == "web_search_result"
+    assert tool_span["output"][0]["url"] == text_block.text
+    assert tool_span["output"][0]["encrypted_content"] == "<redacted>"
+    assert tool_span["metadata"] == {
+        "tool_use_id": tool_use_block.id,
+        "tool_call_type": "server_tool_use",
+        "tool_result_type": result_block.type,
+        "caller": {"type": "direct"},
+    }
+    assert tool_span["span_parents"] == [llm_span["span_id"]]
+    assert tool_span["root_span_id"] == llm_span["root_span_id"]
 
 
 def _assert_metrics_are_valid(metrics, start, end):

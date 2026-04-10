@@ -27,6 +27,8 @@ Use this file as the default playbook for work in this repository.
 
 6. **Prefer real integration coverage over mocks.**
    - For provider/integration behavior, prefer VCR-backed tests with checked-in cassettes.
+   - This includes bugs in tracing/span shaping that happen after the SDK returns a real provider payload. If the behavior depends on the provider's actual response shape, treat it as VCR-first work, not mock-first work.
+   - Be actively skeptical of mock/fake tests for provider integrations. Do not reach for mocks just because they are faster or easier to write.
    - Avoid mocks/fakes unless the code is purely local or there is no practical cassette-based option.
 
 7. **Do not assume optional provider packages are installed.**
@@ -175,6 +177,10 @@ For provider and integration behavior, the default path is:
 1. reproduce with a failing cassette-backed test
 2. implement the fix
 3. re-run the affected session
+
+Do not downgrade to a mock/fake regression test just because the bug is in local post-processing of a real provider response. If the response shape is part of the behavior under test, the primary regression test should still be cassette-backed. Mock/unit tests may be added as supplemental coverage, not as the main reproduction, unless recording is genuinely impractical.
+
+When deciding between a VCR test and a mock/fake test for provider behavior, bias heavily toward VCR. The burden of proof is on the mock: if you cannot clearly explain why a cassette-backed test is impractical, you should not be using a mock or fake as the primary regression coverage.
 
 Cassette locations:
 
