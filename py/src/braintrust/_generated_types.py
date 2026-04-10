@@ -2082,12 +2082,28 @@ class Role(TypedDict):
 
 class RunEvalData(TypedDict):
     dataset_id: str
+    dataset_version: NotRequired[str | None]
+    """
+    The version of the dataset to evaluate
+    """
+    dataset_environment: NotRequired[str | None]
+    """
+    The environment tag that resolves to the dataset version to evaluate
+    """
     _internal_btql: NotRequired[Mapping[str, Any] | None]
 
 
 class RunEvalData1(TypedDict):
     project_name: str
     dataset_name: str
+    dataset_version: NotRequired[str | None]
+    """
+    The version of the dataset to evaluate
+    """
+    dataset_environment: NotRequired[str | None]
+    """
+    The environment tag that resolves to the dataset version to evaluate
+    """
     _internal_btql: NotRequired[Mapping[str, Any] | None]
 
 
