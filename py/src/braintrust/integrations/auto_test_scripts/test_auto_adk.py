@@ -7,7 +7,6 @@ from braintrust.auto import auto_instrument
 from braintrust.integrations.adk.patchers import (
     AgentRunAsyncPatcher,
     _RunnerRunAsyncSubPatcher,
-    _RunnerRunSyncSubPatcher,
     _ThreadBridgePlatformSubPatcher,
     _ThreadBridgeRunnersSubPatcher,
 )
@@ -27,7 +26,6 @@ def is_patched(target, patcher):
 
 # 1. Verify ADK surfaces are not patched initially.
 assert not is_patched(BaseAgent.run_async, AgentRunAsyncPatcher)
-assert not is_patched(Runner.run, _RunnerRunSyncSubPatcher)
 assert not is_patched(Runner.run_async, _RunnerRunAsyncSubPatcher)
 assert not is_patched(platform_thread.create_thread, _ThreadBridgePlatformSubPatcher)
 assert not is_patched(adk_runners.create_thread, _ThreadBridgeRunnersSubPatcher)
@@ -38,8 +36,8 @@ assert results.get("adk") == True, "auto_instrument should return True for adk"
 
 # 3. Verify the imported google.adk surfaces are patched.
 assert is_patched(BaseAgent.run_async, AgentRunAsyncPatcher)
-assert is_patched(Runner.run, _RunnerRunSyncSubPatcher)
 assert is_patched(Runner.run_async, _RunnerRunAsyncSubPatcher)
+assert not is_patched(Runner.run, _RunnerRunAsyncSubPatcher)
 assert is_patched(platform_thread.create_thread, _ThreadBridgePlatformSubPatcher)
 assert is_patched(adk_runners.create_thread, _ThreadBridgeRunnersSubPatcher)
 
@@ -47,7 +45,7 @@ assert is_patched(adk_runners.create_thread, _ThreadBridgeRunnersSubPatcher)
 results2 = auto_instrument()
 assert results2.get("adk") == True, "auto_instrument should still return True on second call"
 assert is_patched(BaseAgent.run_async, AgentRunAsyncPatcher)
-assert is_patched(Runner.run, _RunnerRunSyncSubPatcher)
 assert is_patched(Runner.run_async, _RunnerRunAsyncSubPatcher)
+assert not is_patched(Runner.run, _RunnerRunAsyncSubPatcher)
 
 print("SUCCESS")

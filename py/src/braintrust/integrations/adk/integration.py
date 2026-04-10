@@ -8,7 +8,7 @@ from .patchers import (
     AgentRunAsyncPatcher,
     FlowRunAsyncPatcher,
     McpToolPatcher,
-    RunnerRunSyncPatcher,
+    RunnerRunPatcher,
     ThreadBridgePatcher,
     ToolCallAsyncPatcher,
 )
@@ -26,7 +26,7 @@ class ADKIntegration(BaseIntegration):
     patchers = (
         ThreadBridgePatcher,
         AgentRunAsyncPatcher,
-        RunnerRunSyncPatcher,
+        RunnerRunPatcher,
         FlowRunAsyncPatcher,
         ToolCallAsyncPatcher,
         McpToolPatcher,

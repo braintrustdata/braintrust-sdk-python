@@ -11,7 +11,6 @@ from .tracing import (
     _flow_run_async_wrapper,
     _mcp_tool_run_async_wrapper_async,
     _runner_run_async_wrapper,
-    _runner_run_wrapper,
     _tool_call_async_wrapper,
 )
 
@@ -31,17 +30,8 @@ class AgentRunAsyncPatcher(FunctionWrapperPatcher):
 
 
 # ---------------------------------------------------------------------------
-# Runner patchers (sync + async)
+# Runner patchers
 # ---------------------------------------------------------------------------
-
-
-class _RunnerRunSyncSubPatcher(FunctionWrapperPatcher):
-    """Patch ``Runner.run`` (sync generator)."""
-
-    name = "adk.runner.run.sync"
-    target_module = "google.adk.runners"
-    target_path = "Runner.run"
-    wrapper = _runner_run_wrapper
 
 
 class _RunnerRunAsyncSubPatcher(FunctionWrapperPatcher):
@@ -53,11 +43,16 @@ class _RunnerRunAsyncSubPatcher(FunctionWrapperPatcher):
     wrapper = _runner_run_async_wrapper
 
 
-class RunnerRunSyncPatcher(CompositeFunctionWrapperPatcher):
-    """Patch ``Runner.run`` (sync) and ``Runner.run_async`` for tracing."""
+class RunnerRunPatcher(CompositeFunctionWrapperPatcher):
+    """Patch ``Runner.run_async`` for tracing.
+
+    ``Runner.run()`` already delegates to ``run_async()`` in supported ADK
+    versions, so tracing the async surface alone gives sync and async callers a
+    single invocation span with the same child structure.
+    """
 
     name = "adk.runner.run"
-    sub_patchers = (_RunnerRunSyncSubPatcher, _RunnerRunAsyncSubPatcher)
+    sub_patchers = (_RunnerRunAsyncSubPatcher,)
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +156,7 @@ def wrap_agent(Agent: Any) -> Any:
 
 def wrap_runner(Runner: Any) -> Any:
     """Manually patch a runner class for tracing."""
-    return RunnerRunSyncPatcher.wrap_target(Runner)
+    return RunnerRunPatcher.wrap_target(Runner)
 
 
 def wrap_flow(Flow: Any) -> Any:
