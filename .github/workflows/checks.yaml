@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -26,12 +26,30 @@ jobs:
           mise exec -- pre-commit run --from-ref origin/${{ github.base_ref || 'main' }} --to-ref HEAD
 
   ensure-pinned-actions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Ensure SHA pinned actions
         uses: zgosalvez/github-actions-ensure-sha-pinned-actions@70c4af2ed5282c51ba40566d026d6647852ffa3e # v5.0.1
+
+  static_checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run pylint and type tests
+        shell: bash
+        run: |
+          mise exec python@${{ matrix.python-version }} -- nox -f ./py/noxfile.py -s pylint test_types
 
   smoke:
     runs-on: ${{ matrix.os }}
@@ -41,7 +59,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04, windows-2025]
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -66,7 +84,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04, windows-2025]
         shard: [0, 1, 2, 3]
 
     steps:
@@ -78,7 +96,9 @@ jobs:
       - name: Run nox tests (shard ${{ matrix.shard }}/4)
         shell: bash
         run: |
-          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4
+          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
+            --exclude-session pylint \
+            --exclude-session test_types
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
@@ -90,7 +110,7 @@ jobs:
     needs:
       - smoke
       - nox
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -114,12 +134,13 @@ jobs:
     needs:
       - lint
       - ensure-pinned-actions
+      - static_checks
       - smoke
       - nox
       - adk-py
       - langchain-py
       - upload-wheel
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
     steps:
@@ -138,12 +159,13 @@ jobs:
           }
 
           check_result "lint" "${{ needs.lint.result }}"
-          check_result "ensure-pinned-actions" "${{ needs.ensure-pinned-actions.result }}"
+          check_result "ensure-pinned-actions" "${{ needs['ensure-pinned-actions'].result }}"
+          check_result "static_checks" "${{ needs.static_checks.result }}"
           check_result "smoke" "${{ needs.smoke.result }}"
           check_result "nox" "${{ needs.nox.result }}"
-          check_result "adk-py" "${{ needs.adk-py.result }}"
-          check_result "langchain-py" "${{ needs.langchain-py.result }}"
-          check_result "upload-wheel" "${{ needs.upload-wheel.result }}"
+          check_result "adk-py" "${{ needs['adk-py'].result }}"
+          check_result "langchain-py" "${{ needs['langchain-py'].result }}"
+          check_result "upload-wheel" "${{ needs['upload-wheel'].result }}"
 
           if [ "$FAILED" -ne 0 ]; then
             echo "One or more required checks failed"

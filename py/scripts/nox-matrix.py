@@ -6,7 +6,7 @@ script). Unknown sessions get a default weight. The algorithm sorts sessions
 by weight descending and greedily assigns each to the lightest shard.
 
 Usage:
-    python nox-matrix.py <shard_index> <number_of_shards> [--dry-run]
+    python nox-matrix.py <shard_index> <number_of_shards> [--dry-run] [--exclude-session <name> ...]
 """
 
 import argparse
@@ -81,6 +81,12 @@ def main() -> None:
     parser.add_argument("num_shards", type=int, help="Total number of shards")
     parser.add_argument("--dry-run", action="store_true", help="Print assignment without running nox")
     parser.add_argument(
+        "--exclude-session",
+        action="append",
+        default=[],
+        help="Exclude a nox session from shard assignment. May be passed multiple times.",
+    )
+    parser.add_argument(
         "--output-durations",
         type=Path,
         default=None,
@@ -108,6 +114,8 @@ def main() -> None:
     weights_file = root_dir / "py" / "scripts" / "session-weights.json"
 
     all_sessions = get_nox_sessions(noxfile)
+    excluded_sessions = set(args.exclude_session)
+    all_sessions = [session for session in all_sessions if session not in excluded_sessions]
     weights, default_weight = load_weights(weights_file)
     shard_assignments = assign_shards(all_sessions, args.num_shards, weights, default_weight)
 

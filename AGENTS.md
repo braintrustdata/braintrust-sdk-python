@@ -15,7 +15,8 @@ Use this file as the default playbook for work in this repository.
 2. **Use `mise` as the source of truth for tools and environment.**
 
 3. **Do not guess test commands or version coverage.**
-   - `py/noxfile.py` is the source of truth for nox session names, provider/version matrices, and CI coverage.
+   - `py/noxfile.py` is the source of truth for nox session names, provider/version matrices, and local reproduction commands.
+   - `.github/workflows/checks.yaml` is the source of truth for which sessions run in CI, on which Python versions, and outside vs. inside the nox shard matrix.
    - For provider and integration work, also check `py/src/braintrust/integrations/versioning.py`.
 
 4. **Keep changes narrow and validate with the smallest relevant test first.**
@@ -116,7 +117,7 @@ Do not guess:
 - supported provider versions
 - which tests a provider session runs
 
-Check `py/noxfile.py` and reproduce with the exact local session CI uses.
+Check `py/noxfile.py` and `.github/workflows/checks.yaml`, then reproduce with the exact local session CI uses.
 
 ### Run the smallest relevant test first
 
@@ -143,6 +144,8 @@ Before changing provider/integration behavior:
 
 - `test_core` runs without optional vendor packages.
 - `test_types` runs pyright, mypy, and pytest on `py/src/braintrust/type_tests/`.
+- CI runs `pylint` and `test_types` via the dedicated `static_checks` workflow job on Ubuntu across the configured Python matrix, not inside the sharded `nox` job.
+- The sharded `nox` workflow excludes `pylint` and `test_types`; use `py/scripts/nox-matrix.py --exclude-session ...` when reproducing shard membership locally.
 - wrapper coverage is split across dedicated nox sessions by provider/version.
 - `test-wheel` is a wheel sanity check and requires a built wheel first.
 

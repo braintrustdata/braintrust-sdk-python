@@ -34,13 +34,14 @@ Read when relevant:
 
 - `lint`: pre-commit diff-based checks
 - `ensure-pinned-actions`: workflow hygiene
+- `static_checks`: Ubuntu-only Python matrix for `pylint` and `test_types`
 - `smoke`: install/import matrix across Python and OS
 - `nox`: provider and core test matrix, sharded through `py/scripts/nox-matrix.py`
 - `adk-py`: reusable workflow for ADK coverage
 - `langchain-py`: reusable workflow for LangChain coverage
 - `upload-wheel`: build wheel sanity check
 
-The most common failure source is the `nox` matrix job.
+The most common failure source is still the `nox` matrix job, but `pylint` and `test_types` failures now surface through `static_checks`, not through `nox`.
 
 ## Standard Workflow
 
@@ -48,15 +49,17 @@ The most common failure source is the `nox` matrix job.
 2. Inspect the failing job logs with `gh`.
 3. Determine which workflow branch failed:
    - `lint`
+   - `static_checks`
    - `smoke`
    - `nox`
    - reusable workflow (`adk-py`, `langchain-py`)
    - `upload-wheel`
 4. For `nox` failures, map the matrix job to the exact nox session and pinned provider version from the logs.
-5. Reproduce the narrowest failing command locally.
-6. Fix the bug.
-7. Re-run the narrowest failing command first.
-8. Expand only if shared code changed.
+5. For `static_checks` failures, identify whether `pylint` or `test_types` failed under the reported Python version.
+6. Reproduce the narrowest failing command locally.
+7. Fix the bug.
+8. Re-run the narrowest failing command first.
+9. Expand only if shared code changed.
 
 Do not start by running the whole suite locally unless the failure genuinely spans many sessions.
 
@@ -94,25 +97,29 @@ gh api repos/braintrustdata/braintrust-sdk-python/actions/jobs/<job-id>/logs
 Job names look like this:
 
 ```text
-nox (3.10, ubuntu-latest, 0)
+nox (3.10, ubuntu-24.04, 0)
 ```
 
 That means:
 
 - Python `3.10`
-- OS `ubuntu-latest`
+- OS `ubuntu-24.04`
 - shard `0` out of 4
 
 The workflow runs:
 
 ```bash
-mise exec python@<python-version> -- python ./py/scripts/nox-matrix.py <shard> 4
+mise exec python@<python-version> -- python ./py/scripts/nox-matrix.py <shard> 4 \
+  --exclude-session pylint \
+  --exclude-session test_types
 ```
 
 Use a dry run first to see which sessions belong to the shard:
 
 ```bash
-mise exec python@3.10 -- python ./py/scripts/nox-matrix.py 0 4 --dry-run
+mise exec python@3.10 -- python ./py/scripts/nox-matrix.py 0 4 --dry-run \
+  --exclude-session pylint \
+  --exclude-session test_types
 ```
 
 Then inspect the failing logs to find the exact session name, for example:
@@ -159,6 +166,23 @@ If the failure is really from SDK linting, also check:
 cd py
 make lint
 make pylint
+```
+
+### `static_checks`
+
+The `static_checks` job is an Ubuntu-only Python matrix that runs `pylint` and `test_types` together for each configured Python version.
+
+Local equivalents:
+
+```bash
+mise exec python@3.10 -- nox -f ./py/noxfile.py -s pylint test_types
+```
+
+If only one of the two sessions failed in CI, narrow locally to that specific session:
+
+```bash
+mise exec python@3.10 -- nox -f ./py/noxfile.py -s pylint
+mise exec python@3.10 -- nox -f ./py/noxfile.py -s test_types
 ```
 
 ### `smoke`
@@ -276,7 +300,9 @@ Preferred progression:
 
 ```bash
 # 1. Inspect the failing shard
-mise exec python@3.10 -- python ./py/scripts/nox-matrix.py 0 4 --dry-run
+mise exec python@3.10 -- python ./py/scripts/nox-matrix.py 0 4 --dry-run \
+  --exclude-session pylint \
+  --exclude-session test_types
 
 # 2. Reproduce the exact session
 cd py
@@ -299,7 +325,7 @@ When answering a CI-triage question, report:
 Good example structure:
 
 ```text
-The failing job is `nox (3.10, ubuntu-latest, 0)`.
+The failing job is `nox (3.10, ubuntu-24.04, 0)`.
 Within that shard, the failing session is `test_google_genai(1.30.0)`.
 The root cause is that the tests import a symbol that does not exist in google-genai 1.30.0, even though it exists in newer versions.
 You can reproduce it locally with `cd py && nox -s "test_google_genai(1.30.0)"`.
@@ -311,6 +337,7 @@ The fix is to gate the behavior for older versions or stop assuming the newer AP
 Avoid these common mistakes:
 
 - guessing the session from the provider name without checking `py/noxfile.py`
+- forgetting that CI excludes `pylint` and `test_types` from the sharded `nox` job
 - reproducing with `latest` when CI failed on an older pinned version
 - running from repo root when the real SDK command belongs in `py/`
 - fixing the symptom in tests without understanding the provider-version contract
