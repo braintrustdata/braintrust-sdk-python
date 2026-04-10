@@ -4,11 +4,7 @@ import warnings
 
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
-from braintrust.integrations.utils import (
-    _attachment_filename_for_mime_type,
-    _attachment_from_base64_data,
-    _image_url_payload,
-)
+from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import log_exc_info_to_span, start_span
 
 
@@ -415,11 +411,6 @@ def _start_batch_results_span(args, kwargs):
     return start_span(name="anthropic.messages.batches.results", type="task", metadata=metadata, input=_input)
 
 
-def _attachment_filename_for_media_type(media_type: str, block_type: str) -> str:
-    prefix = "image" if block_type == "image" else "document"
-    return _attachment_filename_for_mime_type(media_type, prefix=prefix)
-
-
 def _convert_base64_source_to_attachment(block_type, source):
     if not isinstance(source, dict):
         return None
@@ -431,10 +422,10 @@ def _convert_base64_source_to_attachment(block_type, source):
     if not isinstance(media_type, str) or not isinstance(data, str):
         return None
 
-    return _attachment_from_base64_data(
+    return _materialize_attachment(
         data,
-        media_type,
-        filename=_attachment_filename_for_media_type(media_type, block_type),
+        mime_type=media_type,
+        prefix="image" if block_type == "image" else "document",
     )
 
 
@@ -447,11 +438,11 @@ def _process_input_attachments(value):
         source = value.get("source")
 
         if block_type in {"image", "document"} and isinstance(source, dict):
-            attachment = _convert_base64_source_to_attachment(block_type, source)
-            if attachment is not None:
+            resolved_attachment = _convert_base64_source_to_attachment(block_type, source)
+            if resolved_attachment is not None:
                 processed = {k: _process_input_attachments(v) for k, v in value.items() if k != "source"}
                 processed["source"] = {k: _process_input_attachments(v) for k, v in source.items() if k != "data"}
-                processed.update(_image_url_payload(attachment))
+                processed.update(resolved_attachment.multimodal_part_payload)
                 return processed
 
         return {k: _process_input_attachments(v) for k, v in value.items()}

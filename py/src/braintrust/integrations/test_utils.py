@@ -4,18 +4,15 @@ import pytest
 from braintrust import Attachment
 from braintrust.integrations.utils import (
     _attachment_filename_for_mime_type,
-    _attachment_from_base64_data,
-    _attachment_from_bytes,
-    _attachment_from_file_input,
     _camel_to_snake,
-    _convert_data_url_to_attachment,
-    _image_url_payload,
     _is_supported_metric_value,
     _log_and_end_span,
     _log_error_and_end_span,
+    _materialize_attachment,
     _merge_timing_and_usage_metrics,
     _parse_openai_usage_metrics,
     _prettify_response_params,
+    _ResolvedAttachment,
     _serialize_response_format,
     _timing_metrics,
     _try_to_dict,
@@ -154,56 +151,91 @@ def test_prettify_response_params_filters_not_given_without_mutating_input():
     assert "optional" in original
 
 
-def test_attachment_filename_for_mime_type_handles_suffixes_and_prefixes():
-    assert _attachment_filename_for_mime_type("image/png", prefix="image") == "image.png"
-    assert _attachment_filename_for_mime_type("application/pdf", prefix="document") == "document.pdf"
-    assert _attachment_filename_for_mime_type("image/svg+xml", prefix="file") == "file.svg"
+def test_attachment_filename_for_mime_type_prefers_known_extensions():
+    assert _attachment_filename_for_mime_type("image/svg+xml", prefix="image") == "image.svg"
+    assert (
+        _attachment_filename_for_mime_type(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        == "file.xlsx"
+    )
 
 
-def test_attachment_from_bytes_uses_default_filename():
-    attachment = _attachment_from_bytes(b"hello", "image/png")
+def test_materialize_attachment_from_bytes_uses_default_filename():
+    resolved = _materialize_attachment(b"hello", mime_type="image/png")
 
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == "image/png"
-    assert attachment.reference["filename"] == "file.png"
+    assert isinstance(resolved, _ResolvedAttachment)
+    assert isinstance(resolved.attachment, Attachment)
+    assert resolved.mime_type == "image/png"
+    assert resolved.filename == "image.png"
+    assert resolved.attachment.reference["content_type"] == "image/png"
+    assert resolved.attachment.reference["filename"] == "image.png"
 
 
-def test_attachment_from_base64_data_accepts_data_urls_and_custom_filenames():
-    attachment = _attachment_from_base64_data(
+def test_materialize_attachment_from_bytes_accepts_custom_prefix():
+    resolved = _materialize_attachment(b"hello", mime_type="application/pdf", prefix="document")
+
+    assert isinstance(resolved, _ResolvedAttachment)
+    assert resolved.mime_type == "application/pdf"
+    assert resolved.filename == "document.pdf"
+
+
+def test_materialize_attachment_prefix_handles_mime_suffixes():
+    resolved = _materialize_attachment(b"<svg />", mime_type="image/svg+xml", prefix="image")
+
+    assert isinstance(resolved, _ResolvedAttachment)
+    assert resolved.mime_type == "image/svg+xml"
+    assert resolved.filename == "image.svg"
+
+
+def test_materialize_attachment_from_base64_accepts_data_urls_and_custom_filenames():
+    resolved = _materialize_attachment(
         "data:image/png;base64,aGVsbG8=",
-        "image/png",
+        mime_type="image/png",
         filename="generated_image_0.png",
     )
 
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == "image/png"
-    assert attachment.reference["filename"] == "generated_image_0.png"
+    assert isinstance(resolved, _ResolvedAttachment)
+    assert isinstance(resolved.attachment, Attachment)
+    assert resolved.attachment.reference["content_type"] == "image/png"
+    assert resolved.attachment.reference["filename"] == "generated_image_0.png"
 
 
-def test_attachment_from_base64_data_returns_none_for_invalid_payloads():
-    assert _attachment_from_base64_data("aGVsbG8=!", "image/png") is None
+def test_materialize_attachment_returns_none_for_invalid_base64_payloads():
+    assert _materialize_attachment("aGVsbG8=!", mime_type="image/png") is None
 
 
-def test_convert_data_url_to_attachment_converts_valid_base64():
+def test_materialize_attachment_converts_valid_data_url():
     data_url = "data:image/png;base64,aGVsbG8="
 
-    attachment = _convert_data_url_to_attachment(data_url)
+    resolved = _materialize_attachment(data_url, label="image")
 
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == "image/png"
-    assert attachment.reference["filename"] == "image.png"
+    assert isinstance(resolved, _ResolvedAttachment)
+    assert isinstance(resolved.attachment, Attachment)
+    assert resolved.attachment.reference["content_type"] == "image/png"
+    assert resolved.attachment.reference["filename"] == "image.png"
 
 
-def test_image_url_payload_wraps_attachment_and_string_urls():
-    attachment = _attachment_from_bytes(b"hello", "image/png")
+def test_resolved_attachment_multimodal_part_payload_uses_image_url_for_images():
+    resolved = _materialize_attachment(b"hello", mime_type="image/png")
 
-    assert _image_url_payload(attachment) == {"image_url": {"url": attachment}}
-    assert _image_url_payload("https://example.com/image.png") == {
-        "image_url": {"url": "https://example.com/image.png"}
+    assert resolved is not None
+    assert resolved.multimodal_part_payload == {"image_url": {"url": resolved.attachment}}
+
+
+def test_resolved_attachment_multimodal_part_payload_uses_file_parts_for_non_images():
+    resolved = _materialize_attachment(b"hello", mime_type="application/pdf", filename="document.pdf")
+
+    assert resolved is not None
+    assert resolved.multimodal_part_payload == {
+        "file": {
+            "file_data": resolved.attachment,
+            "filename": "document.pdf",
+        }
     }
 
 
-def test_attachment_from_file_input_handles_common_input_shapes(tmp_path):
+def test_materialize_attachment_handles_common_input_shapes(tmp_path):
     file_path = tmp_path / "example.png"
     file_path.write_bytes(b"abc")
 
@@ -222,52 +254,51 @@ def test_attachment_from_file_input_handles_common_input_shapes(tmp_path):
         def seek(self, position):
             self._position = position
 
-    path_attachment = _attachment_from_file_input(file_path)
-    bytes_attachment = _attachment_from_file_input(b"abc", filename="example.png")
-    tuple_attachment = _attachment_from_file_input((str(file_path), b"abc", "image/png"))
-    file_attachment = _attachment_from_file_input(FileLike())
+    path_attachment = _materialize_attachment(file_path)
+    bytes_attachment = _materialize_attachment(b"abc", filename="example.png")
+    tuple_attachment = _materialize_attachment((str(file_path), b"abc", "image/png"))
+    file_attachment = _materialize_attachment(FileLike())
 
-    for attachment in (path_attachment, bytes_attachment, tuple_attachment, file_attachment):
-        assert isinstance(attachment, Attachment)
-        assert attachment.reference["filename"] == "example.png"
-        assert attachment.reference["content_type"] == "image/png"
+    for resolved in (path_attachment, bytes_attachment, tuple_attachment, file_attachment):
+        assert isinstance(resolved, _ResolvedAttachment)
+        assert resolved.attachment.reference["filename"] == "example.png"
+        assert resolved.attachment.reference["content_type"] == "image/png"
 
 
-def test_attachment_from_file_input_preserves_file_position(tmp_path):
+def test_materialize_attachment_preserves_file_position(tmp_path):
     file_path = tmp_path / "example.png"
     file_path.write_bytes(b"abc")
 
     with file_path.open("rb") as file_obj:
         assert file_obj.tell() == 0
-        attachment = _attachment_from_file_input(file_obj)
-        assert isinstance(attachment, Attachment)
+        resolved = _materialize_attachment(file_obj)
+        assert isinstance(resolved, _ResolvedAttachment)
         assert file_obj.tell() == 0
 
 
-def test_convert_data_url_to_attachment_preserves_invalid_base64():
-    data_url = "data:image/png;base64,aGVsbG8=!"
-
-    converted = _convert_data_url_to_attachment(data_url)
-
-    assert converted == data_url
+def test_materialize_attachment_preserves_invalid_base64_strings_without_mime_type():
+    assert _materialize_attachment("data:image/png;base64,aGVsbG8=!") is None
 
 
-def test_convert_data_url_to_attachment_uses_file_prefix_for_non_image_mime_types():
-    data_url = "data:application/pdf;base64,aGVsbG8="
+def test_materialize_attachment_uses_file_prefix_for_non_image_mime_types():
+    resolved = _materialize_attachment("data:application/pdf;base64,aGVsbG8=")
 
-    attachment = _convert_data_url_to_attachment(data_url)
-
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == "application/pdf"
-    assert attachment.reference["filename"] == "file.pdf"
+    assert isinstance(resolved, _ResolvedAttachment)
+    assert resolved.attachment.reference["content_type"] == "application/pdf"
+    assert resolved.attachment.reference["filename"] == "file.pdf"
 
 
-def test_convert_data_url_to_attachment_preserves_non_data_urls():
-    value = "https://example.com/image.png"
+def test_materialize_attachment_preserves_existing_attachment_filename_over_prefix():
+    attachment = Attachment(data=b"hello", filename="existing.pdf", content_type="application/pdf")
 
-    converted = _convert_data_url_to_attachment(value)
+    resolved = _materialize_attachment(attachment, prefix="document")
 
-    assert converted == value
+    assert isinstance(resolved, _ResolvedAttachment)
+    assert resolved.attachment.reference["filename"] == "existing.pdf"
+
+
+def test_materialize_attachment_returns_none_for_non_data_url_strings():
+    assert _materialize_attachment("https://example.com/image.png") is None
 
 
 def test_serialize_response_format_with_pydantic_basemodel_subclass():

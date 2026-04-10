@@ -5,18 +5,11 @@ import dataclasses
 import logging
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from datetime import date, datetime
-from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.integrations.utils import (
-    _attachment_filename_for_mime_type,
-    _attachment_from_base64_data,
-    _attachment_from_bytes,
-    _image_url_payload,
-)
-from braintrust.logger import Attachment, start_span
+from braintrust.integrations.utils import _materialize_attachment
+from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones
 
@@ -62,7 +55,7 @@ _interaction_tool_spans: contextvars.ContextVar[dict[str, _ActiveInteractionTool
 
 
 # ---------------------------------------------------------------------------
-# Serialization helpers
+# Interaction payload helpers
 # ---------------------------------------------------------------------------
 
 
@@ -118,11 +111,9 @@ def _serialize_content_item(item: Any) -> Any:
 
                 # Ensure data is bytes
                 if isinstance(data, bytes):
-                    attachment = _attachment_from_bytes(data, mime_type)
-
-                    # Return the attachment object in image_url format
-                    # The SDK's _extract_attachments will replace it with its reference when logging
-                    return _image_url_payload(attachment)
+                    resolved_attachment = _materialize_attachment(data, mime_type=mime_type, prefix="file")
+                    if resolved_attachment is not None:
+                        return resolved_attachment.multimodal_part_payload
 
         # Try to use built-in serialization if available
         if hasattr(item, "model_dump"):
@@ -155,36 +146,43 @@ def _serialize_tools(api_client: Any, input: Any | None) -> Any | None:
         return None
 
 
-def _serialize_interaction_content_dict(value: dict[str, Any]) -> dict[str, Any]:
-    serialized = {key: _serialize_interaction_value(val) for key, val in value.items() if val is not None}
+def _materialize_interaction_content_dict(value: dict[str, Any]) -> dict[str, Any]:
+    materialized = {key: _materialize_interaction_value(val) for key, val in value.items()}
 
-    content_type = serialized.get("type")
-    data = serialized.get("data")
-    mime_type = serialized.get("mime_type")
-    if content_type in _MEDIA_CONTENT_TYPES and isinstance(data, str) and isinstance(mime_type, str):
-        attachment = _attachment_from_base64_data(data, mime_type, label=content_type)
-        if attachment is not None:
-            serialized["data"] = attachment
+    content_type = materialized.get("type")
+    data = materialized.get("data")
+    mime_type = materialized.get("mime_type")
+    if content_type in _MEDIA_CONTENT_TYPES and isinstance(mime_type, str):
+        resolved_attachment = _materialize_attachment(data, mime_type=mime_type, label=content_type)
+        if resolved_attachment is not None:
+            materialized["data"] = resolved_attachment.attachment
+            materialized.update(resolved_attachment.multimodal_part_payload)
 
-    return serialized
+    return materialized
 
 
-def _serialize_interaction_value(value: Any) -> Any:
-    if value is None or isinstance(value, (str, int, float, bool, Attachment)):
+def _materialize_interaction_value(value: Any) -> Any:
+    if value is None or isinstance(value, (str, int, float, bool)):
         return value
-    if isinstance(value, Enum):
-        return value.value
-    if isinstance(value, (date, datetime)):
-        return value.isoformat()
     if isinstance(value, (list, tuple)):
-        return [_serialize_interaction_value(item) for item in value]
+        return [_materialize_interaction_value(item) for item in value]
     if isinstance(value, dict):
-        return _serialize_interaction_content_dict(value)
+        return _materialize_interaction_content_dict(value)
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {
+            field.name: _materialize_interaction_value(getattr(value, field.name))
+            for field in dataclasses.fields(value)
+        }
     if hasattr(value, "model_dump"):
         try:
-            return _serialize_interaction_value(value.model_dump(exclude_none=True))
+            return _materialize_interaction_value(value.model_dump(exclude_none=True))
         except TypeError:
-            return _serialize_interaction_value(value.model_dump())
+            return _materialize_interaction_value(value.model_dump())
+    if hasattr(value, "dict") and not isinstance(value, type):
+        try:
+            return _materialize_interaction_value(value.dict(exclude_none=True))
+        except TypeError:
+            return _materialize_interaction_value(value.dict())
     return value
 
 
@@ -229,18 +227,18 @@ def _prepare_interaction_create_traced_call(
         {
             "model": kwargs.get("model"),
             "agent": kwargs.get("agent"),
-            "input": _serialize_interaction_value(kwargs.get("input")),
+            "input": _materialize_interaction_value(kwargs.get("input")),
             "background": kwargs.get("background"),
-            "generation_config": _serialize_interaction_value(kwargs.get("generation_config")),
+            "generation_config": _materialize_interaction_value(kwargs.get("generation_config")),
             "previous_interaction_id": kwargs.get("previous_interaction_id"),
-            "response_format": _serialize_interaction_value(kwargs.get("response_format")),
+            "response_format": _materialize_interaction_value(kwargs.get("response_format")),
             "response_mime_type": kwargs.get("response_mime_type"),
-            "response_modalities": _serialize_interaction_value(kwargs.get("response_modalities")),
+            "response_modalities": _materialize_interaction_value(kwargs.get("response_modalities")),
             "store": kwargs.get("store"),
             "stream": kwargs.get("stream"),
             "system_instruction": kwargs.get("system_instruction"),
-            "tools": _serialize_interaction_value(kwargs.get("tools")),
-            "agent_config": _serialize_interaction_value(kwargs.get("agent_config")),
+            "tools": _materialize_interaction_value(kwargs.get("tools")),
+            "agent_config": _materialize_interaction_value(kwargs.get("agent_config")),
         }
     )
     metadata = clean_nones(
@@ -386,12 +384,13 @@ def _extract_generate_images_output(response: Any) -> dict[str, Any]:
         # Convert image bytes to an Attachment so the SDK uploads them to
         # object storage and the Braintrust UI can render the image.
         if isinstance(image_bytes, bytes) and mime_type:
-            attachment = _attachment_from_bytes(
+            resolved_attachment = _materialize_attachment(
                 image_bytes,
-                mime_type,
-                filename=_attachment_filename_for_mime_type(mime_type, prefix=f"generated_image_{i}"),
+                mime_type=mime_type,
+                prefix=f"generated_image_{i}",
             )
-            image_entry.update(_image_url_payload(attachment))
+            if resolved_attachment is not None:
+                image_entry.update(resolved_attachment.multimodal_part_payload)
 
         serialized_images.append(image_entry)
 
@@ -454,7 +453,7 @@ def _extract_interaction_text(outputs: list[dict[str, Any]]) -> str | None:
 
 
 def _serialize_interaction_outputs(response: "Interaction") -> list[dict[str, Any]]:
-    outputs = _serialize_interaction_value(getattr(response, "outputs", None))
+    outputs = _materialize_interaction_value(getattr(response, "outputs", None))
     return outputs if isinstance(outputs, list) else ([] if outputs is None else [outputs])
 
 
@@ -474,7 +473,7 @@ def _extract_interaction_output(
 
 def _extract_interaction_metadata(response: "Interaction") -> dict[str, Any]:
     usage = getattr(response, "usage", None)
-    usage_serialized = _serialize_interaction_value(usage)
+    usage_serialized = _materialize_interaction_value(usage)
     usage_by_modality = None
     if isinstance(usage_serialized, dict):
         usage_by_modality = clean_nones(
@@ -492,7 +491,7 @@ def _extract_interaction_metadata(response: "Interaction") -> dict[str, Any]:
             "previous_interaction_id": getattr(response, "previous_interaction_id", None),
             "role": getattr(response, "role", None),
             "response_mime_type": getattr(response, "response_mime_type", None),
-            "response_modalities": _serialize_interaction_value(getattr(response, "response_modalities", None)),
+            "response_modalities": _materialize_interaction_value(getattr(response, "response_modalities", None)),
             "usage_by_modality": usage_by_modality,
         }
     )
@@ -576,7 +575,7 @@ def _interaction_process_result(
 
 
 def _generic_process_result(result: Any, start: float) -> tuple[Any, dict[str, Any]]:
-    return _serialize_interaction_value(result), _extract_generic_timing_metrics(start)
+    return _materialize_interaction_value(result), _extract_generic_timing_metrics(start)
 
 
 # ---------------------------------------------------------------------------
@@ -722,10 +721,10 @@ def _reconstruct_interaction_outputs_from_events(events: list[Any]) -> list[dict
             continue
 
         if event_type == "content.start":
-            outputs_by_index[index] = _serialize_interaction_value(getattr(event, "content", None)) or {}
+            outputs_by_index[index] = _materialize_interaction_value(getattr(event, "content", None)) or {}
         elif event_type == "content.delta":
             item = outputs_by_index.setdefault(index, {})
-            delta = _serialize_interaction_value(getattr(event, "delta", None)) or {}
+            delta = _materialize_interaction_value(getattr(event, "delta", None)) or {}
             if isinstance(delta, dict):
                 outputs_by_index[index] = _merge_interaction_content_delta(item, delta)
 
@@ -829,7 +828,7 @@ def _activate_interaction_tool_span(
 
 
 def _serialize_interaction_items(value: Any) -> list[dict[str, Any]]:
-    serialized = _serialize_interaction_value(value)
+    serialized = _materialize_interaction_value(value)
     if serialized is None:
         return []
     items = serialized if isinstance(serialized, list) else [serialized]
@@ -965,8 +964,8 @@ def _aggregate_interaction_events(
             None,
         )
         if error_event is not None:
-            metadata["stream_error"] = _serialize_interaction_value(error_event.error)
-        return {"events": _serialize_interaction_value(events)}, clean_nones(metrics), metadata
+            metadata["stream_error"] = _materialize_interaction_value(error_event.error)
+        return {"events": _materialize_interaction_value(events)}, clean_nones(metrics), metadata
 
     final_outputs_list = _serialize_interaction_outputs(final_interaction)
 

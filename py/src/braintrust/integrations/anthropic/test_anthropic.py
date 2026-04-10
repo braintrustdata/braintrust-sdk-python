@@ -124,9 +124,10 @@ def test_get_input_from_kwargs_converts_multimodal_base64_blocks_to_attachments(
 
     assert document_block["type"] == "document"
     assert document_block["source"] == {"type": "base64", "media_type": "application/pdf"}
-    assert isinstance(document_block["image_url"]["url"], Attachment)
-    assert document_block["image_url"]["url"].reference["content_type"] == "application/pdf"
-    assert document_block["image_url"]["url"].reference["filename"] == "document.pdf"
+    assert document_block["file"]["filename"] == "document.pdf"
+    assert isinstance(document_block["file"]["file_data"], Attachment)
+    assert document_block["file"]["file_data"].reference["content_type"] == "application/pdf"
+    assert document_block["file"]["file_data"].reference["filename"] == "document.pdf"
 
     serialized = str(processed_input)
     assert PNG_BASE64 not in serialized
@@ -365,9 +366,10 @@ def test_anthropic_messages_create_with_document_attachment_input(memory_logger)
 
     assert document_block["type"] == "document"
     assert document_block["source"] == {"type": "base64", "media_type": "application/pdf"}
-    assert isinstance(document_block["image_url"]["url"], Attachment)
-    assert document_block["image_url"]["url"].reference["content_type"] == "application/pdf"
-    assert document_block["image_url"]["url"].reference["filename"] == "document.pdf"
+    assert document_block["file"]["filename"] == "document.pdf"
+    assert isinstance(document_block["file"]["file_data"], Attachment)
+    assert document_block["file"]["file_data"].reference["content_type"] == "application/pdf"
+    assert document_block["file"]["file_data"].reference["filename"] == "document.pdf"
     assert PDF_BASE64 not in str(span["input"])
 
 

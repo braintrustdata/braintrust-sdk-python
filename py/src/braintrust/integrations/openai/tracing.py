@@ -7,13 +7,10 @@ from collections.abc import Callable
 from typing import Any
 
 from braintrust.integrations.utils import (
-    _attachment_filename_for_mime_type,
-    _attachment_from_base64_data,
-    _attachment_from_file_input,
-    _convert_data_url_to_attachment,
-    _image_url_payload,
+    _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
+    _ResolvedAttachment,
     _timing_metrics,
     _try_to_dict,
 )
@@ -104,47 +101,56 @@ def _raw_response_requested(kwargs: dict[str, Any]) -> bool:
     return False
 
 
+def _materialize_logged_file_input(value: Any) -> Any:
+    if isinstance(value, list):
+        return [_materialize_logged_file_input(item) for item in value]
+
+    return resolved.attachment if (resolved := _materialize_attachment(value)) is not None else value
+
+
 def _process_attachments_in_input(input_data: Any) -> Any:
     """Process input to convert data URL images and base64 documents to Attachment objects."""
     if isinstance(input_data, list):
         return [_process_attachments_in_input(item) for item in input_data]
 
     if isinstance(input_data, dict):
-        # Check for OpenAI's image_url format with data URLs
         if (
             input_data.get("type") == "image_url"
             and isinstance(input_data.get("image_url"), dict)
             and isinstance(input_data["image_url"].get("url"), str)
         ):
-            processed_url = _convert_data_url_to_attachment(input_data["image_url"]["url"])
+            url = input_data["image_url"]["url"]
             return {
                 **input_data,
                 "image_url": {
                     **input_data["image_url"],
-                    "url": processed_url,
+                    "url": resolved.attachment if (resolved := _materialize_attachment(url)) is not None else url,
                 },
             }
 
-        # Check for OpenAI's file format with data URL (e.g., PDFs)
         if (
             input_data.get("type") == "file"
             and isinstance(input_data.get("file"), dict)
             and isinstance(input_data["file"].get("file_data"), str)
         ):
+            file_data = input_data["file"]["file_data"]
             file_filename = input_data["file"].get("filename")
-            processed_file_data = _convert_data_url_to_attachment(
-                input_data["file"]["file_data"],
-                filename=file_filename if isinstance(file_filename, str) else None,
-            )
             return {
                 **input_data,
                 "file": {
                     **input_data["file"],
-                    "file_data": processed_file_data,
+                    "file_data": resolved.attachment
+                    if (
+                        resolved := _materialize_attachment(
+                            file_data,
+                            filename=file_filename if isinstance(file_filename, str) else None,
+                        )
+                    )
+                    is not None
+                    else file_data,
                 },
             }
 
-        # Recursively process nested objects
         return {key: _process_attachments_in_input(value) for key, value in input_data.items()}
 
     return input_data
@@ -883,20 +889,20 @@ def _image_attachment_from_base64(
     *,
     output_format: Any,
     index: int,
-) -> tuple[Any | None, int | None, str | None]:
+) -> tuple[_ResolvedAttachment | None, int | None]:
     if not isinstance(data, str):
-        return None, None, None
+        return None, None
 
     extension = output_format if isinstance(output_format, str) and output_format else "png"
     mime_type = extension if "/" in extension else f"image/{extension}"
-    attachment = _attachment_from_base64_data(
+    resolved_attachment = _materialize_attachment(
         data,
-        mime_type,
-        filename=_attachment_filename_for_mime_type(mime_type, prefix=f"generated_image_{index}"),
+        mime_type=mime_type,
+        prefix=f"generated_image_{index}",
     )
-    if attachment is None:
-        return None, None, None
-    return attachment, len(attachment.data), mime_type
+    if resolved_attachment is None:
+        return None, None
+    return resolved_attachment, len(resolved_attachment.attachment.data)
 
 
 def _extract_images_output(response: dict[str, Any]) -> dict[str, Any]:
@@ -915,18 +921,18 @@ def _extract_images_output(response: dict[str, Any]) -> dict[str, Any]:
         )
 
         if isinstance(image_dict.get("url"), str):
-            image_entry.update(_image_url_payload(image_dict["url"]))
+            image_entry["image_url"] = {"url": image_dict["url"]}
 
         b64_json = image_dict.get("b64_json")
-        attachment, image_size_bytes, mime_type = _image_attachment_from_base64(
+        resolved_attachment, image_size_bytes = _image_attachment_from_base64(
             b64_json,
             output_format=output_format,
             index=index,
         )
-        if attachment is not None:
-            image_entry.update(_image_url_payload(attachment))
+        if resolved_attachment is not None:
+            image_entry.update(resolved_attachment.multimodal_part_payload)
             image_entry["image_size_bytes"] = image_size_bytes
-            image_entry["mime_type"] = mime_type
+            image_entry["mime_type"] = resolved_attachment.mime_type
         elif isinstance(b64_json, str):
             image_entry["b64_json_present"] = True
 
@@ -1067,8 +1073,8 @@ class _ImageBaseWrapper(BaseWrapper):
         input_data = clean_nones(
             {
                 "prompt": prompt,
-                "image": _attachment_from_file_input(image),
-                "mask": _attachment_from_file_input(mask),
+                "image": _materialize_logged_file_input(image),
+                "mask": _materialize_logged_file_input(mask),
             }
         )
 

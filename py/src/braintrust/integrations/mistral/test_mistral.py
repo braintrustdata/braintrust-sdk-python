@@ -1,3 +1,4 @@
+import base64
 import importlib
 import inspect
 import os
@@ -6,12 +7,13 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from braintrust import logger
+from braintrust import Attachment, logger
 from braintrust.integrations.mistral import MistralIntegration, wrap_mistral
 from braintrust.integrations.mistral.tracing import (
     _aggregate_completion_events,
     _chat_complete_async_wrapper,
     _chat_complete_wrapper,
+    sanitize_mistral_logged_value,
 )
 from braintrust.test_helpers import init_test_logger
 from braintrust.wrappers.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
@@ -602,6 +604,38 @@ async def test_chat_complete_async_wrapper_logs_errors(memory_logger):
     assert span["metadata"]["provider"] == "mistral"
     assert span["metadata"]["model"] == CHAT_MODEL
     assert "async boom" in span["error"]
+
+
+def test_sanitize_mistral_logged_value_converts_image_url_data_uri_to_attachment():
+    sanitized = sanitize_mistral_logged_value(
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64,aGVsbG8="},
+        }
+    )
+
+    assert isinstance(sanitized["image_url"]["url"], Attachment)
+    assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
+
+
+def test_sanitize_mistral_logged_value_converts_large_base64_input_audio_to_attachment():
+    sanitized = sanitize_mistral_logged_value(
+        {
+            "type": "input_audio",
+            "input_audio": base64.b64encode(b"hello" * 16).decode("ascii"),
+        }
+    )
+
+    assert isinstance(sanitized["input_audio"], Attachment)
+    assert sanitized["input_audio"].reference["filename"] == "input_audio.bin"
+
+
+def test_sanitize_mistral_logged_value_leaves_non_base64_input_audio_unchanged():
+    original = {"type": "input_audio", "input_audio": "not base64"}
+
+    sanitized = sanitize_mistral_logged_value(original)
+
+    assert sanitized == original
 
 
 def test_aggregate_completion_events_merges_tool_calls_and_content():

@@ -1,7 +1,5 @@
 """Mistral-specific tracing helpers."""
 
-import base64
-import binascii
 import logging
 import re
 import time
@@ -11,13 +9,13 @@ from typing import Any
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import (
     _camel_to_snake,
-    _convert_data_url_to_attachment,
     _is_supported_metric_value,
     _log_and_end_span,
     _log_error_and_end_span,
+    _materialize_attachment,
     _merge_timing_and_usage_metrics,
 )
-from braintrust.logger import Attachment, start_span
+from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 
 
@@ -83,17 +81,30 @@ def _is_unset(value: Any) -> bool:
     return value.__class__.__name__ == "Unset"
 
 
-def _convert_input_audio_to_attachment(value: str) -> Attachment | str:
+def _normalize_base64_payload(value: str) -> str | None:
     normalized = value.strip().replace("\n", "")
-    if len(normalized) < 64 or len(normalized) % 4 != 0 or not _BASE64_RE.fullmatch(normalized):
+    if len(normalized) >= 64 and len(normalized) % 4 == 0 and _BASE64_RE.fullmatch(normalized) is not None:
+        return normalized
+    return None
+
+
+def _convert_input_audio_to_attachment(value: str) -> Any:
+    normalized = _normalize_base64_payload(value)
+    if normalized is None:
         return value
 
-    try:
-        binary_data = base64.b64decode(normalized, validate=True)
-    except (binascii.Error, ValueError):
-        return value
-
-    return Attachment(data=binary_data, filename="input_audio.bin", content_type="application/octet-stream")
+    return (
+        resolved.attachment
+        if (
+            resolved := _materialize_attachment(
+                normalized,
+                mime_type="application/octet-stream",
+                filename="input_audio.bin",
+            )
+        )
+        is not None
+        else value
+    )
 
 
 def _normalize_special_payloads(value: Any) -> Any:
@@ -106,14 +117,18 @@ def _normalize_special_payloads(value: Any) -> Any:
         if isinstance(image_url, str):
             return {
                 **value,
-                "image_url": _convert_data_url_to_attachment(image_url),
+                "image_url": resolved.attachment
+                if (resolved := _materialize_attachment(image_url)) is not None
+                else image_url,
             }
         if isinstance(image_url, dict) and isinstance(image_url.get("url"), str):
             return {
                 **value,
                 "image_url": {
                     **image_url,
-                    "url": _convert_data_url_to_attachment(image_url["url"]),
+                    "url": resolved.attachment
+                    if (resolved := _materialize_attachment(image_url["url"])) is not None
+                    else image_url["url"],
                 },
             }
 

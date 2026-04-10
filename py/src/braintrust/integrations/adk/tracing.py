@@ -9,7 +9,7 @@ from contextlib import aclosing
 from typing import Any, cast
 
 from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.integrations.utils import _attachment_from_bytes, _image_url_payload
+from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 
@@ -58,12 +58,10 @@ def _serialize_part(part: Any) -> Any:
             data = inline_data.data
             mime_type = inline_data.mime_type
 
-            # Convert bytes to Attachment
             if isinstance(data, bytes):
-                attachment = _attachment_from_bytes(data, mime_type)
-
-                # Return in image_url format - SDK will replace with AttachmentReference
-                return _image_url_payload(attachment)
+                resolved_attachment = _materialize_attachment(data, mime_type=mime_type)
+                if resolved_attachment is not None:
+                    return resolved_attachment.multimodal_part_payload
 
     # Handle Part objects with file_data (file references)
     if hasattr(part, "file_data") and part.file_data:

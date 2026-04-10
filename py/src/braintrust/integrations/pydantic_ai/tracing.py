@@ -7,7 +7,7 @@ from contextlib import AbstractAsyncContextManager
 from typing import Any
 
 from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.integrations.utils import _attachment_from_bytes
+from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
@@ -945,8 +945,13 @@ def _serialize_content_part(part: Any) -> Any:
             data = part.data
             media_type = part.media_type
 
-            attachment = _attachment_from_bytes(data, media_type)
-            return {"type": "binary", "attachment": attachment, "media_type": media_type}
+            resolved_attachment = _materialize_attachment(data, mime_type=media_type)
+            if resolved_attachment is not None:
+                return {
+                    "type": "binary",
+                    "attachment": resolved_attachment.attachment,
+                    "media_type": resolved_attachment.mime_type,
+                }
 
     if hasattr(part, "content"):
         content = part.content

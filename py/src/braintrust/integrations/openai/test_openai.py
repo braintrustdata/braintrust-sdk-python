@@ -10,7 +10,11 @@ import openai
 import pytest
 from braintrust import Attachment, logger, wrap_openai
 from braintrust.integrations.openai import OpenAIIntegration
-from braintrust.integrations.openai.tracing import RAW_RESPONSE_HEADER, ChatCompletionWrapper
+from braintrust.integrations.openai.tracing import (
+    RAW_RESPONSE_HEADER,
+    ChatCompletionWrapper,
+    _materialize_logged_file_input,
+)
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 from braintrust.wrappers.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from openai import AsyncOpenAI
@@ -1770,6 +1774,16 @@ def test_openai_images_generate(memory_logger):
         assert span["output"]["images_count"] == 1
         assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
         assert span["metrics"]["duration"] >= 0
+
+
+def test_materialize_logged_file_input_preserves_unrecognized_values():
+    file_id = "file-123"
+    values = [file_id, NOT_GIVEN]
+
+    materialized = _materialize_logged_file_input(values)
+
+    assert materialized[0] == file_id
+    assert materialized[1] is NOT_GIVEN
 
 
 @pytest.mark.vcr

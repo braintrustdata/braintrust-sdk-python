@@ -143,10 +143,16 @@ def _assert_timing_metrics_are_valid(metrics, start=None, end=None):
 
 
 def _assert_attachment_part(part, *, content_type, filename):
-    assert "image_url" in part
-    assert "url" in part["image_url"]
+    if content_type.startswith("image/"):
+        assert "image_url" in part
+        assert "url" in part["image_url"]
+        attachment = part["image_url"]["url"]
+    else:
+        assert "file" in part
+        assert "file_data" in part["file"]
+        assert part["file"]["filename"] == filename
+        attachment = part["file"]["file_data"]
 
-    attachment = part["image_url"]["url"]
     assert isinstance(attachment, Attachment)
     assert attachment.reference["type"] == "braintrust_attachment"
     assert attachment.reference["content_type"] == content_type
@@ -1028,6 +1034,43 @@ def test_attachment_with_pydantic_model(memory_logger):
 
     # Attachment should be preserved
     assert copied["context_file"] is attachment
+
+
+def test_interaction_materialization_only_converts_multimodal_payloads():
+    """Interaction helpers should only materialize attachments, not re-serialize values."""
+    from datetime import datetime
+    from enum import Enum
+
+    from braintrust.integrations.google_genai.tracing import _materialize_interaction_value
+    from pydantic import BaseModel
+
+    class Mode(Enum):
+        CHAT = "chat"
+
+    class InteractionPayload(BaseModel):
+        created_at: datetime
+        mode: Mode
+        media: dict[str, object]
+
+    created_at = datetime(2024, 1, 2, 3, 4, 5)
+    materialized = _materialize_interaction_value(
+        InteractionPayload(
+            created_at=created_at,
+            mode=Mode.CHAT,
+            media={
+                "type": "image",
+                "data": TINY_PNG_BASE64,
+                "mime_type": "image/png",
+                "caption": None,
+            },
+        )
+    )
+
+    assert materialized["created_at"] == created_at
+    assert materialized["mode"] is Mode.CHAT
+    assert materialized["media"]["caption"] is None
+    assert isinstance(materialized["media"]["data"], Attachment)
+    assert materialized["media"]["image_url"]["url"] is materialized["media"]["data"]
 
 
 GROUNDING_MODEL = "gemini-2.0-flash-001"

@@ -28,6 +28,7 @@ Always read:
 - `py/src/braintrust/integrations/base.py`
 - `py/src/braintrust/integrations/versioning.py`
 - `py/src/braintrust/integrations/__init__.py`
+- `py/src/braintrust/integrations/utils.py`
 - `py/noxfile.py`
 
 Read these when working on an existing integration:
@@ -43,8 +44,9 @@ Read these when relevant:
 - `py/src/braintrust/auto.py` for `auto_instrument()` changes
 - `py/src/braintrust/conftest.py` for VCR behavior
 - `py/src/braintrust/integrations/auto_test_scripts/` for subprocess auto-instrument coverage
-- `py/src/braintrust/integrations/adk/test_adk.py` and `py/src/braintrust/integrations/anthropic/test_anthropic.py` for test layout patterns
-- `py/src/braintrust/integrations/adk/tracing.py` and `py/src/braintrust/integrations/google_genai/tracing.py` when handling multimodal content, binary inputs, or generated media
+- `py/src/braintrust/integrations/test_utils.py` when touching shared attachment materialization or multimodal payload shaping
+- `py/src/braintrust/integrations/adk/test_adk.py`, `py/src/braintrust/integrations/anthropic/test_anthropic.py`, and `py/src/braintrust/integrations/google_genai/test_google_genai.py` for attachment-focused test layout patterns
+- `py/src/braintrust/integrations/adk/tracing.py`, `py/src/braintrust/integrations/anthropic/tracing.py`, and `py/src/braintrust/integrations/google_genai/tracing.py` when handling multimodal content, binary inputs, generated media, or attachment materialization behavior
 
 Do not forget `auto.py` and `auto_test_scripts/`. Import-order and subprocess regressions often only show up there.
 
@@ -54,8 +56,8 @@ Start from the nearest current integration:
 
 - ADK: direct method patching, `target_module`, `CompositeFunctionWrapperPatcher`, manual `wrap_*()` helpers, context propagation, inline data to `Attachment`
 - Agno: multi-target patching, several related patchers, version-conditional fallbacks with `superseded_by`
-- Anthropic: compact constructor patching and a small public surface
-- Google GenAI: multimodal tracing, generated media, output-side `Attachment` handling
+- Anthropic: compact constructor patching, a small public surface, and multimodal request blocks that distinguish image vs document attachment payloads
+- Google GenAI: multimodal tracing, generated media, output-side `Attachment` handling, and nested attachment materialization while preserving non-attachment values
 
 Choose the reference based on the hardest part of the task:
 
@@ -188,10 +190,16 @@ def _process_result(result: Any, start: float) -> tuple[dict[str, Any], dict[str
 
 Treat binary payloads as attachments, not logged bytes:
 
-- convert raw `bytes` to `braintrust.logger.Attachment`
+- prefer the shared `_materialize_attachment(...)` helper in `py/src/braintrust/integrations/utils.py` over provider-local base64 or file-decoding code
+- convert provider-owned raw `bytes`, base64 payloads, data URLs, file inputs, and generated media into `braintrust.logger.Attachment` objects when Braintrust should upload the content
 - preserve normal remote URLs as strings
-- keep useful metadata such as MIME type, size, or provider ids next to the attachment
-- follow existing repo content shapes for multimodal payloads
+- use the repo's existing multimodal payload shapes after materialization:
+  - images -> `{"image_url": {"url": attachment}}`
+  - non-image media/documents/files -> `{"file": {"file_data": attachment, "filename": resolved.filename}}`
+- do not force non-image payloads through `image_url` shims
+- if attachment materialization fails, keep the original value instead of dropping it or replacing it with `None`
+- preserve non-attachment values while walking nested payloads unless you are intentionally normalizing them for readability
+- keep useful metadata such as MIME type, size, safety data, filenames, or provider ids next to the attachment
 
 ## Patcher Rules
 
@@ -251,13 +259,20 @@ Cover the surfaces that changed:
 - idempotence
 - failure and error logging
 - patcher resolution and duplicate detection when relevant
-- attachment conversion for binary inputs or generated media
+- attachment conversion for binary inputs or generated media, including assertions that images land under `image_url.url`, non-image payloads land under `file.file_data`, and traced payloads contain `Attachment` objects rather than raw bytes or base64 blobs
 - span structure, especially `input`, `output`, `metadata`, and `metrics`
 
 For streaming changes, verify both:
 
 - the provider still returns the expected iterator or async iterator
 - the final logged span contains the aggregated `output` and stream-specific `metrics`
+
+Also verify, when relevant:
+
+- the `input` contains the expected model/messages/prompt/config fields
+- the `output` contains normalized provider results rather than opaque SDK instances
+- the `metadata` contains finish reasons, ids, or annotations in the expected place
+- binary payloads are represented as `Attachment` objects where applicable, while remote URLs and non-attachment values remain unchanged and unmaterialized file inputs are preserved rather than dropped
 
 Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/`. Re-record only when behavior intentionally changes.
 
@@ -296,3 +311,4 @@ Avoid these failures:
 - re-recording cassettes when behavior did not intentionally change
 - adding a custom `_instrument_*` helper where `_instrument_integration()` already fits
 - forgetting `target_module` for deep or optional patch targets
+- forcing non-image attachments through `image_url` shims, dropping unrecognized file inputs, or re-serializing non-attachment values while materializing payloads

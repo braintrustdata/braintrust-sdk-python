@@ -314,8 +314,9 @@ async def test_adk_document_inline_data_attachment_conversion(memory_logger):
     assert len(new_message["parts"]) == 2
 
     document_part = new_message["parts"][0]
-    assert "image_url" in document_part
-    attachment = document_part["image_url"]["url"]
+    assert "file" in document_part
+    assert document_part["file"]["filename"] == "file.pdf"
+    attachment = document_part["file"]["file_data"]
     assert isinstance(attachment, Attachment)
     assert attachment.reference["content_type"] == "application/pdf"
     assert attachment.reference["filename"] == "file.pdf"
@@ -329,8 +330,8 @@ async def test_adk_document_inline_data_attachment_conversion(memory_logger):
     llm_span = next(row for row in spans if row["span_attributes"]["type"] == "llm")
     llm_contents = llm_span["input"]["contents"]
     llm_document_part = llm_contents[0]["parts"][0]
-    assert isinstance(llm_document_part["image_url"]["url"], Attachment)
-    assert llm_document_part["image_url"]["url"].reference["content_type"] == "application/pdf"
+    assert isinstance(llm_document_part["file"]["file_data"], Attachment)
+    assert llm_document_part["file"]["file_data"].reference["content_type"] == "application/pdf"
 
 
 @pytest.mark.vcr
@@ -592,7 +593,7 @@ def test_serialize_content_with_binary_data():
     assert isinstance(attachment, Attachment), "Should be an Attachment object"
     assert attachment.reference["type"] == "braintrust_attachment"
     assert attachment.reference["content_type"] == "image/png"
-    assert attachment.reference["filename"] == "file.png"
+    assert attachment.reference["filename"] == "image.png"
     assert "key" in attachment.reference
 
     # Test serializing a Part with text
@@ -740,7 +741,7 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
     assert "filename" in ref, "Attachment reference should have a filename"
     assert "content_type" in ref, "Attachment reference should have a content_type"
     assert ref["content_type"] == "image/png", "Content type should be image/png"
-    assert ref["filename"] == "file.png", "Filename should be file.png"
+    assert ref["filename"] == "image.png", "Filename should be image.png"
 
     # Second part should be the text
     text_part = new_message["parts"][1]
