@@ -1,56 +1,96 @@
 # Braintrust SDK Agent Guide
 
-Guide for contributing to the Braintrust Python SDK repository.
+This guide is for development of the Braintrust Python SDK in this repository.
+If you need to learn more about Braintrust itself, see the Braintrust docs: https://www.braintrust.dev/docs
 
-## Defaults
+Use this file as the default playbook for work in this repository.
 
-- Use `mise` as the source of truth for tools and environment.
-- Prefer `py/` commands over root `make` targets when working on the SDK itself.
-- Keep changes narrow and run the smallest relevant test session first.
-- Do not rely on optional provider packages being installed unless the active nox session installs them.
+## Core Rules
+
+1. **For SDK work, treat `py/` as the primary workspace.**
+   - Read files under `py/`.
+   - Run commands from `py/`.
+   - Prefer `py/` commands over repo-root wrappers unless the task is clearly repo-level.
+
+2. **Use `mise` as the source of truth for tools and environment.**
+
+3. **Do not guess test commands or version coverage.**
+   - `py/noxfile.py` is the source of truth for nox session names, provider/version matrices, and CI coverage.
+   - For provider and integration work, also check `py/src/braintrust/integrations/versioning.py`.
+
+4. **Keep changes narrow and validate with the smallest relevant test first.**
+
+5. **Default bug-fix workflow: red -> green.**
+   - First add or update a test that reproduces the issue.
+   - Then implement the fix.
+   - Only skip this if the user explicitly asks for a different approach.
+
+6. **Prefer real integration coverage over mocks.**
+   - For provider/integration behavior, prefer VCR-backed tests with checked-in cassettes.
+   - Avoid mocks/fakes unless the code is purely local or there is no practical cassette-based option.
+
+7. **Do not assume optional provider packages are installed.**
+   - Rely on the active nox session to install what it needs.
+
+8. **Do not add `from __future__ import annotations` unless absolutely required.**
+   - It can change runtime annotation behavior in ways that break introspection.
+   - Prefer quoted forward references or `TYPE_CHECKING` guards.
 
 ## Repo Map
 
-- `py/`: main Python package, tests, examples, nox sessions, release build
-- `py/benchmarks/`: pyperf performance benchmarks
+- `py/`: main Python package, tests, examples, nox sessions, build/release workflow
+- `py/src/braintrust/`: SDK source
+  - top-level package files: core SDK
+  - `wrappers/`: wrappers
+  - `integrations/`: integrations API
+  - `contrib/temporal/`: Temporal support
+  - `cli/`, `devserver/`: CLI and devserver
+  - `type_tests/`: static + runtime type tests
+  - colocated `test_*.py`: local unit/integration tests
+- `py/benchmarks/`: pyperf benchmarks
 - `integrations/`: separate integration packages
 - `docs/`: supporting docs
 
-Important code areas in `py/src/braintrust/`:
-
-- core SDK modules: top-level package files
-- wrappers/integrations: `wrappers/`
-- temporal: `contrib/temporal/`
-- CLI/devserver: `cli/`, `devserver/`
-- tests: colocated `test_*.py`
-- type tests: `type_tests/`
-
 ## Setup
 
-Preferred repo bootstrap:
+Repo bootstrap:
 
 ```bash
 mise install
 make develop
 ```
 
-Package-focused setup:
+SDK-focused setup:
 
 ```bash
 cd py
 make install-dev
 ```
 
-Install optional provider dependencies only if needed:
+Install optional provider dependencies only when needed:
 
 ```bash
 cd py
 make install-optional
 ```
 
-## Commands
+## Default Workflow
 
-Preferred SDK workflow:
+When working on the SDK, prefer this sequence:
+
+```bash
+cd py
+```
+
+1. Read the relevant code and tests.
+2. Check `noxfile.py` for the exact session(s) that cover the change.
+3. If fixing behavior, add/update a reproducing test first.
+4. Make the smallest possible change.
+5. Run the narrowest affected test session first.
+6. Expand coverage only as needed.
+7. Before handoff, run broader hygiene checks if the change is large enough to justify them.
+
+Common commands:
 
 ```bash
 cd py
@@ -59,9 +99,28 @@ make test-core
 nox -l
 ```
 
-For larger or cross-cutting changes, also run `make pylint` from `py/` before handing work off.
+Notes:
 
-Targeted wrapper/session runs:
+- `cd py && make lint` runs pre-commit hooks and then `pylint`.
+- `cd py && make pylint` runs only `pylint`.
+- After major changes, run `cd py && make fixup` before handoff.
+- The repo-root `Makefile` is a convenience wrapper; `py/Makefile` and `py/noxfile.py` are authoritative for SDK work.
+
+## Testing Rules
+
+### Always check the real CI target
+
+Do not guess:
+
+- nox session names
+- supported provider versions
+- which tests a provider session runs
+
+Check `py/noxfile.py` and reproduce with the exact local session CI uses.
+
+### Run the smallest relevant test first
+
+Examples:
 
 ```bash
 cd py
@@ -69,47 +128,55 @@ nox -s "test_openai(latest)"
 nox -s "test_openai(latest)" -- -k "test_chat_metrics"
 ```
 
-Root `Makefile` exists as a convenience wrapper. The authoritative SDK workflow is in `py/Makefile` and `py/noxfile.py`.
+### Provider and integration changes
 
-## Tests
+Version-specific behavior matters in this repo.
 
-`py/noxfile.py` is the source of truth for compatibility coverage.
+Before changing provider/integration behavior:
 
-Testing preferences:
+1. Read the relevant session(s) in `py/noxfile.py`.
+2. Read `py/src/braintrust/integrations/versioning.py`.
+3. Confirm which versions, gates, fallbacks, and feature checks must keep working.
+4. Do not stop at `latest` if the matrix includes older versions or version-specific branches.
 
-- Prefer VCR-backed integration tests with checked-in cassettes whenever practical.
-- Avoid mocks, fakes, and heavily synthetic tests unless there is no reasonable cassette-based alternative or the code under test is truly internal/purely local.
-- When fixing a bug or issue, default to a red/green workflow: first add or update a test that reproduces the problem and fails, then implement the fix, unless the user explicitly asks for a different approach.
-
-Key facts:
+### Key test facts
 
 - `test_core` runs without optional vendor packages.
-- `test_types` runs pyright, mypy, and pytest on `py/src/braintrust/type_tests/`. Use this session when changing generic type signatures in the framework.
+- `test_types` runs pyright, mypy, and pytest on `py/src/braintrust/type_tests/`.
 - wrapper coverage is split across dedicated nox sessions by provider/version.
-- `pylint` installs the broad dependency surface before checking files.
-- `cd py && make pylint` runs only `pylint`; `cd py && make lint` runs pre-commit hooks first and then `pylint`.
 - `test-wheel` is a wheel sanity check and requires a built wheel first.
-
-When changing behavior, run the narrowest affected session first, then expand only if needed.
 
 ## Type Tests
 
-`py/src/braintrust/type_tests/` contains tests that are validated by both static type checkers (pyright, mypy) and pytest at runtime. The `test_types` nox session runs all three checks and is auto-discovered by CI.
+Use `py/src/braintrust/type_tests/` when changing generic type signatures such as:
 
-When changing generic type signatures (e.g., `Eval`, `EvalCase`, `EvalScorer`, `EvalHooks`), add or update a test in `type_tests/` to verify the type checker accepts the intended usage patterns.
+- `Eval`
+- `EvalCase`
+- `EvalScorer`
+- `EvalHooks`
 
-New test files should be named `test_*.py` and use absolute imports (`from braintrust.framework import ...`). They are regular pytest files that also happen to be valid pyright/mypy targets.
+Rules:
+
+- add or update a type test for the intended usage pattern
+- name files `test_*.py`
+- use absolute imports such as `from braintrust.framework import ...`
+
+Run with:
 
 ```bash
 cd py
 nox -s test_types
 ```
 
-## VCR
+## VCR and Cassettes
 
-VCR/cassette coverage is the default and preferred testing strategy for provider and integration behavior in this repo. Reach for cassette-backed tests before introducing mocks or fakes, and keep new coverage aligned with the existing VCR patterns unless there is a strong reason not to.
+For provider and integration behavior, the default path is:
 
-VCR cassette directories:
+1. reproduce with a failing cassette-backed test
+2. implement the fix
+3. re-run the affected session
+
+Cassette locations:
 
 - `py/src/braintrust/cassettes/`
 - `py/src/braintrust/wrappers/cassettes/`
@@ -120,8 +187,8 @@ Behavior from `py/src/braintrust/conftest.py`:
 
 - local default: `record_mode="once"`
 - CI default: `record_mode="none"`
-- wheel-mode skips VCR-marked tests
-- test fixtures inject dummy API keys and reset global state
+- wheel mode skips VCR-marked tests
+- fixtures inject dummy API keys and reset global state
 
 Common commands:
 
@@ -132,9 +199,13 @@ nox -s "test_openai(latest)" -- --disable-vcr
 nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
 ```
 
-Claude Agent SDK does not use VCR because the SDK talks to the bundled `claude` subprocess over stdin/stdout. Those tests use a transport-level cassette helper instead.
+Claude Agent SDK note:
 
-Common Claude Agent SDK cassette commands:
+- it does not use HTTP VCR
+- it talks to the bundled `claude` subprocess over stdin/stdout
+- it uses transport-level cassette helpers instead
+
+Common Claude Agent SDK commands:
 
 ```bash
 cd py
@@ -143,26 +214,32 @@ BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest
 BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
 ```
 
-Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If in doubt, ask the user.
+Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If unsure, ask the user.
 
 ## Benchmarks
 
-Run `cd py && make bench` when touching hot-path code (serialization, deep-copy, span creation, logging). Not required for every change.
+If you touch a hot path such as serialization, deep-copy, span creation, or logging, consider benchmarks.
 
-Benchmarks use pyperf. All `bench_*.py` files in `py/benchmarks/benches/` are auto-discovered — no registration needed.
-
-Key commands:
+Quick commands:
 
 ```bash
 cd py
-make bench                                   # run all benchmarks
-make bench BENCH_ARGS="--fast"               # quick sanity check
-make bench BENCH_ARGS="-o /tmp/before.json"  # save baseline before a change
-make bench BENCH_ARGS="-o /tmp/after.json"   # save after a change
+make bench
+make bench BENCH_ARGS="--fast"
+make bench BENCH_ARGS="-o /tmp/before.json"
+make bench BENCH_ARGS="-o /tmp/after.json"
 make bench-compare BENCH_BASE=/tmp/before.json BENCH_NEW=/tmp/after.json
 ```
 
-New benchmark files go in `py/benchmarks/benches/bench_<name>.py`. Each must expose `main(runner: pyperf.Runner | None = None)`. Shared payload builders go in `py/benchmarks/fixtures.py`. See existing `bench_bt_json.py` for the pattern.
+Rules:
+
+- benchmark hot-path changes when practical
+- benchmark files live in `py/benchmarks/benches/`
+- new files should be named `bench_<name>.py`
+- each benchmark file must expose `main(runner: pyperf.Runner | None = None)`
+- shared payload builders belong in `py/benchmarks/fixtures.py`
+
+See `py/benchmarks/benches/bench_bt_json.py` for the pattern.
 
 ## Build Notes
 
@@ -173,18 +250,27 @@ cd py
 make build
 ```
 
-Important caveat:
+Caveat:
 
-- `py/scripts/template-version.py` rewrites `py/src/braintrust/version.py` during build.
-- `py/Makefile` restores that file afterward with `git checkout`.
+- `py/scripts/template-version.py` rewrites `py/src/braintrust/version.py` during build
+- `py/Makefile` restores that file afterward with `git checkout`
 
 Avoid editing `py/src/braintrust/version.py` while also running build commands.
 
-## Editing Guidance
+## Editing Guidelines
 
-- Keep tests near the code they cover.
+- Keep tests close to the code they cover.
 - Reuse existing fixtures and cassette patterns.
 - Prefer extending an existing cassette-backed test over adding a new mock-heavy test.
 - If a change affects examples or integrations, update the nearest example or focused test.
 - For CLI/devserver changes, consider whether wheel-mode behavior also needs coverage.
-- Do **not** add `from __future__ import annotations` unless it is absolutely required (e.g., a genuine forward-reference that cannot be resolved any other way). This import changes annotation evaluation semantics at runtime and can silently break `get_type_hints()`, Pydantic models, and other runtime introspection. Prefer quoted string literals (`"MyClass"`) or `TYPE_CHECKING` guards for forward references instead.
+
+## Quick Decision Guide
+
+- **Changing SDK code?** Work from `py/`.
+- **Need a test command?** Read `py/noxfile.py`.
+- **Fixing a bug?** Add/update a failing test first.
+- **Changing provider/integration behavior?** Use VCR-backed coverage and check version gates.
+- **Changing generic typing?** Add/update a file in `py/src/braintrust/type_tests/` and run `nox -s test_types`.
+- **Touching a hot path?** Consider `cd py && make bench`.
+- **Preparing handoff after a major change?** Run `cd py && make fixup`.

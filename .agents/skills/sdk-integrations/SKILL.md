@@ -5,26 +5,21 @@ description: Create or update Braintrust Python SDK integrations built on the in
 
 # SDK Integrations
 
-Use this skill for integrations API work under `py/src/braintrust/integrations/`.
+Use this skill for integration work under `py/src/braintrust/integrations/`.
 
-If the provider already has a real implementation under `py/src/braintrust/wrappers/<provider>/` and the task is to move that implementation into the integrations API, switch to `sdk-wrapper-migrations` instead of treating it like a fresh integration.
+Use `sdk-wrapper-migrations` instead when the provider already has a real implementation under `py/src/braintrust/wrappers/<provider>/` and the task is to move that implementation into the integrations API.
 
-## Pick The Nearest Example
+## Quick Start
 
-Start from one structural reference and one patching reference instead of designing from scratch:
+Before editing:
 
-- ADK (`py/src/braintrust/integrations/adk/`) for direct method patching, `target_module`, `CompositeFunctionWrapperPatcher`, manual `wrap_*()` helpers, priority-based context propagation, and input-side `inline_data` to `Attachment` conversion.
-- Agno (`py/src/braintrust/integrations/agno/`) for multi-target patching, version-conditional fallbacks with `superseded_by`, and providers that need several related patchers.
-- Anthropic (`py/src/braintrust/integrations/anthropic/`) for constructor patching and a compact provider package with a small public surface.
-- Google GenAI (`py/src/braintrust/integrations/google_genai/`) for multimodal serialization, generated media outputs, and output-side `Attachment` handling.
+1. Read the shared integration primitives.
+2. Read the target provider package.
+3. Pick the nearest existing integration as a reference.
+4. Decide the span shape before writing patchers.
+5. Run the narrowest provider nox session first.
 
-Match an existing repo pattern unless the target provider forces a different shape.
-
-Choose the example based on the hardest part of the task, not just provider similarity:
-
-- If the task is mostly about patcher topology, copy the closest patcher layout first.
-- If the task is mostly about traced payload shaping, copy the closest tracing implementation first.
-- If the task involves generated media or multimodal payloads, start from ADK or Google GenAI before looking at simpler text-only integrations.
+Do not design a new integration shape from scratch if an existing provider already matches the problem.
 
 ## Read First
 
@@ -35,7 +30,7 @@ Always read:
 - `py/src/braintrust/integrations/__init__.py`
 - `py/noxfile.py`
 
-Read when updating an existing integration:
+Read these when working on an existing integration:
 
 - `py/src/braintrust/integrations/<provider>/__init__.py`
 - `py/src/braintrust/integrations/<provider>/integration.py`
@@ -43,38 +38,57 @@ Read when updating an existing integration:
 - `py/src/braintrust/integrations/<provider>/tracing.py`
 - `py/src/braintrust/integrations/<provider>/test_*.py`
 
-Read when relevant:
+Read these when relevant:
 
-- `py/src/braintrust/auto.py` for `auto_instrument()` work
+- `py/src/braintrust/auto.py` for `auto_instrument()` changes
 - `py/src/braintrust/conftest.py` for VCR behavior
-- `py/src/braintrust/integrations/auto_test_scripts/` for subprocess auto-instrument tests
+- `py/src/braintrust/integrations/auto_test_scripts/` for subprocess auto-instrument coverage
 - `py/src/braintrust/integrations/adk/test_adk.py` and `py/src/braintrust/integrations/anthropic/test_anthropic.py` for test layout patterns
-- `py/src/braintrust/integrations/adk/tracing.py` and `py/src/braintrust/integrations/google_genai/tracing.py` when the provider accepts binary inputs, emits generated files, or otherwise needs `Attachment` objects in traced input/output
+- `py/src/braintrust/integrations/adk/tracing.py` and `py/src/braintrust/integrations/google_genai/tracing.py` when handling multimodal content, binary inputs, or generated media
 
-## Working Sequence
+Do not forget `auto.py` and `auto_test_scripts/`. Import-order and subprocess regressions often only show up there.
 
-Use this order unless the task is obviously narrower:
+## Pick A Reference
 
-1. Read the nearest provider package and the shared integration primitives.
-2. Decide which public surface is being patched: constructor, top-level function, client method, stream method, or manual `wrap_*()` helper.
-3. Decide what the span should look like before writing patchers:
-   - what belongs in `input`
-   - what belongs in `output`
-   - what belongs in `metadata`
-   - what belongs in `metrics`
+Start from the nearest current integration:
+
+- ADK: direct method patching, `target_module`, `CompositeFunctionWrapperPatcher`, manual `wrap_*()` helpers, context propagation, inline data to `Attachment`
+- Agno: multi-target patching, several related patchers, version-conditional fallbacks with `superseded_by`
+- Anthropic: compact constructor patching and a small public surface
+- Google GenAI: multimodal tracing, generated media, output-side `Attachment` handling
+
+Choose the reference based on the hardest part of the task:
+
+- patcher topology
+- tracing shape
+- streaming behavior
+- multimodal or binary payload handling
+
+## Default Workflow
+
+Use this order unless the task is clearly narrower:
+
+1. Read shared primitives and the provider package.
+2. Decide which public surface is being patched.
+3. Define the span shape:
+   - `input`
+   - `output`
+   - `metadata`
+   - `metrics`
+   - `error` when failures matter
 4. Implement or update patchers.
 5. Implement or update tracing helpers.
-6. Add or update focused tests in the provider package.
+6. Add or update focused tests.
 7. Run the narrowest nox session first, then expand only if shared code changed.
 
-Do not start by wiring patchers and only later asking what the logged span should contain. The traced shape should drive the tracing helper design from the start.
+Do not start by wiring wrappers and only later decide what the span should contain.
 
 ## Route The Task
 
 ### New provider integration
 
 1. Create `py/src/braintrust/integrations/<provider>/`.
-2. Add the normal split unless the provider is exceptionally small:
+2. Use this layout unless the provider is exceptionally small:
    - `__init__.py`
    - `integration.py`
    - `patchers.py`
@@ -91,73 +105,77 @@ Do not start by wiring patchers and only later asking what the logged span shoul
 1. Read the current provider package before editing.
 2. Change only the affected patchers, tracing helpers, exports, tests, and cassettes.
 3. Preserve the provider's public setup and `wrap_*()` surface unless the task explicitly changes it.
-4. Keep repo-level changes narrow; do not touch `auto.py`, `integrations/__init__.py`, or `py/noxfile.py` unless the task actually requires it.
-5. Preserve existing span shape conventions unless the task is intentionally improving or correcting them.
+4. Do not touch `auto.py`, `integrations/__init__.py`, or `py/noxfile.py` unless the task requires it.
+5. Even if `auto.py` does not change, check whether the behavior change also needs an auto-instrument subprocess test update.
+6. Preserve existing span shape conventions unless the task is intentionally correcting them.
 
 ### `auto_instrument()` only
 
 1. Update `py/src/braintrust/auto.py`.
-2. Use `_instrument_integration(...)` instead of adding a custom `_instrument_*` helper when the integration fits the standard pattern.
+2. Prefer `_instrument_integration(...)` over a custom `_instrument_*` helper when the standard pattern fits.
 3. Add the integration import near the other integration imports.
 4. Add or update the relevant subprocess auto-instrument test.
 
-## Package Layout
+## Package Layout Rules
 
-Keep provider-local code inside `py/src/braintrust/integrations/<provider>/`.
+Keep provider-specific behavior in `py/src/braintrust/integrations/<provider>/`.
 
-If tracing or normalization logic is genuinely shared across multiple integrations, prefer adding it to `py/src/braintrust/integrations/utils.py` instead of copying it into each provider package. Avoid duplicating code between integrations unless there is a clear provider-specific reason the behavior must diverge.
+Typical ownership:
 
-Typical file ownership:
+- `__init__.py`: public exports, `setup_<provider>()`, public `wrap_*()` helpers
+- `integration.py`: `BaseIntegration` subclass and patcher registration
+- `patchers.py`: patchers and manual `wrap_*()` helpers
+- `tracing.py`: request/response normalization, metadata extraction, stream handling, error logging
+- `test_*.py`: provider behavior tests
+- `cassettes/`: VCR recordings for provider HTTP traffic
 
-- `__init__.py`: export the integration class, `setup_<provider>()`, and public `wrap_*()` helpers
-- `integration.py`: define the `BaseIntegration` subclass and register patchers
-- `patchers.py`: define patchers and manual `wrap_*()` helpers
-- `tracing.py`: keep provider-specific tracing, stream handling, normalization, and metadata extraction; move cross-integration helpers to `py/src/braintrust/integrations/utils.py`
-- `test_*.py`: keep provider behavior tests next to the integration
-- `cassettes/`: keep VCR recordings next to the integration tests when the provider uses HTTP
+Keep `integration.py` thin.
 
-Keep `integration.py` thin. Put provider behavior in provider-local modules, not in shared integration primitives, unless the shared abstraction is genuinely missing.
+If logic is genuinely shared across integrations, move it to `py/src/braintrust/integrations/utils.py` instead of copying it into multiple providers.
 
 ## Integration Rules
 
-Set the integration class up declaratively:
+Set up the integration declaratively:
 
 - set `name`
 - set `import_names`
 - set `patchers`
 - set `min_version` or `max_version` only when feature detection is not enough
 
-Keep span creation, metadata extraction, stream aggregation, error logging, and output normalization in `tracing.py`.
+Prefer feature detection first and version checks second. Use:
 
-Preserve provider behavior. Do not let tracing-only code change provider return values, control flow, or error behavior except where the task explicitly requires it.
+- `detect_module_version(...)`
+- `version_satisfies(...)`
+- `make_specifier(...)`
 
-Generate structured spans. Do not pass raw `args` and `kwargs` straight into traced spans unless the provider API already exposes the exact stable schema you want to log. Instead:
+Let `BaseIntegration.resolve_patchers()` reject duplicate patcher ids. Do not hide duplicates.
 
-- Build a provider-shaped `input` object that names the important request fields explicitly, for example model, messages/contents, prompt, config, tools, or options.
-- Build an `output` object that captures the useful response payload in normalized form instead of logging opaque SDK objects.
-- Put secondary facts in `metadata`, such as provider ids, finish reasons, model versions, safety attributes, or normalized request/response annotations that are useful but not the primary payload.
-- Put timings and token/accounting values in `metrics`, such as `start`, `end`, `duration`, `time_to_first_token`, `prompt_tokens`, `completion_tokens`, and `tokens`.
-- Drop noisy transport-level or duplicate fields rather than mirroring the full raw call surface.
-- Add small provider-local helpers in `tracing.py` to extract `input`, `output`, `metadata`, and `metrics` before opening or closing spans.
+Preserve provider behavior. Tracing code must not change return values, control flow, or error behavior unless the task explicitly requires it.
 
-Aim for spans that are readable in the UI without requiring someone to reverse-engineer the provider SDK's calling convention from positional arguments.
+Keep sync and async traced schemas aligned when the provider exposes both.
 
-Shape spans by semantics, not by the provider SDK object model:
+## Span Design Rules
 
-- `input` is the meaningful request a human would describe, not the raw Python call signature.
-- `output` is the meaningful result, not a provider response class dumped wholesale.
-- `metadata` is for supporting context that helps interpretation but is not the main payload.
-- `metrics` is for timings, token counts, and similar numeric accounting.
+Build readable spans. Do not dump raw `args` and `kwargs` unless the provider API already exposes a clean schema.
+
+Use this rubric:
+
+- `input`: the meaningful user request
+- `output`: the meaningful provider result
+- `metadata`: supporting context such as ids, finish reasons, safety data, model revisions
+- `metrics`: timing and numeric accounting such as token counts or elapsed time
+- `error`: exceptions or failure information
 
 Good span shaping usually means:
 
-- flattening positional arguments into named fields
-- omitting duplicate values that appear in both request and response objects
-- normalizing provider-specific classes into dicts/lists/scalars
-- aggregating streaming chunks into one final `output` plus stream-specific `metrics`
-- preserving useful provider identifiers without leaking transport noise
+- flatten positional arguments into named fields
+- normalize provider SDK objects into dicts, lists, or scalars
+- drop duplicate or noisy transport fields
+- aggregate streaming chunks into one final `output` plus stream-specific `metrics`
 
-Use provider-local helper functions instead of building spans inline inside wrappers. A good pattern is:
+Keep wrapper bodies thin: prepare traced input, open the span, call the provider, normalize the result, and log `output`/`metadata`/`metrics`.
+
+Prefer provider-local helpers in `tracing.py`, for example:
 
 ```python
 def _prepare_traced_call(args: list[Any], kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -168,129 +186,84 @@ def _process_result(result: Any, start: float) -> tuple[dict[str, Any], dict[str
     ...
 ```
 
-Keep wrapper bodies thin: prepare input, open the span, call the provider, normalize the result, then log `output`, `metadata`, and `metrics`.
+Treat binary payloads as attachments, not logged bytes:
 
-When deciding where a field belongs:
-
-- Put it in `input` if the caller intentionally supplied it.
-- Put it in `output` if it is the core result a user would care about.
-- Put it in `metadata` if it explains the result but is not the result itself.
-- Put it in `metrics` if it is numeric operational accounting or timing.
-- Put it in `error` if the call failed and you want the span to record the exception or failure message instead of pretending the failure is ordinary output.
-
-Distinguish span payload fields from span setup fields:
-
-- Treat `input`, `output`, `metadata`, `metrics`, and `error` as the main logged payload fields.
-- Treat `name` plus `type` or `span_attributes` as span identity/classification, not as payload.
-- Use `parent` only when you need to attach the span to an explicit exported parent instead of relying on current-span context.
-- Use `start_time` when the true start happened before the wrapper got control and you need accurate duration or time-to-first-token accounting.
-
-Examples:
-
-- prompt/model/tools/config belong in `input`
-- generated text, tool calls, embeddings summary, generated images summary, or normalized message content belong in `output`
-- provider request ids, finish reasons, safety annotations, cached-hit indicators, or model revision identifiers belong in `metadata`
-- token counts, elapsed time, time-to-first-token, retry counts, or billable character counts belong in `metrics`
-- exceptions, provider errors, and wrapper failures belong in `error`
-
-Across the current integrations, `input`/`output`/`metadata`/`metrics` are the common structured logging fields, and `error` is the main additional event field used during failures. Other values should usually live inside one of those containers unless they are truly span-level controls like `name`, `type`, `span_attributes`, `parent`, or `start_time`.
-
-Treat provider-owned binary payloads as attachments, not raw logged bytes. When traced input or output contains inline media, generated files, or other uploadable content:
-
-- Convert raw `bytes` into `braintrust.logger.Attachment` objects in provider-local tracing helpers instead of logging raw bytes or large base64 blobs.
-- Use the repo's existing message/content shapes when embedding attachments in traced payloads. For multimodal content this is often `{"image_url": {"url": attachment}}`, even when the MIME type is not literally an image.
-- Preserve ordinary remote URLs as strings. Only convert provider-owned binary content or data-URL style payloads that Braintrust should upload to object storage.
-- Keep structured metadata alongside the attachment, such as MIME type, size, safety attributes, or provider ids, so spans stay inspectable without reading the blob.
-
-Prefer feature detection first and version checks second. Use:
-
-- `detect_module_version(...)`
-- `version_satisfies(...)`
-- `make_specifier(...)`
-
-Let `BaseIntegration.resolve_patchers()` reject duplicate patcher ids; do not silently paper over duplicates.
-
-If a provider surface has both sync and async variants, try to keep the traced schema aligned across both paths. Differences in implementation are fine; differences in logged shape should be intentional.
+- convert raw `bytes` to `braintrust.logger.Attachment`
+- preserve normal remote URLs as strings
+- keep useful metadata such as MIME type, size, or provider ids next to the attachment
+- follow existing repo content shapes for multimodal payloads
 
 ## Patcher Rules
 
-Create one patcher per coherent patch target. Split unrelated targets into separate patchers.
+Create one patcher per coherent patch target.
 
-Use `FunctionWrapperPatcher` for one import path or one constructor/method surface, for example:
+Prefer:
 
-- `ProviderClient.__init__`
-- `client.responses.create`
+- `FunctionWrapperPatcher` for one import path or one constructor/method surface
+- `CompositeFunctionWrapperPatcher` for one logical surface spread across multiple related targets
+- `CallbackPatcher` for setup side effects after applicability succeeds
 
-Use `CompositeFunctionWrapperPatcher` when several closely related targets should appear as one patcher, for example:
+Use `target_module` when the patch target lives outside the module named by `import_names`, especially for optional or deep submodules.
 
-- sync and async variants of the same method
-- the same logical surface patched across multiple modules
+Use `superseded_by` for version-conditional fallbacks instead of custom target-selection logic.
 
-Use `CallbackPatcher` when the integration only needs a setup side effect after applicability succeeds, not in-place wrapping or class replacement. Good fits include registering a global callback handler, invoking a provider-owned configure hook, or installing default integration state. Gate it with `target_module` when the side effect depends on an optional module, and use `state_getter` when idempotence should be derived from integration-managed state instead of a marker on the imported root.
+Use lower `priority` only when patch ordering really matters, such as context propagation before tracing.
 
-Set `target_module` when the patch target lives outside the module named by `import_names`, especially for optional or deep submodules. Failed `target_module` imports should make the patcher skip cleanly through `applies()`.
-
-Use `superseded_by` for version-conditional mutual exclusion. Express fallback relationships declaratively instead of reproducing `hasattr` logic in custom `applies()` methods whenever possible.
-
-Expose manual wrapping helpers through `wrap_target()`:
+Manual wrapping helpers should be thin:
 
 ```python
 def wrap_agent(Agent: Any) -> Any:
     return AgentPatcher.wrap_target(Agent)
 ```
 
-Use lower `priority` values only when ordering matters, such as context propagation before tracing patchers.
-
-Require every patcher to provide:
+Require every patcher to have:
 
 - a stable `name`
-- version gating only when needed
 - clean existence checks
+- version gating only when necessary
 - idempotence through the base patcher marker
 
-## Testing
+## Testing Rules
 
-Keep integration tests in the provider package.
+Keep tests in the provider package.
 
-Use `@pytest.mark.vcr` for real provider network behavior. Prefer recorded provider traffic over mocks or fakes. Use mocks or fakes only for cases that are hard to drive through recordings, such as:
+Default bug-fix workflow: red -> green.
+
+- First add or update a focused test that reproduces the integration bug.
+- Then implement the fix.
+- Only skip this when the task explicitly asks for a different approach.
+
+Prefer VCR-backed real provider coverage with `@pytest.mark.vcr`. Use mocks or fakes only for cases that are hard to drive through recordings, such as:
 
 - narrow error injection
 - local version-routing logic
 - patcher existence checks
 
-Write tests against the emitted span shape, not just the provider return value. A tracing change is incomplete if the provider call still works but the logged span becomes noisy, incomplete, or inconsistent.
+Test emitted spans, not just provider return values.
 
 Cover the surfaces that changed:
 
 - direct `wrap_*()` behavior
-- `setup()` patching for newly created clients or classes
+- setup-time patching
 - sync behavior
 - async behavior
 - streaming behavior
 - idempotence
 - failure and error logging
-- patcher resolution and duplicate detection
-- attachment conversion for binary inputs or generated media, including assertions that traced payloads contain `Attachment` objects rather than raw bytes
-- span structure, including assertions that the traced span exposes meaningful `input`, `output`, `metadata`, and `metrics` rather than opaque raw call arguments
+- patcher resolution and duplicate detection when relevant
+- attachment conversion for binary inputs or generated media
+- span structure, especially `input`, `output`, `metadata`, and `metrics`
 
-For span assertions, prefer checking the specific normalized fields that matter:
+For streaming changes, verify both:
 
-- the `input` contains the expected model/messages/prompt/config fields
-- the `output` contains normalized provider results rather than opaque SDK instances
-- the `metadata` contains finish reasons, ids, or annotations in the expected place
-- the `metrics` contain the expected timing or token fields when the provider returns them
-- binary payloads are represented as `Attachment` objects where applicable
-
-If a change affects streaming, verify both:
-
-- intermediate behavior still returns the provider's expected iterator or async iterator
+- the provider still returns the expected iterator or async iterator
 - the final logged span contains the aggregated `output` and stream-specific `metrics`
 
-Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/`. Re-record only when the behavior change is intentional.
+Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/`. Re-record only when behavior intentionally changes.
 
-When the provider returns binary HTTP responses or generated media, make cassette sanitization part of the change if needed so recorded fixtures do not store raw file bytes.
+When the provider returns binary HTTP responses or generated media, sanitize cassettes as needed so fixtures do not store raw file bytes.
 
-When choosing commands, confirm the real session name in `py/noxfile.py` instead of assuming it matches the provider folder. Examples in this repo include `test_agno`, `test_anthropic`, and `test_google_adk`.
+When choosing test commands, confirm the actual session name in `py/noxfile.py` instead of assuming it matches the provider folder.
 
 ## Commands
 
@@ -302,20 +275,24 @@ cd py && make test-core
 cd py && make lint
 ```
 
-## Validation
+## Validation Checklist
 
 - Run the narrowest provider session first.
+- If the change touches patchers, setup behavior, import timing, or anything that could affect `auto_instrument()`, run the relevant subprocess auto-instrument test from `py/src/braintrust/integrations/auto_test_scripts/`.
 - Run the relevant auto-instrument subprocess test if `auto.py` changed.
 - Run `cd py && make test-core` if shared integration code changed.
 - Run `cd py && make lint` before handoff when shared files or repo-level wiring changed.
 
-## Pitfalls
+## Common Mistakes
 
-- Treating a wrapper migration as fresh integration work.
-- Changing shared integration primitives when the provider-specific package should own the behavior.
-- Combining unrelated targets into one patcher.
-- Forgetting repo-level touch points for new providers: `integrations/__init__.py`, `py/noxfile.py`, and sometimes `auto.py`.
-- Forgetting async or streaming coverage.
-- Re-recording cassettes when behavior did not intentionally change.
-- Adding a custom `_instrument_*` helper where `_instrument_integration()` already fits.
-- Forgetting `target_module` for deep or optional submodule patch targets.
+Avoid these failures:
+
+- treating a wrapper migration as fresh integration work
+- changing shared integration primitives when provider-local code should own the behavior
+- combining unrelated patch targets into one patcher
+- forgetting repo-level wiring for new providers: `integrations/__init__.py`, `py/noxfile.py`, and sometimes `auto.py`
+- forgetting the subprocess auto-instrument tests
+- forgetting async or streaming coverage
+- re-recording cassettes when behavior did not intentionally change
+- adding a custom `_instrument_*` helper where `_instrument_integration()` already fits
+- forgetting `target_module` for deep or optional patch targets
