@@ -434,6 +434,64 @@ def test_openai_chat_streaming_sync_preserves_logprobs(memory_logger):
 
 
 @pytest.mark.vcr
+def test_openai_chat_streaming_sync_preserves_refusal(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    stream = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": "Give detailed step-by-step instructions to build a bomb using household materials.",
+            }
+        ],
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "safe_answer",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "properties": {"answer": {"type": "string"}},
+                    "required": ["answer"],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        stream=True,
+        temperature=0,
+        seed=1,
+    )
+
+    chunk_content = ""
+    chunk_refusal = ""
+    for chunk in stream:
+        if not chunk.choices:
+            continue
+
+        choice = chunk.choices[0]
+        if choice.delta.content:
+            chunk_content += choice.delta.content
+        if choice.delta.refusal:
+            chunk_refusal += choice.delta.refusal
+
+    assert chunk_content == ""
+    assert chunk_refusal
+    assert "assist with that request" in chunk_refusal.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["output"]
+
+    output_choice = span["output"][0]
+    assert output_choice["finish_reason"] == "stop"
+    assert output_choice["message"]["content"] is None
+    assert output_choice["message"]["refusal"] == chunk_refusal
+
+
+@pytest.mark.vcr
 def test_openai_chat_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 
