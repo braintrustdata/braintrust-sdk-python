@@ -105,7 +105,8 @@ def _materialize_logged_file_input(value: Any) -> Any:
     if isinstance(value, list):
         return [_materialize_logged_file_input(item) for item in value]
 
-    return resolved.attachment if (resolved := _materialize_attachment(value)) is not None else value
+    resolved = _materialize_attachment(value)
+    return resolved.attachment if resolved is not None else value
 
 
 def _process_attachments_in_input(input_data: Any) -> Any:
@@ -120,11 +121,12 @@ def _process_attachments_in_input(input_data: Any) -> Any:
             and isinstance(input_data["image_url"].get("url"), str)
         ):
             url = input_data["image_url"]["url"]
+            resolved = _materialize_attachment(url)
             return {
                 **input_data,
                 "image_url": {
                     **input_data["image_url"],
-                    "url": resolved.attachment if (resolved := _materialize_attachment(url)) is not None else url,
+                    "url": resolved.attachment if resolved is not None else url,
                 },
             }
 
@@ -135,19 +137,15 @@ def _process_attachments_in_input(input_data: Any) -> Any:
         ):
             file_data = input_data["file"]["file_data"]
             file_filename = input_data["file"].get("filename")
+            resolved = _materialize_attachment(
+                file_data,
+                filename=file_filename if isinstance(file_filename, str) else None,
+            )
             return {
                 **input_data,
                 "file": {
                     **input_data["file"],
-                    "file_data": resolved.attachment
-                    if (
-                        resolved := _materialize_attachment(
-                            file_data,
-                            filename=file_filename if isinstance(file_filename, str) else None,
-                        )
-                    )
-                    is not None
-                    else file_data,
+                    "file_data": resolved.attachment if resolved is not None else file_data,
                 },
             }
 

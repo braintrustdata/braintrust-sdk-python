@@ -27,6 +27,13 @@ from braintrust.util import is_numeric
 
 _DATA_URL_RE = re.compile(r"^data:([^;]+);base64,(.+)$")
 
+# Keep these overrides narrow and deterministic across platforms. Python's
+# mimetypes registry varies by OS (notably on Windows), which can otherwise
+# produce verbose vendor-subtype suffixes instead of common file extensions.
+_KNOWN_ATTACHMENT_EXTENSIONS = {
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+}
+
 
 def _try_to_dict(obj: Any) -> dict[str, Any] | Any:
     """Best-effort conversion of an SDK response object to a plain dict.
@@ -110,12 +117,14 @@ def _attachment_filename_for_mime_type(mime_type: str, *, prefix: str = "file") 
     - ``application/vnd.openxmlformats-officedocument.spreadsheetml.sheet``
       with prefix ``file`` -> ``file.xlsx``
     """
-    guessed_extension = mimetypes.guess_extension(mime_type)
-    if guessed_extension:
-        extension = guessed_extension.lstrip(".")
-    else:
-        extension = mime_type.split("/", 1)[1] if "/" in mime_type else "bin"
-        extension = extension.split("+", 1)[0]
+    extension = _KNOWN_ATTACHMENT_EXTENSIONS.get(mime_type)
+    if extension is None:
+        guessed_extension = mimetypes.guess_extension(mime_type)
+        if guessed_extension:
+            extension = guessed_extension.lstrip(".")
+        else:
+            extension = mime_type.split("/", 1)[1] if "/" in mime_type else "bin"
+            extension = extension.split("+", 1)[0]
     return f"{prefix}.{extension}"
 
 
