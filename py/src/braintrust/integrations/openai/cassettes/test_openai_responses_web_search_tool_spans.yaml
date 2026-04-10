@@ -1,0 +1,128 @@
+interactions:
+- request:
+    body: '{"input":"Search the web for the current weather in Paris and answer in
+      one sentence.","model":"gpt-4.1-mini","tool_choice":{"type":"web_search_preview"},"tools":[{"type":"web_search_preview","search_context_size":"low"}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '222'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - OpenAI/Python 2.24.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.24.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"id\": \"resp_02ba15fc2fd264b20069d9564b711c819182af700a09fe0c1f\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1775851083,\n  \"status\":
+        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": 1775851085,\n  \"error\": null,\n
+        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
+        \"gpt-4.1-mini-2025-04-14\",\n  \"output\": [\n    {\n      \"id\": \"ws_02ba15fc2fd264b20069d9564b8aa88191b0fce6f6e4a6d0b6\",\n
+        \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
+        {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
+        the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
+        \       \"query\": \"Search the web for the current weather in Paris and answer
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_02ba15fc2fd264b20069d9564c85b881919add08d779b2c1a1\",\n
+        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 9:58\\u202fPM
+        on April 10, 2026, in Paris, France, the weather is mostly cloudy with a temperature
+        of 56\\u00b0F (13\\u00b0C).\\n\\n## Weather for Paris, Paris, France:\\nCurrent
+        Conditions: Mostly cloudy, 56\\u00b0F (13\\u00b0C)\\n\\nDaily Forecast:\\n*
+        Friday, April 10: Low: 49\\u00b0F (10\\u00b0C), High: 61\\u00b0F (16\\u00b0C),
+        Description: Cooler with times of clouds and sun\\n* Saturday, April 11: Low:
+        43\\u00b0F (6\\u00b0C), High: 61\\u00b0F (16\\u00b0C), Description: Mostly
+        cloudy and cooler; occasional afternoon rain and drizzle\\n* Sunday, April
+        12: Low: 45\\u00b0F (7\\u00b0C), High: 59\\u00b0F (15\\u00b0C), Description:
+        Mostly cloudy\\n* Monday, April 13: Low: 44\\u00b0F (6\\u00b0C), High: 60\\u00b0F
+        (15\\u00b0C), Description: A passing shower in the morning; otherwise, cloudy\\n*
+        Tuesday, April 14: Low: 47\\u00b0F (8\\u00b0C), High: 64\\u00b0F (18\\u00b0C),
+        Description: Sunny to partly cloudy\\n* Wednesday, April 15: Low: 50\\u00b0F
+        (10\\u00b0C), High: 67\\u00b0F (19\\u00b0C), Description: Thickening clouds\\n*
+        Thursday, April 16: Low: 47\\u00b0F (8\\u00b0C), High: 68\\u00b0F (20\\u00b0C),
+        Description: Nice with intervals of clouds and sunshine\\n \"\n        }\n
+        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"auto\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\":
+        [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_context_size\":
+        \"low\",\n      \"user_location\": {\n        \"type\": \"approximate\",\n
+        \       \"city\": null,\n        \"country\": \"US\",\n        \"region\":
+        null,\n        \"timezone\": null\n      }\n    }\n  ],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        323,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 303,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 626\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
+    headers:
+      CF-RAY:
+      - 9ea452f74992ac6c-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 10 Apr 2026 19:58:05 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '3357'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '1870'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=74yoaPxjLsemgt3Gm2pbBidFEZrSluN1vCX7nOSZM4E-1775851083.4086235-1.0.1.1-5hp2jlDwjwyIsWI_AqKiWhK0a47Xwpx4l6KxT2tkPUDtBzOODfHxSoHdNw6FbtRw2knfc1s8QlkMK7r03gOBIb5.o0f_oP83TNk8gUXTjO1WvAQTKvzBAFgADElEFi1v;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 10 Apr 2026
+        20:28:05 GMT
+      x-request-id:
+      - req_0c2c210a4f5e4e8a9406206d1f4e7796
+    status:
+      code: 200
+      message: OK
+version: 1

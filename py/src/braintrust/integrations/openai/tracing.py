@@ -2,6 +2,7 @@
 
 import abc
 import inspect
+import json
 import time
 from collections.abc import Callable
 from typing import Any
@@ -638,6 +639,140 @@ class _RawResponseWithTracedStream(NamedWrapper):
         return self._traced_stream
 
 
+_RESPONSE_TOOL_ITEM_INPUT_KEYS = {
+    "function_call": ("arguments",),
+    "web_search_call": ("action",),
+    "file_search_call": ("queries",),
+    "code_interpreter_call": ("code", "container_id"),
+    "computer_call": ("action",),
+    "image_generation_call": (),
+    "mcp_call": ("arguments",),
+}
+
+
+def _maybe_parse_json_string(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+
+    stripped = value.strip()
+    if not stripped or stripped[0] not in "[{":
+        return value
+
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        return value
+
+
+def _serialize_response_output_items(value: Any) -> list[dict[str, Any]]:
+    serialized = _try_to_dict(value)
+    if serialized is None:
+        return []
+
+    items = serialized if isinstance(serialized, list) else [serialized]
+    serialized_items = []
+    for item in items:
+        item_dict = _try_to_dict(item)
+        if isinstance(item_dict, dict):
+            serialized_items.append(item_dict)
+    return serialized_items
+
+
+def _response_tool_span_name(item: dict[str, Any]) -> str:
+    if item.get("server_label") and item.get("name"):
+        return f"{item['server_label']}.{item['name']}"
+    if item.get("name"):
+        return str(item["name"])
+    return str(item.get("type") or "response_tool")
+
+
+def _response_tool_span_input(item: dict[str, Any]) -> Any:
+    input_keys = _RESPONSE_TOOL_ITEM_INPUT_KEYS.get(item.get("type"), ())
+    if not input_keys:
+        return None
+
+    input_data = clean_nones({key: _maybe_parse_json_string(item.get(key)) for key in input_keys})
+    if not input_data:
+        return None
+
+    if input_keys == ("arguments",):
+        return input_data["arguments"]
+    return input_data
+
+
+def _response_tool_span_output(item: dict[str, Any]) -> Any:
+    if item.get("type") == "function_call":
+        return None
+
+    excluded_keys = {
+        "id",
+        "type",
+        "name",
+        "call_id",
+        "server_label",
+        "error",
+        *(_RESPONSE_TOOL_ITEM_INPUT_KEYS.get(item.get("type"), ())),
+    }
+    output = clean_nones(
+        {
+            key: _maybe_parse_json_string(value) if key in {"output", "error"} else value
+            for key, value in item.items()
+            if key not in excluded_keys
+        }
+    )
+    return output or None
+
+
+def _response_tool_span_error(item: dict[str, Any]) -> Any:
+    error = item.get("error")
+    if error is None:
+        return None
+    parsed_error = _maybe_parse_json_string(error)
+    if isinstance(parsed_error, (dict, list)):
+        return parsed_error
+    return str(parsed_error)
+
+
+def _response_tool_span_metadata(item: dict[str, Any]) -> dict[str, Any] | None:
+    return (
+        clean_nones(
+            {
+                "tool_type": item.get("type"),
+                "tool_id": item.get("id"),
+                "call_id": item.get("call_id"),
+                "status": item.get("status"),
+                "server_label": item.get("server_label"),
+            }
+        )
+        or None
+    )
+
+
+def _log_response_tool_spans(output: Any, *, parent_export: str | None) -> None:
+    for item in _serialize_response_output_items(output):
+        if item.get("type") not in _RESPONSE_TOOL_ITEM_INPUT_KEYS:
+            continue
+
+        span_args = {
+            "name": _response_tool_span_name(item),
+            "type": SpanTypeAttribute.TOOL,
+            "input": _response_tool_span_input(item),
+            "metadata": _response_tool_span_metadata(item),
+        }
+        if parent_export is not None:
+            span_args["parent"] = parent_export
+
+        with start_span(**span_args) as tool_span:
+            error = _response_tool_span_error(item)
+            if error is not None:
+                tool_span.log(error=error)
+                continue
+
+            output_data = _response_tool_span_output(item)
+            if output_data is not None:
+                tool_span.log(output=output_data)
+
+
 class ResponseWrapper:
     def __init__(
         self,
@@ -684,7 +819,9 @@ class ResponseWrapper:
                             all_results.append(item)
                             yield item
 
-                        span.log(**self._postprocess_streaming_results(all_results))
+                        event_data = self._postprocess_streaming_results(all_results)
+                        span.log(**event_data)
+                        _log_response_tool_spans(event_data.get("output"), parent_export=span.export())
                     finally:
                         span.end()
 
@@ -699,6 +836,7 @@ class ResponseWrapper:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
                 span.log(**event_data)
+                _log_response_tool_spans(event_data.get("output"), parent_export=span.export())
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
             if should_end:
@@ -737,7 +875,9 @@ class ResponseWrapper:
                             all_results.append(item)
                             yield item
 
-                        span.log(**self._postprocess_streaming_results(all_results))
+                        event_data = self._postprocess_streaming_results(all_results)
+                        span.log(**event_data)
+                        _log_response_tool_spans(event_data.get("output"), parent_export=span.export())
                     finally:
                         span.end()
 
@@ -753,6 +893,7 @@ class ResponseWrapper:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
                 span.log(**event_data)
+                _log_response_tool_spans(event_data.get("output"), parent_export=span.export())
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
             if should_end:

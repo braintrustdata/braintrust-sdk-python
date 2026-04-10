@@ -15,6 +15,7 @@ from braintrust.integrations.openai.tracing import (
     ChatCompletionWrapper,
     _materialize_logged_file_input,
 )
+from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 from braintrust.wrappers.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from openai import AsyncOpenAI
@@ -25,6 +26,7 @@ from pydantic import BaseModel
 TEST_ORG_ID = "test-org-openai-py-tracing"
 PROJECT_NAME = "test-project-openai-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
+RESPONSES_TOOL_MODEL = "gpt-4.1-mini"
 TEST_PROMPT = "What's 12 + 12?"
 TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
 
@@ -34,6 +36,34 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+def _find_spans_by_type(spans, span_type):
+    return [span for span in spans if span["span_attributes"]["type"] == span_type]
+
+
+def _find_span_by_name(spans, name):
+    return next(span for span in spans if span["span_attributes"]["name"] == name)
+
+
+def _supports_response_function_tools() -> bool:
+    try:
+        from openai.types.responses import ResponseFunctionToolCall
+
+        del ResponseFunctionToolCall
+    except ImportError:
+        return False
+    return True
+
+
+def _supports_response_web_search_tools() -> bool:
+    try:
+        from openai.types.responses import ResponseFunctionWebSearch, WebSearchPreviewToolParam
+
+        del ResponseFunctionWebSearch, WebSearchPreviewToolParam
+    except ImportError:
+        return False
+    return True
 
 
 @pytest.mark.vcr
@@ -257,6 +287,119 @@ def test_openai_responses_metadata_preservation(memory_logger):
     # Check metrics
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
+
+
+@pytest.mark.vcr
+def test_openai_responses_function_call_tool_spans(memory_logger):
+    if not _supports_response_function_tools():
+        pytest.skip("Responses function tool calls are not available in this SDK version")
+
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    response = client.responses.create(
+        model=RESPONSES_TOOL_MODEL,
+        input="Use the get_weather tool with location Paris. Do not answer directly.",
+        tools=[
+            {
+                "type": "function",
+                "name": "get_weather",
+                "description": "Get the weather for a location.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                    "required": ["location"],
+                },
+            }
+        ],
+        tool_choice={"type": "function", "name": "get_weather"},
+    )
+
+    function_call = next(output for output in response.output if getattr(output, "type", None) == "function_call")
+    assert function_call.name == "get_weather"
+    assert "Paris" in function_call.arguments
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    assert len(llm_spans) == 1
+    tool_span = _find_span_by_name(tool_spans, "get_weather")
+    assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
+    assert tool_span["metadata"]["tool_type"] == "function_call"
+    assert tool_span["metadata"]["call_id"] == function_call.call_id
+    assert "Paris" in str(tool_span["input"])
+
+
+@pytest.mark.vcr
+def test_openai_responses_web_search_tool_spans(memory_logger):
+    if not _supports_response_web_search_tools():
+        pytest.skip("Responses web search tools are not available in this SDK version")
+
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    response = client.responses.create(
+        model=RESPONSES_TOOL_MODEL,
+        input="Search the web for the current weather in Paris and answer in one sentence.",
+        tools=[{"type": "web_search_preview", "search_context_size": "low"}],
+        tool_choice={"type": "web_search_preview"},
+    )
+
+    web_search_call = next(output for output in response.output if getattr(output, "type", None) == "web_search_call")
+    assert getattr(web_search_call, "status", None)
+    assert response.output_text
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    assert len(llm_spans) == 1
+    tool_span = _find_span_by_name(tool_spans, "web_search_call")
+    assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
+    assert tool_span["metadata"]["tool_type"] == "web_search_call"
+    assert tool_span["metadata"]["status"] == web_search_call.status
+
+
+@pytest.mark.vcr
+def test_openai_responses_web_search_tool_spans_stream(memory_logger):
+    if not _supports_response_web_search_tools():
+        pytest.skip("Responses web search tools are not available in this SDK version")
+
+    client = openai.OpenAI()
+    if not hasattr(client.responses, "stream"):
+        pytest.skip("openai.responses.stream is not available in this SDK version")
+
+    assert not memory_logger.pop()
+
+    wrapped_client = wrap_openai(openai.OpenAI())
+    with wrapped_client.responses.stream(
+        model=RESPONSES_TOOL_MODEL,
+        input="Search the web for the latest weather in Paris and answer briefly.",
+        tools=[{"type": "web_search_preview", "search_context_size": "low"}],
+        tool_choice={"type": "web_search_preview"},
+    ) as stream:
+        event_types = []
+        for event in stream:
+            event_types.append(event.type)
+        final_response = stream.get_final_response()
+
+    assert any(event_type.startswith("response.web_search_call.") for event_type in event_types)
+    web_search_call = next(
+        output for output in final_response.output if getattr(output, "type", None) == "web_search_call"
+    )
+    assert final_response.output_text
+    assert getattr(web_search_call, "status", None)
+
+    spans = memory_logger.pop()
+    llm_spans = _find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    assert len(llm_spans) == 1
+    tool_span = _find_span_by_name(tool_spans, "web_search_call")
+    assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
+    assert tool_span["metadata"]["tool_type"] == "web_search_call"
+    assert tool_span["metadata"]["status"] == web_search_call.status
 
 
 @pytest.mark.vcr
