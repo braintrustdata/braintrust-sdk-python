@@ -129,22 +129,20 @@ def _normalize_special_payloads(value: Any) -> Any:
     if item_type == "image_url":
         image_url = value.get("image_url")
         if isinstance(image_url, str):
+            resolved = _materialize_attachment(image_url)
             return {
                 **value,
                 "image_url": {
-                    "url": resolved.attachment
-                    if (resolved := _materialize_attachment(image_url)) is not None
-                    else image_url,
+                    "url": resolved.attachment if resolved is not None else image_url,
                 },
             }
         if isinstance(image_url, dict) and isinstance(image_url.get("url"), str):
+            resolved = _materialize_attachment(image_url["url"])
             return {
                 **value,
                 "image_url": {
                     **image_url,
-                    "url": resolved.attachment
-                    if (resolved := _materialize_attachment(image_url["url"])) is not None
-                    else image_url["url"],
+                    "url": resolved.attachment if resolved is not None else image_url["url"],
                 },
             }
 
