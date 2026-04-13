@@ -8,6 +8,7 @@ from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extr
 from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import log_exc_info_to_span, start_span
 from braintrust.span_types import SpanTypeAttribute
+from braintrust.util import is_numeric
 
 
 log = logging.getLogger(__name__)
@@ -132,6 +133,14 @@ class AsyncBeta(Wrapper):
     def messages(self):
         return AsyncMessages(self.__beta.messages)
 
+    @property
+    def agents(self):
+        return AsyncAgents(self.__beta.agents)
+
+    @property
+    def sessions(self):
+        return AsyncSessions(self.__beta.sessions)
+
 
 class TracedAnthropic(Wrapper):
     def __init__(self, client):
@@ -191,6 +200,366 @@ class Beta(Wrapper):
     @property
     def messages(self):
         return Messages(self.__beta.messages)
+
+    @property
+    def agents(self):
+        return Agents(self.__beta.agents)
+
+    @property
+    def sessions(self):
+        return Sessions(self.__beta.sessions)
+
+
+class Agents(Wrapper):
+    def __init__(self, agents):
+        super().__init__(agents)
+        self.__agents = agents
+
+    def create(self, *args, **kwargs):
+        return _trace_managed_agents_call(self.__agents.create, "anthropic.beta.agents.create", kwargs, kwargs)
+
+    def retrieve(self, agent_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__agents.retrieve,
+            "anthropic.beta.agents.retrieve",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+    def list(self, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__agents.list,
+            "anthropic.beta.agents.list",
+            kwargs,
+            kwargs,
+            output_factory=_managed_agents_paginator_output,
+        )
+
+    def update(self, agent_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__agents.update,
+            "anthropic.beta.agents.update",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+    def delete(self, agent_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__agents.delete,
+            "anthropic.beta.agents.delete",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+    def archive(self, agent_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__agents.archive,
+            "anthropic.beta.agents.archive",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+
+class AsyncAgents(Wrapper):
+    def __init__(self, agents):
+        super().__init__(agents)
+        self.__agents = agents
+
+    async def create(self, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__agents.create,
+            "anthropic.beta.agents.create",
+            kwargs,
+            kwargs,
+        )
+
+    async def retrieve(self, agent_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__agents.retrieve,
+            "anthropic.beta.agents.retrieve",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+    def list(self, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__agents.list,
+            "anthropic.beta.agents.list",
+            kwargs,
+            kwargs,
+            output_factory=_managed_agents_paginator_output,
+        )
+
+    async def update(self, agent_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__agents.update,
+            "anthropic.beta.agents.update",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+    async def delete(self, agent_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__agents.delete,
+            "anthropic.beta.agents.delete",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+    async def archive(self, agent_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__agents.archive,
+            "anthropic.beta.agents.archive",
+            {"agent_id": agent_id, **kwargs},
+            kwargs,
+            agent_id,
+            *args,
+        )
+
+
+class Sessions(Wrapper):
+    def __init__(self, sessions):
+        super().__init__(sessions)
+        self.__sessions = sessions
+
+    @property
+    def events(self):
+        return SessionEvents(self.__sessions.events)
+
+    def create(self, *args, **kwargs):
+        return _trace_managed_agents_call(self.__sessions.create, "anthropic.beta.sessions.create", kwargs, kwargs)
+
+    def retrieve(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__sessions.retrieve,
+            "anthropic.beta.sessions.retrieve",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    def list(self, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__sessions.list,
+            "anthropic.beta.sessions.list",
+            kwargs,
+            kwargs,
+            output_factory=_managed_agents_paginator_output,
+        )
+
+    def update(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__sessions.update,
+            "anthropic.beta.sessions.update",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    def delete(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__sessions.delete,
+            "anthropic.beta.sessions.delete",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    def archive(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__sessions.archive,
+            "anthropic.beta.sessions.archive",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+
+class AsyncSessions(Wrapper):
+    def __init__(self, sessions):
+        super().__init__(sessions)
+        self.__sessions = sessions
+
+    @property
+    def events(self):
+        return AsyncSessionEvents(self.__sessions.events)
+
+    async def create(self, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__sessions.create,
+            "anthropic.beta.sessions.create",
+            kwargs,
+            kwargs,
+        )
+
+    async def retrieve(self, session_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__sessions.retrieve,
+            "anthropic.beta.sessions.retrieve",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    def list(self, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__sessions.list,
+            "anthropic.beta.sessions.list",
+            kwargs,
+            kwargs,
+            output_factory=_managed_agents_paginator_output,
+        )
+
+    async def update(self, session_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__sessions.update,
+            "anthropic.beta.sessions.update",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    async def delete(self, session_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__sessions.delete,
+            "anthropic.beta.sessions.delete",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    async def archive(self, session_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__sessions.archive,
+            "anthropic.beta.sessions.archive",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+
+class SessionEvents(Wrapper):
+    def __init__(self, events):
+        super().__init__(events)
+        self.__events = events
+
+    def list(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__events.list,
+            "anthropic.beta.sessions.events.list",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+            output_factory=_managed_agents_paginator_output,
+        )
+
+    def send(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__events.send,
+            "anthropic.beta.sessions.events.send",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    def create(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__events.create,
+            "anthropic.beta.sessions.events.create",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    def stream(self, session_id, *args, **kwargs):
+        span = _start_managed_agents_span(
+            "anthropic.beta.sessions.events.stream",
+            {"session_id": session_id, **kwargs},
+            request_kwargs=kwargs,
+        )
+        try:
+            stream = self.__events.stream(session_id, *args, **kwargs)
+            return TracedManagedAgentsEventStream(stream, span)
+        except Exception as e:
+            span.log(error=e)
+            span.end()
+            raise
+
+
+class AsyncSessionEvents(Wrapper):
+    def __init__(self, events):
+        super().__init__(events)
+        self.__events = events
+
+    def list(self, session_id, *args, **kwargs):
+        return _trace_managed_agents_call(
+            self.__events.list,
+            "anthropic.beta.sessions.events.list",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+            output_factory=_managed_agents_paginator_output,
+        )
+
+    async def send(self, session_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__events.send,
+            "anthropic.beta.sessions.events.send",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    async def create(self, session_id, *args, **kwargs):
+        return await _trace_async_managed_agents_call(
+            self.__events.create,
+            "anthropic.beta.sessions.events.create",
+            {"session_id": session_id, **kwargs},
+            kwargs,
+            session_id,
+            *args,
+        )
+
+    async def stream(self, session_id, *args, **kwargs):
+        span = _start_managed_agents_span(
+            "anthropic.beta.sessions.events.stream",
+            {"session_id": session_id, **kwargs},
+            request_kwargs=kwargs,
+        )
+        try:
+            stream = await self.__events.stream(session_id, *args, **kwargs)
+            return AsyncTracedManagedAgentsEventStream(stream, span)
+        except Exception as e:
+            span.log(error=e)
+            span.end()
+            raise
 
 
 class Batches(Wrapper):
@@ -360,6 +729,431 @@ class TracedMessageStream(Wrapper):
             self.__time_to_first_token = time.time() - self.__request_start_time
 
         self.__snapshot = accumulate_event(event=m, current_snapshot=self.__snapshot)
+
+
+class TracedManagedAgentsEventStream(Wrapper):
+    def __init__(self, stream, span):
+        super().__init__(stream)
+        self.__stream = stream
+        self.__span = span
+        self.__events: list[dict[str, Any]] = []
+        self.__finished = False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            event = next(self.__stream)
+        except StopIteration:
+            self._finish()
+            raise
+        except Exception as e:
+            self._finish(error=e)
+            raise
+
+        self.__events.append(_normalize_anthropic_data(event))
+        return event
+
+    def __enter__(self):
+        entered = self.__stream.__enter__()
+        if entered is not self.__stream:
+            self.__stream = entered
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return self.__stream.__exit__(exc_type, exc_value, traceback)
+        finally:
+            self._finish(exc_type=exc_type, exc_value=exc_value, traceback=traceback)
+
+    def close(self):
+        try:
+            close = getattr(self.__stream, "close", None)
+            if callable(close):
+                close()
+        finally:
+            self._finish()
+
+    def _finish(self, exc_type=None, exc_value=None, traceback=None, error=None):
+        if self.__finished:
+            return
+        self.__finished = True
+
+        _log_managed_agents_stream_to_span(self.__events, self.__span)
+        if error is not None:
+            self.__span.log(error=error)
+        elif exc_type is not None:
+            log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
+        self.__span.end()
+
+
+class AsyncTracedManagedAgentsEventStream(Wrapper):
+    def __init__(self, stream, span):
+        super().__init__(stream)
+        self.__stream = stream
+        self.__span = span
+        self.__events: list[dict[str, Any]] = []
+        self.__finished = False
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            event = await self.__stream.__anext__()
+        except StopAsyncIteration:
+            await self._finish()
+            raise
+        except Exception as e:
+            await self._finish(error=e)
+            raise
+
+        self.__events.append(_normalize_anthropic_data(event))
+        return event
+
+    async def __aenter__(self):
+        entered = await self.__stream.__aenter__()
+        if entered is not self.__stream:
+            self.__stream = entered
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        try:
+            return await self.__stream.__aexit__(exc_type, exc_value, traceback)
+        finally:
+            await self._finish(exc_type=exc_type, exc_value=exc_value, traceback=traceback)
+
+    async def close(self):
+        try:
+            close = getattr(self.__stream, "close", None)
+            if callable(close):
+                await close()
+        finally:
+            await self._finish()
+
+    async def _finish(self, exc_type=None, exc_value=None, traceback=None, error=None):
+        if self.__finished:
+            return
+        self.__finished = True
+
+        _log_managed_agents_stream_to_span(self.__events, self.__span)
+        if error is not None:
+            self.__span.log(error=error)
+        elif exc_type is not None:
+            log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
+        self.__span.end()
+
+
+_MANAGED_AGENTS_CALL_TYPES = frozenset({"agent.tool_use", "agent.mcp_tool_use", "agent.custom_tool_use"})
+_MANAGED_AGENTS_RESULT_REF_KEYS = {
+    "agent.tool_result": "tool_use_id",
+    "agent.mcp_tool_result": "mcp_tool_use_id",
+    "user.custom_tool_result": "custom_tool_use_id",
+}
+
+
+def _normalize_anthropic_data(value: Any) -> Any:
+    converted = _try_to_dict(value)
+    if converted is not None:
+        value = converted
+
+    if isinstance(value, tuple):
+        value = list(value)
+
+    if isinstance(value, list):
+        return [_normalize_anthropic_data(item) for item in value]
+
+    if isinstance(value, dict):
+        return {key: _normalize_anthropic_data(item) for key, item in value.items()}
+
+    return value
+
+
+def _normalize_anthropic_input(value: Any) -> Any:
+    return _process_input_attachments(_normalize_anthropic_data(bt_safe_deep_copy(value)))
+
+
+def _managed_agents_model_name(value: Any) -> str | None:
+    value = _normalize_anthropic_data(value)
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict) and isinstance(value.get("id"), str):
+        return value["id"]
+    return None
+
+
+def _managed_agents_request_metadata(request_kwargs: dict[str, Any] | None) -> dict[str, Any]:
+    metadata: dict[str, Any] = {"provider": "anthropic", "anthropic_api": "managed_agents"}
+    if not request_kwargs:
+        return metadata
+
+    model_name = _managed_agents_model_name(request_kwargs.get("model"))
+    if model_name is not None:
+        metadata["model"] = model_name
+    return metadata
+
+
+def _start_managed_agents_span(name: str, span_input: Any, request_kwargs: dict[str, Any] | None = None):
+    return start_span(
+        name=name,
+        type="task",
+        metadata=_managed_agents_request_metadata(request_kwargs),
+        input=_normalize_anthropic_input(span_input),
+    )
+
+
+def _managed_agents_paginator_output(result: Any) -> dict[str, Any]:
+    return {"type": type(result).__name__}
+
+
+def _extract_managed_agents_result_metrics_and_metadata(result: Any) -> tuple[dict[str, float], dict[str, Any]]:
+    metrics: dict[str, float] = {}
+    metadata: dict[str, Any] = {}
+
+    usage_metrics, usage_metadata = extract_anthropic_usage(getattr(result, "usage", None))
+    metrics.update(usage_metrics)
+    metadata.update(usage_metadata)
+
+    stats = _try_to_dict(getattr(result, "stats", None))
+    if isinstance(stats, dict):
+        for key in ("active_seconds", "duration_seconds"):
+            value = stats.get(key)
+            if is_numeric(value):
+                metrics[key] = float(value)
+
+    model_name = _managed_agents_model_name(getattr(result, "model", None))
+    if model_name is None:
+        agent = _try_to_dict(getattr(result, "agent", None))
+        if isinstance(agent, dict):
+            model_name = _managed_agents_model_name(agent.get("model"))
+    if model_name is not None:
+        metadata["model"] = model_name
+
+    status = getattr(result, "status", None)
+    if isinstance(status, str):
+        metadata["session_status"] = status
+
+    return metrics, metadata
+
+
+def _log_managed_agents_result_to_span(result: Any, span, output_factory=None) -> None:
+    output = output_factory(result) if output_factory is not None else _normalize_anthropic_data(result)
+    metrics, metadata = _extract_managed_agents_result_metrics_and_metadata(result)
+
+    span_log_kwargs = {}
+    if output is not None:
+        span_log_kwargs["output"] = output
+    if metrics:
+        span_log_kwargs["metrics"] = metrics
+    if metadata:
+        span_log_kwargs["metadata"] = metadata
+    if span_log_kwargs:
+        span.log(**span_log_kwargs)
+
+
+def _trace_managed_agents_call(method, span_name, span_input, request_kwargs, *args, output_factory=None):
+    span = _start_managed_agents_span(span_name, span_input, request_kwargs=request_kwargs)
+    method_kwargs = dict(request_kwargs or {})
+    try:
+        result = method(*args, **method_kwargs)
+        _log_managed_agents_result_to_span(result, span, output_factory=output_factory)
+        return result
+    except Exception as e:
+        span.log(error=e)
+        raise
+    finally:
+        span.end()
+
+
+async def _trace_async_managed_agents_call(method, span_name, span_input, request_kwargs, *args, output_factory=None):
+    span = _start_managed_agents_span(span_name, span_input, request_kwargs=request_kwargs)
+    method_kwargs = dict(request_kwargs or {})
+    try:
+        result = await method(*args, **method_kwargs)
+        _log_managed_agents_result_to_span(result, span, output_factory=output_factory)
+        return result
+    except Exception as e:
+        span.log(error=e)
+        raise
+    finally:
+        span.end()
+
+
+def _managed_agents_stream_metrics_and_metadata(
+    events: list[dict[str, Any]],
+) -> tuple[dict[str, float], dict[str, Any]]:
+    metrics: dict[str, float] = {}
+    metadata: dict[str, Any] = {}
+
+    final_status: str | None = None
+    stop_reason: str | None = None
+    session_error: str | None = None
+
+    for event in events:
+        event_type = event.get("type")
+        if event_type == "span.model_request_end":
+            event_metrics, _ = extract_anthropic_usage(event.get("model_usage"))
+            for key, value in event_metrics.items():
+                metrics[key] = metrics.get(key, 0.0) + value
+        elif isinstance(event_type, str) and event_type.startswith("session.status_"):
+            final_status = event_type.removeprefix("session.status_")
+            if event_type == "session.status_idle":
+                stop_reason_data = event.get("stop_reason")
+                if isinstance(stop_reason_data, dict):
+                    reason = stop_reason_data.get("type")
+                    if isinstance(reason, str):
+                        stop_reason = reason
+        elif event_type == "session.error":
+            error_data = event.get("error")
+            if isinstance(error_data, dict):
+                session_error = error_data.get("message") or error_data.get("type")
+
+    if final_status is not None:
+        metadata["session_status"] = final_status
+    if stop_reason is not None:
+        metadata["stop_reason"] = stop_reason
+    if session_error is not None:
+        metadata["session_error"] = session_error
+
+    return metrics, metadata
+
+
+def _managed_agents_tool_ref_key(result_item: dict[str, Any] | None) -> str | None:
+    if not result_item:
+        return None
+    result_type = result_item.get("type")
+    if not isinstance(result_type, str):
+        return None
+    return _MANAGED_AGENTS_RESULT_REF_KEYS.get(result_type)
+
+
+def _managed_agents_tool_span_name(call_item: dict[str, Any] | None, result_item: dict[str, Any] | None) -> str:
+    if isinstance((call_item or {}).get("name"), str):
+        return call_item["name"]
+
+    result_type = (result_item or {}).get("type")
+    if isinstance(result_type, str):
+        return result_type.replace(".", "_")
+
+    return "managed_agent_tool"
+
+
+def _managed_agents_tool_span_input(call_item: dict[str, Any] | None) -> Any:
+    if not call_item:
+        return None
+    return call_item.get("input")
+
+
+def _managed_agents_tool_span_output(result_item: dict[str, Any] | None) -> Any:
+    if not result_item:
+        return None
+    return result_item.get("content")
+
+
+def _managed_agents_tool_span_error(result_item: dict[str, Any] | None) -> str | None:
+    if not result_item:
+        return None
+    if result_item.get("is_error"):
+        result_type = result_item.get("type")
+        if isinstance(result_type, str):
+            return result_type
+        return "tool_error"
+    return None
+
+
+def _managed_agents_tool_span_metadata(
+    call_item: dict[str, Any] | None, result_item: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    ref_key = _managed_agents_tool_ref_key(result_item)
+    metadata = {
+        key: value
+        for key, value in {
+            "tool_use_id": (call_item or {}).get("id") or ((result_item or {}).get(ref_key) if ref_key else None),
+            "tool_call_type": (call_item or {}).get("type"),
+            "tool_result_type": (result_item or {}).get("type"),
+            "mcp_server_name": (call_item or {}).get("mcp_server_name"),
+            "evaluated_permission": (call_item or {}).get("evaluated_permission"),
+        }.items()
+        if value is not None
+    }
+    return metadata or None
+
+
+def _log_managed_agents_tool_span(
+    parent_span, call_item: dict[str, Any] | None, result_item: dict[str, Any] | None
+) -> None:
+    tool_span = start_span(
+        name=_managed_agents_tool_span_name(call_item, result_item),
+        type=SpanTypeAttribute.TOOL,
+        parent=parent_span.export(),
+        input=_managed_agents_tool_span_input(call_item),
+        metadata=_managed_agents_tool_span_metadata(call_item, result_item),
+    )
+    try:
+        output = _managed_agents_tool_span_output(result_item)
+        error = _managed_agents_tool_span_error(result_item)
+        if output is None and error is None:
+            return
+        if error is not None:
+            tool_span.log(output=output, error=error)
+        else:
+            tool_span.log(output=output)
+    finally:
+        tool_span.end()
+
+
+def _log_managed_agents_tool_spans(events: list[dict[str, Any]], parent_span) -> None:
+    calls_by_id: dict[str, dict[str, Any]] = {}
+    pending_results_by_id: dict[str, list[dict[str, Any]]] = {}
+    matched_call_ids: set[str] = set()
+    pairs: list[tuple[dict[str, Any] | None, dict[str, Any] | None]] = []
+
+    for event in events:
+        event_type = event.get("type")
+        if event_type in _MANAGED_AGENTS_CALL_TYPES:
+            call_id = event.get("id")
+            if isinstance(call_id, str):
+                calls_by_id[call_id] = event
+                for pending_result in pending_results_by_id.pop(call_id, []):
+                    pairs.append((event, pending_result))
+                    matched_call_ids.add(call_id)
+            else:
+                pairs.append((event, None))
+            continue
+
+        ref_key = _managed_agents_tool_ref_key(event)
+        if ref_key is None:
+            continue
+
+        call_id = event.get(ref_key)
+        if isinstance(call_id, str) and call_id in calls_by_id:
+            pairs.append((calls_by_id[call_id], event))
+            matched_call_ids.add(call_id)
+        elif isinstance(call_id, str):
+            pending_results_by_id.setdefault(call_id, []).append(event)
+        else:
+            pairs.append((None, event))
+
+    for call_item, result_item in pairs:
+        _log_managed_agents_tool_span(parent_span, call_item, result_item)
+
+    for call_id, call_item in calls_by_id.items():
+        if call_id not in matched_call_ids:
+            _log_managed_agents_tool_span(parent_span, call_item, None)
+
+    for pending_results in pending_results_by_id.values():
+        for result_item in pending_results:
+            _log_managed_agents_tool_span(parent_span, None, result_item)
+
+
+def _log_managed_agents_stream_to_span(events: list[dict[str, Any]], span) -> None:
+    if not events:
+        return
+
+    metrics, metadata = _managed_agents_stream_metrics_and_metadata(events)
+    span.log(output=events, metrics=metrics or None, metadata=metadata or None)
+    _log_managed_agents_tool_spans(events, span)
 
 
 def _start_batch_create_span(kwargs):
