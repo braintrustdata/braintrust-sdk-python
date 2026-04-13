@@ -31,12 +31,14 @@ try:
     Embeddings = importlib.import_module("mistralai.client.embeddings").Embeddings
     Fim = importlib.import_module("mistralai.client.fim").Fim
     Agents = importlib.import_module("mistralai.client.agents").Agents
+    Ocr = importlib.import_module("mistralai.client.ocr").Ocr
     models = importlib.import_module("mistralai.client.models")
 except ImportError:
     Chat = importlib.import_module("mistralai.chat").Chat
     Embeddings = importlib.import_module("mistralai.embeddings").Embeddings
     Fim = importlib.import_module("mistralai.fim").Fim
     Agents = importlib.import_module("mistralai.agents").Agents
+    Ocr = importlib.import_module("mistralai.ocr").Ocr
     models = importlib.import_module("mistralai.models")
 
 
@@ -45,6 +47,15 @@ CHAT_MODEL = "mistral-small-latest"
 AGENT_MODEL = CHAT_MODEL
 EMBEDDING_MODEL = "mistral-embed"
 FIM_MODEL = "codestral-latest"
+OCR_MODEL = "mistral-ocr-latest"
+TINY_PNG_DATA_URL = (
+    "data:image/png;base64,"
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+)
+TEST_PDF_DATA_URL = (
+    "data:application/pdf;base64,"
+    "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
+)
 
 
 @pytest.fixture(scope="module")
@@ -61,6 +72,13 @@ def memory_logger():
 
 def _get_client():
     return Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
+
+
+def _assert_ocr_metrics_are_valid(metrics, start, end):
+    assert metrics["duration"] >= 0
+    assert metrics["pages_processed"] >= 1
+    assert metrics["doc_size_bytes"] > 0
+    assert start <= metrics["start"] <= metrics["end"] <= end
 
 
 @contextmanager
@@ -285,6 +303,76 @@ async def test_wrap_mistral_agents_stream_async(memory_logger):
 
 
 @pytest.mark.vcr
+def test_wrap_mistral_ocr_process_sync(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    start = time.time()
+    response = client.ocr.process(
+        model=OCR_MODEL,
+        document={
+            "type": "document_url",
+            "document_url": TEST_PDF_DATA_URL,
+            "document_name": "test.pdf",
+        },
+    )
+    end = time.time()
+
+    assert response.pages
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "mistral"
+    assert span["metadata"]["model"] == OCR_MODEL
+    assert span["metadata"]["document_type"] == "document_url"
+    assert span["metadata"]["page_count"] == len(response.pages)
+    assert span["output"]["pages"]
+    file_data_value = span["input"]["document"]["file"]["file_data"]
+    assert isinstance(file_data_value, Attachment)
+    assert file_data_value.reference["type"] == "braintrust_attachment"
+    assert file_data_value.reference["content_type"] == "application/pdf"
+    assert file_data_value.reference["filename"] == "test.pdf"
+    assert file_data_value.reference["key"]
+    _assert_ocr_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_wrap_mistral_ocr_process_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    start = time.time()
+    response = await client.ocr.process_async(
+        model=OCR_MODEL,
+        document={
+            "type": "image_url",
+            "image_url": TINY_PNG_DATA_URL,
+        },
+    )
+    end = time.time()
+
+    assert response.pages
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "mistral"
+    assert span["metadata"]["model"] == OCR_MODEL
+    assert span["metadata"]["document_type"] == "image_url"
+    assert span["metadata"]["page_count"] == len(response.pages)
+    assert span["output"]["pages"]
+    image_url_value = span["input"]["document"]["image_url"]["url"]
+    assert isinstance(image_url_value, Attachment)
+    assert image_url_value.reference["type"] == "braintrust_attachment"
+    assert image_url_value.reference["content_type"] == "image/png"
+    assert image_url_value.reference["filename"] == "image.png"
+    assert image_url_value.reference["key"]
+    _assert_ocr_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
 def test_wrap_mistral_embeddings_create(memory_logger):
     assert not memory_logger.pop()
 
@@ -452,6 +540,8 @@ def test_mistral_integration_setup_creates_spans(memory_logger, monkeypatch):
     original_agents_complete_async = inspect.getattr_static(Agents, "complete_async")
     original_agents_stream = inspect.getattr_static(Agents, "stream")
     original_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
+    original_ocr_process = inspect.getattr_static(Ocr, "process")
+    original_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
 
     assert MistralIntegration.setup()
     client = _get_client()
@@ -477,6 +567,8 @@ def test_mistral_integration_setup_creates_spans(memory_logger, monkeypatch):
     monkeypatch.setattr(Agents, "complete_async", original_agents_complete_async)
     monkeypatch.setattr(Agents, "stream", original_agents_stream)
     monkeypatch.setattr(Agents, "stream_async", original_agents_stream_async)
+    monkeypatch.setattr(Ocr, "process", original_ocr_process)
+    monkeypatch.setattr(Ocr, "process_async", original_ocr_process_async)
 
     assert "4" in str(response.choices[0].message.content)
 
@@ -504,6 +596,8 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     first_agents_complete_async = inspect.getattr_static(Agents, "complete_async")
     first_agents_stream = inspect.getattr_static(Agents, "stream")
     first_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
+    first_ocr_process = inspect.getattr_static(Ocr, "process")
+    first_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
 
     assert MistralIntegration.setup()
     patched_complete = inspect.getattr_static(Chat, "complete")
@@ -520,6 +614,8 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     patched_agents_complete_async = inspect.getattr_static(Agents, "complete_async")
     patched_agents_stream = inspect.getattr_static(Agents, "stream")
     patched_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
+    patched_ocr_process = inspect.getattr_static(Ocr, "process")
+    patched_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
 
     assert MistralIntegration.setup()
     assert inspect.getattr_static(Chat, "complete") is patched_complete
@@ -536,6 +632,8 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     assert inspect.getattr_static(Agents, "complete_async") is patched_agents_complete_async
     assert inspect.getattr_static(Agents, "stream") is patched_agents_stream
     assert inspect.getattr_static(Agents, "stream_async") is patched_agents_stream_async
+    assert inspect.getattr_static(Ocr, "process") is patched_ocr_process
+    assert inspect.getattr_static(Ocr, "process_async") is patched_ocr_process_async
 
     monkeypatch.setattr(Chat, "complete", first_complete)
     monkeypatch.setattr(Chat, "complete_async", first_complete_async)
@@ -551,6 +649,8 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     monkeypatch.setattr(Agents, "complete_async", first_agents_complete_async)
     monkeypatch.setattr(Agents, "stream", first_agents_stream)
     monkeypatch.setattr(Agents, "stream_async", first_agents_stream_async)
+    monkeypatch.setattr(Ocr, "process", first_ocr_process)
+    monkeypatch.setattr(Ocr, "process_async", first_ocr_process_async)
 
 
 def test_chat_complete_wrapper_logs_errors(memory_logger):
@@ -616,6 +716,33 @@ def test_sanitize_mistral_logged_value_converts_image_url_data_uri_to_attachment
 
     assert isinstance(sanitized["image_url"]["url"], Attachment)
     assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
+
+
+def test_sanitize_mistral_logged_value_converts_image_url_string_data_uri_to_attachment():
+    sanitized = sanitize_mistral_logged_value(
+        {
+            "type": "image_url",
+            "image_url": "data:image/png;base64,aGVsbG8=",
+        }
+    )
+
+    assert isinstance(sanitized["image_url"]["url"], Attachment)
+    assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
+
+
+def test_sanitize_mistral_logged_value_converts_document_url_data_uri_to_attachment():
+    sanitized = sanitize_mistral_logged_value(
+        {
+            "type": "document_url",
+            "document_url": TEST_PDF_DATA_URL,
+            "document_name": "test.pdf",
+        }
+    )
+
+    assert sanitized["type"] == "file"
+    assert isinstance(sanitized["file"]["file_data"], Attachment)
+    assert sanitized["file"]["file_data"].reference["content_type"] == "application/pdf"
+    assert sanitized["file"]["filename"] == "test.pdf"
 
 
 def test_sanitize_mistral_logged_value_converts_large_base64_input_audio_to_attachment():

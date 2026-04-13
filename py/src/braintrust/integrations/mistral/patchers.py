@@ -17,6 +17,8 @@ from .tracing import (
     _fim_complete_wrapper,
     _fim_stream_async_wrapper,
     _fim_stream_wrapper,
+    _ocr_process_async_wrapper,
+    _ocr_process_wrapper,
 )
 
 
@@ -279,4 +281,44 @@ class AgentsPatcher(CompositeFunctionWrapperPatcher):
         _AgentsStreamV1Patcher,
         _AgentsStreamAsyncV2Patcher,
         _AgentsStreamAsyncV1Patcher,
+    )
+
+
+class _OcrProcessV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.ocr.process.v2"
+    target_module = "mistralai.client.ocr"
+    target_path = "Ocr.process"
+    wrapper = _ocr_process_wrapper
+
+
+class _OcrProcessV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.ocr.process.v1"
+    target_module = "mistralai.ocr"
+    target_path = "Ocr.process"
+    wrapper = _ocr_process_wrapper
+    superseded_by = (_OcrProcessV2Patcher,)
+
+
+class _OcrProcessAsyncV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.ocr.process_async.v2"
+    target_module = "mistralai.client.ocr"
+    target_path = "Ocr.process_async"
+    wrapper = _ocr_process_async_wrapper
+
+
+class _OcrProcessAsyncV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.ocr.process_async.v1"
+    target_module = "mistralai.ocr"
+    target_path = "Ocr.process_async"
+    wrapper = _ocr_process_async_wrapper
+    superseded_by = (_OcrProcessAsyncV2Patcher,)
+
+
+class OcrPatcher(CompositeFunctionWrapperPatcher):
+    name = "mistral.ocr"
+    sub_patchers = (
+        _OcrProcessV2Patcher,
+        _OcrProcessV1Patcher,
+        _OcrProcessAsyncV2Patcher,
+        _OcrProcessAsyncV1Patcher,
     )

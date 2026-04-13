@@ -75,6 +75,20 @@ _FIM_METADATA_KEYS = (
     "random_seed",
     "min_tokens",
 )
+_OCR_METADATA_KEYS = (
+    "model",
+    "id",
+    "pages",
+    "include_image_base64",
+    "image_limit",
+    "image_min_size",
+    "bbox_annotation_format",
+    "document_annotation_format",
+    "document_annotation_prompt",
+    "table_format",
+    "extract_header",
+    "extract_footer",
+)
 
 
 def _is_unset(value: Any) -> bool:
@@ -117,9 +131,11 @@ def _normalize_special_payloads(value: Any) -> Any:
         if isinstance(image_url, str):
             return {
                 **value,
-                "image_url": resolved.attachment
-                if (resolved := _materialize_attachment(image_url)) is not None
-                else image_url,
+                "image_url": {
+                    "url": resolved.attachment
+                    if (resolved := _materialize_attachment(image_url)) is not None
+                    else image_url,
+                },
             }
         if isinstance(image_url, dict) and isinstance(image_url.get("url"), str):
             return {
@@ -129,6 +145,21 @@ def _normalize_special_payloads(value: Any) -> Any:
                     "url": resolved.attachment
                     if (resolved := _materialize_attachment(image_url["url"])) is not None
                     else image_url["url"],
+                },
+            }
+
+    if item_type == "document_url" and isinstance(value.get("document_url"), str):
+        resolved = _materialize_attachment(
+            value["document_url"],
+            filename=value.get("document_name"),
+            prefix="document",
+        )
+        if resolved is not None:
+            return {
+                "type": "file",
+                "file": {
+                    "file_data": resolved.attachment,
+                    "filename": resolved.filename,
                 },
             }
 
@@ -207,12 +238,38 @@ def _build_fim_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) -
     return _build_request_metadata(kwargs, _FIM_METADATA_KEYS, stream=stream)
 
 
+def _document_type(document: Any) -> str | None:
+    if _is_unset(document):
+        return None
+
+    document_type = getattr(document, "type", None)
+    if document_type is None and isinstance(document, dict):
+        document_type = document.get("type")
+
+    if isinstance(document_type, str) and document_type:
+        return document_type
+
+    return None
+
+
+def _build_ocr_metadata(kwargs: dict[str, Any]) -> dict[str, Any]:
+    metadata = _build_request_metadata(kwargs, _OCR_METADATA_KEYS)
+    document_type = _document_type(kwargs.get("document"))
+    if document_type is not None:
+        metadata["document_type"] = document_type
+    return metadata
+
+
 def _fim_input(kwargs: dict[str, Any]) -> dict[str, Any]:
     span_input = {"prompt": kwargs.get("prompt")}
     suffix = kwargs.get("suffix")
     if suffix is not None and not _is_unset(suffix):
         span_input["suffix"] = suffix
     return span_input
+
+
+def _ocr_input(kwargs: dict[str, Any]) -> dict[str, Any]:
+    return {"document": kwargs.get("document")}
 
 
 def _start_span(name: str, span_input: Any, metadata: dict[str, Any]):
@@ -250,6 +307,20 @@ def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None
     )
 
 
+def _parse_ocr_usage_metrics(usage: Any) -> dict[str, float]:
+    usage_data = sanitize_mistral_logged_value(usage)
+    if not isinstance(usage_data, dict):
+        return {}
+
+    return {
+        _camel_to_snake(key): float(value) for key, value in usage_data.items() if _is_supported_metric_value(value)
+    }
+
+
+def _merge_ocr_metrics(start_time: float, usage: Any) -> dict[str, Any]:
+    return _merge_timing_and_usage_metrics(start_time, usage, _parse_ocr_usage_metrics)
+
+
 def _response_to_metadata(response: Any) -> dict[str, Any]:
     data = sanitize_mistral_logged_value(response)
     if not isinstance(data, dict):
@@ -282,6 +353,31 @@ def _embeddings_output(response: Any) -> dict[str, Any]:
     if first is not None and getattr(first, "index", None) is not None:
         output["first_index"] = first.index
     return output
+
+
+def _ocr_output(response: Any) -> dict[str, Any]:
+    data = sanitize_mistral_logged_value(response)
+    if not isinstance(data, dict):
+        return {"pages": []}
+
+    output = {
+        "pages": data.get("pages") or [],
+    }
+    document_annotation = data.get("document_annotation")
+    if document_annotation is not None:
+        output["document_annotation"] = document_annotation
+    return output
+
+
+def _ocr_response_to_metadata(response: Any) -> dict[str, Any]:
+    data = sanitize_mistral_logged_value(response)
+    if not isinstance(data, dict):
+        return {}
+
+    pages = data.get("pages")
+    return {
+        "page_count": len(pages) if isinstance(pages, list) else 0,
+    }
 
 
 def _call_with_error_logging(span: Any, wrapped: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
@@ -469,6 +565,16 @@ def _finalize_embeddings_response(span: Any, request_metadata: dict[str, Any], r
         span,
         output=_embeddings_output(response),
         metrics=_merge_metrics(start_time, getattr(response, "usage", None)),
+        metadata={**request_metadata, **response_metadata},
+    )
+
+
+def _finalize_ocr_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
+    response_metadata = _ocr_response_to_metadata(response)
+    _log_and_end_span(
+        span,
+        output=_ocr_output(response),
+        metrics=_merge_ocr_metrics(start_time, getattr(response, "usage_info", None)),
         metadata={**request_metadata, **response_metadata},
     )
 
@@ -749,9 +855,29 @@ async def _fim_stream_async_wrapper(wrapped, instance, args, kwargs):
     return _TracedMistralAsyncStream(result, span, request_metadata, start_time)
 
 
+def _ocr_process_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_ocr_metadata(kwargs)
+    span = _start_span("mistral.ocr.process", _ocr_input(kwargs), request_metadata)
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    _finalize_ocr_response(span, request_metadata, result, start_time)
+    return result
+
+
+async def _ocr_process_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_ocr_metadata(kwargs)
+    span = _start_span("mistral.ocr.process", _ocr_input(kwargs), request_metadata)
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    _finalize_ocr_response(span, request_metadata, result, start_time)
+    return result
+
+
 def wrap_mistral(client: Any) -> Any:
     """Wrap a single Mistral client instance for tracing."""
-    from .patchers import AgentsPatcher, ChatPatcher, EmbeddingsPatcher, FimPatcher
+    from .patchers import AgentsPatcher, ChatPatcher, EmbeddingsPatcher, FimPatcher, OcrPatcher
 
     chat = getattr(client, "chat", None)
     if chat is not None:
@@ -768,5 +894,9 @@ def wrap_mistral(client: Any) -> Any:
     agents = getattr(client, "agents", None)
     if agents is not None:
         AgentsPatcher.wrap_target(agents)
+
+    ocr = getattr(client, "ocr", None)
+    if ocr is not None:
+        OcrPatcher.wrap_target(ocr)
 
     return client
