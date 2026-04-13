@@ -350,6 +350,7 @@ _AUDIO_FORMAT_TO_MIME_TYPE = {
     "aac": "audio/aac",
     "flac": "audio/flac",
     "pcm": "audio/pcm",
+    "pcm16": "audio/pcm",
 }
 
 

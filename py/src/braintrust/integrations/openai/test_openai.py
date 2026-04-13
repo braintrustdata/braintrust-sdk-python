@@ -14,6 +14,7 @@ from braintrust.integrations.openai.tracing import (
     RAW_RESPONSE_HEADER,
     ChatCompletionWrapper,
     _materialize_logged_file_input,
+    _process_attachments_in_chat_output,
 )
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
@@ -636,6 +637,54 @@ def test_openai_chat_streaming_sync_preserves_refusal(memory_logger):
     assert output_choice["finish_reason"] == "stop"
     assert output_choice["message"]["content"] is None
     assert output_choice["message"]["refusal"] == chunk_refusal
+
+
+@pytest.mark.vcr
+def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    stream = client.chat.completions.create(
+        model="gpt-4o-audio-preview",
+        messages=[{"role": "user", "content": "Say exactly hello."}],
+        modalities=["text", "audio"],
+        audio={"voice": "alloy", "format": "pcm16"},
+        stream=True,
+        stream_options={"include_usage": True},
+        temperature=0,
+    )
+
+    transcript = ""
+    saw_audio_data = False
+    for chunk in stream:
+        chunk_dict = chunk.model_dump()
+        choices = chunk_dict.get("choices") or []
+        if not choices:
+            continue
+
+        delta_audio = (choices[0].get("delta") or {}).get("audio")
+        if isinstance(delta_audio, dict) and delta_audio.get("transcript"):
+            transcript += delta_audio["transcript"]
+        if isinstance(delta_audio, dict) and delta_audio.get("data"):
+            saw_audio_data = True
+
+    assert saw_audio_data
+    assert transcript
+    assert "hello" in transcript.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    output_choice = span["output"][0]
+    message = output_choice["message"]
+    assert message["role"] == "assistant"
+    assert message["content"] is None
+    _assert_chat_audio_attachment(
+        message["audio"],
+        transcript=transcript,
+        content_type="audio/pcm",
+        filename="generated_audio.pcm",
+    )
 
 
 @pytest.mark.vcr
@@ -1942,6 +1991,33 @@ def _assert_audio_output_attachment(span) -> None:
     assert attachment.reference["filename"].startswith("generated_speech")
 
 
+def _assert_chat_audio_attachment(
+    audio,
+    *,
+    transcript: str,
+    audio_size_bytes: int | None = None,
+    content_type: str,
+    filename: str,
+    audio_id: str | None = None,
+    expires_at: int | None = None,
+) -> None:
+    if audio_id is not None:
+        assert audio["id"] == audio_id
+    if expires_at is not None:
+        assert audio["expires_at"] == expires_at
+    assert audio["transcript"] == transcript
+    if audio_size_bytes is not None:
+        assert audio["audio_size_bytes"] == audio_size_bytes
+    else:
+        assert audio["audio_size_bytes"] > 0
+    assert "data" not in audio
+
+    attachment = audio["file"]["file_data"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == content_type
+    assert attachment.reference["filename"] == filename
+
+
 def _write_test_png(path: str, *, width: int = 64, height: int = 64) -> None:
     """Write a simple opaque red RGBA PNG without external dependencies."""
 
@@ -2488,4 +2564,86 @@ class TestZAICompatibleOpenAI:
         assert tool_call["function"]["arguments"] == '{"city": "New York"}'
 
         # No spans should be generated from this unit test
+        assert not memory_logger.pop()
+
+    def test_chat_completion_streaming_audio_is_materialized_as_attachment(self, memory_logger):
+        assert not memory_logger.pop()
+
+        all_results = [
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "role": "assistant",
+                            "audio": {
+                                "id": "audio_123",
+                                "transcript": "He",
+                                "data": "aGU=",
+                            },
+                        },
+                        "finish_reason": None,
+                    }
+                ],
+            },
+            {
+                "choices": [
+                    {
+                        "delta": {
+                            "audio": {
+                                "transcript": "llo",
+                                "data": "bGxv",
+                                "expires_at": 123,
+                            }
+                        },
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        ]
+
+        wrapper = ChatCompletionWrapper(None, None)
+        result = wrapper._postprocess_streaming_results(all_results, audio_format="wav")
+
+        message = result["output"][0]["message"]
+        _assert_chat_audio_attachment(
+            message["audio"],
+            audio_id="audio_123",
+            transcript="Hello",
+            expires_at=123,
+            audio_size_bytes=len(b"hello"),
+            content_type="audio/wav",
+            filename="generated_audio.wav",
+        )
+        assert not memory_logger.pop()
+
+    def test_chat_completion_non_stream_audio_is_materialized_as_attachment(self, memory_logger):
+        assert not memory_logger.pop()
+
+        output = _process_attachments_in_chat_output(
+            [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "audio": {
+                            "id": "audio_456",
+                            "transcript": "Hello",
+                            "data": "aGVsbG8=",
+                            "expires_at": 456,
+                        },
+                    }
+                }
+            ],
+            audio_format="wav",
+        )
+
+        message = output[0]["message"]
+        _assert_chat_audio_attachment(
+            message["audio"],
+            audio_id="audio_456",
+            transcript="Hello",
+            expires_at=456,
+            audio_size_bytes=len(b"hello"),
+            content_type="audio/wav",
+            filename="generated_audio.wav",
+        )
         assert not memory_logger.pop()

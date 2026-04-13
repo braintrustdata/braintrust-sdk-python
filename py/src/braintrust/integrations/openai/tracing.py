@@ -1,6 +1,8 @@
 """OpenAI-specific tracing wrappers, stream proxies, and serialization helpers."""
 
 import abc
+import base64
+import binascii
 import inspect
 import json
 import time
@@ -9,6 +11,7 @@ from typing import Any
 
 from braintrust.integrations.utils import (
     _extract_audio_output,
+    _infer_audio_mime_type,
     _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
@@ -154,6 +157,72 @@ def _process_attachments_in_input(input_data: Any) -> Any:
         return {key: _process_attachments_in_input(value) for key, value in input_data.items()}
 
     return input_data
+
+
+def _get_requested_audio_format(params: dict[str, Any]) -> str | None:
+    audio = params.get("audio")
+    if not isinstance(audio, dict):
+        return None
+
+    audio_format = audio.get("format")
+    return audio_format if isinstance(audio_format, str) else None
+
+
+def _decode_chat_completion_audio_chunk(data: Any) -> bytes | None:
+    if isinstance(data, (bytes, bytearray)):
+        return bytes(data)
+    if not isinstance(data, str):
+        return None
+
+    raw_data = data.partition(",")[2] if data.startswith("data:") else data
+    try:
+        return base64.b64decode(raw_data, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+
+
+def _process_chat_completion_audio(audio: Any, *, audio_format: str | None = None) -> Any:
+    if not isinstance(audio, dict):
+        return audio
+
+    processed_audio = {key: value for key, value in audio.items() if key not in {"data", "_decoded_data"}}
+    audio_data = audio.get("_decoded_data", audio.get("data"))
+    if audio_data is None:
+        return processed_audio
+
+    resolved = _materialize_attachment(
+        audio_data,
+        mime_type=_infer_audio_mime_type(None, response_format=audio_format),
+        prefix="generated_audio",
+    )
+    if resolved is None:
+        processed_audio["data"] = audio.get("data", audio_data)
+        return processed_audio
+
+    processed_audio.update(
+        {
+            "mime_type": resolved.mime_type,
+            "audio_size_bytes": len(resolved.attachment.data),
+            **resolved.multimodal_part_payload,
+        }
+    )
+    return processed_audio
+
+
+def _process_attachments_in_chat_output(output_data: Any, *, audio_format: str | None = None) -> Any:
+    if isinstance(output_data, list):
+        return [_process_attachments_in_chat_output(item, audio_format=audio_format) for item in output_data]
+
+    if isinstance(output_data, dict):
+        processed = {}
+        for key, value in output_data.items():
+            if key == "audio" and isinstance(value, dict):
+                processed[key] = _process_chat_completion_audio(value, audio_format=audio_format)
+            else:
+                processed[key] = _process_attachments_in_chat_output(value, audio_format=audio_format)
+        return processed
+
+    return output_data
 
 
 def _is_async_callable(fn: Any) -> bool:
@@ -338,6 +407,7 @@ class ChatCompletionWrapper:
 
     def create(self, *args: Any, **kwargs: Any) -> Any:
         raw_requested = _raw_response_requested(kwargs)
+        audio_format = _get_requested_audio_format(kwargs)
         params = self._parse_params(kwargs)
         stream = kwargs.get("stream", False)
 
@@ -371,7 +441,7 @@ class ChatCompletionWrapper:
                             all_results.append(_try_to_dict(item))
                             yield item
 
-                        span.log(**self._postprocess_streaming_results(all_results))
+                        span.log(**self._postprocess_streaming_results(all_results, audio_format=audio_format))
                     finally:
                         span.end()
 
@@ -385,7 +455,7 @@ class ChatCompletionWrapper:
                 metrics["time_to_first_token"] = time.time() - start
                 span.log(
                     metrics=metrics,
-                    output=log_response["choices"],
+                    output=_process_attachments_in_chat_output(log_response["choices"], audio_format=audio_format),
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -394,6 +464,7 @@ class ChatCompletionWrapper:
 
     async def acreate(self, *args: Any, **kwargs: Any) -> Any:
         raw_requested = _raw_response_requested(kwargs)
+        audio_format = _get_requested_audio_format(kwargs)
         params = self._parse_params(kwargs)
         stream = kwargs.get("stream", False)
 
@@ -429,7 +500,7 @@ class ChatCompletionWrapper:
                             all_results.append(_try_to_dict(item))
                             yield item
 
-                        span.log(**self._postprocess_streaming_results(all_results))
+                        span.log(**self._postprocess_streaming_results(all_results, audio_format=audio_format))
                     finally:
                         span.end()
 
@@ -444,7 +515,7 @@ class ChatCompletionWrapper:
                 metrics["time_to_first_token"] = time.time() - start
                 span.log(
                     metrics=metrics,
-                    output=log_response["choices"],
+                    output=_process_attachments_in_chat_output(log_response["choices"], audio_format=audio_format),
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -472,10 +543,16 @@ class ChatCompletionWrapper:
         )
 
     @classmethod
-    def _postprocess_streaming_results(cls, all_results: list[dict[str, Any]]) -> dict[str, Any]:
+    def _postprocess_streaming_results(
+        cls,
+        all_results: list[dict[str, Any]],
+        *,
+        audio_format: str | None = None,
+    ) -> dict[str, Any]:
         role = None
         content = None
         refusal = None
+        audio: dict[str, Any] | None = None
         tool_calls: list[Any] | None = None
         finish_reason = None
         logprobs_content: list[Any] | None = None
@@ -525,6 +602,25 @@ class ChatCompletionWrapper:
             if delta.get("refusal") is not None:
                 refusal = (refusal or "") + delta.get("refusal")
 
+            delta_audio = delta.get("audio")
+            if isinstance(delta_audio, dict):
+                if audio is None:
+                    audio = {}
+
+                if delta_audio.get("id") is not None:
+                    audio["id"] = delta_audio.get("id")
+                if delta_audio.get("transcript") is not None:
+                    audio["transcript"] = (audio.get("transcript") or "") + delta_audio.get("transcript")
+                if delta_audio.get("data") is not None:
+                    delta_audio_data = delta_audio.get("data")
+                    decoded_audio = _decode_chat_completion_audio_chunk(delta_audio_data)
+                    if decoded_audio is not None:
+                        audio["_decoded_data"] = (audio.get("_decoded_data") or b"") + decoded_audio
+                    else:
+                        audio["data"] = (audio.get("data") or "") + delta_audio_data
+                if delta_audio.get("expires_at") is not None:
+                    audio["expires_at"] = delta_audio.get("expires_at")
+
             if delta.get("tool_calls") is not None:
                 delta_tool_calls = delta.get("tool_calls")
                 if not delta_tool_calls:
@@ -553,6 +649,9 @@ class ChatCompletionWrapper:
                         # pylint: disable=unsubscriptable-object
                         tool_calls[-1]["function"]["arguments"] += args
 
+        processed_audio = (
+            _process_chat_completion_audio(audio, audio_format=audio_format) if audio is not None else None
+        )
         return {
             "metrics": metrics,
             "output": [
@@ -563,6 +662,7 @@ class ChatCompletionWrapper:
                         "content": content,
                         "tool_calls": tool_calls,
                         **({"refusal": refusal} if refusal is not None else {}),
+                        **({"audio": processed_audio} if processed_audio is not None else {}),
                     },
                     "logprobs": (
                         {
