@@ -1288,10 +1288,12 @@ class _AudioFileWrapper(BaseWrapper):
         params = prettify_params(params)
         # Remove the file object after prettifying — prettify_params already
         # made a copy so the original kwargs (used by the API call) are preserved.
-        params.pop("file", None)
+        file_input = _materialize_logged_file_input(params.pop("file", None))
+        input_data = {"file": file_input} if file_input is not None else None
         return merge_dicts(
             ret,
             {
+                "input": input_data,
                 "metadata": {**params, "provider": "openai"},
             },
         )

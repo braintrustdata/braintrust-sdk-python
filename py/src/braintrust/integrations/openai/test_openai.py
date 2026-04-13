@@ -1927,6 +1927,12 @@ def _is_wrapped(client):
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
 
 
+def _assert_audio_input_attachment(span) -> None:
+    assert isinstance(span["input"]["file"], Attachment)
+    assert span["input"]["file"].reference["filename"] == "test_audio.wav"
+    assert span["input"]["file"].reference["content_type"].startswith("audio/")
+
+
 def _write_test_png(path: str, *, width: int = 64, height: int = 64) -> None:
     """Write a simple opaque red RGBA PNG without external dependencies."""
 
@@ -2086,6 +2092,7 @@ def test_openai_audio_transcription(memory_logger):
     span = spans[0]
     assert span["metadata"]["model"] == "whisper-1"
     assert span["metadata"]["provider"] == "openai"
+    _assert_audio_input_attachment(span)
     assert span["output"] == "you"
 
 
@@ -2112,6 +2119,7 @@ def test_openai_audio_transcription_text_format(memory_logger):
     span = spans[0]
     assert span["metadata"]["model"] == "whisper-1"
     assert span["metadata"]["provider"] == "openai"
+    _assert_audio_input_attachment(span)
     assert span["output"] == "you"
 
 
@@ -2137,6 +2145,7 @@ def test_openai_audio_translation(memory_logger):
     span = spans[0]
     assert span["metadata"]["model"] == "whisper-1"
     assert span["metadata"]["provider"] == "openai"
+    _assert_audio_input_attachment(span)
     assert span["output"] == "you"
 
 
@@ -2190,6 +2199,7 @@ async def test_openai_audio_transcription_async(memory_logger):
         span = spans[0]
         assert span["metadata"]["model"] == "whisper-1"
         assert span["metadata"]["provider"] == "openai"
+        _assert_audio_input_attachment(span)
         assert span["output"] == "you"
 
 
@@ -2214,6 +2224,7 @@ async def test_openai_audio_translation_async(memory_logger):
         span = spans[0]
         assert span["metadata"]["model"] == "whisper-1"
         assert span["metadata"]["provider"] == "openai"
+        _assert_audio_input_attachment(span)
         assert span["output"] == "you"
 
 
