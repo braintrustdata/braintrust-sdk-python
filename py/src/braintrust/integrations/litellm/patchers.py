@@ -9,11 +9,13 @@ from .tracing import (
     _aembedding_wrapper_async,
     _aimage_generation_wrapper_async,
     _aresponses_wrapper_async,
+    _atranscription_wrapper_async,
     _completion_wrapper,
     _embedding_wrapper,
     _image_generation_wrapper,
     _moderation_wrapper,
     _responses_wrapper,
+    _transcription_wrapper,
 )
 
 
@@ -76,6 +78,18 @@ class LiteLLMModerationPatcher(FunctionWrapperPatcher):
     wrapper = _moderation_wrapper
 
 
+class LiteLLMTranscriptionPatcher(FunctionWrapperPatcher):
+    name = "litellm.transcription"
+    target_path = "transcription"
+    wrapper = _transcription_wrapper
+
+
+class LiteLLMATranscriptionPatcher(FunctionWrapperPatcher):
+    name = "litellm.atranscription"
+    target_path = "atranscription"
+    wrapper = _atranscription_wrapper_async
+
+
 # ---------------------------------------------------------------------------
 # All patchers, in declaration order
 # ---------------------------------------------------------------------------
@@ -90,6 +104,8 @@ _ALL_LITELLM_PATCHERS = (
     LiteLLMEmbeddingPatcher,
     LiteLLMAembeddingPatcher,
     LiteLLMModerationPatcher,
+    LiteLLMTranscriptionPatcher,
+    LiteLLMATranscriptionPatcher,
 )
 
 
@@ -105,8 +121,8 @@ def wrap_litellm(litellm: Any) -> Any:
     module, this function instruments a specific module object (or any object
     that exposes the same top-level callables such as ``completion``,
     ``acompletion``, ``responses``, ``aresponses``, ``image_generation``,
-    ``aimage_generation``, ``embedding``, ``aembedding``, and ``moderation``).
-    Each patcher is applied
+    ``aimage_generation``, ``embedding``, ``aembedding``, ``moderation``,
+    ``transcription``, and ``atranscription``). Each patcher is applied
     idempotently — calling
     ``wrap_litellm`` twice on the same object is safe.
 

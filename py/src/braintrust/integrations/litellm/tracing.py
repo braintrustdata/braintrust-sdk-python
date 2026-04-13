@@ -441,6 +441,40 @@ def _moderation_wrapper(wrapped, instance, args, kwargs):
         return moderation_response
 
 
+def _transcription_wrapper(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.transcription."""
+    updated_span_payload = _update_audio_span_payload_from_params(kwargs)
+
+    with start_span(
+        **merge_dicts(
+            dict(name="Transcription", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
+        )
+    ) as span:
+        transcription_response = wrapped(*args, **kwargs)
+        log_response = _try_to_dict(transcription_response)
+        usage = log_response.get("usage") if isinstance(log_response, dict) else None
+        metrics = _parse_metrics_from_usage(usage)
+        span.log(metrics=metrics, output=_extract_transcription_text(log_response))
+        return transcription_response
+
+
+async def _atranscription_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.atranscription."""
+    updated_span_payload = _update_audio_span_payload_from_params(kwargs)
+
+    with start_span(
+        **merge_dicts(
+            dict(name="Transcription", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
+        )
+    ) as span:
+        transcription_response = await wrapped(*args, **kwargs)
+        log_response = _try_to_dict(transcription_response)
+        usage = log_response.get("usage") if isinstance(log_response, dict) else None
+        metrics = _parse_metrics_from_usage(usage)
+        span.log(metrics=metrics, output=_extract_transcription_text(log_response))
+        return transcription_response
+
+
 # ---------------------------------------------------------------------------
 # Streaming post-processing
 # ---------------------------------------------------------------------------
@@ -585,6 +619,32 @@ def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "i
         span_info_d,
         {"input": input_data, "metadata": {**params, "provider": "litellm", "model": model}},
     )
+
+
+def _update_audio_span_payload_from_params(params: dict[str, Any]) -> dict[str, Any]:
+    """Update the span payload for audio transcription calls."""
+    params = params.copy()
+    span_info_d = params.pop("span_info", {})
+
+    params = _prettify_response_params(params)
+    audio_file = _materialize_attachment(params.pop("file", None))
+    model = params.pop("model", None)
+
+    input_data = {"file": audio_file.attachment} if audio_file is not None else None
+
+    return merge_dicts(
+        span_info_d,
+        {"input": input_data, "metadata": {**params, "provider": "litellm", "model": model}},
+    )
+
+
+def _extract_transcription_text(response: Any) -> str | None:
+    """Extract text output from a LiteLLM transcription response."""
+    if isinstance(response, dict):
+        return response.get("text")
+    if isinstance(response, str):
+        return response.strip()
+    return getattr(response, "text", None)
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
