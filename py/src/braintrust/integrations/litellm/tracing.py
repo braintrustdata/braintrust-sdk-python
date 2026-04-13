@@ -6,13 +6,16 @@ from types import TracebackType
 from typing import Any
 
 from braintrust.integrations.utils import (
+    _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
+    _ResolvedAttachment,
+    _timing_metrics,
     _try_to_dict,
 )
 from braintrust.logger import Span, start_span
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import merge_dicts
+from braintrust.util import clean_nones, merge_dicts
 
 
 # LiteLLM's representation to Braintrust's representation
@@ -274,6 +277,114 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
     finally:
         if should_end:
             span.end()
+
+
+def _image_attachment_from_base64(
+    data: Any, *, output_format: Any, index: int
+) -> tuple[_ResolvedAttachment | None, int | None]:
+    if not isinstance(data, str):
+        return None, None
+
+    extension = output_format if isinstance(output_format, str) and output_format else "png"
+    mime_type = extension if "/" in extension else f"image/{extension}"
+    resolved_attachment = _materialize_attachment(
+        data,
+        mime_type=mime_type,
+        prefix=f"generated_image_{index}",
+    )
+    if resolved_attachment is None:
+        return None, None
+    return resolved_attachment, len(resolved_attachment.attachment.data)
+
+
+def _extract_image_generation_output(response: dict[str, Any]) -> dict[str, Any]:
+    images = []
+    output_format = response.get("output_format")
+
+    for index, image in enumerate(response.get("data") or []):
+        image_dict = _try_to_dict(image)
+        if not isinstance(image_dict, dict):
+            continue
+
+        image_entry = clean_nones(
+            {
+                "revised_prompt": image_dict.get("revised_prompt"),
+            }
+        )
+
+        if isinstance(image_dict.get("url"), str):
+            image_entry["image_url"] = {"url": image_dict["url"]}
+
+        b64_json = image_dict.get("b64_json")
+        resolved_attachment, image_size_bytes = _image_attachment_from_base64(
+            b64_json,
+            output_format=output_format,
+            index=index,
+        )
+        if resolved_attachment is not None:
+            image_entry.update(resolved_attachment.multimodal_part_payload)
+            image_entry["image_size_bytes"] = image_size_bytes
+            image_entry["mime_type"] = resolved_attachment.mime_type
+        elif isinstance(b64_json, str):
+            image_entry["b64_json_present"] = True
+
+        images.append(image_entry)
+
+    return clean_nones(
+        {
+            "created": response.get("created"),
+            "background": response.get("background"),
+            "output_format": output_format,
+            "quality": response.get("quality"),
+            "size": response.get("size"),
+            "images_count": len(images),
+            "images": images,
+        }
+    )
+
+
+def _image_generation_wrapper(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.image_generation."""
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="prompt")
+
+    with start_span(
+        **merge_dicts(
+            dict(name="Image Generation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
+        )
+    ) as span:
+        start = time.time()
+        image_response = wrapped(*args, **kwargs)
+        log_response = _try_to_dict(image_response)
+        metrics = _timing_metrics(start, time.time())
+        if isinstance(log_response, dict):
+            metrics.update(_parse_metrics_from_usage(log_response.get("usage", {})))
+        span.log(
+            metrics=metrics,
+            output=_extract_image_generation_output(log_response) if isinstance(log_response, dict) else log_response,
+        )
+        return image_response
+
+
+async def _aimage_generation_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.aimage_generation."""
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="prompt")
+
+    with start_span(
+        **merge_dicts(
+            dict(name="Image Generation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
+        )
+    ) as span:
+        start = time.time()
+        image_response = await wrapped(*args, **kwargs)
+        log_response = _try_to_dict(image_response)
+        metrics = _timing_metrics(start, time.time())
+        if isinstance(log_response, dict):
+            metrics.update(_parse_metrics_from_usage(log_response.get("usage", {})))
+        span.log(
+            metrics=metrics,
+            output=_extract_image_generation_output(log_response) if isinstance(log_response, dict) else log_response,
+        )
+        return image_response
 
 
 def _embedding_wrapper(wrapped, instance, args, kwargs):

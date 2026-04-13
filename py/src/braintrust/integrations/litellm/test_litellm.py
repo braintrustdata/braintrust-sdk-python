@@ -275,6 +275,65 @@ def test_litellm_moderation(memory_logger):
 
 
 @pytest.mark.vcr
+def test_litellm_image_generation(memory_logger):
+    assert not memory_logger.pop()
+
+    prompt = "A tiny red square on a white background"
+
+    response = litellm.image_generation(
+        model="dall-e-2",
+        prompt=prompt,
+        size="256x256",
+        response_format="url",
+    )
+
+    assert response
+    assert response.data
+    assert response.data[0].url
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "dall-e-2"
+    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["response_format"] == "url"
+    assert span["input"] == prompt
+    assert span["output"]["images_count"] == 1
+    assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
+    assert span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_litellm_aimage_generation(memory_logger):
+    assert not memory_logger.pop()
+
+    prompt = "A tiny blue square on a white background"
+
+    response = await litellm.aimage_generation(
+        model="dall-e-2",
+        prompt=prompt,
+        size="256x256",
+        response_format="url",
+    )
+
+    assert response
+    assert response.data
+    assert response.data[0].url
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "dall-e-2"
+    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["response_format"] == "url"
+    assert span["input"] == prompt
+    assert span["output"]["images_count"] == 1
+    assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
+    assert span["metrics"]["duration"] >= 0
+
+
+@pytest.mark.vcr
 def test_litellm_completion_with_system_prompt(memory_logger):
     assert not memory_logger.pop()
 

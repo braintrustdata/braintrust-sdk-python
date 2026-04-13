@@ -8,9 +8,9 @@ def patch_litellm() -> bool:
     """Patch LiteLLM to add Braintrust tracing.
 
     This wraps litellm.completion, litellm.acompletion, litellm.responses,
-    litellm.aresponses, litellm.embedding, litellm.aembedding, and
-    litellm.moderation to automatically create Braintrust spans with
-    detailed token metrics,
+    litellm.aresponses, litellm.image_generation, litellm.aimage_generation,
+    litellm.embedding, litellm.aembedding, and litellm.moderation to
+    automatically create Braintrust spans with detailed token metrics,
     timing, and costs.
 
     Returns:
