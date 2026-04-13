@@ -343,6 +343,72 @@ def _materialize_attachment(
     return None
 
 
+_AUDIO_FORMAT_TO_MIME_TYPE = {
+    "mp3": "audio/mpeg",
+    "wav": "audio/wav",
+    "opus": "audio/opus",
+    "aac": "audio/aac",
+    "flac": "audio/flac",
+    "pcm": "audio/pcm",
+}
+
+
+def _infer_audio_mime_type(response: Any, response_format: Any = None) -> str:
+    raw_response = getattr(response, "response", None)
+    if raw_response is None and isinstance(response, Mapping):
+        raw_response = response.get("response")
+
+    headers = getattr(raw_response, "headers", None)
+    if headers is not None:
+        content_type = headers.get("content-type")
+        if isinstance(content_type, str) and content_type:
+            return content_type.split(";", 1)[0].strip()
+
+    if isinstance(response_format, str) and response_format:
+        normalized = response_format.lower()
+        return _AUDIO_FORMAT_TO_MIME_TYPE.get(
+            normalized,
+            normalized if "/" in normalized else f"audio/{normalized}",
+        )
+
+    return "application/octet-stream"
+
+
+def _extract_audio_output(
+    response: Any,
+    *,
+    response_format: Any = None,
+    prefix: str = "generated_audio",
+) -> dict[str, Any]:
+    audio_bytes = getattr(response, "content", None)
+    if not isinstance(audio_bytes, (bytes, bytearray)) and isinstance(response, Mapping):
+        raw_response = response.get("response")
+        audio_bytes = getattr(raw_response, "content", None)
+
+    if not isinstance(audio_bytes, (bytes, bytearray)):
+        return {"type": "audio"}
+
+    mime_type = _infer_audio_mime_type(response, response_format)
+    resolved_attachment = _materialize_attachment(
+        audio_bytes,
+        mime_type=mime_type,
+        prefix=prefix,
+    )
+    if resolved_attachment is None:
+        return {
+            "type": "audio",
+            "mime_type": mime_type,
+            "audio_size_bytes": len(audio_bytes),
+        }
+
+    return {
+        "type": "audio",
+        "mime_type": resolved_attachment.mime_type,
+        "audio_size_bytes": len(audio_bytes),
+        **resolved_attachment.multimodal_part_payload,
+    }
+
+
 def _is_not_given(value: object) -> bool:
     """Return ``True`` when *value* is a provider ``NOT_GIVEN`` sentinel.
 

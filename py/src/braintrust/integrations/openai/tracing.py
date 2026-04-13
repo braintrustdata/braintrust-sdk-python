@@ -8,6 +8,7 @@ from collections.abc import Callable
 from typing import Any
 
 from braintrust.integrations.utils import (
+    _extract_audio_output,
     _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
@@ -1276,7 +1277,7 @@ class SpeechWrapper(BaseWrapper):
         super().__init__(create_fn, acreate_fn, "Speech")
 
     def process_output(self, response: Any, span: Span):
-        span.log(output={"type": "audio"})
+        span.log(output=_extract_audio_output(response, prefix="generated_speech"))
 
 
 class _AudioFileWrapper(BaseWrapper):

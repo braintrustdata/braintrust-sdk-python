@@ -6,6 +6,7 @@ from types import TracebackType
 from typing import Any
 
 from braintrust.integrations.utils import (
+    _extract_audio_output,
     _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
@@ -439,6 +440,46 @@ def _moderation_wrapper(wrapped, instance, args, kwargs):
             output=log_response["results"],
         )
         return moderation_response
+
+
+def _speech_wrapper(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.speech."""
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
+
+    with start_span(
+        **merge_dicts(dict(name="Speech", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
+    ) as span:
+        start = time.time()
+        speech_response = wrapped(*args, **kwargs)
+        span.log(
+            metrics=_timing_metrics(start, time.time()),
+            output=_extract_audio_output(
+                speech_response,
+                response_format=kwargs.get("response_format"),
+                prefix="generated_speech",
+            ),
+        )
+        return speech_response
+
+
+async def _aspeech_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.aspeech."""
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
+
+    with start_span(
+        **merge_dicts(dict(name="Speech", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
+    ) as span:
+        start = time.time()
+        speech_response = await wrapped(*args, **kwargs)
+        span.log(
+            metrics=_timing_metrics(start, time.time()),
+            output=_extract_audio_output(
+                speech_response,
+                response_format=kwargs.get("response_format"),
+                prefix="generated_speech",
+            ),
+        )
+        return speech_response
 
 
 def _transcription_wrapper(wrapped, instance, args, kwargs):

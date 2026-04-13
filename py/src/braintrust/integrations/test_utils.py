@@ -5,6 +5,8 @@ from braintrust import Attachment
 from braintrust.integrations.utils import (
     _attachment_filename_for_mime_type,
     _camel_to_snake,
+    _extract_audio_output,
+    _infer_audio_mime_type,
     _is_supported_metric_value,
     _log_and_end_span,
     _log_error_and_end_span,
@@ -299,6 +301,42 @@ def test_materialize_attachment_preserves_existing_attachment_filename_over_pref
 
 def test_materialize_attachment_returns_none_for_non_data_url_strings():
     assert _materialize_attachment("https://example.com/image.png") is None
+
+
+def test_infer_audio_mime_type_prefers_response_headers():
+    raw_response = unittest.mock.Mock(headers={"content-type": "audio/mpeg; charset=binary"})
+    response = unittest.mock.Mock(response=raw_response)
+
+    assert _infer_audio_mime_type(response, response_format="wav") == "audio/mpeg"
+
+
+def test_extract_audio_output_materializes_attachment_from_binary_response():
+    raw_response = unittest.mock.Mock(headers={"content-type": "audio/mpeg"})
+    response = unittest.mock.Mock(content=b"audio-bytes", response=raw_response)
+
+    output = _extract_audio_output(response, prefix="generated_speech")
+
+    assert output["type"] == "audio"
+    assert output["mime_type"] == "audio/mpeg"
+    assert output["audio_size_bytes"] == len(b"audio-bytes")
+    attachment = output["file"]["file_data"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "audio/mpeg"
+    assert attachment.reference["filename"] == "generated_speech.mp3"
+
+
+def test_extract_audio_output_supports_mapping_with_raw_response_only():
+    raw_response = unittest.mock.Mock(headers={"content-type": "audio/wav"}, content=b"wave")
+
+    output = _extract_audio_output({"response": raw_response}, prefix="generated_speech")
+
+    assert output["type"] == "audio"
+    assert output["mime_type"] == "audio/wav"
+    assert output["audio_size_bytes"] == len(b"wave")
+    attachment = output["file"]["file_data"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"] == "audio/wav"
+    assert attachment.reference["filename"] == "generated_speech.wav"
 
 
 def test_serialize_response_format_with_pydantic_basemodel_subclass():

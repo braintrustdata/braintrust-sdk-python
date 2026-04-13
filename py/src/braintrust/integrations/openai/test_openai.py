@@ -1933,6 +1933,15 @@ def _assert_audio_input_attachment(span) -> None:
     assert span["input"]["file"].reference["content_type"].startswith("audio/")
 
 
+def _assert_audio_output_attachment(span) -> None:
+    assert span["output"]["type"] == "audio"
+    assert span["output"]["audio_size_bytes"] > 0
+    attachment = span["output"]["file"]["file_data"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"].startswith("audio/")
+    assert attachment.reference["filename"].startswith("generated_speech")
+
+
 def _write_test_png(path: str, *, width: int = 64, height: int = 64) -> None:
     """Write a simple opaque red RGBA PNG without external dependencies."""
 
@@ -2067,7 +2076,7 @@ def test_openai_audio_speech(memory_logger):
     assert span["metadata"]["voice"] == "alloy"
     assert span["metadata"]["provider"] == "openai"
     assert span["input"] == "Hello, this is a test."
-    assert span["output"] == {"type": "audio"}
+    _assert_audio_output_attachment(span)
 
 
 @pytest.mark.vcr
@@ -2175,7 +2184,7 @@ async def test_openai_audio_speech_async(memory_logger):
         assert span["metadata"]["voice"] == "alloy"
         assert span["metadata"]["provider"] == "openai"
         assert span["input"] == "Hello, this is a test."
-        assert span["output"] == {"type": "audio"}
+        _assert_audio_output_attachment(span)
 
 
 @pytest.mark.asyncio

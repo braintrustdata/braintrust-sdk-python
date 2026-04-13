@@ -18,6 +18,15 @@ TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with number
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
 
 
+def _assert_speech_output_attachment(span) -> None:
+    assert span["output"]["type"] == "audio"
+    assert span["output"]["audio_size_bytes"] > 0
+    attachment = span["output"]["file"]["file_data"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["content_type"].startswith("audio/")
+    assert attachment.reference["filename"].startswith("generated_speech")
+
+
 @pytest.fixture(autouse=True)
 def _patch():
     patch_litellm()
@@ -400,6 +409,57 @@ async def test_litellm_atranscription(memory_logger):
     assert span["input"]["file"].reference["filename"] == "test_audio.wav"
     assert span["input"]["file"].reference["content_type"] in ("audio/x-wav", "audio/wav")  # OS-dependent
     assert span["output"] == "you"
+
+
+@pytest.mark.vcr
+def test_litellm_speech(memory_logger):
+    assert not memory_logger.pop()
+
+    response = litellm.speech(
+        model="tts-1",
+        voice="alloy",
+        input="Hello, this is a test.",
+        response_format="mp3",
+    )
+
+    assert response
+    assert response.content
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "tts-1"
+    assert span["metadata"]["voice"] == "alloy"
+    assert span["metadata"]["response_format"] == "mp3"
+    assert span["metadata"]["provider"] == "litellm"
+    assert span["input"] == "Hello, this is a test."
+    _assert_speech_output_attachment(span)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_litellm_aspeech(memory_logger):
+    assert not memory_logger.pop()
+
+    response = await litellm.aspeech(
+        model="tts-1",
+        voice="alloy",
+        input="Hello, this is a test.",
+        response_format="mp3",
+    )
+
+    assert response
+    assert response.content
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "tts-1"
+    assert span["metadata"]["voice"] == "alloy"
+    assert span["metadata"]["response_format"] == "mp3"
+    assert span["metadata"]["provider"] == "litellm"
+    assert span["input"] == "Hello, this is a test."
+    _assert_speech_output_attachment(span)
 
 
 @pytest.mark.vcr
