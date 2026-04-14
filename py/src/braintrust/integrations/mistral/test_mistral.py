@@ -32,6 +32,7 @@ try:
     Fim = importlib.import_module("mistralai.client.fim").Fim
     Agents = importlib.import_module("mistralai.client.agents").Agents
     Ocr = importlib.import_module("mistralai.client.ocr").Ocr
+    Transcriptions = importlib.import_module("mistralai.client.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.client.models")
 except ImportError:
     Chat = importlib.import_module("mistralai.chat").Chat
@@ -39,7 +40,13 @@ except ImportError:
     Fim = importlib.import_module("mistralai.fim").Fim
     Agents = importlib.import_module("mistralai.agents").Agents
     Ocr = importlib.import_module("mistralai.ocr").Ocr
+    Transcriptions = importlib.import_module("mistralai.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.models")
+
+try:
+    Speech = importlib.import_module("mistralai.client.speech").Speech
+except ImportError:
+    Speech = None
 
 
 PROJECT_NAME = "test-mistral-sdk"
@@ -56,6 +63,70 @@ TEST_PDF_DATA_URL = (
     "data:application/pdf;base64,"
     "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
 )
+AUDIO_TRANSCRIPTION_MODEL = "voxtral-mini-2507"
+SPEECH_MODEL = "voxtral-mini-tts-latest"
+SPEECH_VOICE_ID = "en_paul_neutral"
+TEST_AUDIO_FILE = Path(__file__).resolve().parents[2] / "fixtures" / "test_audio.wav"
+
+
+def _transcription_file_payload(file_obj):
+    return {
+        "file_name": TEST_AUDIO_FILE.name,
+        "content": file_obj,
+        "content_type": "audio/wav",
+    }
+
+
+def _assert_speech_output_attachment(span):
+    assert span["output"]["type"] == "audio"
+    assert span["output"]["audio_size_bytes"] > 0
+    assert span["output"]["mime_type"] == "audio/mpeg"
+    attachment = span["output"]["file"]["file_data"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["filename"].startswith("generated_speech")
+    assert attachment.reference["content_type"] == "audio/mpeg"
+
+
+def _assert_transcription_complete_span(span, response_text, start, end, *, check_content_type=False):
+    assert isinstance(span["input"]["file"], Attachment)
+    assert span["input"]["file"].reference["filename"] == TEST_AUDIO_FILE.name
+    if check_content_type:
+        assert span["input"]["file"].reference["content_type"] == "audio/wav"
+    assert span["metadata"]["provider"] == "mistral"
+    assert span["metadata"]["model"] == AUDIO_TRANSCRIPTION_MODEL
+    assert span["output"] == response_text
+    assert span["metrics"]["prompt_audio_seconds"] > 0
+    assert span["metrics"]["tokens"] > 0
+    assert_metrics_are_valid(span["metrics"], start, end)
+
+
+def _assert_speech_complete_span(span, start, end):
+    assert span["input"] == "Hello from Braintrust."
+    assert span["metadata"]["provider"] == "mistral"
+    assert span["metadata"]["model"] == SPEECH_MODEL
+    assert span["metadata"]["voice_id"] == SPEECH_VOICE_ID
+    assert span["metadata"]["response_format"] == "mp3"
+    _assert_speech_output_attachment(span)
+    assert start <= span["metrics"]["start"] <= span["metrics"]["end"] <= end
+    assert span["metrics"]["duration"] >= 0
+
+
+def _audio_method_refs():
+    refs = {}
+    for cls, methods in (
+        (Transcriptions, ("complete", "complete_async", "stream", "stream_async")),
+        (Speech, ("complete", "complete_async") if Speech is not None else ()),
+    ):
+        if cls is None:
+            continue
+        for method in methods:
+            refs[(cls, method)] = inspect.getattr_static(cls, method)
+    return refs
+
+
+def _restore_method_refs(monkeypatch, refs):
+    for (cls, method), original in refs.items():
+        monkeypatch.setattr(cls, method, original)
 
 
 @pytest.fixture(scope="module")
@@ -523,6 +594,162 @@ async def test_wrap_mistral_fim_stream_async(memory_logger):
 
 
 @pytest.mark.vcr
+def test_wrap_mistral_audio_transcriptions_complete_sync(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    with TEST_AUDIO_FILE.open("rb") as file_obj:
+        start = time.time()
+        response = client.audio.transcriptions.complete(
+            model=AUDIO_TRANSCRIPTION_MODEL,
+            file=_transcription_file_payload(file_obj),
+        )
+        end = time.time()
+
+    assert response.text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_transcription_complete_span(spans[0], response.text, start, end, check_content_type=True)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_wrap_mistral_audio_transcriptions_complete_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    with TEST_AUDIO_FILE.open("rb") as file_obj:
+        start = time.time()
+        response = await client.audio.transcriptions.complete_async(
+            model=AUDIO_TRANSCRIPTION_MODEL,
+            file=_transcription_file_payload(file_obj),
+        )
+        end = time.time()
+
+    assert response.text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_transcription_complete_span(spans[0], response.text, start, end)
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_audio_transcriptions_stream_sync(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    with TEST_AUDIO_FILE.open("rb") as file_obj:
+        start = time.time()
+        with client.audio.transcriptions.stream(
+            model=AUDIO_TRANSCRIPTION_MODEL,
+            file=_transcription_file_payload(file_obj),
+        ) as stream:
+            events = list(stream)
+        end = time.time()
+
+    assert events
+    streamed_text = "".join(
+        event.data.text
+        for event in events
+        if getattr(event, "event", None) == "transcription.text.delta"
+        and isinstance(getattr(event.data, "text", None), str)
+    )
+    final_text = next(
+        event.data.text
+        for event in reversed(events)
+        if getattr(event, "event", None) == "transcription.done" and isinstance(getattr(event.data, "text", None), str)
+    )
+    assert streamed_text == final_text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["provider"] == "mistral"
+    assert span["metadata"]["model"] == AUDIO_TRANSCRIPTION_MODEL
+    assert span["metadata"]["stream"] == True
+    assert span["output"] == final_text
+    assert span["metrics"]["prompt_audio_seconds"] > 0
+    assert span["metrics"]["time_to_first_token"] >= 0
+    assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_audio_speech_complete_sync(memory_logger):
+    if Speech is None:
+        pytest.skip("Mistral speech API is unavailable in this SDK version")
+
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    start = time.time()
+    response = client.audio.speech.complete(
+        input="Hello from Braintrust.",
+        model=SPEECH_MODEL,
+        response_format="mp3",
+        voice_id=SPEECH_VOICE_ID,
+    )
+    end = time.time()
+
+    assert response.audio_data
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_speech_complete_span(spans[0], start, end)
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_wrap_mistral_audio_speech_complete_async(memory_logger):
+    if Speech is None:
+        pytest.skip("Mistral speech API is unavailable in this SDK version")
+
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    start = time.time()
+    response = await client.audio.speech.complete_async(
+        input="Hello from Braintrust.",
+        model=SPEECH_MODEL,
+        response_format="mp3",
+        voice_id=SPEECH_VOICE_ID,
+    )
+    end = time.time()
+
+    assert response.audio_data
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_speech_complete_span(spans[0], start, end)
+
+
+@pytest.mark.vcr(cassette_name="test_wrap_mistral_audio_transcriptions_complete_sync")
+def test_mistral_integration_setup_instruments_audio_transcriptions(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    original_audio_methods = _audio_method_refs()
+
+    assert MistralIntegration.setup()
+    client = _get_client()
+    try:
+        with TEST_AUDIO_FILE.open("rb") as file_obj:
+            start = time.time()
+            response = client.audio.transcriptions.complete(
+                model=AUDIO_TRANSCRIPTION_MODEL,
+                file=_transcription_file_payload(file_obj),
+            )
+            end = time.time()
+    finally:
+        _restore_method_refs(monkeypatch, original_audio_methods)
+
+    assert response.text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_transcription_complete_span(spans[0], response.text, start, end)
+
+
+@pytest.mark.vcr
 def test_mistral_integration_setup_creates_spans(memory_logger, monkeypatch):
     assert not memory_logger.pop()
 
@@ -542,6 +769,7 @@ def test_mistral_integration_setup_creates_spans(memory_logger, monkeypatch):
     original_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
     original_ocr_process = inspect.getattr_static(Ocr, "process")
     original_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
+    original_audio_methods = _audio_method_refs()
 
     assert MistralIntegration.setup()
     client = _get_client()
@@ -569,6 +797,7 @@ def test_mistral_integration_setup_creates_spans(memory_logger, monkeypatch):
     monkeypatch.setattr(Agents, "stream_async", original_agents_stream_async)
     monkeypatch.setattr(Ocr, "process", original_ocr_process)
     monkeypatch.setattr(Ocr, "process_async", original_ocr_process_async)
+    _restore_method_refs(monkeypatch, original_audio_methods)
 
     assert "4" in str(response.choices[0].message.content)
 
@@ -598,6 +827,7 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     first_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
     first_ocr_process = inspect.getattr_static(Ocr, "process")
     first_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
+    first_audio_methods = _audio_method_refs()
 
     assert MistralIntegration.setup()
     patched_complete = inspect.getattr_static(Chat, "complete")
@@ -616,6 +846,7 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     patched_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
     patched_ocr_process = inspect.getattr_static(Ocr, "process")
     patched_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
+    patched_audio_methods = _audio_method_refs()
 
     assert MistralIntegration.setup()
     assert inspect.getattr_static(Chat, "complete") is patched_complete
@@ -634,6 +865,8 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     assert inspect.getattr_static(Agents, "stream_async") is patched_agents_stream_async
     assert inspect.getattr_static(Ocr, "process") is patched_ocr_process
     assert inspect.getattr_static(Ocr, "process_async") is patched_ocr_process_async
+    for key, method in patched_audio_methods.items():
+        assert inspect.getattr_static(*key) is method
 
     monkeypatch.setattr(Chat, "complete", first_complete)
     monkeypatch.setattr(Chat, "complete_async", first_complete_async)
@@ -651,6 +884,7 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     monkeypatch.setattr(Agents, "stream_async", first_agents_stream_async)
     monkeypatch.setattr(Ocr, "process", first_ocr_process)
     monkeypatch.setattr(Ocr, "process_async", first_ocr_process_async)
+    _restore_method_refs(monkeypatch, first_audio_methods)
 
 
 def test_chat_complete_wrapper_logs_errors(memory_logger):

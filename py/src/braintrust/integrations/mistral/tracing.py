@@ -9,6 +9,7 @@ from typing import Any
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import (
     _camel_to_snake,
+    _infer_audio_mime_type,
     _is_supported_metric_value,
     _log_and_end_span,
     _log_error_and_end_span,
@@ -88,6 +89,20 @@ _OCR_METADATA_KEYS = (
     "table_format",
     "extract_header",
     "extract_footer",
+)
+_SPEECH_METADATA_KEYS = (
+    "model",
+    "voice_id",
+    "ref_audio",
+    "response_format",
+)
+_TRANSCRIPTIONS_METADATA_KEYS = (
+    "model",
+    "language",
+    "temperature",
+    "diarize",
+    "context_bias",
+    "timestamp_granularities",
 )
 
 
@@ -258,6 +273,64 @@ def _build_ocr_metadata(kwargs: dict[str, Any]) -> dict[str, Any]:
     return metadata
 
 
+def _build_speech_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) -> dict[str, Any]:
+    return _build_request_metadata(kwargs, _SPEECH_METADATA_KEYS, stream=stream)
+
+
+def _build_transcriptions_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) -> dict[str, Any]:
+    return _build_request_metadata(kwargs, _TRANSCRIPTIONS_METADATA_KEYS, stream=stream)
+
+
+def _get_value(value: Any, *keys: str) -> Any:
+    if isinstance(value, dict):
+        for key in keys:
+            if key in value and value[key] is not None and not _is_unset(value[key]):
+                return value[key]
+        return None
+
+    for key in keys:
+        attr = getattr(value, key, None)
+        if attr is not None and not _is_unset(attr):
+            return attr
+    return None
+
+
+def _transcription_input_attachment(file_value: Any) -> Any:
+    if file_value is None or _is_unset(file_value):
+        return None
+
+    attachment_value = _get_value(file_value, "content")
+    filename = _get_value(file_value, "file_name", "fileName")
+    mime_type = _get_value(file_value, "content_type", "contentType", "Content-Type")
+
+    if attachment_value is None:
+        attachment_value = file_value
+
+    resolved = _materialize_attachment(
+        attachment_value,
+        filename=filename,
+        mime_type=mime_type,
+        prefix="input_audio",
+    )
+    return resolved.attachment if resolved is not None else None
+
+
+def _transcriptions_input(kwargs: dict[str, Any]) -> dict[str, Any] | None:
+    span_input: dict[str, Any] = {}
+
+    file_value = kwargs.get("file")
+    if file_value is not None and not _is_unset(file_value):
+        attachment = _transcription_input_attachment(file_value)
+        span_input["file"] = attachment if attachment is not None else "[audio]"
+
+    for key in ("file_url", "file_id"):
+        value = kwargs.get(key)
+        if value is not None and not _is_unset(value):
+            span_input[key] = value
+
+    return span_input or None
+
+
 def _fim_input(kwargs: dict[str, Any]) -> dict[str, Any]:
     span_input = {"prompt": kwargs.get("prompt")}
     suffix = kwargs.get("suffix")
@@ -378,6 +451,48 @@ def _ocr_response_to_metadata(response: Any) -> dict[str, Any]:
     }
 
 
+def _transcription_output(response: Any) -> str | None:
+    return _get_value(response, "text")
+
+
+def _transcription_response_to_metadata(response: Any) -> dict[str, Any]:
+    metadata = _response_to_metadata(response)
+    language = _get_value(response, "language")
+    finish_reason = _get_value(response, "finish_reason")
+    segments = _get_value(response, "segments")
+
+    if language is not None:
+        metadata["language"] = language
+    if finish_reason is not None:
+        metadata["finish_reason"] = finish_reason
+    if isinstance(segments, list):
+        metadata["segments_count"] = len(segments)
+    return metadata
+
+
+def _speech_output(response: Any, *, response_format: Any) -> dict[str, Any]:
+    audio_data = _get_value(response, "audio_data")
+    mime_type = _infer_audio_mime_type(response, response_format=response_format)
+
+    if not isinstance(audio_data, str):
+        return {"type": "audio", "mime_type": mime_type}
+
+    resolved = _materialize_attachment(
+        audio_data,
+        mime_type=mime_type,
+        prefix="generated_speech",
+    )
+    if resolved is None:
+        return {"type": "audio", "mime_type": mime_type}
+
+    return {
+        "type": "audio",
+        "mime_type": resolved.mime_type,
+        "audio_size_bytes": len(resolved.attachment.data),
+        **resolved.multimodal_part_payload,
+    }
+
+
 def _call_with_error_logging(span: Any, wrapped: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     try:
         return wrapped(*args, **kwargs)
@@ -487,6 +602,90 @@ def _chunk_has_output(item: Any) -> bool:
     return False
 
 
+def _transcription_chunk_has_output(item: Any) -> bool:
+    return getattr(item, "event", None) == "transcription.text.delta" and isinstance(
+        _get_value(getattr(item, "data", item), "text"),
+        str,
+    )
+
+
+def _aggregate_transcription_events(items: list[Any]) -> dict[str, Any]:
+    text_parts: list[str] = []
+    final_text = None
+    model = None
+    usage = None
+    language = None
+    segments = None
+    finish_reason = None
+
+    for item in items:
+        data = getattr(item, "data", item)
+        event = getattr(item, "event", None)
+        if event == "transcription.text.delta":
+            text = _get_value(data, "text")
+            if isinstance(text, str):
+                text_parts.append(text)
+            continue
+
+        if event != "transcription.done":
+            continue
+
+        model = _get_value(data, "model") or model
+        usage = _get_value(data, "usage") or usage
+        language_value = _get_value(data, "language")
+        if language_value is not None:
+            language = language_value
+        segments_value = _get_value(data, "segments")
+        if segments_value is not None:
+            segments = segments_value
+        finish_reason = _get_value(data, "finish_reason") or finish_reason
+        text = _get_value(data, "text")
+        if isinstance(text, str):
+            final_text = text
+
+    result: dict[str, Any] = {"text": final_text if final_text is not None else "".join(text_parts)}
+    if model is not None:
+        result["model"] = model
+    if usage is not None:
+        result["usage"] = sanitize_mistral_logged_value(usage)
+    if language is not None:
+        result["language"] = language
+    if isinstance(segments, list):
+        result["segments"] = sanitize_mistral_logged_value(segments)
+    if finish_reason is not None:
+        result["finish_reason"] = finish_reason
+    return result
+
+
+def _speech_chunk_has_output(item: Any) -> bool:
+    return getattr(item, "event", None) == "speech.audio.delta" and isinstance(
+        _get_value(getattr(item, "data", item), "audio_data"),
+        str,
+    )
+
+
+def _aggregate_speech_events(items: list[Any]) -> dict[str, Any]:
+    audio_parts: list[str] = []
+    usage = None
+
+    for item in items:
+        data = getattr(item, "data", item)
+        event = getattr(item, "event", None)
+        if event == "speech.audio.delta":
+            audio_data = _get_value(data, "audio_data")
+            if isinstance(audio_data, str):
+                audio_parts.append(audio_data)
+            continue
+
+        if event == "speech.audio.done":
+            usage = _get_value(data, "usage") or usage
+
+    result = {"audio_data": "".join(audio_parts)}
+    if usage is not None:
+        result["usage"] = sanitize_mistral_logged_value(usage)
+    return result
+
+
 def _aggregate_completion_events(items: list[Any]) -> dict[str, Any]:
     response_id = None
     model = None
@@ -577,12 +776,90 @@ def _finalize_ocr_response(span: Any, request_metadata: dict[str, Any], response
     )
 
 
+def _finalize_transcription_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
+    response_metadata = _transcription_response_to_metadata(response)
+    _log_and_end_span(
+        span,
+        output=_transcription_output(response),
+        metrics=_merge_metrics(start_time, _get_value(response, "usage")),
+        metadata={**request_metadata, **response_metadata},
+    )
+
+
+def _finalize_speech_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
+    _log_and_end_span(
+        span,
+        output=_speech_output(response, response_format=request_metadata.get("response_format")),
+        metrics=_merge_metrics(start_time, _get_value(response, "usage")),
+        metadata=request_metadata,
+    )
+
+
+def _finalize_completion_stream(
+    span: Any,
+    metadata: dict[str, Any],
+    items: list[Any],
+    start_time: float,
+    first_token_time: float | None,
+):
+    response = _aggregate_completion_events(items)
+    _log_and_end_span(
+        span,
+        output=response.get("choices"),
+        metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
+        metadata={**metadata, **_response_to_metadata(response)},
+    )
+
+
+def _finalize_transcription_stream(
+    span: Any,
+    metadata: dict[str, Any],
+    items: list[Any],
+    start_time: float,
+    first_token_time: float | None,
+):
+    response = _aggregate_transcription_events(items)
+    _log_and_end_span(
+        span,
+        output=response.get("text"),
+        metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
+        metadata={**metadata, **_transcription_response_to_metadata(response)},
+    )
+
+
+def _finalize_speech_stream(
+    span: Any,
+    metadata: dict[str, Any],
+    items: list[Any],
+    start_time: float,
+    first_token_time: float | None,
+):
+    response = _aggregate_speech_events(items)
+    _log_and_end_span(
+        span,
+        output=_speech_output(response, response_format=metadata.get("response_format")),
+        metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
+        metadata=metadata,
+    )
+
+
 class _TracedMistralSyncStream:
-    def __init__(self, stream: Any, span: Any, metadata: dict[str, Any], start_time: float):
+    def __init__(
+        self,
+        stream: Any,
+        span: Any,
+        metadata: dict[str, Any],
+        start_time: float,
+        *,
+        chunk_has_output: Any = _chunk_has_output,
+        finalize_stream: Any = _finalize_completion_stream,
+    ):
         self._stream = stream
         self._span = span
         self._metadata = metadata
         self._start_time = start_time
+        self._chunk_has_output = chunk_has_output
+        self._finalize_stream = finalize_stream
         self._first_token_time = None
         self._items = []
         self._closed = False
@@ -603,7 +880,7 @@ class _TracedMistralSyncStream:
             self._finalize(error=error)
             raise
 
-        if self._first_token_time is None and _chunk_has_output(item):
+        if self._first_token_time is None and self._chunk_has_output(item):
             self._first_token_time = time.time()
         self._items.append(item)
         return item
@@ -630,21 +907,32 @@ class _TracedMistralSyncStream:
             _log_error_and_end_span(self._span, error)
             return
 
-        response = _aggregate_completion_events(self._items)
-        _log_and_end_span(
+        self._finalize_stream(
             self._span,
-            output=response.get("choices"),
-            metrics=_merge_metrics(self._start_time, response.get("usage"), self._first_token_time),
-            metadata={**self._metadata, **_response_to_metadata(response)},
+            self._metadata,
+            self._items,
+            self._start_time,
+            self._first_token_time,
         )
 
 
 class _TracedMistralAsyncStream:
-    def __init__(self, stream: Any, span: Any, metadata: dict[str, Any], start_time: float):
+    def __init__(
+        self,
+        stream: Any,
+        span: Any,
+        metadata: dict[str, Any],
+        start_time: float,
+        *,
+        chunk_has_output: Any = _chunk_has_output,
+        finalize_stream: Any = _finalize_completion_stream,
+    ):
         self._stream = stream
         self._span = span
         self._metadata = metadata
         self._start_time = start_time
+        self._chunk_has_output = chunk_has_output
+        self._finalize_stream = finalize_stream
         self._first_token_time = None
         self._items = []
         self._closed = False
@@ -665,7 +953,7 @@ class _TracedMistralAsyncStream:
             self._finalize(error=error)
             raise
 
-        if self._first_token_time is None and _chunk_has_output(item):
+        if self._first_token_time is None and self._chunk_has_output(item):
             self._first_token_time = time.time()
         self._items.append(item)
         return item
@@ -692,12 +980,12 @@ class _TracedMistralAsyncStream:
             _log_error_and_end_span(self._span, error)
             return
 
-        response = _aggregate_completion_events(self._items)
-        _log_and_end_span(
+        self._finalize_stream(
             self._span,
-            output=response.get("choices"),
-            metrics=_merge_metrics(self._start_time, response.get("usage"), self._first_token_time),
-            metadata={**self._metadata, **_response_to_metadata(response)},
+            self._metadata,
+            self._items,
+            self._start_time,
+            self._first_token_time,
         )
 
 
@@ -809,6 +1097,98 @@ async def _embeddings_create_async_wrapper(wrapped, instance, args, kwargs):
     return result
 
 
+def _transcriptions_complete_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_transcriptions_metadata(kwargs)
+    span = _start_span("mistral.audio.transcriptions.complete", _transcriptions_input(kwargs), request_metadata)
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    _finalize_transcription_response(span, request_metadata, result, start_time)
+    return result
+
+
+async def _transcriptions_complete_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_transcriptions_metadata(kwargs)
+    span = _start_span("mistral.audio.transcriptions.complete", _transcriptions_input(kwargs), request_metadata)
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    _finalize_transcription_response(span, request_metadata, result, start_time)
+    return result
+
+
+def _transcriptions_stream_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_transcriptions_metadata(kwargs, stream=True)
+    span = _start_span("mistral.audio.transcriptions.stream", _transcriptions_input(kwargs), request_metadata)
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralSyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_transcription_chunk_has_output,
+        finalize_stream=_finalize_transcription_stream,
+    )
+
+
+async def _transcriptions_stream_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_transcriptions_metadata(kwargs, stream=True)
+    span = _start_span("mistral.audio.transcriptions.stream", _transcriptions_input(kwargs), request_metadata)
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralAsyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_transcription_chunk_has_output,
+        finalize_stream=_finalize_transcription_stream,
+    )
+
+
+def _speech_complete_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_speech_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span("mistral.audio.speech.complete", kwargs.get("input"), request_metadata)
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralSyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_speech_chunk_has_output,
+            finalize_stream=_finalize_speech_stream,
+        )
+
+    _finalize_speech_response(span, request_metadata, result, start_time)
+    return result
+
+
+async def _speech_complete_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_speech_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span("mistral.audio.speech.complete", kwargs.get("input"), request_metadata)
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralAsyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_speech_chunk_has_output,
+            finalize_stream=_finalize_speech_stream,
+        )
+
+    _finalize_speech_response(span, request_metadata, result, start_time)
+    return result
+
+
 def _fim_complete_wrapper(wrapped, instance, args, kwargs):
     request_metadata = _build_fim_metadata(kwargs, stream=bool(kwargs.get("stream")))
     span = _start_span("mistral.fim.complete", _fim_input(kwargs), request_metadata)
@@ -875,7 +1255,15 @@ async def _ocr_process_async_wrapper(wrapped, instance, args, kwargs):
 
 def wrap_mistral(client: Any) -> Any:
     """Wrap a single Mistral client instance for tracing."""
-    from .patchers import AgentsPatcher, ChatPatcher, EmbeddingsPatcher, FimPatcher, OcrPatcher
+    from .patchers import (
+        AgentsPatcher,
+        ChatPatcher,
+        EmbeddingsPatcher,
+        FimPatcher,
+        OcrPatcher,
+        SpeechPatcher,
+        TranscriptionsPatcher,
+    )
 
     chat = getattr(client, "chat", None)
     if chat is not None:
@@ -896,5 +1284,15 @@ def wrap_mistral(client: Any) -> Any:
     ocr = getattr(client, "ocr", None)
     if ocr is not None:
         OcrPatcher.wrap_target(ocr)
+
+    audio = getattr(client, "audio", None)
+    if audio is not None:
+        transcriptions = getattr(audio, "transcriptions", None)
+        if transcriptions is not None:
+            TranscriptionsPatcher.wrap_target(transcriptions)
+
+        speech = getattr(audio, "speech", None)
+        if speech is not None:
+            SpeechPatcher.wrap_target(speech)
 
     return client

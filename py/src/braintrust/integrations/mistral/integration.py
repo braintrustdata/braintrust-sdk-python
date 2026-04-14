@@ -2,7 +2,15 @@
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import AgentsPatcher, ChatPatcher, EmbeddingsPatcher, FimPatcher, OcrPatcher
+from .patchers import (
+    AgentsPatcher,
+    ChatPatcher,
+    EmbeddingsPatcher,
+    FimPatcher,
+    OcrPatcher,
+    SpeechPatcher,
+    TranscriptionsPatcher,
+)
 
 
 class MistralIntegration(BaseIntegration):
@@ -17,4 +25,6 @@ class MistralIntegration(BaseIntegration):
         FimPatcher,
         AgentsPatcher,
         OcrPatcher,
+        TranscriptionsPatcher,
+        SpeechPatcher,
     )
