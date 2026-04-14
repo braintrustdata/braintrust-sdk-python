@@ -593,7 +593,7 @@ def pluralize(n, singular, plural):
         return plural
 
 
-def report_failures(evaluator: Evaluator, failing_results: Iterable[EvalResult], verbose: bool, jsonl: bool) -> None:
+def report_failures(evaluator: Evaluator, failing_results: Sequence[EvalResult], verbose: bool, jsonl: bool) -> None:
     eprint(
         f"{bcolors.FAIL}Evaluator {evaluator.eval_name} failed with {len(failing_results)} {pluralize(len(failing_results), 'error', 'errors')}{bcolors.ENDC}"
     )
