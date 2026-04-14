@@ -38,7 +38,7 @@ JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSO
 ValidatedParameters = dict[str, object]
 ParameterSchema = PromptParameter | ModelParameter | type[object] | None
 EvalParameters = Mapping[str, ParameterSchema]
-ParametersSchema = dict[str, Any]
+ParametersSchema = Mapping[str, Any]
 
 
 @dataclass
