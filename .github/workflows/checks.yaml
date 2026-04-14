@@ -97,8 +97,7 @@ jobs:
         shell: bash
         run: |
           mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
-            --exclude-session pylint \
-            --exclude-session test_types
+            --exclude-static-checks
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
