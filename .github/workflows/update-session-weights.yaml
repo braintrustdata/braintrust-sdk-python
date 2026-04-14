@@ -12,8 +12,8 @@ permissions:
 
 jobs:
   measure:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: windows-2025
+    timeout-minutes: 45
 
     strategy:
       fail-fast: false
@@ -25,10 +25,11 @@ jobs:
       - name: Setup Python environment
         uses: ./.github/actions/setup-python-env
         with:
-          python-version: "3.13"
+          python-version: "3.10"
       - name: Run nox tests (shard ${{ matrix.shard }}/4)
+        shell: bash
         run: |
-          mise exec python@3.13 -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
+          mise exec python@3.10 -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
             --output-durations measured-durations-${{ matrix.shard }}.json
       - name: Upload measured durations
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -39,7 +40,7 @@ jobs:
 
   update:
     needs: [measure]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -70,7 +71,7 @@ jobs:
           body: |
             Automated weekly update of `py/scripts/session-weights.json`.
 
-            Session durations were re-measured on `ubuntu-latest` with Python 3.13
+            Session durations were re-measured on `windows-2025` with Python 3.10
             and at least one session drifted beyond the 50% threshold.
 
             This keeps nox shard balancing accurate.
