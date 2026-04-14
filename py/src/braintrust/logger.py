@@ -24,10 +24,8 @@ from multiprocessing import cpu_count
 from types import TracebackType
 from typing import (
     Any,
-    Dict,
     Generic,
     Literal,
-    Optional,
     TypedDict,
     TypeVar,
     Union,
@@ -1067,7 +1065,7 @@ class _HTTPBackgroundLogger:
         self.started = False
 
         self.logger = logging.getLogger("braintrust")
-        self.queue: "LogQueue[LazyValue[Dict[str, Any]]]" = LogQueue(maxsize=self.queue_maxsize)
+        self.queue: "LogQueue[LazyValue[dict[str, Any]]]" = LogQueue(maxsize=self.queue_maxsize)
 
         # Counter for tracking overflow uploads (useful for testing)
         self._overflow_upload_count = 0
@@ -1536,7 +1534,7 @@ def init(
     project: str | None = ...,
     experiment: str | None = ...,
     description: str | None = ...,
-    dataset: Optional["Dataset"] = ...,
+    dataset: "Dataset | None" = ...,
     parameters: RemoteEvalParameters | ParametersRef | None = ...,
     open: Literal[False] = ...,
     base_experiment: str | None = ...,
@@ -1561,7 +1559,7 @@ def init(
     project: str | None = ...,
     experiment: str | None = ...,
     description: str | None = ...,
-    dataset: Optional["Dataset"] = ...,
+    dataset: "Dataset | None" = ...,
     parameters: RemoteEvalParameters | ParametersRef | None = ...,
     open: Literal[True] = ...,
     base_experiment: str | None = ...,
@@ -1585,7 +1583,7 @@ def init(
     project: str | None = None,
     experiment: str | None = None,
     description: str | None = None,
-    dataset: Optional["Dataset"] | DatasetRef = None,
+    dataset: "Dataset | None" | DatasetRef = None,
     parameters: RemoteEvalParameters | ParametersRef | None = None,
     open: bool = False,
     base_experiment: str | None = None,
@@ -2345,13 +2343,13 @@ def summarize(summarize_scores: bool = True, comparison_experiment_id: str | Non
     )
 
 
-def current_experiment() -> Optional["Experiment"]:
+def current_experiment() -> "Experiment | None":
     """Returns the currently-active experiment (set by `braintrust.init(...)`). Returns None if no current experiment has been set."""
 
     return _state.current_experiment
 
 
-def current_logger() -> Optional["Logger"]:
+def current_logger() -> "Logger | None":
     """Returns the currently-active logger (set by `braintrust.init_logger(...)`). Returns None if no current logger has been set."""
 
     return _state._cv_logger.get() or _state._local_logger
@@ -3759,7 +3757,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
     def __init__(
         self,
         lazy_metadata: LazyValue[ProjectExperimentMetadata],
-        dataset: Optional["Dataset"] = None,
+        dataset: "Dataset | None" = None,
         state: BraintrustState | None = None,
     ):
         self._lazy_metadata = lazy_metadata
