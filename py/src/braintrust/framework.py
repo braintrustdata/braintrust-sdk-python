@@ -85,6 +85,7 @@ class EvalCase(SerializableDataClass, Generic[Input, Expected]):
     expected: Expected | None = None
     metadata: Metadata | None = None
     tags: Sequence[str] | None = None
+    trial_count: int | None = None
 
     # These fields are only set if the EvalCase is part of a Dataset.
     id: str | None = None
@@ -1677,7 +1678,12 @@ async def _run_evaluator_internal_impl(
         disable=position is None,
     ) as pbar:
         async for datum in pbar:
-            for trial_index in range(evaluator.trial_count):
+            if isinstance(datum, dict):
+                datum_trial_count = datum.get("trial_count")
+            else:
+                datum_trial_count = getattr(datum, "trial_count", None)
+            trial_count = datum_trial_count if datum_trial_count is not None else evaluator.trial_count
+            for trial_index in range(trial_count):
                 tasks.append(asyncio.create_task(with_max_concurrency(run_evaluator_task(datum, trial_index))))
 
     if not tasks:

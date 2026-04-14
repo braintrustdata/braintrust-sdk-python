@@ -25,6 +25,7 @@ class EvalCaseDictNoOutput(Generic[Input], TypedDict):
     input: Input
     metadata: NotRequired[dict[str, Any] | None]
     tags: NotRequired[Sequence[str] | None]
+    trial_count: NotRequired[int | None]
 
     id: NotRequired[str | None]
     _xact_id: NotRequired[str | None]

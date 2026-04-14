@@ -290,6 +290,80 @@ async def test_hooks_trial_index_multiple_inputs():
     assert sorted(input_2_trials) == [0, 1]
 
 
+@pytest.mark.asyncio
+async def test_per_input_trial_count_overrides_global():
+    """Test that per-input trial_count overrides the global trial_count."""
+    trial_data: List[tuple] = []  # (input, trial_index)
+
+    def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
+        trial_data.append((input_value, hooks.trial_index))
+        return input_value * 2
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-per-input-trial-count",
+        data=[
+            EvalCase(input=1, expected=2),  # inherits global trial_count=2
+            EvalCase(input=2, expected=4, trial_count=5),  # overrides to 5
+            EvalCase(input=3, expected=6, trial_count=1),  # overrides to 1
+        ],
+        task=task_with_hooks,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        trial_count=2,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    # 2 + 5 + 1 = 8 total results
+    assert len(result.results) == 8
+    assert len(trial_data) == 8
+
+    input_1_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 1])
+    input_2_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 2])
+    input_3_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 3])
+
+    assert input_1_trials == [0, 1]
+    assert input_2_trials == [0, 1, 2, 3, 4]
+    assert input_3_trials == [0]
+
+
+@pytest.mark.asyncio
+async def test_per_input_trial_count_without_global():
+    """Test that per-input trial_count works when no global trial_count is set."""
+    trial_data: List[tuple] = []  # (input, trial_index)
+
+    def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
+        trial_data.append((input_value, hooks.trial_index))
+        return input_value * 2
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-per-input-trial-count-no-global",
+        data=[
+            EvalCase(input=1, expected=2),  # uses default trial_count=1
+            EvalCase(input=2, expected=4, trial_count=3),  # overrides to 3
+        ],
+        task=task_with_hooks,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    # 1 + 3 = 4 total results
+    assert len(result.results) == 4
+    assert len(trial_data) == 4
+
+    input_1_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 1])
+    input_2_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 2])
+
+    assert input_1_trials == [0]
+    assert input_2_trials == [0, 1, 2]
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_scorer_spans_have_purpose_attribute(with_memory_logger, with_simulate_login):
