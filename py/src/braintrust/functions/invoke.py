@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any, Literal, TypedDict, TypeVar, overload
 
 from sseclient import SSEClient
@@ -45,9 +46,9 @@ def invoke(
     function_type: FunctionTypeEnum | None = None,
     # arguments to the function
     input: Any = None,
-    messages: list[Any] | None = None,
+    messages: Sequence[Any] | None = None,
     metadata: Metadata | None = None,
-    tags: list[str] | None = None,
+    tags: Sequence[str] | None = None,
     parent: Exportable | str | None = None,
     stream: Literal[False] | None = None,
     mode: ModeType | None = None,
@@ -73,9 +74,9 @@ def invoke(
     function_type: FunctionTypeEnum | None = None,
     # arguments to the function
     input: Any = None,
-    messages: list[Any] | None = None,
+    messages: Sequence[Any] | None = None,
     metadata: Metadata | None = None,
-    tags: list[str] | None = None,
+    tags: Sequence[str] | None = None,
     parent: Exportable | str | None = None,
     stream: Literal[True] = True,
     mode: ModeType | None = None,
@@ -100,9 +101,9 @@ def invoke(
     function_type: FunctionTypeEnum | None = None,
     # arguments to the function
     input: Any = None,
-    messages: list[Any] | None = None,
+    messages: Sequence[Any] | None = None,
     metadata: Metadata | None = None,
-    tags: list[str] | None = None,
+    tags: Sequence[str] | None = None,
     parent: Exportable | str | None = None,
     stream: bool = False,
     mode: ModeType | None = None,
