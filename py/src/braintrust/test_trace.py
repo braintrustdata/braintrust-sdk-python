@@ -233,34 +233,8 @@ class TestCachedSpanFetcher:
         assert len(no_type_result) == 2
 
     @pytest.mark.asyncio
-    async def test_handle_empty_results(self):
-        """Test that empty results don't permanently cache, allowing re-fetch when data becomes available."""
-        call_count = 0
-        mock_spans = [make_span("span-1", "llm")]
-
-        async def fetch_fn(span_type):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                return []
-            return mock_spans
-
-        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-
-        # First call returns empty
-        result = await fetcher.get_spans()
-        assert len(result) == 0
-        assert call_count == 1
-
-        # Second call should re-fetch since first was empty
-        result = await fetcher.get_spans()
-        assert call_count == 2
-        assert len(result) == 1
-        assert result[0].span_id == "span-1"
-
-    @pytest.mark.asyncio
     async def test_empty_then_populated_refetches(self):
-        """Test that fetch_fn returning [] first, then spans on second call, works correctly."""
+        """Test that empty results don't permanently cache, allowing re-fetch when data becomes available."""
         call_count = 0
         spans = [make_span("span-1", "llm"), make_span("span-2", "function")]
 
@@ -273,9 +247,12 @@ class TestCachedSpanFetcher:
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
 
+        # First call returns empty
         result1 = await fetcher.get_spans()
         assert len(result1) == 0
+        assert call_count == 1
 
+        # Second call should re-fetch since first was empty
         result2 = await fetcher.get_spans()
         assert call_count == 2
         assert len(result2) == 2
