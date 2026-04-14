@@ -364,6 +364,45 @@ async def test_per_input_trial_count_without_global():
     assert input_2_trials == [0, 1, 2]
 
 
+@pytest.mark.asyncio
+async def test_per_input_trial_count_with_dict_data():
+    """Test that per-input trial_count works when data items are plain dicts."""
+    trial_data: List[tuple] = []  # (input, trial_index)
+
+    def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
+        trial_data.append((input_value, hooks.trial_index))
+        return input_value * 2
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-per-input-trial-count-dict",
+        data=[
+            {"input": 1, "expected": 2},  # inherits global trial_count=2
+            {"input": 2, "expected": 4, "trial_count": 4},  # overrides to 4
+            {"input": 3, "expected": 6, "trial_count": 1},  # overrides to 1
+        ],
+        task=task_with_hooks,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        trial_count=2,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    # 2 + 4 + 1 = 7 total results
+    assert len(result.results) == 7
+    assert len(trial_data) == 7
+
+    input_1_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 1])
+    input_2_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 2])
+    input_3_trials = sorted([trial_idx for inp, trial_idx in trial_data if inp == 3])
+
+    assert input_1_trials == [0, 1]
+    assert input_2_trials == [0, 1, 2, 3]
+    assert input_3_trials == [0]
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_scorer_spans_have_purpose_attribute(with_memory_logger, with_simulate_login):
