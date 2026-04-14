@@ -1,5 +1,6 @@
 """Evaluation parameters support for Python SDK."""
 
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
@@ -36,7 +37,7 @@ class ModelParameter(TypedDict):
 JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
 ValidatedParameters = dict[str, object]
 ParameterSchema = PromptParameter | ModelParameter | type[object] | None
-EvalParameters = dict[str, ParameterSchema]
+EvalParameters = Mapping[str, ParameterSchema]
 ParametersSchema = dict[str, Any]
 
 
@@ -172,7 +173,7 @@ def _pydantic_field_required(field: Any) -> bool:
 def is_eval_parameter_schema(schema: Any) -> bool:
     if isinstance(schema, RemoteEvalParameters):
         return True
-    if not isinstance(schema, dict):
+    if not isinstance(schema, Mapping):
         return False
     if len(schema) == 0:
         return True
