@@ -35,7 +35,7 @@ class ModelParameter(TypedDict):
 
 
 JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
-ValidatedParameters = dict[str, object]
+ValidatedParameters = dict[str, Any]
 ParameterSchema = PromptParameter | ModelParameter | type[object] | None
 EvalParameters = Mapping[str, ParameterSchema]
 ParametersSchema = dict[str, Any]

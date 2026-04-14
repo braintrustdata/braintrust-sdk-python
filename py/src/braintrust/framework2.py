@@ -1,6 +1,6 @@
 import dataclasses
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, overload
 
 import slugify
@@ -127,7 +127,7 @@ class CodeParameters:
     description: str | None
     schema: EvalParameters
     if_exists: IfExists | None
-    metadata: dict[str, Any] | None = None
+    metadata: Mapping[str, Any] | None = None
 
     def to_function_definition(self, if_exists: IfExists | None, project_ids: ProjectIdCache) -> dict[str, Any]:
         schema = parameters_to_json_schema(self.schema)
@@ -352,7 +352,7 @@ class ParametersBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Mapping[str, Any] | None = None,
     ) -> EvalParameters:
         if slug is None or len(slug) == 0:
             slug = slugify.slugify(name)
@@ -408,7 +408,7 @@ class ScorerBuilder:
         model: str,
         params: ModelParams | None = None,
         use_cot: bool,
-        choice_scores: dict[str, float],
+        choice_scores: Mapping[str, float],
     ) -> CodePrompt: ...
 
     # LLM scorer with messages.
@@ -426,7 +426,7 @@ class ScorerBuilder:
         model: str,
         params: ModelParams | None = None,
         use_cot: bool,
-        choice_scores: dict[str, float],
+        choice_scores: Mapping[str, float],
     ) -> CodePrompt: ...
 
     def create(
@@ -448,7 +448,7 @@ class ScorerBuilder:
         model: str | None = None,
         params: ModelParams | None = None,
         use_cot: bool | None = None,
-        choice_scores: dict[str, float] | None = None,
+        choice_scores: Mapping[str, float] | None = None,
     ) -> CodeFunction | CodePrompt:
         """Creates a scorer.
 
