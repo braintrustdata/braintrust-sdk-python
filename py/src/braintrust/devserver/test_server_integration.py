@@ -49,6 +49,9 @@ def client():
         """Simple exact match scorer."""
         return 1.0 if output == expected else 0.0
 
+    def classifier(input: str, output: str, expected: str) -> dict[str, str]:
+        return {"id": "correct" if output == expected else "incorrect", "name": "answer_type"}
+
     evaluator = Evaluator(
         project_name="test-math-eval",
         eval_name="simple-math-eval",
@@ -59,6 +62,7 @@ def client():
         ],
         task=task,
         scores=[scorer],
+        classifiers=[classifier],
         experiment_name=None,
         metadata=None,
     )
@@ -114,6 +118,8 @@ def test_devserver_list_evaluators(client, api_key, org_name):
     assert response.status_code == 200
     evaluators = response.json()
     assert "simple-math-eval" in evaluators
+    assert evaluators["simple-math-eval"]["scores"] == [{"name": "scorer"}]
+    assert evaluators["simple-math-eval"]["classifiers"] == [{"name": "classifier"}]
 
 
 def parse_sse_events(response_text: str) -> list[dict[str, Any]]:

@@ -17,7 +17,7 @@ from typing import Any
 
 import requests
 import slugify
-from braintrust.framework import _evals, _scorer_name, _set_lazy_load
+from braintrust.framework import _classifier_name, _evals, _scorer_name, _set_lazy_load
 
 from .. import api_conn, login, org_id, proxy_conn
 from ..framework2 import ProjectIdCache, global_
@@ -303,8 +303,11 @@ def _collect_evaluator_defs(
         evaluator = eval_instance.evaluator
         project_id = project_ids.get_by_name(evaluator.project_name)
 
-        scores = [{"name": _scorer_name(scorer, i)} for i, scorer in enumerate(evaluator.scores)]
-        evaluator_definition: dict[str, Any] = {"scores": scores}
+        scores = [{"name": _scorer_name(scorer, i)} for i, scorer in enumerate(evaluator.scores or [])]
+        classifiers = [
+            {"name": _classifier_name(classifier, i)} for i, classifier in enumerate(evaluator.classifiers or [])
+        ]
+        evaluator_definition: dict[str, Any] = {"scores": scores, "classifiers": classifiers}
         if evaluator.parameters is not None:
             evaluator_definition["parameters"] = serialize_remote_eval_parameters_container(evaluator.parameters)
 

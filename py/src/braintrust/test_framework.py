@@ -18,7 +18,7 @@ from .framework import (
     parse_filters,
     run_evaluator,
 )
-from .score import Score, Scorer
+from .score import Classification, Score, Scorer
 from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login  # noqa: F401
 
 
@@ -466,6 +466,133 @@ def simple_scorer():
         return {"name": "simple_scorer", "score": 0.8}
 
     return simple_scorer_function
+
+
+@pytest.mark.asyncio
+async def test_eval_classifier_only_populates_classifications():
+    result = await Eval(
+        "test-classifier-only",
+        data=[{"input": "hello", "expected": "greeting"}],
+        task=lambda input_value: input_value,
+        classifiers=[
+            lambda input_value, output, expected: Classification(
+                id="greeting",
+                name="category",
+                label="Greeting",
+                metadata={"source": "unit-test"},
+            )
+        ],
+        no_send_logs=True,
+    )
+
+    assert len(result.results) == 1
+    assert result.results[0].scores == {}
+    assert result.results[0].classifications == {
+        "category": [
+            {
+                "id": "greeting",
+                "label": "Greeting",
+                "metadata": {"source": "unit-test"},
+            }
+        ]
+    }
+
+
+@pytest.mark.asyncio
+async def test_eval_multiple_classifications_append_same_name():
+    def category(input_value, output, expected):
+        return [
+            {"id": "greeting", "name": "category", "label": "Greeting"},
+            {"id": "informal", "name": "category", "label": "Informal"},
+        ]
+
+    result = await Eval(
+        "test-classifier-append",
+        data=[{"input": "hello"}],
+        task=lambda input_value: input_value,
+        classifiers=[category],
+        no_send_logs=True,
+    )
+
+    assert len(result.results) == 1
+    assert result.results[0].classifications == {
+        "category": [
+            {"id": "greeting", "label": "Greeting"},
+            {"id": "informal", "label": "Informal"},
+        ]
+    }
+
+
+@pytest.mark.asyncio
+async def test_eval_populates_scores_and_classifications(simple_scorer):
+    def category(input_value, output, expected):
+        return {"id": "greeting", "label": "Greeting"}
+
+    result = await Eval(
+        "test-score-and-classify",
+        data=[{"input": "hello", "expected": "hello"}],
+        task=lambda input_value: input_value,
+        scores=[simple_scorer],
+        classifiers=[category],
+        no_send_logs=True,
+    )
+
+    assert len(result.results) == 1
+    assert result.results[0].scores == {"simple_scorer": 0.8}
+    assert result.results[0].classifications == {"category": [{"id": "greeting", "label": "Greeting"}]}
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_classifier_spans_are_logged(with_memory_logger, with_simulate_login):
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-classifier-span",
+        data=[EvalCase(input="hello", expected="greeting")],
+        task=lambda input_value: input_value,
+        scores=[],
+        classifiers=[
+            lambda input_value, output, expected: [
+                {
+                    "id": "greeting",
+                    "name": "category",
+                    "label": "Greeting",
+                    "metadata": {"source": "greeting"},
+                },
+                {
+                    "id": "informal",
+                    "name": "category",
+                    "label": "Informal",
+                    "metadata": {"source": "style"},
+                },
+            ]
+        ],
+        experiment_name="test-classifier-span",
+        metadata=None,
+    )
+
+    exp = init_test_exp("test-classifier-span", "test-project")
+    result = await run_evaluator(experiment=exp, evaluator=evaluator, position=None, filters=[])
+
+    assert len(result.results) == 1
+    expected_classifications = {
+        "category": [
+            {"id": "greeting", "label": "Greeting", "metadata": {"source": "greeting"}},
+            {"id": "informal", "label": "Informal", "metadata": {"source": "style"}},
+        ]
+    }
+    assert result.results[0].classifications == expected_classifications
+
+    logs = with_memory_logger.pop()
+    classifier_spans = [log for log in logs if log.get("span_attributes", {}).get("type") == "classifier"]
+    assert len(classifier_spans) == 1
+    assert classifier_spans[0]["span_attributes"].get("purpose") == "scorer"
+    assert classifier_spans[0].get("output") == expected_classifications
+    assert classifier_spans[0].get("metadata") == {"category": [{"source": "greeting"}, {"source": "style"}]}
+
+    root_spans = [log for log in logs if not log["span_parents"]]
+    assert len(root_spans) == 1
+    assert root_spans[0].get("classifications") == expected_classifications
 
 
 @pytest.mark.asyncio

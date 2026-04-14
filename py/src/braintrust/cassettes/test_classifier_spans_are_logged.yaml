@@ -1,0 +1,76 @@
+interactions:
+- request:
+    body: '{"id": "test-classifier-span"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '30'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.5
+    method: POST
+    uri: https://www.braintrust.dev/api/base_experiment/get_id
+  response:
+    body:
+      string: "[\n  {\n    \"validation\": \"uuid\",\n    \"code\": \"invalid_string\",\n
+        \   \"message\": \"Invalid uuid\",\n    \"path\": [\n      \"id\"\n    ]\n
+        \ }\n] [user_email=___braintrust_anon_user___@braintrustdata.com] [timestamp=1776185951.284]
+        [request_id=yul1::rlkb8-1776185950926-a394af342bfa]"
+    headers:
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '267'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-NGNlMGVjNTUtNmE2MC00ZDA3LWE3OGMtMDQ3NWExNWVkZGUz''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self'';
+        frame-ancestors ''self''; worker-src ''self'' blob:; report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - text/plain; charset=utf-8
+      Date:
+      - Tue, 14 Apr 2026 16:59:11 GMT
+      Etag:
+      - '"ox95rpt6sr7f"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Set-Cookie:
+      - __Host-authjs.csrf-token=29800db0ea46edba4ca7714d00cba09854ccf08e98f28666bd7a8f816dc260ea%7C4f5ce689e487bc9972f79ed54f75a99deeb00baec720e82e1efa5e58f551d316;
+        Path=/; HttpOnly; Secure; SameSite=Lax
+      - __Secure-authjs.callback-url=https%3A%2F%2Fwww.braintrustdata.com; Path=/;
+        HttpOnly; Secure; SameSite=Lax
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Clerk-Auth-Reason:
+      - session-token-and-uat-missing
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/base_experiment/get_id
+      X-Nonce:
+      - NGNlMGVjNTUtNmE2MC00ZDA3LWE3OGMtMDQ3NWExNWVkZGUz
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::rlkb8-1776185950926-a394af342bfa
+    status:
+      code: 400
+      message: Bad Request
+version: 1

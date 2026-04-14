@@ -32,6 +32,8 @@ from ..framework import (
     Evaluator,
     ExperimentSummary,
     SSEProgressEvent,
+    _classifier_name,
+    _scorer_name,
 )
 from ..generated_types import FunctionId
 from ..logger import BraintrustState, bt_iscoroutinefunction
@@ -123,7 +125,10 @@ async def list_evaluators(request: Request) -> JSONResponse:
             "parameters": (
                 serialize_remote_eval_parameters_container(evaluator.parameters) if evaluator.parameters else None
             ),
-            "scores": [{"name": getattr(score, "name", f"score_{i}")} for i, score in enumerate(evaluator.scores)],
+            "scores": [{"name": _scorer_name(score, i)} for i, score in enumerate(evaluator.scores or [])],
+            "classifiers": [
+                {"name": _classifier_name(classifier, i)} for i, classifier in enumerate(evaluator.classifiers or [])
+            ],
         }
 
     return JSONResponse(evaluator_list)
@@ -227,7 +232,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
                 **{
                     **eval_kwargs,
                     "state": state,
-                    "scores": evaluator.scores
+                    "scores": (evaluator.scores or [])
                     + [
                         make_scorer(state, score["name"], score["function_id"], ctx.project_id)
                         for score in eval_data.get("scores", [])

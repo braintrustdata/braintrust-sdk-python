@@ -49,7 +49,7 @@ from .parameters import (
     validate_parameters,
 )
 from .resource_manager import ResourceManager
-from .score import Score, is_score, is_scorer
+from .score import Classification, ClassificationItem, Score, is_classification, is_score, is_scorer
 from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
 from .types._eval import EvalCaseDict, EvalCaseDictNoOutput, ExperimentDatasetEvent
@@ -102,6 +102,7 @@ class EvalResult(SerializableDataClass, Generic[Input, Output, Expected]):
     input: Input
     output: Output
     scores: dict[str, float | None]
+    classifications: dict[str, list[ClassificationItem]] | None = None
     expected: Expected | None = None
     metadata: Metadata | None = None
     tags: list[str] | None = None
@@ -218,6 +219,12 @@ class EvalScorerArgs(SerializableDataClass, Generic[Input, Output, Expected]):
 
 
 OneOrMoreScores = Union[float, int, bool, None, Score, list[Score]]
+OneOrMoreClassifications = Union[
+    None,
+    Classification,
+    Mapping[str, Any],
+    list[Classification | Mapping[str, Any]],
+]
 
 
 # Synchronous scorer interface - implements callable
@@ -250,6 +257,11 @@ EvalScorer = Union[
     type[ScorerLike[Input, Output, Expected]],
     Callable[[Input, Output, Expected], OneOrMoreScores],
     Callable[[Input, Output, Expected], Awaitable[OneOrMoreScores]],
+]
+
+EvalClassifier = Union[
+    Callable[[Input, Output, Expected], OneOrMoreClassifications],
+    Callable[[Input, Output, Expected], Awaitable[OneOrMoreClassifications]],
 ]
 
 
@@ -427,6 +439,12 @@ class Evaluator(Generic[Input, Output, Expected]):
     """
     A set of parameters that will be passed to the evaluator.
     Can be used to define prompts or other configurable values.
+    """
+
+    classifiers: list[EvalClassifier[Input, Output, Expected]] | None = None
+    """
+    Optional list of classifiers to evaluate the task output. Classifier results are
+    recorded under the `classifications` field instead of `scores`.
     """
 
     parameter_values: dict[str, Any] | None = None
@@ -647,7 +665,8 @@ def _EvalCommon(
     name: str,
     data: EvalData[Input, Expected],
     task: EvalTask[Input, Output, Expected],
-    scores: Sequence[EvalScorer[Input, Output, Expected]],
+    scores: Sequence[EvalScorer[Input, Output, Expected]] | None,
+    classifiers: Sequence[EvalClassifier[Input, Output, Expected]] | None,
     experiment_name: str | None,
     trial_count: int,
     metadata: Metadata | None,
@@ -678,6 +697,9 @@ def _EvalCommon(
     the `_evals` global immediately instead of whenever the coroutine is
     awaited.
     """
+    if scores is None and classifiers is None:
+        raise ValueError("At least one of `scores` or `classifiers` must be provided.")
+
     eval_name = _make_eval_name(name, experiment_name)
 
     global _evals
@@ -689,7 +711,8 @@ def _EvalCommon(
         project_name=name,
         data=data,
         task=task,
-        scores=scores,
+        scores=list(scores or []),
+        classifiers=list(classifiers) if classifiers is not None else None,
         experiment_name=experiment_name,
         trial_count=trial_count,
         metadata=metadata,
@@ -783,7 +806,8 @@ async def EvalAsync(
     name: str,
     data: EvalData[Input, Expected],
     task: EvalTask[Input, Output, Expected],
-    scores: Sequence[EvalScorer[Input, Output, Expected]],
+    scores: Sequence[EvalScorer[Input, Output, Expected]] | None = None,
+    classifiers: Sequence[EvalClassifier[Input, Output, Expected]] | None = None,
     experiment_name: str | None = None,
     trial_count: int = 1,
     metadata: Metadata | None = None,
@@ -875,6 +899,7 @@ async def EvalAsync(
         data=data,
         task=task,
         scores=scores,
+        classifiers=classifiers,
         experiment_name=experiment_name,
         trial_count=trial_count,
         metadata=metadata,
@@ -899,7 +924,6 @@ async def EvalAsync(
         state=state,
         enable_cache=enable_cache,
     )
-
     return await f()
 
 
@@ -910,7 +934,8 @@ def Eval(
     name: str,
     data: EvalData[Input, Expected],
     task: EvalTask[Input, Output, Expected],
-    scores: Sequence[EvalScorer[Input, Output, Expected]],
+    scores: Sequence[EvalScorer[Input, Output, Expected]] | None = None,
+    classifiers: Sequence[EvalClassifier[Input, Output, Expected]] | None = None,
     experiment_name: str | None = None,
     trial_count: int = 1,
     metadata: Metadata | None = None,
@@ -1003,6 +1028,7 @@ def Eval(
         data=data,
         task=task,
         scores=scores,
+        classifiers=classifiers,
         experiment_name=experiment_name,
         trial_count=trial_count,
         metadata=metadata,
@@ -1028,7 +1054,6 @@ def Eval(
         state=state,
         enable_cache=enable_cache,
     )
-
     # https://stackoverflow.com/questions/55409641/asyncio-run-cannot-be-called-from-a-running-event-loop-when-using-jupyter-no
     try:
         loop = asyncio.get_running_loop()
@@ -1252,19 +1277,89 @@ def set_thread_pool_max_workers(max_workers):
         obj.set_max_workers(max_workers)
 
 
-def _scorer_name(scorer, scorer_idx):
-    def helper():
-        if hasattr(scorer, "_name"):
-            return scorer._name()
-        elif hasattr(scorer, "__name__"):
-            return scorer.__name__
-        else:
-            return type(scorer).__name__
+def _callable_name(obj: Any, idx: int, fallback_prefix: str) -> str:
+    if hasattr(obj, "_name"):
+        ret = obj._name()
+    elif hasattr(obj, "__name__"):
+        ret = obj.__name__
+    else:
+        ret = type(obj).__name__
 
-    ret = helper()
     if ret == "<lambda>":
-        ret = f"scorer_{scorer_idx}"
+        ret = f"{fallback_prefix}_{idx}"
     return ret
+
+
+def _scorer_name(scorer, scorer_idx):
+    return _callable_name(scorer, scorer_idx, "scorer")
+
+
+def _classifier_name(classifier, classifier_idx):
+    return _callable_name(classifier, classifier_idx, "classifier")
+
+
+def _build_span_metadata(results: list[Score] | list[Classification]) -> Metadata | None:
+    if not results:
+        return None
+    if len(results) == 1:
+        return results[0].metadata
+
+    grouped_metadata: Metadata = {}
+    for result in results:
+        assert result.name is not None, f"Expected result to have a name, but got {result!r}"
+        if result.name not in grouped_metadata:
+            grouped_metadata[result.name] = result.metadata
+        elif isinstance(grouped_metadata[result.name], list):
+            grouped_metadata[result.name].append(result.metadata)
+        else:
+            grouped_metadata[result.name] = [grouped_metadata[result.name], result.metadata]
+    return grouped_metadata
+
+
+def _build_classification_span_output(
+    classifications: list[Classification],
+) -> dict[str, ClassificationItem | list[ClassificationItem]] | ClassificationItem:
+    assert classifications, "_build_classification_span_output requires a non-empty list"
+    if len(classifications) == 1:
+        return classifications[0].as_item()
+
+    grouped_output: dict[str, ClassificationItem | list[ClassificationItem]] = {}
+    for classification in classifications:
+        item = classification.as_item()
+        if classification.name not in grouped_output:
+            grouped_output[classification.name] = item
+        elif isinstance(grouped_output[classification.name], list):
+            grouped_output[classification.name].append(item)
+        else:
+            grouped_output[classification.name] = [grouped_output[classification.name], item]
+    return grouped_output
+
+
+def _validate_classification_result(value: Any, classifier_name: str) -> Classification:
+    if isinstance(value, Mapping):
+        if not value:
+            raise ValueError(
+                "When returning structured classifier results, each classification must be a non-empty object. "
+                f"Got: {value}"
+            )
+        try:
+            classification = Classification.from_dict(value)
+        except Exception as e:
+            raise ValueError(
+                "When returning structured classifier results, each classification must be a valid "
+                f"Classification object. Got: {value}"
+            ) from e
+    elif is_classification(value):
+        classification = value
+    else:
+        raise ValueError(
+            "When returning structured classifier results, each classification must be a non-empty object. "
+            f"Got: {value}"
+        )
+
+    if not classification.name:
+        classification = dataclasses.replace(classification, name=classifier_name)
+    return classification
 
 
 async def run_evaluator(
@@ -1355,16 +1450,14 @@ async def _run_evaluator_internal_impl(
             if hasattr(scorer, "eval_async"):
                 score = scorer.eval_async
 
-            scorer_args = kwargs
-
-            result = await call_user_fn(event_loop, score, **scorer_args)
+            result = await call_user_fn(event_loop, score, **kwargs)
             if isinstance(result, dict):
                 try:
                     result = Score.from_dict(result)
                 except Exception as e:
                     raise ValueError(f"When returning a dict, it must be a valid Score object. Got: {result}") from e
 
-            if isinstance(result, Iterable):
+            if isinstance(result, Iterable) and not isinstance(result, (str, bytes, Mapping)):
                 for s in result:
                     if not is_score(s):
                         raise ValueError(
@@ -1379,7 +1472,7 @@ async def _run_evaluator_internal_impl(
             def get_other_fields(s):
                 return {k: v for k, v in s.as_dict().items() if k not in ["metadata", "name"]}
 
-            result_metadata = {r.name: r.metadata for r in result} if len(result) != 1 else result[0].metadata
+            result_metadata = _build_span_metadata(result)
             result_output = (
                 {r.name: get_other_fields(r) for r in result} if len(result) != 1 else get_other_fields(result[0])
             )
@@ -1388,9 +1481,45 @@ async def _run_evaluator_internal_impl(
             span.log(output=result_output, metadata=result_metadata, scores=scores)
             return result
 
+    async def await_or_run_classifier(root_span, classifier, name, **kwargs):
+        parent_propagated = root_span.propagated_event or {}
+        merged_propagated = merge_dicts(
+            {**parent_propagated},
+            {"span_attributes": {"purpose": "scorer"}},
+        )
+        logged_input = {k: v for k, v in kwargs.items() if k != "trace"}
+        with root_span.start_span(
+            name=name,
+            span_attributes={"type": SpanTypeAttribute.CLASSIFIER, "purpose": "scorer"},
+            propagated_event=merged_propagated,
+            input=logged_input,
+        ) as span:
+            result = await call_user_fn(event_loop, classifier, **kwargs)
+            if result is None:
+                return None
+
+            if isinstance(result, Iterable) and not isinstance(result, (str, bytes, Mapping)):
+                raw_results = list(result)
+            else:
+                raw_results = [result]
+
+            classifications = [_validate_classification_result(r, name) for r in raw_results]
+            if not classifications:
+                span.log(output={}, metadata=None)
+                return classifications
+
+            result_metadata = _build_span_metadata(classifications)
+            result_output = _build_classification_span_output(classifications)
+            span.log(output=result_output, metadata=result_metadata)
+            return classifications
+
     # First, resolve the scorers if they are classes
-    scorers = [scorer() if inspect.isclass(scorer) and is_scorer(scorer) else scorer for scorer in evaluator.scores]
+    scorers = [
+        scorer() if inspect.isclass(scorer) and is_scorer(scorer) else scorer for scorer in (evaluator.scores or [])
+    ]
     scorer_names = [_scorer_name(scorer, i) for i, scorer in enumerate(scorers)]
+    classifiers = list(evaluator.classifiers or [])
+    classifier_names = [_classifier_name(classifier, i) for i, classifier in enumerate(classifiers)]
     unhandled_scores = scorer_names
 
     if evaluator.parameter_values is not None:
@@ -1411,6 +1540,7 @@ async def _run_evaluator_internal_impl(
         error = None
         exc_info = None
         scores = {}
+        classifications = {}
         tags = datum.tags
 
         event_dataset = (
@@ -1548,34 +1678,47 @@ async def _run_evaluator_internal_impl(
                         state=trace_state,
                     )
 
+                scorer_kwargs = {
+                    "input": datum.input,
+                    "expected": datum.expected,
+                    "metadata": metadata,
+                    "output": output,
+                    "trace": trace,
+                }
                 score_promises = [
-                    asyncio.create_task(
-                        await_or_run_scorer(
-                            root_span,
-                            score,
-                            name,
-                            **{
-                                "input": datum.input,
-                                "expected": datum.expected,
-                                "metadata": metadata,
-                                "output": output,
-                                "trace": trace,
-                            },
-                        )
-                    )
+                    asyncio.create_task(await_or_run_scorer(root_span, score, name, **scorer_kwargs))
                     for score, name in zip(scorers, scorer_names)
                 ]
-                passing_scorers_and_results = []
+                classifier_promises = [
+                    asyncio.create_task(await_or_run_classifier(root_span, classifier, name, **scorer_kwargs))
+                    for classifier, name in zip(classifiers, classifier_names)
+                ]
+
                 failing_scorers_and_exceptions = []
                 for name, p in zip(scorer_names, score_promises):
                     try:
                         score_results = await p
                         for score in score_results:
-                            passing_scorers_and_results.append((score.name, score))
                             scores[score.name] = score.score
                     except Exception as e:
-                        exc_info = traceback.format_exc()
-                        failing_scorers_and_exceptions.append((name, e, exc_info))
+                        failing_scorers_and_exceptions.append((name, e, traceback.format_exc()))
+
+                failing_classifiers_and_exceptions = []
+                for name, p in zip(classifier_names, classifier_promises):
+                    try:
+                        classifier_results = await p
+                        if classifier_results is None:
+                            continue
+                        for classification in classifier_results:
+                            item = classification.as_item()
+                            if classification.name not in classifications:
+                                classifications[classification.name] = []
+                            classifications[classification.name].append(item)
+                    except Exception as e:
+                        failing_classifiers_and_exceptions.append((name, e, traceback.format_exc()))
+
+                if classifications:
+                    root_span.log(classifications=classifications)
 
                 nonlocal unhandled_scores
                 unhandled_scores = None
@@ -1584,14 +1727,25 @@ async def _run_evaluator_internal_impl(
                         scorer_name: exc_info for scorer_name, _, exc_info in failing_scorers_and_exceptions
                     }
                     metadata["scorer_errors"] = scorer_errors
-                    root_span.log(metadata=metadata, tags=tags)
-                    names = ", ".join(scorer_errors.keys())
-                    exceptions = [x[1] for x in failing_scorers_and_exceptions]
                     unhandled_scores = list(scorer_errors.keys())
                     eprint(
-                        f"Found exceptions for the following scorers: {names}",
-                        exceptions,
+                        f"Found exceptions for the following scorers: {', '.join(scorer_errors.keys())}",
+                        [x[1] for x in failing_scorers_and_exceptions],
                     )
+
+                if failing_classifiers_and_exceptions:
+                    classifier_errors = {
+                        classifier_name: exc_info
+                        for classifier_name, _, exc_info in failing_classifiers_and_exceptions
+                    }
+                    metadata["classifier_errors"] = classifier_errors
+                    eprint(
+                        f"Found exceptions for the following classifiers: {', '.join(classifier_errors.keys())}",
+                        [x[1] for x in failing_classifiers_and_exceptions],
+                    )
+
+                if failing_scorers_and_exceptions or failing_classifiers_and_exceptions:
+                    root_span.log(metadata=metadata, tags=tags)
             except Exception as e:
                 exc_type, exc_value, tb = sys.exc_info()
                 root_span.log(error=stringify_exception(exc_type, exc_value, tb))
@@ -1615,6 +1769,7 @@ async def _run_evaluator_internal_impl(
                 ),
                 **scores,
             },
+            classifications=classifications or None,
             error=error,
             exc_info=exc_info,
         )
@@ -1732,4 +1887,14 @@ def build_local_summary(
     )
 
 
-__all__ = ["Evaluator", "Eval", "EvalAsync", "Score", "EvalCase", "EvalHooks", "BaseExperiment", "Reporter"]
+__all__ = [
+    "BaseExperiment",
+    "Classification",
+    "Eval",
+    "EvalAsync",
+    "EvalCase",
+    "EvalHooks",
+    "Evaluator",
+    "Reporter",
+    "Score",
+]

@@ -2,7 +2,9 @@ import dataclasses
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TypedDict
+
+from typing_extensions import NotRequired
 
 from .serializable_data_class import SerializableDataClass
 from .types import Metadata
@@ -51,6 +53,56 @@ class Score(SerializableDataClass):
             )
 
 
+class ClassificationItem(TypedDict):
+    id: str
+    label: str
+    metadata: NotRequired[Metadata]
+
+
+@dataclasses.dataclass
+class Classification(SerializableDataClass):
+    """A classification result for an evaluation."""
+
+    id: str
+    """A machine-readable identifier for the classification outcome."""
+
+    name: str | None = None
+    """The name of this classification result. Defaults to the classifier function name when omitted."""
+
+    label: str | None = None
+    """Optional human-readable label. Defaults to ``id`` when omitted."""
+
+    metadata: Metadata | None = None
+    """Optional metadata attached to the classification result."""
+
+    def as_dict(self):
+        result = {"id": self.id}
+        if self.name is not None:
+            result["name"] = self.name
+        if self.label is not None:
+            result["label"] = self.label
+        if self.metadata is not None:
+            result["metadata"] = self.metadata
+        return result
+
+    def as_item(self) -> ClassificationItem:
+        result: ClassificationItem = {
+            "id": self.id,
+            "label": self.label or self.id,
+        }
+        if self.metadata is not None:
+            result["metadata"] = self.metadata
+        return result
+
+    def __post_init__(self):
+        if not isinstance(self.id, str) or not self.id:
+            raise ValueError("classification id must be a non-empty string")
+        if self.name is not None and (not isinstance(self.name, str) or not self.name):
+            raise ValueError("classification name must be a non-empty string when provided")
+        if self.label is not None and not isinstance(self.label, str):
+            raise ValueError("classification label must be a string when provided")
+
+
 def is_score(obj):
     return hasattr(obj, "name") and hasattr(obj, "score") and hasattr(obj, "metadata") and hasattr(obj, "as_dict")
 
@@ -76,6 +128,10 @@ class Scorer(ABC):
     def _run_eval_sync(self, output: Any, expected: Any = None, **kwargs: Any) -> Score: ...
 
 
+def is_classification(obj):
+    return hasattr(obj, "id") and hasattr(obj, "metadata") and hasattr(obj, "as_dict")
+
+
 def is_scorer(obj):
     # For class objects, check for appropriate methods
     if inspect.isclass(obj):
@@ -92,4 +148,12 @@ def is_scorer(obj):
     return callable(obj)
 
 
-__all__ = ["Score", "Scorer", "is_score", "is_scorer"]
+__all__ = [
+    "Classification",
+    "ClassificationItem",
+    "Score",
+    "Scorer",
+    "is_classification",
+    "is_score",
+    "is_scorer",
+]

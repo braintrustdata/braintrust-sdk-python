@@ -15,10 +15,11 @@ def _make_scorer(name):
     return scorer
 
 
-def _make_evaluator(project_name, scorer_names, parameters=None):
+def _make_evaluator(project_name, scorer_names, parameters=None, classifier_names=None):
     evaluator = MagicMock()
     evaluator.project_name = project_name
     evaluator.scores = [_make_scorer(n) for n in scorer_names]
+    evaluator.classifiers = [_make_scorer(n) for n in (classifier_names or [])]
     evaluator.parameters = parameters
 
     instance = MagicMock()
@@ -50,7 +51,10 @@ class TestCollectEvaluatorDefs:
                             "sandbox_spec": {"provider": "lambda"},
                             "entrypoints": ["evals/my_eval.py"],
                             "eval_name": "my_eval",
-                            "evaluator_definition": {"scores": [{"name": "accuracy"}]},
+                            "evaluator_definition": {
+                                "scores": [{"name": "accuracy"}],
+                                "classifiers": [],
+                            },
                         },
                         "bundle_id": "bundle-abc",
                     },
@@ -97,6 +101,16 @@ class TestCollectEvaluatorDefs:
         assert parameters["type"] == "braintrust.staticParameters"
         assert parameters["source"] is None
         assert parameters["schema"]["prompt"]["type"] == "prompt"
+
+    def test_evaluator_with_classifiers(self, mock_project_ids):
+        evaluators = {"eval1": _make_evaluator("test-project", ["accuracy"], classifier_names=["category"])}
+
+        functions = []
+        _collect_evaluator_defs(mock_project_ids, functions, "bundle-1", "replace", "eval.py", evaluators)
+
+        eval_def = functions[0]["function_data"]["data"]["location"]["evaluator_definition"]
+        assert eval_def["scores"] == [{"name": "accuracy"}]
+        assert eval_def["classifiers"] == [{"name": "category"}]
 
     def test_slug_from_source_file(self, mock_project_ids):
         evaluators = {"Test Eval": _make_evaluator("test-project", ["accuracy"])}

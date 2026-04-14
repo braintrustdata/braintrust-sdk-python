@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from .score import Score
+from .score import Classification, Score
 
 
 class TestScore(unittest.TestCase):
@@ -149,6 +149,36 @@ class TestScore(unittest.TestCase):
         result_with_error = score_with_error.as_dict()
 
         self.assertNotIn("error", result_with_error)
+
+
+class TestClassification(unittest.TestCase):
+    def test_as_dict_omits_unset_optional_fields(self):
+        classification = Classification(id="greeting")
+        self.assertEqual(classification.as_dict(), {"id": "greeting"})
+
+    def test_as_item_defaults_label_to_id(self):
+        classification = Classification(id="greeting")
+        self.assertEqual(classification.as_item(), {"id": "greeting", "label": "greeting"})
+
+    def test_as_item_includes_metadata(self):
+        classification = Classification(
+            id="greeting",
+            name="category",
+            label="Greeting",
+            metadata={"source": "unit-test"},
+        )
+        self.assertEqual(
+            classification.as_item(),
+            {
+                "id": "greeting",
+                "label": "Greeting",
+                "metadata": {"source": "unit-test"},
+            },
+        )
+
+    def test_validation_requires_non_empty_id(self):
+        with self.assertRaises(ValueError):
+            Classification(id="")
 
 
 if __name__ == "__main__":
