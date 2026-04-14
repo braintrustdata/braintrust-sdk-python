@@ -26,6 +26,7 @@ jobs:
         uses: ./.github/actions/setup-python-env
         with:
           python-version: "3.10"
+          install-dev: 'false'
       - name: Run nox tests (shard ${{ matrix.shard }}/4)
         shell: bash
         run: |

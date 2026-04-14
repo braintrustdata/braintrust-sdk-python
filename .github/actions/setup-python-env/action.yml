@@ -5,6 +5,10 @@ inputs:
   python-version:
     description: "Python version to install (e.g. 3.12)"
     required: true
+  install-dev:
+    description: "Run 'make install-dev' to install full dev dependencies. Set to 'false' for nox jobs that manage their own virtualenvs."
+    required: false
+    default: 'true'
 
 runs:
   using: "composite"
@@ -15,7 +19,29 @@ runs:
         cache: true
         experimental: true
         install_args: python@${{ inputs.python-version }}
+    - name: Set uv cache directory
+      shell: bash
+      run: |
+        # Place the uv cache on the same filesystem as the workspace so that
+        # uv can hardlink cached wheels into virtualenvs instead of copying.
+        # On Windows CI the workspace lives on D:\ while the default uv cache
+        # is on C:\, which makes hardlinks impossible and triggers a slow
+        # full-copy fallback for every install.
+        echo "UV_CACHE_DIR=${{ github.workspace }}/.uv-cache" >> "$GITHUB_ENV"
+    - name: Cache uv downloads
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ${{ github.workspace }}/.uv-cache
+        key: uv-cache-${{ runner.os }}-py${{ inputs.python-version }}-${{ hashFiles('py/setup.py', 'py/noxfile.py', 'py/requirements-dev.txt', 'py/requirements-build.txt', 'py/requirements-nox.txt') }}
+        restore-keys: |
+          uv-cache-${{ runner.os }}-py${{ inputs.python-version }}-
     - name: Install dependencies
+      if: inputs.install-dev == 'true'
       shell: bash
       run: |
         mise exec python@${{ inputs.python-version }} -- make -C py install-dev
+    - name: Install nox
+      if: inputs.install-dev != 'true'
+      shell: bash
+      run: |
+        mise exec python@${{ inputs.python-version }} -- pip install -r py/requirements-nox.txt

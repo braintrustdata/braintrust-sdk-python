@@ -1,6 +1,8 @@
 PYTHON ?= python
-UV := $(PYTHON) -m uv
 UV_VERSION := $(shell awk '$$1=="uv" { print $$2 }' ../.tool-versions)
+# Prefer the standalone uv binary (provided by mise) over python -m uv.
+# This avoids a slow pip-bootstrap of the uv package into the venv.
+UV := $(shell command -v uv 2>/dev/null || echo "$(PYTHON) -m uv")
 
 .PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean bench bench-compare
 
@@ -62,7 +64,10 @@ verify: lint test
 
 install-build-deps:
 	$(if $(UV_VERSION),,$(error Failed to read uv version from ../.tool-versions))
-	$(PYTHON) -m pip install uv==$(UV_VERSION)
+	@if ! command -v uv >/dev/null 2>&1; then \
+		echo "uv not found on PATH, installing via pip"; \
+		$(PYTHON) -m pip install uv==$(UV_VERSION); \
+	fi
 	$(UV) pip install -e .
 	$(UV) pip install -r requirements-build.txt
 

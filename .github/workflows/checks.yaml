@@ -46,6 +46,7 @@ jobs:
         uses: ./.github/actions/setup-python-env
         with:
           python-version: ${{ matrix.python-version }}
+          install-dev: 'false'
       - name: Run pylint and type tests
         shell: bash
         run: |
@@ -67,10 +68,10 @@ jobs:
         uses: ./.github/actions/setup-python-env
         with:
           python-version: ${{ matrix.python-version }}
+          install-dev: 'false'
       - name: Test whether the Python SDK can be installed
         run: |
-          # This is already done by make install-dev, but we're keeping this as a separate step
-          # to explicitly verify that installation works
+          # Verify that the SDK can be installed from source into a clean environment
           mise exec python@${{ matrix.python-version }} -- uv pip install -e ./py[all]
       - name: Test whether the Python SDK can be imported
         run: |
@@ -93,6 +94,7 @@ jobs:
         uses: ./.github/actions/setup-python-env
         with:
           python-version: ${{ matrix.python-version }}
+          install-dev: 'false'
       - name: Run nox tests (shard ${{ matrix.shard }}/6)
         shell: bash
         run: |
