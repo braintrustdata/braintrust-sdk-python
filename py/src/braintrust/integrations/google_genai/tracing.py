@@ -78,53 +78,89 @@ def _serialize_input(api_client: Any, input: dict[str, Any]) -> dict[str, Any]:
 
 
 def _serialize_contents(contents: Any) -> Any:
-    """Serialize contents, converting binary data to base64-encoded data URLs."""
+    """Serialize contents, converting binary inline_data into attachments.
+
+    Most of the heavy lifting (Pydantic model_dump, deep-copy, etc.) is
+    handled downstream by ``bt_safe_deep_copy``.  This pass only needs to
+    walk the Content/Part tree and replace binary ``inline_data`` with
+    :class:`Attachment` objects so the background logger can upload them.
+    """
     if contents is None:
         return None
 
-    # Handle list of contents
     if isinstance(contents, list):
         return [_serialize_content_item(item) for item in contents]
 
-    # Handle single content item
     return _serialize_content_item(contents)
 
 
 def _serialize_content_item(item: Any) -> Any:
-    """Serialize a single content item, handling binary data."""
-    # If it's already a dict, return as-is
-    if isinstance(item, dict):
+    """Replace binary inline_data inside a content item with Attachments.
+
+    Content-like objects (with ``parts``) are recursed into so nested
+    binary data is converted.  Everything else is returned as-is for
+    ``bt_safe_deep_copy`` to serialise later.
+    """
+    if item is None or isinstance(item, (str, int, float, bool)):
         return item
 
-    # Handle Part objects from google.genai
-    if hasattr(item, "__class__") and item.__class__.__name__ == "Part":
-        # Try to extract the data from the Part
-        if hasattr(item, "text") and item.text is not None:
-            return {"text": item.text}
-        elif hasattr(item, "inline_data"):
-            # Handle binary data (e.g., images)
-            inline_data = item.inline_data
-            if hasattr(inline_data, "data") and hasattr(inline_data, "mime_type"):
-                # Convert bytes to Attachment
-                data = inline_data.data
-                mime_type = inline_data.mime_type
+    # Content-like wrapper (has "parts") — recurse into each part.
+    parts = _get_parts(item)
+    if parts is not None:
+        serialized_parts = [_serialize_content_item(p) for p in parts]
+        if isinstance(item, dict):
+            return {**item, "parts": serialized_parts}
+        # Object form (e.g. types.Content): build a minimal dict so that
+        # the replaced Attachment parts survive bt_safe_deep_copy.
+        result: dict[str, Any] = {"parts": serialized_parts}
+        role = getattr(item, "role", None)
+        if role is not None:
+            result["role"] = role
+        return result
 
-                # Ensure data is bytes
-                if isinstance(data, bytes):
-                    resolved_attachment = _materialize_attachment(data, mime_type=mime_type, prefix="file")
-                    if resolved_attachment is not None:
-                        return resolved_attachment.multimodal_part_payload
+    # Leaf part — replace binary inline_data with an Attachment if present.
+    resolved = _try_materialize_inline_data(item)
+    if resolved is not None:
+        return resolved
 
-        # Try to use built-in serialization if available
-        if hasattr(item, "model_dump"):
-            return item.model_dump()
-        elif hasattr(item, "dump"):
-            return item.dump()
-        elif hasattr(item, "to_dict"):
-            return item.to_dict()
-
-    # Return the item as-is if we can't serialize it
+    # No binary data — return as-is; bt_safe_deep_copy handles the rest.
     return item
+
+
+def _get_parts(item: Any) -> list[Any] | None:
+    """Extract the ``parts`` list from a Content-like object or dict, or None."""
+    if isinstance(item, dict):
+        parts = item.get("parts")
+        return parts if isinstance(parts, list) else None
+    # Object with .parts that is not itself a Part.
+    if getattr(getattr(item, "__class__", None), "__name__", None) == "Part":
+        return None
+    parts = getattr(item, "parts", None)
+    return parts if isinstance(parts, list) else None
+
+
+def _try_materialize_inline_data(item: Any) -> Any | None:
+    """If *item* carries binary ``inline_data``, convert it to an attachment payload."""
+    if isinstance(item, dict):
+        inline_data = item.get("inline_data") or item.get("inlineData")
+    else:
+        inline_data = getattr(item, "inline_data", None)
+
+    if inline_data is None:
+        return None
+
+    if isinstance(inline_data, dict):
+        data = inline_data.get("data")
+        mime_type = inline_data.get("mime_type") or inline_data.get("mimeType")
+    else:
+        data = getattr(inline_data, "data", None)
+        mime_type = getattr(inline_data, "mime_type", None)
+
+    if not isinstance(data, bytes) or not isinstance(mime_type, str):
+        return None
+
+    resolved = _materialize_attachment(data, mime_type=mime_type, prefix="file")
+    return resolved.multimodal_part_payload if resolved is not None else None
 
 
 def _serialize_tools(api_client: Any, input: Any | None) -> Any | None:

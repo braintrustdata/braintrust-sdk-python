@@ -406,6 +406,60 @@ def test_document_input(memory_logger):
     _assert_metrics_are_valid(span["metrics"], start, end)
 
 
+@pytest.mark.vcr
+def test_image_input_wrapped_in_content(memory_logger):
+    """Verify binary Parts inside a Content wrapper are traced as attachments.
+
+    This is a regression test for the case where the user passes a
+    ``types.Content(parts=[Part.from_bytes(...), ...])`` instead of a flat
+    list of Part objects.  Previously the Content object was returned
+    un-serialized, leaking raw bytes into the logged span.
+    """
+    assert not memory_logger.pop()
+
+    image_data = (FIXTURES_DIR / "test-image.png").read_bytes()
+
+    client = Client()
+    start = time.time()
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=[
+            types.Content(
+                role="user",
+                parts=[
+                    types.Part.from_bytes(data=image_data, mime_type="image/png"),
+                    types.Part.from_text(text="What color is this image?"),
+                ],
+            ),
+        ],
+        config=types.GenerateContentConfig(
+            max_output_tokens=150,
+        ),
+    )
+    end = time.time()
+
+    assert response.text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == MODEL
+
+    # The contents list should contain one serialized Content dict.
+    contents = span["input"]["contents"]
+    assert len(contents) == 1
+    content = contents[0]
+    assert content["role"] == "user"
+    assert len(content["parts"]) == 2
+
+    # Binary part must be an attachment, not raw bytes.
+    _assert_attachment_part(content["parts"][0], content_type="image/png", filename="file.png")
+    assert content["parts"][1] == {"text": "What color is this image?"}
+    _assert_binary_not_logged(span, image_data)
+    assert span["output"]
+    _assert_metrics_are_valid(span["metrics"], start, end)
+
+
 # Test 3: Tool Use (Sync)
 @pytest.mark.vcr
 @pytest.mark.parametrize(
@@ -1071,6 +1125,47 @@ def test_interaction_materialization_only_converts_multimodal_payloads():
     assert materialized["media"]["caption"] is None
     assert isinstance(materialized["media"]["data"], Attachment)
     assert materialized["media"]["image_url"]["url"] is materialized["media"]["data"]
+
+
+def test_serialize_content_item_with_content_and_binary_part():
+    """Content objects wrapping binary Parts must produce Attachment objects.
+
+    _serialize_content_item only replaces binary inline_data with Attachments;
+    non-binary parts are left as-is for bt_safe_deep_copy to serialise later.
+    """
+    from braintrust.integrations.google_genai.tracing import _serialize_content_item
+    from braintrust.logger import Attachment
+
+    image_data = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64  # small fake PNG bytes
+    content = types.Content(
+        role="user",
+        parts=[
+            types.Part.from_bytes(data=image_data, mime_type="image/png"),
+            types.Part.from_text(text="What color is this image?"),
+        ],
+    )
+
+    serialized = _serialize_content_item(content)
+
+    # The Content wrapper must be preserved with role + serialized parts.
+    assert isinstance(serialized, dict), f"Expected dict, got {type(serialized)}"
+    assert serialized["role"] == "user"
+    assert isinstance(serialized.get("parts"), list)
+    assert len(serialized["parts"]) == 2
+
+    # The binary part must have been converted to an attachment – not left as
+    # raw bytes or a model_dump of inline_data.
+    binary_part = serialized["parts"][0]
+    assert "image_url" in binary_part, f"Expected image_url key in binary part, got keys: {list(binary_part.keys())}"
+    attachment = binary_part["image_url"]["url"]
+    assert isinstance(attachment, Attachment), f"Expected Attachment, got {type(attachment)}"
+    assert attachment.reference["content_type"] == "image/png"
+    assert attachment.reference["filename"] == "file.png"
+
+    # The text part is left as the original Part object — bt_safe_deep_copy
+    # will serialise it downstream.
+    text_part = serialized["parts"][1]
+    assert getattr(text_part, "text", None) == "What color is this image?"
 
 
 GROUNDING_MODEL = "gemini-2.0-flash-001"
