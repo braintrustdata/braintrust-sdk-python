@@ -63,6 +63,9 @@ jobs:
         if: steps.check.outputs.drifted == 'true'
         run: |
           python ./py/scripts/check-session-weights.py --update measured-durations-*.json
+      - name: Remove temporary duration files
+        if: steps.check.outputs.drifted == 'true'
+        run: rm -f measured-durations-*.json
       - name: Create pull request
         if: steps.check.outputs.drifted == 'true'
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
