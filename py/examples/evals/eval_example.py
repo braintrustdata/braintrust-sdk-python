@@ -2,6 +2,7 @@ import json
 
 from braintrust import Eval
 
+
 NUM_EXAMPLES = 10
 
 
@@ -12,9 +13,9 @@ async def exact_match_scorer(input, output, expected, trace=None):
         score = 1.0 if output == expected else 0.0
 
     if trace:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print(f"🔍 TRACE INFO for input: {input}")
-        print("="*80)
+        print("=" * 80)
 
         # Print trace configuration
         config = trace.get_configuration()
@@ -27,13 +28,13 @@ async def exact_match_scorer(input, output, expected, trace=None):
         try:
             spans = await trace.get_spans()
             print(f"\n✨ Found {len(spans)} spans:")
-            print("-"*80)
+            print("-" * 80)
 
             for i, span in enumerate(spans, 1):
                 print(f"\n  Span {i}:")
                 print(f"    ID:         {span.span_id}")
-                span_type = span.span_attributes.get('type', 'N/A') if span.span_attributes else 'N/A'
-                span_name = span.span_attributes.get('name', 'N/A') if span.span_attributes else 'N/A'
+                span_type = span.span_attributes.get("type", "N/A") if span.span_attributes else "N/A"
+                span_name = span.span_attributes.get("name", "N/A") if span.span_attributes else "N/A"
                 print(f"    Type:       {span_type}")
                 print(f"    Name:       {span_name}")
 
@@ -50,10 +51,11 @@ async def exact_match_scorer(input, output, expected, trace=None):
                 if span.metadata:
                     print(f"    Metadata:   {list(span.metadata.keys())}")
 
-            print("\n" + "="*80 + "\n")
+            print("\n" + "=" * 80 + "\n")
         except Exception as e:
             print(f"\n⚠️  Error fetching spans: {e}")
             import traceback
+
             traceback.print_exc()
     else:
         print(f"⚠️  No trace available for input: {input}")

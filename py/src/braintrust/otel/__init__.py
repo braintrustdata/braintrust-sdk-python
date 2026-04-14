@@ -3,6 +3,7 @@ import os
 import warnings
 from urllib.parse import urljoin
 
+
 INSTALL_ERR_MSG = (
     "OpenTelemetry packages are not installed. "
     "Install optional OpenTelemetry dependencies with: pip install braintrust[otel]"
@@ -402,9 +403,11 @@ def _get_braintrust_parent(object_type, object_id: str | None = None, compute_ar
 
     return None
 
+
 def is_root_span(span) -> bool:
     """Returns True if the span is a root span (no parent span)."""
     return getattr(span, "parent", None) is None
+
 
 def context_from_span_export(export_str: str):
     """

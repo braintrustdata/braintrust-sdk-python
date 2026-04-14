@@ -6,6 +6,7 @@ from braintrust.contrib.temporal import BraintrustPlugin
 # Import only what we need to avoid loading optional dependencies
 from braintrust.logger import init_logger
 
+
 # Initialize logger at module level before importing plugin
 init_logger(project="temporal-example")
 

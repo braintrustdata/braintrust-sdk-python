@@ -2,6 +2,7 @@
 import os
 
 import pytest
+from braintrust.integrations.langchain.context import clear_global_handler
 from braintrust.logger import (
     TEST_API_KEY,
     Logger,
@@ -10,8 +11,6 @@ from braintrust.logger import (
     _MemoryBackgroundLogger,
 )
 from braintrust.test_helpers import init_test_logger
-
-from braintrust_langchain.context import clear_global_handler
 
 
 @pytest.fixture(autouse=True)

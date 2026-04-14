@@ -16,8 +16,9 @@ Key concepts:
 
 import os
 
+
 # Enable OTEL compatibility mode
-os.environ['BRAINTRUST_OTEL_COMPAT'] = 'true'
+os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
 
 import braintrust
 from braintrust.otel import (
@@ -31,14 +32,14 @@ from opentelemetry import trace
 from opentelemetry.propagate import inject
 from opentelemetry.sdk.trace import TracerProvider
 
+
 PROJECT_NAME = "distributed-tracing-demo"
 
 
 def setup_otel():
     """Setup OTEL instrumentation with Braintrust processor."""
     provider = TracerProvider()
-    add_braintrust_span_processor(provider,
-                                  parent=f"project_name:different-project")
+    add_braintrust_span_processor(provider, parent=f"project_name:different-project")
     trace.set_tracer_provider(provider)
     return trace.get_tracer(__name__, "1.0.0")
 
@@ -61,9 +62,8 @@ def service_b_process_request(exported_context: str, tracer, project):
         with tracer.start_as_current_span("service_b.root") as fetch_span:
             # Nested operation in Service B
             with tracer.start_as_current_span("service_b.child"):
-                trace_id = format(fetch_span.get_span_context().trace_id, '032x')
+                trace_id = format(fetch_span.get_span_context().trace_id, "032x")
                 print(f"  Created OTEL child spans (trace_id: {trace_id})")
-
 
             # Ensure 'braintrust.parent' is set on the baggage.
             add_span_parent_to_baggage(fetch_span)
@@ -94,9 +94,7 @@ def service_c_process_request(headers: dict, project):
         span_id = analytics_span.span_id
         print(f"  Created BT span as child of OTEL parent (span_id: {span_id[:16]}...)")
         analytics_span.log(
-            input="Analytics data from Service B",
-            output="Processed analytics",
-            metadata={"service": "analytics"}
+            input="Analytics data from Service B", output="Processed analytics", metadata={"service": "analytics"}
         )
 
 
@@ -130,7 +128,7 @@ def main():
 
     # Flush all data
     project.flush()
-    if hasattr(trace.get_tracer_provider(), 'force_flush'):
+    if hasattr(trace.get_tracer_provider(), "force_flush"):
         trace.get_tracer_provider().force_flush(timeout_millis=5000)
 
     print(f"\n✓ Trace complete! All 3 services share trace_id: {trace_id[:16]}...")

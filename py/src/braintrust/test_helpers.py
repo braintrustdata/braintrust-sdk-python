@@ -6,6 +6,7 @@ from braintrust import logger
 from braintrust.logger import ObjectMetadata, OrgProjectMetadata, ProjectExperimentMetadata
 from braintrust.util import LazyValue
 
+
 # Fake API key for testing only - this will not work with actual API calls
 TEST_ORG_ID = "test-org-id"
 TEST_ORG_NAME = "test-org-name"
@@ -112,6 +113,20 @@ def init_test_logger(project_name: str):
 
     logger._compute_logger_metadata = fake_compute_logger_metadata
     return l
+
+
+def find_spans_by_type(spans, span_type):
+    """Filter spans by their span_attributes type."""
+    return [span for span in spans if span.get("span_attributes", {}).get("type") == span_type]
+
+
+def find_span_by_name(spans, name):
+    """Find a single span by its span_attributes name. Raises AssertionError with available names if not found."""
+    for span in spans:
+        if span["span_attributes"]["name"] == name:
+            return span
+    available_names = [span["span_attributes"]["name"] for span in spans]
+    raise AssertionError(f"Expected span named {name!r}. Available spans: {available_names}")
 
 
 def init_test_exp(experiment_name: str, project_name: str = None):

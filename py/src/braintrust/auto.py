@@ -4,10 +4,26 @@ Auto-instrumentation for AI/ML libraries.
 Provides one-line instrumentation for supported libraries.
 """
 
-from __future__ import annotations
-
 import logging
 from contextlib import contextmanager
+
+from braintrust.integrations import (
+    ADKIntegration,
+    AgentScopeIntegration,
+    AgnoIntegration,
+    AnthropicIntegration,
+    ClaudeAgentSDKIntegration,
+    DSPyIntegration,
+    GoogleGenAIIntegration,
+    LangChainIntegration,
+    LiteLLMIntegration,
+    MistralIntegration,
+    OpenAIAgentsIntegration,
+    OpenAIIntegration,
+    OpenRouterIntegration,
+    PydanticAIIntegration,
+)
+
 
 __all__ = ["auto_instrument"]
 
@@ -32,10 +48,15 @@ def auto_instrument(
     litellm: bool = True,
     pydantic_ai: bool = True,
     google_genai: bool = True,
+    openrouter: bool = True,
+    mistral: bool = True,
     agno: bool = True,
+    agentscope: bool = True,
     claude_agent_sdk: bool = True,
     dspy: bool = True,
     adk: bool = True,
+    langchain: bool = True,
+    openai_agents: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -52,10 +73,15 @@ def auto_instrument(
         litellm: Enable LiteLLM instrumentation (default: True)
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
+        openrouter: Enable OpenRouter instrumentation (default: True)
+        mistral: Enable Mistral instrumentation (default: True)
         agno: Enable Agno instrumentation (default: True)
+        agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
+        langchain: Enable LangChain instrumentation (default: True)
+        openai_agents: Enable OpenAI Agents SDK instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -104,94 +130,38 @@ def auto_instrument(
     results = {}
 
     if openai:
-        results["openai"] = _instrument_openai()
+        results["openai"] = _instrument_integration(OpenAIIntegration)
     if anthropic:
-        results["anthropic"] = _instrument_anthropic()
+        results["anthropic"] = _instrument_integration(AnthropicIntegration)
     if litellm:
-        results["litellm"] = _instrument_litellm()
+        results["litellm"] = _instrument_integration(LiteLLMIntegration)
     if pydantic_ai:
-        results["pydantic_ai"] = _instrument_pydantic_ai()
+        results["pydantic_ai"] = _instrument_integration(PydanticAIIntegration)
     if google_genai:
-        results["google_genai"] = _instrument_google_genai()
+        results["google_genai"] = _instrument_integration(GoogleGenAIIntegration)
+    if openrouter:
+        results["openrouter"] = _instrument_integration(OpenRouterIntegration)
+    if mistral:
+        results["mistral"] = _instrument_integration(MistralIntegration)
     if agno:
-        results["agno"] = _instrument_agno()
+        results["agno"] = _instrument_integration(AgnoIntegration)
+    if agentscope:
+        results["agentscope"] = _instrument_integration(AgentScopeIntegration)
     if claude_agent_sdk:
-        results["claude_agent_sdk"] = _instrument_claude_agent_sdk()
+        results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
     if dspy:
-        results["dspy"] = _instrument_dspy()
+        results["dspy"] = _instrument_integration(DSPyIntegration)
     if adk:
-        results["adk"] = _instrument_adk()
+        results["adk"] = _instrument_integration(ADKIntegration)
+    if langchain:
+        results["langchain"] = _instrument_integration(LangChainIntegration)
+    if openai_agents:
+        results["openai_agents"] = _instrument_integration(OpenAIAgentsIntegration)
 
     return results
 
 
-def _instrument_openai() -> bool:
+def _instrument_integration(integration) -> bool:
     with _try_patch():
-        from braintrust.oai import patch_openai
-
-        return patch_openai()
-    return False
-
-
-def _instrument_anthropic() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.anthropic import patch_anthropic
-
-        return patch_anthropic()
-    return False
-
-
-def _instrument_litellm() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.litellm import patch_litellm
-
-        return patch_litellm()
-    return False
-
-
-def _instrument_pydantic_ai() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.pydantic_ai import setup_pydantic_ai
-
-        return setup_pydantic_ai()
-    return False
-
-
-def _instrument_google_genai() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.google_genai import setup_genai
-
-        return setup_genai()
-    return False
-
-
-def _instrument_agno() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.agno import setup_agno
-
-        return setup_agno()
-    return False
-
-
-def _instrument_claude_agent_sdk() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.claude_agent_sdk import setup_claude_agent_sdk
-
-        return setup_claude_agent_sdk()
-    return False
-
-
-def _instrument_dspy() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.dspy import patch_dspy
-
-        return patch_dspy()
-    return False
-
-
-def _instrument_adk() -> bool:
-    with _try_patch():
-        from braintrust.wrappers.adk import setup_adk
-
-        return setup_adk()
+        return integration.setup()
     return False

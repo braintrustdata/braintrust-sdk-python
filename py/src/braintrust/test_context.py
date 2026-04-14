@@ -32,6 +32,7 @@ from braintrust import current_span, start_span
 from braintrust.test_helpers import init_test_logger, with_memory_logger  # noqa: F401
 from braintrust.wrappers.threads import setup_threads
 
+
 F = TypeVar("F", bound=Callable)
 
 

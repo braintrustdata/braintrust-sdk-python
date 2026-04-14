@@ -3,6 +3,7 @@ import re
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+
 # CORS configuration
 ALLOWED_ORIGINS: list[str | re.Pattern] = [
     "https://www.braintrust.dev",
@@ -22,6 +23,7 @@ ALLOWED_HEADERS = [
     "x-bt-project-id",
     "x-bt-stream-fmt",
     "x-bt-use-cache",
+    "x-bt-use-gateway",
     "x-stainless-os",
     "x-stainless-lang",
     "x-stainless-package-version",
@@ -56,7 +58,7 @@ def check_origin(origin: str) -> bool:
     for allowed in ALLOWED_ORIGINS:
         if isinstance(allowed, str) and origin == allowed:
             return True
-        elif isinstance(allowed, re.Pattern) and allowed.match(origin):
+        elif isinstance(allowed, re.Pattern) and allowed.fullmatch(origin):
             return True
 
     return False

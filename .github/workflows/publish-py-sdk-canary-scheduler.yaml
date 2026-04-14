@@ -1,0 +1,47 @@
+# This workflow schedules the Python SDK canary publish workflow on a daily basis.
+# The actual publish still happens in `test-publish-py-sdk.yaml` so TestPyPI trusted
+# publishing only needs that one workflow configured as the publisher.
+
+name: Schedule Python SDK Canary Publish
+
+concurrency:
+  group: publish-py-sdk-canary-scheduler
+  cancel-in-progress: false
+
+on:
+  schedule:
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  dispatch-canary-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch TestPyPI publish workflow
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "test-publish-py-sdk.yaml",
+              ref: "main",
+              inputs: {
+                ref: "main",
+                release_type: "canary",
+                dry_run: "false",
+              },
+            });
+
+      - name: Summarize dispatch
+        run: |
+          {
+            echo "## Python SDK Canary Dispatch Queued"
+            echo
+            echo "- Workflow: \`test-publish-py-sdk.yaml\`"
+            echo "- Release type: \`canary\`"
+            echo "- Ref: \`main\`"
+          } >> "$GITHUB_STEP_SUMMARY"

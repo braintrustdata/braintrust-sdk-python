@@ -24,7 +24,6 @@ If you use `mise activate` in your shell, entering the repo will automatically e
 
 - `py/`: main Python SDK
 - `integrations/`: separate integration packages such as LangChain and ADK
-- `internal/golden/`: golden and compatibility projects
 - `docs/`: supporting docs
 
 Most SDK changes should happen under `py/`.
@@ -135,6 +134,17 @@ BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all \
   nox -s "test_claude_agent_sdk(latest)" -- -k "test_calculator_with_multiple_operations"
 ```
 
+### Type Tests
+
+`py/src/braintrust/type_tests/` contains tests that are checked by pyright, mypy, and pytest. The `test_types` nox session runs all three and is included in CI automatically.
+
+When changing generic type signatures (e.g., `Eval`, `EvalCase`, `EvalScorer`, `EvalHooks`), add or update a test file in `type_tests/` to verify the type checker accepts the intended usage patterns. Test files are named `test_*.py`, use absolute imports (`from braintrust.framework import ...`), and double as regular pytest files.
+
+```bash
+cd py
+nox -s test_types
+```
+
 ### Fixtures
 
 Shared test fixtures live in `py/src/braintrust/conftest.py`.
@@ -147,16 +157,96 @@ Common ones include:
 
 The `memory_logger` fixture from `braintrust.test_helpers` is useful for asserting on logged spans without a real Braintrust backend.
 
+## Benchmarks
+
+The SDK includes local performance benchmarks powered by [pyperf](https://pyperf.readthedocs.io/), located in `py/benchmarks/`. These cover hot paths like serialization and deep-copy routines.
+
+### Running benchmarks
+
+```bash
+cd py
+
+# Run all benchmarks
+make bench
+
+# Quick sanity check (fewer iterations)
+make bench BENCH_ARGS="--fast"
+
+# Save results for later comparison
+make bench BENCH_ARGS="-o /tmp/results.json"
+
+# Run a single benchmark module directly
+python -m benchmarks.benches.bench_bt_json
+```
+
+To benchmark with the optional `orjson` fast-path installed:
+
+```bash
+cd py
+python -m uv pip install -e '.[performance]'
+make bench
+```
+
+### Comparing across branches
+
+```bash
+cd py
+
+git checkout main
+make bench BENCH_ARGS="-o /tmp/main.json"
+
+git checkout my-branch
+make bench BENCH_ARGS="-o /tmp/branch.json"
+
+make bench-compare BENCH_BASE=/tmp/main.json BENCH_NEW=/tmp/branch.json
+```
+
+### Useful pyperf flags
+
+| Flag            | Purpose                                           |
+| --------------- | ------------------------------------------------- |
+| `--fast`        | Fewer iterations — good for a quick sanity check  |
+| `--rigorous`    | More iterations — reduces noise for final numbers |
+| `-o FILE`       | Write results to a JSON file for later comparison |
+| `--append FILE` | Append to an existing results file                |
+
+Run `python -m benchmarks --help` for the full list.
+
+### Adding a new benchmark
+
+Drop a new `bench_<name>.py` file into `py/benchmarks/benches/`. It will be picked up automatically — no registration required.
+
+Your module needs to expose a `main()` function that accepts an optional `pyperf.Runner`:
+
+```python
+import pyperf
+
+from benchmarks._utils import disable_pyperf_psutil
+
+
+def main(runner: pyperf.Runner | None = None) -> None:
+    if runner is None:
+        disable_pyperf_psutil()
+        runner = pyperf.Runner()
+
+    runner.bench_func("my_benchmark", my_func, my_arg)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+If your benchmark needs reusable test data, add builder functions to `py/benchmarks/fixtures.py`.
+
 ## CI
 
 GitHub Actions workflows live in `.github/workflows/`.
 
 Main workflows:
 
-- `py.yaml`: SDK test matrix
+- `checks.yaml`: merged SDK checks workflow, including lint, pinned-action validation, the Python test matrix, wheel build, and the `checks-passed` required-check aggregator
 - `langchain-py-test.yaml`: LangChain integration tests
 - `adk-py-test.yaml`: ADK integration tests
-- `lint.yaml`: pre-commit and formatting checks
 - `publish-py-sdk.yaml`: PyPI release
 - `test-publish-py-sdk.yaml`: TestPyPI release validation
 

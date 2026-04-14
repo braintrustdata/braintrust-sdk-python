@@ -10,17 +10,16 @@ from braintrust import logger
 from braintrust.conftest import get_vcr_config
 from braintrust.test_helpers import init_test_logger
 
+
 # Source directory paths (resolved to handle installed vs source locations)
 _SOURCE_DIR = Path(__file__).resolve().parent
-AUTO_TEST_SCRIPTS_DIR = _SOURCE_DIR / "auto_test_scripts"
+AUTO_TEST_SCRIPTS_DIR = _SOURCE_DIR.parent / "integrations" / "auto_test_scripts"
 
 # Cassettes dir can be overridden via env var for subprocess tests
 CASSETTES_DIR = Path(os.environ.get("BRAINTRUST_CASSETTES_DIR", _SOURCE_DIR / "cassettes"))
 
 
-def run_in_subprocess(
-    code: str, timeout: int = 30, env: dict[str, str] | None = None
-) -> subprocess.CompletedProcess:
+def run_in_subprocess(code: str, timeout: int = 30, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
     """Run Python code in a fresh subprocess."""
     run_env = os.environ.copy()
     if env:
@@ -35,7 +34,7 @@ def run_in_subprocess(
 
 
 def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subprocess.CompletedProcess:
-    """Run a test script from the auto_test_scripts directory.
+    """Run a test script from the integrations auto_test_scripts directory.
 
     Raises AssertionError if the script exits with non-zero code.
     """
@@ -44,7 +43,7 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
     env = os.environ.copy()
     env["BRAINTRUST_CASSETTES_DIR"] = str(_SOURCE_DIR / "cassettes")
     env["BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR"] = str(
-        _SOURCE_DIR / "claude_agent_sdk" / "cassettes"
+        _SOURCE_DIR.parent / "integrations" / "claude_agent_sdk" / "cassettes"
     )
     result = subprocess.run(
         [sys.executable, str(script_path)],
@@ -72,7 +71,7 @@ def assert_metrics_are_valid(metrics, start=None, end=None):
 
 
 @contextmanager
-def autoinstrument_test_context(cassette_name: str, *, use_vcr: bool = True):
+def autoinstrument_test_context(cassette_name: str, *, use_vcr: bool = True, cassettes_dir: Path | None = None):
     """Context manager for auto_instrument tests.
 
     Sets up the shared memory_logger context and, by default, VCR.
@@ -81,12 +80,16 @@ def autoinstrument_test_context(cassette_name: str, *, use_vcr: bool = True):
     non-VCR mechanism, such as the Claude Agent SDK subprocess cassette
     transport.
 
+    Use ``cassettes_dir`` to override the cassette directory (e.g. when
+    cassettes live next to an integration package rather than in
+    ``wrappers/cassettes/``).
+
     Usage:
         with autoinstrument_test_context("test_auto_openai") as memory_logger:
             # make API call
             spans = memory_logger.pop()
     """
-    cassette_path = CASSETTES_DIR / f"{cassette_name}.yaml"
+    cassette_path = (cassettes_dir or CASSETTES_DIR) / f"{cassette_name}.yaml"
 
     init_test_logger("test-auto-instrument")
 

@@ -9,6 +9,7 @@ and custom filter functions. Only AI-related spans and root spans will be sent t
 import os
 import time
 
+
 # Set environment variables
 os.environ.setdefault("BRAINTRUST_PARENT", "project_name:otel-examples")
 os.environ.setdefault("BRAINTRUST_OTEL_FILTER_AI_SPANS", "false")
@@ -18,6 +19,7 @@ from openai import OpenAI
 from opentelemetry import trace
 from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
+
 
 # Set up the tracer provider
 provider = TracerProvider()

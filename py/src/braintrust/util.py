@@ -29,6 +29,7 @@ def parse_env_var_float(name: str, default: float) -> float:
     except (ValueError, TypeError):
         return default
 
+
 GLOBAL_PROJECT = "Global"
 BT_IS_ASYNC_ATTRIBUTE = "_BT_IS_ASYNC"
 
@@ -37,6 +38,11 @@ BT_IS_ASYNC_ATTRIBUTE = "_BT_IS_ASYNC"
 # https://stackoverflow.com/questions/5574702/how-do-i-print-to-stderr-in-python.
 def is_numeric(v):
     return isinstance(v, (int, float, complex)) and not isinstance(v, bool)
+
+
+def clean_nones(obj: dict[str, Any]) -> dict[str, Any]:
+    """Return a shallow copy of *obj* with ``None``-valued keys removed."""
+    return {k: v for k, v in obj.items() if v is not None}
 
 
 def eprint(*args, **kwargs) -> None:

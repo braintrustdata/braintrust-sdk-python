@@ -2,7 +2,7 @@ PYTHON ?= python
 UV := $(PYTHON) -m uv
 UV_VERSION := $(shell awk '$$1=="uv" { print $$2 }' ../.tool-versions)
 
-.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean
+.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean bench bench-compare
 
 clean:
 	rm -rf build dist
@@ -32,8 +32,18 @@ test-wheel:
 test-core:
 	nox -s test_core
 
+bench:
+	$(PYTHON) -m benchmarks $(BENCH_ARGS)
+
+bench-compare:
+	@if [ -z "$(BENCH_BASE)" ] || [ -z "$(BENCH_NEW)" ]; then \
+		echo "Usage: make bench-compare BENCH_BASE=/tmp/base.json BENCH_NEW=/tmp/new.json"; \
+		exit 1; \
+	fi
+	$(PYTHON) -m pyperf compare_to $(BENCH_BASE) $(BENCH_NEW)
+
 _template-version:
-	@bash scripts/template-version.sh
+	@$(PYTHON) scripts/template-version.py
 
 build: clean _template-version
 	$(PYTHON) -m build
@@ -60,12 +70,14 @@ install-dev: install-build-deps
 	$(UV) pip install -r requirements-dev.txt
 
 install-optional: install-dev
-	$(UV) pip install anthropic openai pydantic_ai litellm agno google-genai google-adk dspy langsmith
+	$(UV) pip install -r requirements-optional.txt
 	$(UV) pip install -e .[temporal,otel]
 
 .DEFAULT_GOAL := help
 help:
 	@echo "Available targets:"
+	@echo "  bench               - Run benchmarks (pass extra flags via BENCH_ARGS=, e.g. --fast)"
+	@echo "  bench-compare       - Compare two benchmark results (BENCH_BASE=... BENCH_NEW=...)"
 	@echo "  build               - Build Python package"
 	@echo "  clean               - Remove build artifacts"
 	@echo "  help                - Show this help message"

@@ -2,47 +2,39 @@ name: langchain-py
 
 on:
   workflow_call:
-    inputs:
-      python-version:
-        required: true
-        type: string
-      os:
-        required: true
-        type: string
 
 jobs:
   test:
-    runs-on: ${{ inputs.os }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
-
-    defaults:
-      run:
-        working-directory: integrations/langchain-py
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache: true
           experimental: true
-          install_args: python@${{ inputs.python-version }} uv
+          install_args: uv
 
       - name: Install dependencies
+        working-directory: integrations/langchain-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv sync
+          mise exec -- uv sync
 
-      - name: Lint with ruff
-        if: ${{ inputs.os == 'ubuntu-latest' }}
+      - name: Lint package
+        working-directory: integrations/langchain-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
+          mise exec -- uv run ruff check $(git ls-files '*.py' | grep -v 'examples/')
 
       - name: Run tests
+        working-directory: integrations/langchain-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv run pytest src
+          mise exec -- uv run pytest src
 
-      - name: Test import
+      - name: Test package import
+        working-directory: integrations/langchain-py
         run: |
-          mise exec python@${{ inputs.python-version }} -- uv run python -c "import braintrust_langchain; print('braintrust_langchain imported successfully')"
-          mise exec python@${{ inputs.python-version }} -- uv run python -c "from braintrust_langchain import BraintrustCallbackHandler; print('BraintrustCallbackHandler imported successfully')"
+          mise exec -- uv run python -c "import braintrust_langchain; print('braintrust_langchain imported successfully')"
+          mise exec -- uv run python -c "from braintrust_langchain import BraintrustCallbackHandler; print('BraintrustCallbackHandler imported successfully')"

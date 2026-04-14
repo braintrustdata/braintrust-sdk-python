@@ -10,6 +10,7 @@ import asyncio
 
 import braintrust
 
+
 # Auto-instrument all supported libraries including Google ADK
 braintrust.auto_instrument()
 

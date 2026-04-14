@@ -16,11 +16,13 @@ import zipfile
 from typing import Any
 
 import requests
-from braintrust.framework import _set_lazy_load
+import slugify
+from braintrust.framework import _evals, _scorer_name, _set_lazy_load
 
 from .. import api_conn, login, org_id, proxy_conn
 from ..framework2 import ProjectIdCache, global_
 from ..generated_types import IfExists
+from ..parameters import serialize_remote_eval_parameters_container
 from ..util import add_azure_blob_headers
 
 
@@ -136,6 +138,23 @@ def _run_install(install_args: list[str], packages_dir: str):
         ],
         check=True,
     )
+
+
+def _validate_python_archive_path(archive_path: str) -> None:
+    for component in archive_path.split(os.sep):
+        if any(ch.isspace() for ch in component):
+            raise ValueError(
+                "python bundle source path "
+                f"'{archive_path}' contains whitespace in path component '{component}'; "
+                "rename the file or directory before running `braintrust push`"
+            )
+
+
+def _validate_python_bundle_source_paths(sources: list[str], archive_root: str | None = None) -> None:
+    abs_root = os.path.abspath(archive_root or os.getcwd())
+    for source in sources:
+        archive_path = os.path.normpath(os.path.relpath(os.path.abspath(source), abs_root))
+        _validate_python_archive_path(archive_path)
 
 
 def _upload_bundle(entry_module_name: str, sources: list[str], requirements: str | None) -> str:
@@ -270,6 +289,63 @@ def _collect_prompt_function_defs(
         functions.append(p.to_function_definition(if_exists, project_ids))
 
 
+def _collect_evaluator_defs(
+    project_ids: ProjectIdCache,
+    functions: list[dict[str, Any]],
+    bundle_id: str | None,
+    if_exists: IfExists,
+    source_file: str,
+    evaluators: dict[str, Any],
+) -> None:
+    source_stem = os.path.splitext(os.path.basename(source_file))[0]
+
+    for eval_name, eval_instance in evaluators.items():
+        evaluator = eval_instance.evaluator
+        project_id = project_ids.get_by_name(evaluator.project_name)
+
+        scores = [{"name": _scorer_name(scorer, i)} for i, scorer in enumerate(evaluator.scores)]
+        evaluator_definition: dict[str, Any] = {"scores": scores}
+        if evaluator.parameters is not None:
+            evaluator_definition["parameters"] = serialize_remote_eval_parameters_container(evaluator.parameters)
+
+        functions.append(
+            {
+                "project_id": project_id,
+                "name": f"Eval {eval_name} sandbox",
+                "slug": slugify.slugify(f"{source_stem}-{eval_name}-sandbox"),
+                "description": f"Sandbox eval {eval_name}",
+                "function_data": {
+                    "type": "code",
+                    "data": {
+                        "type": "bundle",
+                        "runtime_context": {
+                            "runtime": "python",
+                            "version": _py_version(),
+                        },
+                        "location": {
+                            "type": "sandbox",
+                            "sandbox_spec": {"provider": "lambda"},
+                            "entrypoints": [source_file],
+                            "eval_name": eval_name,
+                            "evaluator_definition": evaluator_definition,
+                        },
+                        "bundle_id": bundle_id,
+                    },
+                },
+                "function_type": "sandbox",
+                "metadata": {"_bt_sandbox_group_name": source_stem},
+                "if_exists": if_exists,
+            }
+        )
+
+
+def _collect_parameters_function_defs(
+    project_ids: ProjectIdCache, functions: list[dict[str, Any]], if_exists: IfExists
+) -> None:
+    for p in global_.parameters:
+        functions.append(p.to_function_definition(if_exists, project_ids))
+
+
 def run(args):
     """Runs the braintrust push subcommand."""
     login(
@@ -289,6 +365,7 @@ def run(args):
     try:
         with _set_lazy_load(True):
             sources = _import_module(module_name, path)
+            evaluators = _evals.evaluators.copy()
     except ImportError as e:
         if str(e) == "attempted relative import with no known parent package":
             raise ImportError(
@@ -300,14 +377,35 @@ def run(args):
         raise
     except Exception as e:
         raise
+    finally:
+        _evals.clear()
 
     project_ids = ProjectIdCache()
     functions: list[dict[str, Any]] = []
-    if len(global_.functions) > 0:
+
+    needs_bundle = len(global_.functions) > 0 or len(evaluators) > 0
+    bundle_id = None
+    if needs_bundle:
+        _validate_python_bundle_source_paths(sources)
         bundle_id = _upload_bundle(module_name, sources, args.requirements)
+
+    if len(global_.functions) > 0:
         _collect_function_function_defs(project_ids, functions, bundle_id, args.if_exists)
+
+    if len(evaluators) > 0:
+        _collect_evaluator_defs(
+            project_ids,
+            functions,
+            bundle_id,
+            args.if_exists,
+            args.file,
+            evaluators,
+        )
+
     if len(global_.prompts) > 0:
         _collect_prompt_function_defs(project_ids, functions, args.if_exists)
+    if len(global_.parameters) > 0:
+        _collect_parameters_function_defs(project_ids, functions, args.if_exists)
 
     if len(functions) > 0:
         api_conn().post_json("insert-functions", {"functions": functions})

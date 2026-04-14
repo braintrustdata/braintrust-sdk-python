@@ -11,6 +11,7 @@ Run with: OPENAI_API_KEY=<your-key> BRAINTRUST_API_KEY=<your-key> python example
 # IMPORTANT: Patch LiteLLM BEFORE importing DSPy to get detailed token metrics
 from braintrust.wrappers.litellm import patch_litellm
 
+
 patch_litellm()
 
 # Now import DSPy

@@ -4,6 +4,7 @@ from typing import TypeVar
 
 from .util import eprint
 
+
 T = TypeVar("T")
 
 DEFAULT_QUEUE_SIZE = 25000

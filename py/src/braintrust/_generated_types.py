@@ -11,6 +11,7 @@ from typing import Any, Literal, TypeAlias, TypedDict
 
 from typing_extensions import NotRequired
 
+
 AclObjectType: TypeAlias = Literal[
     'organization',
     'project',
@@ -136,7 +137,9 @@ class AsyncScoringControlAsyncScoringControl4TriggeredFunction(TypedDict):
 
 class AsyncScoringControlAsyncScoringControl4(TypedDict):
     kind: Literal['trigger_functions']
-    triggered_functions: Sequence[AsyncScoringControlAsyncScoringControl4TriggeredFunction]
+    triggered_functions: Sequence[
+        AsyncScoringControlAsyncScoringControl4TriggeredFunction
+    ]
 
 
 class AsyncScoringControlAsyncScoringControl5(TypedDict):
@@ -162,7 +165,9 @@ class AsyncScoringStateAsyncScoringState1(TypedDict):
     status: Literal['disabled']
 
 
-AsyncScoringState: TypeAlias = AsyncScoringStateAsyncScoringState | AsyncScoringStateAsyncScoringState1 | None
+AsyncScoringState: TypeAlias = (
+    AsyncScoringStateAsyncScoringState | AsyncScoringStateAsyncScoringState1 | None
+)
 
 
 class PreprocessorPreprocessor(TypedDict):
@@ -387,7 +392,9 @@ class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam(TypedDict
     name: NotRequired[str | None]
 
 
-class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2FunctionCall(TypedDict):
+class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2FunctionCall(
+    TypedDict
+):
     arguments: str
     name: str
 
@@ -395,7 +402,9 @@ class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2FunctionC
 class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2(TypedDict):
     role: Literal['assistant']
     content: NotRequired[str | Sequence[ChatCompletionContentPartText] | None]
-    function_call: NotRequired[ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2FunctionCall | None]
+    function_call: NotRequired[
+        ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2FunctionCall
+    ]
     name: NotRequired[str | None]
     tool_calls: NotRequired[Sequence[ChatCompletionMessageToolCall] | None]
     reasoning: NotRequired[Sequence[ChatCompletionMessageReasoning] | None]
@@ -524,6 +533,10 @@ class Dataset(TypedDict):
     """
     Identifies the user who created the dataset
     """
+    tags: NotRequired[Sequence[str] | None]
+    """
+    A list of tags for the dataset
+    """
     metadata: NotRequired[Mapping[str, Any] | None]
     """
     User-controlled metadata about the dataset
@@ -538,6 +551,30 @@ class DatasetEventMetadata(TypedDict):
     model: NotRequired[str | None]
     """
     The model used for this example
+    """
+
+
+class DatasetSnapshot(TypedDict):
+    id: str
+    """
+    Unique identifier for the dataset snapshot
+    """
+    dataset_id: str
+    """
+    Unique identifier for the dataset that this snapshot belongs to
+    """
+    name: str
+    """
+    Name of the dataset snapshot
+    """
+    description: str | None
+    xact_id: str
+    """
+    Transaction id of the brainstore version at the time of the snapshot
+    """
+    created: str | None
+    """
+    Date of dataset snapshot creation
     """
 
 
@@ -721,7 +758,9 @@ class Preprocessor1Preprocessor12(TypedDict):
     pass
 
 
-class Preprocessor1Preprocessor13(Preprocessor1Preprocessor1, Preprocessor1Preprocessor12):
+class Preprocessor1Preprocessor13(
+    Preprocessor1Preprocessor1, Preprocessor1Preprocessor12
+):
     pass
 
 
@@ -849,18 +888,6 @@ class FunctionIdFunctionId4InlineContext(TypedDict):
     version: str
 
 
-class FunctionIdFunctionId4(TypedDict):
-    inline_context: FunctionIdFunctionId4InlineContext
-    code: str
-    """
-    The inline code to execute
-    """
-    name: NotRequired[str | None]
-    """
-    The name of the inline code function
-    """
-
-
 FunctionIdRef: TypeAlias = Mapping[str, Any]
 
 
@@ -879,7 +906,9 @@ FunctionObjectType: TypeAlias = Literal[
 ]
 
 
-FunctionOutputType: TypeAlias = Literal['completion', 'score', 'facet', 'classification', 'any']
+FunctionOutputType: TypeAlias = Literal[
+    'completion', 'score', 'facet', 'classification', 'any'
+]
 
 
 FunctionTypeEnum: TypeAlias = Literal[
@@ -1274,6 +1303,7 @@ class InvokeFunctionInvokeFunction4(TypedDict):
     """
     The inline code to execute
     """
+    function_type: NotRequired[FunctionTypeEnum | None]
     name: NotRequired[str | None]
     """
     The name of the inline code function
@@ -1359,7 +1389,9 @@ class MCPServer(TypedDict):
     """
 
 
-MessageRole: TypeAlias = Literal['system', 'user', 'assistant', 'function', 'tool', 'model', 'developer']
+MessageRole: TypeAlias = Literal[
+    'system', 'user', 'assistant', 'function', 'tool', 'model', 'developer'
+]
 
 
 class ModelParamsModelParamsToolChoiceFunction(TypedDict):
@@ -1430,7 +1462,9 @@ class NullableSavedFunctionIdNullableSavedFunctionId1(TypedDict):
 
 
 NullableSavedFunctionId: TypeAlias = (
-    NullableSavedFunctionIdNullableSavedFunctionId | NullableSavedFunctionIdNullableSavedFunctionId1 | None
+    NullableSavedFunctionIdNullableSavedFunctionId
+    | NullableSavedFunctionIdNullableSavedFunctionId1
+    | None
 )
 """
 Default preprocessor for this project. When set, functions that use preprocessors will use this instead of their built-in default.
@@ -1438,7 +1472,9 @@ Default preprocessor for this project. When set, functions that use preprocessor
 
 
 class ObjectReference(TypedDict):
-    object_type: Literal['project_logs', 'experiment', 'dataset', 'prompt', 'function', 'prompt_session']
+    object_type: Literal[
+        'project_logs', 'experiment', 'dataset', 'prompt', 'function', 'prompt_session'
+    ]
     """
     Type of the object the event is originating from.
     """
@@ -1461,7 +1497,9 @@ class ObjectReference(TypedDict):
 
 
 class ObjectReferenceNullish(TypedDict):
-    object_type: Literal['project_logs', 'experiment', 'dataset', 'prompt', 'function', 'prompt_session']
+    object_type: Literal[
+        'project_logs', 'experiment', 'dataset', 'prompt', 'function', 'prompt_session'
+    ]
     """
     Type of the object the event is originating from.
     """
@@ -1505,7 +1543,14 @@ class Organization(TypedDict):
 
 
 Permission: TypeAlias = Literal[
-    'create', 'read', 'update', 'delete', 'create_acls', 'read_acls', 'update_acls', 'delete_acls'
+    'create',
+    'read',
+    'update',
+    'delete',
+    'create_acls',
+    'read_acls',
+    'update_acls',
+    'delete_acls',
 ]
 """
 Each permission permits a certain type of operation on an object in the system
@@ -1736,7 +1781,9 @@ class ProjectScoreCategory(TypedDict):
     """
 
 
-ProjectScoreType: TypeAlias = Literal['slider', 'categorical', 'weighted', 'minimum', 'maximum', 'online', 'free-form']
+ProjectScoreType: TypeAlias = Literal[
+    'slider', 'categorical', 'weighted', 'minimum', 'maximum', 'online', 'free-form'
+]
 """
 The type of the configured score
 """
@@ -2035,12 +2082,28 @@ class Role(TypedDict):
 
 class RunEvalData(TypedDict):
     dataset_id: str
+    dataset_version: NotRequired[str | None]
+    """
+    The version of the dataset to evaluate
+    """
+    dataset_environment: NotRequired[str | None]
+    """
+    The environment tag that resolves to the dataset version to evaluate
+    """
     _internal_btql: NotRequired[Mapping[str, Any] | None]
 
 
 class RunEvalData1(TypedDict):
     project_name: str
     dataset_name: str
+    dataset_version: NotRequired[str | None]
+    """
+    The version of the dataset to evaluate
+    """
+    dataset_environment: NotRequired[str | None]
+    """
+    The environment tag that resolves to the dataset version to evaluate
+    """
     _internal_btql: NotRequired[Mapping[str, Any] | None]
 
 
@@ -2108,6 +2171,7 @@ class TaskTask4(TypedDict):
     """
     The inline code to execute
     """
+    function_type: NotRequired[FunctionTypeEnum | None]
     name: NotRequired[str | None]
     """
     The name of the inline code function
@@ -2202,7 +2266,9 @@ class SavedFunctionIdSavedFunctionId1(TypedDict):
     function_type: NotRequired[FunctionTypeEnum | None]
 
 
-SavedFunctionId: TypeAlias = SavedFunctionIdSavedFunctionId | SavedFunctionIdSavedFunctionId1
+SavedFunctionId: TypeAlias = (
+    SavedFunctionIdSavedFunctionId | SavedFunctionIdSavedFunctionId1
+)
 
 
 class ServiceToken(TypedDict):
@@ -2281,7 +2347,17 @@ class SpanScope(TypedDict):
 
 
 SpanType: TypeAlias = Literal[
-    'llm', 'score', 'function', 'eval', 'task', 'tool', 'automation', 'facet', 'preprocessor', 'classifier', 'review'
+    'llm',
+    'score',
+    'function',
+    'eval',
+    'task',
+    'tool',
+    'automation',
+    'facet',
+    'preprocessor',
+    'classifier',
+    'review',
 ]
 """
 Type of the span, for display purposes only
@@ -2303,7 +2379,16 @@ class SSEProgressEventData(TypedDict):
     format: FunctionFormat
     output_type: FunctionOutputType
     name: str
-    event: Literal['reasoning_delta', 'text_delta', 'json_delta', 'error', 'console', 'start', 'done', 'progress']
+    event: Literal[
+        'reasoning_delta',
+        'text_delta',
+        'json_delta',
+        'error',
+        'console',
+        'start',
+        'done',
+        'progress',
+    ]
     data: str
 
 
@@ -2323,6 +2408,15 @@ class ToolFunctionDefinitionFunction(TypedDict):
 class ToolFunctionDefinition(TypedDict):
     type: Literal['function']
     function: ToolFunctionDefinitionFunction
+
+
+TopicAutomationConfigBackfillTimeRange = TypedDict(
+    'TopicAutomationConfigBackfillTimeRange',
+    {
+        'from': str,
+        'to': str,
+    },
+)
 
 
 class TopicAutomationDataScopeTopicAutomationDataScope(TypedDict):
@@ -2347,34 +2441,6 @@ TopicAutomationDataScope: TypeAlias = (
 """
 Optional data scope for topic automation.
 """
-
-
-class TopicMapData(TypedDict):
-    type: Literal['topic_map']
-    source_facet: str
-    """
-    The facet field name to use as input for classification
-    """
-    embedding_model: str
-    """
-    The embedding model to use for embedding facet values
-    """
-    bundle_key: NotRequired[str | None]
-    """
-    Key of the topic map bundle in code_bundles bucket
-    """
-    report_key: NotRequired[str | None]
-    """
-    Key of the clustering report in code_bundles bucket
-    """
-    topic_names: NotRequired[Mapping[str, str] | None]
-    """
-    Mapping from topic_id to topic name
-    """
-    distance_threshold: NotRequired[float | None]
-    """
-    Maximum distance to nearest centroid. If exceeded, returns no_match.
-    """
 
 
 class Function1Function1(TypedDict):
@@ -2413,6 +2479,17 @@ class TopicMapFunctionAutomation(TypedDict):
     """
     Per-topic-map BTQL filter. For trace scope, a topic map runs when max(filter) over the trace is truthy. For span scope, it runs when the current span matches.
     """
+
+
+class TopicMapGenerationSettings(TypedDict):
+    algorithm: Literal['hdbscan', 'kmeans']
+    dimension_reduction: Literal['umap', 'pca', 'none']
+    sample_size: NotRequired[int | None]
+    n_clusters: NotRequired[int | None]
+    min_cluster_size: NotRequired[int | None]
+    min_samples: NotRequired[int | None]
+    hierarchy_threshold: NotRequired[int | None]
+    naming_model: NotRequired[str | None]
 
 
 class TraceScope(TypedDict):
@@ -2454,7 +2531,11 @@ class TriggeredFunctionState(TypedDict):
     """
     Number of execution attempts (for retry tracking)
     """
-    scope: TriggeredFunctionStateScope | TriggeredFunctionStateScope1 | TriggeredFunctionStateScope2
+    scope: (
+        TriggeredFunctionStateScope
+        | TriggeredFunctionStateScope1
+        | TriggeredFunctionStateScope2
+    )
     """
     The scope of data this function operates on
     """
@@ -2487,6 +2568,10 @@ class User(TypedDict):
     created: NotRequired[str | None]
     """
     Date of user creation
+    """
+    last_active_at: NotRequired[float | None]
+    """
+    Unix timestamp in milliseconds of the user's last activity, when available
     """
 
 
@@ -2557,6 +2642,7 @@ class ViewOptionsViewOptions1(TypedDict):
     rowHeight: NotRequired[str | None]
     tallGroupRows: NotRequired[bool | None]
     layout: NotRequired[str | None]
+    topicMapReportKey: NotRequired[str | None]
     chartHeight: NotRequired[float | None]
     excludedMeasures: NotRequired[Sequence[ViewOptionsViewOptions1ExcludedMeasure] | None]
     yMetric: NotRequired[ViewOptionsViewOptions1YMetric | None]
@@ -2569,6 +2655,7 @@ class ViewOptionsViewOptions1(TypedDict):
     chartAnnotations: NotRequired[Sequence[ViewOptionsViewOptions1ChartAnnotation] | None]
     timeRangeFilter: NotRequired[str | ViewOptionsViewOptions1TimeRangeFilter | None]
     queryShape: NotRequired[Literal['traces', 'spans'] | None]
+    cluster: NotRequired[str | None]
     freezeColumns: NotRequired[bool | None]
 
 
@@ -2623,8 +2710,15 @@ class AnyModelParams(TypedDict):
     frequency_penalty: NotRequired[float | None]
     presence_penalty: NotRequired[float | None]
     response_format: NotRequired[ResponseFormatNullish | None]
-    tool_choice: NotRequired[Literal['auto'] | Literal['none'] | Literal['required'] | AnyModelParamsToolChoice | None]
-    function_call: NotRequired[Literal['auto'] | Literal['none'] | AnyModelParamsFunctionCall | None]
+    tool_choice: NotRequired[
+        Literal['auto']
+        | Literal['none']
+        | Literal['required']
+        | AnyModelParamsToolChoice
+    ]
+    function_call: NotRequired[
+        Literal['auto'] | Literal['none'] | AnyModelParamsFunctionCall
+    ]
     n: NotRequired[float | None]
     stop: NotRequired[Sequence[str] | None]
     reasoning_effort: NotRequired[Literal['none', 'minimal', 'low', 'medium', 'high'] | None]
@@ -2659,7 +2753,9 @@ AsyncScoringControl: TypeAlias = (
 )
 
 
-AttachmentReference: TypeAlias = BraintrustAttachmentReference | ExternalAttachmentReference
+AttachmentReference: TypeAlias = (
+    BraintrustAttachmentReference | ExternalAttachmentReference
+)
 
 
 class AttachmentStatus(TypedDict):
@@ -2683,28 +2779,6 @@ class PreprocessorPreprocessor4(PreprocessorPreprocessor1, PreprocessorPreproces
 Preprocessor: TypeAlias = PreprocessorPreprocessor3 | PreprocessorPreprocessor4
 
 
-class BatchedFacetDataTopicMap(TypedDict):
-    function_name: str
-    """
-    The name of the topic map function
-    """
-    topic_map_id: NotRequired[str | None]
-    """
-    The id of the topic map function
-    """
-    topic_map_data: TopicMapData
-
-
-class BatchedFacetData(TypedDict):
-    type: Literal['batched_facet']
-    preprocessor: NotRequired[Preprocessor | None]
-    facets: Sequence[BatchedFacetDataFacet]
-    topic_maps: NotRequired[Mapping[str, Sequence[BatchedFacetDataTopicMap]] | None]
-    """
-    Topic maps that depend on facets in this batch, keyed by source facet name. Each source facet can have multiple topic maps.
-    """
-
-
 ChatCompletionContentPart: TypeAlias = (
     ChatCompletionContentPartTextWithTitle
     | ChatCompletionContentPartImageWithTitle
@@ -2721,7 +2795,9 @@ class ChatCompletionMessageParamChatCompletionMessageParam1(TypedDict):
 class ChatCompletionMessageParamChatCompletionMessageParam2(TypedDict):
     role: Literal['assistant']
     content: NotRequired[str | Sequence[ChatCompletionContentPartText] | None]
-    function_call: NotRequired[ChatCompletionMessageParamChatCompletionMessageParam2FunctionCall | None]
+    function_call: NotRequired[
+        ChatCompletionMessageParamChatCompletionMessageParam2FunctionCall
+    ]
     name: NotRequired[str | None]
     tool_calls: NotRequired[Sequence[ChatCompletionMessageToolCall] | None]
     reasoning: NotRequired[Sequence[ChatCompletionMessageReasoning] | None]
@@ -2905,6 +2981,14 @@ class Experiment(TypedDict):
     """
     Version number of the linked dataset the experiment was run against. This can be used to reproduce the experiment after the dataset has been modified.
     """
+    parameters_id: NotRequired[str | None]
+    """
+    Identifier of the linked saved parameters object, or null if the experiment is not linked to saved parameters
+    """
+    parameters_version: NotRequired[str | None]
+    """
+    Version number of the linked saved parameters object the experiment was run against.
+    """
     public: bool
     """
     Whether or not the experiment is public. Public experiments can be viewed by anybody inside or outside the organization
@@ -2942,7 +3026,9 @@ class Preprocessor1Preprocessor11(TypedDict):
     function_type: NotRequired[FunctionTypeEnum | None]
 
 
-class Preprocessor1Preprocessor14(Preprocessor1Preprocessor11, Preprocessor1Preprocessor12):
+class Preprocessor1Preprocessor14(
+    Preprocessor1Preprocessor11, Preprocessor1Preprocessor12
+):
     pass
 
 
@@ -2988,6 +3074,19 @@ class FunctionIdFunctionId2(TypedDict):
     function_type: NotRequired[FunctionTypeEnum | None]
 
 
+class FunctionIdFunctionId4(TypedDict):
+    inline_context: FunctionIdFunctionId4InlineContext
+    code: str
+    """
+    The inline code to execute
+    """
+    function_type: NotRequired[FunctionTypeEnum | None]
+    name: NotRequired[str | None]
+    """
+    The name of the inline code function
+    """
+
+
 class InvokeFunctionInvokeFunction7(TypedDict):
     input: NotRequired[Any | None]
     """
@@ -3029,23 +3128,33 @@ class InvokeFunctionInvokeFunction7(TypedDict):
     """
 
 
-class InvokeFunctionInvokeFunction8(InvokeFunctionInvokeFunction, InvokeFunctionInvokeFunction7):
+class InvokeFunctionInvokeFunction8(
+    InvokeFunctionInvokeFunction, InvokeFunctionInvokeFunction7
+):
     pass
 
 
-class InvokeFunctionInvokeFunction9(InvokeFunctionInvokeFunction1, InvokeFunctionInvokeFunction7):
+class InvokeFunctionInvokeFunction9(
+    InvokeFunctionInvokeFunction1, InvokeFunctionInvokeFunction7
+):
     pass
 
 
-class InvokeFunctionInvokeFunction10(InvokeFunctionInvokeFunction2, InvokeFunctionInvokeFunction7):
+class InvokeFunctionInvokeFunction10(
+    InvokeFunctionInvokeFunction2, InvokeFunctionInvokeFunction7
+):
     pass
 
 
-class InvokeFunctionInvokeFunction11(InvokeFunctionInvokeFunction3, InvokeFunctionInvokeFunction7):
+class InvokeFunctionInvokeFunction11(
+    InvokeFunctionInvokeFunction3, InvokeFunctionInvokeFunction7
+):
     pass
 
 
-class InvokeFunctionInvokeFunction12(InvokeFunctionInvokeFunction4, InvokeFunctionInvokeFunction7):
+class InvokeFunctionInvokeFunction12(
+    InvokeFunctionInvokeFunction4, InvokeFunctionInvokeFunction7
+):
     pass
 
 
@@ -3064,9 +3173,14 @@ class ModelParamsModelParams(TypedDict):
     presence_penalty: NotRequired[float | None]
     response_format: NotRequired[ResponseFormatNullish | None]
     tool_choice: NotRequired[
-        Literal['auto'] | Literal['none'] | Literal['required'] | ModelParamsModelParamsToolChoice
+        Literal['auto']
+        | Literal['none']
+        | Literal['required']
+        | ModelParamsModelParamsToolChoice
     ]
-    function_call: NotRequired[Literal['auto'] | Literal['none'] | ModelParamsModelParamsFunctionCall | None]
+    function_call: NotRequired[
+        Literal['auto'] | Literal['none'] | ModelParamsModelParamsFunctionCall
+    ]
     n: NotRequired[float | None]
     stop: NotRequired[Sequence[str] | None]
     reasoning_effort: NotRequired[Literal['none', 'minimal', 'low', 'medium', 'high'] | None]
@@ -3157,7 +3271,9 @@ class ProjectAutomationConfig2(TypedDict):
     """
 
 
-ProjectScoreCategories: TypeAlias = Sequence[ProjectScoreCategory] | Mapping[str, float] | Sequence[str] | None
+ProjectScoreCategories: TypeAlias = (
+    Sequence[ProjectScoreCategory] | Mapping[str, float] | Sequence[str] | None
+)
 
 
 class ProjectScoreConfig(TypedDict):
@@ -3172,7 +3288,9 @@ class PromptBlockDataPromptBlockData(TypedDict):
     tools: NotRequired[str | None]
 
 
-PromptBlockData: TypeAlias = PromptBlockDataPromptBlockData | PromptBlockDataPromptBlockData1
+PromptBlockData: TypeAlias = (
+    PromptBlockDataPromptBlockData | PromptBlockDataPromptBlockData1
+)
 
 
 class PromptBlockDataNullishPromptBlockDataNullish(TypedDict):
@@ -3182,7 +3300,9 @@ class PromptBlockDataNullishPromptBlockDataNullish(TypedDict):
 
 
 PromptBlockDataNullish: TypeAlias = (
-    PromptBlockDataNullishPromptBlockDataNullish | PromptBlockDataNullishPromptBlockDataNullish1 | None
+    PromptBlockDataNullishPromptBlockDataNullish
+    | PromptBlockDataNullishPromptBlockDataNullish1
+    | None
 )
 
 
@@ -3204,7 +3324,9 @@ class ResponseFormatResponseFormat1(TypedDict):
 
 
 ResponseFormat: TypeAlias = (
-    ResponseFormatResponseFormat | ResponseFormatResponseFormat1 | ResponseFormatResponseFormat2
+    ResponseFormatResponseFormat
+    | ResponseFormatResponseFormat1
+    | ResponseFormatResponseFormat2
 )
 
 
@@ -3214,6 +3336,10 @@ class SpanAttributes(TypedDict):
     Name of the span, for display purposes only
     """
     type: NotRequired[SpanType | None]
+    purpose: NotRequired[Literal['scorer'] | None]
+    """
+    A special value that indicates the span was generated by a scoring automation
+    """
 
 
 class TopicAutomationConfig(TypedDict):
@@ -3242,11 +3368,76 @@ class TopicAutomationConfig(TypedDict):
     """
     Optional BTQL filter applied before topic automation.
     """
+    rerun_seconds: NotRequired[float | None]
+    """
+    How often to recompute topic maps
+    """
+    relabel_overlap_seconds: NotRequired[float | None]
+    """
+    How much recent history to relabel after a new topic map version becomes active
+    """
+    backfill_time_range: NotRequired[
+        str | TopicAutomationConfigBackfillTimeRange | None
+    ]
+    """
+    Topic window used for classification coverage and initial backfill.
+    """
+
+
+class TopicMapData(TypedDict):
+    type: Literal['topic_map']
+    source_facet: str
+    """
+    The facet field name to use as input for classification
+    """
+    embedding_model: str
+    """
+    The embedding model to use for embedding facet values
+    """
+    bundle_key: NotRequired[str | None]
+    """
+    Key of the topic map bundle in code_bundles bucket
+    """
+    report_key: NotRequired[str | None]
+    """
+    Key of the clustering report in code_bundles bucket
+    """
+    topic_names: NotRequired[Mapping[str, str] | None]
+    """
+    Mapping from topic_id to topic name
+    """
+    generation_settings: NotRequired[TopicMapGenerationSettings | None]
+    distance_threshold: NotRequired[float | None]
+    """
+    Maximum distance to nearest centroid. If exceeded, returns no_match.
+    """
 
 
 class ViewData(TypedDict):
     search: NotRequired[ViewDataSearch | None]
     custom_charts: NotRequired[Any | None]
+
+
+class BatchedFacetDataTopicMap(TypedDict):
+    function_name: str
+    """
+    The name of the topic map function
+    """
+    topic_map_id: NotRequired[str | None]
+    """
+    The id of the topic map function
+    """
+    topic_map_data: TopicMapData
+
+
+class BatchedFacetData(TypedDict):
+    type: Literal['batched_facet']
+    preprocessor: NotRequired[Preprocessor | None]
+    facets: Sequence[BatchedFacetDataFacet]
+    topic_maps: NotRequired[Mapping[str, Sequence[BatchedFacetDataTopicMap]] | None]
+    """
+    Topic maps that depend on facets in this batch, keyed by source facet name. Each source facet can have multiple topic maps.
+    """
 
 
 class ExperimentEvent(TypedDict):
@@ -3591,7 +3782,15 @@ class TaskTask14(TaskTask6, TaskTask7):
     pass
 
 
-Task: TypeAlias = TaskTask8 | TaskTask9 | TaskTask10 | TaskTask11 | TaskTask12 | TaskTask13 | TaskTask14
+Task: TypeAlias = (
+    TaskTask8
+    | TaskTask9
+    | TaskTask10
+    | TaskTask11
+    | TaskTask12
+    | TaskTask13
+    | TaskTask14
+)
 
 
 class View(TypedDict):
@@ -3704,11 +3903,15 @@ class InvokeFunctionInvokeFunction6(TypedDict):
     """
 
 
-class InvokeFunctionInvokeFunction13(InvokeFunctionInvokeFunction5, InvokeFunctionInvokeFunction7):
+class InvokeFunctionInvokeFunction13(
+    InvokeFunctionInvokeFunction5, InvokeFunctionInvokeFunction7
+):
     pass
 
 
-class InvokeFunctionInvokeFunction14(InvokeFunctionInvokeFunction6, InvokeFunctionInvokeFunction7):
+class InvokeFunctionInvokeFunction14(
+    InvokeFunctionInvokeFunction6, InvokeFunctionInvokeFunction7
+):
     pass
 
 

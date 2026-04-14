@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from braintrust.functions.invoke import init_function, invoke
-from braintrust.logger import _internal_get_global_state, _internal_reset_global_state
+from braintrust.logger import TEST_API_KEY, _internal_get_global_state, _internal_reset_global_state
 
 
 class TestInitFunction:
@@ -83,7 +83,9 @@ def _invoke_with_messages(messages):
     kwargs = mock_conn.post.call_args.kwargs
     assert "data" in kwargs, "invoke must use data= (bt_dumps) not json= (json.dumps) (see issue 38)"
     assert "json" not in kwargs
-    return json.loads(kwargs["data"])
+    data = kwargs["data"]
+    assert isinstance(data, bytes), "body must be bytes so requests does not re-encode as Latin-1"
+    return json.loads(data.decode("utf-8"))
 
 
 def test_invoke_serializes_openai_messages():
@@ -114,3 +116,33 @@ def test_invoke_serializes_google_messages():
     msg = google_types.Content(role="model", parts=[google_types.Part(text="The answer is X.")])
     parsed = _invoke_with_messages([msg])
     assert isinstance(parsed, dict) and parsed
+
+
+@pytest.mark.vcr
+def test_invoke_encodes_body_as_utf8_bytes(monkeypatch):
+    """Regression test for BT-4620: non-Latin-1 Unicode must not be corrupted.
+
+    When invoke() serializes the request body via bt_dumps() and passes it to
+    requests.post(data=...), the body must be UTF-8 encoded bytes — not a str.
+    Passing a str causes requests to re-encode with Latin-1, which raises
+    UnicodeEncodeError (or silently corrupts data) for characters outside U+007F.
+
+    Uses TEST_API_KEY to skip the HTTP login entirely, so the cassette only needs
+    to capture the single POST to /function/invoke.  BRAINTRUST_PROXY_URL is
+    cleared so the proxy URL is always the predictable test stub value
+    (https://proxy.braintrust.ai) regardless of the local environment.
+    """
+    # Prevent local env overrides from changing the proxy URL used in the cassette.
+    monkeypatch.delenv("BRAINTRUST_PROXY_URL", raising=False)
+    monkeypatch.delenv("BRAINTRUST_API_URL", raising=False)
+    _internal_reset_global_state()
+
+    em_dash = "\u2014"  # — (U+2014) is outside Latin-1; triggers the bug when body is str
+    result = invoke(
+        project_name="test-project",
+        slug="test-fn",
+        input={"text": f"result {em_dash} excellent"},
+        parent="",  # skip span-parent lookup; no extra HTTP call needed
+        api_key=TEST_API_KEY,
+    )
+    assert result["output"] == f"result {em_dash} excellent"

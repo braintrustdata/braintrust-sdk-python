@@ -113,6 +113,7 @@ _patch_vcr_aiohttp_stubs()
 def mock_project_ids():
     mock = MagicMock(spec=ProjectIdCache)
     mock.get.return_value = "project-123"
+    mock.get_by_name.return_value = "project-123"
     return mock
 
 
@@ -151,6 +152,7 @@ def setup_braintrust():
     os.environ.setdefault("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", "your_google_api_key_here"))
     os.environ.setdefault("OPENAI_API_KEY", "sk-test-dummy-api-key-for-vcr-tests")
     os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test-dummy-api-key-for-vcr-tests")
+    os.environ.setdefault("MISTRAL_API_KEY", "mistral-test-dummy-api-key-for-vcr-tests")
 
 
 @pytest.fixture(autouse=True)
@@ -190,6 +192,7 @@ def get_vcr_config():
         "decode_compressed_response": True,
         "filter_headers": [
             "authorization",
+            "Authorization",
             "openai-organization",
             "x-api-key",
             "api-key",

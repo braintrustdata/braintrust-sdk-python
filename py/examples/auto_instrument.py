@@ -17,6 +17,7 @@ Supported integrations:
 
 import braintrust
 
+
 # One-line instrumentation - call this BEFORE importing AI libraries
 # This patches all supported libraries automatically
 results = braintrust.auto_instrument()
@@ -35,6 +36,7 @@ logger = braintrust.init_logger(project="auto-instrument-demo")
 # IMPORTANT: Import AI libraries AFTER calling auto_instrument()
 import anthropic
 import openai
+
 
 # Create clients - they're automatically wrapped
 openai_client = openai.OpenAI()

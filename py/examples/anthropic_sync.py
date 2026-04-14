@@ -6,6 +6,7 @@ An app demonstrating how to wrap the sync Anthropic Client.
 import anthropic
 import braintrust
 
+
 # Initialize Anthropic client (needs ANTHROPIC_API_KEY)
 client = braintrust.wrap_anthropic(anthropic.Anthropic())
 braintrust.init_logger(project="example-anthropic-app")

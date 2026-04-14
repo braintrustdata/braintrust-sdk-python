@@ -11,10 +11,12 @@ Key concept: No bridge needed - just pure OTEL + pure Braintrust with automatic 
 
 import os
 
-os.environ['BRAINTRUST_OTEL_COMPAT'] = 'true'
+
+os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
 
 import braintrust
 from braintrust.otel import add_braintrust_span_processor
+
 
 PROJECT_NAME = "mixed-otel-braintrust-python-2"
 
@@ -30,14 +32,13 @@ def setup_otel():
 
     return trace.get_tracer(__name__, "1.0.0")
 
+
 def main():
     # Setup
     braintrust.login()
 
     tracer = setup_otel()
-    project = braintrust.init_logger(
-        project=PROJECT_NAME
-    )
+    project = braintrust.init_logger(project=PROJECT_NAME)
 
     # Demo 1: BT project as root span with OTEL instrumentation inside
     with project.start_span("trace1_root_bt") as session_span:
@@ -67,10 +68,9 @@ def main():
 
         trace1_child_bt_traced()
 
-
     # Demo 2: OTEL as root span with BT spans inside
     with tracer.start_as_current_span("trace2_root_otel") as otel_root:
-        otel_trace_id = format(otel_root.get_span_context().trace_id, '032x')
+        otel_trace_id = format(otel_root.get_span_context().trace_id, "032x")
         otel_root.set_attribute("type", "otel_root")
         otel_root.add_event("otel_root_start")
 
@@ -86,6 +86,7 @@ def main():
             @braintrust.traced
             def trace2_grandchild_bt1():
                 pass
+
             trace2_grandchild_bt1()
 
             # Nested BT span should also inherit same trace ID
@@ -95,6 +96,7 @@ def main():
         @braintrust.traced
         def trace2_child_bt_traced():
             pass
+
         trace2_child_bt_traced()
 
         otel_root.add_event("otel_root_end")
@@ -103,7 +105,7 @@ def main():
     project.flush()
 
     # Then flush OTEL spans so they can attach to existing parents
-    if hasattr(trace.get_tracer_provider(), 'force_flush'):
+    if hasattr(trace.get_tracer_provider(), "force_flush"):
         trace.get_tracer_provider().force_flush(timeout_millis=5000)
 
 

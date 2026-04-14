@@ -1973,6 +1973,16 @@
             "format": "uuid",
             "description": "Identifies the user who created the dataset"
           },
+          "tags": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of tags for the dataset"
+          },
           "metadata": {
             "type": [
               "object",
@@ -2211,6 +2221,51 @@
           "dataset_id",
           "span_id",
           "root_span_id"
+        ]
+      },
+      "DatasetSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the dataset snapshot"
+          },
+          "dataset_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the dataset that this snapshot belongs to"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the dataset snapshot"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "xact_id": {
+            "type": "string",
+            "description": "Transaction id of the brainstore version at the time of the snapshot"
+          },
+          "created": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of dataset snapshot creation"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "name",
+          "description",
+          "xact_id",
+          "created"
         ]
       },
       "EnvVar": {
@@ -2504,6 +2559,21 @@
               "null"
             ],
             "description": "Version number of the linked dataset the experiment was run against. This can be used to reproduce the experiment after the dataset has been modified."
+          },
+          "parameters_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Identifier of the linked saved parameters object, or null if the experiment is not linked to saved parameters"
+          },
+          "parameters_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Version number of the linked saved parameters object the experiment was run against."
           },
           "public": {
             "type": "boolean",
@@ -3531,6 +3601,16 @@
               "code": {
                 "type": "string",
                 "description": "The inline code to execute"
+              },
+              "function_type": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/FunctionTypeEnum"
+                  },
+                  {
+                    "description": "The function type for inline code. Required when invoking inline preprocessors."
+                  }
+                ]
               },
               "name": {
                 "type": [
@@ -5148,7 +5228,7 @@
             "description": "Textual description of the project automation"
           },
           "config": {
-            "anyOf": [
+            "oneOf": [
               {
                 "type": "object",
                 "properties": {
@@ -7050,6 +7130,20 @@
                   "dataset_id": {
                     "type": "string"
                   },
+                  "dataset_version": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The version of the dataset to evaluate"
+                  },
+                  "dataset_environment": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The environment tag that resolves to the dataset version to evaluate"
+                  },
                   "_internal_btql": {
                     "type": [
                       "object",
@@ -7072,6 +7166,20 @@
                   },
                   "dataset_name": {
                     "type": "string"
+                  },
+                  "dataset_version": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The version of the dataset to evaluate"
+                  },
+                  "dataset_environment": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The environment tag that resolves to the dataset version to evaluate"
                   },
                   "_internal_btql": {
                     "type": [
@@ -7390,6 +7498,16 @@
           },
           "type": {
             "$ref": "#/components/schemas/SpanType"
+          },
+          "purpose": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "scorer"
+            ],
+            "description": "A special value that indicates the span was generated by a scoring automation"
           }
         },
         "additionalProperties": {},
@@ -7680,6 +7798,48 @@
               "null"
             ],
             "description": "Optional BTQL filter applied before topic automation."
+          },
+          "rerun_seconds": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 600,
+            "description": "How often to recompute topic maps"
+          },
+          "relabel_overlap_seconds": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 60,
+            "description": "How much recent history to relabel after a new topic map version becomes active"
+          },
+          "backfill_time_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Topic window used for classification coverage and initial backfill."
           }
         },
         "required": [
@@ -7775,6 +7935,9 @@
             },
             "description": "Mapping from topic_id to topic name"
           },
+          "generation_settings": {
+            "$ref": "#/components/schemas/TopicMapGenerationSettings"
+          },
           "distance_threshold": {
             "type": "number",
             "description": "Maximum distance to nearest centroid. If exceeded, returns no_match."
@@ -7810,6 +7973,54 @@
         "required": [
           "function"
         ]
+      },
+      "TopicMapGenerationSettings": {
+        "type": "object",
+        "properties": {
+          "algorithm": {
+            "type": "string",
+            "enum": [
+              "hdbscan",
+              "kmeans"
+            ]
+          },
+          "dimension_reduction": {
+            "type": "string",
+            "enum": [
+              "umap",
+              "pca",
+              "none"
+            ]
+          },
+          "sample_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "n_clusters": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "min_cluster_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "min_samples": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "hierarchy_threshold": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "naming_model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "algorithm",
+          "dimension_reduction"
+        ],
+        "description": "Clustering and naming settings used to generate this topic map"
       },
       "TraceScope": {
         "type": "object",
@@ -7969,6 +8180,13 @@
             ],
             "format": "date-time",
             "description": "Date of user creation"
+          },
+          "last_active_at": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Unix timestamp in milliseconds of the user's last activity, when available"
           }
         },
         "required": [
@@ -8261,6 +8479,12 @@
                   "null"
                 ]
               },
+              "topicMapReportKey": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "chartHeight": {
                 "type": [
                   "number",
@@ -8429,6 +8653,12 @@
                   "spans"
                 ]
               },
+              "cluster": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "freezeColumns": {
                 "type": [
                   "boolean",
@@ -8454,8 +8684,7 @@
     "description": "Publicly exported typespecs for the Braintrust API.",
     "license": {
       "name": "Apache 2.0"
-    },
-    "x-internal-git-sha": "7cc4507a2a809d3d0bcaea7cb53cb89c1bde1a91"
+    }
   },
   "paths": {},
   "webhooks": {}

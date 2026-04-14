@@ -67,15 +67,19 @@ from .git_fields import GitMetadataSettings, RepoInfo
 from .gitutil import get_past_n_ancestors, get_repo_info
 from .merge_row_batch import batch_items, merge_row_batch
 from .object import DEFAULT_IS_LEGACY_DATASET, ensure_dataset_record
+from .parameters import RemoteEvalParameters
 from .prompt import BRAINTRUST_PARAMS, ImagePart, PromptBlockData, PromptData, PromptMessage, PromptSchema, TextPart
 from .prompt_cache.disk_cache import DiskCache
 from .prompt_cache.lru_cache import LRUCache
+from .prompt_cache.parameters_cache import ParametersCache
 from .prompt_cache.prompt_cache import PromptCache
 from .queue import DEFAULT_QUEUE_SIZE, LogQueue
 from .serializable_data_class import SerializableDataClass
 from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from .span_identifier_v4 import SpanComponentsV4
 from .span_types import SpanTypeAttribute
+from .types import Metadata
+from .types._eval import ExperimentDatasetEvent
 from .util import (
     GLOBAL_PROJECT,
     AugmentedHTTPError,
@@ -92,13 +96,13 @@ from .util import (
     parse_env_var_float,
     response_raise_for_status,
 )
+from .xact_ids import prettify_xact
+
 
 # Fields that should be passed to the masking function
 # Note: "tags" field is intentionally excluded, but can be added if needed
 REDACTION_FIELDS = ["input", "output", "expected", "metadata", "context", "scores", "metrics"]
-from .xact_ids import prettify_xact
 
-Metadata = dict[str, Any]
 DATA_API_VERSION = 2
 LOGS3_OVERFLOW_REFERENCE_TYPE = "logs3_overflow"
 # 6 MB for the AWS lambda gateway (from our own testing).
@@ -121,6 +125,13 @@ class LogItemWithMeta:
 
 class DatasetRef(TypedDict, total=False):
     """Reference to a dataset by ID and optional version."""
+
+    id: str
+    version: str
+
+
+class ParametersRef(TypedDict, total=False):
+    """Reference to saved parameters by ID and optional version."""
 
     id: str
     version: str
@@ -434,6 +445,19 @@ class BraintrustState:
                 max_size=int(os.environ.get("BRAINTRUST_PROMPT_CACHE_DISK_MAX_SIZE", str(1 << 20))),
                 serializer=lambda x: x.as_dict(),
                 deserializer=PromptSchema.from_dict_deep,
+            ),
+        )
+        self._parameters_cache = ParametersCache(
+            memory_cache=LRUCache(
+                max_size=int(os.environ.get("BRAINTRUST_PARAMETERS_CACHE_MEMORY_MAX_SIZE", str(1 << 10)))
+            ),
+            disk_cache=DiskCache(
+                cache_dir=os.environ.get(
+                    "BRAINTRUST_PARAMETERS_CACHE_DIR", f"{os.environ.get('HOME')}/.braintrust/parameters_cache"
+                ),
+                max_size=int(os.environ.get("BRAINTRUST_PARAMETERS_CACHE_DISK_MAX_SIZE", str(1 << 20))),
+                serializer=lambda x: x.as_dict(),
+                deserializer=RemoteEvalParameters.from_dict_deep,
             ),
         )
 
@@ -765,6 +789,9 @@ class HTTPConnection:
     def post(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
         return self.session.post(_urljoin(self.base_url, path), *args, **kwargs)
 
+    def patch(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
+        return self.session.patch(_urljoin(self.base_url, path), *args, **kwargs)
+
     def put(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
         return self.session.put(_urljoin(self.base_url, path), *args, **kwargs)
 
@@ -778,6 +805,11 @@ class HTTPConnection:
 
     def post_json(self, object_type: str, args: Mapping[str, Any] | None = None) -> Any:
         resp = self.post(f"/{object_type.lstrip('/')}", json=args)
+        response_raise_for_status(resp)
+        return resp.json()
+
+    def patch_json(self, object_type: str, args: Mapping[str, Any] | None = None) -> Any:
+        resp = self.patch(f"/{object_type.lstrip('/')}", json=args)
         response_raise_for_status(resp)
         return resp.json()
 
@@ -1025,6 +1057,11 @@ class _HTTPBackgroundLogger:
         except:
             self.all_publish_payloads_dir = None
 
+        try:
+            disable_atexit_flush = os.environ["BRAINTRUST_DISABLE_ATEXIT_FLUSH"].lower() in ("true", "1", "yes")
+        except:
+            disable_atexit_flush = False
+
         self.start_thread_lock = threading.RLock()
         self.thread = threading.Thread(target=self._publisher, daemon=True)
         self.started = False
@@ -1035,7 +1072,8 @@ class _HTTPBackgroundLogger:
         # Counter for tracking overflow uploads (useful for testing)
         self._overflow_upload_count = 0
 
-        atexit.register(self._finalize)
+        if not disable_atexit_flush:
+            atexit.register(self._finalize)
 
     def enforce_queue_size_limit(self, enforce: bool) -> None:
         """
@@ -1355,7 +1393,7 @@ class _HTTPBackgroundLogger:
 
             is_retrying = i + 1 < self.num_tries
             retrying_text = "" if is_retrying else " Retrying"
-            errmsg = f"log request failed. Elapsed time: {time.time() - start_time} seconds. Payload size: {payload_bytes}.{retrying_text}\nError: {resp_errmsg}"
+            errmsg = f"log request failed. Elapsed time: {time.time() - start_time} seconds. Payload size: {payload_bytes}.{retrying_text} Error: {resp_errmsg}"
 
             if not is_retrying and self.failed_publish_payloads_dir:
                 _HTTPBackgroundLogger._write_payload_to_dir(
@@ -1499,6 +1537,7 @@ def init(
     experiment: str | None = ...,
     description: str | None = ...,
     dataset: Optional["Dataset"] = ...,
+    parameters: RemoteEvalParameters | ParametersRef | None = ...,
     open: Literal[False] = ...,
     base_experiment: str | None = ...,
     is_public: bool = ...,
@@ -1523,6 +1562,7 @@ def init(
     experiment: str | None = ...,
     description: str | None = ...,
     dataset: Optional["Dataset"] = ...,
+    parameters: RemoteEvalParameters | ParametersRef | None = ...,
     open: Literal[True] = ...,
     base_experiment: str | None = ...,
     is_public: bool = ...,
@@ -1546,6 +1586,7 @@ def init(
     experiment: str | None = None,
     description: str | None = None,
     dataset: Optional["Dataset"] | DatasetRef = None,
+    parameters: RemoteEvalParameters | ParametersRef | None = None,
     open: bool = False,
     base_experiment: str | None = None,
     is_public: bool = False,
@@ -1570,6 +1611,8 @@ def init(
     :param description: (Optional) An optional description of the experiment.
     :param dataset: (Optional) A dataset to associate with the experiment. The dataset must be initialized with `braintrust.init_dataset` before passing
     it into the experiment.
+    :param parameters: (Optional) Saved parameters to associate with the experiment. Pass either a `RemoteEvalParameters`
+    object or a dictionary containing an `id` and optional `version`.
     :param update: If the experiment already exists, continue logging to it. If it does not exist, creates the experiment with the specified arguments.
     :param base_experiment: An optional experiment name to use as a base. If specified, the new experiment will be summarized and compared to this experiment. Otherwise, it will pick an experiment by finding the closest ancestor on the default (e.g. main) branch.
     :param is_public: An optional parameter to control whether the experiment is publicly visible to anybody with the link or privately visible to only members of the organization. Defaults to private.
@@ -1677,6 +1720,12 @@ def init(
                 # Full Dataset object
                 args["dataset_id"] = dataset.id
                 args["dataset_version"] = dataset.version
+
+        parameters_ref = _get_parameters_ref(parameters)
+        if parameters_ref is not None:
+            args["parameters_id"] = parameters_ref["id"]
+            if parameters_ref.get("version") is not None:
+                args["parameters_version"] = parameters_ref["version"]
 
         if is_public is not None:
             args["public"] = is_public
@@ -1894,17 +1943,14 @@ def load_prompt(
     :param id: The id of a specific prompt to load. If specified, this takes precedence over all other parameters (project, slug, version).
     :param defaults: (Optional) A dictionary of default values to use when rendering the prompt. Prompt values will override these defaults.
     :param no_trace: If true, do not include logging metadata for this prompt when build() is called.
-    :param environment: The environment to load the prompt from. Cannot be used together with version.
+    :param environment: The environment to load the prompt from. If both `version` and `environment` are provided, `version` takes precedence.
     :param app_url: The URL of the Braintrust App. Defaults to https://www.braintrust.dev.
     :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable. If no API
     key is specified, will prompt the user to login.
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :returns: The prompt object.
     """
-    if version is not None and environment is not None:
-        raise ValueError(
-            "Cannot specify both 'version' and 'environment' parameters. Please use only one (remove the other)."
-        )
+    effective_environment = None if version is not None else environment
 
     if id:
         # When loading by ID, we don't need project or slug
@@ -1919,29 +1965,24 @@ def load_prompt(
             login(org_name=org_name, api_key=api_key, app_url=app_url)
             if id:
                 # Load prompt by ID using the /v1/prompt/{id} endpoint
-                prompt_args = {}
-                if version is not None:
-                    prompt_args["version"] = version
-                if environment is not None:
-                    prompt_args["environment"] = environment
+                prompt_args = _populate_args({}, version=version, environment=effective_environment)
                 response = _state.api_conn().get_json(f"/v1/prompt/{id}", prompt_args)
                 # Wrap single prompt response in objects array to match list API format
                 if response is not None:
                     response = {"objects": [response]}
             else:
                 args = _populate_args(
-                    {
-                        "project_name": project,
-                        "project_id": project_id,
-                        "slug": slug,
-                        "version": version,
-                        "environment": environment,
-                    },
+                    {},
+                    project_name=project,
+                    project_id=project_id,
+                    slug=slug,
+                    version=version,
+                    environment=effective_environment,
                 )
                 response = _state.api_conn().get_json("/v1/prompt", args)
         except Exception as server_error:
             # If environment or version was specified, don't fall back to cache
-            if environment is not None or version is not None:
+            if effective_environment is not None or version is not None:
                 raise ValueError(f"Prompt not found with specified parameters") from server_error
 
             eprint(f"Failed to load prompt, attempting to fall back to cache: {server_error}")
@@ -1999,6 +2040,131 @@ def load_prompt(
     return Prompt(
         lazy_metadata=LazyValue(compute_metadata, use_mutex=True), defaults=defaults or {}, no_trace=no_trace
     )
+
+
+def _is_parameters_ref(value: Any) -> bool:
+    return isinstance(value, dict) and isinstance(value.get("id"), str)
+
+
+def _get_parameters_ref(
+    parameters: RemoteEvalParameters | ParametersRef | None,
+) -> ParametersRef | None:
+    if parameters is None:
+        return None
+    if isinstance(parameters, RemoteEvalParameters):
+        if parameters.id is None:
+            return None
+        ref: ParametersRef = {"id": parameters.id}
+        if parameters.version is not None:
+            ref["version"] = parameters.version
+        return ref
+    if _is_parameters_ref(parameters):
+        ref = cast(ParametersRef, {"id": parameters["id"]})
+        if parameters.get("version") is not None:
+            ref["version"] = parameters["version"]
+        return ref
+    return None
+
+
+def load_parameters(
+    project: str | None = None,
+    slug: str | None = None,
+    version: str | int | None = None,
+    project_id: str | None = None,
+    id: str | None = None,
+    environment: str | None = None,
+    app_url: str | None = None,
+    api_key: str | None = None,
+    org_name: str | None = None,
+) -> RemoteEvalParameters:
+    """
+    Load saved parameters from Braintrust.
+
+    :param project: The name of the project to load the parameters from. Must specify at least one of `project` or `project_id`.
+    :param slug: The slug of the parameters to load.
+    :param version: An optional version of the parameters to read. If not specified, the latest version will be used.
+    :param project_id: The ID of the project to load the parameters from. This takes precedence over `project`.
+    :param id: The ID of a specific parameters object to load. If specified, this takes precedence over project and slug.
+    :param environment: The environment to load the parameters from. If both `version` and `environment` are provided, `version` takes precedence.
+    :param app_url: The URL of the Braintrust App. Defaults to https://www.braintrust.dev.
+    :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable.
+    :param org_name: The name of a specific organization to connect to.
+    :returns: A `RemoteEvalParameters` object.
+    """
+    if id is None and not project and not project_id:
+        raise ValueError("Must specify at least one of project or project_id")
+    if id is None and not slug:
+        raise ValueError("Must specify slug")
+
+    effective_environment = None if version is not None else environment
+    should_fall_back_to_cache = version is None and effective_environment is None
+    query_args = _populate_args({}, version=version, environment=effective_environment)
+
+    try:
+        login(org_name=org_name, api_key=api_key, app_url=app_url)
+        if id:
+            response = _state.api_conn().get_json(f"/v1/function/{id}", query_args)
+            if response is not None:
+                response = {"objects": [response]}
+        else:
+            args = _populate_args(
+                {"function_type": "parameters"},
+                project_name=project,
+                project_id=project_id,
+                slug=slug,
+                **query_args,
+            )
+            response = _state.api_conn().get_json("/v1/function", args)
+    except Exception as server_error:
+        if not should_fall_back_to_cache:
+            raise
+
+        eprint(f"Failed to load parameters, attempting to fall back to cache: {server_error}")
+        try:
+            if id:
+                return _state._parameters_cache.get(id=id)
+            return _state._parameters_cache.get(
+                slug=slug,
+                version=str(version) if version is not None else "latest",
+                project_id=project_id,
+                project_name=project,
+            )
+        except Exception as cache_error:
+            if id:
+                raise ValueError(
+                    f"Parameters with id {id} not found (not found on server or in local cache): {cache_error}"
+                ) from server_error
+            raise ValueError(
+                f"Parameters {slug} not found in {project or project_id} (not found on server or in local cache): {cache_error}"
+            ) from server_error
+
+    if response is None or "objects" not in response or len(response["objects"]) == 0:
+        if id:
+            raise ValueError(f"Parameters with id {id} not found.")
+        raise ValueError(f"Parameters {slug} not found in project {project or project_id}.")
+    if len(response["objects"]) > 1:
+        if id:
+            raise ValueError(f"Multiple parameters found with id {id}. This should never happen.")
+        raise ValueError(
+            f"Multiple parameters found with slug {slug} in project {project or project_id}. This should never happen."
+        )
+
+    parameters = RemoteEvalParameters.from_function_row(response["objects"][0])
+    try:
+        if id:
+            _state._parameters_cache.set(parameters, id=id)
+        elif slug:
+            _state._parameters_cache.set(
+                parameters,
+                slug=slug,
+                version=str(version) if version is not None else "latest",
+                project_id=project_id,
+                project_name=project,
+            )
+    except Exception as exc:
+        eprint(f"Failed to store parameters in cache: {exc}")
+
+    return parameters
 
 
 login_lock = threading.RLock()
@@ -3214,7 +3380,7 @@ def _log_feedback_impl(
     expected: Any | None = None,
     tags: Sequence[str] | None = None,
     comment: str | None = None,
-    metadata: Mapping[str, Any] | None = None,
+    metadata: Metadata | None = None,
     source: Literal["external", "app", "api", None] = None,
 ):
     if source is None:
@@ -3510,17 +3676,17 @@ def _start_span_parent_args(
     if parent:
         assert parent_span_ids is None, "Cannot specify both parent and parent_span_ids"
         parent_components = SpanComponentsV4.from_str(parent)
-        assert (
-            parent_object_type == parent_components.object_type
-        ), f"Mismatch between expected span parent object type {parent_object_type} and provided type {parent_components.object_type}"
+        assert parent_object_type == parent_components.object_type, (
+            f"Mismatch between expected span parent object type {parent_object_type} and provided type {parent_components.object_type}"
+        )
 
         parent_components_object_id_lambda = _span_components_to_object_id_lambda(parent_components)
 
         def compute_parent_object_id():
             parent_components_object_id = parent_components_object_id_lambda()
-            assert (
-                parent_object_id.get() == parent_components_object_id
-            ), f"Mismatch between expected span parent object id {parent_object_id.get()} and provided id {parent_components_object_id}"
+            assert parent_object_id.get() == parent_components_object_id, (
+                f"Mismatch between expected span parent object id {parent_object_id.get()} and provided id {parent_components_object_id}"
+            )
             return parent_object_id.get()
 
         arg_parent_object_id = LazyValue(compute_parent_object_id, use_mutex=False)
@@ -3551,20 +3717,6 @@ class ExperimentIdentifier:
     name: str
 
 
-class _ExperimentDatasetEvent(TypedDict):
-    """
-    TODO: This could be unified with `framework._EvalCaseDict` like we do in the
-    TypeScript SDK, or generated from OpenAPI spec. For now, marking as internal
-    to exclude it from the docs.
-    """
-
-    id: str
-    _xact_id: str
-    input: Any | None
-    expected: Any | None
-    tags: Sequence[str] | None
-
-
 class ExperimentDatasetIterator:
     def __init__(self, iterator: Iterator[ExperimentEvent]):
         self.iterator = iterator
@@ -3572,14 +3724,14 @@ class ExperimentDatasetIterator:
     def __iter__(self):
         return self
 
-    def __next__(self) -> _ExperimentDatasetEvent:
+    def __next__(self) -> ExperimentDatasetEvent:
         while True:
             value = next(self.iterator)
             if value["root_span_id"] != value["span_id"]:
                 continue
 
             output, expected = value.get("output"), value.get("expected")
-            ret: _ExperimentDatasetEvent = {
+            ret: ExperimentDatasetEvent = {
                 "input": value.get("input"),
                 "expected": expected if expected is not None else output,
                 "tags": value.get("tags"),
@@ -3665,7 +3817,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         error: str | None = None,
         tags: Sequence[str] | None = None,
         scores: Mapping[str, int | float] | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         metrics: Mapping[str, int | float] | None = None,
         id: str | None = None,
         dataset_record_id: str | None = None,
@@ -3717,7 +3869,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
         comment: str | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         source: Literal["external", "app", "api", None] = None,
     ) -> None:
         """
@@ -3968,7 +4120,7 @@ class ReadonlyExperiment(ObjectFetcher[ExperimentEvent]):
         self._lazy_metadata.get()
         return self.state
 
-    def as_dataset(self, batch_size: int | None = None) -> Iterator[_ExperimentDatasetEvent]:
+    def as_dataset(self, batch_size: int | None = None) -> Iterator[ExperimentDatasetEvent]:
         """
         Return the experiment's data as a dataset iterator.
 
@@ -4500,7 +4652,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
 
     def _validate_event(
         self,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         expected: Any | None = None,
         output: Any | None = None,
         tags: Sequence[str] | None = None,
@@ -4553,7 +4705,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         input: Any | None = None,
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         id: str | None = None,
         output: Any | None = None,
     ) -> str:
@@ -4597,7 +4749,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         input: Any | None = None,
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
     ) -> str:
         """
         Update fields of a single record in the dataset. The updated fields will be batched and uploaded behind the scenes.
@@ -5098,7 +5250,7 @@ class Logger(Exportable):
         error: str | None = None,
         tags: Sequence[str] | None = None,
         scores: Mapping[str, int | float] | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         metrics: Mapping[str, int | float] | None = None,
         id: str | None = None,
         allow_concurrent_with_spans: bool = False,
@@ -5149,7 +5301,7 @@ class Logger(Exportable):
         expected: Any | None = None,
         tags: Sequence[str] | None = None,
         comment: str | None = None,
-        metadata: Mapping[str, Any] | None = None,
+        metadata: Metadata | None = None,
         source: Literal["external", "app", "api", None] = None,
     ) -> None:
         """

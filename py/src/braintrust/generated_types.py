@@ -1,4 +1,4 @@
-"""Auto-generated file (internal git SHA 7cc4507a2a809d3d0bcaea7cb53cb89c1bde1a91) -- do not modify"""
+"""Auto-generated file (content hash 0a2373633d8deec4) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -28,6 +28,7 @@ from ._generated_types import (
     CodeBundle,
     Dataset,
     DatasetEvent,
+    DatasetSnapshot,
     EnvVar,
     EvalStatusPage,
     EvalStatusPageConfig,
@@ -105,6 +106,7 @@ from ._generated_types import (
     TopicAutomationDataScope,
     TopicMapData,
     TopicMapFunctionAutomation,
+    TopicMapGenerationSettings,
     TraceScope,
     TriggeredFunctionState,
     UploadStatus,
@@ -114,6 +116,7 @@ from ._generated_types import (
     ViewDataSearch,
     ViewOptions,
 )
+
 
 __all__ = [
     "AISecret",
@@ -143,6 +146,7 @@ __all__ = [
     "CodeBundle",
     "Dataset",
     "DatasetEvent",
+    "DatasetSnapshot",
     "EnvVar",
     "EvalStatusPage",
     "EvalStatusPageConfig",
@@ -220,6 +224,7 @@ __all__ = [
     "TopicAutomationDataScope",
     "TopicMapData",
     "TopicMapFunctionAutomation",
+    "TopicMapGenerationSettings",
     "TraceScope",
     "TriggeredFunctionState",
     "UploadStatus",

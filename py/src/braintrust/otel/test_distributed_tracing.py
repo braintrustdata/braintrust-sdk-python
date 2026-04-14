@@ -12,6 +12,7 @@ from braintrust.logger import _internal_with_memory_background_logger
 from braintrust.otel import BraintrustSpanProcessor, context_from_span_export
 from braintrust.test_helpers import init_test_logger, preserve_env_vars
 
+
 OTEL_AVAILABLE = True
 try:
     from opentelemetry.sdk.trace import TracerProvider
