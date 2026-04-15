@@ -11,16 +11,6 @@ import vcr
 from braintrust import Attachment, logger
 from braintrust.conftest import get_vcr_config
 from braintrust.integrations.conftest import _versioned_cassette_dir
-from braintrust.test_helpers import init_test_logger
-
-
-# Source directory paths (resolved to handle installed vs source locations).
-# When running inside a subprocess spawned by verify_autoinstrument_script,
-# __file__ may resolve to the installed site-packages location where
-# non-Python files (cassettes, scripts) are absent.  The env-var override
-# lets the parent process hand down the *source-tree* integrations path.
-_INTEGRATIONS_DIR = Path(os.environ.get("BRAINTRUST_INTEGRATIONS_DIR", Path(__file__).resolve().parent))
-AUTO_TEST_SCRIPTS_DIR = _INTEGRATIONS_DIR / "auto_test_scripts"
 from braintrust.integrations.utils import (
     _attachment_filename_for_mime_type,
     _camel_to_snake,
@@ -38,6 +28,16 @@ from braintrust.integrations.utils import (
     _timing_metrics,
     _try_to_dict,
 )
+from braintrust.test_helpers import init_test_logger
+
+
+# Source directory paths (resolved to handle installed vs source locations).
+# When running inside a subprocess spawned by verify_autoinstrument_script,
+# __file__ may resolve to the installed site-packages location where
+# non-Python files (cassettes, scripts) are absent.  The env-var override
+# lets the parent process hand down the *source-tree* integrations path.
+_INTEGRATIONS_DIR = Path(os.environ.get("BRAINTRUST_INTEGRATIONS_DIR", Path(__file__).resolve().parent))
+AUTO_TEST_SCRIPTS_DIR = _INTEGRATIONS_DIR / "auto_test_scripts"
 
 
 @contextmanager
