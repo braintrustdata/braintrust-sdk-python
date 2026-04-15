@@ -15,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - PatchedOpenAI/Python 2.15.0
+      - OpenAI/Python 1.92.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -25,9 +25,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.15.0
-      X-Stainless-Raw-Response:
-      - 'true'
+      - 1.92.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -40,34 +38,30 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAA4xSy27bMBC86yu2PFuF7cqJ4ksPPdQJ2kMvLYoiEGhyJbGhuAS5Sm0E/veCUmIp
-        jwK96LCzM5oZ7kMGIIwWWxCqlaw6b/NPh+OH+CPusLtb3pQ/v17X3777w+bzl/u2vBGLxKD9b1T8
-        xHqvqPMW2ZAbYRVQMibV1eVFWSzL9UUxAB1ptInWeM4LyjvjTL5erot8eZmvykd2S0ZhFFv4lQEA
-        PAzf5NNpPIgtLBdPkw5jlA2K7XkJQASyaSJkjCaydCwWE6jIMbrB+s68gx39ASUdXMO4DUfqgUnL
-        48c5K2DdR5mcu97aGSCdI5Yp+eD39hE5nR1aanygfXxBFbVxJrZVQBnJJTeRyYsBPWUAt0MT/bNw
-        wgfqPFdMdzj87mpUE1P9rzEmlnYar8rFG1qVRpbGxlmPQknVop6YU+my14ZmQDZL/NrLW9pjauOa
-        /5GfAKXQM+rKB9RGPc87rQVMt/mvtXPDg2ERMdwbhRUbDOkVNNayt+PFiHiMjF1VG9dg8MGMZ1P7
-        ShWbcrPf7K+UyE7ZXwAAAP//AwCuvReaRAMAAA==
+      string: "{\n  \"id\": \"chatcmpl-DV3S6OKP0hkqsxqV8RlicEgmfPS8f\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776293810,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Hi there! How can I assist you today?\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        9,\n    \"completion_tokens\": 10,\n    \"total_tokens\": 19,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_fe7a5277a8\"\n}\n"
     headers:
-      CF-RAY:
-      - 9bde85857d3a8191-IAD
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ece8bbbcc5dec6f-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Wed, 14 Jan 2026 16:31:05 GMT
+      - Wed, 15 Apr 2026 22:56:50 GMT
       Server:
       - cloudflare
-      Set-Cookie:
-      - __cf_bm=WC8qx7XxkvNS5wuwlfQhz1YXRyMLnO27mFg6CLFQsBA-1768408265-1.0.1.1-CYX0R1gm_JLPDaW7XX1DXFIeIJcSzOBeQt8GvdCwva0SF6kpS7rj822yvepm_lCRzCmfG4LdKQMzdL6iJwxli_Hn5FpXoHbcVT65fyweftE;
-        path=/; expires=Wed, 14-Jan-26 17:01:05 GMT; domain=.api.openai.com; HttpOnly;
-        Secure; SameSite=None
-      - _cfuvid=wyzjAd4Rg15mG6l4SO3Ptarr8MXdf2XE6SjjYZWnlPc-1768408265199-0.0.1.1-604800000;
-        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
@@ -78,18 +72,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
+      content-length:
+      - '843'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '525'
+      - '285'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '547'
+      set-cookie:
+      - __cf_bm=tdRvfpZvneRtDtSuUj8ZNpeZunmXKT23rUi.4e7GdrE-1776293810.5275388-1.0.1.1-HVOclLl0TPcu8w0THfGfD8hkseZRrsEJWga4MSeGPo2okGlAwnCMTg4DiWe8SvkzSBVR6_5hNGotUPUUoZgDXT5Q5xBt6eguKtJP_ftxi.Efoj6kivkmNZ.d86muZG1n;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 15 Apr 2026
+        23:26:50 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -99,13 +95,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '149999997'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3a43c0bbc3274bf4b365b54caa285598
+      - req_a111b8a6a97a4357a7123146e8d55dca
     status:
       code: 200
       message: OK

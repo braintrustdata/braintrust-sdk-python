@@ -16,7 +16,7 @@ interactions:
       Host:
       - openrouter.ai
       User-Agent:
-      - OpenAI/Python 2.30.0
+      - OpenAI/Python 1.92.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,9 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.30.0
-      X-Stainless-Raw-Response:
-      - 'true'
+      - 1.92.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -44,13 +42,13 @@ interactions:
       string: ': OPENROUTER PROCESSING
 
 
-        data: {"id":"gen-1774558351-mKeRYZ3LRhALYAGOy6cg","object":"chat.completion.chunk","created":1774558351,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_f85b8886b6","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
+        data: {"id":"gen-1776293819-NBuaDYwXxvugHtKRi4LN","object":"chat.completion.chunk","created":1776293819,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_eb37e061ec","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
 
 
-        data: {"id":"gen-1774558351-mKeRYZ3LRhALYAGOy6cg","object":"chat.completion.chunk","created":1774558351,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_f85b8886b6","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
+        data: {"id":"gen-1776293819-NBuaDYwXxvugHtKRi4LN","object":"chat.completion.chunk","created":1776293819,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_eb37e061ec","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
 
 
-        data: {"id":"gen-1774558351-mKeRYZ3LRhALYAGOy6cg","object":"chat.completion.chunk","created":1774558351,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_f85b8886b6","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":1,"total_tokens":21,"cost":0.0000036,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000036,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":6e-7},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
+        data: {"id":"gen-1776293819-NBuaDYwXxvugHtKRi4LN","object":"chat.completion.chunk","created":1776293819,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_eb37e061ec","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":2,"total_tokens":22,"cost":0.0000042,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000042,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":0.0000012},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
 
 
         data: [DONE]
@@ -61,7 +59,7 @@ interactions:
       Access-Control-Allow-Origin:
       - '*'
       CF-RAY:
-      - 9e290a1d49f55fe3-SJC
+      - 9ece8bf67bbc8e83-YYZ
       Cache-Control:
       - no-cache
       Connection:
@@ -69,7 +67,7 @@ interactions:
       Content-Type:
       - text/event-stream
       Date:
-      - Thu, 26 Mar 2026 20:52:31 GMT
+      - Wed, 15 Apr 2026 22:57:00 GMT
       Permissions-Policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
@@ -81,6 +79,10 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
+      X-Generation-Id:
+      - gen-1776293819-NBuaDYwXxvugHtKRi4LN
+      access-control-expose-headers:
+      - X-Generation-Id,cf-ray
     status:
       code: 200
       message: OK

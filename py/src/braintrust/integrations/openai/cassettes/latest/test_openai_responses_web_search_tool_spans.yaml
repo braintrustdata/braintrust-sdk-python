@@ -6,7 +6,7 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate, zstd
+      - gzip, deflate
       Connection:
       - keep-alive
       Content-Length:
@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.24.0
+      - OpenAI/Python 2.31.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.24.0
+      - 2.31.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,37 +39,37 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_02ba15fc2fd264b20069d9564b711c819182af700a09fe0c1f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1775851083,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0d087f18d439db930069e017280a2c819fa1e995c478fd08b6\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1776293672,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1775851085,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1776293674,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4.1-mini-2025-04-14\",\n  \"output\": [\n    {\n      \"id\": \"ws_02ba15fc2fd264b20069d9564b8aa88191b0fce6f6e4a6d0b6\",\n
+        \"gpt-4.1-mini-2025-04-14\",\n  \"output\": [\n    {\n      \"id\": \"ws_0d087f18d439db930069e017282298819f9c4d5fa07f751a76\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_02ba15fc2fd264b20069d9564c85b881919add08d779b2c1a1\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_0d087f18d439db930069e0172940d0819fb7e6af279abe1e0a\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 9:58\\u202fPM
-        on April 10, 2026, in Paris, France, the weather is mostly cloudy with a temperature
-        of 56\\u00b0F (13\\u00b0C).\\n\\n## Weather for Paris, Paris, France:\\nCurrent
-        Conditions: Mostly cloudy, 56\\u00b0F (13\\u00b0C)\\n\\nDaily Forecast:\\n*
-        Friday, April 10: Low: 49\\u00b0F (10\\u00b0C), High: 61\\u00b0F (16\\u00b0C),
-        Description: Cooler with times of clouds and sun\\n* Saturday, April 11: Low:
-        43\\u00b0F (6\\u00b0C), High: 61\\u00b0F (16\\u00b0C), Description: Mostly
-        cloudy and cooler; occasional afternoon rain and drizzle\\n* Sunday, April
-        12: Low: 45\\u00b0F (7\\u00b0C), High: 59\\u00b0F (15\\u00b0C), Description:
-        Mostly cloudy\\n* Monday, April 13: Low: 44\\u00b0F (6\\u00b0C), High: 60\\u00b0F
-        (15\\u00b0C), Description: A passing shower in the morning; otherwise, cloudy\\n*
-        Tuesday, April 14: Low: 47\\u00b0F (8\\u00b0C), High: 64\\u00b0F (18\\u00b0C),
-        Description: Sunny to partly cloudy\\n* Wednesday, April 15: Low: 50\\u00b0F
-        (10\\u00b0C), High: 67\\u00b0F (19\\u00b0C), Description: Thickening clouds\\n*
-        Thursday, April 16: Low: 47\\u00b0F (8\\u00b0C), High: 68\\u00b0F (20\\u00b0C),
-        Description: Nice with intervals of clouds and sunshine\\n \"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of April 16, 2026,
+        12:54\\u202fAM local time, Paris is experiencing partly cloudy conditions
+        with a temperature of 62\\u00b0F (16\\u00b0C).\\n\\n## Weather for Paris,
+        Paris, France:\\nCurrent Conditions: Partly cloudy, 62\\u00b0F (16\\u00b0C)\\n\\nDaily
+        Forecast:\\n* Wednesday, April 15: Low: 48\\u00b0F (9\\u00b0C), High: 65\\u00b0F
+        (19\\u00b0C), Description: Intervals of clouds and sunshine\\n* Thursday,
+        April 16: Low: 48\\u00b0F (9\\u00b0C), High: 68\\u00b0F (20\\u00b0C), Description:
+        Nice with intervals of clouds and sunshine\\n* Friday, April 17: Low: 51\\u00b0F
+        (10\\u00b0C), High: 72\\u00b0F (22\\u00b0C), Description: Nice and warm with
+        sunshine and some clouds\\n* Saturday, April 18: Low: 49\\u00b0F (10\\u00b0C),
+        High: 71\\u00b0F (22\\u00b0C), Description: Cloudy with a couple of showers
+        in the afternoon\\n* Sunday, April 19: Low: 46\\u00b0F (8\\u00b0C), High:
+        65\\u00b0F (18\\u00b0C), Description: Sun followed by increasing clouds\\n*
+        Monday, April 20: Low: 44\\u00b0F (7\\u00b0C), High: 63\\u00b0F (17\\u00b0C),
+        Description: Times of clouds and sun\\n* Tuesday, April 21: Low: 43\\u00b0F
+        (6\\u00b0C), High: 61\\u00b0F (16\\u00b0C), Description: Episodes of sunshine\\n
+        \"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
@@ -87,13 +87,13 @@ interactions:
         {}\n}"
     headers:
       CF-RAY:
-      - 9ea452f74992ac6c-YYZ
+      - 9ece885a0be63b8e-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 10 Apr 2026 19:58:05 GMT
+      - Wed, 15 Apr 2026 22:54:34 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -107,21 +107,21 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       content-length:
-      - '3357'
+      - '3366'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1870'
+      - '2444'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=74yoaPxjLsemgt3Gm2pbBidFEZrSluN1vCX7nOSZM4E-1775851083.4086235-1.0.1.1-5hp2jlDwjwyIsWI_AqKiWhK0a47Xwpx4l6KxT2tkPUDtBzOODfHxSoHdNw6FbtRw2knfc1s8QlkMK7r03gOBIb5.o0f_oP83TNk8gUXTjO1WvAQTKvzBAFgADElEFi1v;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 10 Apr 2026
-        20:28:05 GMT
+      - __cf_bm=5HXpCWrLnlxOIbW3q7K3WCcc8Iy7Bjb.L7NE3MrE7ck-1776293672.0043302-1.0.1.1-ISISYHkeaUCpTe1_H_STEF6hg6FKI0S9v1ZSuPAzGmHoB__8aDb4DvOegF8RW2NSzsh8EmUY8.lSmLK0mD9kI6U56QFbv7WucAh5tde4gXVxCN02j.RAuoWEpXw.kxlN;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 15 Apr 2026
+        23:24:34 GMT
       x-request-id:
-      - req_0c2c210a4f5e4e8a9406206d1f4e7796
+      - req_84dc3ff2f5ac4e5e8d1358e9da3d06a6
     status:
       code: 200
       message: OK
