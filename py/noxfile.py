@@ -142,9 +142,6 @@ def test_pydantic_ai_wrap_openai(session, version):
 @nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
 def test_pydantic_ai_integration(session, version):
     """Test pydantic_ai with setup_pydantic_ai() wrapper - requires 1.10.0+."""
-    # Skip on Python 3.9 - pydantic_ai 1.10.0+ requires Python 3.10+
-    if sys.version_info < (3, 10):
-        session.skip("pydantic_ai integration tests require Python >= 3.10 (pydantic_ai 1.10.0+)")
     _install_test_deps(session)
     _install(session, "pydantic_ai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_integration.py", version=version)
@@ -153,8 +150,6 @@ def test_pydantic_ai_integration(session, version):
 @nox.session()
 def test_pydantic_ai_logfire(session):
     """Test pydantic_ai + logfire coexistence (issue #1324)."""
-    if sys.version_info < (3, 10):
-        session.skip("pydantic_ai + logfire tests require Python >= 3.10")
     _install_test_deps(session)
     _install(session, "pydantic_ai")
     _install(session, "logfire")
@@ -164,9 +159,6 @@ def test_pydantic_ai_logfire(session):
 @nox.session()
 @nox.parametrize("version", CLAUDE_AGENT_SDK_VERSIONS, ids=CLAUDE_AGENT_SDK_VERSIONS)
 def test_claude_agent_sdk(session, version):
-    # claude_agent_sdk requires Python >= 3.10
-    # These tests use subprocess-transport cassettes, so they can replay in CI
-    # while still exercising the real Claude Agent SDK control protocol.
     _install_test_deps(session)
     _install(session, "claude_agent_sdk", version)
     _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py", version=version)
@@ -211,7 +203,6 @@ def test_google_genai(session, version):
 @nox.session()
 @nox.parametrize("version", GOOGLE_ADK_VERSIONS, ids=GOOGLE_ADK_VERSIONS)
 def test_google_adk(session, version):
-    """Test Google ADK integration."""
     _install_test_deps(session)
     _install(session, "google-adk", version)
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py", version=version)
@@ -221,10 +212,6 @@ def test_google_adk(session, version):
 @nox.session()
 @nox.parametrize("version", LANGCHAIN_VERSIONS, ids=LANGCHAIN_VERSIONS)
 def test_langchain(session, version):
-    """Test LangChain integration."""
-    # langchain requires Python >= 3.10
-    if sys.version_info < (3, 10):
-        session.skip("langchain requires Python >= 3.10")
     _install_test_deps(session)
     _install(session, "langchain-core", version)
     _install(session, "langchain-openai")
@@ -248,8 +235,6 @@ def test_openai(session, version):
 @nox.session()
 @nox.parametrize("version", OPENAI_AGENTS_VERSIONS, ids=OPENAI_AGENTS_VERSIONS)
 def test_openai_agents(session, version):
-    if sys.version_info < (3, 10):
-        session.skip("openai-agents requires Python >= 3.10")
     _install_test_deps(session)
     _install(session, "openai")
     _install(session, "openai-agents", version)
@@ -287,9 +272,6 @@ def test_mistral(session, version):
 @nox.session()
 @nox.parametrize("version", LITELLM_VERSIONS, ids=LITELLM_VERSIONS)
 def test_litellm(session, version):
-    # litellm latest requires Python >= 3.10
-    if version == LATEST and sys.version_info < (3, 10):
-        session.skip("litellm latest requires Python >= 3.10")
     _install_test_deps(session)
     # Install a compatible version of openai (1.99.9 or lower) to avoid the ResponseTextConfig removal in 1.100.0
     # https://github.com/BerriAI/litellm/issues/13711
@@ -302,9 +284,6 @@ def test_litellm(session, version):
 @nox.session()
 @nox.parametrize("version", DSPY_VERSIONS, ids=DSPY_VERSIONS)
 def test_dspy(session, version):
-    # dspy latest depends on litellm which requires Python >= 3.10
-    if sys.version_info < (3, 10):
-        session.skip("dspy latest requires Python >= 3.10 (litellm dependency)")
     _install_test_deps(session)
     _install(session, "dspy", version)
     _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version)
@@ -360,9 +339,6 @@ def test_otel(session):
 @nox.parametrize("version", TEMPORAL_VERSIONS, ids=TEMPORAL_VERSIONS)
 def test_temporal(session, version):
     """Test Temporal integration with temporalio installed."""
-    # temporalio 1.19.0+ requires Python >= 3.10
-    if sys.version_info < (3, 10):
-        session.skip("temporalio 1.19.0+ requires Python >= 3.10")
     _install_test_deps(session)
     _install(session, "temporalio", version)
     _run_tests(session, "braintrust/contrib/temporal")
@@ -422,20 +398,6 @@ def pylint(session):
     if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
         files = [f for f in files if not f.startswith("scripts/")]
     session.run("pylint", "--errors-only", *files)
-
-
-def _install_npm_in_session(session):
-    """Install Node.js and npm in the nox session using nodeenv."""
-    session.install("nodeenv", silent=SILENT_INSTALLS)
-    # Create a node environment in the session's temporary directory
-    node_dir = os.path.join(session.create_tmp(), "node_env")
-    session.run("nodeenv", node_dir, silent=SILENT_INSTALLS)
-    # Return the path to npm binary for direct use
-    if sys.platform == "win32":
-        npm_bin = os.path.join(node_dir, "Scripts", "npm.cmd")
-    else:
-        npm_bin = os.path.join(node_dir, "bin", "npm")
-    return npm_bin
 
 
 def _install_test_deps(session):
