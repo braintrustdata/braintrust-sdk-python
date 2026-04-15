@@ -197,7 +197,6 @@ def test_agentscope(session, version):
 def test_anthropic(session, version):
     _install_test_deps(session)
     _install(session, "anthropic", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_anthropic.py")
     _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py")
 
 
