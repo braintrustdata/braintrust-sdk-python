@@ -192,7 +192,7 @@ The smoke job validates install + import across OS and Python versions.
 Local equivalents:
 
 ```bash
-mise exec python@3.10 -- uv pip install -e ./py[all]
+mise exec python@3.10 -- uv sync --project ./py --all-extras
 mise exec python@3.10 -- uv run --active --no-project python -c 'import braintrust'
 ```
 

@@ -49,7 +49,7 @@ jobs:
       - name: Run pylint and type tests
         shell: bash
         run: |
-          mise exec python@${{ matrix.python-version }} -- nox -f ./py/noxfile.py -s pylint test_types
+          mise exec python@${{ matrix.python-version }} -- uv run --project ./py nox -f ./py/noxfile.py -s pylint test_types
 
   smoke:
     runs-on: ${{ matrix.os }}
@@ -71,10 +71,10 @@ jobs:
         run: |
           # This is already done by make install-dev, but we're keeping this as a separate step
           # to explicitly verify that installation works
-          mise exec python@${{ matrix.python-version }} -- uv pip install -e ./py[all]
+          mise exec python@${{ matrix.python-version }} -- uv sync --project ./py --all-extras
       - name: Test whether the Python SDK can be imported
         run: |
-          mise exec python@${{ matrix.python-version }} -- uv run --active --no-project python -c 'import braintrust'
+          mise exec python@${{ matrix.python-version }} -- uv run --project ./py python -c 'import braintrust'
 
   nox:
     runs-on: ${{ matrix.os }}

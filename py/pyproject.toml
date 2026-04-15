@@ -1,0 +1,371 @@
+[build-system]
+requires = ["setuptools>=82.0.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "braintrust"
+dynamic = ["version"]
+description = "SDK for integrating Braintrust"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10.0"
+authors = [
+    { name = "Braintrust", email = "sdk@braintrustdata.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "GitPython",
+    "requests",
+    "chevron",
+    "tqdm",
+    "exceptiongroup>=1.2.0",
+    "jsonschema",
+    "packaging",
+    "sseclient-py",
+    "python-slugify",
+    "typing_extensions>=4.1.0",
+    "wrapt",
+]
+
+[project.urls]
+Homepage = "https://www.braintrust.dev"
+"Source Code" = "https://github.com/braintrustdata/braintrust-sdk-python"
+"Bug Tracker" = "https://github.com/braintrustdata/braintrust-sdk-python/issues"
+
+[project.scripts]
+braintrust = "braintrust.cli.__main__:main"
+
+[project.entry-points.pytest11]
+braintrust = "braintrust.wrappers.pytest_plugin.plugin"
+
+[project.optional-dependencies]
+cli = ["boto3", "python-dotenv", "uv", "starlette", "uvicorn"]
+# TODO: remove the doc extra in the next major version.
+doc = []
+openai-agents = ["openai-agents"]
+otel = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-http",
+]
+performance = [
+    "orjson; platform_python_implementation != 'PyPy'",
+]
+temporal = [
+    "temporalio>=1.19.0; python_version>='3.10'",
+]
+all = [
+    "boto3",
+    "openai-agents",
+    "opentelemetry-api",
+    "opentelemetry-exporter-otlp-proto-http",
+    "opentelemetry-sdk",
+    "orjson; platform_python_implementation != 'PyPy'",
+    "python-dotenv",
+    "starlette",
+    "temporalio>=1.19.0; python_version>='3.10'",
+    "uv",
+    "uvicorn",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "braintrust.version.VERSION"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+braintrust = ["py.typed"]
+
+# ---------------------------------------------------------------------------
+# Dependency groups (PEP 735)
+#
+# Session auxiliary deps and infrastructure.  These participate in
+# ``uv lock`` and get a fully-resolved lockfile.
+#
+# Provider *matrix* versions live in ``[tool.braintrust.matrix]`` below
+# because declaring every version combination as dependency-group conflicts
+# creates ~1.5 M resolution forks and makes ``uv lock`` infeasible.
+# ---------------------------------------------------------------------------
+
+[dependency-groups]
+
+# -- Base test deps (all sessions include this) --------------------------------
+test = [
+    "pytest==9.0.2",
+    "pytest-asyncio==1.3.0",
+    "pytest-vcr==1.0.2",
+]
+
+# -- Session-specific auxiliary deps -------------------------------------------
+
+test-openai-http2 = [
+    {include-group = "test"},
+    "h2==4.3.0",
+]
+
+test-openai-agents = [
+    {include-group = "test"},
+    # openai is an auxiliary dep (matrix dep is openai-agents); pin here.
+    "openai==2.31.0",
+]
+
+test-litellm = [
+    {include-group = "test"},
+    # litellm requires openai<=1.99.9 (ResponseTextConfig removal in 1.100.0)
+    "openai==1.99.9",
+    "fastapi==0.135.3",
+    "orjson==3.11.8",
+]
+
+test-agno = [
+    {include-group = "test"},
+    "openai==2.31.0",
+    "fastapi==0.135.3",
+]
+
+test-agentscope = [
+    {include-group = "test"},
+    "openai==2.31.0",
+]
+
+test-pydantic-ai-logfire = [
+    {include-group = "test"},
+    "logfire==4.32.1",
+]
+
+test-langchain = [
+    {include-group = "test"},
+    "langchain-openai==1.1.13",
+    "langchain-anthropic==1.4.0",
+    "langgraph==1.1.6",
+]
+
+test-cli = [
+    {include-group = "test"},
+    "httpx==0.28.1",
+]
+
+test-types = [
+    {include-group = "test"},
+    "pyright==1.1.408",
+    "mypy==1.20.0",
+]
+
+# -- Lint deps -----------------------------------------------------------------
+
+lint = [
+    "pylint==4.0.5",
+    "pyperf==2.10.0",
+    # Packages below are needed so pylint can resolve every SDK import.
+    # Versions are unpinned (unless already constrained) so the resolver
+    # can find mutually compatible transitive deps.
+    "agentscope",
+    "agno",
+    "anthropic",
+    "autoevals",
+    "braintrust-core",
+    "dspy",
+    "google-adk",
+    "google-genai",
+    "litellm",
+    "mistralai",
+    "openai",
+    "openai-agents",
+    "openrouter",
+    "temporalio",
+    "pydantic-ai>=1.10.0",
+    "opentelemetry-instrumentation-openai==0.59.1",
+    "langsmith==0.7.31",
+    "langchain-core",
+    "langchain-openai",
+    "langchain-anthropic",
+]
+
+# -- Build deps ----------------------------------------------------------------
+
+build = [
+    "setuptools>=82.0.1",
+]
+
+# -- Dev deps (superset for local development) ---------------------------------
+
+dev = [
+    {include-group = "test"},
+    {include-group = "build"},
+    "nox==2026.2.9",
+    "pre-commit==4.5.1",
+    "pylint==4.0.5",
+    "pyperf==2.10.0",
+]
+
+
+# ---------------------------------------------------------------------------
+# UV conflicts — auxiliary session groups that pin different versions of the
+# same package cannot coexist in a single resolution.
+# ---------------------------------------------------------------------------
+
+[tool.uv]
+conflicts = [
+    # Groups that pin or transitively require conflicting openai versions.
+    [
+        {group = "test-openai-agents"},
+        {group = "test-litellm"},
+        {group = "test-agno"},
+        {group = "test-agentscope"},
+        {group = "test-langchain"},
+        {group = "lint"},
+    ],
+    # opentelemetry-sdk version conflicts (google-adk vs logfire).
+    [
+        {group = "lint"},
+        {group = "test-pydantic-ai-logfire"},
+    ],
+]
+
+# ---------------------------------------------------------------------------
+# Provider version matrix
+#
+# This is a custom metadata table — NOT dependency-groups — so it does not
+# participate in ``uv lock`` (which would be infeasible with ~1.5 M conflict
+# forks).  The noxfile reads these at import time.
+#
+# Each key is a provider prefix.  The value is a dict mapping human-readable
+# version tags to the pip requirement string.  "latest" is pinned to an
+# explicit version and bumped by the weekly dependency-update workflow.
+# ---------------------------------------------------------------------------
+
+[tool.braintrust.matrix]
+
+[tool.braintrust.matrix.openai]
+latest = "openai==2.31.0"
+"1.92.0" = "openai==1.92.0"
+"1.77.0" = "openai==1.77.0"
+"1.71.0" = "openai==1.71.0"
+
+[tool.braintrust.matrix.anthropic]
+latest = "anthropic==0.95.0"
+"0.48.0" = "anthropic==0.48.0"
+
+[tool.braintrust.matrix.openai-agents]
+latest = "openai-agents==0.14.1"
+"0.0.19" = "openai-agents==0.0.19"
+
+[tool.braintrust.matrix.litellm]
+latest = "litellm==1.83.8"
+"1.74.0" = "litellm==1.74.0"
+
+[tool.braintrust.matrix.claude-agent-sdk]
+latest = "claude-agent-sdk==0.1.59"
+"0.1.10" = "claude-agent-sdk==0.1.10"
+
+[tool.braintrust.matrix.agno]
+latest = "agno==2.5.17"
+"2.4.0" = "agno==2.4.0"
+"2.1.0" = "agno==2.1.0"
+
+[tool.braintrust.matrix.agentscope]
+latest = "agentscope==1.0.18"
+"1.0.0" = "agentscope==1.0.0"
+
+[tool.braintrust.matrix.pydantic-ai-integration]
+latest = "pydantic-ai==1.82.0"
+"1.10.0" = "pydantic-ai==1.10.0"
+
+[tool.braintrust.matrix.pydantic-ai-wrap-openai]
+latest = "pydantic-ai==1.82.0"
+"1.0.1" = "pydantic-ai==1.0.1"
+"0.1.9" = "pydantic-ai==0.1.9"
+
+[tool.braintrust.matrix.autoevals]
+latest = "autoevals==0.2.0"
+"0.0.129" = "autoevals==0.0.129"
+
+[tool.braintrust.matrix.google-genai]
+latest = "google-genai==1.73.1"
+"1.30.0" = "google-genai==1.30.0"
+
+[tool.braintrust.matrix.dspy]
+latest = "dspy==3.1.3"
+"2.6.0" = "dspy==2.6.0"
+
+[tool.braintrust.matrix.google-adk]
+latest = "google-adk==1.30.0"
+"1.14.1" = "google-adk==1.14.1"
+
+[tool.braintrust.matrix.langchain-core]
+latest = "langchain-core==1.2.30"
+"0.3.28" = "langchain-core==0.3.28"
+
+[tool.braintrust.matrix.openrouter]
+latest = "openrouter==0.9.1"
+"0.6.0" = "openrouter==0.6.0"
+
+[tool.braintrust.matrix.mistralai]
+latest = "mistralai==2.3.2"
+"1.12.4" = "mistralai==1.12.4"
+
+[tool.braintrust.matrix.temporalio]
+latest = "temporalio==1.25.0"
+"1.20.0" = "temporalio==1.20.0"
+"1.19.0" = "temporalio==1.19.0"
+
+[tool.braintrust.matrix.pytest-matrix]
+latest = "pytest==9.0.3"
+"8.4.2" = "pytest==8.4.2"
+
+[tool.braintrust.matrix.braintrust-core]
+latest = "braintrust-core==0.0.59"
+
+# ---------------------------------------------------------------------------
+# Vendor packages — optional third-party packages the SDK can work without.
+# Keys are matrix keys; values are Python import names.  The noxfile uses this
+# table to:
+#   - pylint: install each at its matrix ``latest`` pin so import checks pass
+#   - test_core: verify none are importable in the minimal environment
+# Packages that only need lint coverage but not test_core gating (e.g.
+# pydantic-ai, langchain-core) belong in the ``lint`` dependency group instead.
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Cassette directory mapping — maps integration directory names under
+# ``src/braintrust/integrations/`` to the matrix key(s) whose version tags
+# populate their ``cassettes/<version>/`` subdirectories.
+#
+# Used by ``scripts/check-stale-cassettes.py`` to detect orphaned cassette
+# directories when versions are dropped from the matrix.
+# ---------------------------------------------------------------------------
+[tool.braintrust.cassette-dirs]
+adk = ["google-adk"]
+agentscope = ["agentscope"]
+agno = ["agno"]
+anthropic = ["anthropic"]
+claude_agent_sdk = ["claude-agent-sdk"]
+dspy = ["dspy"]
+google_genai = ["google-genai"]
+langchain = ["langchain-core"]
+litellm = ["litellm"]
+mistral = ["mistralai"]
+openai = ["openai"]
+openai_agents = ["openai-agents"]
+openrouter = ["openrouter"]
+pydantic_ai = ["pydantic-ai-integration", "pydantic-ai-wrap-openai"]
+
+[tool.braintrust.vendor-packages]
+agno = "agno"
+agentscope = "agentscope"
+anthropic = "anthropic"
+autoevals = "autoevals"
+braintrust-core = "braintrust_core"
+dspy = "dspy"
+google-adk = "google.adk"
+google-genai = "google.genai"
+litellm = "litellm"
+mistralai = "mistralai"
+openai = "openai"
+openai-agents = "agents"
+openrouter = "openrouter"
+temporalio = "temporalio"

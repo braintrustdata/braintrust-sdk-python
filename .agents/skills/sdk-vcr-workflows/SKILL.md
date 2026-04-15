@@ -14,6 +14,7 @@ This repo prefers real recorded integration coverage over mocks for provider beh
 Always read:
 
 - `AGENTS.md`
+- `py/pyproject.toml` (`[tool.braintrust.matrix]` for provider version pins)
 - `py/noxfile.py`
 - `py/src/braintrust/conftest.py`
 - `py/src/braintrust/integrations/conftest.py` (shared version-aware cassette directory resolution)
@@ -37,7 +38,7 @@ These rules must stay aligned with `AGENTS.md`:
 
 - Work from `py/` for SDK tasks.
 - Use `mise` as the source of truth for tools and environment.
-- Do not guess nox session names or provider/version coverage.
+- Do not guess nox session names or provider/version coverage. Provider version pins (including what "latest" resolves to) are in `py/pyproject.toml` `[tool.braintrust.matrix]`.
 - Default bug-fix workflow is red -> green.
 - Prefer VCR-backed provider tests over mocks or fakes whenever practical.
 - Treat mock/fake tests for provider behavior as an exception that requires justification, not as a neutral alternative.

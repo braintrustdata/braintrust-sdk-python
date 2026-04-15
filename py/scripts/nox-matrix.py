@@ -26,7 +26,7 @@ STATIC_CHECK_SESSIONS = ["pylint", "test_types"]
 def get_nox_sessions(noxfile: Path) -> list[str]:
     """List available nox sessions by running ``nox -l``."""
     result = subprocess.run(
-        ["nox", "-l", "-f", str(noxfile)],
+        ["uv", "run", "--project", str(noxfile.parent), "nox", "-l", "-f", str(noxfile)],
         capture_output=True,
         text=True,
         check=True,
@@ -151,7 +151,7 @@ def main() -> None:
         print("\n".join(other_sessions))
         return
 
-    cmd = ["nox", "-f", str(noxfile), "-s", *my_sessions]
+    cmd = ["uv", "run", "--project", str(noxfile.parent), "nox", "-f", str(noxfile), "-s", *my_sessions]
 
     if args.output_durations is None:
         sys.exit(subprocess.run(cmd).returncode)

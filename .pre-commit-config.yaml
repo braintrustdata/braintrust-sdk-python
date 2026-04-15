@@ -19,6 +19,14 @@ repos:
       - id: ruff-format
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
+  - repo: local
+    hooks:
+      - id: check-stale-cassettes
+        name: check stale cassettes
+        entry: python py/scripts/check-stale-cassettes.py
+        language: python
+        pass_filenames: false
+        files: (pyproject\.toml|cassettes/)
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.5
     hooks:
@@ -28,6 +36,7 @@ repos:
               .*\.(json|prisma|svg)
               |.*.yaml
               |.*/cassettes/.*
+              |.*uv\.lock
           )$
         args:
           - "-L"

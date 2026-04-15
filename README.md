@@ -13,6 +13,9 @@ This repository contains Braintrust's Python SDKs and integrations, including:
 Install the main SDK and scorer package:
 
 ```bash
+# uv
+uv add braintrust autoevals
+# pip
 pip install braintrust autoevals
 ```
 

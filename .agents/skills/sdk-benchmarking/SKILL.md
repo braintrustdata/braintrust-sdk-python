@@ -24,7 +24,7 @@ Read when relevant:
 
 - `py/benchmarks/benches/bench_bt_json.py` for the module pattern
 - `py/benchmarks/fixtures.py` for shared payload builders
-- `py/setup.py` when benchmarking the optional `orjson` fast path
+- `py/pyproject.toml` when benchmarking the optional `orjson` fast path (see `[project.optional-dependencies]`)
 - `references/benchmark-patterns.md` in this skill for command and module templates
 
 ## Workflow
@@ -56,7 +56,7 @@ If the benchmark should measure the optional `orjson` path, install the performa
 
 ```bash
 cd py
-python -m uv pip install -e '.[performance]'
+uv sync --extra performance
 ```
 
 ## Adding Benchmarks

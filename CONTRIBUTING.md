@@ -23,10 +23,12 @@ If you use `mise activate` in your shell, entering the repo will automatically e
 ## Repo Layout
 
 - `py/`: main Python SDK
+- `py/pyproject.toml`: single source of truth for package metadata, dependency groups, and provider version matrix
+- `py/uv.lock`: committed lockfile for reproducible auxiliary dep resolution
 - `integrations/`: separate integration packages such as LangChain and ADK
 - `docs/`: supporting docs
 
-Most SDK changes should happen under `py/`.
+Most SDK changes should happen under `py/`. There is no `setup.py` — `pyproject.toml` is the build configuration.
 
 ## Common Workflows
 
@@ -39,6 +41,8 @@ make test-core
 make lint
 nox -l
 ```
+
+`make install-dev` uses `uv sync` under the hood, reading dependency groups from `py/pyproject.toml`. There are no separate `requirements-*.txt` files.
 
 Run a focused session:
 
@@ -54,12 +58,7 @@ cd py
 nox -s "test_openai(latest)" -- -k "test_chat_metrics"
 ```
 
-Install optional provider packages only when you need them:
-
-```bash
-cd py
-make install-optional
-```
+Optional provider packages are installed automatically by each nox session — there is no separate `install-optional` target.
 
 ### Repo-Level Commands
 
@@ -95,7 +94,7 @@ uv run pytest
 
 ## Testing Notes
 
-The SDK uses [nox](https://nox.thea.codes/) for compatibility testing across optional providers and versions. `py/noxfile.py` is the source of truth for available sessions.
+The SDK uses [nox](https://nox.thea.codes/) for compatibility testing across optional providers and versions. Provider version pins live in `py/pyproject.toml` under `[tool.braintrust.matrix]`; the noxfile reads them at import time. `py/noxfile.py` is the source of truth for available sessions and their auxiliary deps.
 
 ### VCR Tests
 
@@ -187,7 +186,7 @@ To benchmark with the optional `orjson` fast-path installed:
 
 ```bash
 cd py
-python -m uv pip install -e '.[performance]'
+uv sync --extra performance
 make bench
 ```
 

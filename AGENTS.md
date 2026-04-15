@@ -15,7 +15,8 @@ Use this file as the default playbook for work in this repository.
 2. **Use `mise` as the source of truth for tools and environment.**
 
 3. **Do not guess test commands or version coverage.**
-   - `py/noxfile.py` is the source of truth for nox session names, provider/version matrices, and local reproduction commands.
+   - `py/pyproject.toml` `[tool.braintrust.matrix]` is the source of truth for provider version pins (including what "latest" resolves to).
+   - `py/noxfile.py` reads those pins and is the source of truth for nox session names, parametrized version matrices, and local reproduction commands.
    - `.github/workflows/checks.yaml` is the source of truth for which sessions run in CI, on which Python versions, and outside vs. inside the nox shard matrix.
    - For provider and integration work, also check `py/src/braintrust/integrations/versioning.py`.
 
@@ -42,6 +43,8 @@ Use this file as the default playbook for work in this repository.
 ## Repo Map
 
 - `py/`: main Python package, tests, examples, nox sessions, build/release workflow
+- `py/pyproject.toml`: single source of truth for package metadata, dependency groups, and provider version matrix
+- `py/uv.lock`: committed lockfile for reproducible auxiliary dep resolution
 - `py/src/braintrust/`: SDK source
   - top-level package files: core SDK
   - `wrappers/`: wrappers
@@ -70,12 +73,7 @@ cd py
 make install-dev
 ```
 
-Install optional provider dependencies only when needed:
-
-```bash
-cd py
-make install-optional
-```
+Note: `install-dev` uses `uv sync` under the hood, reading dependency groups from `py/pyproject.toml`. There is no separate `requirements-dev.txt`.
 
 ## Default Workflow
 
@@ -236,6 +234,16 @@ BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all nox -s "test_claude_agent_sdk(latest
 
 Only re-record HTTP or subprocess cassettes when the behavior change is intentional. If unsure, ask the user.
 
+Stale cassette detection:
+
+- When versions are dropped from `[tool.braintrust.matrix]`, their cassette subdirectories become orphaned.
+- `py/scripts/check-stale-cassettes.py` compares on-disk cassette version directories against the matrix.
+- The mapping from integration directory name to matrix key(s) lives in `[tool.braintrust.cassette-dirs]` in `py/pyproject.toml`.
+- Runs automatically via pre-commit hook (triggers on `pyproject.toml` or `cassettes/` changes).
+- Manual check: `cd py && make check-stale-cassettes`
+- To auto-delete stale dirs: `cd py && python scripts/check-stale-cassettes.py --clean`
+- When adding a new integration with versioned cassettes, add an entry to `[tool.braintrust.cassette-dirs]`.
+
 ## Benchmarks
 
 If you touch a hot path such as serialization, deep-copy, span creation, or logging, consider benchmarks.
@@ -270,12 +278,26 @@ cd py
 make build
 ```
 
+The build uses `pyproject.toml` with the setuptools backend. There is no `setup.py`.
+
 Caveat:
 
 - `py/scripts/template-version.py` rewrites `py/src/braintrust/version.py` during build
 - `py/Makefile` restores that file afterward with `git checkout`
 
 Avoid editing `py/src/braintrust/version.py` while also running build commands.
+
+## Dependency Pinning
+
+All nox session dependency pins are centralized in `py/pyproject.toml`:
+
+- **`[dependency-groups]`** (PEP 735): base test deps, session-specific auxiliary deps (e.g. `test-litellm`, `test-langchain`), lint deps, build deps, and dev deps. These participate in `uv lock` and produce `py/uv.lock`.
+- **`[tool.braintrust.matrix]`**: provider version matrix pins (e.g. `openai`, `anthropic`). Each provider has a `latest` key pinned to an explicit version and additional older version keys. The noxfile reads these at import time to derive the parametrized version tuples.
+- **`[tool.uv.conflicts]`**: declares which dependency groups cannot coexist in one resolution (e.g. groups pinning different `openai` versions).
+
+The `LATEST` sentinel in the noxfile maps to the `latest` key in the matrix table — it is no longer a floating install.
+
+A daily GitHub Actions workflow (`.github/workflows/dependency-updates.yml`) runs `uv lock --upgrade`, classifies changes by reading group names from `pyproject.toml`, and opens a PR labeled `needs-cassette-rerecord` (provider SDK bumps) or `auto-merge-candidate` (infra-only bumps).
 
 ## Editing Guidelines
 

@@ -1,0 +1,83 @@
+name: Dependency updates
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily 6am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up mise
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: true
+          experimental: true
+
+      - name: Upgrade lockfile
+        working-directory: py
+        run: uv lock --upgrade
+
+      - name: Determine labels
+        id: labels
+        working-directory: py
+        run: |
+          python3 << 'PYEOF' >> "$GITHUB_OUTPUT"
+          import subprocess, sys
+
+          if sys.version_info >= (3, 11):
+              import tomllib
+          else:
+              try:
+                  import tomllib
+              except ModuleNotFoundError:
+                  import tomli as tomllib
+
+          diff = subprocess.check_output(["git", "diff", "uv.lock"], text=True)
+          if not diff:
+              print("changed=false")
+              raise SystemExit(0)
+
+          # Read pyproject.toml to find provider SDK packages from the matrix table
+          with open("pyproject.toml", "rb") as f:
+              pyproject = tomllib.load(f)
+
+          matrix = pyproject.get("tool", {}).get("braintrust", {}).get("matrix", {})
+
+          # Extract the base package name from each matrix requirement string
+          provider_pkgs = set()
+          for _prefix, versions in matrix.items():
+              for req in versions.values():
+                  # req looks like "openai==1.92.0" or "pydantic-ai==1.82.0"
+                  pkg = req.split("==")[0].split(">=")[0].split("<=")[0].strip()
+                  provider_pkgs.add(pkg)
+
+          # Check if any provider package changed in the lockfile diff
+          needs_rerecord = any(pkg in diff for pkg in provider_pkgs)
+
+          print("changed=true")
+          print(f"needs_rerecord={str(needs_rerecord).lower()}")
+          PYEOF
+
+      - name: Get date
+        id: date
+        run: echo "date=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Open PR
+        if: steps.labels.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b31e8c0e067c3b0d45ef # v7.0.8
+        with:
+          title: "chore(deps): daily dependency update"
+          body: |
+            Automated daily dependency update via `uv lock --upgrade`.
+
+            ${{ steps.labels.outputs.needs_rerecord == 'true' && '⚠️ **Provider SDK packages changed.** A human needs to re-record cassettes locally before merging.' || '✅ Only test infrastructure deps changed. Safe to merge if CI passes.' }}
+          branch: deps/daily-update-${{ steps.date.outputs.date }}
+          labels: |
+            dependencies
+            ${{ steps.labels.outputs.needs_rerecord == 'true' && 'needs-cassette-rerecord' || 'auto-merge-candidate' }}
