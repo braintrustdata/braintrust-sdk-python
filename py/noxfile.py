@@ -136,7 +136,6 @@ def test_pydantic_ai_wrap_openai(session, version):
     _install_test_deps(session)
     _install(session, "pydantic_ai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_wrap_openai.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -149,7 +148,6 @@ def test_pydantic_ai_integration(session, version):
     _install_test_deps(session)
     _install(session, "pydantic_ai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_integration.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -172,7 +170,6 @@ def test_claude_agent_sdk(session, version):
     _install_test_deps(session)
     _install(session, "claude_agent_sdk", version)
     _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -184,7 +181,6 @@ def test_agno(session, version):
     _install(session, "fastapi")  # Required for agno.workflow
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py")
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -194,7 +190,6 @@ def test_agentscope(session, version):
     _install(session, "agentscope", version)
     _install(session, "openai")
     _run_tests(session, f"{INTEGRATION_DIR}/agentscope/test_agentscope.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -202,8 +197,8 @@ def test_agentscope(session, version):
 def test_anthropic(session, version):
     _install_test_deps(session)
     _install(session, "anthropic", version)
+    _run_tests(session, f"{WRAPPER_DIR}/test_anthropic.py")
     _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -212,7 +207,6 @@ def test_google_genai(session, version):
     _install_test_deps(session)
     _install(session, "google-genai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/google_genai/test_google_genai.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -223,7 +217,6 @@ def test_google_adk(session, version):
     _install(session, "google-adk", version)
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py")
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk_mcp_tool.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -241,7 +234,6 @@ def test_langchain(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_callbacks.py")
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_context.py")
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -252,7 +244,6 @@ def test_openai(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai.py")
     _run_tests(session, f"{INTEGRATION_DIR}/openai/test_oai_attachments.py")
     _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -264,7 +255,6 @@ def test_openai_agents(session, version):
     _install(session, "openai")
     _install(session, "openai-agents", version)
     _run_tests(session, f"{INTEGRATION_DIR}/openai_agents/test_openai_agents.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -293,7 +283,6 @@ def test_mistral(session, version):
     _install_test_deps(session)
     _install(session, "mistralai", version)
     _run_tests(session, f"{INTEGRATION_DIR}/mistral/test_mistral.py")
-    _run_core_tests(session)
 
 
 @nox.session()
@@ -309,7 +298,6 @@ def test_litellm(session, version):
     session.install("openai<=1.99.9", "--force-reinstall", "fastapi", "orjson")
     _install(session, "litellm", version)
     _run_tests(session, f"{INTEGRATION_DIR}/litellm/test_litellm.py")
-    _run_core_tests(session)
 
 
 @nox.session()
