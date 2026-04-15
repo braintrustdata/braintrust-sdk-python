@@ -13,8 +13,12 @@ from braintrust.conftest import get_vcr_config
 from braintrust.test_helpers import init_test_logger
 
 
-# Source directory paths (resolved to handle installed vs source locations)
-_INTEGRATIONS_DIR = Path(__file__).resolve().parent
+# Source directory paths (resolved to handle installed vs source locations).
+# When running inside a subprocess spawned by verify_autoinstrument_script,
+# __file__ may resolve to the installed site-packages location where
+# non-Python files (cassettes, scripts) are absent.  The env-var override
+# lets the parent process hand down the *source-tree* integrations path.
+_INTEGRATIONS_DIR = Path(os.environ.get("BRAINTRUST_INTEGRATIONS_DIR", Path(__file__).resolve().parent))
 AUTO_TEST_SCRIPTS_DIR = _INTEGRATIONS_DIR / "auto_test_scripts"
 from braintrust.integrations.utils import (
     _attachment_filename_for_mime_type,
@@ -104,6 +108,10 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
     """
     script_path = AUTO_TEST_SCRIPTS_DIR / script_name
     env = os.environ.copy()
+    # Hand source-tree integrations dir to the subprocess so that
+    # cassettes and auto_test_scripts resolve correctly even when
+    # braintrust is installed from a wheel (which excludes .yaml files).
+    env["BRAINTRUST_INTEGRATIONS_DIR"] = str(_INTEGRATIONS_DIR)
     env["BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR"] = str(_INTEGRATIONS_DIR / "claude_agent_sdk" / "cassettes")
     result = subprocess.run(
         [sys.executable, str(script_path)],
