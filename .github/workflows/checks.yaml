@@ -85,7 +85,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-24.04, windows-2025]
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5]
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -93,12 +93,11 @@ jobs:
         uses: ./.github/actions/setup-python-env
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run nox tests (shard ${{ matrix.shard }}/4)
+      - name: Run nox tests (shard ${{ matrix.shard }}/6)
         shell: bash
         run: |
-          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
-            --exclude-session pylint \
-            --exclude-session test_types
+          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 6 \
+            --exclude-static-checks
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml

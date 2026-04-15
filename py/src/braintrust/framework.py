@@ -17,7 +17,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Optional,
     TypeVar,
     Union,
 )
@@ -290,7 +289,7 @@ EvalTask = Union[
     Callable[[Input, EvalHooks[Expected]], Union[Output, Awaitable[Output]]],
 ]
 
-ErrorScoreHandler = Callable[[Span, EvalCase[Input, Expected], list[str]], Optional[dict[str, float]]]
+ErrorScoreHandler = Callable[[Span, EvalCase[Input, Expected], Sequence[str]], dict[str, float] | None]
 
 
 @dataclasses.dataclass
@@ -325,7 +324,7 @@ class Evaluator(Generic[Input, Output, Expected]):
     Runs the evaluation task on a single input. The `hooks` object can be used to add metadata to the evaluation.
     """
 
-    scores: list[EvalScorer[Input, Output, Expected]]
+    scores: Sequence[EvalScorer[Input, Output, Expected]]
     """
     A list of scorers to evaluate the results of the task. Each scorer can be a Scorer object or a function
     that takes `input`, `output`, and `expected` arguments and returns a `Score` object. The function can be async.
@@ -344,7 +343,7 @@ class Evaluator(Generic[Input, Output, Expected]):
     JSON-serializable type, but its keys must be strings.
     """
 
-    tags: list[str] | None = None
+    tags: Sequence[str] | None = None
     """
     Optional list of tags for the experiment
     """
@@ -593,7 +592,7 @@ def pluralize(n, singular, plural):
         return plural
 
 
-def report_failures(evaluator: Evaluator, failing_results: Iterable[EvalResult], verbose: bool, jsonl: bool) -> None:
+def report_failures(evaluator: Evaluator, failing_results: Sequence[EvalResult], verbose: bool, jsonl: bool) -> None:
     eprint(
         f"{bcolors.FAIL}Evaluator {evaluator.eval_name} failed with {len(failing_results)} {pluralize(len(failing_results), 'error', 'errors')}{bcolors.ENDC}"
     )
@@ -651,7 +650,7 @@ def _EvalCommon(
     experiment_name: str | None,
     trial_count: int,
     metadata: Metadata | None,
-    tags: list[str] | None,
+    tags: Sequence[str] | None,
     is_public: bool,
     update: bool,
     reporter: ReporterDef[Input, Output, Expected, EvalReport] | None,
@@ -787,7 +786,7 @@ async def EvalAsync(
     experiment_name: str | None = None,
     trial_count: int = 1,
     metadata: Metadata | None = None,
-    tags: list[str] | None = None,
+    tags: Sequence[str] | None = None,
     is_public: bool = False,
     update: bool = False,
     reporter: ReporterDef[Input, Output, Expected, EvalReport] | None = None,
@@ -914,7 +913,7 @@ def Eval(
     experiment_name: str | None = None,
     trial_count: int = 1,
     metadata: Metadata | None = None,
-    tags: list[str] | None = None,
+    tags: Sequence[str] | None = None,
     is_public: bool = False,
     update: bool = False,
     reporter: ReporterDef[Input, Output, Expected, EvalReport] | None = None,

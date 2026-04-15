@@ -30,6 +30,7 @@ jobs:
         shell: bash
         run: |
           mise exec python@3.10 -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
+            --exclude-static-checks \
             --output-durations measured-durations-${{ matrix.shard }}.json
       - name: Upload measured durations
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -61,6 +62,9 @@ jobs:
         if: steps.check.outputs.drifted == 'true'
         run: |
           python ./py/scripts/check-session-weights.py --update measured-durations-*.json
+      - name: Remove temporary duration files
+        if: steps.check.outputs.drifted == 'true'
+        run: rm -f measured-durations-*.json
       - name: Create pull request
         if: steps.check.outputs.drifted == 'true'
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8

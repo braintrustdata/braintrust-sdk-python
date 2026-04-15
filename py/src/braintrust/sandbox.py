@@ -1,5 +1,6 @@
 import dataclasses
 import sys
+from collections.abc import Sequence
 from typing import Any, Literal, cast
 
 import slugify
@@ -51,7 +52,7 @@ def register_sandbox(
     project: str,
     sandbox: SandboxConfig,
     *,
-    entrypoints: list[str] | None = None,
+    entrypoints: Sequence[str] | None = None,
     description: str | None = None,
     metadata: dict[str, Any] | None = None,
     if_exists: IfExists | None = None,

@@ -17,6 +17,12 @@ import sys
 from pathlib import Path
 
 
+# Sessions that run in the dedicated static_checks CI job and should be
+# excluded from the sharded nox matrix.  Both checks.yaml and
+# update-session-weights.yaml reference this via --exclude-static-checks.
+STATIC_CHECK_SESSIONS = ["pylint", "test_types"]
+
+
 def get_nox_sessions(noxfile: Path) -> list[str]:
     """List available nox sessions by running ``nox -l``."""
     result = subprocess.run(
@@ -87,6 +93,12 @@ def main() -> None:
         help="Exclude a nox session from shard assignment. May be passed multiple times.",
     )
     parser.add_argument(
+        "--exclude-static-checks",
+        action="store_true",
+        default=False,
+        help=f"Exclude sessions that run in the dedicated static_checks CI job ({', '.join(STATIC_CHECK_SESSIONS)}).",
+    )
+    parser.add_argument(
         "--output-durations",
         type=Path,
         default=None,
@@ -115,6 +127,8 @@ def main() -> None:
 
     all_sessions = get_nox_sessions(noxfile)
     excluded_sessions = set(args.exclude_session)
+    if args.exclude_static_checks:
+        excluded_sessions.update(STATIC_CHECK_SESSIONS)
     all_sessions = [session for session in all_sessions if session not in excluded_sessions]
     weights, default_weight = load_weights(weights_file)
     shard_assignments = assign_shards(all_sessions, args.num_shards, weights, default_weight)

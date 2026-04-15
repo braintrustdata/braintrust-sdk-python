@@ -1,4 +1,5 @@
+from collections.abc import Mapping
 from typing import Any
 
 
-Metadata = dict[str, Any]
+Metadata = Mapping[str, Any]

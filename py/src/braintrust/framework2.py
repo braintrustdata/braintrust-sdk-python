@@ -1,6 +1,6 @@
 import dataclasses
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, overload
 
 import slugify
@@ -127,7 +127,7 @@ class CodeParameters:
     description: str | None
     schema: EvalParameters
     if_exists: IfExists | None
-    metadata: dict[str, Any] | None = None
+    metadata: Mapping[str, Any] | None = None
 
     def to_function_definition(self, if_exists: IfExists | None, project_ids: ProjectIdCache) -> dict[str, Any]:
         schema = parameters_to_json_schema(self.schema)
@@ -229,7 +229,7 @@ class PromptBuilder:
         prompt: str,
         model: str,
         params: ModelParams | None = None,
-        tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
+        tools: Sequence[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
         metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
@@ -243,10 +243,10 @@ class PromptBuilder:
         slug: str | None = None,
         description: str | None = None,
         id: str | None = None,
-        messages: list[ChatCompletionMessageParam],
+        messages: Sequence[ChatCompletionMessageParam],
         model: str,
         params: ModelParams | None = None,
-        tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
+        tools: Sequence[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
         metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
@@ -260,10 +260,10 @@ class PromptBuilder:
         description: str | None = None,
         id: str | None = None,
         prompt: str | None = None,
-        messages: list[ChatCompletionMessageParam] | None = None,
+        messages: Sequence[ChatCompletionMessageParam] | None = None,
         model: str,
         params: ModelParams | None = None,
-        tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
+        tools: Sequence[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
         metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
@@ -352,7 +352,7 @@ class ParametersBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Mapping[str, Any] | None = None,
     ) -> EvalParameters:
         if slug is None or len(slug) == 0:
             slug = slugify.slugify(name)
@@ -408,7 +408,7 @@ class ScorerBuilder:
         model: str,
         params: ModelParams | None = None,
         use_cot: bool,
-        choice_scores: dict[str, float],
+        choice_scores: Mapping[str, float],
     ) -> CodePrompt: ...
 
     # LLM scorer with messages.
@@ -422,11 +422,11 @@ class ScorerBuilder:
         if_exists: IfExists | None = None,
         metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
-        messages: list[ChatCompletionMessageParam],
+        messages: Sequence[ChatCompletionMessageParam],
         model: str,
         params: ModelParams | None = None,
         use_cot: bool,
-        choice_scores: dict[str, float],
+        choice_scores: Mapping[str, float],
     ) -> CodePrompt: ...
 
     def create(
@@ -444,11 +444,11 @@ class ScorerBuilder:
         returns: Any = None,
         # LLM scorer params.
         prompt: str | None = None,
-        messages: list[ChatCompletionMessageParam] | None = None,
+        messages: Sequence[ChatCompletionMessageParam] | None = None,
         model: str | None = None,
         params: ModelParams | None = None,
         use_cot: bool | None = None,
-        choice_scores: dict[str, float] | None = None,
+        choice_scores: Mapping[str, float] | None = None,
     ) -> CodeFunction | CodePrompt:
         """Creates a scorer.
 
