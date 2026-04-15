@@ -190,7 +190,15 @@ Cassette locations:
 - `py/src/braintrust/cassettes/`
 - `py/src/braintrust/wrappers/cassettes/`
 - `py/src/braintrust/devserver/cassettes/`
-- `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/` for Claude Agent SDK subprocess transport recordings
+- `py/src/braintrust/integrations/<provider>/cassettes/<version>/` for per-version integration cassettes
+- `py/src/braintrust/integrations/claude_agent_sdk/cassettes/<version>/` for Claude Agent SDK subprocess transport recordings
+
+Per-version cassette directories:
+
+- Integration and Claude Agent SDK cassettes are stored in version-specific subdirectories (e.g. `cassettes/latest/`, `cassettes/1.71.0/`).
+- Nox sessions set the `BRAINTRUST_TEST_PACKAGE_VERSION` env var, which `py/src/braintrust/integrations/conftest.py` uses to resolve the correct subdirectory.
+- When running a test file directly (outside nox), the env var is absent and cassettes resolve to the base `cassettes/` directory for backward compatibility.
+- Individual test files do not define their own `vcr_cassette_dir` fixtures; the shared `integrations/conftest.py` handles it.
 
 Behavior from `py/src/braintrust/conftest.py`:
 
@@ -208,11 +216,14 @@ nox -s "test_openai(latest)" -- --disable-vcr
 nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
 ```
 
+When re-recording, the nox session sets `BRAINTRUST_TEST_PACKAGE_VERSION` automatically, so cassettes land in the correct version subdirectory.
+
 Claude Agent SDK note:
 
 - it does not use HTTP VCR
 - it talks to the bundled `claude` subprocess over stdin/stdout
 - it uses transport-level cassette helpers instead
+- cassettes are also stored per-version under `integrations/claude_agent_sdk/cassettes/<version>/`
 
 Common Claude Agent SDK commands:
 

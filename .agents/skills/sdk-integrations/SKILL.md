@@ -43,6 +43,7 @@ Read these when relevant:
 
 - `py/src/braintrust/auto.py` for `auto_instrument()` changes
 - `py/src/braintrust/conftest.py` for VCR behavior
+- `py/src/braintrust/integrations/conftest.py` for per-version cassette directory resolution
 - `py/src/braintrust/integrations/auto_test_scripts/` for subprocess auto-instrument coverage
 - `py/src/braintrust/integrations/test_utils.py` when touching shared attachment materialization or multimodal payload shaping
 - `py/src/braintrust/integrations/adk/test_adk.py`, `py/src/braintrust/integrations/anthropic/test_anthropic.py`, and `py/src/braintrust/integrations/google_genai/test_google_genai.py` for attachment-focused test layout patterns
@@ -98,7 +99,7 @@ Do not start by wiring wrappers and only later decide what the span should conta
    - `patchers.py`
    - `tracing.py`
    - `test_<provider>.py`
-   - `cassettes/` when the provider uses HTTP
+   - `cassettes/<version>/` when the provider uses HTTP (one subdirectory per version in the nox matrix, plus `latest/`)
 3. Export the integration from `py/src/braintrust/integrations/__init__.py`.
 4. Add or update the provider session in `py/noxfile.py`.
 5. Update `py/src/braintrust/auto.py` only if the integration should participate in `auto_instrument()`.
@@ -283,7 +284,7 @@ Also verify, when relevant:
 - the `metadata` contains finish reasons, ids, or annotations in the expected place
 - binary payloads are represented as `Attachment` objects where applicable, while remote URLs and non-attachment values remain unchanged and unmaterialized file inputs are preserved rather than dropped
 
-Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/`. Re-record only when behavior intentionally changes.
+Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/<version>/` (e.g. `cassettes/latest/`, `cassettes/0.48.0/`). Nox sessions set `BRAINTRUST_TEST_PACKAGE_VERSION` automatically so cassettes land in the correct version subdirectory. Do not add per-test `vcr_cassette_dir` or `cassette_library_dir` fixtures; the shared `py/src/braintrust/integrations/conftest.py` handles version routing. Re-record only when behavior intentionally changes.
 
 When the provider returns binary HTTP responses or generated media, sanitize cassettes as needed so fixtures do not store raw file bytes.
 

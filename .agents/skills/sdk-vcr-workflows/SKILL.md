@@ -16,12 +16,13 @@ Always read:
 - `AGENTS.md`
 - `py/noxfile.py`
 - `py/src/braintrust/conftest.py`
+- `py/src/braintrust/integrations/conftest.py` (shared version-aware cassette directory resolution)
 - the target provider test file under `py/src/braintrust/integrations/<provider>/` or `py/src/braintrust/wrappers/`
 
 Read when relevant:
 
 - the provider integration package under `py/src/braintrust/integrations/<provider>/`
-- the provider cassette directory under `py/src/braintrust/integrations/<provider>/cassettes/`
+- the provider cassette directory under `py/src/braintrust/integrations/<provider>/cassettes/<version>/`
 - `py/src/braintrust/cassettes/`
 - `py/src/braintrust/wrappers/cassettes/`
 - `py/src/braintrust/devserver/cassettes/`
@@ -54,11 +55,26 @@ Current defaults:
 - wheel mode skips VCR-marked tests
 - fixtures inject dummy API keys and reset global state
 
+### Per-version cassette directories
+
+Integration cassettes are stored in version-specific subdirectories:
+
+- `py/src/braintrust/integrations/<provider>/cassettes/<version>/` (e.g. `cassettes/latest/`, `cassettes/1.71.0/`)
+
+The mechanism:
+
+- Nox sessions pass the version under test via the `BRAINTRUST_TEST_PACKAGE_VERSION` env var.
+- The shared `py/src/braintrust/integrations/conftest.py` provides a `vcr_cassette_dir` fixture that resolves `<test_dir>/cassettes/<version>/`.
+- When the env var is absent (e.g. running a test file directly outside nox), cassettes fall back to the base `cassettes/` directory.
+- Individual test files do not define their own `vcr_cassette_dir` or `cassette_library_dir` fixtures; the shared conftest handles it.
+- Claude Agent SDK `_test_transport.py` also reads `BRAINTRUST_TEST_PACKAGE_VERSION` for version-specific cassette resolution.
+
 Implications:
 
 - A test that passes locally by silently recording new traffic may still fail in CI if the cassette is missing or stale.
 - CI will not save you by recording fresh traffic. If the cassette is wrong, CI should fail.
 - Reproducing a CI VCR failure locally usually means running the exact nox session named in `py/noxfile.py`, not raw pytest in whatever environment happens to exist.
+- When re-recording, always use a nox session so cassettes land in the correct version subdirectory.
 
 ## Standard Workflow
 
@@ -108,8 +124,10 @@ Common locations in this repo:
 - `py/src/braintrust/cassettes/`
 - `py/src/braintrust/wrappers/cassettes/`
 - `py/src/braintrust/devserver/cassettes/`
-- `py/src/braintrust/integrations/<provider>/cassettes/`
-- `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/` for Claude Agent SDK subprocess transport recordings
+- `py/src/braintrust/integrations/<provider>/cassettes/<version>/` for per-version integration cassettes
+- `py/src/braintrust/integrations/claude_agent_sdk/cassettes/<version>/` for Claude Agent SDK subprocess transport recordings
+
+Each version tested in a nox session gets its own cassette subdirectory (e.g. `cassettes/latest/`, `cassettes/0.48.0/`). The `latest` subdirectory holds cassettes for the unpinned latest version.
 
 Keep cassettes next to the tests they support. When migrating or moving tests, move the cassettes with them.
 
@@ -241,6 +259,8 @@ Important differences:
 
 - it talks to the bundled `claude` subprocess over stdin/stdout
 - it uses transport-level cassette helpers instead of HTTP request recording
+- cassettes are stored per-version under `integrations/claude_agent_sdk/cassettes/<version>/`
+- `_test_transport.py` reads `BRAINTRUST_TEST_PACKAGE_VERSION` (set by nox) to resolve the version subdirectory
 - use `BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all` when re-recording
 
 Do not try to force ordinary HTTP VCR patterns onto Claude Agent SDK subprocess tests.
@@ -278,3 +298,5 @@ Avoid these failures:
 - forgetting that Claude Agent SDK uses subprocess transport recordings, not HTTP VCR
 - leaving duplicate stale cassettes behind after moving tests or renaming scenarios
 - broad re-records that create unnecessary review noise
+- running raw pytest outside nox when re-recording, causing cassettes to land in the base `cassettes/` directory instead of the correct version subdirectory
+- adding per-test `vcr_cassette_dir` or `cassette_library_dir` fixtures — the shared `integrations/conftest.py` handles version routing

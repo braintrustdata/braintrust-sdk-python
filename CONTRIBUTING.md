@@ -105,6 +105,8 @@ Many wrapper and devserver tests use VCR cassettes.
 - In CI, missing cassettes fail because `record_mode="none"` is used.
 - If your change intentionally changes HTTP behavior, re-record the affected cassettes and commit them.
 
+Integration cassettes are stored in **per-version subdirectories** (e.g. `cassettes/latest/`, `cassettes/1.71.0/`). Nox sessions set `BRAINTRUST_TEST_PACKAGE_VERSION` automatically so cassettes land in the correct directory when recording. The shared `py/src/braintrust/integrations/conftest.py` resolves the version-specific path; individual test files do not need their own `vcr_cassette_dir` fixtures.
+
 Useful example:
 
 ```bash
@@ -116,7 +118,9 @@ nox -s "test_openai(latest)" -- --vcr-record=all -k "test_openai_chat_metrics"
 
 `claude_agent_sdk` tests use the real SDK and bundled `claude` CLI, but they do not use VCR. Instead they record and replay the SDK/CLI JSON transport under:
 
-- `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/`
+- `py/src/braintrust/integrations/claude_agent_sdk/cassettes/<version>/`
+
+Like HTTP VCR cassettes, Claude Agent SDK cassettes are stored in per-version subdirectories. The `BRAINTRUST_TEST_PACKAGE_VERSION` env var (set by nox) selects the correct directory.
 
 Behavior:
 
