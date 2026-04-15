@@ -27,12 +27,21 @@ except ImportError as exc:
 if TYPE_CHECKING:
     from claude_agent_sdk.types import ClaudeAgentOptions
 
-CASSETTES_DIR = Path(
-    os.environ.get(
-        "BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR",
-        Path(__file__).resolve().parent / "cassettes",
-    )
-)
+
+def _resolve_cassettes_dir() -> Path:
+    explicit = os.environ.get("BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR")
+    if explicit:
+        # Caller (e.g. verify_autoinstrument_script) already resolved the
+        # version-specific path — use it as-is to avoid double-nesting.
+        return Path(explicit)
+    base = Path(__file__).resolve().parent / "cassettes"
+    version = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION")
+    if version:
+        return base / version
+    return base
+
+
+CASSETTES_DIR = _resolve_cassettes_dir()
 
 
 def get_record_mode() -> str:

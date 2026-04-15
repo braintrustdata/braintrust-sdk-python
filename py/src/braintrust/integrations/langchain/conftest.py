@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import pytest
 
@@ -9,7 +8,6 @@ def vcr_config():
     record_mode = "none" if (os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS")) else "once"
 
     return {
-        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
         "filter_headers": [
             "authorization",
             "x-goog-api-key",

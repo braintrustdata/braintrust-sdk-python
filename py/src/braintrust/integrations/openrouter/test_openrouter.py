@@ -1,7 +1,6 @@
 import inspect
 import os
 import time
-from pathlib import Path
 
 import pytest
 from braintrust import logger
@@ -20,11 +19,6 @@ from openrouter.responses import Responses
 PROJECT_NAME = "test-openrouter-sdk"
 CHAT_MODEL = "openai/gpt-4o-mini"
 EMBEDDING_MODEL = "openai/text-embedding-3-small"
-
-
-@pytest.fixture(scope="module")
-def vcr_cassette_dir():
-    return str(Path(__file__).resolve().parent / "cassettes")
 
 
 @pytest.fixture

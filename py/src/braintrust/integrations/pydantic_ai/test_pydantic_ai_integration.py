@@ -5,7 +5,6 @@
 import asyncio
 import inspect
 import time
-from pathlib import Path
 
 import pytest
 from braintrust import logger, setup_pydantic_ai, traced
@@ -21,11 +20,6 @@ from pydantic_ai.usage import UsageLimits
 PROJECT_NAME = "test-pydantic-ai-integration"
 MODEL = "openai:gpt-4o-mini"  # Use cheaper model for tests
 TEST_PROMPT = "What is 2+2? Answer with just the number."
-
-
-@pytest.fixture(scope="module")
-def vcr_cassette_dir():
-    return str(Path(__file__).resolve().parent / "cassettes")
 
 
 @pytest.fixture(scope="module", autouse=True)

@@ -10,6 +10,7 @@ import pytest
 import vcr
 from braintrust import Attachment, logger
 from braintrust.conftest import get_vcr_config
+from braintrust.integrations.conftest import _versioned_cassette_dir
 from braintrust.test_helpers import init_test_logger
 
 
@@ -65,7 +66,8 @@ def autoinstrument_test_context(
     transport.
     """
     if cassettes_dir is None and integration is not None:
-        cassettes_dir = _INTEGRATIONS_DIR / integration / "cassettes"
+        base_dir = _INTEGRATIONS_DIR / integration / "cassettes"
+        cassettes_dir = Path(_versioned_cassette_dir(str(base_dir)))
     if cassettes_dir is None and use_vcr:
         raise ValueError(
             "Either integration or cassettes_dir is required – e.g. integration='openai' or cassettes_dir=Path(...)"
@@ -112,7 +114,9 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
     # cassettes and auto_test_scripts resolve correctly even when
     # braintrust is installed from a wheel (which excludes .yaml files).
     env["BRAINTRUST_INTEGRATIONS_DIR"] = str(_INTEGRATIONS_DIR)
-    env["BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR"] = str(_INTEGRATIONS_DIR / "claude_agent_sdk" / "cassettes")
+    env["BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR"] = str(
+        Path(_versioned_cassette_dir(str(_INTEGRATIONS_DIR / "claude_agent_sdk" / "cassettes")))
+    )
     result = subprocess.run(
         [sys.executable, str(script_path)],
         capture_output=True,

@@ -129,11 +129,6 @@ def _restore_method_refs(monkeypatch, refs):
         monkeypatch.setattr(cls, method, original)
 
 
-@pytest.fixture(scope="module")
-def vcr_cassette_dir():
-    return str(Path(__file__).resolve().parent / "cassettes")
-
-
 @pytest.fixture
 def memory_logger():
     init_test_logger(PROJECT_NAME)

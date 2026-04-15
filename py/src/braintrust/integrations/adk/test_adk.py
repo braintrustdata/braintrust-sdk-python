@@ -38,7 +38,6 @@ def vcr_config():
 
     return {
         "record_mode": record_mode,
-        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
         "filter_headers": [
             "authorization",
             "Authorization",

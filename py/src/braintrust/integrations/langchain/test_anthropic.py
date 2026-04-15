@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any
 from unittest.mock import ANY
 
@@ -14,13 +13,6 @@ from .helpers import assert_matches_object
 
 PROJECT_NAME = "langchain-anthropic"
 MODEL = "claude-sonnet-4-20250514"
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {
-        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
-    }
 
 
 @pytest.fixture

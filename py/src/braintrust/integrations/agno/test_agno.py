@@ -4,8 +4,6 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportUnknownVariableType=false
 # pyright: reportUnknownArgumentType=false
-from pathlib import Path
-
 import pytest
 from braintrust import logger
 from braintrust.integrations.agno import setup_agno
@@ -31,13 +29,6 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
-
-
-@pytest.fixture(scope="module")
-def vcr_config():
-    return {
-        "cassette_library_dir": str(Path(__file__).parent / "cassettes"),
-    }
 
 
 @pytest.fixture(scope="module", autouse=True)
