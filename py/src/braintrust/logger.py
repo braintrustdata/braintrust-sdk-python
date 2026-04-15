@@ -1583,7 +1583,7 @@ def init(
     project: str | None = None,
     experiment: str | None = None,
     description: str | None = None,
-    dataset: "Dataset | None" | DatasetRef = None,
+    dataset: "Dataset | None | DatasetRef" = None,
     parameters: RemoteEvalParameters | ParametersRef | None = None,
     open: bool = False,
     base_experiment: str | None = None,
