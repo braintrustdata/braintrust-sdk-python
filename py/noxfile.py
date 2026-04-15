@@ -115,7 +115,7 @@ def test_openai_http2_streaming(session, version):
     # h2 is isolated to this session because it's only needed to force the
     # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
     session.install("h2")
-    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py", version=version)
 
 
 OPENAI_AGENTS_VERSIONS = (LATEST, "0.0.19")
@@ -208,7 +208,7 @@ def test_pydantic_ai_logfire(session, version):
     _install_test_deps(session)
     _install(session, "pydantic_ai", version)
     _install(session, "logfire")
-    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_logfire.py")
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_logfire.py", version=version)
 
 
 @nox.session()
