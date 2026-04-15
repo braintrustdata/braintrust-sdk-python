@@ -1,17 +1,13 @@
 """Test auto_instrument for LangChain."""
 
-from pathlib import Path
-
 from braintrust.auto import auto_instrument
 from braintrust.integrations.langchain import BraintrustCallbackHandler
 from braintrust.integrations.langchain.context import clear_global_handler, get_global_handler
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 from langchain_core.callbacks import CallbackManager
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
-
-_CASSETTES_DIR = Path(__file__).resolve().parent.parent / "langchain" / "cassettes"
 
 # 1. Verify not patched initially.
 clear_global_handler()
@@ -34,7 +30,7 @@ assert results2.get("langchain") == True
 assert get_global_handler() is handler
 
 # 4. Make an API call and verify spans.
-with autoinstrument_test_context("test_global_handler", cassettes_dir=_CASSETTES_DIR) as memory_logger:
+with autoinstrument_test_context("test_global_handler", integration="langchain") as memory_logger:
     prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
     model = ChatOpenAI(
         model="gpt-4o-mini",

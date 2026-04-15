@@ -4,8 +4,8 @@ import braintrust
 import pytest
 from braintrust import logger
 from braintrust.integrations.openai_agents import BraintrustTracingProcessor, OpenAIAgentsIntegration
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
 
 PROJECT_NAME = "test-project-openai-agents-tracing"

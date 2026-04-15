@@ -1,7 +1,7 @@
 """Test auto_instrument for Google GenAI (no uninstrument available)."""
 
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 # 1. Instrument
@@ -13,7 +13,7 @@ results2 = auto_instrument()
 assert results2.get("google_genai") == True
 
 # 3. Make API call and verify span
-with autoinstrument_test_context("test_auto_google_genai") as memory_logger:
+with autoinstrument_test_context("test_auto_google_genai", integration="google_genai") as memory_logger:
     from google.genai import types
     from google.genai.client import Client
 

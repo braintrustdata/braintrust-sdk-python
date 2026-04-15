@@ -5,8 +5,8 @@ from unittest.mock import ANY
 import pytest
 from braintrust import logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler, setup_langchain
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate

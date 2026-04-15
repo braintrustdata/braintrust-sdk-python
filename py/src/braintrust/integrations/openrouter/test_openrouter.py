@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 from braintrust import logger
 from braintrust.integrations.openrouter import OpenRouterIntegration, wrap_openrouter
+from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 
 
 openrouter = pytest.importorskip("openrouter")

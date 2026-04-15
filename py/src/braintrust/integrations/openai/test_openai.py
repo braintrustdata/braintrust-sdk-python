@@ -16,9 +16,9 @@ from braintrust.integrations.openai.tracing import (
     _materialize_logged_file_input,
     _process_attachments_in_chat_output,
 )
+from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
-from braintrust.wrappers.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from openai import AsyncOpenAI
 from openai._types import NOT_GIVEN
 from pydantic import BaseModel

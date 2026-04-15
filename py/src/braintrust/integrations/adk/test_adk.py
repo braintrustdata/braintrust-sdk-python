@@ -1822,6 +1822,6 @@ class TestAutoInstrumentADK:
 
     def test_auto_instrument_adk(self):
         """Test auto_instrument patches ADK classes and is idempotent."""
-        from braintrust.wrappers.test_utils import verify_autoinstrument_script
+        from braintrust.integrations.test_utils import verify_autoinstrument_script
 
         verify_autoinstrument_script("test_auto_adk.py")

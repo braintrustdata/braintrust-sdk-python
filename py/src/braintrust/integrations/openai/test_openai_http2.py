@@ -4,8 +4,8 @@ import httpx
 import openai
 import pytest
 from braintrust import logger, wrap_openai
+from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.test_utils import assert_metrics_are_valid
 from openai import AsyncOpenAI
 
 

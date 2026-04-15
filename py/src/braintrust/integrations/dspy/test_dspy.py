@@ -6,8 +6,8 @@ import dspy
 import pytest
 from braintrust import logger
 from braintrust.integrations.dspy import BraintrustDSpyCallback
+from braintrust.integrations.test_utils import run_in_subprocess, verify_autoinstrument_script
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.test_utils import run_in_subprocess, verify_autoinstrument_script
 
 
 PROJECT_NAME = "test-dspy-app"

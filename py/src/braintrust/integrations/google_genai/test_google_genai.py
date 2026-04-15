@@ -7,10 +7,10 @@ from pathlib import Path
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
-from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from google.genai import types
 
 

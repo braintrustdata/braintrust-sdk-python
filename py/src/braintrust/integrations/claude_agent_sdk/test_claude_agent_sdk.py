@@ -38,10 +38,10 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
     _serialize_tool_result_output,
     _thread_local,
 )
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
-from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
 
 PROJECT_NAME = "test-claude-agent-sdk"

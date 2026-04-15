@@ -4,7 +4,7 @@ import os
 
 import openrouter
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 results = auto_instrument()
@@ -13,7 +13,7 @@ assert results.get("openrouter") == True
 results2 = auto_instrument()
 assert results2.get("openrouter") == True
 
-with autoinstrument_test_context("test_auto_openrouter") as memory_logger:
+with autoinstrument_test_context("test_auto_openrouter", integration="openrouter") as memory_logger:
     client = openrouter.OpenRouter(api_key=os.environ.get("OPENROUTER_API_KEY"))
     response = client.chat.send(
         model="openai/gpt-4o-mini",

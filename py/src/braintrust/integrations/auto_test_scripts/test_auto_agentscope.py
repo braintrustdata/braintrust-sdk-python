@@ -1,13 +1,7 @@
 """Test auto_instrument for AgentScope."""
 
-import os
-from pathlib import Path
-
-
-os.environ["BRAINTRUST_CASSETTES_DIR"] = str(Path(__file__).resolve().parent.parent / "agentscope" / "cassettes")
-
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 results = auto_instrument()
@@ -39,7 +33,7 @@ assert hasattr(Toolkit.call_tool_function, "__wrapped__"), "Toolkit.call_tool_fu
 assert hasattr(OpenAIChatModel.__call__, "__wrapped__"), "OpenAIChatModel.__call__ should be wrapped"
 
 
-with autoinstrument_test_context("test_auto_agentscope") as memory_logger:
+with autoinstrument_test_context("test_auto_agentscope", integration="agentscope") as memory_logger:
     agent = ReActAgent(
         name="Test Agent",
         sys_prompt="You are a helpful assistant. Be brief.",

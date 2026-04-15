@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 from braintrust import logger
 from braintrust.integrations.agentscope import setup_agentscope
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.test_utils import verify_autoinstrument_script
 
 
 PROJECT_NAME = "test_agentscope"

@@ -1,7 +1,7 @@
 """Test auto_instrument for Pydantic AI (no uninstrument available)."""
 
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 # 1. Instrument
@@ -13,7 +13,7 @@ results2 = auto_instrument()
 assert results2.get("pydantic_ai") == True
 
 # 3. Make API call and verify span
-with autoinstrument_test_context("test_auto_pydantic_ai") as memory_logger:
+with autoinstrument_test_context("test_auto_pydantic_ai", integration="pydantic_ai") as memory_logger:
     from pydantic_ai import Agent
     from pydantic_ai.models.openai import OpenAIChatModel
     from pydantic_ai.settings import ModelSettings

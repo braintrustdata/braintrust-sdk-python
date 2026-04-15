@@ -2,7 +2,7 @@
 
 from braintrust.auto import auto_instrument
 from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 # 1. Instrument

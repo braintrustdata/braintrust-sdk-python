@@ -2,7 +2,7 @@
 
 import anthropic
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 # 1. Verify not patched initially
@@ -25,7 +25,7 @@ results2 = auto_instrument()
 assert results2.get("anthropic") == True
 
 # 4. Make API call and verify span
-with autoinstrument_test_context("test_auto_anthropic") as memory_logger:
+with autoinstrument_test_context("test_auto_anthropic", integration="anthropic") as memory_logger:
     client = anthropic.Anthropic()
     response = client.messages.create(
         model="claude-3-5-haiku-20241022",

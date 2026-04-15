@@ -1,7 +1,21 @@
+import os
+import subprocess
+import sys
+import textwrap
 import unittest.mock
+from contextlib import contextmanager
+from pathlib import Path
 
 import pytest
-from braintrust import Attachment
+import vcr
+from braintrust import Attachment, logger
+from braintrust.conftest import get_vcr_config
+from braintrust.test_helpers import init_test_logger
+
+
+# Source directory paths (resolved to handle installed vs source locations)
+_INTEGRATIONS_DIR = Path(__file__).resolve().parent
+AUTO_TEST_SCRIPTS_DIR = _INTEGRATIONS_DIR / "auto_test_scripts"
 from braintrust.integrations.utils import (
     _attachment_filename_for_mime_type,
     _camel_to_snake,
@@ -19,6 +33,101 @@ from braintrust.integrations.utils import (
     _timing_metrics,
     _try_to_dict,
 )
+
+
+@contextmanager
+def autoinstrument_test_context(
+    cassette_name: str,
+    *,
+    integration: str | None = None,
+    use_vcr: bool = True,
+    cassettes_dir: Path | None = None,
+):
+    """Context manager for auto_instrument tests.
+
+    Sets up the shared memory_logger context and, by default, VCR.
+
+    Use ``integration`` to automatically resolve cassettes from
+    ``integrations/<name>/cassettes/``::
+
+        with autoinstrument_test_context("test_auto_openai", integration="openai") as ml:
+            ...
+
+    Use ``cassettes_dir`` to override with an explicit path (takes
+    precedence over ``integration``).
+
+    Use ``use_vcr=False`` for tests that replay provider traffic through a
+    non-VCR mechanism, such as the Claude Agent SDK subprocess cassette
+    transport.
+    """
+    if cassettes_dir is None and integration is not None:
+        cassettes_dir = _INTEGRATIONS_DIR / integration / "cassettes"
+    if cassettes_dir is None and use_vcr:
+        raise ValueError(
+            "Either integration or cassettes_dir is required – e.g. integration='openai' or cassettes_dir=Path(...)"
+        )
+
+    cassette_path = cassettes_dir / f"{cassette_name}.yaml" if cassettes_dir else None
+
+    init_test_logger("test-auto-instrument")
+
+    with logger._internal_with_memory_background_logger() as memory_logger:
+        memory_logger.pop()  # Clear any prior spans
+
+        if not use_vcr:
+            yield memory_logger
+            return
+
+        my_vcr = vcr.VCR(**get_vcr_config())
+        with my_vcr.use_cassette(str(cassette_path)):
+            yield memory_logger
+
+
+def run_in_subprocess(code: str, timeout: int = 30, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+    """Run Python code in a fresh subprocess."""
+    run_env = os.environ.copy()
+    if env:
+        run_env.update(env)
+    return subprocess.run(
+        [sys.executable, "-c", textwrap.dedent(code)],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env=run_env,
+    )
+
+
+def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subprocess.CompletedProcess:
+    """Run a test script from the integrations auto_test_scripts directory.
+
+    Raises AssertionError if the script exits with non-zero code.
+    """
+    script_path = AUTO_TEST_SCRIPTS_DIR / script_name
+    env = os.environ.copy()
+    env["BRAINTRUST_CLAUDE_AGENT_SDK_CASSETTES_DIR"] = str(_INTEGRATIONS_DIR / "claude_agent_sdk" / "cassettes")
+    result = subprocess.run(
+        [sys.executable, str(script_path)],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env=env,
+    )
+    assert result.returncode == 0, f"Script {script_name} failed:\n{result.stderr}"
+    return result
+
+
+def assert_metrics_are_valid(metrics, start=None, end=None):
+    assert metrics
+    # assert 0 < metrics["time_to_first_token"]
+    assert 0 < metrics["tokens"]
+    assert 0 < metrics["prompt_tokens"]
+    assert 0 < metrics["completion_tokens"]
+    # we use <= because windows timestamps are not very precise and
+    # we use VCR which skips HTTP requests.
+    if start and end:
+        assert start <= metrics["start"] <= metrics["end"] <= end
+    else:
+        assert metrics["start"] <= metrics["end"]
 
 
 class NotGiven:

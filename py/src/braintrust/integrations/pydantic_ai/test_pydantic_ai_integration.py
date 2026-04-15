@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 from braintrust import logger, setup_pydantic_ai, traced
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
-from braintrust.wrappers.test_utils import verify_autoinstrument_script
 from pydantic import BaseModel
 from pydantic_ai import Agent, ModelSettings
 from pydantic_ai.messages import ModelRequest, UserPromptPart

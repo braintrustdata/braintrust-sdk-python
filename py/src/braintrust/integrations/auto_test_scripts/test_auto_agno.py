@@ -1,7 +1,7 @@
 """Test auto_instrument for Agno (no uninstrument available)."""
 
 from braintrust.auto import auto_instrument
-from braintrust.wrappers.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import autoinstrument_test_context
 
 
 # 1. Instrument
@@ -73,7 +73,7 @@ assert hasattr(FunctionCall, "aexecute") and hasattr(FunctionCall.aexecute, "__w
 )
 
 # 4. Make API call and verify spans
-with autoinstrument_test_context("test_auto_agno") as memory_logger:
+with autoinstrument_test_context("test_auto_agno", integration="agno") as memory_logger:
     from agno.models.openai import OpenAIChat
 
     agent = Agent(
