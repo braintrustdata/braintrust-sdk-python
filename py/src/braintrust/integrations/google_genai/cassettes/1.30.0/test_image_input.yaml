@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"inlineData": {"data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==",
+      "mimeType": "image/png"}}, {"text": "What color is this image?"}], "role": "user"}],
+      "generationConfig": {"maxOutputTokens": 150}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2611607'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      x-goog-api-client:
+      - google-genai-sdk/1.70.0 gl-python/3.13.3
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The image is predominantly blue.\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.39939455191294354\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 1296,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\":
+        1302,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"IMAGE\",\n
+        \       \"tokenCount\": 1290\n      },\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 6\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 6\n      }\n
+        \   ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
+        \"4qzNaamuO7Gx1MkPtOGkwQU\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 01 Apr 2026 23:40:19 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=2700
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '756'
+    status:
+      code: 200
+      message: OK
+version: 1

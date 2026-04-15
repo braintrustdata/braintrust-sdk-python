@@ -1,0 +1,84 @@
+interactions:
+- request:
+    body: '{"input":"What is 7+7? Reply with just the number.","model":"openai/gpt-4o-mini","store":false,"service_tier":"auto","stream":true}'
+    headers:
+      Accept:
+      - text/event-stream
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '131'
+      Host:
+      - openrouter.ai
+      content-type:
+      - application/json
+      user-agent:
+      - speakeasy-sdk/python 0.7.11 2.768.0 1.0.0 openrouter
+    method: POST
+    uri: https://openrouter.ai/api/v1/responses
+  response:
+    body:
+      string: ': OPENROUTER PROCESSING
+
+
+        data: {"type":"response.created","response":{"id":"gen-1774558315-g19MVRVGotjqi32J3OZZ","object":"response","created_at":1774558315,"model":"openai/gpt-4o-mini","status":"in_progress","completed_at":null,"output":[],"error":null,"incomplete_details":null,"tools":[],"tool_choice":"auto","parallel_tool_calls":true,"max_output_tokens":null,"temperature":1,"top_p":1,"presence_penalty":0,"frequency_penalty":0,"top_logprobs":0,"max_tool_calls":null,"metadata":{},"background":false,"previous_response_id":null,"service_tier":"auto","truncation":"disabled","store":false,"instructions":null,"text":{"format":{"type":"text"}},"reasoning":null,"safety_identifier":null,"prompt_cache_key":null,"usage":null},"sequence_number":0}
+
+
+        data: {"type":"response.in_progress","response":{"id":"gen-1774558315-g19MVRVGotjqi32J3OZZ","object":"response","created_at":1774558315,"model":"openai/gpt-4o-mini","status":"in_progress","completed_at":null,"output":[],"error":null,"incomplete_details":null,"tools":[],"tool_choice":"auto","parallel_tool_calls":true,"max_output_tokens":null,"temperature":1,"top_p":1,"presence_penalty":0,"frequency_penalty":0,"top_logprobs":0,"max_tool_calls":null,"metadata":{},"background":false,"previous_response_id":null,"service_tier":"auto","truncation":"disabled","store":false,"instructions":null,"text":{"format":{"type":"text"}},"reasoning":null,"safety_identifier":null,"prompt_cache_key":null,"usage":null},"sequence_number":1}
+
+
+        data: {"type":"response.output_item.added","output_index":0,"item":{"id":"msg_tmp_hpa06btx1fl","type":"message","status":"in_progress","role":"assistant","content":[]},"sequence_number":2}
+
+
+        data: {"type":"response.content_part.added","output_index":0,"item_id":"msg_tmp_hpa06btx1fl","content_index":0,"part":{"type":"output_text","text":"","annotations":[],"logprobs":[]},"sequence_number":3}
+
+
+        data: {"type":"response.output_text.delta","output_index":0,"item_id":"msg_tmp_hpa06btx1fl","content_index":0,"delta":"14","logprobs":[],"sequence_number":4}
+
+
+        data: {"type":"response.output_text.done","output_index":0,"item_id":"msg_tmp_hpa06btx1fl","content_index":0,"text":"14","logprobs":[],"sequence_number":5}
+
+
+        data: {"type":"response.content_part.done","output_index":0,"item_id":"msg_tmp_hpa06btx1fl","content_index":0,"part":{"type":"output_text","text":"14","annotations":[],"logprobs":[]},"sequence_number":6}
+
+
+        data: {"type":"response.output_item.done","output_index":0,"item":{"id":"msg_tmp_hpa06btx1fl","type":"message","status":"completed","role":"assistant","content":[{"type":"output_text","text":"14","annotations":[],"logprobs":[]}]},"sequence_number":7}
+
+
+        data: {"type":"response.completed","response":{"id":"gen-1774558315-g19MVRVGotjqi32J3OZZ","object":"response","created_at":1774558315,"model":"openai/gpt-4o-mini","status":"completed","completed_at":1774558315,"output":[{"id":"msg_tmp_hpa06btx1fl","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"14","annotations":[],"logprobs":[]}]}],"error":null,"incomplete_details":null,"tools":[],"tool_choice":"auto","parallel_tool_calls":true,"max_output_tokens":null,"temperature":1,"top_p":1,"presence_penalty":0,"frequency_penalty":0,"top_logprobs":0,"max_tool_calls":null,"metadata":{},"background":false,"previous_response_id":null,"service_tier":"auto","truncation":"disabled","store":false,"instructions":null,"text":{"format":{"type":"text"}},"reasoning":null,"safety_identifier":null,"prompt_cache_key":null,"usage":{"input_tokens":20,"input_tokens_details":{"cached_tokens":0},"output_tokens":1,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":21,"cost":0.0000036,"is_byok":false,"cost_details":{"upstream_inference_cost":0.0000036,"upstream_inference_input_cost":0.000003,"upstream_inference_output_cost":6e-7}}},"sequence_number":8}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-RAY:
+      - 9e29093d6956cec9-SJC
+      Cache-Control:
+      - no-cache
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream
+      Date:
+      - Thu, 26 Mar 2026 20:51:55 GMT
+      Permissions-Policy:
+      - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
+        "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
+      Referrer-Policy:
+      - no-referrer, strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+version: 1

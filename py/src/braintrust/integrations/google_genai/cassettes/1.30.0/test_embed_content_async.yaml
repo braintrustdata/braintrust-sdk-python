@@ -1,0 +1,110 @@
+interactions:
+- request:
+    body: '{"requests": [{"content": {"parts": [{"text": "This is a test"}], "role":
+      "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality": 32, "model":
+      "models/text-embedding-004"}, {"content": {"parts": [{"text": "This is another
+      test"}], "role": "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality":
+      32, "model": "models/text-embedding-004"}]}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/1.66.0 gl-python/3.13.3
+      x-goog-api-client:
+      - google-genai-sdk/1.66.0 gl-python/3.13.3
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"models/text-embedding-004
+        is not found for API version v1beta, or is not supported for embedContent.
+        Call ListModels to see the list of available models and their supported methods.\",\n
+        \   \"status\": \"NOT_FOUND\"\n  }\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 20 Mar 2026 17:24:34 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=61
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: '{"requests": [{"content": {"parts": [{"text": "This is a test"}], "role":
+      "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality": 32, "model":
+      "models/gemini-embedding-001"}, {"content": {"parts": [{"text": "This is another
+      test"}], "role": "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality":
+      32, "model": "models/gemini-embedding-001"}]}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/1.66.0 gl-python/3.13.3
+      x-goog-api-client:
+      - google-genai-sdk/1.66.0 gl-python/3.13.3
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents
+  response:
+    body:
+      string: "{\n  \"embeddings\": [\n    {\n      \"values\": [\n        -0.023325698,\n
+        \       0.0046664835,\n        0.011547477,\n        -0.09579112,\n        -0.0014762759,\n
+        \       0.0008815472,\n        -0.0021552797,\n        -0.010228449,\n        0.0051200837,\n
+        \       -0.00017234083,\n        -0.004328001,\n        -0.011912019,\n        0.00035554593,\n
+        \       -0.0041076173,\n        0.16096918,\n        0.012422918,\n        -0.0063045956,\n
+        \       0.007986352,\n        -0.002453504,\n        -0.0076586856,\n        -0.0046673263,\n
+        \       -0.011785407,\n        0.019633682,\n        -0.0028250674,\n        0.003508845,\n
+        \       -0.008396229,\n        0.023694735,\n        0.013479813,\n        0.019790472,\n
+        \       -0.0024608728,\n        -0.009812026,\n        0.013141339\n      ]\n
+        \   },\n    {\n      \"values\": [\n        -0.020953175,\n        0.00159121,\n
+        \       0.01681236,\n        -0.09719086,\n        -0.0057125897,\n        -0.0091514345,\n
+        \       0.0065565477,\n        -0.010889619,\n        0.005243009,\n        -0.0102227805,\n
+        \       0.0024382372,\n        -0.008563973,\n        0.0069260946,\n        -0.010109229,\n
+        \       0.15993133,\n        0.014212301,\n        -0.013013395,\n        0.0043994756,\n
+        \       -0.015382343,\n        -0.009089905,\n        6.0088325e-05,\n        -0.006942369,\n
+        \       0.020732542,\n        -0.0068101394,\n        0.0039503737,\n        -0.004525233,\n
+        \       0.032600258,\n        0.009397907,\n        0.022764705,\n        -0.006015099,\n
+        \       -0.012276714,\n        0.013333517\n      ]\n    }\n  ]\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 20 Mar 2026 17:28:26 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=142
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

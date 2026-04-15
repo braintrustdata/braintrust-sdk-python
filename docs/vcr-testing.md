@@ -32,7 +32,6 @@ The key difference between local and CI is the cassette record mode.
 
 - **Record mode:** `once` -- records a new cassette if one doesn't exist, replays if it does.
 - **API keys:** You need real API keys set in your environment to record new cassettes.
-- **`test_latest_wrappers_novcr` session:** Runs normally, making real API calls (no VCR).
 
 ```bash
 # Run tests (replays cassettes, records missing ones with real keys)
@@ -65,7 +64,6 @@ BRAINTRUST_CLAUDE_AGENT_SDK_RECORD_MODE=all \
   - `ANTHROPIC_API_KEY` -> `sk-ant-test-dummy-api-key-for-vcr-tests`
   - `GOOGLE_API_KEY` -> `your_google_api_key_here`
 - **Claude Agent SDK tests:** Replay committed subprocess cassettes from `py/src/braintrust/wrappers/claude_agent_sdk/cassettes/`.
-- **`test_latest_wrappers_novcr` session:** Automatically skipped in CI since it disables VCR and would need real keys.
 - **No secrets needed:** CI workflows do not pass `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY` as secrets. This means forks and external contributors can run CI without configuring any API key secrets.
 
 ## Recording Modes

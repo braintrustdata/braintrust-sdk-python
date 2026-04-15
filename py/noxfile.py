@@ -424,23 +424,6 @@ def pylint(session):
     session.run("pylint", "--errors-only", *files)
 
 
-@nox.session()
-def test_latest_wrappers_novcr(session):
-    """Run the latest wrapper tests without vcrpy."""
-    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
-        session.skip("Skipping novcr tests in CI (no real API keys available)")
-    # every test run we hit openai, anthropic,  at least once so we balance CI speed (with vcrpy)
-    # with testing reality.
-    args = session.posargs.copy()
-    if "--disable-vcr" not in args:
-        args.append("--disable-vcr")
-    session.notify("test_openai(latest)", posargs=args)
-    session.notify("test_anthropic(latest)", posargs=args)
-    session.notify("test_pydantic_ai_wrap_openai(latest)", posargs=args)
-    session.notify("test_pydantic_ai_integration(latest)", posargs=args)
-    session.notify("test_claude_agent_sdk(latest)", posargs=args)
-
-
 def _install_npm_in_session(session):
     """Install Node.js and npm in the nox session using nodeenv."""
     session.install("nodeenv", silent=SILENT_INSTALLS)

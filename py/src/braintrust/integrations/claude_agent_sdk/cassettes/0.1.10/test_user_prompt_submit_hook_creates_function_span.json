@@ -1,0 +1,303 @@
+{
+  "cassette_name": "test_user_prompt_submit_hook_creates_function_span",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "UserPromptSubmit": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": null
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_67570bb7",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_67570bb7",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Say hello in one short sentence.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "UserPromptSubmit",
+            "permission_mode": "bypassPermissions",
+            "prompt": "Say hello in one short sentence.",
+            "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "a53c8d5a-4ea4-4b73-9cce-9c17bca24b78"
+        },
+        "request_id": "a44c49fc-67bd-4332-aed1-50934fcf7f54",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "a44c49fc-67bd-4332-aed1-50934fcf7f54",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "Remember the answer should stay concise.",
+                "hookEventName": "UserPromptSubmit"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.81",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "skills": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "schedule",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "schedule",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "RemoteTrigger",
+          "ToolSearch"
+        ],
+        "type": "system",
+        "uuid": "1661665e-3159-4e99-b237-9a75a4f6e055"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user is asking me to say hello in one short sentence. This is a simple greeting request. I should keep it concise and friendly.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_0174ptnfaH65R4cf7XtoZpRn",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 5528
+            },
+            "cache_creation_input_tokens": 5528,
+            "cache_read_input_tokens": 13663,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "type": "assistant",
+        "uuid": "b7c6c3ed-a2f7-4392-895e-f666060ef546"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Hello! I'm Claude, your AI assistant in Claude Code\u2014how can I help you today?",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_0174ptnfaH65R4cf7XtoZpRn",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 5528
+            },
+            "cache_creation_input_tokens": 5528,
+            "cache_read_input_tokens": 13663,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "type": "assistant",
+        "uuid": "5ab9bfbf-6345-4ff9-8ab5-a3cfc5472d8c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 1149,
+        "duration_ms": 1259,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 5528,
+            "cacheReadInputTokens": 13663,
+            "contextWindow": 200000,
+            "costUSD": 0.0085863,
+            "inputTokens": 10,
+            "maxOutputTokens": 32000,
+            "outputTokens": 60,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 1,
+        "permission_denials": [],
+        "result": "Hello! I'm Claude, your AI assistant in Claude Code\u2014how can I help you today?",
+        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "total_cost_usd": 0.0085863,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 5528
+          },
+          "cache_creation_input_tokens": 5528,
+          "cache_read_input_tokens": 13663,
+          "inference_geo": "",
+          "input_tokens": 10,
+          "iterations": [],
+          "output_tokens": 60,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "174fde97-5c86-44df-94ff-58d198652f20"
+      }
+    }
+  ],
+  "sdk_version": "0.1.50"
+}

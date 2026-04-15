@@ -1,0 +1,123 @@
+interactions:
+- request:
+    body: '{"max_tokens":256,"messages":[{"role":"user","content":"Use the web_search
+      tool to find the Braintrust docs homepage. Then answer with exactly the homepage
+      URL and no other text."}],"model":"claude-haiku-4-5-20251001","tool_choice":{"type":"tool","name":"web_search","disable_parallel_tool_use":true},"tools":[{"type":"web_search_20250305","name":"web_search","max_uses":1}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '375'
+      Content-Type:
+      - application/json
+      Host:
+      - api.anthropic.com
+      User-Agent:
+      - Anthropic/Python 0.93.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 0.93.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      anthropic-version:
+      - '2023-06-01'
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: "{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_015tGoRbByHYiodGx8f64RR6\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"server_tool_use\",\"id\":\"srvtoolu_01TvxcVuELES1qHMs2vf9M63\",\"name\":\"web_search\",\"input\":{\"query\":\"Braintrust
+        docs homepage\"}},{\"type\":\"web_search_tool_result\",\"tool_use_id\":\"srvtoolu_01TvxcVuELES1qHMs2vf9M63\",\"content\":[{\"type\":\"web_search_result\",\"title\":\"Get
+        started with Braintrust - Braintrust\",\"url\":\"https://www.braintrust.dev/docs\",\"encrypted_content\":\"ErINCioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDKAjd2qXCVnINHjEgxoMSPL5nFwAWTTLFbhNIjBmGIYS10O8F+J87SnbopY4PnlST0hIPP4bfRW1PVVvyfauRtblIflzrqeIvolL5KkqtQw+4+eBDfpivmMb3zqTh/yMAsd+b7XyvIo5hSHlh1HFk7M1KQKhvCzKChEurZg8VctbPqmXtNrw2540NbCb4HWhO7c1UL5AjVrH23BCJYLSr886iot2twL5UVushCv1qdnthMgVR+5VzTU6V6ykCxLmqH5QRBkR0q9u/yRe7MNSEmKStKm7qVKaQ0kOjMRFIyycPXlVMTBuC4mcNB+YuoDmTZDaAEN/QQ17Y8Dj/0Xn6BxuRXIfQqave8eL0d4O/XK4pfeEEeHSeipWlu8a1C+aznrYPNJv7a49JrVGQB7aWOM0yZ2pGv3+rEaoTgotYsaDcb3eggZIXyWcMpaK6OWfEMVyZvA85h8z+GKxBKt76WZab8UDKaAiJgLVDKKL6bQ3cAukZg2P58FkQ1o2jswc5TtXyOyb1LklWm/8bA56SJH31ctN7lb4Lnn27NrA/yXta0QjtpdXdW6xWmjOPQxnrrP4olIFiXmTGjNE2kFB6jdxb5I0xArt37/5u6oeAquq4q6sTiKAbws2Xv1WHwewHKMs8mGYXObb6D4GAf90zoEvq/YqBN2Ad/F4g9C4B+MaotnXB5VNmTDynOBdF0myej9AB3NpaJCANhIgu6hAJSfQoYh/ae8nYVyNa+tqC3yXalWHtrpZ7nPyrKic+qZwRwzPLdcP6oeZJJKb8BDJO0bnnkRCj2x5XGyUooiaE7uQqcJyiBKC94+j0Hh2iUS4bWQ5W1ia+N++jOCOeArf+Akmhb6E2RHn9pKALn2Nz2lRymOOccefIWxJ3rlKIXm5Yws7s0d0z8KE2h2as3f42K/f+fB60rxvUoac0V9OHg3seOsoEBYHBhIZBEkZsA32vI1tdf+zduOIFXCwgeRFy6IZhTFred+IBSGlfRX8mfGoOFil9CgMZvcFG/HWC/R4h8cYvejcCjiOjs+Qa5+0FEpWzHRLWsVGAheVgBsbGj1tlRigJPkp6JpsK1p7l9Osxsoehwx5wyNx0LP2vaUCsS553PoLn4XydmmO4o1QmasaVKc1Itn0QKh5I7zK0paszCN7sDuWOjTWmlhX0DbLdaX0xGGmAGVVqN4lfqRzUCvuEQWzMLMlaSWVJ7RB/3SqTEqC8rAjlkKnYm6i/d25hD3bc1k//0oaX//fejL8zTz4EE0I6JrjGFspzOx/6N/wvJfayN6mK6N97rlX+tYCTOn5kqa/7QchjH9ykPKSspvUfrBPGmab2bsLT2Q1dizdApphz2bpm6wEkjFEzmG5eAzP9Fi82bM3QlxN+4IgECtcM7GU4WhYq3JUmQnKWcp19xRJaUPp28wY919zc5NnXLMNg7tmp/6S7hNPrR3TMlzGr7MeTeEz2/7WzC/Ah0V++mscWZtIRpELwhawZFc9Swyh1J7vjVtDxJDct3/PqQfsgO+y1PvH8Zz5zKwtWOO7j3alpjy1SnDVcHA7rsGoKn7kZybD7AhMG6oVd2HlH1vE8PuK9udGLKXvi1DGLQpM1K6Jt75Y/p9WgF/lOQE+9NiIKyJ0xIJS9op+pBZYua2uOppN5edHFArRSd9ORZLbVl9i4VrcgKT6C1i6DrObFwvZLeMImaKCAomyJT3LJ3qDJRh0FogBVroY1Yphx1MPYeddT4rs2OfELPpEFPBK8rKiKo9x/swpDstkmqg0bemqzEIbt81f/Iuf3pXXqmenip7X1BPkKMM9HaIO+wWaQBJrpTQVi25sAEqv3XdgoiK60exwu5J737pakzpsvR3o5gR2qi+P33KJURiE4sPqvWwWaxTx31T3+CubVOm+8G2/nnhmSRhGwxi7M1P9P49uWP0IlvcrnEIKrXHIfyenFMsOEulc9dfNc/KXq4JCtnuvtSQcm34+IdtLKqoB0KljERbHOhBrTSr1SfYECcrwUfyEm/H+xLHugXK35pO4YyXIn4MhRohtvFsDZBRV5p2CW0GbUF2tjUI7pF+/Xri77n/9FbZG8EYUT0H86T6Vag8cvHl+kQSDU9W8rwkXVhZpqH0T528Z7dfX5B8FeMln9kCUkxye01YKnJxm2bTlO3m9OSMNFN9aEm0imXF3hc5SlDU6psIBn2DaCazvW5Bg5ByaCkRYRI6ShXdXzYvH6dZ4sPz0OxgD\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"Get
+        started - Docs - Braintrust\",\"url\":\"https://www.braintrust.dev/docs/start\",\"encrypted_content\":\"Ep8ICioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDBo8ZMQmk0UuWp9EexoMgxSh/pmgqgXTIixRIjBJ8ixJWF9w/9QOWHp3Ctwlg3O7pWnYzTzNOirnMJx4MPkQC1FjLDN1TJFsNRZwvfkqogcFV7O2zMkuqaMFmyU/lJE2w7FsUcEXn0J74EkXc/fXVC6N7YwfCWqy5Od9l02kt2uneQnpXLNAfP6HdKMRxkAMy9H7sKHEYAhhjercuo69XadDUfKtUPqjUASR0dlSLDG9p8jf/Xy7mWcsXRJtfKEuUDnPjLvJYfS8BMTh4LknydiEKbP6ygSIGFNYmmqdHEAod9qpwYpvEB09Q4HI4r86rnnB4/uDPXYpALANWXqNypdAgBnpeT4gOMVRSxiDKib9TFPV3TpqfDja4jEikzfnjKgSfM6fr1OxlyOt0zcVQyvXl3tkE883HwPoZbm441N/xQiLk559tfwSBemlTwPuuiIOP9yqMVmqq877ndA+mFp6sVDTBkn2DLrBOllQvazkcSGVYkVE/FnoWz+0t2+ZCDnk07aEVvQCvlfjeOxMSBb0Nd6EOHE+VAteh5KY+oVzT1/fNFXzW64ROg0TP4F1Ynm9kK18obxSUZAbmTcJIeNxk8uQOh+OLXgHvCE//gGea1wyZZkeydV8qPUrTkyMXZH0OenX4HrMTh+EOSkOE801cToPggUru7arMot40huFdWy48I4oVf5Ix+xeBxYLl3qCp2P4z53dX2Dm2KVSDcIhcyFfzvTfh25XQ7OK5lZbfz/+PABedeu9sP3JUbhcR0YHnawTs8pD05EtHy/0bhul7JkQck1H2q1m5Sp2vFMcqYGNms/+p5u6iUE/X2jjen+Q8r+ma7YzWa91Fvn20x3D6umV0n4O8+fFZ/W2/Q8xiSw2XE/vZmqMgpBtk7/2oLbuPabiBT9w+DTUqU9z+uUfUldKQEONaKMn9Ml7yFse4P4Q6kFmoH9CaHNWGIMuacQtNAahbGP5LROPCg4J40r0Tm+QyISTsX7zZkqxhttGNiTlzsp1WQKNY+kClZ7v8HhhmFix0xgTlNv2Jd9j6rL5c4WUEOY7emS/tinm5wAIVkXu7iVgRfIQyovvQ2mmgZeb2JgLaoQu8GTiVbAMsEk5AD9ZBI2KfmtQXv6AQmqKjk0GRkefeOos4Z9L/TeXQvTTW7UcAip9WsKsXlAhLM8aLObRS2MNFjd8KQrcyxlMkowJcCN0BiBiaPLbFj0dVnpgLf4kmL9OcZIMzUiIUMsKZkKt5Fz3EAwS8/cv/nE8IQCWU5JnMmAJeQSUBn+i3oxbrQALkNZPy6dZ9gY+SrUWOIt35PPyydPTr08+ZbJ/sUY+F5WyDUZooeGVi06HTNoYAw==\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"Braintrust
+        Network Overview | Braintrust Community\",\"url\":\"https://docs.usebraintrust.com/communitydocs\",\"encrypted_content\":\"Ev4GCioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDLsCxd2GmA4DtuwhExoM5P6aWBRtuw/DBDPiIjBrENs0838Ry8WBNwqM0a0ZXYCQf+i/tHV8TiDhVpTDWVfXjCiuiUV+U9jiHb9l52UqgQYV97PElkHSRYOQ2Xqg8CIPhTd0oozolk2/+ov9VRxOVHRdqGrUdZnaPPw7cMRkv7dmdLIWuvnvWeFMP22rX8tFcFF7dxyiiSa0pdwRALBlIm/I8YTFAdhBaXlsaJB55QSvSBuNVaQ/KGqQcIRv6LabKa9La8J1sfiGIoWgPzgeDjaB9Y4GIJ7FrcRvmc7NKfaszAzdZ4vG5kqPDTH25QqMj5HGlfF7qXQhhmcEfIp7/oLbpxqyaCuMoBeMXjdCCbyuzkvqxs9HXTtg2wVxokilb0XFnBsuoxR0lRtVcvTwHzNAZiYYQT6rj8JrC+/alaAJKSLZWNBmt7bPcqadKoLDqyDdKCAX+Zk1tFGQeJ9AqGmFIBJu1/VQoCKU2Ch1Uwz56izmrK4Qq8JM1NgvJlFjHfjunriNlqHrJdbrFImUMVaG0d/f7jErYVrHOS/t1n6/5Dx4Rt0Be2Nzhqc4PG+uXLAyLyJpf9r4OiZz701UerllTEx2T4cyZnVd4PhscEw8+wISwqK1XfSyYoJ8Hw16NJbUwhFsq7XS7MlgQfWlvEZNxsII2FlQpdMhieRrL8qZP7ioSzLAbzSeU3Ngo967AAqwY98aihnC4oJnpAUQQ8vdPs0SFVN/4z1cuHGv1SiAzqpv2QCsNnNkhWDl47//6cqNwinNiJ9a/+olDxQry8tXEGJoJMUCG/KoQPYUBFkehU12+VJlJXolTaI7brvhEhMVX6kjzY4k/55SAx8h0H7qNpoHFrxqNHeqQCwD6Hov66lu4v8lgG8seg0Vv/RVAFY9CQusMtAwe+dO2y0mqVMjEVCCUugJF5XUb6OpydhodqtQRK2PCrXAbrLAGsz+JAPRlesxavxx6B6WJFNjCSrvOMkLGEbjljy39C37Kw7qsa0x3uG+pOU2kHDO8N9lgveBOqJ82SmbjuaqazJcCxwu4h8FA1DavTnI6RSfT3bCESvS9hU5AuUq20YEZaxMHlwPZIpIVvl7bm4lLWvHBmD5zzg2a/buixJeBuC9fCkGGAM=\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"Braintrust
+        - The AI observability platform for building quality AI products\",\"url\":\"https://www.braintrust.dev/\",\"encrypted_content\":\"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\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"Braintrust
+        - Chroma Docs\",\"url\":\"https://docs.trychroma.com/integrations/frameworks/braintrust\",\"encrypted_content\":\"EqgBCioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDBVv8A3Jz2kKHlUZ8BoMznMvmmGrTYA852MBIjC7FGrG/mZIXVo5HL0gIWpxaUWYLkq8epnGxktM7Q7DM7No6yatgo8DBb/vexhA494qLOvCg8rqmNEdDTCywwjaViFJ0k1G7VWLG7UxkS6MNd//yohnpVVmELU0AHWfGAM=\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"braintrust
+        - npm\",\"url\":\"https://www.npmjs.com/package/braintrust\",\"encrypted_content\":\"EogECioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDKdLue2ePF7OqY+VKRoMYKydVpcNh4/VPWP9IjCq2Q/LT26LWPAHWS699j067VPT46tY1u97DT87DA0FARm1VNX/C5Z20SqDktuxapwqiwNwodLs1G85eBOBlxC7aKFwZFgzQ8+LRT1LFKTn79/gIudcXVCy+sW3A7KG7Km58XKt+Lu40ObH//vCWuE75kfFWueTb7y2t9wicFtgVoYlV7KUOzbwXJ6DNjtyM/IJ3VcJ03ZRdV5F2uMcNMFthot0etuFQf7CW+0r+YdF8otWT70FLp0iURFwqDcCQSMK7EfGy7XTwxnXEXsHsaI/r4pVoZ6R8/NHVtWleOqtRmyIMfNyUArb8Gsn2aRJ/Ao6X/zIAFL0U8tRoL2EkW3dTILFR6n85dzeS5/pBBfYM1kM4optfscQuWCDdcpGbR+ldbuEQnEYWeKeanUns4rCSDcgCkU0cNzAIJvYTxXEyAKILEUuP7H78HWKtHbiskcFLP7mn34vpbpvdHUkFG39Z5ky4QSEzzP6q2/w3laY56u7gC5vwoOF6mjDGG9+qQ93Nc6hlb2lx8lTnaD5UhtcdsUSHRklqdGpKTCLGWmi/uvMPsjc0ho1ZWtwE2Qpl3v+JFux90q2H5H2bR63BRgD\",\"page_age\":\"1
+        month ago\"},{\"type\":\"web_search_result\",\"title\":\"Braintrust Integration
+        - Browserbase Documentation\",\"url\":\"https://docs.browserbase.com/integrations/braintrust/introduction\",\"encrypted_content\":\"EoQFCioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDIYIIbuLMTJ8oFbAJhoMdYOJbgUtSR+ih+OOIjC1TbMmSa3SZhuM1H/qK4xOSkqmOleUa/6vcM/UT0u1q4KjP8SKIBswkVUAqCs2S6cqhwRrne/KpErB8P9f/OTk2LBNM3LfhtRP869GIAlxtTu9pPQR3/mbRrcrMjkC+vRCeoGKXjRhAXPgnFXqwepO5hmjdnFSCCwYCo5u9mqped9BVMh5UHox1DUdExEQC3pEKCZr1pfJaR5rgOYHTu0wjYQdNUFxpNt04+Bb5kv/AfKRqaYXPniVIUhyA8sIvTkB9FRu9kj4UEEmWwtShiYNA51Fz+L5eF6EuQAjP7DN2QPLNsXRFol5gF9jHM4c5TUu4Gkby0J66wIkfdc+jDvG1WtZOZUqg/teHJAwLLFdy0FjPztmZphE3yABsYAo2c3/xncx3PPSqPxY7YJWvXfW7T9pzsX0UXq3p1d6auEySFtjZR0mX64DguybblosnagmW8UpppsWEZefyM0BnF7Jg+T1AeY1xdfateVLo3LKBlFGdTmPPvgxfEcimr0YiDYSBhEOzacKQDFUjd0X2SLI9RrEpyBJYGVKQcBsrNjiuzefW9tPbFi0Ie94iI/mUoDYZ6YCXYoH6Z4KMOskmy1BIwnPNZhV2OmSuF/ZEVkW/oH8fWY650eucXSgcG0Nq2pmATDHCzNkyNZOEhC2HbGAOmkdhN0IeyAE1xZAGJvLnYa7qj+9qKj2VuM+0nwHLHeUATPr1Nr25QWP8zEED0326jgSm1xytvKzhodtV+k8OApcNzbHyM5v9KsYAw==\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"Braintrust
+        - Apps Documentation - Make\",\"url\":\"https://apps.make.com/braintrust\",\"encrypted_content\":\"Eo4LCioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDKCAaY+gNAlbFvb7eBoM/7E82zLZ70EfhFqLIjBNC8wpniGwfLFUP0BeDWG8p8CG4/Btkux8yzpUH/PzxivJ2JTKjI+2ha500v7gvqEqkQq2Y8R4wITn55AmP2Yi0oW3oEhHFudKd/YfxtgLrZn+5rGAeV9gnZLz730O1wXRbwYW+VHJX2s8nnhiS/nWSDzN1v3ay/1t6B+Bb3eWjJ5JxC+gvkJigHUp0xHWN01RQwdzXnfjaigi7Ax310v1FJ4aaRbga9/5Hp/iPWRm7BFp3LO1lSjF5JhQbaQluu/KKNs6k0PapF8lsLj9eXsgmlgZf8nMuSYY8Q0xXCsuYTwDW0GZ9DIH06Wq9NW71CmEuhduvqs+a/sbCXvM4Vjc4KgF43MsGeHFS4U/yMfyBqzLOt0kwo/etmoHidyOEWV9NXH4SkPOm91T8COGKWgqYf3beN8Rpy6TQXeBON3pnz5fLeAJZCbs6xeoZyil+H8e+Gm/UTSoi4fNxoh6zQQcQntoezLSGzsKmpfvFUkXHbuXH6pfoHWT8wu89KXRVnhzMOHXFv0erQbZeFLwKC+vixJXwU5tdF5tyh/JCdoLQ2cvVVi7SPwuwnP6U+FqTtmp7wu+9ad4pQaZyLGcCoXrG95WSHnQuq6SYeNy1aQo3KdgQDBROoZhrez0VKoWfxpwlvhU4hwmamViNVfa3yAIBRymkusnkyvFvFoYGhqYcC6a7y/bcHlcrYwNxiU5m1szx1A2R/O2g73mBUF6KGgoHLcfUr0LSlcyiGIgt+h1N6rIllqnOg6TQa9xcyODJaJJmahRnkF2JjC0/+FtN4V6XBaatmo7bws1nr2dYzPzUvY7b5cfFQcVWz9rfrq6/5Lw1VSXIl3gl9iNfk3JJLZ6LxASXC888nl3eMfA3i7m9RSy8Y3cQXJ7SbcKAIzFg0/n8C7Nwl++1TSAn5WdGPNIYo5rvbjkyGxylzR4pnh6ropoVhsSvovu6JvRdCCng7EZv5LOU2KTtgpHuf4cSPrGDyJxSAniRRN6/cta4Uw8dvcpI1WEuWehmuwwJoriDotzI9+3za/iUNU7Xt/5xU8fwVxR82tE7QIDu/EVltTdv8FM2seEimtqEnttMxD4kkRGem+sMJofNVBXup6w1d1EkIoLSV8T7m/97wQplcVW4zsweKeH6qrvvumw6nwAZfiAIFrwR+LGNz8zTVzK0FryIj2TDGV0cL+0FONppIQkxLcBIijSNmrcI/uqzpUPyaktn77iFeUJLSpvA8W0MQmpAtMIFDCROxYG2Xzwv3oQHZUwXK4De4qJB1e94shJBy9DAVwQQhVP9kYnsglp/dZalqx4ej/IJqsdqp6fmNaxHOPtneO/XWp3vBQnlNRU3uzIDuvLjLziTFU5U10ECvlEsBc020rO7zMjXQW3BUlcQdX+Gey1em6A811YkaXINKZx/88MpbVhZkDEaMVXjhILlTWl5QSLbp3gLg2/EdvW3sWVyQzeXeDPd+lDcYE0n15Flv4u0ed9bQBrELX9m8PE4TF9vxWodGNKOuacFriry7mRwbmwLGMXAO48NEGwwveCKRf7cesoeDA8dwIUwkP9JKXYw8S9sMgpqnmhsQy1Liw5JBaI2NOPmkaf3LhB3iPgCD8DlX43nDX+YSXru3sCWGzlHmQupX65K9fGox9szwouZQ3OMGjZopcdheGOwVX6g9msP9W1yg9Ar5IWQ2LqXliriqNMFoj/4jIrP7z8Y8Jlwr9mcBkzdahxLnVE8/4UO86YLg/w91klNtjrfjxcArYli/6/WvXOZXA/BDEDNwMhwYEtW3Ne9YxyXXO6gSSd75HqGAM=\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"braintrust
+        \xB7 PyPI\",\"url\":\"https://pypi.org/project/braintrust/\",\"encrypted_content\":\"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\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"Guides
+        - Docs - Braintrust\",\"url\":\"https://www.braintrust.dev/docs/guides\",\"encrypted_content\":\"EvUCCioIDhgCIiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTUSDKNCqb5VrM52TFV4FxoMSCfdAC3m1Bh+MgygIjBeZGQSo09mQ4m8st/Ki1MmpyT878YrYTuvfzEZCavX98CxpqUT8B+nLE5LuES0LFAq+AFm1xd5RvZ8+FA9/TTI5HB4ns70YvgKnJvTSveZ9p8yMG4DCABR5p4JWGtq5ccMtru4JVTcsu7xb0e2jxAQT59pnV0TsrItFeScGBq/ViG9wxhdBy9tDcmSUJKPtvNW6mRjMMWuEZqc8R0+uR2EdJ7IzzHybdUvBO2YHV66iF6Vz9m9mrH404Q8i8OnBd66rVGo50+ml/XsIsS+rNH7w7Lcbg9OxK1Cr9axb5p0O47m6P9An9v8gry87Yzm6Yl1avaR6VsKO06KbCZ8Hu6dbjCTHim6SD6SIoYk9sxSt/zSQd7FLTFdIfedofa32/yx6pQHsg5JFaiGlRgD\",\"page_age\":null}],\"caller\":{\"type\":\"direct\"}},{\"type\":\"text\",\"text\":\"https://www.braintrust.dev/docs\"}],\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":9716,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":43,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\",\"server_tool_use\":{\"web_search_requests\":1,\"web_fetch_requests\":0}}}"
+    headers:
+      CF-RAY:
+      - 9ea4db74cc564c9b-YYZ
+      Connection:
+      - keep-alive
+      Content-Security-Policy:
+      - default-src 'none'; frame-ancestors 'none'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 10 Apr 2026 21:31:15 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '4000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '3993000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-04-10T21:31:15Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '800000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '800000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-04-10T21:31:15Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-04-10T21:31:14Z'
+      anthropic-ratelimit-tokens-limit:
+      - '4800000'
+      anthropic-ratelimit-tokens-remaining:
+      - '4793000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-04-10T21:31:15Z'
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '19745'
+      request-id:
+      - req_011CZvobkA7cGuGEWQ5ZjMN4
+      server-timing:
+      - x-originResponse;dur=1528
+      set-cookie:
+      - _cfuvid=R7oe2JRXSnVuxyfgfECyqePfYOZkCXUE0OsX6JvmP9U-1775856674.0493748-1.0.1.1-0yBoXdAM5zZ27DU_uviq1_Vbg.ADrUOBxtNNC2lvlFY;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      vary:
+      - Accept-Encoding
+      x-envoy-upstream-service-time:
+      - '1526'
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,0 +1,478 @@
+{
+  "cassette_name": "test_tool_hooks_create_function_spans",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "PostToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_1"
+                  ],
+                  "matcher": "Bash"
+                }
+              ],
+              "PreToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": "Bash"
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_5b4c9738",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_5b4c9738",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Run exactly this Bash command and nothing else: echo 'braintrust hook tracing'",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.81",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "skills": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "schedule",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "loop",
+          "schedule",
+          "claude-api",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "review",
+          "security-review",
+          "insights"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "TaskOutput",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "TaskStop",
+          "AskUserQuestion",
+          "Skill",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitWorktree",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "RemoteTrigger",
+          "ToolSearch"
+        ],
+        "type": "system",
+        "uuid": "41ebcc7c-e0ff-4974-af7f-0ee81c8cc3a8"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user is asking me to run a specific Bash command: `echo 'braintrust hook tracing'`\n\nThey said \"Run exactly this Bash command and nothing else\" - so I should use the Bash tool to execute this command.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01NEbckFDgvpwDSyWdx6TMpw",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1120
+            },
+            "cache_creation_input_tokens": 1120,
+            "cache_read_input_tokens": 18056,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 8,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "type": "assistant",
+        "uuid": "bd232c8a-1fe8-4098-85d3-9c84cb699b97"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+              "input": {
+                "command": "echo 'braintrust hook tracing'",
+                "description": "Run the specified echo command"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01NEbckFDgvpwDSyWdx6TMpw",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1120
+            },
+            "cache_creation_input_tokens": 1120,
+            "cache_read_input_tokens": 18056,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 8,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "type": "assistant",
+        "uuid": "27dcc106-2815-4ad6-91cd-5a4f1a99b295"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+            "tool_input": {
+              "command": "echo 'braintrust hook tracing'",
+              "description": "Run the specified echo command"
+            },
+            "tool_name": "Bash",
+            "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P"
+        },
+        "request_id": "f280e354-ba89-42ba-9868-384bd2326d24",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "f280e354-ba89-42ba-9868-384bd2326d24",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "The hook observed the pending Bash command.",
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "allow",
+                "permissionDecisionReason": "Approved by test hook"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+            "tool_input": {
+              "command": "echo 'braintrust hook tracing'",
+              "description": "Run the specified echo command"
+            },
+            "tool_name": "Bash",
+            "tool_response": {
+              "interrupted": false,
+              "isImage": false,
+              "noOutputExpected": false,
+              "stderr": "",
+              "stdout": "braintrust hook tracing"
+            },
+            "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P"
+        },
+        "request_id": "26067aed-5800-4e65-94c7-e184e7ba0977",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "26067aed-5800-4e65-94c7-e184e7ba0977",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "The hook observed the completed Bash command.",
+                "hookEventName": "PostToolUse"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "braintrust hook tracing",
+              "is_error": false,
+              "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "timestamp": "2026-03-25T17:41:23.649Z",
+        "tool_use_result": {
+          "interrupted": false,
+          "isImage": false,
+          "noOutputExpected": false,
+          "stderr": "",
+          "stdout": "braintrust hook tracing"
+        },
+        "type": "user",
+        "uuid": "6c50bbee-44aa-4005-83c2-e16c262cb911"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user ran the command and I can see that the system reminders show that hooks were triggered - a \"PreToolUse:Bash hook\" and a \"PostToolUse:Bash hook\". This appears to be demonstrating that the hook system is working and tracing the execution of Bash commands.\n\nThe output shows:\n- The echo command executed successfully and returned: `braintrust hook tracing`\n- The system detected hooks both before and after the tool use\n\nThe user seems to be testing or demonstrating the hook tracing system. I should acknowledge that the command ran successfully.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01F84Fc9i8UeiLuuvfNw9yv9",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 238
+            },
+            "cache_creation_input_tokens": 238,
+            "cache_read_input_tokens": 19176,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "type": "assistant",
+        "uuid": "a65139b7-9a3f-42c1-b3b9-665bc9ba3a09"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "The command executed successfully. The output shows `braintrust hook tracing`, and I can see from the system reminders that both the PreToolUse and PostToolUse hooks for Bash were triggered and observed the command execution.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01F84Fc9i8UeiLuuvfNw9yv9",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 238
+            },
+            "cache_creation_input_tokens": 238,
+            "cache_read_input_tokens": 19176,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "type": "assistant",
+        "uuid": "55ad9c46-713d-41c0-8b1d-691fd687f879"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 3839,
+        "duration_ms": 4130,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 1358,
+            "cacheReadInputTokens": 37232,
+            "contextWindow": 200000,
+            "costUSD": 0.0070856999999999995,
+            "inputTokens": 20,
+            "maxOutputTokens": 32000,
+            "outputTokens": 329,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 2,
+        "permission_denials": [],
+        "result": "The command executed successfully. The output shows `braintrust hook tracing`, and I can see from the system reminders that both the PreToolUse and PostToolUse hooks for Bash were triggered and observed the command execution.",
+        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "total_cost_usd": 0.0070856999999999995,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 1358
+          },
+          "cache_creation_input_tokens": 1358,
+          "cache_read_input_tokens": 37232,
+          "inference_geo": "",
+          "input_tokens": 20,
+          "iterations": [],
+          "output_tokens": 329,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "4b897612-4939-4b37-9ac7-b47f4bef28a9"
+      }
+    }
+  ],
+  "sdk_version": "0.1.50"
+}
