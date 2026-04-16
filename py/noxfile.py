@@ -447,8 +447,11 @@ def test_types(session):
     if not test_files:
         session.skip("No type test files found")
 
-    # Run pyright on each file
-    session.run("pyright", *test_files)
+    # Run pyright on each file. The local pyrightconfig.json opts these tests
+    # into `reportPrivateImportUsage=error` so consumers catching the rule in
+    # their editor/IDE stay in sync with what we publish.
+    pyright_config = os.path.join(type_tests_dir, "pyrightconfig.json")
+    session.run("pyright", "-p", pyright_config, *test_files)
 
     # Run mypy on each file (only check the test files themselves, not transitive deps)
     session.run("mypy", "--follow-imports=silent", *test_files)
