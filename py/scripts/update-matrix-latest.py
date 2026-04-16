@@ -14,19 +14,11 @@ import argparse
 import json
 import pathlib
 import re
-import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomllib
-    except ModuleNotFoundError:
-        import tomli as tomllib  # type: ignore[no-redef]
+import tomllib
 
 
 _PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
