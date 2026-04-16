@@ -19,14 +19,7 @@ Run from ``py/`` (same working directory as the workflow step):
 import subprocess
 import sys
 
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomllib  # type: ignore[no-redef]
-    except ModuleNotFoundError:
-        import tomli as tomllib  # type: ignore[no-redef]
+import tomllib
 
 
 def main() -> int:
