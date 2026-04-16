@@ -10,7 +10,7 @@
             "hooks": null,
             "subtype": "initialize"
           },
-          "request_id": "req_1_352812de",
+          "request_id": "req_1_c18c0151",
           "type": "control_request"
         }
       }
@@ -19,10 +19,11 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_352812de",
+          "request_id": "req_1_c18c0151",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
               "tokenSource": "none"
             },
             "agents": [],
@@ -54,74 +55,166 @@
       "op": "read",
       "payload": {
         "agents": [
-          "general-purpose",
-          "statusline-setup",
           "Explore",
-          "Plan"
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
         ],
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.71",
+        "claude_code_version": "2.1.111",
         "cwd": "<REDACTED_CWD>",
         "fast_mode_state": "off",
-        "mcp_servers": [],
+        "mcp_servers": [
+          {
+            "name": "braintrust",
+            "status": "connected"
+          },
+          {
+            "name": "linear-server",
+            "status": "connected"
+          }
+        ],
+        "memory_paths": {
+          "auto": "<REDACTED_PATH>"
+        },
         "model": "claude-3-5-haiku-20241022",
         "output_style": "default",
         "permissionMode": "bypassPermissions",
-        "plugins": [],
-        "session_id": "715aa7ea-4a5b-4189-ba6d-289eb5cbc314",
+        "plugins": [
+          {
+            "name": "rust-analyzer-lsp",
+            "path": "<REDACTED_PATH>",
+            "source": "rust-analyzer-lsp@claude-plugins-official"
+          }
+        ],
+        "session_id": "b4d0c5e6-fe8f-468d-834d-7aa9308fb670",
         "skills": [
-          "keybindings-help",
+          "update-config",
           "debug",
           "simplify",
           "batch",
+          "less-permission-prompts",
           "loop",
-          "claude-api"
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking"
         ],
         "slash_commands": [
-          "keybindings-help",
+          "update-config",
           "debug",
           "simplify",
           "batch",
+          "less-permission-prompts",
           "loop",
+          "schedule",
           "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking",
           "compact",
           "context",
           "cost",
           "heapdump",
           "init",
-          "pr-comments",
-          "release-notes",
           "review",
           "security-review",
-          "insights"
+          "insights",
+          "team-onboarding"
         ],
         "subtype": "init",
         "tools": [
           "Task",
-          "TaskOutput",
-          "Bash",
-          "Glob",
-          "Grep",
-          "ExitPlanMode",
-          "Read",
-          "Edit",
-          "Write",
-          "NotebookEdit",
-          "WebFetch",
-          "TodoWrite",
-          "WebSearch",
-          "TaskStop",
           "AskUserQuestion",
-          "Skill",
-          "EnterPlanMode",
-          "EnterWorktree",
+          "Bash",
           "CronCreate",
           "CronDelete",
           "CronList",
-          "ToolSearch"
+          "Edit",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitPlanMode",
+          "ExitWorktree",
+          "Glob",
+          "Grep",
+          "ListMcpResourcesTool",
+          "LSP",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "ReadMcpResourceTool",
+          "RemoteTrigger",
+          "ScheduleWakeup",
+          "Skill",
+          "TaskOutput",
+          "TaskStop",
+          "TodoWrite",
+          "ToolSearch",
+          "WebFetch",
+          "WebSearch",
+          "Write",
+          "mcp__braintrust__generate_permalink",
+          "mcp__braintrust__infer_schema",
+          "mcp__braintrust__list_recent_objects",
+          "mcp__braintrust__resolve_object",
+          "mcp__braintrust__search_docs",
+          "mcp__braintrust__sql_query",
+          "mcp__braintrust__summarize_experiment",
+          "mcp__linear-server__create_attachment",
+          "mcp__linear-server__create_document",
+          "mcp__linear-server__create_issue_label",
+          "mcp__linear-server__delete_attachment",
+          "mcp__linear-server__delete_comment",
+          "mcp__linear-server__delete_customer",
+          "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_status_update",
+          "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_attachment",
+          "mcp__linear-server__get_document",
+          "mcp__linear-server__get_initiative",
+          "mcp__linear-server__get_issue",
+          "mcp__linear-server__get_issue_status",
+          "mcp__linear-server__get_milestone",
+          "mcp__linear-server__get_project",
+          "mcp__linear-server__get_status_updates",
+          "mcp__linear-server__get_team",
+          "mcp__linear-server__get_user",
+          "mcp__linear-server__list_comments",
+          "mcp__linear-server__list_customers",
+          "mcp__linear-server__list_cycles",
+          "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiatives",
+          "mcp__linear-server__list_issue_labels",
+          "mcp__linear-server__list_issue_statuses",
+          "mcp__linear-server__list_issues",
+          "mcp__linear-server__list_milestones",
+          "mcp__linear-server__list_project_labels",
+          "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_teams",
+          "mcp__linear-server__list_users",
+          "mcp__linear-server__save_comment",
+          "mcp__linear-server__save_customer",
+          "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_initiative",
+          "mcp__linear-server__save_issue",
+          "mcp__linear-server__save_milestone",
+          "mcp__linear-server__save_project",
+          "mcp__linear-server__save_status_update",
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__update_document"
         ],
         "type": "system",
-        "uuid": "04580fb4-5ab0-4597-a527-a77f1235c768"
+        "uuid": "f4136e46-3351-45a5-8c82-6979d9792b4f"
       }
     },
     {
@@ -137,7 +230,7 @@
             }
           ],
           "context_management": null,
-          "id": "35b7f708-5311-4ecc-b95f-ec16a0fa5cc0",
+          "id": "095526d8-ef05-4ca6-b321-3f01dd2f6e43",
           "model": "<synthetic>",
           "role": "assistant",
           "stop_reason": "stop_sequence",
@@ -163,25 +256,27 @@
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "715aa7ea-4a5b-4189-ba6d-289eb5cbc314",
+        "session_id": "b4d0c5e6-fe8f-468d-834d-7aa9308fb670",
         "type": "assistant",
-        "uuid": "1b1fdd63-27cd-40b9-999e-05773744c670"
+        "uuid": "ba47c73f-65b6-4eae-8f5d-15932b8b2fb2"
       }
     },
     {
       "op": "read",
       "payload": {
+        "api_error_status": 404,
         "duration_api_ms": 0,
-        "duration_ms": 424,
+        "duration_ms": 388,
         "fast_mode_state": "off",
         "is_error": true,
         "modelUsage": {},
         "num_turns": 1,
         "permission_denials": [],
         "result": "There's an issue with the selected model (claude-3-5-haiku-20241022). It may not exist or you may not have access to it. Run --model to pick a different model.",
-        "session_id": "715aa7ea-4a5b-4189-ba6d-289eb5cbc314",
+        "session_id": "b4d0c5e6-fe8f-468d-834d-7aa9308fb670",
         "stop_reason": "stop_sequence",
         "subtype": "success",
+        "terminal_reason": "completed",
         "total_cost_usd": 0,
         "type": "result",
         "usage": {
@@ -202,9 +297,9 @@
           "service_tier": "standard",
           "speed": "standard"
         },
-        "uuid": "c4f6b54e-7792-4bf6-80b6-47133b56d787"
+        "uuid": "cf09ab01-6bb8-4682-bad3-568e35b897d7"
       }
     }
   ],
-  "sdk_version": "0.1.48"
+  "sdk_version": "0.1.60"
 }

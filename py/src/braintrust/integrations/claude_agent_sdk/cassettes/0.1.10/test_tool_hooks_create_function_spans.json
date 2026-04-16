@@ -27,7 +27,7 @@
             },
             "subtype": "initialize"
           },
-          "request_id": "req_1_5b4c9738",
+          "request_id": "req_1_600f4b3c",
           "type": "control_request"
         }
       }
@@ -36,14 +36,12 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_5b4c9738",
+          "request_id": "req_1_600f4b3c",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
-              "apiProvider": "firstParty",
               "tokenSource": "none"
             },
-            "agents": [],
             "available_output_styles": [],
             "commands": [],
             "models": []
@@ -78,47 +76,29 @@
           "Plan"
         ],
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.81",
+        "claude_code_version": "2.0.53",
         "cwd": "<REDACTED_CWD>",
-        "fast_mode_state": "off",
         "mcp_servers": [],
         "model": "claude-haiku-4-5-20251001",
         "output_style": "default",
         "permissionMode": "bypassPermissions",
         "plugins": [],
-        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
-        "skills": [
-          "update-config",
-          "debug",
-          "simplify",
-          "batch",
-          "loop",
-          "schedule",
-          "claude-api"
-        ],
+        "session_id": "bdec2b7e-9be4-404d-b491-3c013802a3d6",
+        "skills": [],
         "slash_commands": [
-          "update-config",
-          "debug",
-          "simplify",
-          "batch",
-          "loop",
-          "schedule",
-          "claude-api",
           "compact",
           "context",
           "cost",
-          "heapdump",
           "init",
           "pr-comments",
           "release-notes",
+          "todos",
           "review",
-          "security-review",
-          "insights"
+          "security-review"
         ],
         "subtype": "init",
         "tools": [
           "Task",
-          "TaskOutput",
           "Bash",
           "Glob",
           "Grep",
@@ -130,57 +110,14 @@
           "WebFetch",
           "TodoWrite",
           "WebSearch",
-          "TaskStop",
-          "AskUserQuestion",
+          "BashOutput",
+          "KillShell",
           "Skill",
-          "EnterPlanMode",
-          "EnterWorktree",
-          "ExitWorktree",
-          "CronCreate",
-          "CronDelete",
-          "CronList",
-          "RemoteTrigger",
-          "ToolSearch"
+          "SlashCommand",
+          "EnterPlanMode"
         ],
         "type": "system",
-        "uuid": "41ebcc7c-e0ff-4974-af7f-0ee81c8cc3a8"
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
-        "message": {
-          "content": [
-            {
-              "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The user is asking me to run a specific Bash command: `echo 'braintrust hook tracing'`\n\nThey said \"Run exactly this Bash command and nothing else\" - so I should use the Bash tool to execute this command.",
-              "type": "thinking"
-            }
-          ],
-          "context_management": null,
-          "id": "msg_01NEbckFDgvpwDSyWdx6TMpw",
-          "model": "claude-haiku-4-5-20251001",
-          "role": "assistant",
-          "stop_reason": null,
-          "stop_sequence": null,
-          "type": "message",
-          "usage": {
-            "cache_creation": {
-              "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 1120
-            },
-            "cache_creation_input_tokens": 1120,
-            "cache_read_input_tokens": 18056,
-            "inference_geo": "not_available",
-            "input_tokens": 10,
-            "output_tokens": 8,
-            "service_tier": "standard"
-          }
-        },
-        "parent_tool_use_id": null,
-        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
-        "type": "assistant",
-        "uuid": "bd232c8a-1fe8-4098-85d3-9c84cb699b97"
+        "uuid": "6c896b83-2b0d-47de-89da-2ce32d229e1c"
       }
     },
     {
@@ -192,39 +129,40 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+              "id": "toolu_01Xrd4TCknbvUKT2fxdQmP65",
               "input": {
                 "command": "echo 'braintrust hook tracing'",
-                "description": "Run the specified echo command"
+                "description": "Execute echo command with specified text"
               },
               "name": "Bash",
               "type": "tool_use"
             }
           ],
           "context_management": null,
-          "id": "msg_01NEbckFDgvpwDSyWdx6TMpw",
+          "id": "msg_014DCCxx3fQB1X3BPhQZvxqz",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
+          "stop_details": null,
           "stop_reason": null,
           "stop_sequence": null,
           "type": "message",
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 1120
+              "ephemeral_5m_input_tokens": 0
             },
-            "cache_creation_input_tokens": 1120,
-            "cache_read_input_tokens": 18056,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 13894,
             "inference_geo": "not_available",
-            "input_tokens": 10,
-            "output_tokens": 8,
+            "input_tokens": 3,
+            "output_tokens": 58,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "session_id": "bdec2b7e-9be4-404d-b491-3c013802a3d6",
         "type": "assistant",
-        "uuid": "27dcc106-2815-4ad6-91cd-5a4f1a99b295"
+        "uuid": "5646fee6-f7e4-44ed-b831-dbf82ca32695"
       }
     },
     {
@@ -236,19 +174,19 @@
             "cwd": "<REDACTED_CWD>",
             "hook_event_name": "PreToolUse",
             "permission_mode": "bypassPermissions",
-            "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+            "session_id": "bdec2b7e-9be4-404d-b491-3c013802a3d6",
             "tool_input": {
               "command": "echo 'braintrust hook tracing'",
-              "description": "Run the specified echo command"
+              "description": "Execute echo command with specified text"
             },
             "tool_name": "Bash",
-            "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+            "tool_use_id": "toolu_01Xrd4TCknbvUKT2fxdQmP65",
             "transcript_path": "<REDACTED_PATH>"
           },
           "subtype": "hook_callback",
-          "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P"
+          "tool_use_id": "toolu_01Xrd4TCknbvUKT2fxdQmP65"
         },
-        "request_id": "f280e354-ba89-42ba-9868-384bd2326d24",
+        "request_id": "a3c8e845-6a4e-470a-a1fe-efa5b826a8ec",
         "type": "control_request"
       }
     },
@@ -258,7 +196,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "f280e354-ba89-42ba-9868-384bd2326d24",
+            "request_id": "a3c8e845-6a4e-470a-a1fe-efa5b826a8ec",
             "response": {
               "hookSpecificOutput": {
                 "additionalContext": "The hook observed the pending Bash command.",
@@ -282,26 +220,25 @@
             "cwd": "<REDACTED_CWD>",
             "hook_event_name": "PostToolUse",
             "permission_mode": "bypassPermissions",
-            "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+            "session_id": "bdec2b7e-9be4-404d-b491-3c013802a3d6",
             "tool_input": {
               "command": "echo 'braintrust hook tracing'",
-              "description": "Run the specified echo command"
+              "description": "Execute echo command with specified text"
             },
             "tool_name": "Bash",
             "tool_response": {
               "interrupted": false,
               "isImage": false,
-              "noOutputExpected": false,
               "stderr": "",
               "stdout": "braintrust hook tracing"
             },
-            "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+            "tool_use_id": "toolu_01Xrd4TCknbvUKT2fxdQmP65",
             "transcript_path": "<REDACTED_PATH>"
           },
           "subtype": "hook_callback",
-          "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P"
+          "tool_use_id": "toolu_01Xrd4TCknbvUKT2fxdQmP65"
         },
-        "request_id": "26067aed-5800-4e65-94c7-e184e7ba0977",
+        "request_id": "30d084fd-94a4-42f8-b1ca-6442069435ed",
         "type": "control_request"
       }
     },
@@ -311,7 +248,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "26067aed-5800-4e65-94c7-e184e7ba0977",
+            "request_id": "30d084fd-94a4-42f8-b1ca-6442069435ed",
             "response": {
               "hookSpecificOutput": {
                 "additionalContext": "The hook observed the completed Bash command.",
@@ -332,24 +269,22 @@
             {
               "content": "braintrust hook tracing",
               "is_error": false,
-              "tool_use_id": "toolu_01WBojPYKAXEuRK6cVvDLA1P",
+              "tool_use_id": "toolu_01Xrd4TCknbvUKT2fxdQmP65",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
         "parent_tool_use_id": null,
-        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
-        "timestamp": "2026-03-25T17:41:23.649Z",
+        "session_id": "bdec2b7e-9be4-404d-b491-3c013802a3d6",
         "tool_use_result": {
           "interrupted": false,
           "isImage": false,
-          "noOutputExpected": false,
           "stderr": "",
           "stdout": "braintrust hook tracing"
         },
         "type": "user",
-        "uuid": "6c50bbee-44aa-4005-83c2-e16c262cb911"
+        "uuid": "c220ab59-fc66-4163-b1b3-272a000f281a"
       }
     },
     {
@@ -358,121 +293,79 @@
         "message": {
           "content": [
             {
-              "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The user ran the command and I can see that the system reminders show that hooks were triggered - a \"PreToolUse:Bash hook\" and a \"PostToolUse:Bash hook\". This appears to be demonstrating that the hook system is working and tracing the execution of Bash commands.\n\nThe output shows:\n- The echo command executed successfully and returned: `braintrust hook tracing`\n- The system detected hooks both before and after the tool use\n\nThe user seems to be testing or demonstrating the hook tracing system. I should acknowledge that the command ran successfully.",
-              "type": "thinking"
-            }
-          ],
-          "context_management": null,
-          "id": "msg_01F84Fc9i8UeiLuuvfNw9yv9",
-          "model": "claude-haiku-4-5-20251001",
-          "role": "assistant",
-          "stop_reason": null,
-          "stop_sequence": null,
-          "type": "message",
-          "usage": {
-            "cache_creation": {
-              "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 238
-            },
-            "cache_creation_input_tokens": 238,
-            "cache_read_input_tokens": 19176,
-            "inference_geo": "not_available",
-            "input_tokens": 10,
-            "output_tokens": 3,
-            "service_tier": "standard"
-          }
-        },
-        "parent_tool_use_id": null,
-        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
-        "type": "assistant",
-        "uuid": "a65139b7-9a3f-42c1-b3b9-665bc9ba3a09"
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
-        "message": {
-          "content": [
-            {
-              "text": "The command executed successfully. The output shows `braintrust hook tracing`, and I can see from the system reminders that both the PreToolUse and PostToolUse hooks for Bash were triggered and observed the command execution.",
+              "text": "The command has been executed successfully. The output is:\n\n```\nbraintrust hook tracing\n```",
               "type": "text"
             }
           ],
           "context_management": null,
-          "id": "msg_01F84Fc9i8UeiLuuvfNw9yv9",
+          "id": "msg_01RyC6SKKKmvm4QFeaEVHYsd",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
+          "stop_details": null,
           "stop_reason": null,
           "stop_sequence": null,
           "type": "message",
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 238
+              "ephemeral_5m_input_tokens": 139
             },
-            "cache_creation_input_tokens": 238,
-            "cache_read_input_tokens": 19176,
+            "cache_creation_input_tokens": 139,
+            "cache_read_input_tokens": 13894,
             "inference_geo": "not_available",
-            "input_tokens": 10,
-            "output_tokens": 3,
+            "input_tokens": 3,
+            "output_tokens": 1,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
+        "session_id": "bdec2b7e-9be4-404d-b491-3c013802a3d6",
         "type": "assistant",
-        "uuid": "55ad9c46-713d-41c0-8b1d-691fd687f879"
+        "uuid": "e7e5766e-69c6-4051-a945-af4fa0369bf3"
       }
     },
     {
       "op": "read",
       "payload": {
-        "duration_api_ms": 3839,
-        "duration_ms": 4130,
-        "fast_mode_state": "off",
+        "duration_api_ms": 6673,
+        "duration_ms": 3436,
         "is_error": false,
         "modelUsage": {
           "claude-haiku-4-5-20251001": {
-            "cacheCreationInputTokens": 1358,
-            "cacheReadInputTokens": 37232,
+            "cacheCreationInputTokens": 139,
+            "cacheReadInputTokens": 35710,
             "contextWindow": 200000,
-            "costUSD": 0.0070856999999999995,
-            "inputTokens": 20,
-            "maxOutputTokens": 32000,
-            "outputTokens": 329,
+            "costUSD": 0.00559675,
+            "inputTokens": 332,
+            "outputTokens": 304,
             "webSearchRequests": 0
           }
         },
         "num_turns": 2,
         "permission_denials": [],
-        "result": "The command executed successfully. The output shows `braintrust hook tracing`, and I can see from the system reminders that both the PreToolUse and PostToolUse hooks for Bash were triggered and observed the command execution.",
-        "session_id": "53e46d3b-a1d2-4a53-917f-258f2a212dc4",
-        "stop_reason": "end_turn",
+        "result": "The command has been executed successfully. The output is:\n\n```\nbraintrust hook tracing\n```",
+        "session_id": "bdec2b7e-9be4-404d-b491-3c013802a3d6",
         "subtype": "success",
-        "total_cost_usd": 0.0070856999999999995,
+        "total_cost_usd": 0.00559675,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 1358
+            "ephemeral_5m_input_tokens": 139
           },
-          "cache_creation_input_tokens": 1358,
-          "cache_read_input_tokens": 37232,
-          "inference_geo": "",
-          "input_tokens": 20,
-          "iterations": [],
-          "output_tokens": 329,
+          "cache_creation_input_tokens": 139,
+          "cache_read_input_tokens": 27788,
+          "input_tokens": 6,
+          "output_tokens": 109,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
           },
-          "service_tier": "standard",
-          "speed": "standard"
+          "service_tier": "standard"
         },
-        "uuid": "4b897612-4939-4b37-9ac7-b47f4bef28a9"
+        "uuid": "2578c5d8-7c13-4c0f-9809-ea2345c16c1e"
       }
     }
   ],
-  "sdk_version": "0.1.50"
+  "sdk_version": "0.1.10"
 }

@@ -15,7 +15,7 @@ interactions:
       content-type:
       - application/json
       user-agent:
-      - mistral-client-python/2.3.2
+      - mistral-client-python/2.4.0
     method: POST
     uri: https://api.mistral.ai/v1/ocr
   response:
@@ -50,13 +50,13 @@ interactions:
         | Other assets | Other assets | Other assets | Other assets  |","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
     headers:
       CF-RAY:
-      - 9ebb9a0f98b1c4c7-YYZ
+      - 9ed466febc67c4c7-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 13 Apr 2026 15:46:08 GMT
+      - Thu, 16 Apr 2026 16:00:20 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -74,207 +74,21 @@ interactions:
       content-length:
       - '2400'
       mistral-correlation-id:
-      - 019d8785-8600-7e16-9859-7708348b6175
+      - 019d9705-9b69-7a59-b38b-410571fab585
       set-cookie:
-      - __cf_bm=IH7I6n2GZmDJOfMjqfWYKnJMKcznBwjzQQkRXJ6GO_8-1776095167.932906-1.0.1.1-AGNeOifKcmA4gdce0B63TkhwAHVWZ9xIDHS0mHC4h8MphxELtmtVENMNM.r5dcWhqiTRMv6jHoQloXu1dagdVq6ABbSDOjU2lUt6PHD4uZ2nAm3LjiQ4L6ffc3Epi53k;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13 Apr 2026 16:16:08
+      - __cf_bm=TXTXUMyPJJL3o799hMu6pdZ7v6dGWWNCOEuxyKKexZw-1776355220.275474-1.0.1.1-MYJRt6WXmIvcdC4TM2g60AzTzyYYR6P8aglxm2f1v0MloSZ8JyhIT5kHUiR8hvRIbsbidbw1f16hW0l22GbYCEc26zNBsH2QNFN49pb4rnymx6x_potLIYUMcfCtZ.Iz;
+        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 16 Apr 2026 16:30:20
         GMT
-      - _cfuvid=f53rlc3o9oMYNxfeKwsm4W.SXtpRYpjDPIWrsq933CY-1776095167.932906-1.0.1.1-FPFlp50Oi__wvXUGpA_6luK6ulLAu.UfdHO7cU0XIR8;
+      - _cfuvid=iL7QROhEXRO00Im1ua3bCyEMlB_f8y8o0Rxewcb8V.0-1776355220.275474-1.0.1.1-3X_NYngc3cBZtnLtYL2vgkDVJQnbFVFX15qZYKAQXBU;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
       x-envoy-upstream-service-time:
-      - '32'
+      - '28'
       x-kong-proxy-latency:
-      - '10'
+      - '8'
       x-kong-request-id:
-      - 019d8785-8600-7e16-9859-7708348b6175
+      - 019d9705-9b69-7a59-b38b-410571fab585
       x-kong-upstream-latency:
-      - '33'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"model":"mistral-ocr-latest","document":{"image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","type":"image_url"}}'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '195'
-      Host:
-      - api.mistral.ai
-      content-type:
-      - application/json
-      user-agent:
-      - mistral-client-python/2.3.2
-    method: POST
-    uri: https://api.mistral.ai/v1/ocr
-  response:
-    body:
-      string: '{"pages":[{"index":0,"markdown":"|  Net cash used in financing activities
-        | Net cash used in financing activities | Net interest income | Net interest
-        income | Net interest income | Net interest income | Net interest income |
-        Net cash used in financing activities  |\n| --- | --- | --- | --- | --- |
-        --- | --- | --- |\n|  Net cash used in financing activities | Net cash used
-        in financing activities | Other income | Other income, net | Other income,
-        net | Other | Other | Net cash used in financing activities  |\n|  Net cash
-        used in financing activities | Net cash used in financing activities | Net
-        cash used in financing activities | Other income, net | Other | Other | Other
-        | Other  |\n|  Net cash provided by used in financing activities | Net cash
-        used in financing activities | Net interest income | Other | Other | Other
-        | Other | Other  |\n|  Other | Net cash provided by used in financing activities
-        | Other | Other | Other | Other | Other | Other  |\n|  Other | Other | Other
-        | Other | Other | Other | Other | Other  |\n|  Other | Other | Other | Other
-        | Other | Other | Other | Other  |\n|  Other | Other | Other | Other | Other
-        | Other | Other | Other  |\n|  Other | Other | Other | Other | Other | Other
-        | Other | Other  |\n|  Other | Other | Other | Other | Other | Other | Other
-        | Other  |\n|  Other | Other | Other | Other | Other | Other | Other | Other  |\n|  Other
-        | Other | Other | Other | Other | Other | Other | Other  |\n|  Other | Other
-        | Other | Other | Other | Other | Other assets | Other  |\n|  Other assets
-        | Other assets | Other assets | Other assets | Other assets | Other assets
-        | Other assets | Other assets  |\n|  Other assets | Other assets | Other assets
-        | Other assets | Other assets | Other assets | Other assets | Other assets  |\n|  Other
-        assets | Other assets | Other assets | Other assets | Other assets | Other
-        assets | Other assets | Other assets  |\n|  Other assets | Other assets |
-        Other assets | Other assets | Other assets | Other assets | Other assets |
-        Other assets  |\n|  Other assets | Other assets | Other assets | Other assets
-        | Other assets | Other assets | Other assets | Other assets  |","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
-    headers:
-      CF-RAY:
-      - 9ebb9c85199b94e3-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 13 Apr 2026 15:47:48 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
-      access-control-allow-origin:
-      - '*'
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      content-length:
-      - '2400'
-      mistral-correlation-id:
-      - 019d8787-0f66-7b82-81a2-3aff096522da
-      set-cookie:
-      - __cf_bm=sNay.R7C0fGQ17HAOFqtk8hykzL_PV3eQNi8NWO3I40-1776095268.6519113-1.0.1.1-EHcbN.Yo9IFeu8vevjgGJMS47H3HikbUDljyndlb.oS8EFr2sRikqUa0lgOCHsxCc4PPRiLbpW7xd.XUIAWv8Y4p8O3zWpTKGV1jdmiTAFHzcZpN98Qnv0MB0Rmyj.4i;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13 Apr 2026 16:17:48
-        GMT
-      - _cfuvid=3VrNuUGObin9d34K1eUZvmcLtJ0YSHlSwwrP6NeX5Jo-1776095268.6519113-1.0.1.1-qVs_EFjl8Nvhz.jgKKL5MItg59J393I.TzumDaw3Hn4;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
-      x-envoy-upstream-service-time:
-      - '31'
-      x-kong-proxy-latency:
-      - '11'
-      x-kong-request-id:
-      - 019d8787-0f66-7b82-81a2-3aff096522da
-      x-kong-upstream-latency:
-      - '31'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"model":"mistral-ocr-latest","document":{"image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","type":"image_url"}}'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '195'
-      Host:
-      - api.mistral.ai
-      content-type:
-      - application/json
-      user-agent:
-      - mistral-client-python/2.3.2
-    method: POST
-    uri: https://api.mistral.ai/v1/ocr
-  response:
-    body:
-      string: '{"pages":[{"index":0,"markdown":"|  Net cash used in financing activities
-        | Net cash used in financing activities | Net interest income | Net interest
-        income | Net interest income | Net interest income | Net interest income |
-        Net cash used in financing activities  |\n| --- | --- | --- | --- | --- |
-        --- | --- | --- |\n|  Net cash used in financing activities | Net cash used
-        in financing activities | Other income | Other income, net | Other income,
-        net | Other | Other | Net cash used in financing activities  |\n|  Net cash
-        used in financing activities | Net cash used in financing activities | Net
-        cash used in financing activities | Other income, net | Other | Other | Other
-        | Other  |\n|  Net cash provided by used in financing activities | Net cash
-        used in financing activities | Net interest income | Other | Other | Other
-        | Other | Other  |\n|  Other | Net cash provided by used in financing activities
-        | Other | Other | Other | Other | Other | Other  |\n|  Other | Other | Other
-        | Other | Other | Other | Other | Other  |\n|  Other | Other | Other | Other
-        | Other | Other | Other | Other  |\n|  Other | Other | Other | Other | Other
-        | Other | Other | Other  |\n|  Other | Other | Other | Other | Other | Other
-        | Other | Other  |\n|  Other | Other | Other | Other | Other | Other | Other
-        | Other  |\n|  Other | Other | Other | Other | Other | Other | Other | Other  |\n|  Other
-        | Other | Other | Other | Other | Other | Other | Other  |\n|  Other | Other
-        | Other | Other | Other | Other | Other assets | Other  |\n|  Other assets
-        | Other assets | Other assets | Other assets | Other assets | Other assets
-        | Other assets | Other assets  |\n|  Other assets | Other assets | Other assets
-        | Other assets | Other assets | Other assets | Other assets | Other assets  |\n|  Other
-        assets | Other assets | Other assets | Other assets | Other assets | Other
-        assets | Other assets | Other assets  |\n|  Other assets | Other assets |
-        Other assets | Other assets | Other assets | Other assets | Other assets |
-        Other assets  |\n|  Other assets | Other assets | Other assets | Other assets
-        | Other assets | Other assets | Other assets | Other assets  |","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
-    headers:
-      CF-RAY:
-      - 9ebb9cffd8d539f7-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 13 Apr 2026 15:48:08 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
-      access-control-allow-origin:
-      - '*'
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      content-length:
-      - '2400'
-      mistral-correlation-id:
-      - 019d8787-5c30-78bc-a3a6-ff7b7555c884
-      set-cookie:
-      - __cf_bm=o6Az8UPZp2UhR5z8K4Lfq.gwFA_HsCeq4MXAfz0Qpy8-1776095288.3010094-1.0.1.1-6D5NsS_IB.uIi8kfv5v3lb_AqQS8ylImm2ASEp.iTvWUZVVpQTkFDVD4.ofLXny0DDt3_4ekiLDfPg6vHLBu7sb77eJlQIcKxGLkmPJ3sNInvXdDEnQ_GVNMYgYOFcmD;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13 Apr 2026 16:18:08
-        GMT
-      - _cfuvid=FqS_zjNkDpLPELJnsQSIcHOFkGJSJLRFQNEqyOLR75c-1776095288.3010094-1.0.1.1-90Z07Q9cozksCwt.cmHumKtBC2EZ2ItecgCOAdz3ncU;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
-      x-envoy-upstream-service-time:
-      - '38'
-      x-kong-proxy-latency:
-      - '11'
-      x-kong-request-id:
-      - 019d8787-5c30-78bc-a3a6-ff7b7555c884
-      x-kong-upstream-latency:
-      - '39'
+      - '29'
     status:
       code: 200
       message: OK

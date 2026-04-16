@@ -1,5 +1,96 @@
 interactions:
 - request:
+    body: '{"rows": [{"_is_merge": true, "id": "ebe5c979-51d0-4e42-8f36-790b785d6b59",
+      "log_id": "g", "metrics": {"completion_tokens": 9.0, "duration": 1.17673921585083,
+      "end": 1776355275.730796, "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens":
+      0.0, "prompt_tokens": 8.0, "start": 1776355274.554057, "time_to_first_token":
+      1.1760492324829102, "tokens": 17.0}, "output": {"finish_reason": "stop", "kind":
+      "response", "metadata": null, "model_name": "gpt-4o-mini-2024-07-18", "parts":
+      [{"content": "Hello! How can I assist you today?", "id": null, "part_kind":
+      "text", "provider_details": null, "provider_name": null}], "provider_details":
+      {"finish_reason": "stop", "timestamp": "2026-04-16 16:01:14+00:00"}, "provider_name":
+      "openai", "provider_response_id": "chatcmpl-DVJRSiO5px7ZxWo50Bk0ka1buqtHG",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "timestamp": "2026-04-16
+      16:01:15.729977+00:00", "usage": {"cache_audio_read_tokens": 0, "cache_read_tokens":
+      0, "cache_write_tokens": 0, "details": {"accepted_prediction_tokens": 0, "audio_tokens":
+      0, "reasoning_tokens": 0, "rejected_prediction_tokens": 0}, "input_audio_tokens":
+      0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens": 9}}, "project_id":
+      "test-pydantic-ai-integration", "root_span_id": "c25bdb84-9ddb-485f-b5ed-083c11a69117",
+      "span_id": "0f5928fa-d9a2-4102-9583-b482b688ba44", "span_parents": ["5fd27e4d-7528-4ce6-9971-283616708043"]},{"_is_merge":
+      true, "id": "bf0f39e5-7b3d-4d3f-bdd8-be3a04faa7cc", "log_id": "g", "metrics":
+      {"completion_tokens": 9.0, "duration": 1.1769042015075684, "end": 1776355275.730926,
+      "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens": 0.0, "prompt_tokens":
+      8.0, "start": 1776355274.5540218, "time_to_first_token": 1.176084280014038,
+      "tokens": 17.0}, "output": {"finish_reason": "stop", "kind": "response", "metadata":
+      null, "model_name": "gpt-4o-mini-2024-07-18", "parts": [{"content": "Hello!
+      How can I assist you today?", "id": null, "part_kind": "text", "provider_details":
+      null, "provider_name": null}], "provider_details": {"finish_reason": "stop",
+      "timestamp": "2026-04-16 16:01:14+00:00"}, "provider_name": "openai", "provider_response_id":
+      "chatcmpl-DVJRSiO5px7ZxWo50Bk0ka1buqtHG", "provider_url": "https://api.openai.com/v1/",
+      "run_id": null, "timestamp": "2026-04-16 16:01:15.729977+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"accepted_prediction_tokens":
+      0, "audio_tokens": 0, "reasoning_tokens": 0, "rejected_prediction_tokens": 0},
+      "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
+      9}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "c25bdb84-9ddb-485f-b5ed-083c11a69117",
+      "span_id": "5fd27e4d-7528-4ce6-9971-283616708043", "span_parents": ["c615f121-5634-4e3c-980d-e430871dd370"]}],
+      "api_version": 2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2861'
+      User-Agent:
+      - python-requests/2.33.1
+    method: POST
+    uri: https://staging-api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=braintrustdata.com] [timestamp=1776355279.288]","InternalTraceId":"69e107cf000000002ac37c9d1b76ef1f","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Apr 2026 16:01:19 GMT
+      Via:
+      - 1.1 74fa2893a387420c4d3d2a3aac7dae04.cloudfront.net (CloudFront), 1.1 df34ce5bf73c140dc63a22fa17a4dcda.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - wj-uoYxyFDX6yDqqdcC_bF524wBB_cEJ3DW_cFWPQzZbEBhwshNvQQ==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69e107cf-51fbe2d76291a11017b19d92;Parent=3f0228c2e9dea44d;Sampled=0;Lineage=1:fc3b4ff1:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
+      content-length:
+      - '322'
+      etag:
+      - W/"142-lVHouV4tiutlc+97X4a9wWsK8+k"
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - b64obGo0IAMEHlQ=
+      x-amzn-RequestId:
+      - d98b8146-3c04-4a24-91f0-d362c1aa89e2
+      x-bt-internal-trace-id:
+      - 69e107cf000000002ac37c9d1b76ef1f
+    status:
+      code: 403
+      message: Forbidden
+- request:
     body: '{"messages":[{"role":"user","content":"What is AI?"}],"model":"gpt-4o-mini","max_completion_tokens":5,"stream":false}'
     headers:
       Accept:
@@ -8,21 +99,100 @@ interactions:
       - gzip, deflate
       Connection:
       - keep-alive
+      Content-Length:
+      - '117'
       Content-Type:
       - application/json
       Host:
       - api.openai.com
       User-Agent:
-      - python-httpx/0.28.1
+      - pydantic-ai/1.83.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.32.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: '{"id":"chatcmpl-short001","object":"chat.completion","created":1735000000,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_test","choices":[{"index":0,"message":{"role":"assistant","content":"AI
-        stands for Artificial","refusal":null},"logprobs":null,"finish_reason":"length"}],"usage":{"prompt_tokens":11,"completion_tokens":5,"total_tokens":16,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}}}'
+      string: "{\n  \"id\": \"chatcmpl-DVJRXtLq2eYgBSRaLVEJapooOcmpe\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776355279,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Artificial Intelligence (AI)\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"length\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        11,\n    \"completion_tokens\": 5,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_fe7a5277a8\"\n}\n"
     headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ed4686e5851aaf7-YYZ
+      Connection:
+      - keep-alive
       Content-Type:
       - application/json
+      Date:
+      - Thu, 16 Apr 2026 16:01:19 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '836'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '491'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=XNmAVR17PzOp1soPrF9mJ1i0FdPGA5LmwaEqetoZDlo-1776355279.0946963-1.0.1.1-8FKRtFUstHmKbFGx1BDfoF1fIfwmMUfX9BQJIjSEg5t.IOqNE_6_e.xUbnpWOIbD83mKJvChna3DWDX7RF0_TzJ9iHBj5FAyp1slDQ0bSZelBSSng08L81ms7rn_8nhZ;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
+        16:31:19 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999995'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_85d90fe5a90a491c8a9d2cfd152f3555
     status:
       code: 200
       message: OK

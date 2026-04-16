@@ -15,13 +15,10 @@ interactions:
       - '604'
       Content-Type:
       - application/json
-      Cookie:
-      - __cf_bm=SnTjRxRlQXUGj3jo4FeKDaKGiTqzcsdhS_LPeF2hwmg-1766265191-1.0.1.1-aN3W.WEa6IjC4znMp0fTYaZOZeW.3xU8ex4fRGFibZ0fuR86Piz9hDDAEvh8Z9ewQ9WHoKwdnsDvPE5KIpoZY4xurXV7VS4TcwfukWZofIk;
-        _cfuvid=tXOZ7vGE2DBF6L6fDg_veKtSaUVC4UPotJDezWYoYXI-1766265191281-0.0.1.1-604800000
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.37.0
+      - pydantic-ai/1.83.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -31,11 +28,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.14.0
+      - 2.32.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -44,28 +41,32 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jFNNj5swEL3zK6w5Q5XQJCTc2q2iHnrZVqq0Kitk7AGcNbZlm3bTKP+9
-        ApJAslmpHJA1z+/Nmw8fAkJAcEgJsJp61hgZPej9E6u+/1D1dqc451/Z489vvJx91n/qRwg7hi52
-        yPyZ9YHpxkj0QqsBZhapx051nqxW8WoZz9c90GiOsqNVxkcLHTVCiSiexYtolkTz9Ylda8HQQUp+
-        BYQQcuj/nU/F8RVSMgvPkQadoxVCerlECFgtuwhQ54TzVHkIR5Bp5VF11lUr5QTwWsucUSnHxMN3
-        mJzHZlEp82S/e4q3n8S6WG/lw99XW8++fEzsyyTfIL03vaGyVezSpAl+iac3yQgBRRs8JWStpB5v
-        yIQAtVXboPKdcThkoA1a2ullkGbQtNILI/cZhBnQDNJ5nIQZFBmki80RrsSOwb3z86RLFsvWUfm2
-        fVQp7fusff+eT8jxMiqpK2N14W6oUAolXJ1bpK7vwHQQwdlIbwHaq1mDsboxPvf6BfukSTKIwriO
-        IxjPT6DXnsoxvlmHd9Ryjp6KfhUu28coq5GPzHELacuFngDBpPK3Zu5pD9ULVf2P/AgwhsYjz41F
-        Lth1weM1i91jfe/apce9YXBofwuGuRdou2lwLGkrhycEbu88NnkpVIXWWNG/IyhNzhbL9bJYFhsG
-        wTH4BwAA//8DAOTijx1VBAAA
+      string: "{\n  \"id\": \"chatcmpl-DVJRH1Ewfq9cVqLvoZJtNZw8i3KsE\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776355263,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_pvztnlCv5l8bT2Kl55L8AOWw\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
+        \             \"arguments\": \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":127,\\\"b\\\":49}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 77,\n    \"completion_tokens\":
+        21,\n    \"total_tokens\": 98,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_a64aa7d0ff\"\n}\n"
     headers:
-      CF-RAY:
-      - 9b1225104cbc2b8d-LAX
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ed4680c89f8eff9-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Sat, 20 Dec 2025 21:13:39 GMT
+      - Thu, 16 Apr 2026 16:01:04 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -78,18 +79,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
+      content-length:
+      - '1109'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '577'
+      - '740'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '590'
+      set-cookie:
+      - __cf_bm=H1lAR0SFz33yWjM2RmwTjC.NMVztXwyy3I42Kq_t72g-1776355263.4496086-1.0.1.1-6w6zf8Mfj.XrFiLo.1H0VuB_L5PR3knq_y4ZLjNy_ugxN852S90hpy2bTlVFSZGZEhSNzbIQlvWzY21lJgiUxEFM_CfrRYiclM.aX3YymBVeyhYfb4NEf4oZ3q3L7Tia;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
+        16:31:04 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -105,12 +108,102 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_509940fcc6bb40bd8804ce82553ceacf
+      - req_feb19cc3f7b443f28bd4ae6d77adbfb8
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"role":"user","content":"What is 127 multiplied by 49?"},{"role":"assistant","content":null,"tool_calls":[{"id":"call_7yjY2FAi8b8FlCzxrh0D37rk","type":"function","function":{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}"}}]},{"role":"tool","tool_call_id":"call_7yjY2FAi8b8FlCzxrh0D37rk","content":"6223.0"}],"model":"gpt-4o-mini","max_completion_tokens":200,"stream":false,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+    body: '{"rows": [{"_is_merge": true, "id": "fd69aa2d-e94a-4764-8a43-8ceb60f1fbea",
+      "log_id": "g", "metrics": {"completion_tokens": 8.0, "duration": 1.8203949928283691,
+      "end": 1776355254.379821, "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens":
+      0.0, "prompt_tokens": 14.0, "start": 1776355252.559426, "time_to_first_token":
+      1.8197669982910156, "tokens": 22.0}, "output": {"finish_reason": "stop", "kind":
+      "response", "metadata": null, "model_name": "gpt-4o-mini-2024-07-18", "parts":
+      [{"content": "1, 2, 3.", "id": null, "part_kind": "text", "provider_details":
+      null, "provider_name": null}], "provider_details": {"finish_reason": "stop",
+      "timestamp": "2026-04-16 16:00:53+00:00"}, "provider_name": "openai", "provider_response_id":
+      "chatcmpl-DVJR7fqDMeKbyGfxZxaQreDL7zQ43", "provider_url": "https://api.openai.com/v1/",
+      "run_id": null, "timestamp": "2026-04-16 16:00:54.379059+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"accepted_prediction_tokens":
+      0, "audio_tokens": 0, "reasoning_tokens": 0, "rejected_prediction_tokens": 0},
+      "input_audio_tokens": 0, "input_tokens": 14, "output_audio_tokens": 0, "output_tokens":
+      8}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "dd7bce72-d379-4e36-8a1f-1be2cdeb4757",
+      "span_id": "00657aef-e75e-4561-9546-7b3a8c3a2c92", "span_parents": ["47ed73d3-4434-402c-80b6-a9887f61cd9f"]},{"_is_merge":
+      true, "id": "cc052adf-be91-4cee-bfed-cb998549db7b", "log_id": "g", "metrics":
+      {"completion_tokens": 8.0, "duration": 1.8205649852752686, "end": 1776355254.3799329,
+      "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens": 0.0, "prompt_tokens":
+      14.0, "start": 1776355252.559368, "time_to_first_token": 1.8198251724243164,
+      "tokens": 22.0}, "output": {"finish_reason": "stop", "kind": "response", "metadata":
+      null, "model_name": "gpt-4o-mini-2024-07-18", "parts": [{"content": "1, 2, 3.",
+      "id": null, "part_kind": "text", "provider_details": null, "provider_name":
+      null}], "provider_details": {"finish_reason": "stop", "timestamp": "2026-04-16
+      16:00:53+00:00"}, "provider_name": "openai", "provider_response_id": "chatcmpl-DVJR7fqDMeKbyGfxZxaQreDL7zQ43",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "timestamp": "2026-04-16
+      16:00:54.379059+00:00", "usage": {"cache_audio_read_tokens": 0, "cache_read_tokens":
+      0, "cache_write_tokens": 0, "details": {"accepted_prediction_tokens": 0, "audio_tokens":
+      0, "reasoning_tokens": 0, "rejected_prediction_tokens": 0}, "input_audio_tokens":
+      0, "input_tokens": 14, "output_audio_tokens": 0, "output_tokens": 8}}, "project_id":
+      "test-pydantic-ai-integration", "root_span_id": "dd7bce72-d379-4e36-8a1f-1be2cdeb4757",
+      "span_id": "47ed73d3-4434-402c-80b6-a9887f61cd9f", "span_parents": ["dd7bce72-d379-4e36-8a1f-1be2cdeb4757"]}],
+      "api_version": 2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2816'
+      User-Agent:
+      - python-requests/2.33.1
+    method: POST
+    uri: https://staging-api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=braintrustdata.com] [timestamp=1776355264.561]","InternalTraceId":"69e107c000000000772c8e1c3ba6b8e2","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Apr 2026 16:01:04 GMT
+      Via:
+      - 1.1 74fa2893a387420c4d3d2a3aac7dae04.cloudfront.net (CloudFront), 1.1 60c77d7f2a0954d991174a909a828016.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - HHyBfHSR0686Ub0X6e_Z-fmaqxerRvd0Zr9u48I_awXXeU_AU3DcLQ==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69e107c0-0e49c53827f3cc1441c69481;Parent=4a43389fd0aff82c;Sampled=0;Lineage=1:fc3b4ff1:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
+      content-length:
+      - '322'
+      etag:
+      - W/"142-Cr6MWFfgHpnkQVSAdcR95MskDoo"
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - b64mIFsIoAMELHQ=
+      x-amzn-RequestId:
+      - fd4beca7-e07a-4757-ba21-4b1106da79d7
+      x-bt-internal-trace-id:
+      - 69e107c000000000772c8e1c3ba6b8e2
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"messages":[{"role":"user","content":"What is 127 multiplied by 49?"},{"role":"assistant","content":null,"tool_calls":[{"id":"call_pvztnlCv5l8bT2Kl55L8AOWw","type":"function","function":{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":127,\"b\":49}"}}]},{"role":"tool","tool_call_id":"call_pvztnlCv5l8bT2Kl55L8AOWw","content":"6223.0"}],"model":"gpt-4o-mini","max_completion_tokens":200,"stream":false,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"calculate","description":"Perform
       a mathematical calculation.","parameters":{"additionalProperties":false,"properties":{"operation":{"description":"The
       mathematical operation (add, subtract, multiply, divide)","type":"string"},"a":{"description":"First
       number","type":"number"},"b":{"description":"Second number","type":"number"}},"required":["operation","a","b"],"type":"object"},"strict":true}}]}'
@@ -126,12 +219,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=SnTjRxRlQXUGj3jo4FeKDaKGiTqzcsdhS_LPeF2hwmg-1766265191-1.0.1.1-aN3W.WEa6IjC4znMp0fTYaZOZeW.3xU8ex4fRGFibZ0fuR86Piz9hDDAEvh8Z9ewQ9WHoKwdnsDvPE5KIpoZY4xurXV7VS4TcwfukWZofIk;
-        _cfuvid=tXOZ7vGE2DBF6L6fDg_veKtSaUVC4UPotJDezWYoYXI-1766265191281-0.0.1.1-604800000
+      - __cf_bm=H1lAR0SFz33yWjM2RmwTjC.NMVztXwyy3I42Kq_t72g-1776355263.4496086-1.0.1.1-6w6zf8Mfj.XrFiLo.1H0VuB_L5PR3knq_y4ZLjNy_ugxN852S90hpy2bTlVFSZGZEhSNzbIQlvWzY21lJgiUxEFM_CfrRYiclM.aX3YymBVeyhYfb4NEf4oZ3q3L7Tia
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.37.0
+      - pydantic-ai/1.83.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -141,11 +233,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.14.0
+      - 2.32.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -154,26 +246,28 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jFLBjtMwFLznKyyfm1VimrbpjeXAkSssWkWO/ZI+cGxjvyCqVf8dOek2
-        6QISlxzevJnMjN9LxhhHzY+Mq5MkNXiTf3DnL/pTUR+eoH3U+sf7x737XLUYnz6Klm8Sw7XfQNEr
-        60G5wRsgdHaGVQBJkFTL/W4ndpUo6wkYnAaTaL2nfOvyAS3mohDbvNjn5eHKPjlUEPmRfc0YY+xl
-        +iafVsMvfmTF5nUyQIyyB368LTHGgzNpwmWMGEla4psFVM4S2Ml6KfZsGA2hNwiatWe2rRlGthPi
-        3cOaE6Abo0y+7WjMCpDWOpIp9+T2+Ypcbv6M631wbXxD5R1ajKcmgIzOJi+RnOcTeskYe556GO+i
-        cR/c4Kkh9x2m35VFPevxpf4VWl5BciTNai6u7d3rNRpIoomrJrmS6gR6oS61y1GjWwHZKvWfbv6m
-        PSdH2/+P/AIoBZ5ANz6ARnWfeFkLkK7zX2u3lifDPEL4iQoaQgjpJTR0cjTzzfB4jgRD06HtIfiA
-        8+F0vlHb6lC1VVsrnl2y3wAAAP//AwARJ00jRgMAAA==
+      string: "{\n  \"id\": \"chatcmpl-DVJRILr5H0xe2a5owVWTAaJE459Hj\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776355264,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"127 multiplied by 49 is 6223.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        109,\n    \"completion_tokens\": 11,\n    \"total_tokens\": 120,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_888e567758\"\n}\n"
     headers:
-      CF-RAY:
-      - 9b122514ccebbd64-LAX
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ed468123ae2a23a-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Sat, 20 Dec 2025 21:13:39 GMT
+      - Thu, 16 Apr 2026 16:01:04 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -186,18 +280,16 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
+      content-length:
+      - '838'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '442'
+      - '529'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '454'
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -213,7 +305,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_220c103a9c1a4326853c15b5dae82105
+      - req_96e2be3fca5949e08a650201c1c87808
     status:
       code: 200
       message: OK

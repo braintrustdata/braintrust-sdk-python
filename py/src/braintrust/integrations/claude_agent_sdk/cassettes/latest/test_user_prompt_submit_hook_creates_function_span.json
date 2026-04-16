@@ -19,7 +19,7 @@
             },
             "subtype": "initialize"
           },
-          "request_id": "req_1_67570bb7",
+          "request_id": "req_1_d388cbad",
           "type": "control_request"
         }
       }
@@ -28,7 +28,7 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_67570bb7",
+          "request_id": "req_1_d388cbad",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
@@ -70,13 +70,13 @@
             "hook_event_name": "UserPromptSubmit",
             "permission_mode": "bypassPermissions",
             "prompt": "Say hello in one short sentence.",
-            "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+            "session_id": "b0173426-7b4c-46cf-b726-f8a7cd7c3eee",
             "transcript_path": "<REDACTED_PATH>"
           },
           "subtype": "hook_callback",
-          "tool_use_id": "a53c8d5a-4ea4-4b73-9cce-9c17bca24b78"
+          "tool_use_id": "95f46f4b-1229-42d9-8157-f0dc89afb119"
         },
-        "request_id": "a44c49fc-67bd-4332-aed1-50934fcf7f54",
+        "request_id": "f9a54896-f51e-48ab-bd4b-4f28022e3a81",
         "type": "control_request"
       }
     },
@@ -86,7 +86,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "a44c49fc-67bd-4332-aed1-50934fcf7f54",
+            "request_id": "f9a54896-f51e-48ab-bd4b-4f28022e3a81",
             "response": {
               "hookSpecificOutput": {
                 "additionalContext": "Remember the answer should stay concise.",
@@ -103,78 +103,166 @@
       "op": "read",
       "payload": {
         "agents": [
-          "general-purpose",
-          "statusline-setup",
           "Explore",
-          "Plan"
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
         ],
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.81",
+        "claude_code_version": "2.1.111",
         "cwd": "<REDACTED_CWD>",
         "fast_mode_state": "off",
-        "mcp_servers": [],
+        "mcp_servers": [
+          {
+            "name": "braintrust",
+            "status": "connected"
+          },
+          {
+            "name": "linear-server",
+            "status": "connected"
+          }
+        ],
+        "memory_paths": {
+          "auto": "<REDACTED_PATH>"
+        },
         "model": "claude-haiku-4-5-20251001",
         "output_style": "default",
         "permissionMode": "bypassPermissions",
-        "plugins": [],
-        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "plugins": [
+          {
+            "name": "rust-analyzer-lsp",
+            "path": "<REDACTED_PATH>",
+            "source": "rust-analyzer-lsp@claude-plugins-official"
+          }
+        ],
+        "session_id": "b0173426-7b4c-46cf-b726-f8a7cd7c3eee",
         "skills": [
           "update-config",
           "debug",
           "simplify",
           "batch",
+          "less-permission-prompts",
           "loop",
           "schedule",
-          "claude-api"
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking"
         ],
         "slash_commands": [
           "update-config",
           "debug",
           "simplify",
           "batch",
+          "less-permission-prompts",
           "loop",
           "schedule",
           "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking",
           "compact",
           "context",
           "cost",
           "heapdump",
           "init",
-          "pr-comments",
-          "release-notes",
           "review",
           "security-review",
-          "insights"
+          "insights",
+          "team-onboarding"
         ],
         "subtype": "init",
         "tools": [
           "Task",
-          "TaskOutput",
-          "Bash",
-          "Glob",
-          "Grep",
-          "ExitPlanMode",
-          "Read",
-          "Edit",
-          "Write",
-          "NotebookEdit",
-          "WebFetch",
-          "TodoWrite",
-          "WebSearch",
-          "TaskStop",
           "AskUserQuestion",
-          "Skill",
-          "EnterPlanMode",
-          "EnterWorktree",
-          "ExitWorktree",
+          "Bash",
           "CronCreate",
           "CronDelete",
           "CronList",
+          "Edit",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitPlanMode",
+          "ExitWorktree",
+          "Glob",
+          "Grep",
+          "ListMcpResourcesTool",
+          "LSP",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "ReadMcpResourceTool",
           "RemoteTrigger",
-          "ToolSearch"
+          "ScheduleWakeup",
+          "Skill",
+          "TaskOutput",
+          "TaskStop",
+          "TodoWrite",
+          "ToolSearch",
+          "WebFetch",
+          "WebSearch",
+          "Write",
+          "mcp__braintrust__generate_permalink",
+          "mcp__braintrust__infer_schema",
+          "mcp__braintrust__list_recent_objects",
+          "mcp__braintrust__resolve_object",
+          "mcp__braintrust__search_docs",
+          "mcp__braintrust__sql_query",
+          "mcp__braintrust__summarize_experiment",
+          "mcp__linear-server__create_attachment",
+          "mcp__linear-server__create_document",
+          "mcp__linear-server__create_issue_label",
+          "mcp__linear-server__delete_attachment",
+          "mcp__linear-server__delete_comment",
+          "mcp__linear-server__delete_customer",
+          "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_status_update",
+          "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_attachment",
+          "mcp__linear-server__get_document",
+          "mcp__linear-server__get_initiative",
+          "mcp__linear-server__get_issue",
+          "mcp__linear-server__get_issue_status",
+          "mcp__linear-server__get_milestone",
+          "mcp__linear-server__get_project",
+          "mcp__linear-server__get_status_updates",
+          "mcp__linear-server__get_team",
+          "mcp__linear-server__get_user",
+          "mcp__linear-server__list_comments",
+          "mcp__linear-server__list_customers",
+          "mcp__linear-server__list_cycles",
+          "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiatives",
+          "mcp__linear-server__list_issue_labels",
+          "mcp__linear-server__list_issue_statuses",
+          "mcp__linear-server__list_issues",
+          "mcp__linear-server__list_milestones",
+          "mcp__linear-server__list_project_labels",
+          "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_teams",
+          "mcp__linear-server__list_users",
+          "mcp__linear-server__save_comment",
+          "mcp__linear-server__save_customer",
+          "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_initiative",
+          "mcp__linear-server__save_issue",
+          "mcp__linear-server__save_milestone",
+          "mcp__linear-server__save_project",
+          "mcp__linear-server__save_status_update",
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__update_document"
         ],
         "type": "system",
-        "uuid": "1661665e-3159-4e99-b237-9a75a4f6e055"
+        "uuid": "b1680d6c-0c0b-4b95-b010-f16874fec54e"
       }
     },
     {
@@ -184,34 +272,35 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The user is asking me to say hello in one short sentence. This is a simple greeting request. I should keep it concise and friendly.",
+              "thinking": "The user is asking me to say hello in one short sentence. This is a simple greeting request. I should keep it brief and friendly.",
               "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_0174ptnfaH65R4cf7XtoZpRn",
+          "id": "msg_01R7PEqdt2TzUfTEU5WJjxjN",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
+          "stop_details": null,
           "stop_reason": null,
           "stop_sequence": null,
           "type": "message",
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 5528
+              "ephemeral_5m_input_tokens": 41389
             },
-            "cache_creation_input_tokens": 5528,
-            "cache_read_input_tokens": 13663,
+            "cache_creation_input_tokens": 41389,
+            "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 1,
+            "output_tokens": 7,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "session_id": "b0173426-7b4c-46cf-b726-f8a7cd7c3eee",
         "type": "assistant",
-        "uuid": "b7c6c3ed-a2f7-4392-895e-f666060ef546"
+        "uuid": "dbcdb0cf-f818-49b2-b8b7-6fce6aedf5a3"
       }
     },
     {
@@ -220,74 +309,89 @@
         "message": {
           "content": [
             {
-              "text": "Hello! I'm Claude, your AI assistant in Claude Code\u2014how can I help you today?",
+              "text": "Hello! \ud83d\udc4b I'm ready to help you with the Braintrust SDK Python repository.",
               "type": "text"
             }
           ],
           "context_management": null,
-          "id": "msg_0174ptnfaH65R4cf7XtoZpRn",
+          "id": "msg_01R7PEqdt2TzUfTEU5WJjxjN",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
+          "stop_details": null,
           "stop_reason": null,
           "stop_sequence": null,
           "type": "message",
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 5528
+              "ephemeral_5m_input_tokens": 41389
             },
-            "cache_creation_input_tokens": 5528,
-            "cache_read_input_tokens": 13663,
+            "cache_creation_input_tokens": 41389,
+            "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 1,
+            "output_tokens": 7,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "session_id": "b0173426-7b4c-46cf-b726-f8a7cd7c3eee",
         "type": "assistant",
-        "uuid": "5ab9bfbf-6345-4ff9-8ab5-a3cfc5472d8c"
+        "uuid": "5f2c8481-c1a5-4bb6-8e7e-7c40c213063a"
       }
     },
     {
       "op": "read",
       "payload": {
-        "duration_api_ms": 1149,
-        "duration_ms": 1259,
+        "api_error_status": null,
+        "duration_api_ms": 2859,
+        "duration_ms": 1504,
         "fast_mode_state": "off",
         "is_error": false,
         "modelUsage": {
           "claude-haiku-4-5-20251001": {
-            "cacheCreationInputTokens": 5528,
-            "cacheReadInputTokens": 13663,
+            "cacheCreationInputTokens": 41389,
+            "cacheReadInputTokens": 0,
             "contextWindow": 200000,
-            "costUSD": 0.0085863,
-            "inputTokens": 10,
+            "costUSD": 0.052466250000000006,
+            "inputTokens": 355,
             "maxOutputTokens": 32000,
-            "outputTokens": 60,
+            "outputTokens": 75,
             "webSearchRequests": 0
           }
         },
         "num_turns": 1,
         "permission_denials": [],
-        "result": "Hello! I'm Claude, your AI assistant in Claude Code\u2014how can I help you today?",
-        "session_id": "1f59055a-81ca-4f69-923c-ab1b003e3b4b",
+        "result": "Hello! \ud83d\udc4b I'm ready to help you with the Braintrust SDK Python repository.",
+        "session_id": "b0173426-7b4c-46cf-b726-f8a7cd7c3eee",
         "stop_reason": "end_turn",
         "subtype": "success",
-        "total_cost_usd": 0.0085863,
+        "terminal_reason": "completed",
+        "total_cost_usd": 0.052466250000000006,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 5528
+            "ephemeral_5m_input_tokens": 41389
           },
-          "cache_creation_input_tokens": 5528,
-          "cache_read_input_tokens": 13663,
+          "cache_creation_input_tokens": 41389,
+          "cache_read_input_tokens": 0,
           "inference_geo": "",
           "input_tokens": 10,
-          "iterations": [],
-          "output_tokens": 60,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 41389
+              },
+              "cache_creation_input_tokens": 41389,
+              "cache_read_input_tokens": 0,
+              "input_tokens": 10,
+              "output_tokens": 61,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 61,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
@@ -295,9 +399,9 @@
           "service_tier": "standard",
           "speed": "standard"
         },
-        "uuid": "174fde97-5c86-44df-94ff-58d198652f20"
+        "uuid": "501c6e60-2d04-425e-8a6c-913c2fa3f19b"
       }
     }
   ],
-  "sdk_version": "0.1.50"
+  "sdk_version": "0.1.60"
 }

@@ -16,7 +16,7 @@ interactions:
       Host:
       - openrouter.ai
       User-Agent:
-      - OpenAI/Python 2.31.0
+      - OpenAI/Python 2.32.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,11 +26,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.31.0
+      - 2.32.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,13 +39,16 @@ interactions:
     uri: https://openrouter.ai/api/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"gen-1776293780-fNQ6yR3svciUNGEc3BKH","object":"chat.completion.chunk","created":1776293780,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_3d695acdac","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
+      string: ': OPENROUTER PROCESSING
 
 
-        data: {"id":"gen-1776293780-fNQ6yR3svciUNGEc3BKH","object":"chat.completion.chunk","created":1776293780,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_3d695acdac","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
+        data: {"id":"gen-1776355355-THHRsv4oxjdbuvrPEtgz","object":"chat.completion.chunk","created":1776355355,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_eb37e061ec","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
 
 
-        data: {"id":"gen-1776293780-fNQ6yR3svciUNGEc3BKH","object":"chat.completion.chunk","created":1776293780,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_3d695acdac","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":1,"total_tokens":21,"cost":0.0000036,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000036,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":6e-7},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
+        data: {"id":"gen-1776355355-THHRsv4oxjdbuvrPEtgz","object":"chat.completion.chunk","created":1776355355,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_eb37e061ec","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
+
+
+        data: {"id":"gen-1776355355-THHRsv4oxjdbuvrPEtgz","object":"chat.completion.chunk","created":1776355355,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_eb37e061ec","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":2,"total_tokens":22,"cost":0.0000042,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000042,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":0.0000012},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
 
 
         data: [DONE]
@@ -56,7 +59,7 @@ interactions:
       Access-Control-Allow-Origin:
       - '*'
       CF-RAY:
-      - 9ece8b02c907ab00-YYZ
+      - 9ed46a4c9962f41f-YYZ
       Cache-Control:
       - no-cache
       Connection:
@@ -64,7 +67,7 @@ interactions:
       Content-Type:
       - text/event-stream
       Date:
-      - Wed, 15 Apr 2026 22:56:21 GMT
+      - Thu, 16 Apr 2026 16:02:36 GMT
       Permissions-Policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
@@ -77,7 +80,7 @@ interactions:
       X-Content-Type-Options:
       - nosniff
       X-Generation-Id:
-      - gen-1776293780-fNQ6yR3svciUNGEc3BKH
+      - gen-1776355355-THHRsv4oxjdbuvrPEtgz
       access-control-expose-headers:
       - X-Generation-Id,cf-ray
     status:

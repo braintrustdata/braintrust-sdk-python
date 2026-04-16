@@ -13,13 +13,10 @@ interactions:
       - '215'
       Content-Type:
       - application/json
-      Cookie:
-      - __cf_bm=SnTjRxRlQXUGj3jo4FeKDaKGiTqzcsdhS_LPeF2hwmg-1766265191-1.0.1.1-aN3W.WEa6IjC4znMp0fTYaZOZeW.3xU8ex4fRGFibZ0fuR86Piz9hDDAEvh8Z9ewQ9WHoKwdnsDvPE5KIpoZY4xurXV7VS4TcwfukWZofIk;
-        _cfuvid=tXOZ7vGE2DBF6L6fDg_veKtSaUVC4UPotJDezWYoYXI-1766265191281-0.0.1.1-604800000
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.37.0
+      - pydantic-ai/1.83.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -29,11 +26,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.14.0
+      - 2.32.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -42,28 +39,31 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jFNdSxwxFH3fX3HN82zZneq67ktpC4VC6UNRixYZspkzM3EzSUjuaBcR
-        /Bv+PX+JZEadtbXQl0Duuefk3I/cTIiELsWKhGokq9ab6We3PTu1aK++/Dg+O96cu/z75tv5p5PT
-        2ftwIrLEcOtLKH5mvVOu9QasnR1gFSAZSXV+uFjki4N8Pu+B1pUwiVZ7nu67aautnuazfH86O5zO
-        l0/sxmmFKFb0a0JEdNOfyact8VusaJY9R1rEKGuI1UsSkQjOpIiQMerI0rLIRlA5y7C99Y8hhIxa
-        ydju0VdS0j7c3TOtQR7wOt1IMnEDihuNSNpSgDTEukVG645JV7QFMYyhFnTdICAF1qAI5kEiSm2y
-        QZ+i15YkbWWw9HB3v3bdoF/DIkhD15DcIJCXzAg2JrFW1w0TrHKdZYQ9+tnI3mUiGsmauxIkbUnG
-        2Xq4ueQr0KXrgsX2w24DAqouyjQE2xmzA0hrHcs0xL71F0/I7Uuzjat9cOv4B1VU2urYFAEyOpsa
-        G9l50aO3E6KLfqjdqzkJH1zruWC3Qf9cvhzkxLhKI3hw9ASyY2nG+PIwe0OtKMFSm7izFEJJ1aAc
-        meMGya7UbgeY7NT8t5m3tIe6ta3/R34ElIJnlIUPKLV6XfCYFpA+2r/SXnrcGxYR4UorFKwR0hxK
-        VLIzw/qLuI2Mtqi0rRF80MMfqHwBLI5Ujmp/KSa3k0cAAAD//wMAkHTj3xEEAAA=
+      string: "{\n  \"id\": \"chatcmpl-DVJR1F7iSmtqhIEr1pyTtyevhwn5H\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776355247,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Ahoy matey! I be unable to check the
+        current weather fer ye, but I can tell ye to look out yonder fer dark clouds
+        or feel fer a brisk wind! If ye be needin' a forecast, best be consultin'
+        a weather site or app, savvy? Yarrr!\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 28,\n    \"completion_tokens\":
+        61,\n    \"total_tokens\": 89,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_fe7a5277a8\"\n}\n"
     headers:
-      CF-RAY:
-      - 9b1224e1294f9a4f-LAX
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ed467a5ebb1ac3a-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Sat, 20 Dec 2025 21:13:32 GMT
+      - Thu, 16 Apr 2026 16:00:48 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -76,18 +76,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
+      content-length:
+      - '1031'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1332'
+      - '1177'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '1346'
+      set-cookie:
+      - __cf_bm=EElW5rswFM5WKRwzg23WS2q9rqfAIdA6ZvExS74FPxI-1776355247.0257998-1.0.1.1-yOmzrTLAQX7syOLZuMFnmK9gJkrL8d3OPA7Qm9NvrT4XZAGUqvzKPoR89DBfmDAKZM5_d2pLAzB9qU0hRmmCpq8SxvIF9Pf4X83K6AR4auC2VYdYHZvuNgKg.RO2tCmE;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
+        16:30:48 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -103,7 +105,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3dde0d17015c4cd588c2dc14b4bc82b8
+      - req_f4075b36e8034e45b4567781bf860b47
     status:
       code: 200
       message: OK

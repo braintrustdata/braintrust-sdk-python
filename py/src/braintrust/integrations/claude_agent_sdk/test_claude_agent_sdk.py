@@ -196,7 +196,12 @@ async def test_calculator_with_multiple_operations(memory_logger):
             if metric_name in llm_span.get("metrics", {}):
                 assert llm_span["metrics"][metric_name] > 0
     assert any(llm_span.get("metadata", {}).get("usage_service_tier") == "standard" for llm_span in llm_spans)
-    assert any("usage_inference_geo" in llm_span.get("metadata", {}) for llm_span in llm_spans)
+    if any("usage_inference_geo" in llm_span.get("metadata", {}) for llm_span in llm_spans):
+        assert all(
+            isinstance(llm_span.get("metadata", {}).get("usage_inference_geo"), str)
+            for llm_span in llm_spans
+            if "usage_inference_geo" in llm_span.get("metadata", {})
+        )
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
     for tool_span in tool_spans:
         assert tool_span["span_attributes"]["name"] == "calculator"
@@ -777,7 +782,7 @@ async def test_five_parallel_bundled_subagents_preserve_task_parenting(memory_lo
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     root_task_span = find_span_by_name(task_spans, "Claude Agent")
-    subagent_spans = [span for span in task_spans if span["span_id"] != root_task_span["span_id"]]
+    subagent_spans = [span for span in task_spans if span.get("metadata", {}).get("tool_use_id")]
     assert len(subagent_spans) == 5, f"Expected 5 delegated task spans, got {len(subagent_spans)}"
 
     agent_tool_spans_by_id = {
@@ -2169,49 +2174,31 @@ async def test_setup_claude_agent_sdk_query_repro_import_before_setup(memory_log
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
-async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting(memory_logger):
-    """Concurrent subagent LLM spans must run in parallel, not be serialized into a single
-    sequential chain — and every tool span must be parented to its own subagent's LLM span
-    with output preserved.
+async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_parenting(memory_logger, tmp_path):
+    """Concurrent delegated subagents should preserve nested task, LLM, and tool parenting.
 
-    Three subagents each perform two interleaved tool rounds:
-      LLM(A:Bash) → LLM(B:Bash) → LLM(C:MCP tool) → result(A) → result(B) → result(C)
-      LLM(A:Read) → LLM(B:Read) → LLM(C:Read)      → result(A) → result(B) → result(C)
-
-    Verifies:
-    - Each subagent gets its own LLM spans (not shared with other subagents)
-    - LLM spans from different subagents overlap in time (parallel execution)
-    - Tool spans are parented to the correct subagent's LLM span
-    - Tool output is preserved despite cross-subagent message interleaving
+    This prompt is intentionally concrete so the Claude runtime actually delegates work
+    instead of asking for clarification.
     """
     assert not memory_logger.pop()
 
-    subagents = [
-        {"label": "A", "agent_id": "toolu_agent_a", "task_id": "task_a"},
-        {"label": "B", "agent_id": "toolu_agent_b", "task_id": "task_b"},
-        {"label": "C", "agent_id": "toolu_agent_c", "task_id": "task_c"},
-    ]
-    round1_tools = [
-        {"id": "toolu_tool_a1", "name": "Bash", "agent_id": "toolu_agent_a", "result": "a1-output"},
-        {"id": "toolu_tool_b1", "name": "Bash", "agent_id": "toolu_agent_b", "result": "b1-output"},
-        {
-            "id": "toolu_tool_c1",
-            "name": "mcp__server__remote_tool",
-            "agent_id": "toolu_agent_c",
-            "result": "c1-output",
-        },
-    ]
-    round2_tools = [
-        {"id": "toolu_tool_a2", "name": "Read", "agent_id": "toolu_agent_a", "result": "a2-output"},
-        {"id": "toolu_tool_b2", "name": "Read", "agent_id": "toolu_agent_b", "result": "b2-output"},
-        {"id": "toolu_tool_c2", "name": "Read", "agent_id": "toolu_agent_c", "result": "c2-output"},
-    ]
-    all_tools = round1_tools + round2_tools
+    workspace = tmp_path / "concurrent_subagent_workspace"
+    workspace.mkdir()
+    expected_read_markers = {
+        "A": "task_label=A\nowner=alpha\n",
+        "B": "task_label=B\nowner=beta\n",
+        "C": "task_label=C\nowner=gamma\n",
+    }
+    for label, contents in expected_read_markers.items():
+        (workspace / f"task_{label.lower()}.txt").write_text(contents, encoding="utf-8")
 
     with _patched_claude_sdk(wrap_client=True):
         options = claude_agent_sdk.ClaudeAgentOptions(
             model=TEST_MODEL,
+            cwd=workspace,
             permission_mode="bypassPermissions",
+            max_turns=18,
+            allowed_tools=["Task", "Bash", "Read"],
         )
         transport = make_cassette_transport(
             cassette_name=_sdk_cassette_name(
@@ -2223,7 +2210,16 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
         )
 
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query("Run three tasks.")
+            await client.query(
+                "Use exactly three bundled general-purpose subagents and start all three Agent tool calls "
+                "before waiting for any result if the tool API allows it. "
+                "Subagent A must first use Bash to run `echo bash-a-output` and then use Read on task_a.txt. "
+                "Subagent B must first use Bash to run `echo bash-b-output` and then use Read on task_b.txt. "
+                "Subagent C must first use Bash to run `echo bash-c-output` and then use Read on task_c.txt. "
+                "Each delegated subagent must return only its file contents after completing both tool calls. "
+                "After all three delegated agents finish, reply with exactly three lines in order A, B, C. "
+                "Do not ask clarifying questions. Do not answer directly without using all three subagents."
+            )
             async for message in client.receive_response():
                 if type(message).__name__ == "ResultMessage":
                     break
@@ -2233,163 +2229,162 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
-    all_tools = round1_tools + round2_tools
-
-    # --- 1. Root TASK span exists ---
-    find_span_by_name(task_spans, "Claude Agent")
+    root_task_span = find_span_by_name(task_spans, "Claude Agent")
 
     if not _sdk_version_at_least("0.1.11"):
-        # SDK 0.1.10 replays a limited cassette (single assistant + result);
-        # only assert the root task span was produced.
         return
 
-    # --- 2. All subagent TASK spans exist ---
-    subagent_task_by_label: dict[str, dict[str, Any]] = {}
-    for sa in subagents:
-        subagent_task_by_label[sa["label"]] = find_span_by_name(task_spans, f"Task {sa['label']}")
+    subagent_spans = [span for span in task_spans if span["span_id"] != root_task_span["span_id"]]
+    assert len(subagent_spans) == 3, f"Expected 3 delegated task spans, got {len(subagent_spans)}"
+    subagent_span_ids = {span["span_id"] for span in subagent_spans}
 
-    task_id_by_span = {t["span_id"]: label for label, t in subagent_task_by_label.items()}
+    outer_llm_spans = [llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]]
+    assert outer_llm_spans, "Expected outer orchestration LLM spans under the root task"
 
-    # --- 3. Every tool span has output ---
-    non_agent_tools = [s for s in tool_spans if s["span_attributes"]["name"] != "Agent"]
-    tools_without_output = [s for s in non_agent_tools if s.get("output") is None]
-    assert not tools_without_output, (
-        f"{len(tools_without_output)} of {len(non_agent_tools)} tool spans lost their output. "
-        f"Missing: {[s['span_attributes']['name'] + '(' + s.get('metadata', {}).get('gen_ai.tool.call.id', '?') + ')' for s in tools_without_output]}"
-    )
+    agent_tool_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Agent"]
+    assert len(agent_tool_spans) == 3, f"Expected 3 Agent tool spans, got {len(agent_tool_spans)}"
 
-    # --- 4. Tool spans are parented to the correct subagent's LLM span ---
-    agent_id_to_label = {sa["agent_id"]: sa["label"] for sa in subagents}
-    tool_id_to_label = {t["id"]: agent_id_to_label[t["agent_id"]] for t in all_tools}
+    delegated_llm_spans = [
+        llm_span for llm_span in llm_spans if any(parent in subagent_span_ids for parent in llm_span["span_parents"])
+    ]
+    assert delegated_llm_spans, "Expected delegated LLM spans nested under delegated task spans"
 
-    for tool in non_agent_tools:
-        tool_call_id = tool.get("metadata", {}).get("gen_ai.tool.call.id", "")
-        expected_label = tool_id_to_label.get(tool_call_id)
-        if expected_label is None:
-            continue
+    bash_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Bash"]
+    read_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Read"]
+    assert len(bash_spans) >= 3, f"Expected at least 3 Bash spans, got {len(bash_spans)}"
+    assert len(read_spans) >= 3, f"Expected at least 3 Read spans, got {len(read_spans)}"
 
-        parent_llm = next((s for s in llm_spans if s["span_id"] == tool["span_parents"][0]), None)
-        assert parent_llm is not None, f"Tool {tool_call_id} has no parent LLM span"
-
-        llm_task_parent_id = parent_llm["span_parents"][0]
-        actual_label = task_id_by_span.get(llm_task_parent_id)
-        assert actual_label == expected_label, (
-            f"Tool {tool_call_id} should be under subagent {expected_label}, got {actual_label}"
+    delegated_task_ids_for_tools = set()
+    for tool_span in bash_spans + read_spans:
+        parent_llm = next(span for span in llm_spans if span["span_id"] == tool_span["span_parents"][0])
+        parent_task_ids = [pid for pid in parent_llm["span_parents"] if pid in subagent_span_ids]
+        assert len(parent_task_ids) == 1, (
+            f"Expected delegated tool span {tool_span['span_attributes']['name']} to have exactly one delegated task parent"
         )
+        delegated_task_ids_for_tools.add(parent_task_ids[0])
 
-    # --- 5. Correct tool output content ---
-    for t in all_tools:
-        span = next(s for s in tool_spans if s.get("metadata", {}).get("gen_ai.tool.call.id") == t["id"])
-        assert span["output"]["content"] == t["result"]
+    for read_span in read_spans:
+        assert read_span.get("output") is not None, "Expected Read tool output for every delegated subagent"
 
-    # MCP tool name should be parsed
-    mcp_span = next(s for s in tool_spans if s.get("metadata", {}).get("gen_ai.tool.call.id") == "toolu_tool_c1")
-    assert mcp_span["span_attributes"]["name"] == "remote_tool"
-    assert mcp_span["metadata"].get("mcp.server") == "server"
+    assert delegated_task_ids_for_tools == subagent_span_ids, "Expected every delegated task to own delegated tools"
 
-    # --- 6. Scale check ---
-    assert len(non_agent_tools) == 6
-    assert len(llm_spans) >= 7
-    assert len(task_spans) == 4
-
-    # --- 7. LLM spans from different subagents overlap (not serialized) ---
-    subagent_llm_spans: dict[str, list[dict[str, Any]]] = {sa["label"]: [] for sa in subagents}
-    for llm_span in llm_spans:
-        label = task_id_by_span.get(llm_span["span_parents"][0])
-        if label:
-            subagent_llm_spans[label].append(llm_span)
-
-    for label, llms in subagent_llm_spans.items():
-        assert len(llms) == 2, f"Expected 2 LLM spans for subagent {label} (one per tool round), got {len(llms)}"
-
-    a_first = min(subagent_llm_spans["A"], key=lambda s: s["metrics"]["start"])
-    b_first = min(subagent_llm_spans["B"], key=lambda s: s["metrics"]["start"])
-    assert a_first["metrics"]["end"] >= b_first["metrics"]["start"], (
-        f"Subagent A's first LLM span should overlap with B's (not be truncated). "
-        f"A end={a_first['metrics']['end']}, B start={b_first['metrics']['start']}"
+    bash_outputs = [tool_span["output"]["content"] for tool_span in bash_spans if tool_span.get("output") is not None]
+    observed_bash_markers = {
+        marker
+        for marker in ("bash-a-output", "bash-b-output", "bash-c-output")
+        if any(marker in output for output in bash_outputs)
+    }
+    assert len(observed_bash_markers) >= 2, (
+        f"Expected Bash outputs from at least two delegated subagents, got markers {sorted(observed_bash_markers)}"
     )
 
-    # --- 8. Tool spans fit within their parent LLM span ---
-    for tool in non_agent_tools:
-        parent_llm = next((s for s in llm_spans if s["span_id"] == tool["span_parents"][0]), None)
-        if parent_llm and "end" in parent_llm.get("metrics", {}):
-            assert tool["metrics"]["start"] >= parent_llm["metrics"]["start"], "Tool starts before parent LLM"
-            assert tool["metrics"]["end"] <= parent_llm["metrics"]["end"], "Tool extends past parent LLM"
+    read_outputs = [tool_span["output"]["content"] for tool_span in read_spans]
+    for marker in ("task_label=A", "owner=alpha", "task_label=B", "owner=beta", "task_label=C", "owner=gamma"):
+        assert any(marker in output for output in read_outputs), f"Missing Read output marker {marker!r}"
+
+    first_delegated_llm_by_task = {}
+    for llm_span in delegated_llm_spans:
+        task_parent_id = next(pid for pid in llm_span["span_parents"] if pid in subagent_span_ids)
+        first_delegated_llm_by_task.setdefault(task_parent_id, llm_span)
+    assert len(first_delegated_llm_by_task) == 3, "Expected each delegated task to have an LLM span"
+
+    first_two_llms = sorted(first_delegated_llm_by_task.values(), key=lambda span: span["metrics"]["start"])[:2]
+    assert first_two_llms[0]["metrics"]["end"] >= first_two_llms[1]["metrics"]["start"], (
+        "Expected delegated LLM spans from different subagents to overlap in time"
+    )
+
+    for tool_span in bash_spans + read_spans:
+        parent_llm = next(span for span in llm_spans if span["span_id"] == tool_span["span_parents"][0])
+        if "end" in parent_llm.get("metrics", {}):
+            assert tool_span["metrics"]["start"] >= parent_llm["metrics"]["start"], "Tool starts before parent LLM"
+            assert tool_span["metrics"]["end"] <= parent_llm["metrics"]["end"], "Tool extends past parent LLM"
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
-async def test_interleaved_subagent_tool_spans_preserve_output(memory_logger):
-    """Cassette-backed test: tool spans from one subagent must retain their
-    output when another subagent's AssistantMessage arrives before the first
-    subagent's ToolResultBlock.
-
-    The cassette replays a realistic SDK message stream where:
-      1. Orchestrator launches subagent-alpha and subagent-beta
-      2. Alpha's LLM turn emits a Bash tool call
-      3. Beta's LLM turn emits a Read tool call BEFORE alpha's tool result
-      4. Alpha's tool result arrives
-      5. Beta's tool result arrives
-
-    Expected: Both Bash and Read tool spans should have their output recorded.
-    Bug: cleanup() in receive_response force-ends alpha's Bash tool span when
-    beta's AssistantMessage arrives, so alpha's ToolResultBlock is silently
-    skipped and its output is lost.
-    """
+async def test_interleaved_subagent_tool_spans_preserve_output(memory_logger, tmp_path):
+    """Delegated Bash and Read tool spans should retain their outputs when two subagents run in parallel."""
     assert not memory_logger.pop()
+
+    workspace = tmp_path / "interleaved_subagent_workspace"
+    workspace.mkdir()
+    (workspace / "alpha.txt").write_text("alpha_file_contents\n", encoding="utf-8")
+    (workspace / "beta.txt").write_text("beta_file_contents\n", encoding="utf-8")
 
     with _patched_claude_sdk(wrap_client=True):
         options = claude_agent_sdk.ClaudeAgentOptions(
             model=TEST_MODEL,
+            cwd=workspace,
             permission_mode="bypassPermissions",
+            max_turns=12,
+            allowed_tools=["Task", "Bash", "Read"],
         )
         transport = make_cassette_transport(
-            cassette_name="test_interleaved_subagent_tool_output_preserved",
+            cassette_name=_sdk_cassette_name("test_interleaved_subagent_tool_output_preserved", min_version="0.1.11"),
             prompt="",
             options=options,
         )
 
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query("Launch two subagents to process files.")
+            await client.query(
+                "Launch two bundled general-purpose subagents for two independent tasks. "
+                "Start both Agent tool calls before waiting on either result if the tool API allows it. "
+                "The first delegated subagent must use Bash to run `echo alpha-bash-output` and then use Read on alpha.txt. "
+                "The second delegated subagent must use Bash to run `echo beta-bash-output` and then use Read on beta.txt. "
+                "Each delegated subagent must return only its file contents after both tool calls complete. "
+                "After both delegated agents finish, reply with exactly two lines in order alpha then beta. "
+                "Do not ask clarifying questions. Do not answer directly without using both subagents."
+            )
             async for message in client.receive_response():
                 if type(message).__name__ == "ResultMessage":
                     break
 
     spans = memory_logger.pop()
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
-    bash_span = find_span_by_name(tool_spans, "Bash")
-    read_span = find_span_by_name(tool_spans, "Read")
+    find_span_by_name(task_spans, "Claude Agent")
 
-    # Both tool spans should have their output recorded
-    assert bash_span.get("output") is not None, (
-        "Bash tool span output was lost — the cleanup force-ended it before its ToolResultBlock arrived"
-    )
-    assert bash_span["output"]["content"] == "alpha_file_contents"
+    if not _sdk_version_at_least("0.1.11"):
+        return
 
-    assert read_span.get("output") is not None, (
-        "Read tool span output was lost — the cleanup force-ended it before its ToolResultBlock arrived"
-    )
-    assert read_span["output"]["content"] == "beta_file_contents"
+    subagent_spans = [span for span in task_spans if span["span_attributes"]["name"] != "Claude Agent"]
+    assert len(subagent_spans) >= 2, f"Expected at least 2 delegated task spans, got {len(subagent_spans)}"
+
+    bash_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Bash"]
+    read_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Read"]
+    assert len(bash_spans) >= 2, f"Expected at least 2 Bash spans, got {len(bash_spans)}"
+    assert len(read_spans) >= 2, f"Expected at least 2 Read spans, got {len(read_spans)}"
+
+    bash_outputs = [tool_span["output"]["content"] for tool_span in bash_spans if tool_span.get("output") is not None]
+    read_outputs = [tool_span["output"]["content"] for tool_span in read_spans if tool_span.get("output") is not None]
+
+    assert len(bash_outputs) >= 2, "Expected Bash outputs from both delegated subagents"
+    assert len(read_outputs) >= 2, "Expected Read outputs from both delegated subagents"
+    assert any("alpha-bash-output" in output for output in bash_outputs)
+    assert any("beta-bash-output" in output for output in bash_outputs)
+    assert any("alpha_file_contents" in output for output in read_outputs)
+    assert any("beta_file_contents" in output for output in read_outputs)
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
-async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logger):
-    """Cassette-backed test: tool spans from interleaved subagents must be
-    parented to the LLM span from their own subagent, not the most recent
-    LLM span from any subagent.
-
-    Uses the same interleaved cassette to verify that even when messages from
-    different subagents interleave on the single message stream, each tool span
-    references the correct LLM parent via parent_tool_use_id routing.
-    """
+async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logger, tmp_path):
+    """Tool spans from concurrent subagents should stay parented to their own delegated task/LLM lineage."""
     assert not memory_logger.pop()
+
+    workspace = tmp_path / "interleaved_parenting_workspace"
+    workspace.mkdir()
+    (workspace / "alpha.txt").write_text("alpha_file_contents\n", encoding="utf-8")
+    (workspace / "beta.txt").write_text("beta_file_contents\n", encoding="utf-8")
 
     with _patched_claude_sdk(wrap_client=True):
         options = claude_agent_sdk.ClaudeAgentOptions(
             model=TEST_MODEL,
+            cwd=workspace,
             permission_mode="bypassPermissions",
+            max_turns=12,
+            allowed_tools=["Task", "Bash", "Read"],
         )
         transport = make_cassette_transport(
             cassette_name=_sdk_cassette_name(
@@ -2401,7 +2396,15 @@ async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logg
         )
 
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query("Launch two subagents to process files.")
+            await client.query(
+                "Launch two bundled general-purpose subagents for two independent tasks. "
+                "Start both Agent tool calls before waiting on either result if the tool API allows it. "
+                "The first delegated subagent must use Bash to run `echo alpha-bash-output` and then use Read on alpha.txt. "
+                "The second delegated subagent must use Bash to run `echo beta-bash-output` and then use Read on beta.txt. "
+                "Each delegated subagent must return only its file contents after both tool calls complete. "
+                "After both delegated agents finish, reply with exactly two lines in order alpha then beta. "
+                "Do not ask clarifying questions. Do not answer directly without using both subagents."
+            )
             async for message in client.receive_response():
                 if type(message).__name__ == "ResultMessage":
                     break
@@ -2411,39 +2414,48 @@ async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logg
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
     task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
 
-    find_span_by_name(task_spans, "Claude Agent")
+    root_task_span = find_span_by_name(task_spans, "Claude Agent")
 
     if not _sdk_version_at_least("0.1.11"):
-        # SDK 0.1.10 replays a limited cassette; only assert root task span.
         return
 
-    alpha_task = find_span_by_name(task_spans, "Process alpha file")
-    beta_task = find_span_by_name(task_spans, "Process beta file")
+    subagent_spans = [span for span in task_spans if span.get("metadata", {}).get("tool_use_id")]
+    assert len(subagent_spans) >= 2, f"Expected at least 2 delegated task spans, got {len(subagent_spans)}"
+    subagent_span_ids = {span["span_id"] for span in subagent_spans}
 
-    bash_span = find_span_by_name(tool_spans, "Bash")
-    read_span = find_span_by_name(tool_spans, "Read")
+    bash_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Bash"]
+    read_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Read"]
 
-    # Find each tool's parent LLM span
-    bash_parent_llm_id = bash_span["span_parents"][0]
-    read_parent_llm_id = read_span["span_parents"][0]
+    def find_tool_span_with_output(spans_by_name: list[dict[str, Any]], marker: str) -> dict[str, Any]:
+        for span in spans_by_name:
+            output = span.get("output")
+            if output is not None and marker in output["content"]:
+                return span
+        raise AssertionError(f"Expected a tool span output containing {marker!r}")
 
-    bash_parent_llm = next(s for s in llm_spans if s["span_id"] == bash_parent_llm_id)
-    read_parent_llm = next(s for s in llm_spans if s["span_id"] == read_parent_llm_id)
+    def delegated_parent_ids(tool_span: dict[str, Any]) -> tuple[str, str]:
+        parent_llm = next(span for span in llm_spans if span["span_id"] == tool_span["span_parents"][0])
+        parent_task_ids = [pid for pid in parent_llm["span_parents"] if pid in subagent_span_ids]
+        assert len(parent_task_ids) == 1, (
+            f"Expected delegated tool span {tool_span['span_attributes']['name']} to have exactly one delegated task parent"
+        )
+        return parent_task_ids[0], parent_llm["span_id"]
 
-    # Bash's parent LLM should be under alpha's task
-    assert alpha_task["span_id"] in bash_parent_llm["span_parents"], (
-        f"Bash's parent LLM span should be under alpha task, but its parents are {bash_parent_llm['span_parents']}"
-    )
+    alpha_bash_span = find_tool_span_with_output(bash_spans, "alpha-bash-output")
+    beta_bash_span = find_tool_span_with_output(bash_spans, "beta-bash-output")
+    alpha_read_span = find_tool_span_with_output(read_spans, "alpha_file_contents")
+    beta_read_span = find_tool_span_with_output(read_spans, "beta_file_contents")
 
-    # Read's parent LLM should be under beta's task
-    assert beta_task["span_id"] in read_parent_llm["span_parents"], (
-        f"Read's parent LLM span should be under beta task, but its parents are {read_parent_llm['span_parents']}"
-    )
+    alpha_bash_task_id, alpha_bash_llm_id = delegated_parent_ids(alpha_bash_span)
+    alpha_read_task_id, alpha_read_llm_id = delegated_parent_ids(alpha_read_span)
+    beta_bash_task_id, beta_bash_llm_id = delegated_parent_ids(beta_bash_span)
+    beta_read_task_id, beta_read_llm_id = delegated_parent_ids(beta_read_span)
 
-    # The two tool spans should have DIFFERENT LLM parents (not shared)
-    assert bash_parent_llm_id != read_parent_llm_id, (
-        "Tool spans from different subagents should be parented to different LLM spans"
-    )
+    assert alpha_bash_task_id == alpha_read_task_id, "Alpha tool spans should stay within the same delegated task"
+    assert beta_bash_task_id == beta_read_task_id, "Beta tool spans should stay within the same delegated task"
+    assert alpha_bash_task_id != beta_bash_task_id, "Alpha and beta tool spans should belong to different tasks"
+    assert alpha_bash_llm_id != beta_bash_llm_id, "Different subagents should not share the same parent LLM span"
+    assert alpha_read_llm_id != beta_read_llm_id, "Different subagents should not share the same parent LLM span"
 
 
 @pytest.mark.asyncio

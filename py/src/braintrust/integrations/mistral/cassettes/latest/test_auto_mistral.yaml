@@ -6,7 +6,7 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate, zstd
+      - gzip, deflate
       Connection:
       - keep-alive
       Content-Length:
@@ -16,21 +16,21 @@ interactions:
       content-type:
       - application/json
       user-agent:
-      - mistral-client-python/1.12.4
+      - mistral-client-python/2.4.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"e3b5125b7fb14e58a881fd961272620b","created":1775090570,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"4"}}]}'
+      string: '{"id":"cf134f93e06b4f27a3941a466995dbfa","created":1776355230,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"4"}}]}'
     headers:
       CF-RAY:
-      - 9e5bcbc17e7fe930-YYZ
+      - 9ed4673ba964c8b1-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 02 Apr 2026 00:42:50 GMT
+      - Thu, 16 Apr 2026 16:00:30 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -48,29 +48,29 @@ interactions:
       content-length:
       - '343'
       mistral-correlation-id:
-      - 019d4ba4-952f-7c2e-ac5e-894689343339
+      - 019d9705-c18e-79f1-bb15-00ec7a26e4e0
       set-cookie:
-      - __cf_bm=yF37zbYIJO9EqaPOC1bDh7_3kQPvMC8QC32ASLfT2h4-1775090570.477608-1.0.1.1-LaKQJ5wtfgLy9SLNfOCHStgMj3L4js0owc.thrbfcT8NNZTTeNKCI_IajFYVPRxRTJzhBtd_9_xMuCxdZHyGVxufwQxkZysWkTrscYV4kINNvqQeWJWjinIngrscU1gW;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 02 Apr 2026 01:12:50
+      - __cf_bm=wljEnV9fZKokDzfoRLCnMsqXRcsekBkA8OrB1GW6mwM-1776355230.0221324-1.0.1.1-5zvsAuJ8UrF_RLrQJaWyconcVvyeKjUO6FeQOFS9OaygOo_gCePqgRToFq690RWZvjbjOSla_ZBLG0ReT8cdiKNZfwQvS5dCRniNbjzGIrCdCQoHTxy6UNqH5HZ_pN7u;
+        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 16 Apr 2026 16:30:30
         GMT
-      - _cfuvid=9SAmeM9YOFyYq3TU2EPLgqecu.JXGOfVKHopWq8EGYA-1775090570.477608-1.0.1.1-zmkuYsDfIm4OWQayZOKDtpjmdMkjOEdGvJnDk3bSb6o;
+      - _cfuvid=lxO1QY3.u_whxjF.Piur0sqMuZ4VaZ9OzSzpQqqrg8Y-1776355230.0221324-1.0.1.1-UL5r.Mk7ux5qWAu_9lflBXo9_Bg4Lu8BNWpT.tHWtok;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
       x-envoy-upstream-service-time:
-      - '266'
+      - '184'
       x-kong-proxy-latency:
-      - '15'
+      - '9'
       x-kong-request-id:
-      - 019d4ba4-952f-7c2e-ac5e-894689343339
+      - 019d9705-c18e-79f1-bb15-00ec7a26e4e0
       x-kong-upstream-latency:
-      - '267'
+      - '185'
       x-ratelimit-limit-req-minute:
-      - '60'
+      - '400'
       x-ratelimit-limit-tokens-minute:
-      - '375000'
+      - '1500000'
       x-ratelimit-remaining-req-minute:
-      - '54'
+      - '391'
       x-ratelimit-remaining-tokens-minute:
-      - '374849'
+      - '1499679'
       x-ratelimit-tokens-query-cost:
       - '30'
     status:

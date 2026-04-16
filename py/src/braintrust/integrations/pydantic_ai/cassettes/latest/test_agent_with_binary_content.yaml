@@ -13,13 +13,10 @@ interactions:
       - '315'
       Content-Type:
       - application/json
-      Cookie:
-      - __cf_bm=SnTjRxRlQXUGj3jo4FeKDaKGiTqzcsdhS_LPeF2hwmg-1766265191-1.0.1.1-aN3W.WEa6IjC4znMp0fTYaZOZeW.3xU8ex4fRGFibZ0fuR86Piz9hDDAEvh8Z9ewQ9WHoKwdnsDvPE5KIpoZY4xurXV7VS4TcwfukWZofIk;
-        _cfuvid=tXOZ7vGE2DBF6L6fDg_veKtSaUVC4UPotJDezWYoYXI-1766265191281-0.0.1.1-604800000
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.37.0
+      - pydantic-ai/1.83.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -29,11 +26,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.14.0
+      - 2.32.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -42,27 +39,29 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jFLBbtswDL37Kwid4yJ20yTNcTsMKDAMA4aixVAYskTbXGVJk+gtRZF/
-        H+Sksdt1wC468PFR7z3yOQMQpMUOhOokq96b/KN7uq9vbvf3d58/fOIv+5/t9ba4qcvyrrn9KhaJ
-        4eofqPiFdaFc7w0yOXuEVUDJmKYWm/W6XF+VxWYEeqfRJFrrOV+5vCdLebksV/lykxfbE7tzpDCK
-        HXzPAACexzfptBr3YgfLxUulxxhli2J3bgIQwZlUETJGiiwti8UEKmcZ7Sj9W4dAvWwRKEJtpHoE
-        aTX87ohxAQ1KHgLZFiRESv5OPW5gQxbBNSDBY4jOXsx/CNgMUSaXdjBmBkhrHcuU0ujt4YQczm6M
-        a31wdXxDFQ1Zil0VUEZnk/LIzosRPWQAD2Nqw6sghA+u91yxe8Txu+1VcXkcKKZtTXCxPoHsWJo5
-        rbxevDOx0siSTJwlL5RUHeqJO61JDprcDMhmvv+W897so3ey7f+MnwCl0DPqygfUpF5bntoCpmv+
-        V9s551GwiBh+kcKKCUPahcZGDuZ4YyI+Rca+asi2GHyg46E1vtrWtbrc1itdi+yQ/QEAAP//AwAU
-        sfncdgMAAA==
+      string: "{\n  \"id\": \"chatcmpl-DVJREATgkLGwpcnJQSZ7N4fki9aPz\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776355260,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The image is black and white, featuring
+        a simple design or silhouette.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 8513,\n    \"completion_tokens\":
+        14,\n    \"total_tokens\": 8527,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4debc47fe0\"\n}\n"
     headers:
-      CF-RAY:
-      - 9b1225071c71102c-LAX
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ed467f64d03aa71-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Sat, 20 Dec 2025 21:13:38 GMT
+      - Thu, 16 Apr 2026 16:01:00 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -75,18 +74,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
+      content-length:
+      - '881'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1288'
+      - '704'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '1306'
+      set-cookie:
+      - __cf_bm=UaG6ZJPXtWrDfNmi90woQOm0yO921PbuSTtOgQAyKcI-1776355259.8911767-1.0.1.1-wyth.HJhyABHaqfpbwfbJMJM5QT6A22j.kFp1tBqsMVbsfrH4qp3DUtx8mLvOeWROPr6mxpEpckHNTDSuHSbWmFbIf7KsIsZllhTtobC6FKrXrAigKc0hWzhp1ZkIA9I;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
+        16:31:00 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
@@ -108,7 +109,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_4c8353513e384112a1594c46e28d4db5
+      - req_0420791a2a3b433b815cc9cf59119bc4
     status:
       code: 200
       message: OK

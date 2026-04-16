@@ -1,5 +1,6 @@
 # pyright: reportTypedDictNotRequiredAccess=none
 import base64
+import time
 import uuid
 from pathlib import Path
 from typing import Dict, List, Union, cast
@@ -916,8 +917,6 @@ def test_prompt_caching_tokens(logger_memory_logger):
 
     model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-    # XXX: if you need to change the cassette or test, you'll want to change the text below to invalidate the stored cache.
-
     # Anthropic prompt caching requires a minimum of 1024 tokens for Claude Sonnet models.
     # This static text (~1500 tokens) ensures we meet that threshold consistently.
     # See: https://platform.claude.com/docs/en/build-with-claude/prompt-caching
@@ -1054,6 +1053,9 @@ appropriate tools, teams can catch bugs early, improve code quality, and deliver
 
 Remember: Testing is not just about finding bugs, it's about building confidence in your code.
 """
+    # Use a unique suffix so the first request always creates a fresh prompt cache entry,
+    # rather than reading a stale global cache entry from a previous test run.
+    long_text_for_caching += f"\n\nCache salt: {uuid.uuid4().hex}\n"
 
     messages: list[BaseMessage] = [
         SystemMessage(
@@ -1086,29 +1088,34 @@ Remember: Testing is not just about finding bugs, it's about building confidence
     assert first_metrics["prompt_cache_creation_tokens"] > 0
     assert first_metrics["prompt_cached_tokens"] == 0
 
-    res = model.invoke(
-        messages + [res, HumanMessage(content="What testing framework is mentioned for Python?")],
-        config={"callbacks": [cast(BaseCallbackHandler, handler)]},
-    )
+    second_metrics = None
+    for attempt in range(3):
+        res = model.invoke(
+            messages + [res, HumanMessage(content="What testing framework is mentioned for Python?")],
+            config={"callbacks": [cast(BaseCallbackHandler, handler)]},
+        )
 
-    spans = memory_logger.pop()
-    assert len(spans) > 0
+        spans = memory_logger.pop()
+        assert len(spans) > 0
 
-    llm_spans = find_spans_by_attributes(spans, name="ChatAnthropic", type="llm")
+        llm_spans = find_spans_by_attributes(spans, name="ChatAnthropic", type="llm")
+        assert len(llm_spans) == 1
+        second_span = llm_spans[0]
 
-    print(llm_spans)
+        assert "metrics" in second_span
+        second_metrics = second_span["metrics"]
 
-    assert len(llm_spans) == 1
-    second_span = llm_spans[0]
+        assert "prompt_cached_tokens" in second_metrics
+        assert "prompt_tokens" in second_metrics
+        assert second_metrics["prompt_tokens"] > 0
 
-    assert "metrics" in second_span
-    second_metrics = second_span["metrics"]
+        if second_metrics["prompt_cached_tokens"] > 0:
+            break
+        if attempt < 2:
+            time.sleep(1)
 
-    assert "prompt_cached_tokens" in second_metrics
+    assert second_metrics is not None
     assert second_metrics["prompt_cached_tokens"] > 0
-
-    assert "prompt_tokens" in second_metrics
-    assert second_metrics["prompt_tokens"] > 0
 
 
 @pytest.mark.vcr

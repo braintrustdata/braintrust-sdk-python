@@ -12,13 +12,10 @@ interactions:
       - '119'
       Content-Type:
       - application/json
-      Cookie:
-      - __cf_bm=32b.VMplxNQj3L4u_1uDEw4mJbFkX7XgxbW0AIaO4WI-1767741983-1.0.1.1-ngrHAoGsRus82vIYthILxaNTwRrSgq6MT17VyVyBWlwIdCX8AvWXc.5O8aoDYcvvfwwO.wkKSuvDVkjIkcKdBrusGxL1HyXKUH5Xfk3NhOU;
-        _cfuvid=beFRqK6f.Kw4Ih5NqMjxVqYpI9KKqCHTmRCh_PSGRiw-1767741983214-0.0.1.1-604800000
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.36.0
+      - pydantic-ai/1.83.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -28,11 +25,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.13.0
+      - 2.32.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -41,26 +38,28 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jJJBb9swDIXv/hUCr42L2PEaJ7e0wG4Fut62oTBUmXbYyZIm0dm6Iv99
-        kJ3G7tYBu/jAj3x6j+ZLIgRQDVsBai9ZdU6nN4fd0/2Pu9u7Tx/peXX4df3F7+j2/vPNLpMlLOKE
-        fXxCxa9Tl8p2TiOTNSNWHiVjVM3WV+t1kW3KDwPobI06jrWO08KmHRlK82VepMt1mp3E1d6SwgBb
-        8TURQoiX4Rt9mhp/wlYsF6+VDkOQLcL23CQEeKtjBWQIFFgahsUElTWMZrCeiwuRC/zeSx1EcTnv
-        8tj0QUanptd6BqQxlmVMOvh7OJHj2ZG2rfP2MfwxCg0ZCvvKowzWxNcDWwcDPSZCPAzJ+zdhwHnb
-        Oa7YfsPhuawY5WDa9wTLE2PLUk/lPF+8I1bVyJJ0mC0OlFR7rKfJacuyr8nOQDKL/LeX97TH2GTa
-        /5GfgFLoGOvKeaxJvc07tXmMx/ivtvOKB8MQ0B9IYcWEPv6GGhvZ6/FEIDwHxq5qyLTonafxThpX
-        5ZvVaik3V2UJyTH5DQAA//8DAFhHeVE1AwAA
+      string: "{\n  \"id\": \"chatcmpl-DVJRNYoFn3ekuv6ORt4gpPyJeDyDN\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776355269,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"2 + 2 equals 4.\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        14,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 22,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_fe7a5277a8\"\n}\n"
     headers:
-      CF-RAY:
-      - 9b9efaf33bf137c1-SJC
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ed468324a8aac4b-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Tue, 06 Jan 2026 23:26:26 GMT
+      - Thu, 16 Apr 2026 16:01:09 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -73,18 +72,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
+      content-length:
+      - '821'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '307'
+      - '353'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '324'
+      set-cookie:
+      - __cf_bm=H1tLkFpoUHg8.f7t0htQkGIuW_WKQ9mADEoH3aKtKvk-1776355269.4871213-1.0.1.1-ZpB12sMqXyiRfFm_FTzDSwSNkWe_nNdXOjXJCdrhgmJjiz2LBExC.Qvf.9S9SRC2mRBDO5qeTsToMPqOZUwDsudCocB16KZGs4XjuvQH9sJ9.CbAy6xca8VZX2hT9mUt;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
+        16:31:09 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -100,7 +101,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e03ef3aa121d4a0a8c12116743ac7d40
+      - req_70fd6d20907e48f9b34f2b8e20856ce3
     status:
       code: 200
       message: OK

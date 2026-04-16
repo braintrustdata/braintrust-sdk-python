@@ -28,7 +28,7 @@ assert results2.get("anthropic") == True
 with autoinstrument_test_context("test_auto_anthropic", integration="anthropic") as memory_logger:
     client = anthropic.Anthropic()
     response = client.messages.create(
-        model="claude-3-5-haiku-20241022",
+        model="claude-3-haiku-20240307",
         max_tokens=100,
         messages=[{"role": "user", "content": "Say hi"}],
     )
