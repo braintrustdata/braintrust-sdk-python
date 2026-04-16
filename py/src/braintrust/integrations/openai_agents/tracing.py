@@ -8,8 +8,13 @@ from braintrust.logger import NOOP_SPAN, Experiment, Logger, Span, current_span,
 from braintrust.span_types import SpanTypeAttribute
 
 
+# TaskSpanData and TurnSpanData were added in openai-agents 0.14.0.
+_TaskSpanData = getattr(tracing, "TaskSpanData", None)
+_TurnSpanData = getattr(tracing, "TurnSpanData", None)
+
+
 def _span_type(span: tracing.Span[Any]) -> SpanTypeAttribute:
-    if span.span_data.type in ["agent", "handoff", "custom", "speech_group"]:
+    if span.span_data.type in ["agent", "handoff", "custom", "speech_group", "task", "turn"]:
         return SpanTypeAttribute.TASK
     elif span.span_data.type in ["function", "guardrail", "mcp_tools"]:
         return SpanTypeAttribute.TOOL
@@ -44,6 +49,10 @@ def _span_name(span: tracing.Span[Any]) -> str:
         return "Speech"
     elif isinstance(span.span_data, tracing.SpeechGroupSpanData):
         return "Speech Group"
+    elif _TaskSpanData is not None and isinstance(span.span_data, _TaskSpanData):
+        return span.span_data.name
+    elif _TurnSpanData is not None and isinstance(span.span_data, _TurnSpanData):
+        return f"Turn {span.span_data.turn} ({span.span_data.agent_name})"
     else:
         return "Unknown"
 
@@ -58,6 +67,26 @@ def _maybe_timestamp_elapsed(end: str | None, start: str | None) -> float | None
     if start is None or end is None:
         return None
     return (datetime.datetime.fromisoformat(end) - datetime.datetime.fromisoformat(start)).total_seconds()
+
+
+def _usage_to_metrics(usage: dict[str, Any]) -> dict[str, Any]:
+    """Convert an OpenAI-style usage dict to Braintrust metrics."""
+    metrics: dict[str, Any] = {}
+    if "prompt_tokens" in usage:
+        metrics["prompt_tokens"] = usage["prompt_tokens"]
+    elif "input_tokens" in usage:
+        metrics["prompt_tokens"] = usage["input_tokens"]
+
+    if "completion_tokens" in usage:
+        metrics["completion_tokens"] = usage["completion_tokens"]
+    elif "output_tokens" in usage:
+        metrics["completion_tokens"] = usage["output_tokens"]
+
+    if "total_tokens" in usage:
+        metrics["tokens"] = usage["total_tokens"]
+    elif "input_tokens" in usage and "output_tokens" in usage:
+        metrics["tokens"] = usage["input_tokens"] + usage["output_tokens"]
+    return metrics
 
 
 class BraintrustTracingProcessor(tracing.TracingProcessor):
@@ -109,13 +138,16 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
         span.unset_current()
 
     def _agent_log_data(self, span: tracing.Span[tracing.AgentSpanData]) -> dict[str, Any]:
-        return {
-            "metadata": {
-                "tools": span.span_data.tools,
-                "handoffs": span.span_data.handoffs,
-                "output_type": span.span_data.output_type,
-            }
+        metadata: dict[str, Any] = {
+            "tools": span.span_data.tools,
+            "handoffs": span.span_data.handoffs,
+            "output_type": span.span_data.output_type,
         }
+        # AgentSpanData gained a metadata slot in openai-agents 0.14.0.
+        agent_metadata = getattr(span.span_data, "metadata", None)
+        if agent_metadata:
+            metadata.update(agent_metadata)
+        return {"metadata": metadata}
 
     def _response_log_data(self, span: tracing.Span[tracing.ResponseSpanData]) -> dict[str, Any]:
         data = {}
@@ -162,27 +194,10 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
         }
 
     def _generation_log_data(self, span: tracing.Span[tracing.GenerationSpanData]) -> dict[str, Any]:
-        metrics = {}
+        metrics = _usage_to_metrics(span.span_data.usage or {})
         ttft = _maybe_timestamp_elapsed(span.ended_at, span.started_at)
-
         if ttft is not None:
             metrics["time_to_first_token"] = ttft
-
-        usage = span.span_data.usage or {}
-        if "prompt_tokens" in usage:
-            metrics["prompt_tokens"] = usage["prompt_tokens"]
-        elif "input_tokens" in usage:
-            metrics["prompt_tokens"] = usage["input_tokens"]
-
-        if "completion_tokens" in usage:
-            metrics["completion_tokens"] = usage["completion_tokens"]
-        elif "output_tokens" in usage:
-            metrics["completion_tokens"] = usage["output_tokens"]
-
-        if "total_tokens" in usage:
-            metrics["tokens"] = usage["total_tokens"]
-        elif "input_tokens" in usage and "output_tokens" in usage:
-            metrics["tokens"] = usage["input_tokens"] + usage["output_tokens"]
 
         return {
             "input": span.span_data.input,
@@ -230,6 +245,37 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             "input": span.span_data.input,
         }
 
+    def _task_log_data(self, span: "tracing.Span[Any]") -> dict[str, Any]:
+        """Handle TaskSpanData (openai-agents >= 0.14.0)."""
+        data: dict[str, Any] = {}
+        metadata = getattr(span.span_data, "metadata", None)
+        if metadata:
+            data["metadata"] = metadata
+        usage = getattr(span.span_data, "usage", None)
+        if usage:
+            metrics = _usage_to_metrics(usage)
+            if metrics:
+                data["metrics"] = metrics
+        return data
+
+    def _turn_log_data(self, span: "tracing.Span[Any]") -> dict[str, Any]:
+        """Handle TurnSpanData (openai-agents >= 0.14.0)."""
+        data: dict[str, Any] = {
+            "metadata": {
+                "turn": span.span_data.turn,
+                "agent_name": span.span_data.agent_name,
+            }
+        }
+        turn_metadata = getattr(span.span_data, "metadata", None)
+        if turn_metadata:
+            data["metadata"].update(turn_metadata)
+        usage = getattr(span.span_data, "usage", None)
+        if usage:
+            metrics = _usage_to_metrics(usage)
+            if metrics:
+                data["metrics"] = metrics
+        return data
+
     def _log_data(self, span: tracing.Span[Any]) -> dict[str, Any]:
         if isinstance(span.span_data, tracing.AgentSpanData):
             return self._agent_log_data(span)
@@ -253,6 +299,10 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             return self._speech_log_data(span)
         elif isinstance(span.span_data, tracing.SpeechGroupSpanData):
             return self._speech_group_log_data(span)
+        elif _TaskSpanData is not None and isinstance(span.span_data, _TaskSpanData):
+            return self._task_log_data(span)
+        elif _TurnSpanData is not None and isinstance(span.span_data, _TurnSpanData):
+            return self._turn_log_data(span)
         else:
             return {}
 

@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"include":[],"input":[{"content":"What is 2+2? Just the number.","role":"user"}],"instructions":"You
-      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","tools":[]}'
+      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","stream":false,"tools":[]}'
     headers:
       Accept:
       - application/json
@@ -10,13 +10,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '178'
+      - '193'
       Content-Type:
       - application/json
       Host:
       - api.openai.com
       User-Agent:
-      - Agents/Python 0.6.5
+      - Agents/Python 0.0.19
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.15.0
+      - 2.31.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,38 +39,40 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAAA3xUy47bMAy85ysEnTcL23Gcx7F/USwKg5HprLqyqEpUsEGRfy8sx47dZnuz+RiS
-        M6R+r4SQupFHIT0GV2cNVACbfVGp6rDNIMuqQ7XPimpb4Lbc54ctNBvY53leFVgesoOSLz0EnX6i
-        4hGGbMDBrjwCY1ND78t31b4symyzS77AwDH0OYo6Z5CxGZJOoD7OnqLt+2rBBBzM2hhtz/Iofq+E
-        EEI6uKLv8xu8oCGHXq6EuA2FR8inpdF76jNtNCYZWo+/Ilp1rR1aMHyVR5G9Zsmn7QhWN8igTZhn
-        ahvYR8WabJrlO0UBHgWIdzSujUZACDowWH4V31Bc0F+FIqt0wNdh3g4+a4rsItdMH2gX+L2TiUyt
-        wCwrd9Sg6UueHa9LWnfa6nWRFeU6263z/V2YhCuP4i1xNjA3ad6F838k32OV9ZLvt1lVtgpxVzSb
-        XV4m5ITCV4cJB0OAMz4cX2mbnIoso300NW9sATuSgp88ZacAsJYYRs7ffiychs7O0+mJJwEdhSzl
-        ZL3dv6ZA6cmk4pNsQ3AfmIKkAw/GoFnKwj4Oa+o8BrQKn2yS83jRFEM9HkmdZJgUdZ46x7UC9Y71
-        B16/9HnsCdRk5xEeIZBdXAi2LXmeBfXSxK4DP2JPBxOgRb7WuumBW42L8wjoL1phzXo8uBaiGUSR
-        gcnjnAHGzqEHjsmc34e/k3/vrCXfweN/JnqKGyi/d3xBf6KgE5Wyw0bH7nHogwjvpNWgWmSSk+Ox
-        A5LJ1bPNyCajm/foo1VwJ1Y2OsDJjK9STBs+DaDt4l43xcu/9tl7MY2ZBGweidli1L+fgeKZ/Rns
-        JP5XyEwMZtZvOTEYw1LsDhkaYOjhb6vbHwAAAP//AwCbn65uIwYAAA==
+      string: "{\n  \"id\": \"resp_07684df1d621f5c10069e01ad3968c8195b01770cf8844fc81\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1776294611,\n  \"status\":
+        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": 1776294612,\n  \"error\": null,\n
+        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        \"You are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\":
+        null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_07684df1d621f5c10069e01ad49a688195a1eea75fa4307886\",\n
+        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
+        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        32,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 34\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       CF-RAY:
-      - 9be006980c67e60f-IAD
+      - 9ece9f4a2a30ab2d-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Wed, 14 Jan 2026 20:53:57 GMT
+      - Wed, 15 Apr 2026 23:10:12 GMT
       Server:
       - cloudflare
-      Set-Cookie:
-      - __cf_bm=IwSSJ.RHOyrDHy71t190C0u4EL9HMgUY2jiVoTE3Rx0-1768424037-1.0.1.1-ZID4mvxCwpZVRzFS1fLdN1Y2IWkkn_wazHoPQBolLYHzMoZNRkTFDL0fqX4m.0FY97.b95rhiBzBDf3ubnonNwcnYBcTqnrX4_OgE7Fq6Lw;
-        path=/; expires=Wed, 14-Jan-26 21:23:57 GMT; domain=.api.openai.com; HttpOnly;
-        Secure; SameSite=None
-      - _cfuvid=RePkKlnxLbAHj0ymuEQEUhV2_qf3Ejhb0yEUFttOP24-1768424037764-0.0.1.1-604800000;
-        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
@@ -81,16 +83,20 @@ interactions:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      content-length:
+      - '1571'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '560'
+      - '1153'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '565'
+      set-cookie:
+      - __cf_bm=YS3TJrW3hlQ__CbQebRr.5SPMq5V3ZJkjishOJBC82A-1776294611.5447412-1.0.1.1-voCQ6nBcIW5zyySIHPFRQ.oo7pZloaCSYa6WcENlIgvM81wWGtArx1k_C0iCIj6t0oeR4k0aT7n8AmAja8p9AJEhKnLq_kW8WetlTrwSZK8lqk.Rv.rgqNzixhRp0qxs;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 15 Apr 2026
+        23:40:12 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -104,7 +110,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_d8b831ee46ec9bc399abd66e9591fa2f
+      - req_88de356a102e428da106a58c402e74f8
     status:
       code: 200
       message: OK

@@ -261,6 +261,61 @@ async def test_braintrust_tracing_processor_concurrency_bug(memory_logger):
         assert agent_a_trace.get("output") != agent_b_trace.get("output")
 
 
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_agents_task_and_turn_span_types(memory_logger):
+    """v0.14.0+ produces TaskSpanData and TurnSpanData wrapping agent runs.
+
+    Verify that the tracing processor handles these new span types with
+    proper names, metadata, and usage metrics rather than returning
+    'Unknown' / empty dicts.
+    """
+    from agents import tracing as agents_tracing
+
+    has_task_span = hasattr(agents_tracing, "TaskSpanData")
+    has_turn_span = hasattr(agents_tracing, "TurnSpanData")
+    if not has_task_span or not has_turn_span:
+        pytest.skip("TaskSpanData/TurnSpanData not available in this openai-agents version")
+
+    from agents import Agent
+    from agents.run import AgentRunner
+
+    assert not memory_logger.pop()
+
+    assert OpenAIAgentsIntegration.setup() is True
+
+    agent = Agent(name="test-agent", model=TEST_MODEL, instructions=TEST_AGENT_INSTRUCTIONS)
+    result = await AgentRunner().run(agent, TEST_PROMPT)
+    assert result is not None
+
+    spans = memory_logger.pop()
+    assert len(spans) >= 3  # root + task + turn + agent + response at minimum
+
+    # There should be no spans named "Unknown".
+    unknown_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "Unknown"]
+    assert unknown_spans == [], f"Found Unknown spans: {unknown_spans}"
+
+    # Find TaskSpanData-derived span (name should be the workflow name, not "Unknown").
+    task_spans = [
+        s
+        for s in spans
+        if s.get("span_attributes", {}).get("name") == "Agent workflow"
+        and s.get("span_parents")  # child of the root trace span, not the root itself
+    ]
+    assert task_spans, "Expected a task span child of the root trace"
+    task_span = task_spans[0]
+    assert task_span.get("span_attributes", {}).get("type") == "task"
+
+    # Find TurnSpanData-derived span.
+    turn_spans = [s for s in spans if "Turn" in (s.get("span_attributes", {}).get("name") or "")]
+    assert turn_spans, "Expected at least one turn span"
+    turn_span = turn_spans[0]
+    assert turn_span.get("span_attributes", {}).get("type") == "task"
+    # Turn span should have turn number and agent_name in metadata.
+    assert turn_span.get("metadata", {}).get("turn") is not None
+    assert turn_span.get("metadata", {}).get("agent_name") is not None
+
+
 class TestAutoInstrumentOpenAIAgents:
     """Tests for auto_instrument() with the OpenAI Agents SDK."""
 
