@@ -7,7 +7,7 @@ with utility methods to make them easy to log and convert into various formats.
 
 import dataclasses
 import json
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from itertools import tee
 from typing import Literal, Union
 
@@ -79,7 +79,13 @@ class BraintrustInvokeError(ValueError):
     pass
 
 
-BraintrustStreamChunk = Union[BraintrustTextChunk, BraintrustJsonChunk, BraintrustErrorChunk]
+BraintrustStreamChunk = Union[
+    BraintrustTextChunk,
+    BraintrustJsonChunk,
+    BraintrustErrorChunk,
+    BraintrustConsoleChunk,
+    BraintrustProgressChunk,
+]
 
 
 class BraintrustStream:
@@ -96,7 +102,7 @@ class BraintrustStream:
             base_stream: Either an SSEClient or a list of BraintrustStreamChunks.
         """
         if isinstance(base_stream, SSEClient):
-            self.stream = self._parse_sse_stream(base_stream)
+            self.stream: Iterable[BraintrustStreamChunk] = self._parse_sse_stream(base_stream)
         else:
             self.stream = base_stream
         self._memoized_final_value = None
