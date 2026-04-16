@@ -1,0 +1,81 @@
+interactions:
+- request:
+    body: '{"message":"Say hi in one word.","model":"command-a-03-2025","max_tokens":8,"stream":true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '90'
+      Host:
+      - api.cohere.com
+      User-Agent:
+      - cohere/6.1.0
+      X-Fern-Language:
+      - Python
+      X-Fern-Platform:
+      - darwin/25.2.0
+      X-Fern-Runtime:
+      - python/3.14.3
+      X-Fern-SDK-Name:
+      - cohere
+      X-Fern-SDK-Version:
+      - 6.1.0
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.cohere.com/v1/chat
+  response:
+    body:
+      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"36fec019-f579-45e0-83a6-ff808a598ead"}
+
+        {"is_finished":false,"event_type":"text-generation","text":"Hi"}
+
+        {"is_finished":false,"event_type":"text-generation","text":"!"}
+
+        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"f65fee8e-0aac-43a6-a332-0ac19574f113","text":"Hi!","generation_id":"36fec019-f579-45e0-83a6-ff808a598ead","chat_history":[{"role":"USER","message":"Say
+        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":4},"cached_tokens":0}},"finish_reason":"COMPLETE"}
+
+        '
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-type:
+      - application/stream+json
+      date:
+      - Thu, 16 Apr 2026 22:59:44 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      vary:
+      - Origin
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - 0890bdd79f49faa48fe9e6da6572e19c
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '160'
+      x-trial-endpoint-call-limit:
+      - '20'
+      x-trial-endpoint-call-remaining:
+      - '19'
+    status:
+      code: 200
+      message: OK
+version: 1

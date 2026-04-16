@@ -575,6 +575,7 @@ lint = [
     { name = "anthropic" },
     { name = "autoevals" },
     { name = "braintrust-core" },
+    { name = "cohere" },
     { name = "dspy" },
     { name = "google-adk" },
     { name = "google-genai" },
@@ -715,6 +716,7 @@ lint = [
     { name = "anthropic" },
     { name = "autoevals" },
     { name = "braintrust-core" },
+    { name = "cohere" },
     { name = "dspy" },
     { name = "google-adk" },
     { name = "google-genai" },
@@ -3937,14 +3939,14 @@ resolution-markers = [
     "python_full_version < '3.11' and extra != 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-agno' and extra != 'group-10-braintrust-test-langchain' and extra != 'group-10-braintrust-test-litellm' and extra != 'group-10-braintrust-test-openai-agents'",
 ]
 dependencies = [
-    { name = "anyio" },
-    { name = "distro" },
-    { name = "httpx" },
-    { name = "jiter" },
-    { name = "pydantic" },
-    { name = "sniffio" },
-    { name = "tqdm" },
-    { name = "typing-extensions" },
+    { name = "anyio", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "distro", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "httpx", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "jiter", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "pydantic", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "sniffio", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "tqdm", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "typing-extensions", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/94/fe/64b3d035780b3188f86c4f6f1bc202e7bb74757ef028802112273b9dcacf/openai-2.31.0.tar.gz", hash = "sha256:43ca59a88fc973ad1848d86b98d7fac207e265ebbd1828b5e4bdfc85f79427a5", size = 684772, upload-time = "2026-04-08T21:01:41.797Z" }
 wheels = [
@@ -4001,14 +4003,14 @@ resolution-markers = [
     "python_full_version < '3.11' and extra != 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-agno' and extra != 'group-10-braintrust-test-langchain' and extra != 'group-10-braintrust-test-litellm' and extra != 'group-10-braintrust-test-openai-agents'",
 ]
 dependencies = [
-    { name = "griffelib" },
+    { name = "griffelib", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
     { name = "mcp", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
-    { name = "openai", version = "2.31.0", source = { registry = "https://pypi.org/simple" } },
-    { name = "pydantic" },
-    { name = "requests" },
-    { name = "types-requests" },
-    { name = "typing-extensions" },
-    { name = "websockets" },
+    { name = "openai", version = "2.31.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "pydantic", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "requests", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "types-requests", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "typing-extensions", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
+    { name = "websockets", marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra != 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/16/ae/8af117a3a4a06ad72b4a60759fbab98a7158f0eb36c47d90d5d883610781/openai_agents-0.14.1.tar.gz", hash = "sha256:7baac1b4c0a171d32c82eb6e9c207fd010e0d08dd39a5e8cd762ee27969457dc", size = 5256058, upload-time = "2026-04-15T19:26:52.42Z" }
 wheels = [

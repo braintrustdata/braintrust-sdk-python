@@ -159,6 +159,18 @@ def test_anthropic(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py", version=version)
 
 
+COHERE_VERSIONS = _get_matrix_versions("cohere")
+
+
+@nox.session()
+@nox.parametrize("version", COHERE_VERSIONS, ids=COHERE_VERSIONS)
+def test_cohere(session, version):
+    """Test the native Cohere SDK integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "cohere", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/cohere/test_cohere.py", version=version)
+
+
 OPENAI_VERSIONS = _get_matrix_versions("openai")
 
 
