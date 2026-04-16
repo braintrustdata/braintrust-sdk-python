@@ -1,4 +1,3 @@
-# pyright: reportUnusedImport=false
 """
 A Python library for interacting with [Braintrust](https://braintrust.dev/). This library
 contains functionality for running evaluations, logging completions, loading and invoking

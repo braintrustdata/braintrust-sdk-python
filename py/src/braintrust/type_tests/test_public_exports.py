@@ -1,19 +1,14 @@
-"""Regression test: public symbols re-exported from the top-level ``braintrust`` package.
+"""Regression test for pyright's ``reportPrivateImportUsage`` on top-level ``braintrust`` symbols.
 
-Pyright's ``reportPrivateImportUsage`` treats ``from .x import y`` inside a
-``py.typed`` package as a private import — consumer code doing
-``from braintrust import y`` or ``braintrust.y`` then fails type checking.
-The local ``pyrightconfig.json`` in this directory enables the rule at
-error severity so a regression here trips ``nox -s test_types``.
-
-Run as type checks:
-    nox -s test_types
-
-Run as pytest:
-    pytest src/braintrust/type_tests/test_public_exports.py
+Without PEP 484 ``as``-aliasing in ``braintrust/__init__.py``, pyright flags
+``from braintrust import auto_instrument`` (and peers) as private in a
+``py.typed`` consumer. The local ``pyrightconfig.json`` turns the rule into
+an error so this file breaks ``nox -s test_types`` if someone regresses the
+aliasing pattern.
 """
 
 import braintrust
+import pytest
 from braintrust import (
     auto_instrument,
     setup_pydantic_ai,
@@ -24,19 +19,17 @@ from braintrust import (
 )
 
 
-def test_top_level_public_symbols_are_importable() -> None:
-    assert callable(auto_instrument)
-    assert callable(wrap_anthropic)
-    assert callable(wrap_litellm)
-    assert callable(wrap_openai)
-    assert callable(wrap_openrouter)
-    assert callable(setup_pydantic_ai)
+_PUBLIC_SYMBOLS = [
+    ("auto_instrument", auto_instrument),
+    ("wrap_anthropic", wrap_anthropic),
+    ("wrap_litellm", wrap_litellm),
+    ("wrap_openai", wrap_openai),
+    ("wrap_openrouter", wrap_openrouter),
+    ("setup_pydantic_ai", setup_pydantic_ai),
+]
 
 
-def test_top_level_public_symbols_are_attributes() -> None:
-    assert callable(braintrust.auto_instrument)
-    assert callable(braintrust.wrap_anthropic)
-    assert callable(braintrust.wrap_litellm)
-    assert callable(braintrust.wrap_openai)
-    assert callable(braintrust.wrap_openrouter)
-    assert callable(braintrust.setup_pydantic_ai)
+@pytest.mark.parametrize("name,imported", _PUBLIC_SYMBOLS)
+def test_top_level_public_symbol(name: str, imported: object) -> None:
+    assert callable(imported)
+    assert callable(getattr(braintrust, name))
