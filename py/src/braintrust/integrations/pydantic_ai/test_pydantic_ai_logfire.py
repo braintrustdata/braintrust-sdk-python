@@ -66,7 +66,7 @@ async def test_no_model_agent_run_with_logfire(memory_logger):
     assert agent_span is not None, "agent_run span not found"
     assert chat_span is not None, "chat span not found"
 
-    assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    assert agent_span["span_attributes"]["type"] == SpanTypeAttribute.TASK
     assert agent_span["metadata"]["model"] == "gpt-4o-mini"
     assert agent_span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(agent_span["input"])

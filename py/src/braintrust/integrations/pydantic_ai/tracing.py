@@ -70,7 +70,7 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
 
     with start_span(
         name=f"agent_run [{instance.name}]" if hasattr(instance, "name") and instance.name else "agent_run",
-        type=SpanTypeAttribute.LLM,
+        type=SpanTypeAttribute.TASK,
         input=input_data if input_data else None,
         metadata=metadata,
     ) as agent_span:
@@ -96,7 +96,7 @@ def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any)
 
     with start_span(
         name=f"agent_run_sync [{instance.name}]" if hasattr(instance, "name") and instance.name else "agent_run_sync",
-        type=SpanTypeAttribute.LLM,
+        type=SpanTypeAttribute.TASK,
         input=input_data if input_data else None,
         metadata=metadata,
     ) as agent_span:
@@ -124,7 +124,7 @@ def _agent_to_cli_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
         name=f"agent_to_cli_sync [{instance.name}]"
         if hasattr(instance, "name") and instance.name
         else "agent_to_cli_sync",
-        type=SpanTypeAttribute.LLM,
+        type=SpanTypeAttribute.TASK,
         input=input_data if input_data else None,
         metadata=metadata,
     ) as agent_span:
@@ -156,7 +156,7 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
     # Create span context BEFORE calling wrapped function so internal spans nest under it
     span_cm = start_span(
         name=span_name,
-        type=SpanTypeAttribute.LLM,
+        type=SpanTypeAttribute.TASK,
         input=input_data if input_data else None,
         metadata=metadata,
     )
@@ -189,7 +189,7 @@ async def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: An
 
     with start_span(
         name=span_name,
-        type=SpanTypeAttribute.LLM,
+        type=SpanTypeAttribute.TASK,
         input=input_data if input_data else None,
         metadata=metadata,
     ) as agent_span:
@@ -236,7 +236,7 @@ def _create_direct_model_request_wrapper():
 
         with start_span(
             name="model_request",
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TASK,
             input=input_data,
             metadata=metadata,
         ) as span:
@@ -261,7 +261,7 @@ def _create_direct_model_request_sync_wrapper():
 
         with start_span(
             name="model_request_sync",
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TASK,
             input=input_data,
             metadata=metadata,
         ) as span:
@@ -289,6 +289,7 @@ def _create_direct_model_request_stream_wrapper():
             "model_request_stream",
             input_data,
             metadata,
+            span_type=SpanTypeAttribute.TASK,
         )
 
     return wrapper
@@ -316,7 +317,7 @@ def wrap_model_request(original_func: Any) -> Any:
 
         with start_span(
             name="model_request",
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TASK,
             input=input_data,
             metadata=metadata,
         ) as span:
@@ -339,7 +340,7 @@ def wrap_model_request_sync(original_func: Any) -> Any:
 
         with start_span(
             name="model_request_sync",
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TASK,
             input=input_data,
             metadata=metadata,
         ) as span:
@@ -365,6 +366,7 @@ def wrap_model_request_stream(original_func: Any) -> Any:
             "model_request_stream",
             input_data,
             metadata,
+            span_type=SpanTypeAttribute.TASK,
         )
 
     return wrapper
@@ -466,7 +468,7 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
         # DON'T pass start_time here - we'll set it via metrics in __aexit__
         self.span_cm = start_span(
             name=self.span_name,
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TASK,
             input=self.input_data if self.input_data else None,
             metadata=self.metadata,
         )
@@ -535,13 +537,26 @@ class _StreamResultProxy:
 
 
 class _DirectStreamWrapper(AbstractAsyncContextManager):
-    """Wrapper for model_request_stream() that adds tracing while passing through the stream."""
+    """Wrapper for model_request_stream() that adds tracing while passing through the stream.
 
-    def __init__(self, stream_cm: Any, span_name: str, input_data: Any, metadata: Any):
+    Used both as the leaf `chat <model>` span (from `_wrap_concrete_model_class`, default
+    `span_type=LLM`) and as a non-leaf wrapper around a nested model call (from
+    `direct.model_request_stream`, which passes `span_type=TASK` to avoid double-counting).
+    """
+
+    def __init__(
+        self,
+        stream_cm: Any,
+        span_name: str,
+        input_data: Any,
+        metadata: Any,
+        span_type: str = SpanTypeAttribute.LLM,
+    ):
         self.stream_cm = stream_cm
         self.span_name = span_name
         self.input_data = input_data
         self.metadata = metadata
+        self.span_type = span_type
         self.span_cm = None
         self.start_time = None
         self.stream = None
@@ -555,7 +570,7 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
         # DON'T pass start_time here - we'll set it via metrics in __aexit__
         self.span_cm = start_span(
             name=self.span_name,
-            type=SpanTypeAttribute.LLM,
+            type=self.span_type,
             input=self.input_data if self.input_data else None,
             metadata=self.metadata,
         )
@@ -723,7 +738,7 @@ class _DirectStreamWrapperSync:
         # DON'T pass start_time here - we'll set it via metrics in __exit__
         self.span_cm = start_span(
             name=self.span_name,
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TASK,
             input=self.input_data if self.input_data else None,
             metadata=self.metadata,
         )
