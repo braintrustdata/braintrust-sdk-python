@@ -156,9 +156,9 @@ class TestClassification(unittest.TestCase):
         classification = Classification(id="greeting")
         self.assertEqual(classification.as_dict(), {"id": "greeting"})
 
-    def test_as_item_defaults_label_to_id(self):
+    def test_as_item_omits_label_when_unset(self):
         classification = Classification(id="greeting")
-        self.assertEqual(classification.as_item(), {"id": "greeting", "label": "greeting"})
+        self.assertEqual(classification.as_item(), {"id": "greeting"})
 
     def test_as_item_includes_metadata(self):
         classification = Classification(

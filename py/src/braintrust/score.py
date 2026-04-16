@@ -55,7 +55,7 @@ class Score(SerializableDataClass):
 
 class ClassificationItem(TypedDict):
     id: str
-    label: str
+    label: NotRequired[str]
     metadata: NotRequired[Metadata]
 
 
@@ -70,7 +70,7 @@ class Classification(SerializableDataClass):
     """The name of this classification result. Defaults to the classifier function name when omitted."""
 
     label: str | None = None
-    """Optional human-readable label. Defaults to ``id`` when omitted."""
+    """Optional human-readable label."""
 
     metadata: Metadata | None = None
     """Optional metadata attached to the classification result."""
@@ -86,10 +86,9 @@ class Classification(SerializableDataClass):
         return result
 
     def as_item(self) -> ClassificationItem:
-        result: ClassificationItem = {
-            "id": self.id,
-            "label": self.label or self.id,
-        }
+        result: ClassificationItem = {"id": self.id}
+        if self.label is not None:
+            result["label"] = self.label
         if self.metadata is not None:
             result["metadata"] = self.metadata
         return result

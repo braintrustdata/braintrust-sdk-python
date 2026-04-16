@@ -499,6 +499,23 @@ async def test_eval_classifier_only_populates_classifications():
 
 
 @pytest.mark.asyncio
+async def test_eval_classifier_without_label_omits_label():
+    def category(input_value, output, expected):
+        return {"id": "greeting"}
+
+    result = await Eval(
+        "test-classifier-without-label",
+        data=[{"input": "hello"}],
+        task=lambda input_value: input_value,
+        classifiers=[category],
+        no_send_logs=True,
+    )
+
+    assert len(result.results) == 1
+    assert result.results[0].classifications == {"category": [{"id": "greeting"}]}
+
+
+@pytest.mark.asyncio
 async def test_eval_multiple_classifications_append_same_name():
     def category(input_value, output, expected):
         return [
