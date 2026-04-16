@@ -19,6 +19,10 @@ jobs:
           cache: true
           experimental: true
 
+      - name: Update matrix latest pins
+        working-directory: py
+        run: python3 scripts/update-matrix-latest.py
+
       - name: Upgrade lockfile
         working-directory: py
         run: uv lock --upgrade
@@ -38,7 +42,7 @@ jobs:
               except ModuleNotFoundError:
                   import tomli as tomllib
 
-          diff = subprocess.check_output(["git", "diff", "uv.lock"], text=True)
+          diff = subprocess.check_output(["git", "diff", "--", "pyproject.toml", "uv.lock"], text=True)
           if not diff:
               print("changed=false")
               raise SystemExit(0)
@@ -49,9 +53,16 @@ jobs:
 
           matrix = pyproject.get("tool", {}).get("braintrust", {}).get("matrix", {})
 
-          # Extract the base package name from each matrix requirement string
+          # Extract the base package name from provider-related matrix requirement strings.
+          # Exclude pure test/infra pins that do not affect cassette coverage.
+          provider_matrix = {
+              key: versions
+              for key, versions in matrix.items()
+              if key not in {"pytest-matrix", "braintrust-core"}
+          }
+
           provider_pkgs = set()
-          for _prefix, versions in matrix.items():
+          for _prefix, versions in provider_matrix.items():
               for req in versions.values():
                   # req looks like "openai==1.92.0" or "pydantic-ai==1.82.0"
                   pkg = req.split("==")[0].split(">=")[0].split("<=")[0].strip()
@@ -74,7 +85,7 @@ jobs:
         with:
           title: "chore(deps): daily dependency update"
           body: |
-            Automated daily dependency update via `uv lock --upgrade`.
+            Automated daily dependency update via `python scripts/update-matrix-latest.py && uv lock --upgrade`.
 
             ${{ steps.labels.outputs.needs_rerecord == 'true' && '⚠️ **Provider SDK packages changed.** A human needs to re-record cassettes locally before merging.' || '✅ Only test infrastructure deps changed. Safe to merge if CI passes.' }}
           branch: deps/daily-update-${{ steps.date.outputs.date }}

@@ -236,19 +236,19 @@ conflicts = [
 #
 # Each key is a provider prefix.  The value is a dict mapping human-readable
 # version tags to the pip requirement string.  "latest" is pinned to an
-# explicit version and bumped by the weekly dependency-update workflow.
+# explicit version and bumped by the daily dependency-update workflow.
 # ---------------------------------------------------------------------------
 
 [tool.braintrust.matrix]
 
 [tool.braintrust.matrix.openai]
-latest = "openai==2.31.0"
+latest = "openai==2.32.0"
 "1.92.0" = "openai==1.92.0"
 "1.77.0" = "openai==1.77.0"
 "1.71.0" = "openai==1.71.0"
 
 [tool.braintrust.matrix.anthropic]
-latest = "anthropic==0.95.0"
+latest = "anthropic==0.96.0"
 "0.48.0" = "anthropic==0.48.0"
 
 [tool.braintrust.matrix.openai-agents]
@@ -260,7 +260,7 @@ latest = "litellm==1.83.8"
 "1.74.0" = "litellm==1.74.0"
 
 [tool.braintrust.matrix.claude-agent-sdk]
-latest = "claude-agent-sdk==0.1.59"
+latest = "claude-agent-sdk==0.1.60"
 "0.1.10" = "claude-agent-sdk==0.1.10"
 
 [tool.braintrust.matrix.agno]
@@ -273,11 +273,11 @@ latest = "agentscope==1.0.18"
 "1.0.0" = "agentscope==1.0.0"
 
 [tool.braintrust.matrix.pydantic-ai-integration]
-latest = "pydantic-ai==1.82.0"
+latest = "pydantic-ai==1.83.0"
 "1.10.0" = "pydantic-ai==1.10.0"
 
 [tool.braintrust.matrix.pydantic-ai-wrap-openai]
-latest = "pydantic-ai==1.82.0"
+latest = "pydantic-ai==1.83.0"
 "1.0.1" = "pydantic-ai==1.0.1"
 "0.1.9" = "pydantic-ai==0.1.9"
 
@@ -298,7 +298,7 @@ latest = "google-adk==1.30.0"
 "1.14.1" = "google-adk==1.14.1"
 
 [tool.braintrust.matrix.langchain-core]
-latest = "langchain-core==1.2.30"
+latest = "langchain-core==1.2.31"
 "0.3.28" = "langchain-core==0.3.28"
 
 [tool.braintrust.matrix.openrouter]
@@ -306,11 +306,11 @@ latest = "openrouter==0.9.1"
 "0.6.0" = "openrouter==0.6.0"
 
 [tool.braintrust.matrix.mistralai]
-latest = "mistralai==2.3.2"
+latest = "mistralai==2.4.0"
 "1.12.4" = "mistralai==1.12.4"
 
 [tool.braintrust.matrix.temporalio]
-latest = "temporalio==1.25.0"
+latest = "temporalio==1.26.0"
 "1.20.0" = "temporalio==1.20.0"
 "1.19.0" = "temporalio==1.19.0"
 
