@@ -109,7 +109,6 @@ class EvalResult(SerializableDataClass, Generic[Input, Output, Expected]):
     exc_info: str | None = None
 
 
-@dataclasses.dataclass
 class TaskProgressEvent(TypedDict):
     """Progress event that can be reported during task execution."""
 
