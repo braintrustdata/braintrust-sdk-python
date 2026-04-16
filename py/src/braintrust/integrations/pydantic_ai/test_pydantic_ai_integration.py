@@ -140,23 +140,21 @@ async def test_agent_run_async(memory_logger):
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
-    assert agent_span["metrics"]["prompt_tokens"] > 0
-    assert agent_span["metrics"]["completion_tokens"] > 0
+    # Regression: wrapper agent_run span must NOT log token metrics. The leaf chat
+    # span already logs them, and trace-tree rollup (self + descendants) plus any
+    # unfiltered sum over metrics would otherwise double-count tokens/cost at the
+    # parent regardless of span type.
+    for token_key in ("prompt_tokens", "completion_tokens", "tokens", "prompt_cached_tokens"):
+        assert token_key not in agent_span["metrics"], (
+            f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
+        )
 
-    # Regression: no double-counting of cost/tokens. Experiment-level aggregations
-    # sum metrics across type='llm' spans, so a single agent turn must contribute
-    # its tokens exactly once. The wrapper agent_run span logs the same usage as
-    # the leaf chat span; only the leaf should be type=LLM.
+    # Only the leaf chat span should be type=LLM, and it must own the token totals.
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     assert len(llm_spans) == 1, f"expected exactly one LLM-typed span, got {len(llm_spans)}"
     assert llm_spans[0]["span_id"] == chat_span["span_id"]
-    llm_prompt_tokens_sum = sum(s["metrics"].get("prompt_tokens", 0) for s in llm_spans)
-    llm_completion_tokens_sum = sum(s["metrics"].get("completion_tokens", 0) for s in llm_spans)
-    assert llm_prompt_tokens_sum == chat_span["metrics"]["prompt_tokens"]
-    assert llm_completion_tokens_sum == chat_span["metrics"]["completion_tokens"]
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 @pytest.mark.vcr
@@ -245,9 +243,12 @@ def test_agent_run_sync(memory_logger):
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_sync_span["metrics"]
-    assert "completion_tokens" in agent_sync_span["metrics"]
+    # Wrapper agent_run_sync span must not log token metrics (would double-count at rollup).
+    assert "prompt_tokens" not in agent_sync_span["metrics"]
+    assert "completion_tokens" not in agent_sync_span["metrics"]
+    # Tokens live on the leaf chat span only.
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 def test_agent_to_cli_sync(memory_logger, monkeypatch):
@@ -544,9 +545,12 @@ async def test_agent_run_stream(memory_logger):
     print(f"span_parents: {chat_span['span_parents']}")
     print(f"metrics: {chat_span['metrics']}")
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
+    # Wrapper stream span must not log token metrics (would double-count at rollup).
+    # time_to_first_token is asserted above; it's a non-summable timing metric and stays.
+    assert "prompt_tokens" not in agent_span["metrics"]
+    assert "completion_tokens" not in agent_span["metrics"]
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 @pytest.mark.vcr
@@ -842,9 +846,11 @@ async def test_agent_structured_output(memory_logger):
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
+    # Wrapper agent_run span must not log token metrics (would double-count at rollup).
+    assert "prompt_tokens" not in agent_span["metrics"]
+    assert "completion_tokens" not in agent_span["metrics"]
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 @pytest.mark.vcr
@@ -1143,9 +1149,9 @@ def test_agent_run_stream_sync(memory_logger):
     # Chat span may not have complete metrics since it's an intermediate span
     assert "start" in chat_span["metrics"]
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
+    # Wrapper agent_run_stream_sync span must not log token metrics.
+    assert "prompt_tokens" not in agent_span["metrics"]
+    assert "completion_tokens" not in agent_span["metrics"]
 
 
 @pytest.mark.vcr
