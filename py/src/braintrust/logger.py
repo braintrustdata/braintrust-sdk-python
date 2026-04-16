@@ -1478,6 +1478,34 @@ _internal_reset_global_state()
 _logger = logging.getLogger("braintrust")
 
 
+def _safe(fn=None, *, default_factory=None):
+    """Swallow exceptions raised by tracing methods so they never reach user code.
+
+    Tracing is best-effort instrumentation: customer applications must keep
+    running even when the SDK cannot record a span. On failure, we log a
+    warning on the `braintrust` logger and return `default_factory()` (or
+    None). Overhead on the happy path is one extra frame and a try/except
+    that Python optimizes heavily.
+    """
+
+    def decorator(f):
+        name = f.__qualname__
+
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                return f(*args, **kwargs)
+            except Exception as e:
+                _logger.warning("braintrust %s failed: %s", name, e, exc_info=True)
+                return default_factory() if default_factory is not None else None
+
+        return wrapper
+
+    if fn is not None:
+        return decorator(fn)
+    return decorator
+
+
 @contextlib.contextmanager
 def _internal_with_custom_background_logger():
     custom_logger = _HTTPBackgroundLogger(LazyValue(lambda: _state.api_conn(), use_mutex=True))
@@ -2418,6 +2446,7 @@ def get_span_parent_object(
     return NOOP_SPAN
 
 
+@_safe
 def _try_log_input(span, f_sig, f_args, f_kwargs):
     if f_sig:
         input_data = f_sig.bind(*f_args, **f_kwargs).arguments
@@ -2426,8 +2455,40 @@ def _try_log_input(span, f_sig, f_args, f_kwargs):
     span.log(input=input_data)
 
 
+@_safe
 def _try_log_output(span, output):
     span.log(output=output)
+
+
+def _safe_start_span(span_args, span_kwargs):
+    """Resolve a start_span context manager without ever raising.
+
+    Used by @traced wrappers so that a failure in span creation (including a
+    monkeypatched or otherwise broken start_span) degrades to NOOP_SPAN rather
+    than crashing the decorated function.
+    """
+    try:
+        return start_span(*span_args, **span_kwargs)
+    except Exception as e:
+        _logger.warning("braintrust @traced start_span failed: %s", e, exc_info=True)
+        return NOOP_SPAN
+
+
+def _safe_call(fn, *args, **kwargs):
+    """Invoke a tracing helper without letting exceptions escape."""
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        _logger.warning("braintrust call to %s failed: %s", getattr(fn, "__qualname__", fn), e, exc_info=True)
+        return None
+
+
+def _get_max_generator_items() -> int:
+    """Parse BRAINTRUST_MAX_GENERATOR_ITEMS with a safe fallback."""
+    try:
+        return int(os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS", "1000"))
+    except (TypeError, ValueError):
+        return 1000
 
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -2478,32 +2539,32 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
 
         @wraps(f)
         def wrapper_sync(*f_args, **f_kwargs):
-            with start_span(*span_args, **span_kwargs) as span:
+            with _safe_start_span(span_args, span_kwargs) as span:
                 if trace_io:
-                    _try_log_input(span, f_sig, f_args, f_kwargs)
+                    _safe_call(_try_log_input, span, f_sig, f_args, f_kwargs)
                 ret = f(*f_args, **f_kwargs)
                 if trace_io:
-                    _try_log_output(span, ret)
+                    _safe_call(_try_log_output, span, ret)
                 return ret
 
         @wraps(f)
         async def wrapper_async(*f_args, **f_kwargs):
-            with start_span(*span_args, **span_kwargs) as span:
+            with _safe_start_span(span_args, span_kwargs) as span:
                 if trace_io:
-                    _try_log_input(span, f_sig, f_args, f_kwargs)
+                    _safe_call(_try_log_input, span, f_sig, f_args, f_kwargs)
                 ret = await f(*f_args, **f_kwargs)
                 if trace_io:
-                    _try_log_output(span, ret)
+                    _safe_call(_try_log_output, span, ret)
                 return ret
 
         @wraps(f)
         async def wrapper_async_gen(*f_args, **f_kwargs):
-            with start_span(*span_args, **span_kwargs) as span:
+            with _safe_start_span(span_args, span_kwargs) as span:
                 if trace_io:
-                    _try_log_input(span, f_sig, f_args, f_kwargs)
+                    _safe_call(_try_log_input, span, f_sig, f_args, f_kwargs)
 
                 # Get max items from environment or default
-                max_items = int(os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS", "1000"))
+                max_items = _get_max_generator_items()
 
                 if trace_io and max_items != 0:
                     # Collect output up to limit
@@ -2525,11 +2586,11 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                             yield value
 
                         if not truncated:
-                            _try_log_output(span, collected)
-                    except Exception as e:
+                            _safe_call(_try_log_output, span, collected)
+                    except Exception:
                         # Log partial output on error
                         if collected and not truncated:
-                            _try_log_output(span, collected)
+                            _safe_call(_try_log_output, span, collected)
                         raise
                 else:
                     # Original behavior - no collection
@@ -2539,12 +2600,12 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
 
         @wraps(f)
         def wrapper_sync_gen(*f_args, **f_kwargs):
-            with start_span(*span_args, **span_kwargs) as span:
+            with _safe_start_span(span_args, span_kwargs) as span:
                 if trace_io:
-                    _try_log_input(span, f_sig, f_args, f_kwargs)
+                    _safe_call(_try_log_input, span, f_sig, f_args, f_kwargs)
 
                 # Get max items from environment or default
-                max_items = int(os.environ.get("BRAINTRUST_MAX_GENERATOR_ITEMS", "1000"))
+                max_items = _get_max_generator_items()
 
                 if trace_io and max_items != 0:
                     # Collect output up to limit
@@ -2566,11 +2627,11 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
                             yield value
 
                         if not truncated:
-                            _try_log_output(span, collected)
-                    except Exception as e:
+                            _safe_call(_try_log_output, span, collected)
+                    except Exception:
                         # Log partial output on error
                         if collected and not truncated:
-                            _try_log_output(span, collected)
+                            _safe_call(_try_log_output, span, collected)
                         raise
                 else:
                     # Original behavior - no collection
@@ -2595,6 +2656,7 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
         return cast(Callable[[F], F], partial(decorator, span_args, span_kwargs))
 
 
+@_safe(default_factory=lambda: NOOP_SPAN)
 def start_span(
     name: str | None = None,
     type: SpanTypeAttribute | None = None,
@@ -2651,6 +2713,7 @@ def start_span(
         )
 
 
+@_safe
 def flush():
     """Flush any pending rows to the server."""
 
@@ -4252,6 +4315,7 @@ class SpanImpl(Span):
     def name(self) -> str:
         return self._name
 
+    @_safe
     def set_attributes(
         self,
         name: str | None = None,
@@ -4273,6 +4337,7 @@ class SpanImpl(Span):
             }
         )
 
+    @_safe
     def log(self, **event: Any) -> None:
         return self.log_internal(event=event, internal_data=None)
 
@@ -4325,6 +4390,7 @@ class SpanImpl(Span):
 
         self.state.global_bg_logger().log(LazyValue(compute_record, use_mutex=False))
 
+    @_safe
     def log_feedback(self, **event: Any) -> None:
         return _log_feedback_impl(
             parent_object_type=self.parent_object_type,
@@ -4333,6 +4399,7 @@ class SpanImpl(Span):
             **event,
         )
 
+    @_safe(default_factory=lambda: NOOP_SPAN)
     def start_span(
         self,
         name: str | None = None,
@@ -4373,6 +4440,7 @@ class SpanImpl(Span):
             state=self.state,
         )
 
+    @_safe(default_factory=time.time)
     def end(self, end_time: float | None = None) -> float:
         internal_data = {}
         if not self._logged_end_time:
@@ -4453,11 +4521,13 @@ class SpanImpl(Span):
     def close(self, end_time=None) -> float:
         return self.end(end_time)
 
+    @_safe
     def flush(self) -> None:
         """Flush any pending rows to the server."""
 
         self.state.global_bg_logger().flush()
 
+    @_safe
     def set_current(self):
         if self.can_set_current:
             # Get token from context manager and store it
@@ -4486,17 +4556,20 @@ class SpanImpl(Span):
     def __exit__(self, exc_type, exc_value, tb) -> None:
         try:
             if exc_type is not None:
-                self.log_internal(dict(error=stringify_exception(exc_type, exc_value, tb)))
+                try:
+                    self.log_internal(dict(error=stringify_exception(exc_type, exc_value, tb)))
+                except Exception as e:
+                    _logger.warning("braintrust SpanImpl.__exit__ error-log failed: %s", e, exc_info=True)
         finally:
             try:
                 self.unset_current()
             except Exception as e:
-                logging.debug(f"Failed to unset current in __exit__: {e}")
+                _logger.debug("Failed to unset current in __exit__: %s", e)
 
             try:
                 self.end()
             except Exception as e:
-                logging.warning(f"Error ending span: {e}")
+                _logger.warning("Error ending span: %s", e)
 
     def _get_parent_info(self):
         if self.parent_object_type == SpanObjectTypeV3.PROJECT_LOGS:
@@ -5240,6 +5313,7 @@ class Logger(Exportable):
         self._lazy_metadata.get()
         return self.state
 
+    @_safe
     def log(
         self,
         input: Any | None = None,
@@ -5292,6 +5366,7 @@ class Logger(Exportable):
 
         return span.id
 
+    @_safe
     def log_feedback(
         self,
         id: str,
@@ -5325,6 +5400,7 @@ class Logger(Exportable):
             source=source,
         )
 
+    @_safe(default_factory=lambda: NOOP_SPAN)
     def start_span(
         self,
         name: str | None = None,
@@ -5356,6 +5432,7 @@ class Logger(Exportable):
             **event,
         )
 
+    @_safe
     def update_span(self, id: str, **event: Any) -> None:
         """
         Update a span in the experiment using its id. It is important that you only update a span once the original span
@@ -5451,6 +5528,7 @@ class Logger(Exportable):
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         del exc_type, exc_value, traceback
 
+    @_safe
     def flush(self) -> None:
         """
         Flush any pending logs to the server.
