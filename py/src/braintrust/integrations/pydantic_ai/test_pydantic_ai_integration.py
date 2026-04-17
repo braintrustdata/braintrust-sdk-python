@@ -90,8 +90,9 @@ def test_extract_response_metrics_leaf_fields():
     )
     response = SimpleNamespace(usage=usage)
 
-    metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
-    assert metrics is not None
+    maybe_metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
+    assert maybe_metrics is not None
+    metrics: dict[str, float] = maybe_metrics
 
     assert metrics["prompt_tokens"] == 100
     assert metrics["completion_tokens"] == 50
