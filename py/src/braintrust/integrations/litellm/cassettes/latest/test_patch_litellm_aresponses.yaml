@@ -1,97 +1,98 @@
 interactions:
 - request:
-    body: '{"model": "gpt-4o-mini", "input": "What''s 12 + 12?", "instructions": "Just
+    body: '{"model":"gpt-4o-mini","input":"What''s 12 + 12?","instructions":"Just
       the number please"}'
     headers:
       accept:
       - '*/*'
       accept-encoding:
-      - gzip, deflate, zstd
+      - gzip, deflate
       connection:
       - keep-alive
       content-length:
-      - '94'
+      - '89'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - litellm/1.80.11
+      - litellm/1.83.9
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_026bca77278090c400695da9f2336c8197a28a89d2eeea3847\"\
-        ,\n  \"object\": \"response\",\n  \"created_at\": 1767746034,\n  \"status\"\
-        : \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\"\
-        : \"developer\"\n  },\n  \"completed_at\": 1767746036,\n  \"error\": null,\n\
-        \  \"incomplete_details\": null,\n  \"instructions\": \"Just the number please\"\
-        ,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\"\
-        : \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n      \"id\": \"msg_026bca77278090c400695da9f40c608197ab0013c567aa9cff\"\
-        ,\n      \"type\": \"message\",\n      \"status\": \"completed\",\n      \"\
-        content\": [\n        {\n          \"type\": \"output_text\",\n          \"\
-        annotations\": [],\n          \"logprobs\": [],\n          \"text\": \"24\"\
-        \n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\"\
-        : true,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n\
-        \  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":\
-        \ null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"\
-        service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n\
-        \  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n    \"\
-        verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\":\
-        \ [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\"\
-        ,\n  \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\"\
-        : {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"\
-        output_tokens_details\": {\n      \"reasoning_tokens\": 0\n    },\n    \"\
-        total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\": {}\n}"
+      string: "{\n  \"id\": \"resp_0099a965b2d3f21b0069e23f7b0010819ea1a2a7fae019c152\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1776435067,\n  \"status\":
+        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": 1776435067,\n  \"error\": null,\n
+        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
+        \     \"id\": \"msg_0099a965b2d3f21b0069e23f7b80f8819eacc96a5985cb9e3b\",\n
+        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
+        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
+        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       CF-RAY:
-      - 9b9f5dc6cc8f88dc-PDX
+      - 9edc04607e2eab8e-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Wed, 07 Jan 2026 00:33:56 GMT
+      - Fri, 17 Apr 2026 14:11:07 GMT
       Server:
       - cloudflare
       Set-Cookie:
-      - __cf_bm=_y7fCdc9uilcXWWehABBb.Mld5QbTO5KpPG2Z8vNrVk-1767746036-1.0.1.1-SVJnu7TvCHcIGFk47ciU4dkHSA5T2btNr1nGsKdQHCN4ddCrnwJk5s1oZgJKwllLU42AQ86e6IWnerYag8EoUlFmM8hBMTFImeYCLKwAHW4;
-        path=/; expires=Wed, 07-Jan-26 01:03:56 GMT; domain=.api.openai.com; HttpOnly;
-        Secure; SameSite=None
-      - _cfuvid=tf9PFl6ALaHHYzNa_b0aZF9a3TVLXWEeHcFjWXTQvvc-1767746036217-0.0.1.1-604800000;
-        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      - __cf_bm=dvFt5NUQ18EjdkIIjwOaU7hRpYsy3tKotax3Vjk9kKo-1776435066.9595757-1.0.1.1-_N1cauKHWlAy98AhtJwzZxQEoQwyD1ZgRetW.I9EXzbIDqOJOZVUAivSTaDPNTn9jUAsK4t9ZQZ4n6x1TY_CpjNXbYFdYixntPmWnlWTSL4UgZ8r0MgRPZDw34838QbR;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 17 Apr 2026
+        14:41:07 GMT
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
       X-Content-Type-Options:
       - nosniff
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      content-length:
+      - '1549'
       openai-organization:
-      - user-bkcsfvrp2vh67rqzpgtsbnle
+      - braintrust-data
       openai-processing-ms:
-      - '1992'
+      - '619'
       openai-project:
-      - proj_IG1Ou5SIiy81s3W66WZ5dtN6
+      - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '1995'
       x-ratelimit-limit-requests:
-      - '5000'
+      - '30000'
       x-ratelimit-limit-tokens:
-      - '4000000'
+      - '150000000'
       x-ratelimit-remaining-requests:
-      - '4999'
+      - '29999'
       x-ratelimit-remaining-tokens:
-      - '3999959'
+      - '149999960'
       x-ratelimit-reset-requests:
-      - 12ms
+      - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_4d0d66110b8b40c8bbffdaa0446e1ba2
+      - req_12e79be58b5442b9b79e6cd4a0567113
     status:
       code: 200
       message: OK

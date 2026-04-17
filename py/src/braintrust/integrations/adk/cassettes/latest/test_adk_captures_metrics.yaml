@@ -5,33 +5,26 @@ interactions:
       are an agent. Your internal name is \"metrics_agent\"."}], "role": "user"},
       "generationConfig": {}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '255'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61Ry07DMBC85yssn9sqD2gDF1TxrFRERQNCAg6GbB7C9UaxC4Uq/147aVIHrvhg
-        WTvjmd3ZrUMIfWcizmOmQNJT8qwrhGzr22AoFAilgbakiwUr1YHbnK311hQFG/OJ3gDnOCAZfhFt
-        Q2YkA16cvQhq0avu/To4mJTIwSisMAbe0quWQJNc5DK7ByZRGNoyulvQDmWf6RzTosQ30+fQHXmT
-        MPC88Yk7DkMvCPwjp3WuPelashRuQTGdA+umpVphVagIP0Cc47rOwZ80LlZsPTzcwwoV4z0kOB78
-        UZUX2jPndppW0Hp2xnP1bQaMLp8iauWj+k21ATlWjr9b/CezsO/l7NfSbOoRSpk3K0lhpZc09Efu
-        MOFMZrUgLUEWKCTMYsPZuA9XLIZsmiyzn8lsgfPrwJ+61KmcHftOmoycAgAA
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Hello, I'm metrics_agent.\\n\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.046773797273635863\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 27,\n    \"candidatesTokenCount\": 10,\n    \"totalTokenCount\":
+        37,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 27\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 10\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
+        \"cz_iaYOYA82z1MkPwPaSgA0\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -40,11 +33,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Fri, 31 Oct 2025 23:27:03 GMT
+      - Fri, 17 Apr 2026 14:10:59 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=491
+      - gfet4t7; dur=468
       Transfer-Encoding:
       - chunked
       Vary:
@@ -55,6 +48,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:

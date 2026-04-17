@@ -6,35 +6,29 @@ interactions:
       "role": "user"}, "generationConfig": {"temperature": 0.7, "maxOutputTokens":
       50}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '320'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61STU/bQBC9+1eM9sIliUJCPuiN8qGiQkHgtkgFoUl2bC9sdt3dSVMT5b93bePg
-        5FzLsnZmnufNvLfrCEDM0UglkcmLT/ArZADW1besWcNkOBSaVEjm6PgDWz/r1jlAmP6WP4mbVyw6
-        4IlZEyjTgRnNcekJOFMewssZgWfrCrBJFfxU0q4OPFypNOMOhNlAcYjxHcYZluGMyMAqNMnJkQRr
-        6k6ouYCVMtJDYh2kZMghK2t879E8mnifAFbozQHDy9Jz4CpAl9nMhhF7cEtunpEUrdU22/NT50MQ
-        ZzWV2y6sJN3ANw1AJMoon90RemtK2PXJw3N88/X8273YYvBPemXT3NlZqWy33xtOR4PR8eRoMBmO
-        p4fjo6ihr4jF0mNK18QYjMOtPSI0WOQc21cyp3ZZGTfs1yQtn3fqo6bOllHvlKZNqdXWnwVSpdv+
-        t65GUAC14qJcMz5/iEVLJd6dqpEpaqm5P+N/IhvtkUXv7tSG/SDnVe1MSovgVXfQ63cTjT6rOgpH
-        Pg83iC5liXk5m15gMj78Ip+/v00ub9mefv590hfRJvoHTxCJAU8DAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Okay, settle in, because this is the
+        tale of the Obsidian Lighthouse, a story etched in salt spray, loneliness,
+        and the stubborn heart of the sea.\\n\\nThe Obsidian Lighthouse wasn't your
+        typical whitewashed sentinel. It was a monolith of\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
+        \     \"avgLogprobs\": -0.47096416473388669\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 30,\n    \"candidatesTokenCount\": 50,\n    \"totalTokenCount\":
+        80,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 30\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 50\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
+        \"cD_iabHDJJia9MoP-sG-sA0\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -43,11 +37,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Fri, 31 Oct 2025 23:00:29 GMT
+      - Fri, 17 Apr 2026 14:10:57 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=868
+      - gfet4t7; dur=846
       Transfer-Encoding:
       - chunked
       Vary:
@@ -58,6 +52,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:

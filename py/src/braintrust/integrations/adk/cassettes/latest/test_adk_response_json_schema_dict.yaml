@@ -9,34 +9,27 @@ interactions:
       "Population of the city", "minimum": 0}, "country": {"type": "string", "description":
       "Country where the city is located"}}, "required": ["city", "country"]}}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '647'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.56.0 gl-python/3.13.3 google-adk/1.21.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.56.0 gl-python/3.13.3 google-adk/1.21.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61Ry07DMBC85ysin5sqbegj3BDl0NKKAhFCIhyWxE2jprYVu0CJ8u+s86rDGR8i
-        Z2e8sztTWLZNImBxGoOiklzbb1ix7aL6aowzRZlCoC1hUUCuLtz6FMYdKYp+60ekCJlthyRK1TnE
-        /5AE/HDmIRk0dX5iKm+gFQhgHSS4OGWgUs40OvL8qYsnZCUxlMru/j64zJfzjGrxI49p1tLLlkB2
-        KUvl/omC5EzTnoOHLelQ+EzWPBE5/9ArOu4QVa/86WQ2d72J740n/nw2slrxSpacJCR0QxWgi9B5
-        RbDJUSjcmLJbvSginlsLGab3ca/BFVeQ9aBpCxlt5QJF08wMw8gJ94cMnddLBnevATE8Uv2pWpMs
-        w8u/M/6XmNcXs5ps6rheaC7TOpeEHjEpZzx0nV0Gcl91JDmVgjNJl7HmrA5iAdEiWorxvSNvtl/r
-        n5H7uCFWaf0CGhSW3NwCAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"{\\n  \\\"city\\\": \\\"Tokyo\\\",\\n
+        \ \\\"country\\\": \\\"Japan\\\",\\n  \\\"population\\\": 13960000\\n}\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.000773141160607338\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 30,\n    \"candidatesTokenCount\": 33,\n    \"totalTokenCount\":
+        63,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 30\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 33\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
+        \"eT_iaYvhE4mv1MkPi7yfkQc\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -45,11 +38,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Thu, 18 Dec 2025 00:26:15 GMT
+      - Fri, 17 Apr 2026 14:11:05 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=598
+      - gfet4t7; dur=645
       Transfer-Encoding:
       - chunked
       Vary:
@@ -60,6 +53,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:

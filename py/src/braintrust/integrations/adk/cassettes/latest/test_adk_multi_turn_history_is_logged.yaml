@@ -1,5 +1,297 @@
 interactions:
 - request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.33.1
+    method: POST
+    uri: https://www.braintrust.dev/api/apikey/login
+  response:
+    body:
+      string: '{"org_info":[{"id":"5d7c97d7-fef1-4cb7-bda6-7e3756a0ca8e","name":"braintrustdata.com","api_url":"https://staging-api.braintrust.dev","git_metadata":{"fields":["commit","branch","tag","author_name","author_email","commit_message","commit_time","dirty"],"collect":"some"},"is_universal_api":true,"proxy_url":"https://staging-api.braintrust.dev","realtime_url":"wss://realtime.braintrustapi.com"}]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5,
+        Content-Type, Date, X-Api-Version
+      Access-Control-Allow-Methods:
+      - GET,OPTIONS,PATCH,DELETE,POST,PUT
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '395'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-YTYyOGRiMjgtNzU2Yi00ODE2LWJiNWYtYmY1OTE3Yjc0MGEy''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self'';
+        frame-ancestors ''self''; worker-src ''self'' blob:; report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 17 Apr 2026 14:10:48 GMT
+      Etag:
+      - '"12n7ok4b5phaz"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Bt-Was-Udf-Cached:
+      - 'true'
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/apikey/login
+      X-Nonce:
+      - YTYyOGRiMjgtNzU2Yi00ODE2LWJiNWYtYmY1OTE3Yjc0MGEy
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::jwkxx-1776435048810-b5438d7469c4
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.33.1
+    method: GET
+    uri: https://staging-api.braintrust.dev/version
+  response:
+    body:
+      string: '{"version":"2.0.0","date_version":"20260417","ff_version":24,"commit":"0d9d9d17b59a872d1cac7f50d67429265387324c","deployment_mode":"lambda","deployment_type":"custom","brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","metrics","logs","traces","memprof","usage"]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '550'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 17 Apr 2026 14:10:50 GMT
+      Via:
+      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 dc63ed289fa4d9a64b4cc2f12891a350.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - 8xZl3X-NuIZWunHivMlyo6Vq-ZXvRSNpiJjJlFQnE8fDpMA3caHiPQ==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69e23f6a-57ac9c2850e79cda28343d58;Parent=4886760ab6e5e53a;Sampled=0;Lineage=1:fc3b4ff1:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
+      etag:
+      - W/"226-EfRuYziO2Q1Ux8maLsFk5foD01A"
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - b97YoHBTIAMEmyA=
+      x-amzn-Remapped-content-length:
+      - '550'
+      x-amzn-RequestId:
+      - 911691dc-2f95-4a45-8333-41517dedd89f
+      x-bt-internal-trace-id:
+      - 69e23f6a0000000055276e14904e45d3
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"rows": [{"context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_google_adk-latest/lib/python3.14/site-packages/google/adk/runners.py",
+      "caller_functionname": "_invoke_run_async", "caller_lineno": 479}, "created":
+      "2026-04-17T14:10:48.686708+00:00", "id": "5e172b65-ecf1-4de9-9748-b63648da7fa3",
+      "input": {"new_message": {"parts": [{"text": "hello"}], "role": "user"}}, "log_id":
+      "g", "metadata": {"run_config": {"input_audio_transcription": {}, "max_llm_calls":
+      500, "output_audio_transcription": {}, "save_input_blobs_as_artifacts": false,
+      "save_live_audio": false, "save_live_blob": false, "streaming_mode": "StreamingMode.NONE",
+      "support_cfc": false}, "session_id": "test-session-thread", "state_delta": null,
+      "user_id": "test-user"}, "metrics": {"end": 1776435048.689106, "start": 1776435048.6867058},
+      "output": {"actions": {"artifact_delta": {}, "requested_auth_configs": {}, "requested_tool_confirmations":
+      {}, "state_delta": {}}, "author": "echo_agent", "content": {"parts": [{"text":
+      "ok"}], "role": "model"}, "id": "b644c795-c71b-4116-9d62-6446836b4e5b", "invocation_id":
+      "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c", "timestamp": 1776435048.688139}, "project_id":
+      "test_adk", "root_span_id": "dcda4d0b-1606-42fd-a077-03855faa40aa", "span_attributes":
+      {"exec_counter": 2, "name": "invocation [thread_bridge_app]", "type": "task"},
+      "span_id": "ae903ac6-8ca2-4ad8-928b-25f3426df859", "span_parents": ["dcda4d0b-1606-42fd-a077-03855faa40aa"]},{"context":
+      {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_google_adk-latest/lib/python3.14/site-packages/google/adk/runners.py",
+      "caller_functionname": "execute", "caller_lineno": 606}, "created": "2026-04-17T14:10:48.687223+00:00",
+      "id": "46a139df-227f-44c2-802f-2677634a7f38", "log_id": "g", "metadata": {"parent_context":
+      {"agent": {"description": "", "name": "echo_agent", "sub_agents": []}, "agent_states":
+      {}, "end_invocation": false, "end_of_agents": {}, "invocation_id": "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c",
+      "plugin_manager": "<google.adk.plugins.plugin_manager.PluginManager object at
+      0x10fc4fa10>", "run_config": {"input_audio_transcription": {}, "max_llm_calls":
+      500, "output_audio_transcription": {}, "save_input_blobs_as_artifacts": false,
+      "save_live_audio": false, "save_live_blob": false, "streaming_mode": "StreamingMode.NONE",
+      "support_cfc": false}, "session": {"app_name": "thread_bridge_app", "events":
+      [{"actions": {"artifact_delta": {}, "requested_auth_configs": {}, "requested_tool_confirmations":
+      {}, "state_delta": {}}, "author": "user", "content": {"parts": [{"text": "hello"}],
+      "role": "user"}, "id": "dbdd5fb8-d657-4f7a-a8a9-1d0c35205fb5", "invocation_id":
+      "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c", "timestamp": 1776435048.687071}],
+      "id": "test-session-thread", "last_update_time": 1776435048.687071, "state":
+      {}, "user_id": "test-user"}, "session_service": "<google.adk.sessions.in_memory_session_service.InMemorySessionService
+      object at 0x10fc4f770>", "token_compaction_checked": false, "user_content":
+      {"parts": [{"text": "hello"}], "role": "user"}}}, "metrics": {"end": 1776435048.689078,
+      "start": 1776435048.687222}, "output": {"actions": {"artifact_delta": {}, "requested_auth_configs":
+      {}, "requested_tool_confirmations": {}, "state_delta": {}}, "author": "echo_agent",
+      "content": {"parts": [{"text": "ok"}], "role": "model"}, "id": "b644c795-c71b-4116-9d62-6446836b4e5b",
+      "invocation_id": "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c", "timestamp": 1776435048.688139},
+      "project_id": "test_adk", "root_span_id": "dcda4d0b-1606-42fd-a077-03855faa40aa",
+      "span_attributes": {"exec_counter": 3, "name": "agent_run [echo_agent]", "type":
+      "task"}, "span_id": "650feffc-f6c9-4ee5-9948-6eed82af2d23", "span_parents":
+      ["ae903ac6-8ca2-4ad8-928b-25f3426df859"]},{"context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_google_adk-latest/lib/python3.14/site-packages/google/adk/agents/llm_agent.py",
+      "caller_functionname": "_run_async_impl", "caller_lineno": 487}, "created":
+      "2026-04-17T14:10:48.687649+00:00", "id": "0320ad76-4f40-4e25-b97c-311b272b33b7",
+      "log_id": "g", "metadata": {"invocation_context": {"agent": {"description":
+      "", "name": "echo_agent", "sub_agents": []}, "agent_states": {}, "end_invocation":
+      false, "end_of_agents": {}, "invocation_id": "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c",
+      "plugin_manager": "<google.adk.plugins.plugin_manager.PluginManager object at
+      0x10fc4fa10>", "run_config": {"input_audio_transcription": {}, "max_llm_calls":
+      500, "output_audio_transcription": {}, "save_input_blobs_as_artifacts": false,
+      "save_live_audio": false, "save_live_blob": false, "streaming_mode": "StreamingMode.NONE",
+      "support_cfc": false}, "session": {"app_name": "thread_bridge_app", "events":
+      [{"actions": {"artifact_delta": {}, "requested_auth_configs": {}, "requested_tool_confirmations":
+      {}, "state_delta": {}}, "author": "user", "content": {"parts": [{"text": "hello"}],
+      "role": "user"}, "id": "dbdd5fb8-d657-4f7a-a8a9-1d0c35205fb5", "invocation_id":
+      "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c", "timestamp": 1776435048.687071}],
+      "id": "test-session-thread", "last_update_time": 1776435048.687071, "state":
+      {}, "user_id": "test-user"}, "session_service": "<google.adk.sessions.in_memory_session_service.InMemorySessionService
+      object at 0x10fc4f770>", "token_compaction_checked": false, "user_content":
+      {"parts": [{"text": "hello"}], "role": "user"}}}, "metrics": {"end": 1776435048.68904,
+      "start": 1776435048.687648}, "output": {"actions": {"artifact_delta": {}, "requested_auth_configs":
+      {}, "requested_tool_confirmations": {}, "state_delta": {}}, "author": "echo_agent",
+      "content": {"parts": [{"text": "ok"}], "role": "model"}, "id": "b644c795-c71b-4116-9d62-6446836b4e5b",
+      "invocation_id": "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c", "timestamp": 1776435048.688139},
+      "project_id": "test_adk", "root_span_id": "dcda4d0b-1606-42fd-a077-03855faa40aa",
+      "span_attributes": {"exec_counter": 4, "name": "call_llm", "type": "task"},
+      "span_id": "2821c120-172b-4f05-8ed1-f9833ceca4e5", "span_parents": ["650feffc-f6c9-4ee5-9948-6eed82af2d23"]},{"context":
+      {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_google_adk-latest/lib/python3.14/site-packages/google/adk/flows/llm_flows/base_llm_flow.py",
+      "caller_functionname": "_run_one_step_async", "caller_lineno": 881}, "created":
+      "2026-04-17T14:10:48.688347+00:00", "id": "dbc1a851-ffd7-4a4a-bcc5-632f600a627b",
+      "input": {"config": {"system_instruction": "Respond with ok.\n\nYou are an agent.
+      Your internal name is \"echo_agent\"."}, "contents": [{"parts": [{"text": "hello"}],
+      "role": "user"}], "live_connect_config": {"input_audio_transcription": {}, "output_audio_transcription":
+      {}}, "model": "test-llm-context-prop"}, "log_id": "g", "metadata": {"flow_class":
+      "AutoFlow", "invocation_context": {"agent": {"description": "", "name": "echo_agent",
+      "sub_agents": []}, "agent_states": {}, "end_invocation": false, "end_of_agents":
+      {}, "invocation_id": "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c", "plugin_manager":
+      "<google.adk.plugins.plugin_manager.PluginManager object at 0x10fc4fa10>", "run_config":
+      {"input_audio_transcription": {}, "max_llm_calls": 500, "output_audio_transcription":
+      {}, "save_input_blobs_as_artifacts": false, "save_live_audio": false, "save_live_blob":
+      false, "streaming_mode": "StreamingMode.NONE", "support_cfc": false}, "session":
+      {"app_name": "thread_bridge_app", "events": [{"actions": {"artifact_delta":
+      {}, "requested_auth_configs": {}, "requested_tool_confirmations": {}, "state_delta":
+      {}}, "author": "user", "content": {"parts": [{"text": "hello"}], "role": "user"},
+      "id": "dbdd5fb8-d657-4f7a-a8a9-1d0c35205fb5", "invocation_id": "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c",
+      "timestamp": 1776435048.687071}], "id": "test-session-thread", "last_update_time":
+      1776435048.687071, "state": {}, "user_id": "test-user"}, "session_service":
+      "<google.adk.sessions.in_memory_session_service.InMemorySessionService object
+      at 0x10fc4f770>", "token_compaction_checked": false, "user_content": {"parts":
+      [{"text": "hello"}], "role": "user"}}, "model": "test-llm-context-prop", "model_response_event":
+      {"actions": {"artifact_delta": {}, "requested_auth_configs": {}, "requested_tool_confirmations":
+      {}, "state_delta": {}}, "author": "echo_agent", "id": "b644c795-c71b-4116-9d62-6446836b4e5b",
+      "invocation_id": "e-b4e01b2a-1f21-4abf-a30f-4b20c6237f4c", "timestamp": 1776435048.688139}},
+      "metrics": {"end": 1776435048.689007, "start": 1776435048.6883461, "time_to_first_token":
+      0.00035572052001953125}, "output": {"content": {"parts": [{"text": "ok"}], "role":
+      "model"}}, "project_id": "test_adk", "root_span_id": "dcda4d0b-1606-42fd-a077-03855faa40aa",
+      "span_attributes": {"exec_counter": 5, "llm_call_type": "direct_response", "name":
+      "llm_call [direct_response]", "type": "llm"}, "span_id": "3fb0390c-eb8e-4e08-b7c0-2e1e13b50f9c",
+      "span_parents": ["2821c120-172b-4f05-8ed1-f9833ceca4e5"]}], "api_version": 2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '9020'
+      User-Agent:
+      - python-requests/2.33.1
+    method: POST
+    uri: https://staging-api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test_adk, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=braintrustdata.com] [timestamp=1776435050.404]","InternalTraceId":"69e23f6a00000000365a70ba9d12953b","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '236'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 17 Apr 2026 14:10:50 GMT
+      Via:
+      - 1.1 8250156022879efefd7a589c8ba8c706.cloudfront.net (CloudFront), 1.1 412b0215b557780a6efcc1651037dc90.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - QuWBmHHQ0rx2c2sxItUa3dunZGsunbyrCuGEiPvC21eZ8pEU2NeV2g==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69e23f6a-40a6f8765cd1aef3048e6124;Parent=7b73117f8c1b034f;Sampled=0;Lineage=1:fc3b4ff1:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
+      content-encoding:
+      - gzip
+      etag:
+      - W/"12e-Ukf82a9Ccb2QSruXp+yXJFj3uxc"
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - b97YpFN5IAMEHoQ=
+      x-amzn-RequestId:
+      - 8665b28b-004a-49d8-b822-2ba9fd613c66
+      x-bt-internal-trace-id:
+      - 69e23f6a00000000365a70ba9d12953b
+    status:
+      code: 403
+      message: Forbidden
+- request:
     body: '{"contents": [{"parts": [{"text": "Hi, my name is Alice."}], "role": "user"}],
       "systemInstruction": {"parts": [{"text": "You are a concise assistant. When
       the user says their name, acknowledge it briefly. When later asked to recall
@@ -9,9 +301,9 @@ interactions:
       Content-Type:
       - application/json
       user-agent:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3 google-adk/1.14.1 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3 google-adk/1.14.1 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
@@ -19,13 +311,13 @@ interactions:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"Okay, Alice.\\n\"\n          }\n        ],\n
         \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
-        \     \"avgLogprobs\": -0.025065460801124574\n    }\n  ],\n  \"usageMetadata\":
+        \     \"avgLogprobs\": -0.020882511138916017\n    }\n  ],\n  \"usageMetadata\":
         {\n    \"promptTokenCount\": 52,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\":
         57,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 52\n      }\n    ],\n    \"candidatesTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 5\n      }\n
         \   ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
-        \"FxTDaZQUjb3-4w-GqOO4Bg\"\n}\n"
+        \"aj_iaZ2BA7KT1MkP9t_g8QI\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -34,11 +326,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 24 Mar 2026 22:45:43 GMT
+      - Fri, 17 Apr 2026 14:10:50 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=491
+      - gfet4t7; dur=527
       Transfer-Encoding:
       - chunked
       Vary:
@@ -68,9 +360,9 @@ interactions:
       Content-Type:
       - application/json
       user-agent:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3 google-adk/1.14.1 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3 google-adk/1.14.1 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
@@ -78,13 +370,13 @@ interactions:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"Alice.\\n\"\n          }\n        ],\n
         \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
-        \     \"avgLogprobs\": -0.0751932164033254\n    }\n  ],\n  \"usageMetadata\":
+        \     \"avgLogprobs\": -0.51126770178476966\n    }\n  ],\n  \"usageMetadata\":
         {\n    \"promptTokenCount\": 64,\n    \"candidatesTokenCount\": 3,\n    \"totalTokenCount\":
         67,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 64\n      }\n    ],\n    \"candidatesTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 3\n      }\n
         \   ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
-        \"FxTDae3LJ5O9_uMPwcTkwAQ\"\n}\n"
+        \"aj_iabWGLNmVjMcPxe7XiAQ\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -93,11 +385,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 24 Mar 2026 22:45:43 GMT
+      - Fri, 17 Apr 2026 14:10:51 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=438
+      - gfet4t7; dur=548
       Transfer-Encoding:
       - chunked
       Vary:
