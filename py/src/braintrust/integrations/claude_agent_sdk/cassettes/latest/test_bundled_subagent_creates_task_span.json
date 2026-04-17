@@ -10,7 +10,7 @@
             "hooks": null,
             "subtype": "initialize"
           },
-          "request_id": "req_1_a58e72af",
+          "request_id": "req_1_9d990cf3",
           "type": "control_request"
         }
       }
@@ -19,7 +19,7 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_a58e72af",
+          "request_id": "req_1_9d990cf3",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
@@ -61,7 +61,7 @@
           "statusline-setup"
         ],
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.111",
+        "claude_code_version": "2.1.112",
         "cwd": "<REDACTED_CWD>",
         "fast_mode_state": "off",
         "mcp_servers": [
@@ -83,7 +83,7 @@
             "source": "rust-analyzer-lsp@claude-plugins-official"
           }
         ],
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "skills": [
           "update-config",
           "debug",
@@ -201,7 +201,7 @@
           "mcp__linear-server__update_document"
         ],
         "type": "system",
-        "uuid": "197d70eb-40d8-4a71-8737-4da44c963460"
+        "uuid": "cb0f8a34-1eff-4a71-ab0d-611f2f651b54"
       }
     },
     {
@@ -211,12 +211,12 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The user is asking me to delegate this task to a general-purpose agent to inspect the current repository and reply with only the repository name. They explicitly state I should not answer directly without using the subagent.\n\nI need to use the Agent tool with subagent_type \"general-purpose\" to:\n1. Inspect the current repository\n2. Determine the repository name\n3. Report back with only the repository name\n\nLet me create an appropriate prompt for the general-purpose agent to do this task.",
+              "thinking": "The user is asking me to delegate a task to a general-purpose agent to inspect the current repository and reply with only the repository name. I should use the Agent tool with the general-purpose subagent type.\n\nLet me create an agent that will inspect the repository and tell me the repository name.",
               "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_01QAwjeD9Piu9QGVaCVzh3yE",
+          "id": "msg_01V9wGYEBRwdorVdnc2S9zMf",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -226,20 +226,20 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 37579
+              "ephemeral_5m_input_tokens": 37691
             },
-            "cache_creation_input_tokens": 37579,
+            "cache_creation_input_tokens": 37691,
             "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 8,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "type": "assistant",
-        "uuid": "d13a5dbc-6829-4526-b2c0-7aef6fef0221"
+        "uuid": "8ca993c0-6814-4d42-a881-7bab954e9ed0"
       }
     },
     {
@@ -251,10 +251,10 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
+              "id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
               "input": {
-                "description": "Inspect repository and identify its name",
-                "prompt": "Inspect the current repository by examining files like README.md, pyproject.toml, package.json, .git/config, or any other configuration files that would identify the repository name. Then reply with ONLY the repository name, nothing else.",
+                "description": "Inspect repository and report name",
+                "prompt": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
                 "subagent_type": "general-purpose"
               },
               "name": "Agent",
@@ -262,7 +262,7 @@
             }
           ],
           "context_management": null,
-          "id": "msg_01QAwjeD9Piu9QGVaCVzh3yE",
+          "id": "msg_01V9wGYEBRwdorVdnc2S9zMf",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -272,34 +272,34 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 37579
+              "ephemeral_5m_input_tokens": 37691
             },
-            "cache_creation_input_tokens": 37579,
+            "cache_creation_input_tokens": 37691,
             "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 8,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "type": "assistant",
-        "uuid": "1576f5f6-5e4b-49b3-a2c8-44fe99ba797c"
+        "uuid": "f1bf5129-c71c-4f09-a0f1-ee918698edde"
       }
     },
     {
       "op": "read",
       "payload": {
-        "description": "Inspect repository and identify its name",
-        "prompt": "Inspect the current repository by examining files like README.md, pyproject.toml, package.json, .git/config, or any other configuration files that would identify the repository name. Then reply with ONLY the repository name, nothing else.",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "description": "Inspect repository and report name",
+        "prompt": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "subtype": "task_started",
-        "task_id": "ab799669e465ba288",
+        "task_id": "ae78d4ad25a910a76",
         "task_type": "local_agent",
-        "tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
+        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
         "type": "system",
-        "uuid": "38b8bd4e-a99e-459a-b62f-6cf0ef6816b6"
+        "uuid": "593bf60c-297b-4f98-8532-48463021f5c7"
       }
     },
     {
@@ -308,35 +308,35 @@
         "message": {
           "content": [
             {
-              "text": "Inspect the current repository by examining files like README.md, pyproject.toml, package.json, .git/config, or any other configuration files that would identify the repository name. Then reply with ONLY the repository name, nothing else.",
+              "text": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
               "type": "text"
             }
           ],
           "role": "user"
         },
-        "parent_tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
-        "timestamp": "2026-04-16T16:48:53.922Z",
+        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "timestamp": "2026-04-17T16:17:42.496Z",
         "type": "user",
-        "uuid": "117df2f4-1d37-494d-bd17-1b87557ec010"
+        "uuid": "144d4816-2687-42fc-bd6f-1aea42926f5b"
       }
     },
     {
       "op": "read",
       "payload": {
-        "description": "Reading pyproject.toml",
+        "description": "Reading py/pyproject.toml",
         "last_tool_name": "Read",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "subtype": "task_progress",
-        "task_id": "ab799669e465ba288",
-        "tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
+        "task_id": "ae78d4ad25a910a76",
+        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
         "type": "system",
         "usage": {
-          "duration_ms": 1827,
+          "duration_ms": 1814,
           "tool_uses": 1,
-          "total_tokens": 32210
+          "total_tokens": 32090
         },
-        "uuid": "9a231290-a03c-470a-9e57-a585133e47bd"
+        "uuid": "c1a99b96-3099-4e87-8f2a-fc908d3f96d7"
       }
     },
     {
@@ -348,7 +348,7 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01BQ5yemRfBgq6CiV4SuHtj2",
+              "id": "toolu_01LqMG3Ef6WYSJjLcM22UURE",
               "input": {
                 "file_path": "<REDACTED_PATH>",
                 "limit": 50
@@ -358,7 +358,7 @@
             }
           ],
           "context_management": null,
-          "id": "msg_01VqSgvwBTxBBcbGFgNc5biR",
+          "id": "msg_01AshKPBC3qL7CJVeBJCnEG4",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -368,9 +368,9 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 32205
+              "ephemeral_5m_input_tokens": 32085
             },
-            "cache_creation_input_tokens": 32205,
+            "cache_creation_input_tokens": 32085,
             "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 3,
@@ -378,10 +378,10 @@
             "service_tier": "standard"
           }
         },
-        "parent_tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "type": "assistant",
-        "uuid": "9204d543-f124-4d29-a51b-bd28076561d2"
+        "uuid": "e55a002f-0139-4221-a659-c8d4a26ed871"
       }
     },
     {
@@ -390,36 +390,36 @@
         "message": {
           "content": [
             {
-              "content": "1\t[tool.ruff]\n2\tline-length = 119\n3\tforce-exclude = true\n4\textend-exclude = [\n5\t    \"py/src/braintrust/_generated_types.py\",\n6\t    \"py/src/braintrust/generated_types.py\",\n7\t]\n8\t\n9\t[tool.ruff.lint]\n10\tselect = [\n11\t    \"I\",    # isort\n12\t    \"F401\", # unused imports\n13\t]\n14\t[tool.ruff.lint.isort]\n15\tknown-third-party = [\"braintrust\", \"braintrust_local\", \"autoevals\"]\n16\tlines-after-imports = 2\n17\tsplit-on-trailing-comma = true\n18\t\n19\t[tool.pytest.ini_options]\n20\tasyncio_mode = \"strict\"\n21\tasyncio_default_fixture_loop_scope = \"function\"\n22\taddopts = \"--durations=3 --durations-min=0.1\"\n23\t\n\n<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n",
-              "tool_use_id": "toolu_01BQ5yemRfBgq6CiV4SuHtj2",
+              "content": "1\t[build-system]\n2\trequires = [\"setuptools>=82.0.1\"]\n3\tbuild-backend = \"setuptools.build_meta\"\n4\t\n5\t[project]\n6\tname = \"braintrust\"\n7\tdynamic = [\"version\"]\n8\tdescription = \"SDK for integrating Braintrust\"\n9\treadme = \"README.md\"\n10\tlicense = \"MIT\"\n11\trequires-python = \">=3.10.0\"\n12\tauthors = [\n13\t    { name = \"Braintrust\", email = \"sdk@braintrustdata.com\" },\n14\t]\n15\tclassifiers = [\n16\t    \"Programming Language :: Python :: 3\",\n17\t    \"Programming Language :: Python :: 3.10\",\n18\t    \"Operating System :: OS Independent\",\n19\t]\n20\tdependencies = [\n21\t    \"GitPython\",\n22\t    \"requests\",\n23\t    \"chevron\",\n24\t    \"tqdm\",\n25\t    \"exceptiongroup>=1.2.0\",\n26\t    \"jsonschema\",\n27\t    \"packaging\",\n28\t    \"sseclient-py\",\n29\t    \"python-slugify\",\n30\t    \"typing_extensions>=4.1.0\",\n31\t    \"wrapt\",\n32\t]\n33\t\n34\t[project.urls]\n35\tHomepage = \"https://www.braintrust.dev\"\n36\t\"Source Code\" = \"https://github.com/braintrustdata/braintrust-sdk-python\"\n37\t\"Bug Tracker\" = \"https://github.com/braintrustdata/braintrust-sdk-python/issues\"\n38\t\n39\t[project.scripts]\n40\tbraintrust = \"braintrust.cli.__main__:main\"\n41\t\n42\t[project.entry-points.pytest11]\n43\tbraintrust = \"braintrust.wrappers.pytest_plugin.plugin\"\n44\t\n45\t[project.optional-dependencies]\n46\tcli = [\"boto3\", \"python-dotenv\", \"uv\", \"starlette\", \"uvicorn\"]\n47\t# TODO: remove the doc extra in the next major version.\n48\tdoc = []\n49\topenai-agents = [\"openai-agents\"]\n50\totel = [\n\n<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n",
+              "tool_use_id": "toolu_01LqMG3Ef6WYSJjLcM22UURE",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
-        "parent_tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
-        "timestamp": "2026-04-16T16:48:55.756Z",
+        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "timestamp": "2026-04-17T16:17:44.313Z",
         "type": "user",
-        "uuid": "2b5aa7bc-7123-41f8-a4bc-36f6a140e76c"
+        "uuid": "1f94c0b0-b903-4e63-937f-3210074d7c62"
       }
     },
     {
       "op": "read",
       "payload": {
-        "description": "Reading .git/config",
-        "last_tool_name": "Read",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "description": "Running git config --get remote.origin.url",
+        "last_tool_name": "Bash",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "subtype": "task_progress",
-        "task_id": "ab799669e465ba288",
-        "tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
+        "task_id": "ae78d4ad25a910a76",
+        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
         "type": "system",
         "usage": {
-          "duration_ms": 2052,
+          "duration_ms": 2029,
           "tool_uses": 2,
-          "total_tokens": 32211
+          "total_tokens": 32091
         },
-        "uuid": "4b885e8f-d269-4682-b3d7-7f0b1b3fe35f"
+        "uuid": "1ab70f6e-b197-4272-9c19-bc16dd4c14a5"
       }
     },
     {
@@ -431,16 +431,16 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_015heiehE78dQ4xhSLU3RipF",
+              "id": "toolu_01Xy8xzLyeSTjNBoFWgzZf4b",
               "input": {
-                "file_path": "<REDACTED_PATH>"
+                "command": "git config --get remote.origin.url"
               },
-              "name": "Read",
+              "name": "Bash",
               "type": "tool_use"
             }
           ],
           "context_management": null,
-          "id": "msg_01VqSgvwBTxBBcbGFgNc5biR",
+          "id": "msg_01AshKPBC3qL7CJVeBJCnEG4",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -450,9 +450,9 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 32205
+              "ephemeral_5m_input_tokens": 32085
             },
-            "cache_creation_input_tokens": 32205,
+            "cache_creation_input_tokens": 32085,
             "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 3,
@@ -460,10 +460,10 @@
             "service_tier": "standard"
           }
         },
-        "parent_tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "type": "assistant",
-        "uuid": "52e0a467-e22a-468f-86e5-c51b1b6aec09"
+        "uuid": "f462ca70-eaa8-46d9-a43e-d562e44c0ad0"
       }
     },
     {
@@ -472,37 +472,38 @@
         "message": {
           "content": [
             {
-              "content": "1\t[core]\n2\t\trepositoryformatversion = 0\n3\t\tfilemode = true\n4\t\tbare = false\n5\t\tlogallrefupdates = true\n6\t\tignorecase = true\n7\t\tprecomposeunicode = true\n8\t[remote \"origin\"]\n9\t\turl = git@github.com:braintrustdata/braintrust-sdk-python.git\n10\t\tfetch = +refs/heads/*:refs/remotes/origin/*\n11\t[branch \"abhi-remove-js\"]\n12\t\tvscode-merge-base = origin/main\n13\t[branch \"abhi-pydantic-ai-tool-calls\"]\n14\t\tvscode-merge-base = upstream/main\n15\t[branch \"abhi-0.5.6-test-release\"]\n16\t\tvscode-merge-base = upstream/main\n17\t[branch \"abhi-bump-0.6.0\"]\n18\t\tvscode-merge-base = upstream/main\n19\t[branch \"abhi-unbound-local-error-git-metadata\"]\n20\t\tvscode-merge-base = upstream/main\n21\t[branch \"abhi-release-script-correct-repo\"]\n22\t\tvscode-merge-base = origin/main\n23\t[branch \"abhi-release-script-changelog\"]\n24\t\tvscode-merge-base = origin/main\n25\t[branch \"abhi-move-adk-integration\"]\n26\t\tvscode-merge-base = origin/main\n27\t[branch \"abhi-repo-cleanup-rename\"]\n28\t\tvscode-merge-base = origin/main\n29\t[branch \"feat/eval-tags\"]\n30\t\tremote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n31\t\tpushRemote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n32\t\tmerge = refs/heads/feat/eval-tags\n33\t[branch \"abhi-evals-py-tags\"]\n34\t\tvscode-merge-base = origin/main\n35\t[branch \"abhi-bump-0.7.0\"]\n36\t\tvscode-merge-base = origin/main\n37\t[branch \"abhi-fix-repo-url\"]\n38\t\tvscode-merge-base = origin/main\n39\t[branch \"abhi-chmod-release-script\"]\n40\t\tvscode-merge-base = origin/main\n41\t[branch \"abhi-sub-exceptions-traceback\"]\n42\t\tvscode-merge-base = origin/main\n43\t[branch \"ci/label-gated-fork-pr-tests\"]\n44\t\tvscode-merge-base = origin/main\n45\t\tremote = origin\n46\t\tmerge = refs/heads/ci/label-gated-fork-pr-tests\n47\t[branch \"abhi-pytest-integration\"]\n48\t\tvscode-merge-base = origin/main\n49\t[branch \"abhi-sdk-builder-tags\"]\n50\t\tvscode-merge-base = origin/main\n51\t[branch \"clean-redundant-imports\"]\n52\t\tremote = origin\n53\t\tvscode-merge-base = origin/main\n54\t\tmerge = refs/heads/clean-redundant-imports\n55\t[branch \"abhi-improve-changelog\"]\n56\t\tvscode-merge-base = origin/main\n57\t[branch \"ibolmo/bra-3897--thread-safe-integrations-wrappers\"]\n58\t\tremote = origin\n59\t\tmerge = refs/heads/ibolmo/bra-3897--thread-safe-integrations-wrappers\n60\t\tvscode-merge-base = origin/ibolmo/bra-3897--thread-safe-integrations-wrappers\n61\t[branch \"abhi-no-api-keys-ci\"]\n62\t\tvscode-merge-base = origin/main\n63\t[branch \"main\"]\n64\t\tremote = origin\n65\t\tmerge = refs/heads/main\n66\t\tvscode-merge-base = origin/main\n67\t[branch \"abhi-argo-integration-improvements\"]\n68\t\tvscode-merge-base = origin/main\n69\t[branch \"phil/agno-workflow\"]\n70\t\tremote = origin\n71\t\tmerge = refs/heads/phil/agno-workflow\n72\t\tvscode-merge-base = origin/phil/agno-workflow\n73\t[branch \"codex/update-adk-workflow\"]\n74\t\tvscode-merge-base = origin/main\n75\t\tremote = origin\n76\t\tmerge = refs/heads/codex/update-adk-workflow\n77\t[branch \"abhi-python-3.14\"]\n78\t\tvscode-merge-base = origin/main\n79\t[branch \"abhi-sdk-0.8.0\"]\n80\t\tvscode-merge-base = origin/main\n81\t[branch \"abhi-cleanup-readmes\"]\n82\t\tvscode-merge-base = origin/main\n83\t[branch \"abhi-actually-add-performance-extra\"]\n84\t\tvscode-merge-base = origin/main\n85\t[branch \"abhi-use-mise-everywhere\"]\n86\t\tvscode-merge-base = origin/main\n87\t[branch \"abhi-test-increase-windows-shards\"]\n88\t\tvscode-merge-base = origin/main\n89\t[branch \"abhi-0.8.0-test-pypi\"]\n90\t\tvscode-merge-base = origin/main\n91\t[branch \"abhi-openai-with-raw-response\"]\n92\t\tvscode-merge-base = origin/main\n93\t[branch \"fix/31\"]\n94\t\tremote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n95\t\tpushRemote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n96\t\tmerge = refs/heads/fix/31\n97\t\tvscode-merge-base = origin/main\n98\t[branch \"abhi-fix-nox-file-flags\"]\n99\t\tvscode-merge-base = origin/main\n100\t[branch \"abhi-wrap-agent-to_cli_sync\"]\n101\t\tvscode-merge-base = origin/main\n102\t[branch \"abhi-cross-context-cleanup\"]\n103\t\tvscode-merge-base = origin/main\n104\t[branch \"abhi-use-python-3.14-locally\"]\n105\t\tvscode-merge-base = origin/main\n106\t[branch \"alex/handle-classifiers\"]\n107\t\tremote = origin\n108\t\tmerge = refs/heads/alex/handle-classifiers\n109\t[branch \"cedric/json-serialization-error-multi-turn-evaluation\"]\n110\t\tremote = origin\n111\t\tmerge = refs/heads/cedric/json-serialization-error-multi-turn-evaluation\n112\t\tvscode-merge-base = origin/cedric/json-serialization-error-multi-turn-evaluation\n113\t[branch \"abhi-claude-agent-sdk-improvements\"]\n114\t\tvscode-merge-base = origin/main\n115\t[branch \"abhi-better-claude-agent-sdk-spans\"]\n116\t\tvscode-merge-base = origin/main\n117\t[branch \"abhi-claude-agent-sdk-test-pypi\"]\n118\t\tvscode-merge-base = origin/main\n119\t[branch \"abhi-claude-agent-sdk\"]\n120\t\tvscode-merge-base = origin/main\n121\t[branch \"abhi-claude-agent-sdk-record-ci\"]\n122\t\tvscode-merge-base = origin/main\n123\t[branch \"abhi-pin-gha\"]\n124\t\tvscode-merge-base = origin/main\n125\t[branch \"abhi-release-via-gha-trigger\"]\n126\t\tvscode-merge-base = origin/main\n127\t[branch \"abhi-claude-agent-hooks\"]\n128\t\tvscode-merge-base = origin/main\n129\t[branch \"sandbox-registration\"]\n130\t\tremote = origin\n131\t\tmerge = refs/heads/sandbox-registration\n132\t\tvscode-merge-base = origin/sandbox-registration\n133\t[branch \"abhi-fix-parallel-sub-agents-claude-agent-sdk\"]\n134\t\tvscode-merge-base = origin/main\n135\t[branch \"abhi-canary-nightly\"]\n136\t\tvscode-merge-base = origin/main\n137\t[branch \"abhi-create-release-tag-locally-dry-run\"]\n138\t\tvscode-merge-base = origin/main\n139\t[branch \"abhi-metadata-types\"]\n140\t\tvscode-merge-base = origin/main\n141\t[branch \"fix/28\"]\n142\t\tremote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n143\t\tpushRemote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n144\t\tmerge = refs/heads/fix/28\n145\t\tvscode-merge-base = origin/main\n146\t[branch \"chore/regenerate-sdk-python-types\"]\n147\t\tremote = origin\n148\t\tmerge = refs/heads/chore/regenerate-sdk-python-types\n149\t\tvscode-merge-base = origin/chore/regenerate-sdk-python-types\n150\t[branch \"abhi-fix-agno-ci\"]\n151\t\tvscode-merge-base = origin/main\n152\t[branch \"py-sdk-saved-parameters\"]\n153\t\tremote = origin\n154\t\tmerge = refs/heads/py-sdk-saved-parameters\n155\t\tvscode-merge-base = origin/py-sdk-saved-parameters\n156\t[branch \"abhi-pydantic-warning-serialize\"]\n157\t\tvscode-merge-base = origin/main\n158\t[branch \"abhi-ref-claude-agent-sdk\"]\n159\t\tvscode-merge-base = origin/main\n160\t[branch \"abhi-sdk-0.10.0\"]\n161\t\tvscode-merge-base = origin/main\n162\t[branch \"abhi-fix-integration-pr-workflow\"]\n163\t\tvscode-merge-base = origin/main\n164\t[branch \"abhi-provider-gap-action\"]\n165\t\tvscode-merge-base = origin/main\n166\t[branch \"abhi-google-genai-embed-instrumentation\"]\n167\t\tvscode-merge-base = origin/main\n168\t[branch \"chore/label-bot-automation-issues\"]\n169\t\tvscode-merge-base = origin/main\n170\t[branch \"abhi-new-integrations-api\"]\n171\t\tvscode-merge-base = origin/main\n172\t[branch \"abhi-fix-openai-stream-context-manager-http2\"]\n173\t\tvscode-merge-base = origin/main\n174\t[branch \"abhi-fix-broken-lint\"]\n175\t\tvscode-merge-base = origin/main\n176\t[branch \"abhi-refactor-adk-to-integrations-api\"]\n177\t\tvscode-merge-base = origin/main\n178\t[branch \"abhi-test-anthropic-cleanup-vcr-mocks\"]\n179\t\tvscode-merge-base = origin/main\n180\t[branch \"abhi-pin-optional-deps\"]\n181\t\tvscode-merge-base = origin/main\n182\t[branch \"abhi-validate-auto-instrument-adk\"]\n183\t\tvscode-merge-base = origin/main\n184\t[branch \"abhi-adk-nested-subagent-tools\"]\n185\t\tvscode-merge-base = origin/main\n186\t[branch \"abhi-agno-migrate\"]\n187\t\tvscode-merge-base = origin/main\n188\t[branch \"abhi-re-org-ci\"]\n189\t\tvscode-merge-base = origin/main\n190\t[branch \"abhi-benchmarks\"]\n191\t\tvscode-merge-base = origin/main\n192\t[branch \"abhi-delete-adk-golden-test\"]\n193\t\tvscode-merge-base = origin/main\n194\t[branch \"abhi-claude-agent-sdk-migrate\"]\n195\t\tvscode-merge-base = origin/main\n196\t[branch \"claude-agent-sdk-hooks\"]\n197\t\tvscode-merge-base = origin/main\n198\t[branch \"abhi-hard-pin-dev-deps\"]\n199\t\tvscode-merge-base = origin/main\n200\t[branch \"abhi-perf-optimize-bt-json-hot-paths\"]\n201\t\tvscode-merge-base = origin/main\n202\t[branch \"abhi-claude-agent-sdk-hooks\"]\n203\t\tvscode-merge-base = origin/main\n204\t[branch \"abhi-ref-google-genai\"]\n205\t\tvscode-merge-base = origin/main\n206\t[branch \"abhi-google-genai-multimodal\"]\n207\t\tvscode-merge-base = origin/main\n208\t[branch \"abhi-agentscope-integration\"]\n209\t\tvscode-merge-base = origin/main\n210\t[branch \"abhi-agentscope-eval-integration\"]\n211\t\tvscode-merge-base = origin/main\n212\t[branch \"abhi-openrouter-integration\"]\n213\t\tvscode-merge-base = origin/main\n214\t[branch \"auto-instrument-bttraceprocessor\"]\n215\t\tremote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n216\t\tpushRemote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n217\t\tmerge = refs/heads/auto-instrument-bttraceprocessor\n218\t[branch \"abhi-feat-google-genai-generate-images-tracing\"]\n219\t\tvscode-merge-base = origin/main\n220\t[branch \"josh/rehydrate-remote-prompt-parameters\"]\n221\t\tremote = origin\n222\t\tmerge = refs/heads/josh/rehydrate-remote-prompt-parameters\n223\t[branch \"fix/172\"]\n224\t\tremote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n225\t\tpushRemote = git@github.com:Mahhheshh/braintrust-sdk-python.git\n226\t\tmerge = refs/heads/fix/172\n227\t[branch \"abhi-refactor-migrate-pydantic-ai-integration\"]\n228\t\tvscode-merge-base = origin/main\n229\t[branch \"cedric/migrate-langchain-into-braintrust-pkg-without-auto-instrumentation\"]\n230\t\tremote = origin\n231\t\tmerge = refs/heads/cedric/migrate-langchain-into-braintrust-pkg-without-auto-instrumentation\n232\t\tvscode-merge-base = origin/cedric/migrate-langchain-into-braintrust-pkg-without-auto-instrumentation\n233\t[branch \"abhi-feat-litellm-integrations-api-migration\"]\n234\t\tvscode-merge-base = origin/main\n235\t[branch \"abhi-fix-176-dspy-adapter-callbacks\"]\n236\t\tvscode-merge-base = origin/main\n237\t[branch \"abhi-deprecate-old-langchain-package\"]\n238\t\tvscode-merge-base = origin/main\n239\t[branch \"abhi-refactor-migrate-openai-wrapper-to-integrations\"]\n240\t\tvscode-merge-base = origin/main\n241\t[branch \"abhi-fix-149-thinking-block-type\"]\n242\t\tvscode-merge-base = origin/main\n243\t[branch \"abhi-set-min-deps-nox\"]\n244\t\tvscode-merge-base = origin/main\n245\t[branch \"abhi-fix-pydantic-ai-toolmanager-move\"]\n246\t\tvscode-merge-base = origin/main\n247\t[branch \"abhi-feat-198-google-genai-interactions\"]\n248\t\tremote = origin\n249\t\tmerge = refs/heads/abhi-feat-198-google-genai-interactions\n250\t[branch \"abhi-ref-integration-utils\"]\n251\t\tvscode-merge-base = origin/main\n252\t[branch \"migrate-langchain-golden-tests\"]\n253\t\tremote = origin\n254\t\tmerge = refs/heads/migrate-langchain-golden-tests\n255\t\tvscode-merge-base = origin/migrate-langchain-golden-tests\n256\t[branch \"feat/responses-retrieve-cancel-instrumentation\"]\n257\t\tremote = origin\n258\t\tmerge = refs/heads/feat/responses-retrieve-cancel-instrumentation\n259\t[branch \"feat/audio-api-instrumentation\"]\n260\t\tremote = origin\n261\t\tmerge = refs/heads/feat/audio-api-instrumentation\n262\t[branch \"bt-4702-text-stream-ttft\"]\n263\t\tremote = origin\n264\t\tmerge = refs/heads/bt-4702-text-stream-ttft\n265\t[branch \"abhi-feat-add-openai-images-tracing\"]\n266\t\tvscode-merge-base = origin/main\n267\t[branch \"abhi-refactor-integration-attachment-utils\"]\n268\t\tvscode-merge-base = origin/main\n269\t\tremote = origin\n270\t\tmerge = refs/heads/abhi-refactor-integration-attachment-utils\n271\t[branch \"abhi-0.14.0-version-bump\"]\n272\t\tvscode-merge-base = origin/main\n273\t[branch \"abhi-fix-adk-sync-runner-spans\"]\n274\t\tvscode-merge-base = origin/main\n275\t[branch \"abhi-ci-extract-static-checks\"]\n276\t\tvscode-merge-base = origin/main\n277\t[branch \"abhi-feat-222-trace-mistral-ocr\"]\n278\t\tremote = origin\n279\t\tmerge = refs/heads/abhi-feat-222-trace-mistral-ocr\n280\t[branch \"curtis/cached_span_fetcher_fix\"]\n281\t\tremote = origin\n282\t\tmerge = refs/heads/curtis/cached_span_fetcher_fix\n283\t[branch \"auto/update-session-weights\"]\n284\t\tremote = origin\n285\t\tmerge = refs/heads/auto/update-session-weights\n286\t[branch \"ci/speed-up-python-env-setup\"]\n287\t\tvscode-merge-base = origin/main\n288\t[branch \"abhi-test-replace-pytest-forked-with-subprocess\"]\n289\t\tvscode-merge-base = origin/main\n290\t[branch \"abhi-refactor-migrate-wrappers-cassettes-and-test-utils\"]\n291\t\tvscode-merge-base = origin/main\n292\t[branch \"abhi-feat-per-version-vcr-cassettes\"]\n293\t\tvscode-merge-base = origin/main\n294\t[branch \"chore/noxfile-dep-pinning\"]\n295\t\tvscode-merge-base = origin/main\n296\t[branch \"abhi-bump-dep-update\"]\n297\t\tvscode-merge-base = origin/main\n298\t[branch \"deps/daily-update-2026-04-16\"]\n299\t\tremote = origin\n300\t\tmerge = refs/heads/deps/daily-update-2026-04-16\n301\t\tvscode-merge-base = origin/deps/daily-update-2026-04-16\n302\t\n\n<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n",
-              "tool_use_id": "toolu_015heiehE78dQ4xhSLU3RipF",
+              "content": "git@github.com:braintrustdata/braintrust-sdk-python.git",
+              "is_error": false,
+              "tool_use_id": "toolu_01Xy8xzLyeSTjNBoFWgzZf4b",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
-        "parent_tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
-        "timestamp": "2026-04-16T16:48:55.977Z",
+        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "timestamp": "2026-04-17T16:17:44.772Z",
         "type": "user",
-        "uuid": "3f013a99-0762-441a-9865-268bd57149b6"
+        "uuid": "71fe533a-67ac-44f5-8794-157b5a37a87b"
       }
     },
     {
       "op": "read",
       "payload": {
         "output_file": "",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "status": "completed",
         "subtype": "task_notification",
-        "summary": "Inspect repository and identify its name",
-        "task_id": "ab799669e465ba288",
-        "tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
+        "summary": "Inspect repository and report name",
+        "task_id": "ae78d4ad25a910a76",
+        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
         "type": "system",
         "usage": {
-          "duration_ms": 3254,
+          "duration_ms": 3099,
           "tool_uses": 2,
-          "total_tokens": 38825
+          "total_tokens": 34359
         },
-        "uuid": "29d5766c-646e-4290-b588-f2cb0d291b8b"
+        "uuid": "4bfb9b4a-fd8e-41d1-8f67-accd9727ff17"
       }
     },
     {
@@ -517,21 +518,21 @@
                   "type": "text"
                 },
                 {
-                  "text": "agentId: ab799669e465ba288 (use SendMessage with to: 'ab799669e465ba288' to continue this agent)\n<usage>total_tokens: 38831\ntool_uses: 2\nduration_ms: 3256</usage>",
+                  "text": "agentId: ae78d4ad25a910a76 (use SendMessage with to: 'ae78d4ad25a910a76' to continue this agent)\n<usage>total_tokens: 34365\ntool_uses: 2\nduration_ms: 3099</usage>",
                   "type": "text"
                 }
               ],
-              "tool_use_id": "toolu_01Y4DoFs9XchCM46sY2vgLQB",
+              "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
         "parent_tool_use_id": null,
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
-        "timestamp": "2026-04-16T16:48:57.178Z",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "timestamp": "2026-04-17T16:17:45.595Z",
         "tool_use_result": {
-          "agentId": "ab799669e465ba288",
+          "agentId": "ae78d4ad25a910a76",
           "agentType": "general-purpose",
           "content": [
             {
@@ -539,42 +540,30 @@
               "type": "text"
             }
           ],
-          "prompt": "Inspect the current repository by examining files like README.md, pyproject.toml, package.json, .git/config, or any other configuration files that would identify the repository name. Then reply with ONLY the repository name, nothing else.",
+          "prompt": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
           "status": "completed",
           "toolStats": {
-            "bashCount": 0,
+            "bashCount": 1,
             "editFileCount": 0,
             "linesAdded": 0,
             "linesRemoved": 0,
             "otherToolCount": 0,
-            "readCount": 2,
+            "readCount": 1,
             "searchCount": 0
           },
-          "totalDurationMs": 3256,
-          "totalTokens": 38831,
+          "totalDurationMs": 3099,
+          "totalTokens": 34365,
           "totalToolUseCount": 2,
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 6609
+              "ephemeral_5m_input_tokens": 2263
             },
-            "cache_creation_input_tokens": 6609,
-            "cache_read_input_tokens": 32205,
+            "cache_creation_input_tokens": 2263,
+            "cache_read_input_tokens": 32085,
             "inference_geo": "",
             "input_tokens": 7,
-            "iterations": [
-              {
-                "cache_creation": {
-                  "ephemeral_1h_input_tokens": 0,
-                  "ephemeral_5m_input_tokens": 6609
-                },
-                "cache_creation_input_tokens": 6609,
-                "cache_read_input_tokens": 32205,
-                "input_tokens": 7,
-                "output_tokens": 10,
-                "type": "message"
-              }
-            ],
+            "iterations": [],
             "output_tokens": 10,
             "server_tool_use": {
               "web_fetch_requests": 0,
@@ -585,7 +574,7 @@
           }
         },
         "type": "user",
-        "uuid": "3452c768-1ad3-4602-875f-e96a0d0e3747"
+        "uuid": "29dc0ba1-d4dd-418e-8c24-9dc6b1a517e3"
       }
     },
     {
@@ -595,12 +584,12 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The agent has returned \"braintrust-sdk-python\" as the repository name. This matches what I can see from the CLAUDE.md context in the system reminder which indicates this is a Python SDK for Braintrust, and the file path `<REDACTED_PATH> also confirms this.\n\nThe agent did what was asked - it inspected the repository and returned only the repository name.",
+              "thinking": "The agent has returned the repository name: `braintrust-sdk-python`\n\nThe user asked me to have the agent reply with only the repository name and to not answer directly without using the subagent. The agent has done that, so I should just pass along the result.",
               "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_01Dzvc5EXubRCk3VAYJ9L44P",
+          "id": "msg_014gWMrEwYMN32Bf9V4pMKMX",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -610,10 +599,10 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 354
+              "ephemeral_5m_input_tokens": 305
             },
-            "cache_creation_input_tokens": 354,
-            "cache_read_input_tokens": 37579,
+            "cache_creation_input_tokens": 305,
+            "cache_read_input_tokens": 37691,
             "inference_geo": "not_available",
             "input_tokens": 8,
             "output_tokens": 1,
@@ -621,9 +610,9 @@
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "type": "assistant",
-        "uuid": "7ebc76cf-01f1-4265-9611-51daec519cf5"
+        "uuid": "b50f943c-9033-4131-8d47-45846d1cd9f2"
       }
     },
     {
@@ -637,7 +626,7 @@
             }
           ],
           "context_management": null,
-          "id": "msg_01Dzvc5EXubRCk3VAYJ9L44P",
+          "id": "msg_014gWMrEwYMN32Bf9V4pMKMX",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -647,10 +636,10 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 354
+              "ephemeral_5m_input_tokens": 305
             },
-            "cache_creation_input_tokens": 354,
-            "cache_read_input_tokens": 37579,
+            "cache_creation_input_tokens": 305,
+            "cache_read_input_tokens": 37691,
             "inference_geo": "not_available",
             "input_tokens": 8,
             "output_tokens": 1,
@@ -658,63 +647,51 @@
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "type": "assistant",
-        "uuid": "95a8be15-d1f1-40b8-9dc4-5f9d74867659"
+        "uuid": "9f965402-708e-48ea-904c-b77bce2dd584"
       }
     },
     {
       "op": "read",
       "payload": {
         "api_error_status": null,
-        "duration_api_ms": 10100,
-        "duration_ms": 8505,
+        "duration_api_ms": 7974,
+        "duration_ms": 7109,
         "fast_mode_state": "off",
         "is_error": false,
         "modelUsage": {
           "claude-haiku-4-5-20251001": {
-            "cacheCreationInputTokens": 76747,
-            "cacheReadInputTokens": 69784,
+            "cacheCreationInputTokens": 72344,
+            "cacheReadInputTokens": 69776,
             "contextWindow": 200000,
-            "costUSD": 0.10617815,
+            "costUSD": 0.1002186,
             "inputTokens": 406,
             "maxOutputTokens": 32000,
-            "outputTokens": 572,
+            "outputTokens": 481,
             "webSearchRequests": 0
           }
         },
         "num_turns": 2,
         "permission_denials": [],
         "result": "braintrust-sdk-python",
-        "session_id": "1918114c-c1d5-4f90-ad87-7c3312ccb889",
+        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
         "stop_reason": "end_turn",
         "subtype": "success",
         "terminal_reason": "completed",
-        "total_cost_usd": 0.10617815,
+        "total_cost_usd": 0.1002186,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 37933
+            "ephemeral_5m_input_tokens": 37996
           },
-          "cache_creation_input_tokens": 37933,
-          "cache_read_input_tokens": 37579,
+          "cache_creation_input_tokens": 37996,
+          "cache_read_input_tokens": 37691,
           "inference_geo": "",
           "input_tokens": 18,
-          "iterations": [
-            {
-              "cache_creation": {
-                "ephemeral_1h_input_tokens": 0,
-                "ephemeral_5m_input_tokens": 354
-              },
-              "cache_creation_input_tokens": 354,
-              "cache_read_input_tokens": 37579,
-              "input_tokens": 8,
-              "output_tokens": 119,
-              "type": "message"
-            }
-          ],
-          "output_tokens": 382,
+          "iterations": [],
+          "output_tokens": 285,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
@@ -722,9 +699,9 @@
           "service_tier": "standard",
           "speed": "standard"
         },
-        "uuid": "a125dcf0-d150-4c58-a39b-fadbd5d80ab4"
+        "uuid": "39022cdf-72d1-4c71-b614-b94b1979d2b4"
       }
     }
   ],
-  "sdk_version": "0.1.60"
+  "sdk_version": "0.1.61"
 }

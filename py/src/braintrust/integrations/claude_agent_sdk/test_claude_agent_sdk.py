@@ -28,6 +28,7 @@ from braintrust.integrations.anthropic._utils import extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk import setup_claude_agent_sdk
 from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
 from braintrust.integrations.claude_agent_sdk.tracing import (
+    ContextTracker,
     ToolSpanTracker,
     _build_llm_input,
     _create_client_wrapper_class,
@@ -2727,3 +2728,106 @@ def test_dispatch_queue_assigns_identical_tool_spans_in_fifo_order(memory_logger
         llm_beta.end()
 
     memory_logger.pop()  # consume spans
+
+
+def test_context_tracker_preserves_bash_output_when_next_tool_use_arrives_before_result(memory_logger):
+    """Regression for claude-agent-sdk 0.1.61 interleaved subagent event stream.
+
+    In 0.1.61 a subagent can emit two ``tool_use`` AssistantMessages back-to-back
+    (e.g. Bash then Read) before either ``tool_result`` arrives. The first
+    tool span must not be closed when the second AssistantMessage arrives for
+    the same subagent context, so its ``tool_result`` can still be attached.
+    """
+    assert not memory_logger.pop()
+
+    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as root_span:
+        tracker = ContextTracker(root_span=root_span, prompt="go")
+        try:
+            # Parent orchestrator dispatches one Agent subagent tool call.
+            tracker.add(
+                AssistantMessage(
+                    content=[ToolUseBlock(id="call-alpha", name="Agent", input={"prompt": "do stuff"})],
+                    parent_tool_use_id=None,
+                )
+            )
+            tracker.add(
+                TaskStartedMessage(
+                    subtype="task_started",
+                    data={},
+                    task_id="task-alpha",
+                    description="alpha task",
+                    uuid="uuid-alpha",
+                    session_id="session-1",
+                    tool_use_id="call-alpha",
+                )
+            )
+            # Alpha's subagent issues Bash tool_use, then Read tool_use, WITHOUT
+            # any tool_result between them (new behavior in claude-agent-sdk 0.1.61).
+            tracker.add(
+                AssistantMessage(
+                    content=[
+                        ToolUseBlock(
+                            id="bash-alpha",
+                            name="Bash",
+                            input={"command": "echo alpha-bash-output"},
+                        )
+                    ],
+                    parent_tool_use_id="call-alpha",
+                )
+            )
+            tracker.add(
+                AssistantMessage(
+                    content=[
+                        ToolUseBlock(
+                            id="read-alpha",
+                            name="Read",
+                            input={"file_path": "/tmp/alpha.txt"},
+                        )
+                    ],
+                    parent_tool_use_id="call-alpha",
+                )
+            )
+            # Tool results arrive in reverse order (Read first, then Bash).
+            tracker.add(
+                UserMessage(
+                    content=[
+                        ToolResultBlock(
+                            tool_use_id="read-alpha",
+                            content=[TextBlock("alpha_file_contents")],
+                        )
+                    ],
+                    parent_tool_use_id="call-alpha",
+                )
+            )
+            tracker.add(
+                UserMessage(
+                    content=[
+                        ToolResultBlock(
+                            tool_use_id="bash-alpha",
+                            content=[TextBlock("alpha-bash-output")],
+                        )
+                    ],
+                    parent_tool_use_id="call-alpha",
+                )
+            )
+        finally:
+            tracker.cleanup()
+
+    spans = memory_logger.pop()
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    bash_spans = [s for s in tool_spans if s["span_attributes"]["name"] == "Bash"]
+    read_spans = [s for s in tool_spans if s["span_attributes"]["name"] == "Read"]
+
+    assert len(bash_spans) == 1, f"Expected exactly one Bash span, got {len(bash_spans)}"
+    assert len(read_spans) == 1, f"Expected exactly one Read span, got {len(read_spans)}"
+
+    bash_output = bash_spans[0].get("output")
+    assert bash_output is not None, (
+        "Bash tool output was dropped when a second tool_use arrived before its tool_result. "
+        "cleanup_context must not close active tool spans while the LLM turn is still ongoing."
+    )
+    assert bash_output["content"] == "alpha-bash-output"
+
+    read_output = read_spans[0].get("output")
+    assert read_output is not None
+    assert read_output["content"] == "alpha_file_contents"
