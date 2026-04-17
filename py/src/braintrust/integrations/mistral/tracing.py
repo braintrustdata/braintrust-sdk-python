@@ -6,7 +6,6 @@ import time
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
-from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import (
     _camel_to_snake,
     _infer_audio_mime_type,
@@ -60,6 +59,36 @@ _AGENTS_METADATA_KEYS = (
     "prediction",
     "parallel_tool_calls",
     "prompt_mode",
+)
+_CONVERSATION_START_METADATA_KEYS = (
+    "conversation_id",
+    "store",
+    "handoff_execution",
+    "instructions",
+    "tools",
+    "completion_args",
+    "guardrails",
+    "name",
+    "description",
+    "agent_id",
+    "agent_version",
+    "model",
+)
+_CONVERSATION_APPEND_METADATA_KEYS = (
+    "conversation_id",
+    "store",
+    "handoff_execution",
+    "completion_args",
+    "tool_confirmations",
+)
+_CONVERSATION_RESTART_METADATA_KEYS = (
+    "conversation_id",
+    "from_entry_id",
+    "store",
+    "handoff_execution",
+    "completion_args",
+    "guardrails",
+    "agent_version",
 )
 _EMBEDDINGS_METADATA_KEYS = (
     "model",
@@ -185,33 +214,28 @@ def _normalize_special_payloads(value: Any) -> Any:
     return value
 
 
-def sanitize_mistral_logged_value(value: Any) -> Any:
-    if _is_unset(value):
-        return None
-
+def _normalize_mistral_multimodal_value(value: Any) -> Any:
+    """Normalize Mistral multimodal payloads into Braintrust-friendly shapes."""
     if hasattr(value, "model_dump"):
         try:
-            value = value.model_dump(mode="json", by_alias=True)
+            value = value.model_dump(mode="python", by_alias=True)
         except TypeError:
             value = value.model_dump()
 
-    safe = bt_safe_deep_copy(value)
-    safe = _normalize_special_payloads(safe)
+    if isinstance(value, list):
+        return [_normalize_mistral_multimodal_value(item) for item in value]
+    if isinstance(value, tuple):
+        return [_normalize_mistral_multimodal_value(item) for item in value]
+    if isinstance(value, dict):
+        return _normalize_special_payloads(
+            {key: _normalize_mistral_multimodal_value(entry) for key, entry in value.items()}
+        )
+    return value
 
-    if callable(safe):
-        return "[Function]"
-    if isinstance(safe, list):
-        return [sanitize_mistral_logged_value(item) for item in safe]
-    if isinstance(safe, tuple):
-        return [sanitize_mistral_logged_value(item) for item in safe]
-    if isinstance(safe, dict):
-        sanitized = {}
-        for key, entry in safe.items():
-            if _is_unset(entry):
-                continue
-            sanitized[key] = sanitize_mistral_logged_value(entry)
-        return sanitized
-    return safe
+
+def _normalized_mistral_dict(value: Any) -> dict[str, Any] | None:
+    sanitized = _normalize_mistral_multimodal_value(value)
+    return sanitized if isinstance(sanitized, dict) else None
 
 
 def _build_request_metadata(
@@ -223,11 +247,11 @@ def _build_request_metadata(
         value = kwargs.get(key)
         if value is None or _is_unset(value):
             continue
-        metadata[key] = sanitize_mistral_logged_value(value)
+        metadata[key] = _normalize_mistral_multimodal_value(value)
 
     request_metadata = kwargs.get("metadata")
     if request_metadata is not None and not _is_unset(request_metadata):
-        metadata["request_metadata"] = sanitize_mistral_logged_value(request_metadata)
+        metadata["request_metadata"] = _normalize_mistral_multimodal_value(request_metadata)
 
     if stream is not None:
         metadata["stream"] = stream
@@ -241,6 +265,18 @@ def _build_chat_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) 
 
 def _build_agents_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) -> dict[str, Any]:
     return _build_request_metadata(kwargs, _AGENTS_METADATA_KEYS, stream=stream)
+
+
+def _build_conversation_start_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) -> dict[str, Any]:
+    return _build_request_metadata(kwargs, _CONVERSATION_START_METADATA_KEYS, stream=stream)
+
+
+def _build_conversation_append_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) -> dict[str, Any]:
+    return _build_request_metadata(kwargs, _CONVERSATION_APPEND_METADATA_KEYS, stream=stream)
+
+
+def _build_conversation_restart_metadata(kwargs: dict[str, Any], *, stream: bool | None = None) -> dict[str, Any]:
+    return _build_request_metadata(kwargs, _CONVERSATION_RESTART_METADATA_KEYS, stream=stream)
 
 
 def _build_embeddings_metadata(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -343,18 +379,28 @@ def _ocr_input(kwargs: dict[str, Any]) -> dict[str, Any]:
     return {"document": kwargs.get("document")}
 
 
-def _start_span(name: str, span_input: Any, metadata: dict[str, Any]):
+def _conversation_input(kwargs: dict[str, Any]) -> Any:
+    return kwargs.get("inputs")
+
+
+def _start_span(
+    name: str,
+    span_input: Any,
+    metadata: dict[str, Any],
+    *,
+    span_type: SpanTypeAttribute = SpanTypeAttribute.LLM,
+):
     return start_span(
         name=name,
-        type=SpanTypeAttribute.LLM,
-        input=sanitize_mistral_logged_value(span_input),
+        type=span_type,
+        input=_normalize_mistral_multimodal_value(span_input),
         metadata=metadata,
     )
 
 
 def _parse_usage_metrics(usage: Any) -> dict[str, float]:
-    usage_data = sanitize_mistral_logged_value(usage)
-    if not isinstance(usage_data, dict):
+    usage_data = _normalized_mistral_dict(usage)
+    if usage_data is None:
         return {}
 
     metrics = {}
@@ -379,8 +425,8 @@ def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None
 
 
 def _parse_ocr_usage_metrics(usage: Any) -> dict[str, float]:
-    usage_data = sanitize_mistral_logged_value(usage)
-    if not isinstance(usage_data, dict):
+    usage_data = _normalized_mistral_dict(usage)
+    if usage_data is None:
         return {}
 
     return {
@@ -392,9 +438,8 @@ def _merge_ocr_metrics(start_time: float, usage: Any) -> dict[str, Any]:
     return _merge_timing_and_usage_metrics(start_time, usage, _parse_ocr_usage_metrics)
 
 
-def _response_to_metadata(response: Any) -> dict[str, Any]:
-    data = sanitize_mistral_logged_value(response)
-    if not isinstance(data, dict):
+def _response_data_to_metadata(data: dict[str, Any] | None) -> dict[str, Any]:
+    if data is None:
         return {}
 
     metadata = {}
@@ -405,11 +450,40 @@ def _response_to_metadata(response: Any) -> dict[str, Any]:
     return metadata
 
 
-def _completion_response_to_output(response: Any) -> Any:
-    data = sanitize_mistral_logged_value(response)
-    if isinstance(data, dict):
-        return data.get("choices")
-    return None
+def _response_to_metadata(response: Any) -> dict[str, Any]:
+    return _response_data_to_metadata(_normalized_mistral_dict(response))
+
+
+def _conversation_outputs_data(data: dict[str, Any] | None) -> list[Any]:
+    if data is None:
+        return []
+
+    outputs = data.get("outputs")
+    return outputs if isinstance(outputs, list) else []
+
+
+def _conversation_response_data_to_metadata(data: dict[str, Any] | None) -> dict[str, Any]:
+    if data is None:
+        return {}
+
+    metadata = {}
+    conversation_id = data.get("conversation_id")
+    if conversation_id is not None:
+        metadata["conversation_id"] = conversation_id
+
+    object_type = data.get("object")
+    if object_type is not None:
+        metadata["object"] = object_type
+
+    for output in _conversation_outputs_data(data):
+        if not isinstance(output, dict):
+            continue
+        model = output.get("model")
+        if model is not None:
+            metadata["model"] = model
+            break
+
+    return metadata
 
 
 def _embeddings_output(response: Any) -> dict[str, Any]:
@@ -426,9 +500,8 @@ def _embeddings_output(response: Any) -> dict[str, Any]:
     return output
 
 
-def _ocr_output(response: Any) -> dict[str, Any]:
-    data = sanitize_mistral_logged_value(response)
-    if not isinstance(data, dict):
+def _ocr_output_data(data: dict[str, Any] | None) -> dict[str, Any]:
+    if data is None:
         return {"pages": []}
 
     output = {
@@ -438,21 +511,6 @@ def _ocr_output(response: Any) -> dict[str, Any]:
     if document_annotation is not None:
         output["document_annotation"] = document_annotation
     return output
-
-
-def _ocr_response_to_metadata(response: Any) -> dict[str, Any]:
-    data = sanitize_mistral_logged_value(response)
-    if not isinstance(data, dict):
-        return {}
-
-    pages = data.get("pages")
-    return {
-        "page_count": len(pages) if isinstance(pages, list) else 0,
-    }
-
-
-def _transcription_output(response: Any) -> str | None:
-    return _get_value(response, "text")
 
 
 def _transcription_response_to_metadata(response: Any) -> dict[str, Any]:
@@ -515,7 +573,7 @@ def _append_delta_content(message: dict[str, Any], delta_content: Any) -> None:
     if delta_content is None:
         return
 
-    content = sanitize_mistral_logged_value(delta_content)
+    content = _normalize_mistral_multimodal_value(delta_content)
     existing = message.get("content")
 
     if isinstance(content, str):
@@ -526,7 +584,7 @@ def _append_delta_content(message: dict[str, Any], delta_content: Any) -> None:
         elif existing is None:
             message["content"] = content
         else:
-            message["content"] = sanitize_mistral_logged_value(existing)
+            message["content"] = _normalize_mistral_multimodal_value(existing)
         return
 
     if isinstance(content, list):
@@ -544,7 +602,7 @@ def _merge_tool_calls(message: dict[str, Any], tool_calls: Any) -> None:
 
     accumulated = message.setdefault("tool_calls", [])
     for tool_call in tool_calls:
-        call = sanitize_mistral_logged_value(tool_call)
+        call = _normalize_mistral_multimodal_value(tool_call)
         if not isinstance(call, dict):
             continue
 
@@ -647,11 +705,11 @@ def _aggregate_transcription_events(items: list[Any]) -> dict[str, Any]:
     if model is not None:
         result["model"] = model
     if usage is not None:
-        result["usage"] = sanitize_mistral_logged_value(usage)
+        result["usage"] = _normalize_mistral_multimodal_value(usage)
     if language is not None:
         result["language"] = language
     if isinstance(segments, list):
-        result["segments"] = sanitize_mistral_logged_value(segments)
+        result["segments"] = _normalize_mistral_multimodal_value(segments)
     if finish_reason is not None:
         result["finish_reason"] = finish_reason
     return result
@@ -682,7 +740,7 @@ def _aggregate_speech_events(items: list[Any]) -> dict[str, Any]:
 
     result = {"audio_data": "".join(audio_parts)}
     if usage is not None:
-        result["usage"] = sanitize_mistral_logged_value(usage)
+        result["usage"] = _normalize_mistral_multimodal_value(usage)
     return result
 
 
@@ -742,16 +800,179 @@ def _aggregate_completion_events(items: list[Any]) -> dict[str, Any]:
     if created is not None:
         result["created"] = created
     if usage is not None:
-        result["usage"] = sanitize_mistral_logged_value(usage)
+        result["usage"] = _normalize_mistral_multimodal_value(usage)
+    return result
+
+
+def _conversation_output_index(data: Any) -> int:
+    output_index = _get_value(data, "output_index")
+    if isinstance(output_index, int) and output_index >= 0:
+        return output_index
+    return 0
+
+
+def _append_string_field(entry: dict[str, Any], key: str, value: Any) -> None:
+    if not isinstance(value, str) or not value:
+        return
+
+    existing = entry.get(key)
+    entry[key] = f"{existing}{value}" if isinstance(existing, str) else value
+
+
+def _set_normalized_field(entry: dict[str, Any], key: str, value: Any) -> None:
+    if value is None or _is_unset(value):
+        return
+    entry[key] = _normalize_mistral_multimodal_value(value)
+
+
+def _set_normalized_fields(entry: dict[str, Any], data: Any, *keys: str) -> None:
+    for key in keys:
+        _set_normalized_field(entry, key, _get_value(data, key))
+
+
+def _accumulate_message_output(outputs: dict[int, dict[str, Any]], data: Any) -> None:
+    output = outputs.setdefault(
+        _conversation_output_index(data),
+        {
+            "object": "entry",
+            "type": "message.output",
+            "role": "assistant",
+            "content": "",
+        },
+    )
+    _set_normalized_fields(output, data, "id", "model", "agent_id", "role")
+    _append_delta_content(output, _get_value(data, "content"))
+
+
+def _accumulate_function_call_output(outputs: dict[int, dict[str, Any]], data: Any) -> None:
+    output = outputs.setdefault(
+        _conversation_output_index(data),
+        {
+            "object": "entry",
+            "type": "function.call",
+            "name": "",
+            "arguments": "",
+        },
+    )
+    _set_normalized_fields(output, data, "id", "model", "agent_id", "tool_call_id", "confirmation_status")
+    _append_string_field(output, "name", _get_value(data, "name"))
+
+    arguments = _get_value(data, "arguments")
+    if isinstance(arguments, dict):
+        output["arguments"] = {
+            **(output.get("arguments") if isinstance(output.get("arguments"), dict) else {}),
+            **_normalize_mistral_multimodal_value(arguments),
+        }
+    else:
+        _append_string_field(output, "arguments", arguments)
+
+
+def _accumulate_tool_execution_output(outputs: dict[int, dict[str, Any]], data: Any, event: str | None) -> None:
+    output = outputs.setdefault(
+        _conversation_output_index(data),
+        {
+            "object": "entry",
+            "type": "tool.execution",
+            "arguments": "",
+        },
+    )
+    _set_normalized_fields(output, data, "id", "model", "agent_id", "name")
+    _append_string_field(output, "arguments", _get_value(data, "arguments"))
+    if event == "tool.execution.done":
+        _set_normalized_field(output, "info", _get_value(data, "info"))
+
+
+def _accumulate_agent_handoff_output(outputs: dict[int, dict[str, Any]], data: Any) -> None:
+    output = outputs.setdefault(
+        _conversation_output_index(data),
+        {
+            "object": "entry",
+            "type": "agent.handoff",
+        },
+    )
+    _set_normalized_fields(
+        output,
+        data,
+        "id",
+        "previous_agent_id",
+        "previous_agent_name",
+        "next_agent_id",
+        "next_agent_name",
+    )
+
+
+def _conversation_chunk_has_output(item: Any) -> bool:
+    event = getattr(item, "event", None)
+    return event in {
+        "message.output.delta",
+        "function.call.delta",
+        "tool.execution.started",
+        "tool.execution.delta",
+        "tool.execution.done",
+        "agent.handoff.started",
+        "agent.handoff.done",
+    }
+
+
+def _aggregate_conversation_events(items: list[Any]) -> dict[str, Any]:
+    conversation_id = None
+    usage = None
+    outputs: dict[int, dict[str, Any]] = {}
+
+    for item in items:
+        data = getattr(item, "data", item)
+        event = getattr(item, "event", None)
+
+        if event == "conversation.response.started":
+            conversation_id = _get_value(data, "conversation_id") or conversation_id
+            continue
+        if event == "conversation.response.done":
+            usage = _get_value(data, "usage") or usage
+            continue
+        if event == "message.output.delta":
+            _accumulate_message_output(outputs, data)
+            continue
+        if event == "function.call.delta":
+            _accumulate_function_call_output(outputs, data)
+            continue
+        if event in {"tool.execution.started", "tool.execution.delta", "tool.execution.done"}:
+            _accumulate_tool_execution_output(outputs, data, event)
+            continue
+        if event in {"agent.handoff.started", "agent.handoff.done"}:
+            _accumulate_agent_handoff_output(outputs, data)
+
+    result: dict[str, Any] = {
+        "object": "conversation.response",
+        "outputs": [outputs[idx] for idx in sorted(outputs)],
+    }
+    if conversation_id is not None:
+        result["conversation_id"] = conversation_id
+    if usage is not None:
+        result["usage"] = _normalize_mistral_multimodal_value(usage)
     return result
 
 
 def _finalize_completion_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
-    response_metadata = _response_to_metadata(response)
+    response_data = _normalized_mistral_dict(response)
+    response_metadata = _response_data_to_metadata(response_data)
+    usage = response_data.get("usage") if response_data else None
+
     _log_and_end_span(
         span,
-        output=_completion_response_to_output(response),
-        metrics=_merge_metrics(start_time, getattr(response, "usage", None)),
+        output=response_data.get("choices") if response_data else None,
+        metrics=_merge_metrics(start_time, usage),
+        metadata={**request_metadata, **response_metadata},
+    )
+
+
+def _finalize_conversation_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
+    response_data = _normalized_mistral_dict(response)
+    response_metadata = _conversation_response_data_to_metadata(response_data)
+    usage = response_data.get("usage") if response_data else None
+    _log_and_end_span(
+        span,
+        output=_conversation_outputs_data(response_data),
+        metrics=_merge_metrics(start_time, usage),
         metadata={**request_metadata, **response_metadata},
     )
 
@@ -767,11 +988,14 @@ def _finalize_embeddings_response(span: Any, request_metadata: dict[str, Any], r
 
 
 def _finalize_ocr_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
-    response_metadata = _ocr_response_to_metadata(response)
+    response_data = _normalized_mistral_dict(response)
+    pages = response_data.get("pages") if response_data else None
+    response_metadata = {"page_count": len(pages)} if isinstance(pages, list) else {}
+    usage_info = response_data.get("usage_info") if response_data else None
     _log_and_end_span(
         span,
-        output=_ocr_output(response),
-        metrics=_merge_ocr_metrics(start_time, getattr(response, "usage_info", None)),
+        output=_ocr_output_data(response_data),
+        metrics=_merge_ocr_metrics(start_time, usage_info),
         metadata={**request_metadata, **response_metadata},
     )
 
@@ -780,7 +1004,7 @@ def _finalize_transcription_response(span: Any, request_metadata: dict[str, Any]
     response_metadata = _transcription_response_to_metadata(response)
     _log_and_end_span(
         span,
-        output=_transcription_output(response),
+        output=_get_value(response, "text"),
         metrics=_merge_metrics(start_time, _get_value(response, "usage")),
         metadata={**request_metadata, **response_metadata},
     )
@@ -803,11 +1027,29 @@ def _finalize_completion_stream(
     first_token_time: float | None,
 ):
     response = _aggregate_completion_events(items)
+    response_metadata = _response_data_to_metadata(response)
     _log_and_end_span(
         span,
         output=response.get("choices"),
         metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
-        metadata={**metadata, **_response_to_metadata(response)},
+        metadata={**metadata, **response_metadata},
+    )
+
+
+def _finalize_conversation_stream(
+    span: Any,
+    metadata: dict[str, Any],
+    items: list[Any],
+    start_time: float,
+    first_token_time: float | None,
+):
+    response = _aggregate_conversation_events(items)
+    response_metadata = _conversation_response_data_to_metadata(response)
+    _log_and_end_span(
+        span,
+        output=response.get("outputs"),
+        metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
+        metadata={**metadata, **response_metadata},
     )
 
 
@@ -1077,6 +1319,282 @@ async def _agents_stream_async_wrapper(wrapped, instance, args, kwargs):
     return _TracedMistralAsyncStream(result, span, request_metadata, start_time)
 
 
+def _conversations_start_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_start_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span(
+        "mistral.beta.conversations.start",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralSyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_conversation_chunk_has_output,
+            finalize_stream=_finalize_conversation_stream,
+        )
+
+    _finalize_conversation_response(span, request_metadata, result, start_time)
+    return result
+
+
+async def _conversations_start_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_start_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span(
+        "mistral.beta.conversations.start",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralAsyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_conversation_chunk_has_output,
+            finalize_stream=_finalize_conversation_stream,
+        )
+
+    _finalize_conversation_response(span, request_metadata, result, start_time)
+    return result
+
+
+def _conversations_start_stream_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_start_metadata(kwargs, stream=True)
+    span = _start_span(
+        "mistral.beta.conversations.start_stream",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralSyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_conversation_chunk_has_output,
+        finalize_stream=_finalize_conversation_stream,
+    )
+
+
+async def _conversations_start_stream_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_start_metadata(kwargs, stream=True)
+    span = _start_span(
+        "mistral.beta.conversations.start_stream",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralAsyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_conversation_chunk_has_output,
+        finalize_stream=_finalize_conversation_stream,
+    )
+
+
+def _conversations_append_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_append_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span(
+        "mistral.beta.conversations.append",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralSyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_conversation_chunk_has_output,
+            finalize_stream=_finalize_conversation_stream,
+        )
+
+    _finalize_conversation_response(span, request_metadata, result, start_time)
+    return result
+
+
+async def _conversations_append_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_append_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span(
+        "mistral.beta.conversations.append",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralAsyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_conversation_chunk_has_output,
+            finalize_stream=_finalize_conversation_stream,
+        )
+
+    _finalize_conversation_response(span, request_metadata, result, start_time)
+    return result
+
+
+def _conversations_append_stream_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_append_metadata(kwargs, stream=True)
+    span = _start_span(
+        "mistral.beta.conversations.append_stream",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralSyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_conversation_chunk_has_output,
+        finalize_stream=_finalize_conversation_stream,
+    )
+
+
+async def _conversations_append_stream_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_append_metadata(kwargs, stream=True)
+    span = _start_span(
+        "mistral.beta.conversations.append_stream",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralAsyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_conversation_chunk_has_output,
+        finalize_stream=_finalize_conversation_stream,
+    )
+
+
+def _conversations_restart_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_restart_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span(
+        "mistral.beta.conversations.restart",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralSyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_conversation_chunk_has_output,
+            finalize_stream=_finalize_conversation_stream,
+        )
+
+    _finalize_conversation_response(span, request_metadata, result, start_time)
+    return result
+
+
+async def _conversations_restart_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_restart_metadata(kwargs, stream=bool(kwargs.get("stream")))
+    span = _start_span(
+        "mistral.beta.conversations.restart",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    if kwargs.get("stream"):
+        return _TracedMistralAsyncStream(
+            result,
+            span,
+            request_metadata,
+            start_time,
+            chunk_has_output=_conversation_chunk_has_output,
+            finalize_stream=_finalize_conversation_stream,
+        )
+
+    _finalize_conversation_response(span, request_metadata, result, start_time)
+    return result
+
+
+def _conversations_restart_stream_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_restart_metadata(kwargs, stream=True)
+    span = _start_span(
+        "mistral.beta.conversations.restart_stream",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = _call_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralSyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_conversation_chunk_has_output,
+        finalize_stream=_finalize_conversation_stream,
+    )
+
+
+async def _conversations_restart_stream_async_wrapper(wrapped, instance, args, kwargs):
+    request_metadata = _build_conversation_restart_metadata(kwargs, stream=True)
+    span = _start_span(
+        "mistral.beta.conversations.restart_stream",
+        _conversation_input(kwargs),
+        request_metadata,
+        span_type=SpanTypeAttribute.TASK,
+    )
+    start_time = time.time()
+    result = await _call_async_with_error_logging(span, wrapped, args, kwargs)
+
+    return _TracedMistralAsyncStream(
+        result,
+        span,
+        request_metadata,
+        start_time,
+        chunk_has_output=_conversation_chunk_has_output,
+        finalize_stream=_finalize_conversation_stream,
+    )
+
+
 def _embeddings_create_wrapper(wrapped, instance, args, kwargs):
     request_metadata = _build_embeddings_metadata(kwargs)
     span = _start_span("mistral.embeddings.create", kwargs.get("inputs"), request_metadata)
@@ -1258,6 +1776,7 @@ def wrap_mistral(client: Any) -> Any:
     from .patchers import (
         AgentsPatcher,
         ChatPatcher,
+        ConversationsPatcher,
         EmbeddingsPatcher,
         FimPatcher,
         OcrPatcher,
@@ -1280,6 +1799,12 @@ def wrap_mistral(client: Any) -> Any:
     agents = getattr(client, "agents", None)
     if agents is not None:
         AgentsPatcher.wrap_target(agents)
+
+    beta = getattr(client, "beta", None)
+    if beta is not None:
+        conversations = getattr(beta, "conversations", None)
+        if conversations is not None:
+            ConversationsPatcher.wrap_target(conversations)
 
     ocr = getattr(client, "ocr", None)
     if ocr is not None:

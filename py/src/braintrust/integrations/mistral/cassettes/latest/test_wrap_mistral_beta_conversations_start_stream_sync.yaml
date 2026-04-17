@@ -1,0 +1,81 @@
+interactions:
+- request:
+    body: '{"inputs":"What is 3+4? Reply with just the number.","stream":true,"model":"mistral-small-latest"}'
+    headers:
+      Accept:
+      - text/event-stream
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '98'
+      Host:
+      - api.mistral.ai
+      content-type:
+      - application/json
+      user-agent:
+      - mistral-client-python/2.4.0
+    method: POST
+    uri: https://api.mistral.ai/v1/conversations
+  response:
+    body:
+      string: 'event: conversation.response.started
+
+        data: {"type":"conversation.response.started","created_at":"2026-04-17T21:12:25.791348Z","conversation_id":"conv_019d9d49b0e2700f9a363ecd4565bbbf"}
+
+
+        event: message.output.delta
+
+        data: {"type":"message.output.delta","created_at":"2026-04-17T21:12:25.794369Z","output_index":0,"id":"msg_019d9d49b1c277e89ece47f4375fa054","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
+
+
+        event: conversation.response.done
+
+        data: {"type":"conversation.response.done","created_at":"2026-04-17T21:12:25.823510Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
+
+
+        '
+    headers:
+      CF-RAY:
+      - 9ede6d875fec180e-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream; charset=utf-8
+      Date:
+      - Fri, 17 Apr 2026 21:12:25 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      mistral-correlation-id:
+      - 019d9d49-b0d0-7bec-a2c7-6728e9a36d05
+      set-cookie:
+      - __cf_bm=p1CWlY5m4cxrD7Zaav8OCxXcEnCEfcaNVRHEI_eluwU-1776460345.49227-1.0.1.1-KUwjhVB_n0EDvD0VrnRufaUNTqUmsi8J3HuxCHxuurdJNzx81X.0bf3z0bxPJxsEn4eTaVN_dxCZpXk74t1tzqhkb1Pn2p0sk6zqaT7STXZuhZA.j3n0u9IUPRkh_HSY;
+        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Fri, 17 Apr 2026 21:42:25
+        GMT
+      - _cfuvid=0SsnmlKKyEDqFQXO43CbPRSXtrw.EgVonv7816.W1ow-1776460345.49227-1.0.1.1-jA6.IvzRh7obdKLgyLR1B8QzcGXY3JeiqnMRrUXi_kA;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      x-envoy-upstream-service-time:
+      - '232'
+      x-kong-proxy-latency:
+      - '12'
+      x-kong-request-id:
+      - 019d9d49-b0d0-7bec-a2c7-6728e9a36d05
+      x-kong-upstream-latency:
+      - '233'
+    status:
+      code: 200
+      message: OK
+version: 1

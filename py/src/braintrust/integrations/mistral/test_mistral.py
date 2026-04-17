@@ -13,9 +13,12 @@ from braintrust.integrations.mistral.tracing import (
     _aggregate_completion_events,
     _chat_complete_async_wrapper,
     _chat_complete_wrapper,
-    sanitize_mistral_logged_value,
+    _conversations_start_wrapper,
+    _normalize_mistral_multimodal_value,
+    _ocr_process_wrapper,
 )
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 
 
@@ -31,6 +34,7 @@ try:
     Embeddings = importlib.import_module("mistralai.client.embeddings").Embeddings
     Fim = importlib.import_module("mistralai.client.fim").Fim
     Agents = importlib.import_module("mistralai.client.agents").Agents
+    Conversations = importlib.import_module("mistralai.client.conversations").Conversations
     Ocr = importlib.import_module("mistralai.client.ocr").Ocr
     Transcriptions = importlib.import_module("mistralai.client.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.client.models")
@@ -39,6 +43,7 @@ except ImportError:
     Embeddings = importlib.import_module("mistralai.embeddings").Embeddings
     Fim = importlib.import_module("mistralai.fim").Fim
     Agents = importlib.import_module("mistralai.agents").Agents
+    Conversations = importlib.import_module("mistralai.conversations").Conversations
     Ocr = importlib.import_module("mistralai.ocr").Ocr
     Transcriptions = importlib.import_module("mistralai.transcriptions").Transcriptions
     models = importlib.import_module("mistralai.models")
@@ -111,6 +116,20 @@ def _assert_speech_complete_span(span, start, end):
     assert span["metrics"]["duration"] >= 0
 
 
+def _assert_conversation_span(span, expected_input, start, end, *, expected_content, stream=False):
+    assert span["input"] == expected_input
+    assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
+    assert span["metadata"]["provider"] == "mistral"
+    assert span["metadata"]["model"] == CHAT_MODEL
+    assert span["metadata"]["conversation_id"]
+    assert span["output"][0]["type"] == "message.output"
+    assert expected_content in span["output"][0]["content"]
+    if stream:
+        assert span["metadata"]["stream"] == True
+        assert span["metrics"]["time_to_first_token"] >= 0
+    assert_metrics_are_valid(span["metrics"], start, end)
+
+
 def _audio_method_refs():
     refs = {}
     for cls, methods in (
@@ -121,6 +140,26 @@ def _audio_method_refs():
             continue
         for method in methods:
             refs[(cls, method)] = inspect.getattr_static(cls, method)
+    return refs
+
+
+def _conversation_method_refs():
+    refs = {}
+    for method in (
+        "start",
+        "start_async",
+        "start_stream",
+        "start_stream_async",
+        "append",
+        "append_async",
+        "append_stream",
+        "append_stream_async",
+        "restart",
+        "restart_async",
+        "restart_stream",
+        "restart_stream_async",
+    ):
+        refs[(Conversations, method)] = inspect.getattr_static(Conversations, method)
     return refs
 
 
@@ -248,6 +287,128 @@ async def test_wrap_mistral_chat_complete_async(memory_logger):
     assert span["metadata"]["model"] == CHAT_MODEL
     assert "6" in str(span["output"])
     assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_beta_conversations_start_sync(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    start = time.time()
+    response = client.beta.conversations.start(
+        model=CHAT_MODEL,
+        inputs="What is 2+2? Reply with just the number.",
+    )
+    end = time.time()
+
+    assert response.outputs
+    assert response.outputs[0].type == "message.output"
+    assert "4" in str(response.outputs[0].content)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_conversation_span(
+        spans[0],
+        "What is 2+2? Reply with just the number.",
+        start,
+        end,
+        expected_content="4",
+    )
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_wrap_mistral_beta_conversations_append_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = _get_client()
+    initial_response = client.beta.conversations.start(
+        model=CHAT_MODEL,
+        inputs="What is 1+1? Reply with just the number.",
+    )
+
+    wrapped_client = wrap_mistral(client)
+    start = time.time()
+    response = await wrapped_client.beta.conversations.append_async(
+        conversation_id=initial_response.conversation_id,
+        inputs="What is 2+3? Reply with just the number.",
+    )
+    end = time.time()
+
+    assert response.outputs
+    assert response.outputs[0].type == "message.output"
+    assert "5" in str(response.outputs[0].content)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_conversation_span(
+        spans[0],
+        "What is 2+3? Reply with just the number.",
+        start,
+        end,
+        expected_content="5",
+    )
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_beta_conversations_start_stream_sync(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    start = time.time()
+    with client.beta.conversations.start_stream(
+        model=CHAT_MODEL,
+        inputs="What is 3+4? Reply with just the number.",
+    ) as stream:
+        events = list(stream)
+    end = time.time()
+
+    assert events
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_conversation_span(
+        spans[0],
+        "What is 3+4? Reply with just the number.",
+        start,
+        end,
+        expected_content="7",
+        stream=True,
+    )
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_beta_conversations_restart_sync(memory_logger):
+    assert not memory_logger.pop()
+
+    client = _get_client()
+    initial_response = client.beta.conversations.start(
+        model=CHAT_MODEL,
+        inputs="What is 9+1? Reply with just the number.",
+    )
+
+    wrapped_client = wrap_mistral(client)
+    start = time.time()
+    response = wrapped_client.beta.conversations.restart(
+        conversation_id=initial_response.conversation_id,
+        from_entry_id=initial_response.outputs[0].id,
+        inputs="What is 6+6? Reply with just the number.",
+    )
+    end = time.time()
+
+    assert response.outputs
+    assert response.outputs[0].type == "message.output"
+    assert "12" in str(response.outputs[0].content)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_conversation_span(
+        spans[0],
+        "What is 6+6? Reply with just the number.",
+        start,
+        end,
+        expected_content="12",
+    )
 
 
 @pytest.mark.vcr
@@ -745,6 +906,38 @@ def test_mistral_integration_setup_instruments_audio_transcriptions(memory_logge
 
 
 @pytest.mark.vcr
+def test_mistral_integration_setup_instruments_beta_conversations(memory_logger, monkeypatch):
+    assert not memory_logger.pop()
+
+    original_conversation_methods = _conversation_method_refs()
+
+    assert MistralIntegration.setup()
+    client = _get_client()
+    try:
+        start = time.time()
+        response = client.beta.conversations.start(
+            model=CHAT_MODEL,
+            inputs="What is 4+4? Reply with just the number.",
+        )
+        end = time.time()
+    finally:
+        _restore_method_refs(monkeypatch, original_conversation_methods)
+
+    assert response.outputs
+    assert "8" in str(response.outputs[0].content)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    _assert_conversation_span(
+        spans[0],
+        "What is 4+4? Reply with just the number.",
+        start,
+        end,
+        expected_content="8",
+    )
+
+
+@pytest.mark.vcr
 def test_mistral_integration_setup_creates_spans(memory_logger, monkeypatch):
     assert not memory_logger.pop()
 
@@ -822,6 +1015,7 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     first_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
     first_ocr_process = inspect.getattr_static(Ocr, "process")
     first_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
+    first_conversation_methods = _conversation_method_refs()
     first_audio_methods = _audio_method_refs()
 
     assert MistralIntegration.setup()
@@ -841,6 +1035,7 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     patched_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
     patched_ocr_process = inspect.getattr_static(Ocr, "process")
     patched_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
+    patched_conversation_methods = _conversation_method_refs()
     patched_audio_methods = _audio_method_refs()
 
     assert MistralIntegration.setup()
@@ -860,6 +1055,8 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     assert inspect.getattr_static(Agents, "stream_async") is patched_agents_stream_async
     assert inspect.getattr_static(Ocr, "process") is patched_ocr_process
     assert inspect.getattr_static(Ocr, "process_async") is patched_ocr_process_async
+    for key, method in patched_conversation_methods.items():
+        assert inspect.getattr_static(*key) is method
     for key, method in patched_audio_methods.items():
         assert inspect.getattr_static(*key) is method
 
@@ -879,6 +1076,7 @@ def test_mistral_integration_setup_is_idempotent(monkeypatch):
     monkeypatch.setattr(Agents, "stream_async", first_agents_stream_async)
     monkeypatch.setattr(Ocr, "process", first_ocr_process)
     monkeypatch.setattr(Ocr, "process_async", first_ocr_process_async)
+    _restore_method_refs(monkeypatch, first_conversation_methods)
     _restore_method_refs(monkeypatch, first_audio_methods)
 
 
@@ -935,8 +1133,8 @@ async def test_chat_complete_async_wrapper_logs_errors(memory_logger):
     assert "async boom" in span["error"]
 
 
-def test_sanitize_mistral_logged_value_converts_image_url_data_uri_to_attachment():
-    sanitized = sanitize_mistral_logged_value(
+def test_normalize_mistral_multimodal_value_converts_image_url_data_uri_to_attachment():
+    sanitized = _normalize_mistral_multimodal_value(
         {
             "type": "image_url",
             "image_url": {"url": "data:image/png;base64,aGVsbG8="},
@@ -947,8 +1145,8 @@ def test_sanitize_mistral_logged_value_converts_image_url_data_uri_to_attachment
     assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
 
 
-def test_sanitize_mistral_logged_value_converts_image_url_string_data_uri_to_attachment():
-    sanitized = sanitize_mistral_logged_value(
+def test_normalize_mistral_multimodal_value_converts_image_url_string_data_uri_to_attachment():
+    sanitized = _normalize_mistral_multimodal_value(
         {
             "type": "image_url",
             "image_url": "data:image/png;base64,aGVsbG8=",
@@ -959,8 +1157,8 @@ def test_sanitize_mistral_logged_value_converts_image_url_string_data_uri_to_att
     assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
 
 
-def test_sanitize_mistral_logged_value_converts_document_url_data_uri_to_attachment():
-    sanitized = sanitize_mistral_logged_value(
+def test_normalize_mistral_multimodal_value_converts_document_url_data_uri_to_attachment():
+    sanitized = _normalize_mistral_multimodal_value(
         {
             "type": "document_url",
             "document_url": TEST_PDF_DATA_URL,
@@ -974,8 +1172,8 @@ def test_sanitize_mistral_logged_value_converts_document_url_data_uri_to_attachm
     assert sanitized["file"]["filename"] == "test.pdf"
 
 
-def test_sanitize_mistral_logged_value_converts_large_base64_input_audio_to_attachment():
-    sanitized = sanitize_mistral_logged_value(
+def test_normalize_mistral_multimodal_value_converts_large_base64_input_audio_to_attachment():
+    sanitized = _normalize_mistral_multimodal_value(
         {
             "type": "input_audio",
             "input_audio": base64.b64encode(b"hello" * 16).decode("ascii"),
@@ -986,12 +1184,67 @@ def test_sanitize_mistral_logged_value_converts_large_base64_input_audio_to_atta
     assert sanitized["input_audio"].reference["filename"] == "input_audio.bin"
 
 
-def test_sanitize_mistral_logged_value_leaves_non_base64_input_audio_unchanged():
+def test_normalize_mistral_multimodal_value_leaves_non_base64_input_audio_unchanged():
     original = {"type": "input_audio", "input_audio": "not base64"}
 
-    sanitized = sanitize_mistral_logged_value(original)
+    sanitized = _normalize_mistral_multimodal_value(original)
 
     assert sanitized == original
+
+
+class _UnsupportedUsageResponse:
+    def __init__(self, **attrs):
+        for key, value in attrs.items():
+            setattr(self, key, value)
+
+
+@pytest.mark.parametrize(
+    ("wrapper", "kwargs", "response", "missing_metric_keys"),
+    [
+        (
+            _chat_complete_wrapper,
+            {
+                "model": CHAT_MODEL,
+                "messages": [{"role": "user", "content": "hello"}],
+            },
+            _UnsupportedUsageResponse(usage={"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5}),
+            {"tokens", "prompt_tokens", "completion_tokens"},
+        ),
+        (
+            _conversations_start_wrapper,
+            {
+                "model": CHAT_MODEL,
+                "inputs": [{"role": "user", "content": "hello"}],
+            },
+            _UnsupportedUsageResponse(usage={"prompt_tokens": 4, "completion_tokens": 1, "total_tokens": 5}),
+            {"tokens", "prompt_tokens", "completion_tokens"},
+        ),
+        (
+            _ocr_process_wrapper,
+            {
+                "model": OCR_MODEL,
+                "document": {"type": "document_url", "document_url": TEST_PDF_DATA_URL},
+            },
+            _UnsupportedUsageResponse(usage_info={"pages_processed": 1, "doc_size_bytes": 70}),
+            {"pages_processed", "doc_size_bytes"},
+        ),
+    ],
+)
+def test_wrappers_ignore_usage_when_response_normalization_fails(
+    memory_logger, wrapper, kwargs, response, missing_metric_keys
+):
+    assert not memory_logger.pop()
+
+    result = wrapper(lambda *args, **kwargs: response, None, (), kwargs)
+
+    assert result is response
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    for key in missing_metric_keys:
+        assert key not in span["metrics"]
+    assert span["metrics"]["duration"] >= 0
 
 
 def test_aggregate_completion_events_merges_tool_calls_and_content():
