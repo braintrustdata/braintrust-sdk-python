@@ -1189,10 +1189,26 @@ def _extract_response_metrics(
         if hasattr(usage, "cache_write_tokens") and usage.cache_write_tokens is not None:
             metrics["prompt_cache_creation_tokens"] = float(usage.cache_write_tokens)
 
-        # Extract reasoning tokens for reasoning models (o1/o3)
-        if hasattr(usage, "details") and usage.details is not None:
-            if hasattr(usage.details, "reasoning_tokens") and usage.details.reasoning_tokens is not None:
-                metrics["completion_reasoning_tokens"] = float(usage.details.reasoning_tokens)
+        if hasattr(usage, "input_audio_tokens") and usage.input_audio_tokens is not None:
+            metrics["prompt_audio_tokens"] = float(usage.input_audio_tokens)
+
+        if hasattr(usage, "output_audio_tokens") and usage.output_audio_tokens is not None:
+            metrics["completion_audio_tokens"] = float(usage.output_audio_tokens)
+
+        # pydantic_ai's RequestUsage.details is dict[str, int]. Providers stash extra
+        # token counts here -- e.g. OpenAI's responses API puts reasoning_tokens here,
+        # and chat completions spreads completion_tokens_details (reasoning_tokens,
+        # audio_tokens, ...). cached_tokens may also surface here on some providers
+        # alongside the top-level cache_read_tokens. Reading attributes off `details`
+        # would silently drop everything since dict has no such attrs.
+        details = getattr(usage, "details", None)
+        if isinstance(details, dict):
+            reasoning = details.get("reasoning_tokens")
+            if reasoning is not None:
+                metrics["completion_reasoning_tokens"] = float(reasoning)
+            cached = details.get("cached_tokens")
+            if cached is not None:
+                metrics["prompt_cached_tokens"] = float(cached)
 
     return metrics if metrics else None
 
