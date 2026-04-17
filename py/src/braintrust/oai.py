@@ -1,4 +1,5 @@
 from braintrust.integrations.openai import OpenAIIntegration, wrap_openai
+from braintrust.integrations.openai.tracing import NamedWrapper
 
 
 def patch_openai() -> bool:
@@ -7,6 +8,7 @@ def patch_openai() -> bool:
 
 
 __all__ = [
+    "NamedWrapper",
     "patch_openai",
     "wrap_openai",
 ]
