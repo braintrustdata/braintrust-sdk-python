@@ -1,0 +1,66 @@
+interactions:
+- request:
+    body: '{"model": "rerank-english-v3.0", "query": "What is the capital of France?",
+      "top_n": 2, "documents": ["Paris is the capital of France.", "Berlin is the
+      capital of Germany.", "Madrid is the capital of Spain."]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '209'
+      content-type:
+      - application/json
+      host:
+      - api.cohere.com
+      user-agent:
+      - litellm/1.74.0
+    method: POST
+    uri: https://api.cohere.com/v2/rerank
+  response:
+    body:
+      string: '{"id":"e38c517d-0707-49b8-ab1a-b0a43fec4e56","results":[{"index":0,"relevance_score":0.99914074},{"index":1,"relevance_score":0.00090044667}],"meta":{"api_version":{"version":"2"},"billed_units":{"search_units":1}}}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Debug-Trace-ID
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Cache-Control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 17 Apr 2026 16:43:22 GMT
+      Expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - envoy
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin,Accept-Encoding
+      Via:
+      - 1.1 google
+      content-length:
+      - '215'
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - 1f986766371c39aa1748d236c7d008ff
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '59'
+      x-trial-endpoint-call-limit:
+      - '10'
+      x-trial-endpoint-call-remaining:
+      - '6'
+    status:
+      code: 200
+      message: OK
+version: 1

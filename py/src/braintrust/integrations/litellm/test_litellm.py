@@ -17,6 +17,14 @@ TEST_PROMPT = "What's 12 + 12?"
 TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
 
+RERANK_MODEL = "cohere/rerank-english-v3.0"
+RERANK_QUERY = "What is the capital of France?"
+RERANK_DOCUMENTS = [
+    "Paris is the capital of France.",
+    "Berlin is the capital of Germany.",
+    "Madrid is the capital of Spain.",
+]
+
 
 def _assert_speech_output_attachment(span) -> None:
     assert span["output"]["type"] == "audio"
@@ -790,6 +798,140 @@ def test_litellm_openrouter_no_booleans_in_metrics(memory_logger):
     for key, value in metrics.items():
         assert not isinstance(value, bool)
     assert "is_byok" not in metrics
+
+
+@pytest.mark.vcr
+def test_litellm_rerank(memory_logger):
+    assert not memory_logger.pop()
+
+    start = time.time()
+    response = litellm.rerank(
+        model=RERANK_MODEL,
+        query=RERANK_QUERY,
+        documents=RERANK_DOCUMENTS,
+        top_n=2,
+    )
+    end = time.time()
+
+    assert response
+    assert response.results
+    assert len(response.results) == 2
+    # Paris should rank first for "capital of France".
+    assert response.results[0]["index"] == 0
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "Rerank"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["model"] == RERANK_MODEL
+    assert span["metadata"]["top_n"] == 2
+    assert span["metadata"]["document_count"] == 3
+    assert span["input"] == {"query": RERANK_QUERY, "documents": RERANK_DOCUMENTS}
+
+    assert isinstance(span["output"], list)
+    assert len(span["output"]) == 2
+    assert span["output"][0]["index"] == 0
+    assert isinstance(span["output"][0]["relevance_score"], float)
+    # Document payload must not leak into the span output.
+    for entry in span["output"]:
+        assert set(entry.keys()) == {"index", "relevance_score"}
+
+    metrics = span["metrics"]
+    assert metrics["start"] >= start
+    assert metrics["end"] <= end
+    assert metrics["end"] >= metrics["start"]
+    assert metrics["duration"] >= 0
+    # Cohere rerank bills in search_units.
+    assert metrics.get("search_units") == 1
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_litellm_arerank(memory_logger):
+    assert not memory_logger.pop()
+
+    start = time.time()
+    response = await litellm.arerank(
+        model=RERANK_MODEL,
+        query=RERANK_QUERY,
+        documents=RERANK_DOCUMENTS,
+        top_n=2,
+    )
+    end = time.time()
+
+    assert response
+    assert response.results
+    assert len(response.results) == 2
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "Rerank"
+    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["model"] == RERANK_MODEL
+    assert span["metadata"]["top_n"] == 2
+    assert span["metadata"]["document_count"] == 3
+    assert span["input"] == {"query": RERANK_QUERY, "documents": RERANK_DOCUMENTS}
+    assert isinstance(span["output"], list)
+    assert len(span["output"]) == 2
+
+    metrics = span["metrics"]
+    assert metrics["start"] >= start
+    assert metrics["end"] <= end
+    assert metrics.get("search_units") == 1
+
+
+def test_litellm_parse_rerank_metrics_from_meta():
+    """Unit-level sanity check for ``_parse_rerank_metrics``.
+
+    LiteLLM rerank responses follow Cohere's shape: usage lives under
+    ``meta.billed_units`` and ``meta.tokens``.  ``billed_units`` wins when
+    both are present.
+    """
+    from braintrust.integrations.litellm.tracing import _parse_rerank_metrics
+
+    response = {
+        "meta": {
+            "billed_units": {
+                "input_tokens": 7,
+                "output_tokens": 3,
+                "search_units": 1,
+            },
+            "tokens": {
+                "input_tokens": 999,
+                "output_tokens": 999,
+            },
+        }
+    }
+    metrics = _parse_rerank_metrics(response)
+    # billed_units overrides the matching fields in tokens.
+    assert metrics["prompt_tokens"] == 7
+    assert metrics["completion_tokens"] == 3
+    assert metrics["search_units"] == 1
+    # derived total when no total_tokens is reported.
+    assert metrics["tokens"] == 10
+
+    # meta.billed_units alone also yields a derived total.
+    metrics2 = _parse_rerank_metrics({"meta": {"billed_units": {"search_units": 1}}})
+    assert metrics2 == {"search_units": 1}
+
+
+def test_litellm_extract_rerank_output_drops_document():
+    from braintrust.integrations.litellm.tracing import _extract_rerank_output
+
+    response = {
+        "results": [
+            {"index": 0, "relevance_score": 0.9, "document": {"text": "private"}},
+            {"index": 1, "relevance_score": 0.1, "document": {"text": "also private"}},
+        ]
+    }
+    out = _extract_rerank_output(response)
+    assert out == [
+        {"index": 0, "relevance_score": 0.9},
+        {"index": 1, "relevance_score": 0.1},
+    ]
 
 
 class TestAutoInstrumentLiteLLM:
