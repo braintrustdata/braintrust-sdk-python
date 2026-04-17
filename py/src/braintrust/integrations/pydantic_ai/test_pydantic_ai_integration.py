@@ -92,18 +92,19 @@ def test_extract_response_metrics_leaf_fields():
 
     maybe_metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
     assert maybe_metrics is not None
-    metrics: dict[str, float] = maybe_metrics
 
-    assert metrics["prompt_tokens"] == 100
-    assert metrics["completion_tokens"] == 50
-    assert metrics["tokens"] == 150  # total_tokens is a property: input + output
-    assert metrics["prompt_cache_creation_tokens"] == 20
-    assert metrics["prompt_audio_tokens"] == 7
-    assert metrics["completion_audio_tokens"] == 11
-    assert metrics["completion_reasoning_tokens"] == 13
+    # pylint: disable=unsupported-membership-test,unsubscriptable-object
+    assert maybe_metrics["prompt_tokens"] == 100
+    assert maybe_metrics["completion_tokens"] == 50
+    assert maybe_metrics["tokens"] == 150  # total_tokens is a property: input + output
+    assert maybe_metrics["prompt_cache_creation_tokens"] == 20
+    assert maybe_metrics["prompt_audio_tokens"] == 7
+    assert maybe_metrics["completion_audio_tokens"] == 11
+    assert maybe_metrics["completion_reasoning_tokens"] == 13
     # details["cached_tokens"] is read after cache_read_tokens, so it wins when both
     # are populated; this preserves the pre-strip behavior of `_extract_usage_metrics`.
-    assert metrics["prompt_cached_tokens"] == 17
+    assert maybe_metrics["prompt_cached_tokens"] == 17
+    # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
 @pytest.mark.vcr
