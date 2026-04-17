@@ -8,34 +8,27 @@ interactions:
       "name": "get_weather", "parameters": {"properties": {"location": {"type": "STRING"}},
       "required": ["location"], "type": "OBJECT"}}]}], "generationConfig": {}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '561'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61SXU+DMBR9768gfR4LMofG100TP4hTyWJijLnChTWWFttuy1z23y1fG0x9ExJS
-        7jk9596ebonj0BhEwhIwqOmF82IrjrOtviUmhUFhLNCWbLEAZQ7c+tl21paSLkVsmBQT4Ly3ucEF
-        5GjrNEPztkYwC1R0cEwClelfNluEyxhK+VLiCYRzpUDETMeSHnF35K+/w/r1YEyV5FVfuUyQt2K7
-        lkBTJphePCLoxju6n+37prDK7mRWKPletu2eDwPf98bBaeD59h2fjND1AtKaV7Z0qSHDEA3YAGA/
-        LLUieWEi+YFiIpdVAOOz2qiTVw8PGthIA7yPjAY/VPXUejLejbGTsB0fODObcsbo8jnqZGP1e021
-        Z0Q6R3nc4j+ZBX0v0iRThzVHpZsbkWFuc3L9oeemHPSiEqQKdSGFxuuk5Ez9NITwFqfhav1p9EzG
-        XzebB4+SHfkGVtQS/hUDAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"functionCall\": {\n              \"name\": \"get_weather\",\n
+        \             \"args\": {\n                \"location\": \"San Francisco\"\n
+        \             }\n            }\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"avgLogprobs\":
+        1.1747082074483235e-06\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        57,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 63,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 57\n
+        \     }\n    ],\n    \"candidatesTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 6\n      }\n    ]\n  },\n  \"modelVersion\":
+        \"gemini-2.0-flash\",\n  \"responseId\": \"bz_iab31BsKq1MkPt_jiyAY\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -44,11 +37,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Thu, 18 Sep 2025 20:09:51 GMT
+      - Fri, 17 Apr 2026 14:10:55 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=530
+      - gfet4t7; dur=493
       Transfer-Encoding:
       - chunked
       Vary:
@@ -59,6 +52,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:
@@ -69,43 +64,34 @@ interactions:
       "role": "user"}, {"parts": [{"functionCall": {"args": {"location": "San Francisco"},
       "name": "get_weather"}}], "role": "model"}, {"parts": [{"functionResponse":
       {"name": "get_weather", "response": {"location": "San Francisco", "temperature":
-      "72\u00b0F", "condition": "sunny", "humidity": "45%", "wind": "5 mph NW"}}}],
-      "role": "user"}], "systemInstruction": {"parts": [{"text": "You are a helpful
-      weather assistant. Use the get_weather tool to answer questions about weather.\n\nYou
-      are an agent. Your internal name is \"weather_agent\"."}], "role": "user"},
-      "tools": [{"functionDeclarations": [{"description": "Get the weather for a location.",
-      "name": "get_weather", "parameters": {"properties": {"location": {"type": "STRING"}},
-      "required": ["location"], "type": "OBJECT"}}]}], "generationConfig": {}}'
+      "72\u00b0F", "condition": "sunny"}}}], "role": "user"}], "systemInstruction":
+      {"parts": [{"text": "You are a helpful weather assistant. Use the get_weather
+      tool to answer questions about weather.\n\nYou are an agent. Your internal name
+      is \"weather_agent\"."}], "role": "user"}, "tools": [{"functionDeclarations":
+      [{"description": "Get the weather for a location.", "name": "get_weather", "parameters":
+      {"properties": {"location": {"type": "STRING"}}, "required": ["location"], "type":
+      "OBJECT"}}]}], "generationConfig": {}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '881'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.31.0 gl-python/3.9.21 google-adk/1.14.1 gl-python/3.9.21
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61R0U7bQBB891esTuobiS5OHELfqqaRUIEisACprdA2Xsen2nfmbl2IovwT38CX
-        cefUwaGv9YO12pnbGc1sIgCxRJ2pDJmc+Ajf/QZg0/4DZjSTZg90K7+s0fIbd/dterOnMD2FRyIt
-        CB4JuSALSsM1alhY1EvllgaUA9dovYZHxQUgMFU1WeTGEpgcjuOX58UQwomiqVSmeB2eTJIP4B0D
-        h9PKD36XQFUXcHE7/KFFz8h2P/88erNvTUnBW2UyKjv6tiOIXGnliitCZ3SgXaffLsUexT+rM7Oq
-        rfkVEhjIoZQymU1HUo6n8iSeTpKTWRx14q2saByu6JwYfci4j1L4I1XNqflN+rNp2pBnk51Qr5MD
-        fNzhbBjLA2g0mh39c9fNvaoq+2X1evQBYOlTbYv6cpeKXkh8aKtLKeqF+d7kfxIbvxOL/paz6+uG
-        rFO7YlZU+aoG8VAO8hJd0V4UllxttKPTLHDmcX6Op+nXi3v19MDu8j6npPkkRbSNXgFas32N/AIA
-        AA==
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The weather in San Francisco is sunny
+        with a temperature of 72\xB0F.\\n\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"avgLogprobs\":
+        -0.0043557501501507228\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        76,\n    \"candidatesTokenCount\": 18,\n    \"totalTokenCount\": 94,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 76\n
+        \     }\n    ],\n    \"candidatesTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 18\n      }\n    ]\n  },\n  \"modelVersion\":
+        \"gemini-2.0-flash\",\n  \"responseId\": \"bz_iaYn3OonD1MkPvoSN8Aw\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -114,11 +100,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Thu, 18 Sep 2025 20:09:52 GMT
+      - Fri, 17 Apr 2026 14:10:56 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=612
+      - gfet4t7; dur=502
       Transfer-Encoding:
       - chunked
       Vary:
@@ -129,6 +115,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:

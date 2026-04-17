@@ -269,7 +269,7 @@ def test_litellm_moderation(memory_logger):
     assert not memory_logger.pop()
 
     start = time.time()
-    response = litellm.moderation(model="text-moderation-latest", input="This is a test message")
+    response = litellm.moderation(model="omni-moderation-latest", input="This is a test message")
     end = time.time()
 
     assert response
@@ -280,7 +280,7 @@ def test_litellm_moderation(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span
-    assert span["metadata"]["model"] == "text-moderation-latest"
+    assert span["metadata"]["model"] == "omni-moderation-latest"
     assert span["metadata"]["provider"] == "litellm"
     assert "This is a test message" in str(span["input"])
 

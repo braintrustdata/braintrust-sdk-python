@@ -13,6 +13,7 @@ from braintrust.integrations import (
     AgnoIntegration,
     AnthropicIntegration,
     ClaudeAgentSDKIntegration,
+    CohereIntegration,
     DSPyIntegration,
     GoogleGenAIIntegration,
     LangChainIntegration,
@@ -23,6 +24,7 @@ from braintrust.integrations import (
     OpenRouterIntegration,
     PydanticAIIntegration,
 )
+from braintrust.integrations.base import BaseIntegration
 
 
 __all__ = ["auto_instrument"]
@@ -57,6 +59,7 @@ def auto_instrument(
     adk: bool = True,
     langchain: bool = True,
     openai_agents: bool = True,
+    cohere: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -82,6 +85,7 @@ def auto_instrument(
         adk: Enable Google ADK instrumentation (default: True)
         langchain: Enable LangChain instrumentation (default: True)
         openai_agents: Enable OpenAI Agents SDK instrumentation (default: True)
+        cohere: Enable Cohere instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -127,7 +131,7 @@ def auto_instrument(
         client.models.generate_content(model="gemini-2.0-flash", contents="Hello!")
         ```
     """
-    results = {}
+    results: dict[str, bool] = {}
 
     if openai:
         results["openai"] = _instrument_integration(OpenAIIntegration)
@@ -157,11 +161,13 @@ def auto_instrument(
         results["langchain"] = _instrument_integration(LangChainIntegration)
     if openai_agents:
         results["openai_agents"] = _instrument_integration(OpenAIAgentsIntegration)
+    if cohere:
+        results["cohere"] = _instrument_integration(CohereIntegration)
 
     return results
 
 
-def _instrument_integration(integration) -> bool:
+def _instrument_integration(integration: type[BaseIntegration]) -> bool:
     with _try_patch():
         return integration.setup()
     return False

@@ -1,5 +1,127 @@
 interactions:
 - request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.33.1
+    method: GET
+    uri: https://staging-api.braintrust.dev/version
+  response:
+    body:
+      string: '{"version":"2.0.0","date_version":"20260417","ff_version":24,"commit":"0d9d9d17b59a872d1cac7f50d67429265387324c","deployment_mode":"lambda","deployment_type":"custom","brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","metrics","logs","traces","memprof","usage"]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '550'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 17 Apr 2026 14:11:00 GMT
+      Via:
+      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 ed31b4e68abf63ec3ae0c1e539b4d67c.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - _a-z0k0b-ULauPr1RtdD9XA0fQJIKKsocUukIOJISSTH5HffZStJYA==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69e23f74-2a5509501a70c39a65e72bb9;Parent=3a49d2896038b1dc;Sampled=0;Lineage=1:fc3b4ff1:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
+      etag:
+      - W/"226-EfRuYziO2Q1Ux8maLsFk5foD01A"
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - b97aTEWvoAMEmOQ=
+      x-amzn-Remapped-content-length:
+      - '550'
+      x-amzn-RequestId:
+      - 061c2034-b86d-4c90-830f-2fefb7e8a568
+      x-bt-internal-trace-id:
+      - 69e23f740000000059c0ae0bf8c123d5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/.local/share/uv/python/cpython-3.14.3-macos-aarch64-none/lib/python3.14/asyncio/events.py",
+      "caller_functionname": "_run", "caller_lineno": 94}, "created": "2026-04-17T14:10:59.719932+00:00",
+      "id": "bf425eef-d65e-4c7c-93ca-239eda9e0aa4", "log_id": "g", "metrics": {"start":
+      1776435059.719931}, "project_id": "test-context", "root_span_id": "728579d5-0dd0-4ae7-844c-74009244976d",
+      "span_attributes": {"exec_counter": 57, "name": "outer_span", "type": "task"},
+      "span_id": "728579d5-0dd0-4ae7-844c-74009244976d", "span_parents": null}], "api_version":
+      2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '636'
+      User-Agent:
+      - python-requests/2.33.1
+    method: POST
+    uri: https://staging-api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-context, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=braintrustdata.com] [timestamp=1776435060.947]","InternalTraceId":"69e23f740000000051437af58db7b1a5","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '238'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 17 Apr 2026 14:11:00 GMT
+      Via:
+      - 1.1 8250156022879efefd7a589c8ba8c706.cloudfront.net (CloudFront), 1.1 f0b5ff1c80ac588b3de0f130e6e2c0b6.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - MJq0YGNdOuVS0dKIFDvGPaQT2B1HgfOjtkoVejip9wQjlzeid_sDbA==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P1
+      X-Amzn-Trace-Id:
+      - Root=1-69e23f74-7df8c1fa5b4413a118cc7fb4;Parent=2cdc018505975ced;Sampled=0;Lineage=1:fc3b4ff1:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
+      content-encoding:
+      - gzip
+      etag:
+      - W/"132-bd6hiS2MgowFoBU4Ey/RwnmByxI"
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - b97aUEDBIAMErmw=
+      x-amzn-RequestId:
+      - 509dc7d0-9526-4a1e-8ecd-79f9d8da45b3
+      x-bt-internal-trace-id:
+      - 69e23f740000000051437af58db7b1a5
+    status:
+      code: 403
+      message: Forbidden
+- request:
     body: '{"contents": [{"parts": [{"text": "What is the capital of France?"}], "role":
       "user"}], "systemInstruction": {"parts": [{"text": "You are a Capital Information
       Agent. Given a country, respond ONLY with a JSON object containing the capital.
@@ -9,33 +131,26 @@ interactions:
       "The capital of the country.", "title": "Capital", "type": "STRING"}}, "required":
       ["capital"], "title": "CapitalOutput", "type": "OBJECT"}}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '626'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.56.0 gl-python/3.13.3 google-adk/1.21.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.56.0 gl-python/3.13.3 google-adk/1.21.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61RTU/DMAy991dEOW9Tu4l+cGUckChso5qQVg5mzbqMLilJhoCq/52kXbsUruQQ
-        WX7PfvZz5SCEt8AymoEiEl+jjc4gVDW/wThThCkNdCmdLEGoC7d9lRVriiKfpghXKUMo1RIlVVCk
-        OpXiBQgqU5yyGltFdR+/jC5SghfE9DnyjBQdve4IeEcZlfsVAcmZoT0ljwvco/CR3/O8FPzVTDt2
-        J24YeX7kX0WzKAi9MJxNnU66EcUnCTmJiQJtB/RLY93iWKqEvxF2w0+NHb7fyljuDXDPO+OK68UH
-        UBCM/rSVcy1KC9tVy3C9PRRUfZkVk9vnBFsOqeFUnUWO5eTvGf9JzPOGYs75Mu2x1kRI2l4lJ0d9
-        p/F04o53Bch90xELIkvOJLnLDGf9/TAH8N/j+LA6xNuFKwLmL5fYqZ0f+Qzu4aUCAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"{\\n\\\"capital\\\": \\\"Paris\\\"\\n}\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.0819449245929718\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 66,\n    \"candidatesTokenCount\": 10,\n    \"totalTokenCount\":
+        76,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 66\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 10\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
+        \"dD_iadihK7PU1MkPyp7y0AQ\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -44,11 +159,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Wed, 17 Dec 2025 22:48:56 GMT
+      - Fri, 17 Apr 2026 14:11:01 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=713
+      - gfet4t7; dur=538
       Transfer-Encoding:
       - chunked
       Vary:
@@ -59,6 +174,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:

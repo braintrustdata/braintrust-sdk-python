@@ -1,7 +1,7 @@
 name: Dependency updates
 on:
   schedule:
-    - cron: "0 6 * * *" # daily 6am UTC
+    - cron: "0 6 * * 1-5" # weekdays 6am UTC
   workflow_dispatch:
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
 
       - name: Update matrix latest pins
         working-directory: py
-        run: python3 scripts/update-matrix-latest.py
+        run: python scripts/update-matrix-latest.py
 
       - name: Upgrade lockfile
         working-directory: py
@@ -30,54 +30,26 @@ jobs:
       - name: Determine labels
         id: labels
         working-directory: py
-        run: |
-          python3 << 'PYEOF' >> "$GITHUB_OUTPUT"
-          import subprocess, sys
-
-          if sys.version_info >= (3, 11):
-              import tomllib
-          else:
-              try:
-                  import tomllib
-              except ModuleNotFoundError:
-                  import tomli as tomllib
-
-          diff = subprocess.check_output(["git", "diff", "--", "pyproject.toml", "uv.lock"], text=True)
-          if not diff:
-              print("changed=false")
-              raise SystemExit(0)
-
-          # Read pyproject.toml to find provider SDK packages from the matrix table
-          with open("pyproject.toml", "rb") as f:
-              pyproject = tomllib.load(f)
-
-          matrix = pyproject.get("tool", {}).get("braintrust", {}).get("matrix", {})
-
-          # Extract the base package name from provider-related matrix requirement strings.
-          # Exclude pure test/infra pins that do not affect cassette coverage.
-          provider_matrix = {
-              key: versions
-              for key, versions in matrix.items()
-              if key not in {"pytest-matrix", "braintrust-core"}
-          }
-
-          provider_pkgs = set()
-          for _prefix, versions in provider_matrix.items():
-              for req in versions.values():
-                  # req looks like "openai==1.92.0" or "pydantic-ai==1.82.0"
-                  pkg = req.split("==")[0].split(">=")[0].split("<=")[0].strip()
-                  provider_pkgs.add(pkg)
-
-          # Check if any provider package changed in the lockfile diff
-          needs_rerecord = any(pkg in diff for pkg in provider_pkgs)
-
-          print("changed=true")
-          print(f"needs_rerecord={str(needs_rerecord).lower()}")
-          PYEOF
+        run: python scripts/determine-dependency-update-labels.py >> "$GITHUB_OUTPUT"
 
       - name: Get date
         id: date
         run: echo "date=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Close stale daily dependency update PRs
+        if: steps.labels.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_BRANCH: deps/daily-update-${{ steps.date.outputs.date }}
+        run: |
+          gh pr list \
+            --state open \
+            --json number,title,headRefName \
+            --jq ".[] | select(.title == \"chore(deps): daily dependency update\") | select(.headRefName != \"$CURRENT_BRANCH\") | .number" \
+          | while read -r pr; do
+              echo "Closing stale dependency update PR #$pr"
+              gh pr close "$pr" --comment "Superseded by a newer automated dependency update." --delete-branch
+            done
 
       - name: Open PR
         if: steps.labels.outputs.changed == 'true'

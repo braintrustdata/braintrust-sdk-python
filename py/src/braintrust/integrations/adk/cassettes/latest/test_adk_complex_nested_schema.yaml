@@ -15,34 +15,28 @@ interactions:
       ["name", "age", "address"], "required": ["name", "age", "address"], "title":
       "Person", "type": "OBJECT"}}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '1078'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.56.0 gl-python/3.13.3 google-adk/1.21.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.56.0 gl-python/3.13.3 google-adk/1.21.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61SXU/CMBR9369o+gxkDDbUNxSIRokEF2PiDCnsMqpbu7Sd0ZD9d9t9QKev7qFp
-        z7m9p/ecHR2E8I6wmMZEgcRX6FUjCB2r1XCcKWBKEy2kwZwIda6tv6O11yUKvswlfIwYQhFmJINI
-        nyM8TelOb3s1TpIKHrntOY4FSGmw6qbBpBIAqr69LgDFgNb0k6e06WJqdlR91xUrIqi0GV4wJRpy
-        IQgz6oYsI1Zi69Hlaf/WO48qeApmjozHkLblZVuA95RReVgDkZyZsqfwcYVPLPlMHniSC741bvXd
-        getOJp7rB4HnDYOxf+m0wpUkLqT2YwmK6DDIyXKsG2S5CvkHsBszjWYuhrWIlV2H94OGV1yRtEMN
-        R5Pen75yplVpaodq5a2HJ6l22EwYzl9CbBmkus9qHXIsI38/8p/E/KAr5jTB1Fk9g5C0DiWBTMfU
-        9wZuf58Seag6Yv2f5ZxJuIur4OaLGdm+q+vxLWyK5cq93xRyOsZO6fwAprqOZyQDAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"{\\n  \\\"name\\\": \\\"Alice\\\",\\n
+        \ \\\"age\\\": 30,\\n  \\\"address\\\": {\\n    \\\"street\\\": \\\"Rue de
+        Rivoli\\\",\\n    \\\"city\\\": \\\"Paris\\\",\\n    \\\"country\\\": \\\"France\\\"\\n
+        \ }\\n}\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
+        \     \"finishReason\": \"STOP\",\n      \"avgLogprobs\": -0.0092399290629795617\n
+        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 81,\n    \"candidatesTokenCount\":
+        56,\n    \"totalTokenCount\": 137,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 81\n      }\n    ],\n
+        \   \"candidatesTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 56\n      }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n
+        \ \"responseId\": \"dz_iacqSLbKT1MkP9t_g8QI\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -51,11 +45,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Wed, 17 Dec 2025 23:48:24 GMT
+      - Fri, 17 Apr 2026 14:11:04 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=740
+      - gfet4t7; dur=682
       Transfer-Encoding:
       - chunked
       Vary:
@@ -66,6 +60,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:

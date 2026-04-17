@@ -159,6 +159,18 @@ def test_anthropic(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py", version=version)
 
 
+COHERE_VERSIONS = _get_matrix_versions("cohere")
+
+
+@nox.session()
+@nox.parametrize("version", COHERE_VERSIONS, ids=COHERE_VERSIONS)
+def test_cohere(session, version):
+    """Test the native Cohere SDK integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "cohere", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/cohere/test_cohere.py", version=version)
+
+
 OPENAI_VERSIONS = _get_matrix_versions("openai")
 
 
@@ -447,8 +459,11 @@ def test_types(session):
     if not test_files:
         session.skip("No type test files found")
 
-    # Run pyright on each file
-    session.run("pyright", *test_files)
+    # Run pyright on each file. The local pyrightconfig.json opts these tests
+    # into `reportPrivateImportUsage=error` so consumers catching the rule in
+    # their editor/IDE stay in sync with what we publish.
+    pyright_config = os.path.join(type_tests_dir, "pyrightconfig.json")
+    session.run("pyright", "-p", pyright_config, *test_files)
 
     # Run mypy on each file (only check the test files themselves, not transitive deps)
     session.run("mypy", "--follow-imports=silent", *test_files)

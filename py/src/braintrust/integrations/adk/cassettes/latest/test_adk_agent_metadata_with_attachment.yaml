@@ -1,61 +1,5 @@
 interactions:
 - request:
-    body: null
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.32.5
-    method: GET
-    uri: https://staging-api.braintrust.dev/version
-  response:
-    body:
-      string: '{"version":"1.1.31","date_version":"20260303","ff_version":21,"commit":"ef190e7cc21d4a7447c7d5714d94519d3e11abe6","deployment_mode":"lambda","deployment_type":"custom","brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"has_logs2":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","metrics","logs","traces","memprof","usage"]}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '471'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Wed, 04 Mar 2026 18:53:38 GMT
-      Via:
-      - 1.1 24365d50ec90c9fb2b814e9d6c2f8b8c.cloudfront.net (CloudFront), 1.1 df34ce5bf73c140dc63a22fa17a4dcda.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - iZSRCMFDldoyMgPWaFWbIytLGFZDbXXVq3vT1kx3mD2s0z5JPeYL5g==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P1
-      X-Amzn-Trace-Id:
-      - Root=1-69a87fb2-0563d3ca08011a600e7c0c30;Parent=29a9a49d07eb3aa6;Sampled=0;Lineage=1:fc3b4ff1:0
-      X-Cache:
-      - Miss from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms
-      etag:
-      - W/"1d7-AZtEQwxyAKme2P8gABnHCeVZRA4"
-      vary:
-      - Origin
-      x-amz-apigw-id:
-      - Ztjj5Hn9oAMES6Q=
-      x-amzn-Remapped-content-length:
-      - '471'
-      x-amzn-RequestId:
-      - 2e376c2d-4dc9-4eb3-ae5c-befa424bc3f8
-      x-bt-internal-trace-id:
-      - 69a87fb2000000004178719e0e9e5aa1
-    status:
-      code: 200
-      message: OK
-- request:
     body: '{"contents": [{"parts": [{"text": "Use the tool with query: test"}], "role":
       "user"}], "systemInstruction": {"parts": [{"text": "You are a helpful assistant
       with tools.\n\nYou are an agent. Your internal name is \"tool_agent\"."}], "role":
@@ -63,34 +7,27 @@ interactions:
       "name": "simple_tool", "parameters": {"properties": {"query": {"type": "STRING"}},
       "required": ["query"], "type": "OBJECT"}}]}], "generationConfig": {}}'
     headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '471'
       Content-Type:
       - application/json
-      Host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.65.0 gl-python/3.13.3 google-adk/1.26.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.65.0 gl-python/3.13.3 google-adk/1.26.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61S0U6DMBR971eQPo9lONimb2b6YDJ1ccTMGGOu4451lhbbYmKW/bulwAZT3+SB
-        lHvuPef0HnbE8+gKRMISMKjphfdsK563c+8Sk8KgMBZoSraYgzLH3urZtc62ZV2IlWFSTIHzznCN
-        C8jQ1qlmWc7x1UjJae+0CVSqfxm2yEeB6quct6YNPcH35K+v4/nlKEaV5M5LJhPkDdm+aaBrJpje
-        PCBoKcq2RXw/P3il8JnOZJor+VZa9c/74+E4mIwHoyiYhEEwCtEfRKQRd7K00JDiLRqwS4fDBakl
-        yXITy3cUU1m4pYdBJdTKqINHNWykAd6dHPV+sOorq8l4O7pWqvb6wJlxa42vl3ErD8vfMdXsiLRW
-        eWrxn8Sirhapk6nCekSlWZVKipnNyT/rD/w1B71xhFShzqXQeJO4n23pS4Dt9k5th/7kac7MbKEv
-        Q0r25BtzH/bJCQMAAA==
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"functionCall\": {\n              \"name\": \"simple_tool\",\n
+        \             \"args\": {\n                \"query\": \"test\"\n              }\n
+        \           }\n          }\n        ],\n        \"role\": \"model\"\n      },\n
+        \     \"finishReason\": \"STOP\",\n      \"avgLogprobs\": -0.00010093948803842067\n
+        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 41,\n    \"candidatesTokenCount\":
+        5,\n    \"totalTokenCount\": 46,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 41\n      }\n    ],\n
+        \   \"candidatesTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 5\n      }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n
+        \ \"responseId\": \"ej_iafmqB5Oa9MoPzOjrmQ4\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -99,11 +36,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Wed, 04 Mar 2026 18:53:38 GMT
+      - Fri, 17 Apr 2026 14:11:06 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=533
+      - gfet4t7; dur=595
       Transfer-Encoding:
       - chunked
       Vary:
@@ -114,77 +51,13 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:
       code: 200
       message: OK
-- request:
-    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/.local/share/mise/installs/python/3.13.3/lib/python3.13/asyncio/events.py",
-      "caller_functionname": "_run", "caller_lineno": 89}, "created": "2026-03-04T18:53:37.537733+00:00",
-      "id": "67c0d81c-587d-434f-a173-8274bb5247ba", "log_id": "g", "metrics": {"start":
-      1772650417.537733}, "project_id": "test-context", "root_span_id": "a4266ce9-8861-4723-ac6e-688ba177b395",
-      "span_attributes": {"exec_counter": 21, "name": "outer_span", "type": "task"},
-      "span_id": "a4266ce9-8861-4723-ac6e-688ba177b395", "span_parents": null}], "api_version":
-      2}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '620'
-      User-Agent:
-      - python-requests/2.32.5
-    method: POST
-    uri: https://staging-api.braintrust.dev/logs3
-  response:
-    body:
-      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
-        id test-context, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
-        [user_org=braintrustdata.com] [timestamp=1772650418.546]","InternalTraceId":"69a87fb2000000000cf539bdeabb9690","Path":"/logs3","Service":"api"}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '237'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Wed, 04 Mar 2026 18:53:38 GMT
-      Via:
-      - 1.1 5785adb181f17ab60069f54a29dd7b7a.cloudfront.net (CloudFront), 1.1 6477e7b623b71ec66bc28ed8e271db7e.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - XAH7plInwceQZyVAeRsFyCbHK3wPol5Q3FzOnLOSOLcXlWAEIJxpQw==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P1
-      X-Amzn-Trace-Id:
-      - Root=1-69a87fb2-040ba02c60171b0a65f5688d;Parent=40c51c3702a2cb1f;Sampled=0;Lineage=1:fc3b4ff1:0
-      X-Cache:
-      - Error from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms
-      content-encoding:
-      - gzip
-      etag:
-      - W/"132-zIQvupRcq5HDv40+Qcx4u9krY4Q"
-      vary:
-      - Origin, Accept-Encoding
-      x-amz-apigw-id:
-      - Ztjj7G-roAMEKIw=
-      x-amzn-RequestId:
-      - 4586197f-a71c-4ba7-89e8-21ad190ee055
-      x-bt-internal-trace-id:
-      - 69a87fb2000000000cf539bdeabb9690
-    status:
-      code: 403
-      message: Forbidden
 - request:
     body: '{"contents": [{"parts": [{"text": "Use the tool with query: test"}], "role":
       "user"}, {"parts": [{"functionCall": {"args": {"query": "test"}, "name": "simple_tool"}}],
@@ -196,33 +69,27 @@ interactions:
       {"query": {"type": "STRING"}}, "required": ["query"], "type": "OBJECT"}}]}],
       "generationConfig": {}}'
     headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '690'
       Content-Type:
       - application/json
-      Host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.65.0 gl-python/3.13.3 google-adk/1.26.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.65.0 gl-python/3.13.3 google-adk/1.26.0 gl-python/3.13.3
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61RTU+DQBC98yvInkvDxzbSXtVDE42oxNhUD9vulBJhl+wupkr47+5CoYte5UA2
-        897Mm/emcVwX7QmjOSUKJFq5W11x3ab7G4wzBUxpYCjpYkWEunD7r7HemqLgZJpQIvgepAS6cvV8
-        9caQxWvH9/vsMl3wAkxrySkUA70dCOiQs1wen4BIzgztOX1I0IiSz+yOZ5XgO7Og5899jBdBHOMo
-        XEbB0hlkO0FUS5LBPSii3ZPRI9LtZaVS/gHsmted+0XUS1hhTXB8hhVXpJh2Xs3+TJU3WjMv7Ayt
-        eLVxUuTqy7hLb19TZIWjpksN6ThWiL9X/CcxPNVyzjfpz/QCQub9PTIo9YW8cO57h4LIYzcQCZAV
-        ZxLW1HAk8zjZfQfrDcNevElCGp3qR4yc1vkBvZPsN5ICAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"I have used the tool with the query
+        \\\"test\\\". The tool returned: \\\"Processed: test\\\".\\n\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.03503913538796561\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 53,\n    \"candidatesTokenCount\": 21,\n    \"totalTokenCount\":
+        74,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 53\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 21\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
+        \"ej_iac6ZN_-g1MkP89XQ2Aw\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -231,11 +98,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Wed, 04 Mar 2026 18:53:38 GMT
+      - Fri, 17 Apr 2026 14:11:07 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=510
+      - gfet4t7; dur=627
       Transfer-Encoding:
       - chunked
       Vary:
@@ -246,6 +113,8 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
     status:

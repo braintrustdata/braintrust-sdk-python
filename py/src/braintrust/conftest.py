@@ -153,6 +153,8 @@ def setup_braintrust():
     os.environ.setdefault("OPENAI_API_KEY", "sk-test-dummy-api-key-for-vcr-tests")
     os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test-dummy-api-key-for-vcr-tests")
     os.environ.setdefault("MISTRAL_API_KEY", "mistral-test-dummy-api-key-for-vcr-tests")
+    os.environ.setdefault("CO_API_KEY", os.getenv("COHERE_API_KEY", "co-test-dummy-api-key-for-vcr-tests"))
+    os.environ.setdefault("COHERE_API_KEY", os.getenv("CO_API_KEY", "co-test-dummy-api-key-for-vcr-tests"))
 
 
 @pytest.fixture(autouse=True)
