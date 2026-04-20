@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"include":[],"input":[{"content":"What is 2+2? Just the number.","role":"user"}],"instructions":"You
-      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:8b5e7d4a4a464135bcc3cdc5f1513e7d","tools":[]}'
+      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:927cc3deb2104e639f5698f25397d5ef","tools":[]}'
     headers:
       Accept:
       - application/json
@@ -14,11 +14,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=5xhOv8Mpe1ATIPgdKxFqK9PNA3Ckc8fDk8sndQp.Y9k-1776294609.3562365-1.0.1.1-xM7sy9ZAyeEl9KSTtqpFPWyzsOrDj0kiasVWriUsmbsT3ra.jFmgxYmm6_5W2ciNXfO1voIel01iHy7NPdltBxLyRCPVB.XxQ4ELl0VOvhmdE1oLvVl6jps7COVoyFGj
+      - __cf_bm=1UYuRzTAaXdwrDIKtmJddLjN6X.kdb2B_sJOOShjPVQ-1776705511.6388433-1.0.1.1-.P8CAFbGX2vjRmxqBIdN8CbYeUgLzdhtlvrjAMFvK8zOJ9Z8aRHu7wADoouY9HW.PoEvQ0bn9NyKEa5Fi5Ni9tPsfshKjJXWNBJpd7U3VTqKXVsVc.rl_xx4BzgAgkUx
       Host:
       - api.openai.com
       User-Agent:
-      - Agents/Python 0.14.1
+      - Agents/Python 0.14.2
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -32,7 +32,7 @@ interactions:
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -41,38 +41,39 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0967de48ac67d5a80069e01ad2c964819f8b558938ebe9346d\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776294610,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0117b1da116416ae0069e65fe9da5c81a3b60ad374b43d1b51\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1776705513,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776294611,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1776705516,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0967de48ac67d5a80069e01ad374c8819f9d5d00fd3d7af247\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_0117b1da116416ae0069e65fec27bc81a3b9e47d1c6a77f5a2\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:8b5e7d4a4a464135bcc3cdc5f1513e7d\",\n  \"prompt_cache_retention\":
-        null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n
-        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 32,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 34\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \"agents-sdk:run:927cc3deb2104e639f5698f25397d5ef\",\n  \"prompt_cache_retention\":
+        \"in_memory\",\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\":
+        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
+        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\":
+        1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        32,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 34\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       CF-RAY:
-      - 9ece9f451ebfa238-YYZ
+      - 9ef5cf153c7de080-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Wed, 15 Apr 2026 23:10:11 GMT
+      - Mon, 20 Apr 2026 17:18:36 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -86,11 +87,11 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       content-length:
-      - '1616'
+      - '1623'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '823'
+      - '2509'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -108,7 +109,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b599ea8260ac48828cf2c00678fe8703
+      - req_526289993c4b4c6d9e84bf2ada61afb5
     status:
       code: 200
       message: OK

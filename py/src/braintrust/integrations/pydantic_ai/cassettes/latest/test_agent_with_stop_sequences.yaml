@@ -1,85 +1,5 @@
 interactions:
 - request:
-    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
-      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
-      "2026-04-17T14:11:25.985359+00:00", "id": "d5d60ba6-54bd-4623-9e2b-2faa647770c9",
-      "input": {"instrument": null, "messages": [{"instructions": null, "kind": "request",
-      "metadata": null, "parts": [{"content": "Hello", "part_kind": "user-prompt",
-      "timestamp": "2026-04-17 14:11:25.979607+00:00"}], "run_id": null, "timestamp":
-      null}], "model": "openai:gpt-4o-mini", "model_request_parameters": null, "model_settings":
-      null}, "log_id": "g", "metadata": {"model": "gpt-4o-mini", "provider": "openai"},
-      "metrics": {"start": 1776435085.985357}, "project_id": "test-pydantic-ai-integration",
-      "root_span_id": "7244eee1-cc67-4fc7-a4d8-028ed419932d", "span_attributes": {"exec_counter":
-      99, "name": "model_request_stream", "type": "task"}, "span_id": "9c33f03c-f65d-4112-821d-e00ffb4e85ab",
-      "span_parents": ["e95b8f26-bd34-4a59-8d82-7d3825f30de3"]},{"_is_merge": false,
-      "context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
-      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
-      "2026-04-17T14:11:25.985494+00:00", "id": "a41906f8-8739-4fbb-860e-2cf5d72a31c7",
-      "input": {"messages": [{"instructions": null, "kind": "request", "metadata":
-      null, "parts": [{"content": "Hello", "part_kind": "user-prompt", "timestamp":
-      "2026-04-17 14:11:25.979607+00:00"}], "run_id": null, "timestamp": null}]},
-      "log_id": "g", "metadata": {"model": "gpt-4o-mini", "provider": "openai"}, "metrics":
-      {"start": 1776435085.985493}, "project_id": "test-pydantic-ai-integration",
-      "root_span_id": "7244eee1-cc67-4fc7-a4d8-028ed419932d", "span_attributes": {"exec_counter":
-      100, "name": "chat gpt-4o-mini", "type": "llm"}, "span_id": "1ec781e0-0f61-4f87-a4d7-7060b3b9c94d",
-      "span_parents": ["9c33f03c-f65d-4112-821d-e00ffb4e85ab"]}], "api_version": 2}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '2164'
-      User-Agent:
-      - python-requests/2.33.1
-    method: POST
-    uri: https://staging-api.braintrust.dev/logs3
-  response:
-    body:
-      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
-        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
-        [user_org=braintrustdata.com] [timestamp=1776435087.901]","InternalTraceId":"69e23f8f0000000064d6d6dfaf1c8170","Path":"/logs3","Service":"api"}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 17 Apr 2026 14:11:27 GMT
-      Via:
-      - 1.1 cf658ee9f945547220eb3f4e1f7ef2fe.cloudfront.net (CloudFront), 1.1 ed31b4e68abf63ec3ae0c1e539b4d67c.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - vJVywXZCvY_7lbHBGbpcBHR1s4TYn11GXcYNHzl-gzRk72NhPg-Aow==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P1
-      X-Amzn-Trace-Id:
-      - Root=1-69e23f8f-0ca211092021949c2886371b;Parent=040cecc74801747d;Sampled=0;Lineage=1:fc3b4ff1:0
-      X-Cache:
-      - Error from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
-      content-length:
-      - '322'
-      etag:
-      - W/"142-Guj0Hqnv9ftkcGpwbmud75o91jQ"
-      vary:
-      - Origin, Accept-Encoding
-      x-amz-apigw-id:
-      - b97ehHgaIAMEu4Q=
-      x-amzn-RequestId:
-      - be041ea5-747d-4e4d-b52b-45dc49fae759
-      x-bt-internal-trace-id:
-      - 69e23f8f0000000064d6d6dfaf1c8170
-    status:
-      code: 403
-      message: Forbidden
-- request:
     body: '{"messages":[{"role":"user","content":"Write a short story about a robot."}],"model":"gpt-4o-mini","max_completion_tokens":500,"stop":["END","\n\n"],"stream":false}'
     headers:
       Accept:
@@ -95,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.84.0
+      - pydantic-ai/1.84.1
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -118,33 +38,34 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DVeClT9zEw1AfeawwJfFqQPCYvaXS\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776435087,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DWmrzFqzdzHXO4SWim1vsJDg29FHb\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776706723,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"In a bustling city overshadowed by
-        towering skyscrapers, there lived a robot named Elara. Unlike the robust construction
-        bots that built the buildings or the sleek AI-driven vehicles that zoomed
-        through traffic, Elara was designed for a singular purpose: companionship.
-        She was a prototype intended to bridge the gap between humans and technology,
-        equipped with the ability to understand emotions and respond with empathy.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        15,\n    \"completion_tokens\": 77,\n    \"total_tokens\": 92,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"In the quaint little town of Eldrin
+        Hollow, nestled between rolling hills and shimmering rivers, there lived a
+        robot named C1-9Y, affectionately known as \\\"Cy.\\\" Built by a kind-hearted
+        inventor named Elara, Cy was designed to assist with everyday tasks, but he
+        was unlike any other robot in the town. Instead of following a rigid programming
+        system, Cy had a unique feature: a curiosity circuit that allowed him to learn
+        and adapt from his surroundings. \",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 15,\n    \"completion_tokens\":
+        95,\n    \"total_tokens\": 110,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_fe7a5277a8\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_23d0326066\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9edc04e05e1152cf-YYZ
+      - 9ef5eca01e30de74-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 17 Apr 2026 14:11:29 GMT
+      - Mon, 20 Apr 2026 17:38:45 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -158,19 +79,19 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '1229'
+      - '1263'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '2092'
+      - '1571'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=EAv863a8d1FRSjmjuGJMIIK_xwHwZ2Ffz0PoOdy.VuY-1776435087.4113066-1.0.1.1-P83kKVaHw4tyBTcEbPOyvY3WI_TSgENTPxfhwbHnHWOg.1dUvt9ZE7kM8AHJIoQSTUfyuVBt30.7KMVNcsubHwSFBUyPHKiekprdfRIp89OkUnPeIXdzzS5leSq.MhHF;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 17 Apr 2026
-        14:41:29 GMT
+      - __cf_bm=P1PMZkBN6uzXyTC86lPGkB2V_IhxUWYZIDQdUxxD3Sc-1776706723.8520415-1.0.1.1-gfJ8llTuKnB0wYolsmS.BTj50BjOJ2UbJgXkxK2rQvDJ3g0QfH5_z8P.Op8SNqzevZXIl6U2JE.E0qtHvD3Btf68F0LrelLAVH4a6O_d3Zdb62zSX1DbHKv1NiIz6EdV;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 20 Apr 2026
+        18:08:45 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -186,7 +107,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_bec261c2182a93e8a44cd1fc07c7c1d4
+      - req_cd22f9927b3e4e95b46a57a34e88eb38
     status:
       code: 200
       message: OK

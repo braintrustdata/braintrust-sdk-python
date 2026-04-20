@@ -1,85 +1,5 @@
 interactions:
 - request:
-    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
-      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
-      "2026-04-17T14:11:25.985359+00:00", "id": "d5d60ba6-54bd-4623-9e2b-2faa647770c9",
-      "input": {"instrument": null, "messages": [{"instructions": null, "kind": "request",
-      "metadata": null, "parts": [{"content": "Hello", "part_kind": "user-prompt",
-      "timestamp": "2026-04-17 14:11:25.979607+00:00"}], "run_id": null, "timestamp":
-      null}], "model": "openai:gpt-4o-mini", "model_request_parameters": null, "model_settings":
-      null}, "log_id": "g", "metadata": {"model": "gpt-4o-mini", "provider": "openai"},
-      "metrics": {"start": 1776435085.985357}, "project_id": "test-pydantic-ai-integration",
-      "root_span_id": "7244eee1-cc67-4fc7-a4d8-028ed419932d", "span_attributes": {"exec_counter":
-      99, "name": "model_request_stream", "type": "task"}, "span_id": "9c33f03c-f65d-4112-821d-e00ffb4e85ab",
-      "span_parents": ["e95b8f26-bd34-4a59-8d82-7d3825f30de3"]},{"_is_merge": false,
-      "context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
-      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
-      "2026-04-17T14:11:25.985494+00:00", "id": "a41906f8-8739-4fbb-860e-2cf5d72a31c7",
-      "input": {"messages": [{"instructions": null, "kind": "request", "metadata":
-      null, "parts": [{"content": "Hello", "part_kind": "user-prompt", "timestamp":
-      "2026-04-17 14:11:25.979607+00:00"}], "run_id": null, "timestamp": null}]},
-      "log_id": "g", "metadata": {"model": "gpt-4o-mini", "provider": "openai"}, "metrics":
-      {"start": 1776435085.985493}, "project_id": "test-pydantic-ai-integration",
-      "root_span_id": "7244eee1-cc67-4fc7-a4d8-028ed419932d", "span_attributes": {"exec_counter":
-      100, "name": "chat gpt-4o-mini", "type": "llm"}, "span_id": "1ec781e0-0f61-4f87-a4d7-7060b3b9c94d",
-      "span_parents": ["9c33f03c-f65d-4112-821d-e00ffb4e85ab"]}], "api_version": 2}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '2164'
-      User-Agent:
-      - python-requests/2.33.1
-    method: POST
-    uri: https://staging-api.braintrust.dev/logs3
-  response:
-    body:
-      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
-        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
-        [user_org=braintrustdata.com] [timestamp=1776435090.233]","InternalTraceId":"69e23f92000000007fb1656a3f23a3fb","Path":"/logs3","Service":"api"}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 17 Apr 2026 14:11:30 GMT
-      Via:
-      - 1.1 829010acd0fdda0ad4dee0ccb1db7af4.cloudfront.net (CloudFront), 1.1 dc63ed289fa4d9a64b4cc2f12891a350.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - phP6BxX1TR_EoV5nJb8LQRktHJsaXnEuOYnoZadjagCetGAnF5XoFg==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P1
-      X-Amzn-Trace-Id:
-      - Root=1-69e23f92-67b50d014677524e5b7436b0;Parent=039a5393de963575;Sampled=0;Lineage=1:fc3b4ff1:0
-      X-Cache:
-      - Error from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
-      content-length:
-      - '322'
-      etag:
-      - W/"142-7UwpQIDwkJUQgxbIy+fVBvFENYs"
-      vary:
-      - Origin, Accept-Encoding
-      x-amz-apigw-id:
-      - b97e4FntoAMEuyw=
-      x-amzn-RequestId:
-      - 2964a3e4-5da3-4b1b-99d5-ce7f907f00a5
-      x-bt-internal-trace-id:
-      - 69e23f92000000007fb1656a3f23a3fb
-    status:
-      code: 403
-      message: Forbidden
-- request:
     body: '{"messages":[{"role":"user","content":"Write a haiku about coding."},{"role":"assistant","content":"Here
       is a haiku:"},{"role":"user","content":"Write a haiku about coding."}],"model":"gpt-4o-mini","max_completion_tokens":200,"stream":false}'
     headers:
@@ -96,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.84.0
+      - pydantic-ai/1.84.1
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -119,29 +39,29 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DVeCnJ09qDOylgH10sOwdr1efaRss\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776435089,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DWms1b7p0xOa06V6t7oykfGWH2Lk5\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776706725,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Fingers dance on keys,  \\nLogic flows
-        like silent streams,  \\nLines of code take shape.\",\n        \"refusal\":
+        in lines of light,  \\nDreams in code take flight.\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
         \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        35,\n    \"completion_tokens\": 20,\n    \"total_tokens\": 55,\n    \"prompt_tokens_details\":
+        35,\n    \"completion_tokens\": 22,\n    \"total_tokens\": 57,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_fe7a5277a8\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_93a2164d78\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9edc04ee9e05a1e1-YYZ
+      - 9ef5ecab5a3e3a53-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 17 Apr 2026 14:11:30 GMT
+      - Mon, 20 Apr 2026 17:38:46 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -159,15 +79,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '600'
+      - '549'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=3EZRaEblNE2sHeFs_5wX1H7nFT3t9PKQS4jSnXxYLVY-1776435089.6940992-1.0.1.1-wog9saTB1tbbfnNjFJUD0_fg79o.Irg.G.7yUXhfSP3mWNibDmWVxENIpf0FL.ILCm13YlYyJpRGnU6Iu9p3iUZIANWPzIucDb3dboLikm6uyYlR6bhJ.MEfdueFd0.F;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 17 Apr 2026
-        14:41:30 GMT
+      - __cf_bm=mClQ0A8PPhzoW2Px1X6LAcGq9MAl1.4TvR1FhYHL5Yk-1776706725.6569138-1.0.1.1-n5KTJ9LrleBtBPi30ywK_cjPUq1KSNddexZScOreooOpV1kirevEItOdUbSNZuZLMq_k0ATFyfqqq1ElaEkH.JzuohjJ2Mtbt9SqWJf6scvyV275b185Wcr8zQo0RjBd;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 20 Apr 2026
+        18:08:46 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -183,7 +103,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ce94f3d1c6ef4ea2b79a3067ec6fdd85
+      - req_5ee6a2cf28af45a0a665d07dcd70d83c
     status:
       code: 200
       message: OK

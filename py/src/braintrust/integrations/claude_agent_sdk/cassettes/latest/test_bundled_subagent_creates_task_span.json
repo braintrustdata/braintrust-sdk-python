@@ -10,7 +10,7 @@
             "hooks": null,
             "subtype": "initialize"
           },
-          "request_id": "req_1_9d990cf3",
+          "request_id": "req_1_1de17a90",
           "type": "control_request"
         }
       }
@@ -19,7 +19,7 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_9d990cf3",
+          "request_id": "req_1_1de17a90",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
@@ -61,7 +61,7 @@
           "statusline-setup"
         ],
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.112",
+        "claude_code_version": "2.1.114",
         "cwd": "<REDACTED_CWD>",
         "fast_mode_state": "off",
         "mcp_servers": [
@@ -83,18 +83,19 @@
             "source": "rust-analyzer-lsp@claude-plugins-official"
           }
         ],
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "skills": [
           "update-config",
           "debug",
           "simplify",
           "batch",
-          "less-permission-prompts",
+          "fewer-permission-prompts",
           "loop",
           "schedule",
           "claude-api",
           "create-braintrust-demo",
           "braintrust",
+          "sdk-dependency-updates",
           "sdk-integrations",
           "sdk-vcr-workflows",
           "sdk-ci-triage",
@@ -106,12 +107,13 @@
           "debug",
           "simplify",
           "batch",
-          "less-permission-prompts",
+          "fewer-permission-prompts",
           "loop",
           "schedule",
           "claude-api",
           "create-braintrust-demo",
           "braintrust",
+          "sdk-dependency-updates",
           "sdk-integrations",
           "sdk-vcr-workflows",
           "sdk-ci-triage",
@@ -201,7 +203,7 @@
           "mcp__linear-server__update_document"
         ],
         "type": "system",
-        "uuid": "cb0f8a34-1eff-4a71-ab0d-611f2f651b54"
+        "uuid": "945d4163-14be-4eb6-bdcd-763dbd024bec"
       }
     },
     {
@@ -211,12 +213,12 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The user is asking me to delegate a task to a general-purpose agent to inspect the current repository and reply with only the repository name. I should use the Agent tool with the general-purpose subagent type.\n\nLet me create an agent that will inspect the repository and tell me the repository name.",
+              "thinking": "The user is asking me to delegate a task to a general-purpose agent to inspect the current repository and reply with only the repository name. They explicitly say \"Do not answer directly without using the subagent.\"\n\nSo I need to use the Agent tool with the general-purpose agent type to do this. The task is to inspect the current repository and report back the repository name.\n\nLet me use the Agent tool to create a general-purpose agent to do this task.",
               "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_01V9wGYEBRwdorVdnc2S9zMf",
+          "id": "msg_016XgJoUdtSJppKUuYFQCbCD",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -226,20 +228,20 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 37691
+              "ephemeral_5m_input_tokens": 37857
             },
-            "cache_creation_input_tokens": 37691,
+            "cache_creation_input_tokens": 37857,
             "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 3,
+            "output_tokens": 8,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "type": "assistant",
-        "uuid": "8ca993c0-6814-4d42-a881-7bab954e9ed0"
+        "uuid": "d36f6717-8a17-434d-b7d9-1a9c50a9afdb"
       }
     },
     {
@@ -251,10 +253,10 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+              "id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
               "input": {
                 "description": "Inspect repository and report name",
-                "prompt": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
+                "prompt": "Inspect the current repository and reply with ONLY the repository name. Nothing else.",
                 "subagent_type": "general-purpose"
               },
               "name": "Agent",
@@ -262,7 +264,7 @@
             }
           ],
           "context_management": null,
-          "id": "msg_01V9wGYEBRwdorVdnc2S9zMf",
+          "id": "msg_016XgJoUdtSJppKUuYFQCbCD",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -272,34 +274,34 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 37691
+              "ephemeral_5m_input_tokens": 37857
             },
-            "cache_creation_input_tokens": 37691,
+            "cache_creation_input_tokens": 37857,
             "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 3,
+            "output_tokens": 8,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "type": "assistant",
-        "uuid": "f1bf5129-c71c-4f09-a0f1-ee918698edde"
+        "uuid": "a647b0ca-02e7-4ac2-b816-8090d3df94d4"
       }
     },
     {
       "op": "read",
       "payload": {
         "description": "Inspect repository and report name",
-        "prompt": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "prompt": "Inspect the current repository and reply with ONLY the repository name. Nothing else.",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "subtype": "task_started",
-        "task_id": "ae78d4ad25a910a76",
+        "task_id": "ad9381ce80e640411",
         "task_type": "local_agent",
-        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "tool_use_id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
         "type": "system",
-        "uuid": "593bf60c-297b-4f98-8532-48463021f5c7"
+        "uuid": "0ae3c558-a8c8-45b5-901a-2f506a2ce5fe"
       }
     },
     {
@@ -308,118 +310,35 @@
         "message": {
           "content": [
             {
-              "text": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
+              "text": "Inspect the current repository and reply with ONLY the repository name. Nothing else.",
               "type": "text"
             }
           ],
           "role": "user"
         },
-        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
-        "timestamp": "2026-04-17T16:17:42.496Z",
+        "parent_tool_use_id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
+        "timestamp": "2026-04-20T20:41:22.041Z",
         "type": "user",
-        "uuid": "144d4816-2687-42fc-bd6f-1aea42926f5b"
+        "uuid": "40db8c14-732b-4a94-a2e2-05c6e0c530e9"
       }
     },
     {
       "op": "read",
       "payload": {
-        "description": "Reading py/pyproject.toml",
-        "last_tool_name": "Read",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
-        "subtype": "task_progress",
-        "task_id": "ae78d4ad25a910a76",
-        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
-        "type": "system",
-        "usage": {
-          "duration_ms": 1814,
-          "tool_uses": 1,
-          "total_tokens": 32090
-        },
-        "uuid": "c1a99b96-3099-4e87-8f2a-fc908d3f96d7"
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
-        "message": {
-          "content": [
-            {
-              "caller": {
-                "type": "direct"
-              },
-              "id": "toolu_01LqMG3Ef6WYSJjLcM22UURE",
-              "input": {
-                "file_path": "<REDACTED_PATH>",
-                "limit": 50
-              },
-              "name": "Read",
-              "type": "tool_use"
-            }
-          ],
-          "context_management": null,
-          "id": "msg_01AshKPBC3qL7CJVeBJCnEG4",
-          "model": "claude-haiku-4-5-20251001",
-          "role": "assistant",
-          "stop_details": null,
-          "stop_reason": null,
-          "stop_sequence": null,
-          "type": "message",
-          "usage": {
-            "cache_creation": {
-              "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 32085
-            },
-            "cache_creation_input_tokens": 32085,
-            "cache_read_input_tokens": 0,
-            "inference_geo": "not_available",
-            "input_tokens": 3,
-            "output_tokens": 1,
-            "service_tier": "standard"
-          }
-        },
-        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
-        "type": "assistant",
-        "uuid": "e55a002f-0139-4221-a659-c8d4a26ed871"
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
-        "message": {
-          "content": [
-            {
-              "content": "1\t[build-system]\n2\trequires = [\"setuptools>=82.0.1\"]\n3\tbuild-backend = \"setuptools.build_meta\"\n4\t\n5\t[project]\n6\tname = \"braintrust\"\n7\tdynamic = [\"version\"]\n8\tdescription = \"SDK for integrating Braintrust\"\n9\treadme = \"README.md\"\n10\tlicense = \"MIT\"\n11\trequires-python = \">=3.10.0\"\n12\tauthors = [\n13\t    { name = \"Braintrust\", email = \"sdk@braintrustdata.com\" },\n14\t]\n15\tclassifiers = [\n16\t    \"Programming Language :: Python :: 3\",\n17\t    \"Programming Language :: Python :: 3.10\",\n18\t    \"Operating System :: OS Independent\",\n19\t]\n20\tdependencies = [\n21\t    \"GitPython\",\n22\t    \"requests\",\n23\t    \"chevron\",\n24\t    \"tqdm\",\n25\t    \"exceptiongroup>=1.2.0\",\n26\t    \"jsonschema\",\n27\t    \"packaging\",\n28\t    \"sseclient-py\",\n29\t    \"python-slugify\",\n30\t    \"typing_extensions>=4.1.0\",\n31\t    \"wrapt\",\n32\t]\n33\t\n34\t[project.urls]\n35\tHomepage = \"https://www.braintrust.dev\"\n36\t\"Source Code\" = \"https://github.com/braintrustdata/braintrust-sdk-python\"\n37\t\"Bug Tracker\" = \"https://github.com/braintrustdata/braintrust-sdk-python/issues\"\n38\t\n39\t[project.scripts]\n40\tbraintrust = \"braintrust.cli.__main__:main\"\n41\t\n42\t[project.entry-points.pytest11]\n43\tbraintrust = \"braintrust.wrappers.pytest_plugin.plugin\"\n44\t\n45\t[project.optional-dependencies]\n46\tcli = [\"boto3\", \"python-dotenv\", \"uv\", \"starlette\", \"uvicorn\"]\n47\t# TODO: remove the doc extra in the next major version.\n48\tdoc = []\n49\topenai-agents = [\"openai-agents\"]\n50\totel = [\n\n<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n",
-              "tool_use_id": "toolu_01LqMG3Ef6WYSJjLcM22UURE",
-              "type": "tool_result"
-            }
-          ],
-          "role": "user"
-        },
-        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
-        "timestamp": "2026-04-17T16:17:44.313Z",
-        "type": "user",
-        "uuid": "1f94c0b0-b903-4e63-937f-3210074d7c62"
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
-        "description": "Running git config --get remote.origin.url",
+        "description": "Running basename \"$(git rev-parse --show-toplevel)\"",
         "last_tool_name": "Bash",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "subtype": "task_progress",
-        "task_id": "ae78d4ad25a910a76",
-        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "task_id": "ad9381ce80e640411",
+        "tool_use_id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
         "type": "system",
         "usage": {
-          "duration_ms": 2029,
-          "tool_uses": 2,
-          "total_tokens": 32091
+          "duration_ms": 1533,
+          "tool_uses": 1,
+          "total_tokens": 32360
         },
-        "uuid": "1ab70f6e-b197-4272-9c19-bc16dd4c14a5"
+        "uuid": "10c06389-cb68-43b8-b19a-b2265a9638ba"
       }
     },
     {
@@ -431,16 +350,16 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01Xy8xzLyeSTjNBoFWgzZf4b",
+              "id": "toolu_01N5ZjNQBaHsnMr3QBpNWVje",
               "input": {
-                "command": "git config --get remote.origin.url"
+                "command": "basename \"$(git rev-parse --show-toplevel)\""
               },
               "name": "Bash",
               "type": "tool_use"
             }
           ],
           "context_management": null,
-          "id": "msg_01AshKPBC3qL7CJVeBJCnEG4",
+          "id": "msg_01YB4PeX1LTR63kFwWHivRa7",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -450,20 +369,20 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 32085
+              "ephemeral_5m_input_tokens": 32310
             },
-            "cache_creation_input_tokens": 32085,
+            "cache_creation_input_tokens": 32310,
             "cache_read_input_tokens": 0,
             "inference_geo": "not_available",
             "input_tokens": 3,
-            "output_tokens": 1,
+            "output_tokens": 47,
             "service_tier": "standard"
           }
         },
-        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "parent_tool_use_id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "type": "assistant",
-        "uuid": "f462ca70-eaa8-46d9-a43e-d562e44c0ad0"
+        "uuid": "726a3d31-5deb-4d19-9efb-12a9e4b56a3a"
       }
     },
     {
@@ -472,38 +391,38 @@
         "message": {
           "content": [
             {
-              "content": "git@github.com:braintrustdata/braintrust-sdk-python.git",
+              "content": "braintrust-sdk-python",
               "is_error": false,
-              "tool_use_id": "toolu_01Xy8xzLyeSTjNBoFWgzZf4b",
+              "tool_use_id": "toolu_01N5ZjNQBaHsnMr3QBpNWVje",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
-        "parent_tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
-        "timestamp": "2026-04-17T16:17:44.772Z",
+        "parent_tool_use_id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
+        "timestamp": "2026-04-20T20:41:23.825Z",
         "type": "user",
-        "uuid": "71fe533a-67ac-44f5-8794-157b5a37a87b"
+        "uuid": "6037f8b2-9c47-4765-b893-599a4be0c655"
       }
     },
     {
       "op": "read",
       "payload": {
         "output_file": "",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "status": "completed",
         "subtype": "task_notification",
         "summary": "Inspect repository and report name",
-        "task_id": "ae78d4ad25a910a76",
-        "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+        "task_id": "ad9381ce80e640411",
+        "tool_use_id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
         "type": "system",
         "usage": {
-          "duration_ms": 3099,
-          "tool_uses": 2,
-          "total_tokens": 34359
+          "duration_ms": 3265,
+          "tool_uses": 1,
+          "total_tokens": 33913
         },
-        "uuid": "4bfb9b4a-fd8e-41d1-8f67-accd9727ff17"
+        "uuid": "0521135e-da8f-4dc3-9eec-2362f660283f"
       }
     },
     {
@@ -518,21 +437,21 @@
                   "type": "text"
                 },
                 {
-                  "text": "agentId: ae78d4ad25a910a76 (use SendMessage with to: 'ae78d4ad25a910a76' to continue this agent)\n<usage>total_tokens: 34365\ntool_uses: 2\nduration_ms: 3099</usage>",
+                  "text": "agentId: ad9381ce80e640411 (use SendMessage with to: 'ad9381ce80e640411' to continue this agent)\n<usage>total_tokens: 33875\ntool_uses: 1\nduration_ms: 3267</usage>",
                   "type": "text"
                 }
               ],
-              "tool_use_id": "toolu_015CpBQLq1C2DjkN3pSjYmg7",
+              "tool_use_id": "toolu_01MPbTvwjXwdeymKs2CaB4pJ",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
         "parent_tool_use_id": null,
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
-        "timestamp": "2026-04-17T16:17:45.595Z",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
+        "timestamp": "2026-04-20T20:41:25.308Z",
         "tool_use_result": {
-          "agentId": "ae78d4ad25a910a76",
+          "agentId": "ad9381ce80e640411",
           "agentType": "general-purpose",
           "content": [
             {
@@ -540,7 +459,7 @@
               "type": "text"
             }
           ],
-          "prompt": "Inspect the current repository to determine its name. Look at the directory structure, git configuration, package metadata, or any other relevant files to identify the repository name. Reply with ONLY the repository name, nothing else.",
+          "prompt": "Inspect the current repository and reply with ONLY the repository name. Nothing else.",
           "status": "completed",
           "toolStats": {
             "bashCount": 1,
@@ -548,22 +467,34 @@
             "linesAdded": 0,
             "linesRemoved": 0,
             "otherToolCount": 0,
-            "readCount": 1,
+            "readCount": 0,
             "searchCount": 0
           },
-          "totalDurationMs": 3099,
-          "totalTokens": 34365,
-          "totalToolUseCount": 2,
+          "totalDurationMs": 3267,
+          "totalTokens": 33875,
+          "totalToolUseCount": 1,
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 2263
+              "ephemeral_5m_input_tokens": 5743
             },
-            "cache_creation_input_tokens": 2263,
-            "cache_read_input_tokens": 32085,
+            "cache_creation_input_tokens": 5743,
+            "cache_read_input_tokens": 28117,
             "inference_geo": "",
-            "input_tokens": 7,
-            "iterations": [],
+            "input_tokens": 5,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 5743
+                },
+                "cache_creation_input_tokens": 5743,
+                "cache_read_input_tokens": 28117,
+                "input_tokens": 5,
+                "output_tokens": 10,
+                "type": "message"
+              }
+            ],
             "output_tokens": 10,
             "server_tool_use": {
               "web_fetch_requests": 0,
@@ -574,7 +505,7 @@
           }
         },
         "type": "user",
-        "uuid": "29dc0ba1-d4dd-418e-8c24-9dc6b1a517e3"
+        "uuid": "a98f152a-4475-49a4-9354-3f208f299a3f"
       }
     },
     {
@@ -584,12 +515,12 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The agent has returned the repository name: `braintrust-sdk-python`\n\nThe user asked me to have the agent reply with only the repository name and to not answer directly without using the subagent. The agent has done that, so I should just pass along the result.",
+              "thinking": "The agent has returned the repository name: \"braintrust-sdk-python\"\n\nThe agent's response was exactly what was requested - just the repository name with no additional text.",
               "type": "thinking"
             }
           ],
           "context_management": null,
-          "id": "msg_014gWMrEwYMN32Bf9V4pMKMX",
+          "id": "msg_015WCU5kdAPmppXYGRokoNNB",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -599,10 +530,10 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 305
+              "ephemeral_5m_input_tokens": 309
             },
-            "cache_creation_input_tokens": 305,
-            "cache_read_input_tokens": 37691,
+            "cache_creation_input_tokens": 309,
+            "cache_read_input_tokens": 37857,
             "inference_geo": "not_available",
             "input_tokens": 8,
             "output_tokens": 1,
@@ -610,9 +541,9 @@
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "type": "assistant",
-        "uuid": "b50f943c-9033-4131-8d47-45846d1cd9f2"
+        "uuid": "32ab8790-3c6d-4594-a38c-2a2eb1f86de3"
       }
     },
     {
@@ -626,7 +557,7 @@
             }
           ],
           "context_management": null,
-          "id": "msg_014gWMrEwYMN32Bf9V4pMKMX",
+          "id": "msg_015WCU5kdAPmppXYGRokoNNB",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -636,10 +567,10 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 305
+              "ephemeral_5m_input_tokens": 309
             },
-            "cache_creation_input_tokens": 305,
-            "cache_read_input_tokens": 37691,
+            "cache_creation_input_tokens": 309,
+            "cache_read_input_tokens": 37857,
             "inference_geo": "not_available",
             "input_tokens": 8,
             "output_tokens": 1,
@@ -647,51 +578,63 @@
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "type": "assistant",
-        "uuid": "9f965402-708e-48ea-904c-b77bce2dd584"
+        "uuid": "f087ad4c-a49d-4963-ad0b-72b1760c3593"
       }
     },
     {
       "op": "read",
       "payload": {
         "api_error_status": null,
-        "duration_api_ms": 7974,
-        "duration_ms": 7109,
+        "duration_api_ms": 8200,
+        "duration_ms": 7113,
         "fast_mode_state": "off",
         "is_error": false,
         "modelUsage": {
           "claude-haiku-4-5-20251001": {
-            "cacheCreationInputTokens": 72344,
-            "cacheReadInputTokens": 69776,
+            "cacheCreationInputTokens": 76219,
+            "cacheReadInputTokens": 65974,
             "contextWindow": 200000,
-            "costUSD": 0.1002186,
-            "inputTokens": 406,
+            "costUSD": 0.10407515,
+            "inputTokens": 404,
             "maxOutputTokens": 32000,
-            "outputTokens": 481,
+            "outputTokens": 360,
             "webSearchRequests": 0
           }
         },
         "num_turns": 2,
         "permission_denials": [],
         "result": "braintrust-sdk-python",
-        "session_id": "2ef1d545-f6ea-4427-b093-4afcf2a91ddb",
+        "session_id": "2e69a45a-613a-434a-8462-f2b1c3b0c939",
         "stop_reason": "end_turn",
         "subtype": "success",
         "terminal_reason": "completed",
-        "total_cost_usd": 0.1002186,
+        "total_cost_usd": 0.10407515,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 37996
+            "ephemeral_5m_input_tokens": 38166
           },
-          "cache_creation_input_tokens": 37996,
-          "cache_read_input_tokens": 37691,
+          "cache_creation_input_tokens": 38166,
+          "cache_read_input_tokens": 37857,
           "inference_geo": "",
           "input_tokens": 18,
-          "iterations": [],
-          "output_tokens": 285,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 309
+              },
+              "cache_creation_input_tokens": 309,
+              "cache_read_input_tokens": 37857,
+              "input_tokens": 8,
+              "output_tokens": 55,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 271,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
@@ -699,9 +642,9 @@
           "service_tier": "standard",
           "speed": "standard"
         },
-        "uuid": "39022cdf-72d1-4c71-b614-b94b1979d2b4"
+        "uuid": "bb30aa07-1022-48f6-a6a2-16b28e079b03"
       }
     }
   ],
-  "sdk_version": "0.1.61"
+  "sdk_version": "0.1.63"
 }

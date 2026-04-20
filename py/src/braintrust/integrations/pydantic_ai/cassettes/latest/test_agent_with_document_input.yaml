@@ -1,95 +1,5 @@
 interactions:
 - request:
-    body: '{"rows": [{"_is_merge": true, "id": "9eb7a618-8dcf-40a8-a91a-00f4eda9ad4d",
-      "log_id": "g", "metrics": {"completion_tokens": 8.0, "duration": 1.5808079242706299,
-      "end": 1776435063.57685, "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens":
-      0.0, "prompt_tokens": 14.0, "start": 1776435061.996042, "time_to_first_token":
-      1.579916000366211, "tokens": 22.0}, "output": {"finish_reason": "stop", "kind":
-      "response", "metadata": null, "model_name": "gpt-4o-mini-2024-07-18", "parts":
-      [{"content": "1, 2, 3.", "id": null, "part_kind": "text", "provider_details":
-      null, "provider_name": null}], "provider_details": {"finish_reason": "stop",
-      "timestamp": "2026-04-17 14:11:02+00:00"}, "provider_name": "openai", "provider_response_id":
-      "chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50", "provider_url": "https://api.openai.com/v1/",
-      "run_id": null, "timestamp": "2026-04-17 14:11:03.575856+00:00", "usage": {"cache_audio_read_tokens":
-      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"accepted_prediction_tokens":
-      0, "audio_tokens": 0, "reasoning_tokens": 0, "rejected_prediction_tokens": 0},
-      "input_audio_tokens": 0, "input_tokens": 14, "output_audio_tokens": 0, "output_tokens":
-      8}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "18c3fc56-b2da-47e3-8ca0-66b5f8d36192",
-      "span_id": "e2190315-36e7-4bce-a388-1b1e49aae5a9", "span_parents": ["f8eb85c2-f627-483c-a989-85ca91d616cb"]},{"_is_merge":
-      true, "id": "768fc0a0-d899-4306-9b3a-ed8e74a74dad", "log_id": "g", "metrics":
-      {"completion_tokens": 8.0, "duration": 1.5809988975524902, "end": 1776435063.576978,
-      "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens": 0.0, "prompt_tokens":
-      14.0, "start": 1776435061.995979, "time_to_first_token": 1.5799798965454102,
-      "tokens": 22.0}, "output": {"finish_reason": "stop", "kind": "response", "metadata":
-      null, "model_name": "gpt-4o-mini-2024-07-18", "parts": [{"content": "1, 2, 3.",
-      "id": null, "part_kind": "text", "provider_details": null, "provider_name":
-      null}], "provider_details": {"finish_reason": "stop", "timestamp": "2026-04-17
-      14:11:02+00:00"}, "provider_name": "openai", "provider_response_id": "chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50",
-      "provider_url": "https://api.openai.com/v1/", "run_id": null, "timestamp": "2026-04-17
-      14:11:03.575856+00:00", "usage": {"cache_audio_read_tokens": 0, "cache_read_tokens":
-      0, "cache_write_tokens": 0, "details": {"accepted_prediction_tokens": 0, "audio_tokens":
-      0, "reasoning_tokens": 0, "rejected_prediction_tokens": 0}, "input_audio_tokens":
-      0, "input_tokens": 14, "output_audio_tokens": 0, "output_tokens": 8}}, "project_id":
-      "test-pydantic-ai-integration", "root_span_id": "18c3fc56-b2da-47e3-8ca0-66b5f8d36192",
-      "span_id": "f8eb85c2-f627-483c-a989-85ca91d616cb", "span_parents": ["18c3fc56-b2da-47e3-8ca0-66b5f8d36192"]}],
-      "api_version": 2}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '2813'
-      User-Agent:
-      - python-requests/2.33.1
-    method: POST
-    uri: https://staging-api.braintrust.dev/logs3
-  response:
-    body:
-      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
-        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
-        [user_org=braintrustdata.com] [timestamp=1776435071.685]","InternalTraceId":"69e23f7f00000000047d47df2e22ce51","Path":"/logs3","Service":"api"}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 17 Apr 2026 14:11:11 GMT
-      Via:
-      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 9b2dd59575ce5b546a63dbe37a7ae2de.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - mtegZ9BDlbbA-RIpBzD_AAc3DN93WKgB8BNuedfLnw_0ZfImhOPQUQ==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P1
-      X-Amzn-Trace-Id:
-      - Root=1-69e23f7f-561f1e50284c21366eb438a4;Parent=6f443dad89f7529b;Sampled=0;Lineage=1:fc3b4ff1:0
-      X-Cache:
-      - Error from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
-      content-length:
-      - '322'
-      etag:
-      - W/"142-Hq+Yi+tUrpSWkPFRQyYbm3FGgXY"
-      vary:
-      - Origin, Accept-Encoding
-      x-amz-apigw-id:
-      - b97b_HaGoAMEE3w=
-      x-amzn-RequestId:
-      - ed25ff49-7644-422b-be80-8c123e184a5f
-      x-bt-internal-trace-id:
-      - 69e23f7f00000000047d47df2e22ce51
-    status:
-      code: 403
-      message: Forbidden
-- request:
     body: '{"messages":[{"role":"user","content":[{"file":{"file_data":"data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqIDIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PmVuZG9iaiAzIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgNjEyIDc5Ml0vQ29udGVudHMgNCAwIFI+PmVuZG9iaiA0IDAgb2JqPDwvTGVuZ3RoIDQ0Pj5zdHJlYW0KQlQgL0YxIDEyIFRmIDEwMCA3MDAgVGQgKFRlc3QgRG9jdW1lbnQpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyMTQgMDAwMDAgbgp0cmFpbGVyPDwvU2l6ZSA1L1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKMzA3CiUlRU9G","filename":"filename.pdf"},"type":"file"},{"text":"What
       is in this document?","type":"text"}]}],"model":"gpt-4o-mini","max_completion_tokens":150,"stream":false}'
     headers:
@@ -106,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.84.0
+      - pydantic-ai/1.84.1
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -129,17 +39,17 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DVeCUVh7FNdtrvZ4noXZy0G3IY2YI\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776435070,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DWmrt89VBbkBY7h4O7xClCgLh9E9w\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776706717,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The document contains a section labeled
-        \\\"Test Document,\\\" but there is no further content or details provided
-        in the parsed text. If you need specific information about the document's
-        contents or if there are images or specific sections you'd like to explore,
-        please let me know!\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 231,\n    \"completion_tokens\":
-        52,\n    \"total_tokens\": 283,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        \"assistant\",\n        \"content\": \"The document appears to be a test document,
+        but there's no specific content provided for analysis. If you need detailed
+        information about the contents, you could share the document or specify a
+        particular section you're interested in, and I can help summarize or explain
+        further.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 231,\n    \"completion_tokens\": 50,\n
+        \   \"total_tokens\": 281,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
@@ -148,13 +58,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9edc04771cc228db-YYZ
+      - 9ef5ec753b18e21a-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 17 Apr 2026 14:11:12 GMT
+      - Mon, 20 Apr 2026 17:38:38 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -168,19 +78,19 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '1089'
+      - '1088'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1375'
+      - '1150'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=KQAiXHZ8G9msMNhr9ub0wlm65FWtLgkCI8q6NRdvxv8-1776435070.5803003-1.0.1.1-IPKXJQf_pwvBCD1eEJC1Wsb7ennpT4f.5hvIcMiBVQRvzFa_FSg.I4TOGIyRdZ9m7.bBHPUAhi8g0yv6PtbIlgjCVCwExEjNXkxtxy2lJWYckFy2FcQ0PTqT52_xNNqx;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 17 Apr 2026
-        14:41:12 GMT
+      - __cf_bm=TM.YgdiIsdDeccA5GW2yzHz5cf492ARGsGW_oJLuipo-1776706716.9971585-1.0.1.1-WJHXuV_dLEhkBOHueYGDo9LOvEeGwhjvul3n_JZXnFCLKGABEc65P2SMGT18aUm9.Yp0NlNZLVS.ExUMG_nEvD_JUDV1PUywrukSuu8y5chiHP8BbQHzeMIBAHAUWqhT;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 20 Apr 2026
+        18:08:38 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -190,13 +100,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999227'
+      - '149999225'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_27b52ee94da64a9b8d0e5562ba90b93b
+      - req_1c6b340a1d1948019e60d4883f669a4b
     status:
       code: 200
       message: OK

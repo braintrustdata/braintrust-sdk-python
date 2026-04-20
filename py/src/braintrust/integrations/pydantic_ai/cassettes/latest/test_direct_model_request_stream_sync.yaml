@@ -1,219 +1,5 @@
 interactions:
 - request:
-    body: null
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      User-Agent:
-      - python-requests/2.33.1
-    method: POST
-    uri: https://www.braintrust.dev/api/apikey/login
-  response:
-    body:
-      string: '{"org_info":[{"id":"5d7c97d7-fef1-4cb7-bda6-7e3756a0ca8e","name":"braintrustdata.com","api_url":"https://staging-api.braintrust.dev","git_metadata":{"fields":["commit","branch","tag","author_name","author_email","commit_message","commit_time","dirty"],"collect":"some"},"is_universal_api":true,"proxy_url":"https://staging-api.braintrust.dev","realtime_url":"wss://realtime.braintrustapi.com"}]}'
-    headers:
-      Access-Control-Allow-Credentials:
-      - 'true'
-      Access-Control-Allow-Headers:
-      - X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5,
-        Content-Type, Date, X-Api-Version
-      Access-Control-Allow-Methods:
-      - GET,OPTIONS,PATCH,DELETE,POST,PUT
-      Access-Control-Allow-Origin:
-      - '*'
-      Cache-Control:
-      - public, max-age=0, must-revalidate
-      Content-Length:
-      - '395'
-      Content-Security-Policy:
-      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
-        ''nonce-M2Y3ODBiNjQtODRmMS00NWE4LTlmMDEtODE3Zjc2OGM2YTQy''  *.js.stripe.com
-        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
-        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
-        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
-        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
-        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self'';
-        frame-ancestors ''self''; worker-src ''self'' blob:; report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
-        report-to csp-endpoint-0'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 17 Apr 2026 14:11:02 GMT
-      Etag:
-      - '"12n7ok4b5phaz"'
-      Reporting-Endpoints:
-      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
-      Server:
-      - Vercel
-      Strict-Transport-Security:
-      - max-age=63072000
-      X-Bt-Was-Udf-Cached:
-      - 'true'
-      X-Clerk-Auth-Message:
-      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
-        token-carrier=header)
-      X-Clerk-Auth-Reason:
-      - token-invalid
-      X-Clerk-Auth-Status:
-      - signed-out
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Matched-Path:
-      - /api/apikey/login
-      X-Nonce:
-      - M2Y3ODBiNjQtODRmMS00NWE4LTlmMDEtODE3Zjc2OGM2YTQy
-      X-Vercel-Cache:
-      - MISS
-      X-Vercel-Id:
-      - yul1::iad1::jwkxx-1776435062119-af716ebb07b5
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.33.1
-    method: GET
-    uri: https://staging-api.braintrust.dev/version
-  response:
-    body:
-      string: '{"version":"2.0.0","date_version":"20260417","ff_version":24,"commit":"0d9d9d17b59a872d1cac7f50d67429265387324c","deployment_mode":"lambda","deployment_type":"custom","brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","metrics","logs","traces","memprof","usage"]}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '550'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 17 Apr 2026 14:11:02 GMT
-      Via:
-      - 1.1 cf658ee9f945547220eb3f4e1f7ef2fe.cloudfront.net (CloudFront), 1.1 dc63ed289fa4d9a64b4cc2f12891a350.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - WxdY5BQr4kpU-5Ov4piF8XtcCaBZxrjt1lR6I_xyvdSaeCd8T2t8gA==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P1
-      X-Amzn-Trace-Id:
-      - Root=1-69e23f76-7bd57add2fbf67af081e2232;Parent=760122e6ee5de8b7;Sampled=0;Lineage=1:fc3b4ff1:0
-      X-Cache:
-      - Miss from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
-      etag:
-      - W/"226-EfRuYziO2Q1Ux8maLsFk5foD01A"
-      vary:
-      - Origin
-      x-amz-apigw-id:
-      - b97ajFKEoAMEcfQ=
-      x-amzn-Remapped-content-length:
-      - '550'
-      x-amzn-RequestId:
-      - d3b5a057-0649-4bcf-9c37-9e1015142be9
-      x-bt-internal-trace-id:
-      - 69e23f7600000000524896afafdc0b34
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
-      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
-      "2026-04-17T14:11:01.995881+00:00", "id": "768fc0a0-d899-4306-9b3a-ed8e74a74dad",
-      "input": {"instrument": null, "messages": [{"instructions": null, "kind": "request",
-      "metadata": null, "parts": [{"content": "Count from 1 to 3", "part_kind": "user-prompt",
-      "timestamp": "2026-04-17 14:11:01.991721+00:00"}], "run_id": null, "timestamp":
-      null}], "model": "openai:gpt-4o-mini", "model_request_parameters": null, "model_settings":
-      null}, "log_id": "g", "metadata": {"model": "gpt-4o-mini", "provider": "openai"},
-      "metrics": {"start": 1776435061.995879}, "project_id": "test-pydantic-ai-integration",
-      "root_span_id": "18c3fc56-b2da-47e3-8ca0-66b5f8d36192", "span_attributes": {"exec_counter":
-      62, "name": "model_request_stream", "type": "task"}, "span_id": "f8eb85c2-f627-483c-a989-85ca91d616cb",
-      "span_parents": ["18c3fc56-b2da-47e3-8ca0-66b5f8d36192"]},{"_is_merge": false,
-      "context": {"caller_filename": "/Users/abhijeetprasad/workspace/braintrust-sdk-python/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
-      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
-      "2026-04-17T14:11:01.995997+00:00", "id": "9eb7a618-8dcf-40a8-a91a-00f4eda9ad4d",
-      "input": {"messages": [{"instructions": null, "kind": "request", "metadata":
-      null, "parts": [{"content": "Count from 1 to 3", "part_kind": "user-prompt",
-      "timestamp": "2026-04-17 14:11:01.991721+00:00"}], "run_id": null, "timestamp":
-      null}]}, "log_id": "g", "metadata": {"model": "gpt-4o-mini", "provider": "openai"},
-      "metrics": {"start": 1776435061.9959948}, "project_id": "test-pydantic-ai-integration",
-      "root_span_id": "18c3fc56-b2da-47e3-8ca0-66b5f8d36192", "span_attributes": {"exec_counter":
-      63, "name": "chat gpt-4o-mini", "type": "llm"}, "span_id": "e2190315-36e7-4bce-a388-1b1e49aae5a9",
-      "span_parents": ["f8eb85c2-f627-483c-a989-85ca91d616cb"]}], "api_version": 2}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '2188'
-      User-Agent:
-      - python-requests/2.33.1
-    method: POST
-    uri: https://staging-api.braintrust.dev/logs3
-  response:
-    body:
-      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
-        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
-        [user_org=braintrustdata.com] [timestamp=1776435062.592]","InternalTraceId":"69e23f76000000007b5a469b47b67370","Path":"/logs3","Service":"api"}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 17 Apr 2026 14:11:02 GMT
-      Via:
-      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 4eb35caa679bb95c591a03f41b151b8c.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - pCIl6vk41f1yRkD3Cu7lg650krpqd94QU5JFrI3BxhKHA9PwXvKm1Q==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P1
-      X-Amzn-Trace-Id:
-      - Root=1-69e23f76-2e907bfb4a798d237dfb3e72;Parent=26784ceec8ff928e;Sampled=0;Lineage=1:fc3b4ff1:0
-      X-Cache:
-      - Error from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id
-      content-length:
-      - '322'
-      etag:
-      - W/"142-+r9ruPTHfdN3yX+INoIpgGAnrxI"
-      vary:
-      - Origin, Accept-Encoding
-      x-amz-apigw-id:
-      - b97akEOzoAMEoAg=
-      x-amzn-RequestId:
-      - 0958b488-d87d-4da1-a747-b889a1b384fa
-      x-bt-internal-trace-id:
-      - 69e23f76000000007b5a469b47b67370
-    status:
-      code: 403
-      message: Forbidden
-- request:
     body: '{"messages":[{"role":"user","content":"Count from 1 to 3"}],"model":"gpt-4o-mini","stream":true,"stream_options":{"include_usage":true}}'
     headers:
       Accept:
@@ -229,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.84.0
+      - pydantic-ai/1.84.1
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -252,39 +38,39 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"nqpNGWOFV"}
+      string: 'data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"koHqDrcRr"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":"1"},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"3Zg5BM8uII"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"1"},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"fPd1RcHv2u"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":","},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"C1Putt9wds"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":","},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"rDEuCoKiqy"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":"
-        "},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"4GlrfaN6C4"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"
+        "},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"vrULNlicvo"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":"2"},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"2YYOAQSmjJ"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"2"},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"lLNwAYD4yO"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":","},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"rLlcJFOfqH"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":","},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"RliICQ7LO4"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":"
-        "},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"ffcRb44elD"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"
+        "},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"BQv96kCP7t"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":"3"},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"4SzYQZinSk"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"3"},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"oPDY8iauUC"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{"content":"."},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"QlydmDjBUA"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"."},"logprobs":null,"finish_reason":null}],"usage":null,"obfuscation":"nLfJfuuXWZ"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null,"obfuscation":"vOpNE"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null,"obfuscation":"UfxCn"}
 
 
-        data: {"id":"chatcmpl-DVeCMjVZIIA6rT7bbSffo43jztj50","object":"chat.completion.chunk","created":1776435062,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_fe7a5277a8","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":8,"total_tokens":22,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"UyBt4NG6ITZ"}
+        data: {"id":"chatcmpl-DWmsRsMrTqLokjG5J7Q6DKUcuQcuC","object":"chat.completion.chunk","created":1776706751,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[],"usage":{"prompt_tokens":14,"completion_tokens":8,"total_tokens":22,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"obfuscation":"wKaJwAoNGHq"}
 
 
         data: [DONE]
@@ -295,13 +81,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9edc044208baa205-YYZ
+      - 9ef5ed4ce9dd5431-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - text/event-stream; charset=utf-8
       Date:
-      - Fri, 17 Apr 2026 14:11:03 GMT
+      - Mon, 20 Apr 2026 17:39:11 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -317,15 +103,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '936'
+      - '166'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=54qZdQkg_62drbml6p4IZ6Xw5ya1HlIE9YYlaTaQtU8-1776435062.089686-1.0.1.1-ajdRrZWPG87sTLm4H293bPKbB7FYJTgv62msdwSCwgO0qbM3Bl6DoNxRityeBFqhYxwfgKFWDGpe9uKY7rFxHsx_okYpQLQzfIxvqhKHzORuIBhtfU2wo4BESNa1C2RG;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 17 Apr 2026
-        14:41:03 GMT
+      - __cf_bm=tEjiXlQ5hs1B1zyrvxyCGE8X0IqHCeOjy4P9gbitTHw-1776706751.5049155-1.0.1.1-KhU8FTbTPcoUZeeA2J15JiPdu9BSKhX6OQBRXGS52UhFDECuM6pscRe2JUybJwYkTEYRDERS1BpG4LnZN3K50n.c4wO2h2TLYO9bvrUaPWGSUexK7MKOZFc32w.aTvgC;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 20 Apr 2026
+        18:09:11 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -341,7 +127,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_4f25858f69c141e1af14665744ba78df
+      - req_7a121daacab64deaa550be56f3daf6c2
     status:
       code: 200
       message: OK
