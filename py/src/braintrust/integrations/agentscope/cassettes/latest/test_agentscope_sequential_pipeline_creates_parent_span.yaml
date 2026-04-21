@@ -19,7 +19,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.29.0
+      - AsyncOpenAI/Python 2.31.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -29,11 +29,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.29.0
+      - 2.31.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -42,28 +42,29 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdfELyCzzdwMAAAD//41SwW7bMAy95ysMneMi
-        yZwou/a2a5EehqIwFImytcmiIcpbhyH/PspOarfrgF0EmI/v+fGR9+0ed1V1+Hl4HI5f2oevzekU
-        BrHODDx/A51urDuNzIPkMEywjqASZNWtlFUld/KzHIEODfhMa/pUVlh2Lrhyt9lV5UaW2+OV3aLT
-        QNz2xJ9F8Xt8s89g4IXLm/Wt0gGRaoBrtyYuRvS5IhSRo6RCEusZ1BgShNH6PQSwLlGBtngkF5ri
-        AZTnR2M0YIpTVNY6XbhQnIASNyyFItiBVB4mDN4vABUCJpXDGEd4viKXV9Memz7imd5RheUwqK05
-        O+Ig2SAl7MWIXvh9HsMZ3swrWKjrU53wO4y/28tJTswrmcHjFUvsz8/lw379gVhtICnnaZGt0Eq3
-        YGbmvAg1GIcLYLUY+W8vH2lPY3PI/yM/A1pDz6dW9xGM02/nndsi5Hv9V9trxKNhQRB/8AHWyUHM
-        azBg1eCnKxL0ixJ0Ne+qgdhHN52S7WutPoE0cnu2YnVZ/QE7MxO8WAMAAA==
+      string: "{\n  \"id\": \"chatcmpl-DX7NTfDo6goI0mh6BkjAzaDRmwE0P\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785555,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Benefits of Using Real Recorded Traffic
+        in Testing\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 57,\n    \"completion_tokens\": 8,\n
+        \   \"total_tokens\": 65,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_48f18beaba\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9e20e166fbae67b2-SJC
+      - 9efd71321a8836a6-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Wed, 25 Mar 2026 21:06:38 GMT
+      - Tue, 21 Apr 2026 15:32:35 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -76,18 +77,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
+      content-length:
+      - '856'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '664'
+      - '342'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=0vN_GTd.Taalah9PDsZg_Ru.1_PcZ_NBP9qkR2MCsFE-1774472797.273874-1.0.1.1-_HsrwKoaPPyMDTMtccbmEvGb.WDYukiKlNhKyLTp32aZR8vwDwqATyzmrwTg82HAg9bVn2GQnmrENihz.LTaMxGxvJCORGScpnet2yitftoFB0LwZa12LFWkWMzlprHK;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
-        21:36:38 GMT
+      - __cf_bm=6Z4qIRbHbjgyJXXu7iySRWQqBX9hRgH7aJXEaNs1kjc-1776785554.2542353-1.0.1.1-g1nXdLl.V4ciGQZhdrfQzAQRmKcG5iUXBI0NJdQAFL3Fdbgxa3zEbqZEqfSoI1E.HvNuXQe_1HevCBJNOP_W9NhGvzf3gEYJF5i6rbw.RPbM__5.aR8yFoivJ19Ui3GM;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Tue, 21 Apr 2026
+        16:02:35 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -103,115 +106,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_bcc5d231b4f24f049b2e0a0ba5d880a9
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"messages":[{"role":"system","content":[{"type":"text","text":"You rewrite
-      the input as a short title."}]},{"role":"user","content":[{"type":"text","text":"#
-      Conversation History\nThe content between <history></history> tags contains
-      your conversation history\n<history>\nuser: Summarize why tests should use real
-      recorded traffic.\n</history>"}]}],"model":"gpt-4o-mini","stream":false,"temperature":0}'
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '403'
-      Content-Type:
-      - application/json
-      Host:
-      - api.openai.com
-      User-Agent:
-      - AsyncOpenAI/Python 2.29.0
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - async:asyncio
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 2.29.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.13.3
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: !!binary |
-        H4sIAAAAAAAA/4xSwW7bMAy95ysEneMhcdI56G3FTus2DFt3GgpDkShHjSwJIj2sKPLvo+2kdrcO
-        2EWA+fieHx/5tBBCOiOvhdQHRbpNvnj/+cvDR328uXUfNv7WfTuGlSrfVZ9Sh4+tXPaMuH8ATRfW
-        Gx2ZB+RiGGGdQRH0quuq2m6rclduBqCNBnxPaxIV21i0LriiXJXbYlUV692ZfYhOA3LbD/4U4ml4
-        e5/BwC8ur5aXSguIqgGuXZq4mKPvK1IhOiQVSC4nUMdAEAbrNxDAOkIRrfiOLjTiKyjPj47ZgBF3
-        WVnrtHBB3AESN8yFMtgOVT9M6LyfASqESKoPYxjh/oycnk372KQc9/gHVVoOAw81Z4ccJBtEikkO
-        6Inf+yGc7sW8koXaRDXFIwy/u6pGOTmtZAJ3Z4zYn5/Kb6+Wr4jVBkg5j7NspVb6AGZiTotQnXFx
-        BixmI//t5TXtcWwO+X/kJ0BrSHxqdcpgnH4579SWob/Xf7U9RzwYlgj5Jx9gTQ5yvwYDVnV+vCKJ
-        j0jQ1ryrBnLKbjwlm2qtNlCZar23cnFa/AYAAP//AwB2CCbyWAMAAA==
-    headers:
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - 9e20e208d9766142-SJC
-      Connection:
-      - keep-alive
-      Content-Encoding:
-      - gzip
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 25 Mar 2026 21:07:03 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
-      alt-svc:
-      - h3=":443"; ma=86400
-      openai-organization:
-      - braintrust-data
-      openai-processing-ms:
-      - '652'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
-      openai-version:
-      - '2020-10-01'
-      set-cookie:
-      - __cf_bm=nPA03jdSYpPIt1MCtq5c3dH__SdRu5fP0HUZaKsaPsk-1774472823.1741066-1.0.1.1-QeI7TdvczvDfZcpacbJMilgyA_s79AH1EgKxSLO_1Z_BUh6jqZue4vjSpv9Sr.ihxNrRzZkdyq7EzAFHuIxCU9THwR_hF6iuXTWOT0BzCGX_rHDteSnXa7BlEfiRqaBH;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
-        21:37:03 GMT
-      x-openai-proxy-wasm:
-      - v0.1
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '150000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '149999940'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_09e84f9d413d4a8d9495fef9e4133024
+      - req_f357c4a43e4a4d0c84b53e0a47039718
     status:
       code: 200
       message: OK
@@ -235,7 +130,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.29.0
+      - AsyncOpenAI/Python 2.31.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -245,11 +140,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.29.0
+      - 2.31.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -258,29 +153,30 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdfELyPKtcAYAAAD//4xTy27bMBC8+ysInqXA
-        dpQqPRfIMUBb9FQEAk2upG35ApcyYhT+9y6lOHLaFOiFgHZ2docz1OeTg+bT1y/mMH54GB7H5+ZW
-        pV5WhREOP0DnC+tGB+ZBxuAXWCdQGcrUXds2Tbu/3zcz4IIBW2hDzHUTaoce6/1239Tbtt7dv7DH
-        gBqI277zpxC/5rPo9AaeubytLhUHRGoArl2auJiCLRWpiJCy8llWK6iDz+Bn6d8I/SBYquVDh2TA
-        iJxU36MW6EUGyqUB/Kg86xFK6ykpfaoEupjCkUsRUh+SKzhTCIcxUyWUN2IEG0mg4V3Yn0QMZSvy
-        KiSamMkLlHAhwSyAdfJS8EdMwTvuvLnWnKCfSBXf/GTtFaC8D1kV32e3nl6Q86s/Ngys9EB/UGXP
-        vtPY8WrizNgLyiHKGT3z+TTnML2xVvIgF3OXw0+Y193dLePkmv4KLnkzmFmgXevtx+qdaZ2BrNDS
-        VY5SKz2CWZlr6GoyGK6AzdWd/xbz3uzl3hzu/4xfAa0h8rPuYgKD+u2F17YE5d/4V9urx7NgSZCO
-        /Ni7jJBKDgZ6NdnlxUo6UQbXcVgDpJhwebZ97LS6hda0u0MvN+fNbwAAAP//AwDs2pZ8xAMAAA==
+      string: "{\n  \"id\": \"chatcmpl-DX7NUWahumXIWF6TMPtk00txutx8A\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785556,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Using real recorded traffic in testing
+        enhances accuracy, improves performance insights, and helps identify potential
+        issues in a more realistic environment.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 55,\n    \"completion_tokens\":
+        24,\n    \"total_tokens\": 79,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_cd59951324\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9e20e20db9eddfce-SJC
+      - 9efd713c5af45443-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Wed, 25 Mar 2026 21:07:04 GMT
+      - Tue, 21 Apr 2026 15:32:37 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -293,18 +189,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
+      content-length:
+      - '964'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '669'
+      - '736'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=HayDHNMCRsqHCSCg5YnFHqR8EGszTInfOwZSaeO5eyg-1774472823.957494-1.0.1.1-T1qVHFP.Enq2BHk4byqWQwdinEXG5pjJnQ6C55kaXNumTZcQVGLUbKoXNUrcL8OlUtndtdfReMfEtfZ5GDvmyZ8zIPnM28rC8KnQNIAYwe3oTr24xzHY4xyLaaAQfXw_;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
-        21:37:04 GMT
+      - __cf_bm=RLbrejKqGJRD6ZwgI17B2ZjHI6FoAasllbm_D6DLV_U-1776785555.8993464-1.0.1.1-_u55yC8TrrocnSJI1O28k4K.naZQKeb71n5cImZXxRF7lZBdb7L2Nr1M7z2NI0Tp88AaTh75K7wrQZ_8M5wmmEgH3J18XMgnqkh2a1uyQp6V8FWoJj2yFg2anw_AdfQv;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Tue, 21 Apr 2026
+        16:02:37 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -320,7 +218,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_074bde6fdf2a4c4caf77d081e3a5af31
+      - req_5322fe9b8b344d9fa25a1cc62164fa17
     status:
       code: 200
       message: OK
@@ -344,7 +242,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.29.0
+      - AsyncOpenAI/Python 2.31.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -354,11 +252,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.29.0
+      - 2.31.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -367,28 +265,29 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdfELyDb29QAAAAD//4xSTW/bMAy951cYOsdD
-        vlrl3AI99DJsaIGiQ2EoEuWolSVPpLsMQ/77KDup3a0DdhFgPr7nx0c+SL99PHxZP94crg/XPz6v
-        v6/tw62YZ0bcPYOmM+uTjswDcjEMsE6gCLLqUsrNRq62l7IHmmjAZ1rdUrmJZeOCK1eL1aZcyHK5
-        PbH30WlAbvvGn0Xxq3+zz2DgwOXF/FxpAFHVwLVzExdT9LkiFKJDUoHEfAR1DASht34FAawjLKIt
-        7tGFuvgKyvOjYzJgirukrHW6cKG4AyRumAolsB2qPEzovJ8AKoRIKofRj/B0Qo5vpn2s2xR3+AdV
-        WA4D9xVnhxwkG0SKrejRI79PfTjdu3kFCzUtVRRfoP/dhRzkxLiSEdyeMGJ/fixfXsw/EKsMkHIe
-        J9kKrfQezMgcF6E64+IEmE1G/tvLR9rD2Bzy/8iPgNbQ8qlVbQLj9Pt5x7YE+V7/1fYWcW9YIKRX
-        PsCKHKS8BgNWdX64IoE/kaCpeFc1pDa54ZRsW2m1BmnkcmfF7Dj7DQAA//8DANl/ZwFYAwAA
+      string: "{\n  \"id\": \"chatcmpl-DX7O4KJB3v51YxxlDXGY7Dm6rtRo8\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785592,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Benefits of Using Real Recorded Traffic
+        in Testing\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 57,\n    \"completion_tokens\": 8,\n
+        \   \"total_tokens\": 65,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_04d92b3965\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9e20e31aaae4cf8f-SJC
+      - 9efd721f4c20ab82-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Wed, 25 Mar 2026 21:07:47 GMT
+      - Tue, 21 Apr 2026 15:33:12 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -401,18 +300,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
+      content-length:
+      - '856'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '724'
+      - '358'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=Mzctd7Vf4Pj8hLREk5uV3xfhGAJqHTBdS7Z68xdqJ3E-1774472866.9835687-1.0.1.1-9060awKZeUAS__HpRhOh3ZDNpHvhVrftE8gP2f5h5qVQ7SUhdLjp1QfnUBiOHckFloYERDcS4nSTfy3q7RPbo.rO9ak4DB2RBS7.iNAo4m7Yek2xS4nBLaBUTUBc7VfU;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
-        21:37:47 GMT
+      - __cf_bm=IvTzJ8hyN4J7dNDh.0.Abd2I23nHGMrLmSklAYEje1g-1776785592.2054472-1.0.1.1-NsfXhnS483.On1CN51E_2UiSnMCqC2ETNNMDpBIOgPY8_rXJ38J62yi5I5mFApCflLufU09yA7PerDJYjml_G0IjgPUHMmdxj7.KZ3pLmBX2ZD.MNviyirknjrLU_MfN;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Tue, 21 Apr 2026
+        16:03:12 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -428,7 +329,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_923040bc8f624770996dc8d06bd77fef
+      - req_81e85eb8135a4b51a174704b65b25063
     status:
       code: 200
       message: OK
@@ -452,7 +353,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.29.0
+      - AsyncOpenAI/Python 2.31.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -462,11 +363,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.29.0
+      - 2.31.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.13.3
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -475,30 +376,30 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdfELyDbOSAcAAAD//4xTwW7bMAy95ysEnZ0i
-        yZy6uw/tYehp6y5DYSgSbbOVJUGUswZD/n2UndTp2gG7CDAfH/n0nvz19un2W7i//rK6t9u777vD
-        rx/q4UUWmeF3T6DTmXWlPfMgoXcTrCOoBHnquqrKstrcXFcj0HsDNtPakJalX/bocLlZbcrlqlqu
-        b07szqMG4raf/CnE7/HMOp2BFy6vinOlByLVAtfOTVyM3uaKVERISbkkixnU3iVwo/QHQtcKlmr5
-        0D4aMCJF1TSoBTqRgFJuANcpx3qE0nqISh8KgX2Ifs+lALHxsc84UwjbLlEhlDOiAxtIoOFd2BxE
-        8Hkr8iokGpjJC5TofYRRAOvkpeD2GL3rufPqUnOEZiCVfXODtReAcs4nlX0f3Xo8IcdXf6xvWemO
-        /qLKhn2nrubVxJmxF5R8kCN65PNxzGF4Y63kQX1IdfLPMK7bbqdxck5/BjflCUws0M716nPxwbTa
-        QFJo6SJHqZXuwMzMOXQ1GPQXwOLizu/FfDR7ujeH+z/jZ0BrCPys6xDBoH574bktQv43/tX26vEo
-        WBLEPT/2OiHEnIOBRg12erGSDpSgrzmsFmKIOD3bJtRafYLKVOtdIxfHxR8AAAD//wMAQ8dY3cQD
-        AAA=
+      string: "{\n  \"id\": \"chatcmpl-DX7O5ccFHV7f1vQAP6qbOEZTE5D7D\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785593,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Using real recorded traffic in testing
+        enhances accuracy, improves performance insights, and helps identify potential
+        issues in a more realistic environment.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 55,\n    \"completion_tokens\":
+        24,\n    \"total_tokens\": 79,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_cd59951324\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9e20e31fec3dc132-SJC
+      - 9efd7224dd8661e8-YYZ
       Connection:
       - keep-alive
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json
       Date:
-      - Wed, 25 Mar 2026 21:07:48 GMT
+      - Tue, 21 Apr 2026 15:33:14 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -511,18 +412,20 @@ interactions:
       - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
+      content-length:
+      - '964'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '768'
+      - '920'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=JYxrn1QLzqghAM1PJW6V89UMbmiLatd1atmmQw6NPr0-1774472867.8239858-1.0.1.1-hwGgJY4XYCiJtbeBfm6fdTUACpklHSNTd64qYVFPn23d73s8.NBRfBlLx6nUV4d3.tfIInsBJq50FlZh7Wv9iTFtj7HY1hVkAYRHdnNzeq_4_piEn49lFlc_GkLVdmE0;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 25 Mar 2026
-        21:37:48 GMT
+      - __cf_bm=_Cy0fl2ZnfNqiPkxtCX553M3AAn_FyRkTY1_rAC4hxE-1776785593.0927782-1.0.1.1-rdoymAPYR_R6viqog6LRWJiPhix1YyBCQZfarflhezL5HIu0sWikXRoXOQSjRvELDuziL.vInoQ8iRNJb.xXLxJfJlz8m7buTEzh937Q3tW.nJKqlhyV1rlHxxqrenOV;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Tue, 21 Apr 2026
+        16:03:14 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -538,7 +441,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_13f99272933545f8bac789ebd64bb0f1
+      - req_6e597c978ebc480da4c7e4454fdbf1c7
     status:
       code: 200
       message: OK
