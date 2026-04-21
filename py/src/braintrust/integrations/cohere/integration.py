@@ -3,6 +3,7 @@
 from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
+    CohereAudioTranscriptionsPatcher,
     CohereChatPatcher,
     CohereChatStreamPatcher,
     CohereEmbedPatcher,
@@ -21,4 +22,5 @@ class CohereIntegration(BaseIntegration):
         CohereChatStreamPatcher,
         CohereEmbedPatcher,
         CohereRerankPatcher,
+        CohereAudioTranscriptionsPatcher,
     )
