@@ -145,6 +145,13 @@ test-langchain = [
     "langgraph==1.1.6",
 ]
 
+test-crewai = [
+    {include-group = "test"},
+    # CrewAI's no-network smoke test forces the LiteLLM fallback path via
+    # ``is_litellm=True`` + ``mock_response``.
+    "litellm==1.83.10",
+]
+
 test-cli = [
     {include-group = "test"},
     "httpx==0.28.1",
@@ -172,6 +179,11 @@ lint = [
     "cohere",
     "autoevals",
     "braintrust-core",
+    # crewai's transitive dep instructor pulls in pydantic-core 2.33.x, which
+    # does not yet ship wheels for Python 3.14. Exclude 3.14 so pylint can
+    # resolve the rest of the environment. Version is left open so the
+    # resolver can pick whatever is compatible with the other lint pins.
+    "crewai; python_version<'3.14'",
     "dspy",
     "google-adk",
     "google-genai",
@@ -218,6 +230,7 @@ conflicts = [
     [
         {group = "test-openai-agents"},
         {group = "test-litellm"},
+        {group = "test-crewai"},
         {group = "test-agno"},
         {group = "test-agentscope"},
         {group = "test-langchain"},
@@ -309,6 +322,13 @@ latest = "google-genai==1.73.1"
 latest = "dspy==3.2.0"
 "2.6.0" = "dspy==2.6.0"
 
+[tool.braintrust.matrix.crewai]
+# 1.13.0 is the first release with the full causal-id surface (event_id /
+# parent_event_id / started_event_id on BaseEvent) plus the ``usage`` field on
+# LLMCallCompletedEvent that the Braintrust CrewAI integration depends on.
+latest = "crewai==1.14.2"
+"1.13.0" = "crewai==1.13.0"
+
 [tool.braintrust.matrix.google-adk]
 latest = "google-adk==1.31.1"
 "1.14.1" = "google-adk==1.14.1"
@@ -362,6 +382,7 @@ autogen = ["autogen-agentchat"]
 anthropic = ["anthropic"]
 cohere = ["cohere"]
 claude_agent_sdk = ["claude-agent-sdk"]
+crewai = ["crewai"]
 dspy = ["dspy"]
 google_genai = ["google-genai"]
 langchain = ["langchain-core"]
@@ -381,6 +402,7 @@ anthropic = "anthropic"
 cohere = "cohere"
 autoevals = "autoevals"
 braintrust-core = "braintrust_core"
+crewai = "crewai"
 dspy = "dspy"
 google-adk = "google.adk"
 google-genai = "google.genai"

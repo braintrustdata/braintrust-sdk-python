@@ -5,6 +5,7 @@ from .anthropic import AnthropicIntegration
 from .autogen import AutoGenIntegration
 from .claude_agent_sdk import ClaudeAgentSDKIntegration
 from .cohere import CohereIntegration
+from .crewai import CrewAIIntegration
 from .dspy import DSPyIntegration
 from .google_genai import GoogleGenAIIntegration
 from .langchain import LangChainIntegration
@@ -24,6 +25,7 @@ __all__ = [
     "AutoGenIntegration",
     "ClaudeAgentSDKIntegration",
     "CohereIntegration",
+    "CrewAIIntegration",
     "DSPyIntegration",
     "GoogleGenAIIntegration",
     "LiteLLMIntegration",

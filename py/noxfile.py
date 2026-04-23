@@ -343,6 +343,22 @@ def test_dspy(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version)
 
 
+CREWAI_VERSIONS = _get_matrix_versions("crewai")
+
+
+@nox.session()
+@nox.parametrize("version", CREWAI_VERSIONS, ids=CREWAI_VERSIONS)
+def test_crewai(session, version):
+    if sys.version_info >= (3, 14):
+        session.skip(
+            "CrewAI currently resolves instructor -> pydantic-core builds that do not ship Python 3.14 wheels"
+        )
+    _install_test_deps(session)
+    _install_group_locked(session, "test-crewai")
+    _install_matrix_dep(session, "crewai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/crewai/test_crewai.py", version=version)
+
+
 GOOGLE_ADK_VERSIONS = _get_matrix_versions("google-adk")
 
 
