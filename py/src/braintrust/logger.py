@@ -2885,6 +2885,38 @@ DEFAULT_FETCH_BATCH_SIZE = 1000
 MAX_BTQL_ITERATIONS = 10000
 
 
+def _is_internal_btql_filter_clause(value: Any) -> bool:
+    return isinstance(value, dict) and isinstance(value.get("op"), str)
+
+
+def _normalize_internal_btql(
+    internal_btql: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if internal_btql is None or "filters" not in internal_btql:
+        return internal_btql
+
+    normalized_internal_btql = {key: value for key, value in internal_btql.items() if key != "filters"}
+    if "filter" in normalized_internal_btql:
+        return normalized_internal_btql
+
+    filters = internal_btql.get("filters")
+    if not isinstance(filters, list) or not all(_is_internal_btql_filter_clause(value) for value in filters):
+        return internal_btql
+
+    if len(filters) == 1:
+        normalized_internal_btql["filter"] = filters[0]
+        return normalized_internal_btql
+
+    if len(filters) > 1:
+        normalized_internal_btql["filter"] = {
+            "op": "and",
+            "children": filters,
+        }
+        return normalized_internal_btql
+
+    return normalized_internal_btql
+
+
 class ObjectFetcher(ABC, Generic[TMapping]):
     def __init__(
         self,
@@ -2950,6 +2982,7 @@ class ObjectFetcher(ABC, Generic[TMapping]):
             cursor = None
             data = None
             iterations = 0
+            normalized_internal_btql = _normalize_internal_btql(self._internal_btql)
             while True:
                 resp = state.api_conn().post(
                     f"btql",
@@ -2971,7 +3004,7 @@ class ObjectFetcher(ABC, Generic[TMapping]):
                             },
                             "cursor": cursor,
                             "limit": limit,
-                            **(self._internal_btql or {}),
+                            **(normalized_internal_btql or {}),
                         },
                         "use_columnstore": False,
                         "brainstore_realtime": True,
