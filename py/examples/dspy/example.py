@@ -26,7 +26,8 @@ def main():
     print("🔍 Braintrust logging enabled - view traces at https://braintrust.dev")
 
     # Disable DSPy's disk cache (keep memory cache for performance)
-    dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=True)
+    if hasattr(dspy, "configure_cache"):
+        dspy.configure_cache(enable_disk_cache=False, enable_memory_cache=True)  # pylint: disable=no-member
 
     # Configure DSPy with Braintrust callback
     lm = dspy.LM("openai/gpt-4o-mini")

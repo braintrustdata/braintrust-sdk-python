@@ -181,9 +181,13 @@ lint = [
     "braintrust-core",
     # crewai's transitive dep instructor pulls in pydantic-core 2.33.x, which
     # does not yet ship wheels for Python 3.14. Exclude 3.14 so pylint can
-    # resolve the rest of the environment. Version is left open so the
-    # resolver can pick whatever is compatible with the other lint pins.
+    # resolve the rest of the environment. Keep the package itself unpinned so
+    # the resolver can still pick a mutually compatible version with the other
+    # lint deps.
     "crewai; python_version<'3.14'",
+    # onnxruntime 1.24.3 dropped cp310 wheels. Constrain the transitive
+    # resolution on Python 3.10 so pylint can still build its environment.
+    "onnxruntime<1.24; python_version<'3.11'",
     "dspy",
     "google-adk",
     "google-genai",

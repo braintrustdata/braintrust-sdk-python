@@ -12,6 +12,17 @@ from braintrust.integrations.base import CallbackPatcher
 _LISTENER: Any | None = None
 
 
+def _unregister_event_handler(event_bus: Any, event_type: Any, handler: Any) -> None:
+    """Best-effort wrapper around ``CrewAIEventsBus.off``.
+
+    Pylint cannot currently infer the dynamically-generated event-bus API in
+    CrewAI, so we use ``getattr`` here instead of calling ``off`` directly.
+    """
+    unregister = getattr(event_bus, "off", None)
+    if callable(unregister):
+        unregister(event_type, handler)
+
+
 def _register_braintrust_listener() -> bool:
     """Idempotently create and register the Braintrust listener.
 
@@ -63,7 +74,7 @@ def _reset_for_testing() -> None:
         for handler in list(handlers):
             handler_mod = getattr(handler, "__module__", "")
             if "braintrust" in handler_mod and "crewai" in handler_mod:
-                crewai_event_bus.off(event_type, handler)
+                _unregister_event_handler(crewai_event_bus, event_type, handler)
 
     _LISTENER = None
 
