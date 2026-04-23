@@ -2560,6 +2560,24 @@
             ],
             "description": "Version number of the linked dataset the experiment was run against. This can be used to reproduce the experiment after the dataset has been modified."
           },
+          "internal_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "dataset_filter": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": {},
+                "description": "BTQL filter payload used to evaluate a subset of a linked dataset."
+              }
+            },
+            "additionalProperties": {},
+            "description": "Braintrust-controlled metadata about the experiment."
+          },
           "parameters_id": {
             "type": [
               "string",
@@ -5373,6 +5391,23 @@
                     ],
                     "description": "The definition of what to export"
                   },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/SpanScope"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TraceScope"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GroupScope"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Execution scope for export automation. Defaults to span-level execution."
+                  },
                   "export_path": {
                     "type": "string",
                     "description": "The path to export the results to. It should include the storage protocol and prefix, e.g. s3://bucket-name/path/to/export"
@@ -5415,6 +5450,25 @@
                           "type",
                           "role_arn",
                           "external_id"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "gcp_service_account"
+                            ]
+                          },
+                          "service_account_email": {
+                            "type": "string",
+                            "description": "The GCP service account email to impersonate"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "service_account_email"
                         ]
                       }
                     ]
@@ -8650,7 +8704,8 @@
                 ],
                 "enum": [
                   "traces",
-                  "spans"
+                  "spans",
+                  "topics"
                 ]
               },
               "cluster": {

@@ -654,6 +654,13 @@ The theme for the page
 """
 
 
+class ExperimentInternalMetadata(TypedDict):
+    dataset_filter: NotRequired[Mapping[str, Any] | None]
+    """
+    BTQL filter payload used to evaluate a subset of a linked dataset.
+    """
+
+
 class ExperimentEventMetadata(TypedDict):
     model: NotRequired[str | None]
     """
@@ -1636,35 +1643,11 @@ class ProjectAutomationConfig1Credentials(TypedDict):
     """
 
 
-class ProjectAutomationConfig1(TypedDict):
-    event_type: Literal['btql_export']
+class ProjectAutomationConfig1Credentials1(TypedDict):
+    type: Literal['gcp_service_account']
+    service_account_email: str
     """
-    The type of automation.
-    """
-    export_definition: (
-        ProjectAutomationConfig1ExportDefinition
-        | ProjectAutomationConfig1ExportDefinition1
-        | ProjectAutomationConfig1ExportDefinition2
-    )
-    """
-    The definition of what to export
-    """
-    export_path: str
-    """
-    The path to export the results to. It should include the storage protocol and prefix, e.g. s3://bucket-name/path/to/export
-    """
-    format: Literal['jsonl', 'parquet']
-    """
-    The format to export the results in
-    """
-    interval_seconds: float
-    """
-    Perform the triggered action at most once in this interval of seconds
-    """
-    credentials: ProjectAutomationConfig1Credentials
-    batch_size: NotRequired[float | None]
-    """
-    The number of rows to export in each batch
+    The GCP service account email to impersonate
     """
 
 
@@ -2654,7 +2637,7 @@ class ViewOptionsViewOptions1(TypedDict):
     """
     chartAnnotations: NotRequired[Sequence[ViewOptionsViewOptions1ChartAnnotation] | None]
     timeRangeFilter: NotRequired[str | ViewOptionsViewOptions1TimeRangeFilter | None]
-    queryShape: NotRequired[Literal['traces', 'spans'] | None]
+    queryShape: NotRequired[Literal['traces', 'spans', 'topics'] | None]
     cluster: NotRequired[str | None]
     freezeColumns: NotRequired[bool | None]
 
@@ -2981,6 +2964,10 @@ class Experiment(TypedDict):
     """
     Version number of the linked dataset the experiment was run against. This can be used to reproduce the experiment after the dataset has been modified.
     """
+    internal_metadata: NotRequired[ExperimentInternalMetadata | None]
+    """
+    Braintrust-controlled metadata about the experiment.
+    """
     parameters_id: NotRequired[str | None]
     """
     Identifier of the linked saved parameters object, or null if the experiment is not linked to saved parameters
@@ -3257,6 +3244,44 @@ class Project(TypedDict):
     Identifies the user who created the project
     """
     settings: NotRequired[ProjectSettings | None]
+
+
+class ProjectAutomationConfig1(TypedDict):
+    event_type: Literal['btql_export']
+    """
+    The type of automation.
+    """
+    export_definition: (
+        ProjectAutomationConfig1ExportDefinition
+        | ProjectAutomationConfig1ExportDefinition1
+        | ProjectAutomationConfig1ExportDefinition2
+    )
+    """
+    The definition of what to export
+    """
+    scope: NotRequired[SpanScope | TraceScope | GroupScope | None]
+    """
+    Execution scope for export automation. Defaults to span-level execution.
+    """
+    export_path: str
+    """
+    The path to export the results to. It should include the storage protocol and prefix, e.g. s3://bucket-name/path/to/export
+    """
+    format: Literal['jsonl', 'parquet']
+    """
+    The format to export the results in
+    """
+    interval_seconds: float
+    """
+    Perform the triggered action at most once in this interval of seconds
+    """
+    credentials: (
+        ProjectAutomationConfig1Credentials | ProjectAutomationConfig1Credentials1
+    )
+    batch_size: NotRequired[float | None]
+    """
+    The number of rows to export in each batch
+    """
 
 
 class ProjectAutomationConfig2(TypedDict):
