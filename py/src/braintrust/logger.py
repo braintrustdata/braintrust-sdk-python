@@ -1535,6 +1535,7 @@ def init(
     experiment: str | None = ...,
     description: str | None = ...,
     dataset: "Dataset | None" = ...,
+    _internal_btql: dict[str, Any] | None = ...,
     parameters: RemoteEvalParameters | ParametersRef | None = ...,
     open: Literal[False] = ...,
     base_experiment: str | None = ...,
@@ -1560,6 +1561,7 @@ def init(
     experiment: str | None = ...,
     description: str | None = ...,
     dataset: "Dataset | None" = ...,
+    _internal_btql: dict[str, Any] | None = ...,
     parameters: RemoteEvalParameters | ParametersRef | None = ...,
     open: Literal[True] = ...,
     base_experiment: str | None = ...,
@@ -1584,6 +1586,7 @@ def init(
     experiment: str | None = None,
     description: str | None = None,
     dataset: "Dataset | None | DatasetRef" = None,
+    _internal_btql: dict[str, Any] | None = None,
     parameters: RemoteEvalParameters | ParametersRef | None = None,
     open: bool = False,
     base_experiment: str | None = None,
@@ -1718,6 +1721,12 @@ def init(
                 # Full Dataset object
                 args["dataset_id"] = dataset.id
                 args["dataset_version"] = dataset.version
+
+        dataset_filter = _internal_btql
+        if dataset_filter is None and isinstance(dataset, Dataset):
+            dataset_filter = dataset._internal_btql
+        if dataset_filter is not None:
+            args["internal_metadata"] = {"dataset_filter": dataset_filter}
 
         parameters_ref = _get_parameters_ref(parameters)
         if parameters_ref is not None:
