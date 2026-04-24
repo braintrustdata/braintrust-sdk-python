@@ -5,6 +5,8 @@ CrewAI listener on ``crewai_event_bus`` and is idempotent across repeated
 calls.  Full span-shape coverage lives in ``test_crewai.py``.
 """
 
+# pylint: disable=import-error
+
 from braintrust.auto import auto_instrument
 from braintrust.integrations.crewai import BraintrustCrewAIListener
 from braintrust.integrations.crewai.patchers import _get_registered_listener

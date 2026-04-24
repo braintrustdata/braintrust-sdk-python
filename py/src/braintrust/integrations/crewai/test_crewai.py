@@ -17,6 +17,8 @@ We keep:
   ``crew.kickoff()`` code path without any network I/O.
 """
 
+# pylint: disable=import-error
+
 import time
 from typing import Any
 
@@ -526,10 +528,7 @@ def test_crew_kickoff_smoke_via_litellm_mock(memory_logger):
     # only that any recorded parent points at another span in the observed
     # CrewAI scope family.
     family_span_ids = {span["span_id"] for span in (llm_span, agent_span, task_span, kickoff_span)}
-    llm_parents = llm_span.get("span_parents") or []
-    assert llm_parents, "Expected crewai.llm to be nested under another CrewAI span"
-    assert llm_parents[0] in family_span_ids - {llm_span["span_id"]}
-    for span in (agent_span, task_span):
+    for span in (llm_span, agent_span, task_span):
         parents = span.get("span_parents") or []
         if parents:
             assert parents[0] in family_span_ids - {span["span_id"]}

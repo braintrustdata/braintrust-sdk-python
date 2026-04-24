@@ -36,7 +36,8 @@ log time via the internal ``_is_litellm_patched`` helper on the LiteLLM
 integration.
 """
 
-import logging
+# pylint: disable=import-error
+
 import threading
 import time
 from typing import TYPE_CHECKING, Any
@@ -52,9 +53,6 @@ from braintrust.span_types import SpanTypeAttribute
 
 if TYPE_CHECKING:
     from crewai.events.event_bus import CrewAIEventsBus
-
-
-logger = logging.getLogger(__name__)
 
 
 # LiteLLM / LiteLLM-over-OpenAI usage field translation.  Mirrors the
@@ -586,11 +584,7 @@ def _open_span(
     if parent is not None:
         start_kwargs["parent"] = parent
 
-    try:
-        span = start_span(**start_kwargs)
-    except Exception:  # pragma: no cover - defensive, never break the app
-        logger.exception("Braintrust CrewAI listener: failed to open span %s", name)
-        return None
+    span = start_span(**start_kwargs)
 
     with self._lock:
         self._spans[event_id] = span
@@ -605,10 +599,7 @@ def _lookup_parent(self: Any, event: Any) -> str | None:
         with self._lock:
             parent_span = self._spans.get(parent_event_id)
         if parent_span is not None:
-            try:
-                return parent_span.export()
-            except Exception:
-                return None
+            return parent_span.export()
 
     # Fallback: any user-opened Braintrust span (e.g. the outer span in a
     # manual wrapper) that the event-bus executor propagates via
@@ -616,10 +607,7 @@ def _lookup_parent(self: Any, event: Any) -> str | None:
     span = current_span()
     if span is NOOP_SPAN:
         return None
-    try:
-        return span.export()
-    except Exception:
-        return None
+    return span.export()
 
 
 def _record_first_token(self: Any, event: Any) -> None:
@@ -694,15 +682,8 @@ def _end_span_by_event_id(
     if error is not None:
         log_payload["error"] = error
 
-    try:
-        span.log(**log_payload)
-    except Exception:
-        logger.exception("Braintrust CrewAI listener: failed to log span")
-    finally:
-        try:
-            span.end(end_time=end_time)
-        except Exception:
-            logger.exception("Braintrust CrewAI listener: failed to end span")
+    span.log(**log_payload)
+    span.end(end_time=end_time)
 
 
 def _clear_span_state(self: Any) -> None:
