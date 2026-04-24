@@ -278,6 +278,14 @@ latest = "agno==2.6.0"
 latest = "agentscope==1.0.19"
 "1.0.0" = "agentscope==1.0.0"
 
+[tool.braintrust.matrix.autogen-agentchat]
+latest = "autogen-agentchat==0.7.5"
+"0.7.0" = "autogen-agentchat==0.7.0"
+
+[tool.braintrust.matrix.autogen-ext]
+latest = "autogen-ext[openai]==0.7.5"
+"0.7.0" = "autogen-ext[openai]==0.7.0"
+
 [tool.braintrust.matrix.pydantic-ai-integration]
 latest = "pydantic-ai==1.86.1"
 "1.10.0" = "pydantic-ai==1.10.0"
@@ -348,6 +356,7 @@ latest = "braintrust-core==0.0.59"
 adk = ["google-adk"]
 agentscope = ["agentscope"]
 agno = ["agno"]
+autogen = ["autogen-agentchat"]
 anthropic = ["anthropic"]
 cohere = ["cohere"]
 claude_agent_sdk = ["claude-agent-sdk"]
@@ -364,6 +373,8 @@ pydantic_ai = ["pydantic-ai-integration", "pydantic-ai-wrap-openai"]
 [tool.braintrust.vendor-packages]
 agno = "agno"
 agentscope = "agentscope"
+autogen-agentchat = "autogen_agentchat"
+autogen-ext = "autogen_ext"
 anthropic = "anthropic"
 cohere = "cohere"
 autoevals = "autoevals"

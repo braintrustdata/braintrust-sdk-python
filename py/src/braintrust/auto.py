@@ -12,6 +12,7 @@ from braintrust.integrations import (
     AgentScopeIntegration,
     AgnoIntegration,
     AnthropicIntegration,
+    AutoGenIntegration,
     ClaudeAgentSDKIntegration,
     CohereIntegration,
     DSPyIntegration,
@@ -60,6 +61,7 @@ def auto_instrument(
     langchain: bool = True,
     openai_agents: bool = True,
     cohere: bool = True,
+    autogen: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -86,6 +88,7 @@ def auto_instrument(
         langchain: Enable LangChain instrumentation (default: True)
         openai_agents: Enable OpenAI Agents SDK instrumentation (default: True)
         cohere: Enable Cohere instrumentation (default: True)
+        autogen: Enable AutoGen instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -163,6 +166,8 @@ def auto_instrument(
         results["openai_agents"] = _instrument_integration(OpenAIAgentsIntegration)
     if cohere:
         results["cohere"] = _instrument_integration(CohereIntegration)
+    if autogen:
+        results["autogen"] = _instrument_integration(AutoGenIntegration)
 
     return results
 

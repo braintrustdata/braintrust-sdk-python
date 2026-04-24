@@ -2,6 +2,7 @@ from .adk import ADKIntegration
 from .agentscope import AgentScopeIntegration
 from .agno import AgnoIntegration
 from .anthropic import AnthropicIntegration
+from .autogen import AutoGenIntegration
 from .claude_agent_sdk import ClaudeAgentSDKIntegration
 from .cohere import CohereIntegration
 from .dspy import DSPyIntegration
@@ -20,6 +21,7 @@ __all__ = [
     "AgentScopeIntegration",
     "AgnoIntegration",
     "AnthropicIntegration",
+    "AutoGenIntegration",
     "ClaudeAgentSDKIntegration",
     "CohereIntegration",
     "DSPyIntegration",
