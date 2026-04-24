@@ -97,9 +97,12 @@ def test_agno_simple_agent_execution(memory_logger):
     assert messages[1]["role"] == "user"
     assert messages[1]["content"] == "Charlotte's Web"
     assert llm_span["output"]["content"] == "E.B. White"
-    assert llm_span["metrics"]["prompt_tokens"] == 38
-    assert llm_span["metrics"]["completion_tokens"] == 4
-    assert llm_span["metrics"]["tokens"] == 42
+    assert llm_span["metrics"]["prompt_tokens"] > 0
+    assert llm_span["metrics"]["completion_tokens"] > 0
+    assert (
+        llm_span["metrics"]["tokens"]
+        == llm_span["metrics"]["prompt_tokens"] + llm_span["metrics"]["completion_tokens"]
+    )
 
 
 def test_get_model_name_prefers_stable_provider_attribute():
