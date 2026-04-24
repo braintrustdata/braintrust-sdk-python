@@ -41,6 +41,7 @@ STRUCTURED_OUTPUT_SCHEMA = {
 }
 PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 PDF_BASE64 = "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
+PROMPT_CACHE_TEST_TEXT = "\n".join(f"Cached geography fact {i}: Paris is the capital of France." for i in range(300))
 
 
 def _get_client():
@@ -337,15 +338,78 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
         "completion_tokens": 7.0,
         "prompt_cached_tokens": 3.0,
         "prompt_cache_creation_tokens": 7.0,
+        "prompt_cache_creation_5m_tokens": 2.0,
+        "prompt_cache_creation_1h_tokens": 5.0,
         "server_tool_use_web_search_requests": 2.0,
         "server_tool_use_web_fetch_requests": 1.0,
         "tokens": 28.0,
     }
     assert metadata == {
-        "cache_creation_ephemeral_5m_input_tokens": 2,
-        "cache_creation_ephemeral_1h_input_tokens": 5,
         "usage_service_tier": "standard",
     }
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_messages_create_prompt_cache_5m_metrics(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Prompt cache TTL breakdown requires the latest Anthropic SDK cassette")
+
+    client = wrap_anthropic(_get_client())
+    response = client.messages.create(
+        model=LATEST_MODEL,
+        max_tokens=16,
+        temperature=0,
+        system=[
+            {
+                "type": "text",
+                "text": PROMPT_CACHE_TEST_TEXT,
+                "cache_control": {"type": "ephemeral", "ttl": "5m"},
+            }
+        ],
+        messages=[{"role": "user", "content": "What is the capital of France?"}],
+    )
+
+    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    assert span["output"]["role"] == response.role
+    assert span["metrics"]["prompt_cache_creation_tokens"] == response.usage.cache_creation_input_tokens
+    assert (
+        span["metrics"]["prompt_cache_creation_5m_tokens"] == response.usage.cache_creation.ephemeral_5m_input_tokens
+    )
+    assert (
+        span["metrics"]["prompt_cache_creation_1h_tokens"] == response.usage.cache_creation.ephemeral_1h_input_tokens
+    )
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_messages_create_prompt_cache_1h_metrics(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Prompt cache TTL breakdown requires the latest Anthropic SDK cassette")
+
+    client = wrap_anthropic(_get_client())
+    response = client.messages.create(
+        model=LATEST_MODEL,
+        max_tokens=16,
+        temperature=0,
+        extra_headers={"anthropic-beta": "extended-cache-ttl-2025-04-11"},
+        system=[
+            {
+                "type": "text",
+                "text": PROMPT_CACHE_TEST_TEXT,
+                "cache_control": {"type": "ephemeral", "ttl": "1h"},
+            }
+        ],
+        messages=[{"role": "user", "content": "What is the capital of France?"}],
+    )
+
+    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    assert span["output"]["role"] == response.role
+    assert span["metrics"]["prompt_cache_creation_tokens"] == response.usage.cache_creation_input_tokens
+    assert (
+        span["metrics"]["prompt_cache_creation_5m_tokens"] == response.usage.cache_creation.ephemeral_5m_input_tokens
+    )
+    assert (
+        span["metrics"]["prompt_cache_creation_1h_tokens"] == response.usage.cache_creation.ephemeral_1h_input_tokens
+    )
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
@@ -1279,8 +1343,8 @@ def test_setup_creates_spans(memory_logger):
     )
     assert metrics["completion_tokens"] == usage.output_tokens
     assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
-    assert span["metadata"]["cache_creation_ephemeral_5m_input_tokens"] == ephemeral_5m
-    assert span["metadata"]["cache_creation_ephemeral_1h_input_tokens"] == ephemeral_1h
+    assert metrics["prompt_cache_creation_5m_tokens"] == ephemeral_5m
+    assert metrics["prompt_cache_creation_1h_tokens"] == ephemeral_1h
     assert "service_tier" not in metrics
 
 
@@ -1310,14 +1374,12 @@ def test_extract_anthropic_usage_preserves_nested_numeric_fields():
     assert metrics["completion_tokens"] == 12
     assert metrics["tokens"] == 27
     assert metrics["prompt_cache_creation_tokens"] == 7
-    assert metadata["cache_creation_ephemeral_5m_input_tokens"] == 3
-    assert metadata["cache_creation_ephemeral_1h_input_tokens"] == 4
+    assert metrics["prompt_cache_creation_5m_tokens"] == 3
+    assert metrics["prompt_cache_creation_1h_tokens"] == 4
     assert metrics["server_tool_use_web_search_requests"] == 2
     assert metrics["server_tool_use_web_fetch_requests"] == 1
     assert "service_tier" not in metrics
     assert metadata == {
-        "cache_creation_ephemeral_5m_input_tokens": 3,
-        "cache_creation_ephemeral_1h_input_tokens": 4,
         "usage_service_tier": "standard",
         "usage_inference_geo": "not_available",
     }

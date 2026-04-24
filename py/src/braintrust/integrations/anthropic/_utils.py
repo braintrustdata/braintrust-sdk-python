@@ -23,9 +23,9 @@ _ANTHROPIC_USAGE_METRIC_FIELDS = (
     ("cache_creation_input_tokens", "prompt_cache_creation_tokens"),
 )
 
-_ANTHROPIC_CACHE_CREATION_METADATA_FIELDS = (
-    ("ephemeral_5m_input_tokens", "cache_creation_ephemeral_5m_input_tokens"),
-    ("ephemeral_1h_input_tokens", "cache_creation_ephemeral_1h_input_tokens"),
+_ANTHROPIC_CACHE_CREATION_METRIC_FIELDS = (
+    ("ephemeral_5m_input_tokens", "prompt_cache_creation_5m_tokens"),
+    ("ephemeral_1h_input_tokens", "prompt_cache_creation_1h_tokens"),
 )
 
 _ANTHROPIC_USAGE_METADATA_FIELDS = frozenset(
@@ -71,10 +71,10 @@ def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any
     cache_creation = _try_to_dict(usage.get("cache_creation"))
     cache_creation_breakdown: list[float] = []
     if cache_creation is not None:
-        for source_name, metadata_key in _ANTHROPIC_CACHE_CREATION_METADATA_FIELDS:
+        for source_name, metric_name in _ANTHROPIC_CACHE_CREATION_METRIC_FIELDS:
             value = cache_creation.get(source_name)
             if is_numeric(value):
-                metadata[metadata_key] = int(value)
+                metrics[metric_name] = float(value)
                 cache_creation_breakdown.append(float(value))
 
     server_tool_use = _try_to_dict(usage.get("server_tool_use"))
