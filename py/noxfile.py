@@ -247,6 +247,18 @@ def test_agno(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py", version=version)
 
 
+STRANDS_VERSIONS = _get_matrix_versions("strands-agents")
+
+
+@nox.session()
+@nox.parametrize("version", STRANDS_VERSIONS, ids=STRANDS_VERSIONS)
+def test_strands(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "strands-agents", version)
+    _install_group_locked(session, "test-strands")
+    _run_tests(session, f"{INTEGRATION_DIR}/strands/test_strands.py", version=version)
+
+
 AGENTSCOPE_VERSIONS = _get_matrix_versions("agentscope")
 
 
