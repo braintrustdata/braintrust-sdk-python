@@ -1,0 +1,147 @@
+interactions:
+- request:
+    body: '{"inputs":"What is 9+1? Reply with just the number.","stream":false,"model":"mistral-small-latest"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '99'
+      Host:
+      - api.mistral.ai
+      content-type:
+      - application/json
+      user-agent:
+      - mistral-client-python/1.12.4
+    method: POST
+    uri: https://api.mistral.ai/v1/conversations
+  response:
+    body:
+      string: '{"object":"conversation.response","conversation_id":"conv_019d9d49e86573829520ad10adbdb2ae","outputs":[{"object":"entry","type":"message.output","created_at":"2026-04-17T21:12:39.978536Z","completed_at":"2026-04-17T21:12:39.991921Z","model":"mistral-small-latest","id":"msg_019d9d49e92a71d5a23d7592a570149c","role":"assistant","content":"10"}],"usage":{"prompt_tokens":16,"completion_tokens":3,"total_tokens":19},"guardrails":null}'
+    headers:
+      CF-RAY:
+      - 9ede6de01e6ddf5a-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 17 Apr 2026 21:12:40 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '431'
+      mistral-correlation-id:
+      - 019d9d49-e852-7d78-aa76-09a673ca1a92
+      set-cookie:
+      - __cf_bm=H_3yVS30aYJU6QfRlLxEBZRSqQy80W7NpzPZORYY8Jo-1776460359.6941855-1.0.1.1-toPS8orFkUXOyyYfxIb4dgtJuTJdbYISsxL.EHrh4Koen9Fs0woodDFyvDwAeslD8WWn4YQ09O3Ee31uXx8uI5HxIEkO_h6mhBkRSYgfHqWHEdE9aQOGl8mKpVIN_kKF;
+        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Fri, 17 Apr 2026 21:42:40
+        GMT
+      - _cfuvid=B0oHIvVaJxM3lTvM8PDKkITthcu0xYCGOJ8Y1WGvy.4-1776460359.6941855-1.0.1.1-1eXWhpI.ddhDE0z8weO6K6xpaUOIKo2YjBEAIOfyKn4;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      x-envoy-upstream-service-time:
+      - '241'
+      x-kong-proxy-latency:
+      - '12'
+      x-kong-request-id:
+      - 019d9d49-e852-7d78-aa76-09a673ca1a92
+      x-kong-upstream-latency:
+      - '241'
+      x-ratelimit-limit-tokens-minute:
+      - '500000'
+      x-ratelimit-limit-tokens-month:
+      - '1000000000'
+      x-ratelimit-remaining-tokens-minute:
+      - '499729'
+      x-ratelimit-remaining-tokens-month:
+      - '999999589'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"inputs":"What is 6+6? Reply with just the number.","from_entry_id":"msg_019d9d49e92a71d5a23d7592a570149c","stream":false,"store":true,"handoff_execution":"server"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '165'
+      Cookie:
+      - __cf_bm=H_3yVS30aYJU6QfRlLxEBZRSqQy80W7NpzPZORYY8Jo-1776460359.6941855-1.0.1.1-toPS8orFkUXOyyYfxIb4dgtJuTJdbYISsxL.EHrh4Koen9Fs0woodDFyvDwAeslD8WWn4YQ09O3Ee31uXx8uI5HxIEkO_h6mhBkRSYgfHqWHEdE9aQOGl8mKpVIN_kKF;
+        _cfuvid=B0oHIvVaJxM3lTvM8PDKkITthcu0xYCGOJ8Y1WGvy.4-1776460359.6941855-1.0.1.1-1eXWhpI.ddhDE0z8weO6K6xpaUOIKo2YjBEAIOfyKn4
+      Host:
+      - api.mistral.ai
+      content-type:
+      - application/json
+      user-agent:
+      - mistral-client-python/1.12.4
+    method: POST
+    uri: https://api.mistral.ai/v1/conversations/conv_019d9d49e86573829520ad10adbdb2ae/restart
+  response:
+    body:
+      string: '{"object":"conversation.response","conversation_id":"conv_019d9d49ea9f773b81fa3ed2cf5b56ad","outputs":[{"object":"entry","type":"message.output","created_at":"2026-04-17T21:12:40.557743Z","completed_at":"2026-04-17T21:12:40.582376Z","model":"mistral-small-latest","id":"msg_019d9d49eb6d758887d89ae8a06272aa","role":"assistant","content":"12"}],"usage":{"prompt_tokens":34,"completion_tokens":3,"total_tokens":37},"guardrails":null}'
+    headers:
+      CF-RAY:
+      - 9ede6de379aef4cc-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 17 Apr 2026 21:12:40 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '431'
+      mistral-correlation-id:
+      - 019d9d49-ea6c-773d-bec0-6232df811388
+      x-envoy-upstream-service-time:
+      - '282'
+      x-kong-proxy-latency:
+      - '23'
+      x-kong-request-id:
+      - 019d9d49-ea6c-773d-bec0-6232df811388
+      x-kong-upstream-latency:
+      - '285'
+      x-ratelimit-limit-tokens-minute:
+      - '500000'
+      x-ratelimit-limit-tokens-month:
+      - '1000000000'
+      x-ratelimit-remaining-tokens-minute:
+      - '499692'
+      x-ratelimit-remaining-tokens-month:
+      - '999999552'
+    status:
+      code: 200
+      message: OK
+version: 1

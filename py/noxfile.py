@@ -259,6 +259,18 @@ def test_agentscope(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/agentscope/test_agentscope.py", version=version)
 
 
+AUTOGEN_VERSIONS = _get_matrix_versions("autogen-agentchat")
+
+
+@nox.session()
+@nox.parametrize("version", AUTOGEN_VERSIONS, ids=AUTOGEN_VERSIONS)
+def test_autogen(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "autogen-agentchat", version)
+    _install_matrix_dep(session, "autogen-ext", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/autogen/test_autogen.py", version=version)
+
+
 # Two test suites with different version requirements:
 # 1. wrap_openai approach: works with older versions (0.1.9+)
 # 2. Direct wrapper (setup_pydantic_ai): requires 1.10.0+ for all features

@@ -1,0 +1,230 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"You are concise. Answer directly.","role":"system"},{"role":"user","name":"user","content":"Say
+      hello in exactly two words."}],"model":"gpt-4o-mini","stream":true,"temperature":0}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '204'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.31.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.31.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.12.12
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: 'data: {"id":"chatcmpl-DYG9mg1B5zr74X5hOmhdFcbU32mya","object":"chat.completion.chunk","created":1777057630,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}],"obfuscation":"IjS2v5"}
+
+
+        data: {"id":"chatcmpl-DYG9mg1B5zr74X5hOmhdFcbU32mya","object":"chat.completion.chunk","created":1777057630,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}],"obfuscation":"dPa"}
+
+
+        data: {"id":"chatcmpl-DYG9mg1B5zr74X5hOmhdFcbU32mya","object":"chat.completion.chunk","created":1777057630,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"
+        there"},"logprobs":null,"finish_reason":null}],"obfuscation":"Fm"}
+
+
+        data: {"id":"chatcmpl-DYG9mg1B5zr74X5hOmhdFcbU32mya","object":"chat.completion.chunk","created":1777057630,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{"content":"."},"logprobs":null,"finish_reason":null}],"obfuscation":"Nh5bPQi"}
+
+
+        data: {"id":"chatcmpl-DYG9mg1B5zr74X5hOmhdFcbU32mya","object":"chat.completion.chunk","created":1777057630,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_a7190374f3","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"obfuscation":"c7"}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9f1763acad1faaaa-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream; charset=utf-8
+      Date:
+      - Fri, 24 Apr 2026 19:07:10 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '167'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=BnMOThCof0ogO6WG.pYq4.sVRicG2TxYgM_tmqzagOY-1777057630.1902976-1.0.1.1-KU0JXGgu_Rotk1EnYYDSaIe2LQTFAOyKH1lKX6UURSYtZhvXXnM8NuGbfnoBax.dV7fwV7tIpqyNqkbnrdbWXlQbedCg5a0MFurpwLY5OS.m9f5AufLbGYO.noHsSW81;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 24 Apr 2026
+        19:37:10 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_c34820b60472412591aebb2b411267ee
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are concise. Answer directly.","role":"system"},{"role":"user","name":"user","content":"Say
+      hello in exactly two words."}],"model":"gpt-4o-mini","stream":true,"temperature":0}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '204'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.32.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.32.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.12.12
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: 'data: {"id":"chatcmpl-DYGHF92NSkAguMs3ZddsQdCSax0qV","object":"chat.completion.chunk","created":1777058093,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_21e7b37e61","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}],"obfuscation":"X7p8fb"}
+
+
+        data: {"id":"chatcmpl-DYGHF92NSkAguMs3ZddsQdCSax0qV","object":"chat.completion.chunk","created":1777058093,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_21e7b37e61","choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}],"obfuscation":"1YZ"}
+
+
+        data: {"id":"chatcmpl-DYGHF92NSkAguMs3ZddsQdCSax0qV","object":"chat.completion.chunk","created":1777058093,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_21e7b37e61","choices":[{"index":0,"delta":{"content":"
+        there"},"logprobs":null,"finish_reason":null}],"obfuscation":"JD"}
+
+
+        data: {"id":"chatcmpl-DYGHF92NSkAguMs3ZddsQdCSax0qV","object":"chat.completion.chunk","created":1777058093,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_21e7b37e61","choices":[{"index":0,"delta":{"content":"."},"logprobs":null,"finish_reason":null}],"obfuscation":"1zKEfiq"}
+
+
+        data: {"id":"chatcmpl-DYGHF92NSkAguMs3ZddsQdCSax0qV","object":"chat.completion.chunk","created":1777058093,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_21e7b37e61","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"obfuscation":"jE"}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9f176ef9bc06abc7-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream; charset=utf-8
+      Date:
+      - Fri, 24 Apr 2026 19:14:53 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '127'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=sParmINSNmBx9_IW0oqDINzj0MHsBOgTrEgN3b1fqsM-1777058093.0809178-1.0.1.1-amffuckJKmqo7dnnLlzWeT7DNvxjqLockJwzlt81xgsMcJrjlZgJ8O9i934EK9N26MklArU7FBYiCIEZeK6nnBaWdknY1bw39DdNJU4KqIvFhDy.XKKLz8YjwDVyZsAe;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 24 Apr 2026
+        19:44:53 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_37955fd238b848e982daaafa59e374a7
+    status:
+      code: 200
+      message: OK
+version: 1

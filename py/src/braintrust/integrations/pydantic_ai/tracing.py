@@ -83,9 +83,7 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
             _maybe_create_tool_spans_from_messages(result)
 
             output = _serialize_result_output(result)
-            metrics = _extract_usage_metrics(result, start_time, end_time)
-
-            agent_span.log(output=output, metrics=metrics)
+            agent_span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
             return result
         finally:
             _reset_tool_trace_capture(tool_trace_token)
@@ -109,9 +107,7 @@ def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any)
             _maybe_create_tool_spans_from_messages(result)
 
             output = _serialize_result_output(result)
-            metrics = _extract_usage_metrics(result, start_time, end_time)
-
-            agent_span.log(output=output, metrics=metrics)
+            agent_span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
             return result
         finally:
             _reset_tool_trace_capture(tool_trace_token)
@@ -131,7 +127,7 @@ def _agent_to_cli_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
         start_time = time.time()
         result = wrapped(*args, **kwargs)
         end_time = time.time()
-        agent_span.log(metrics={"start": start_time, "end": end_time, "duration": end_time - start_time})
+        agent_span.log(metrics=_wrapper_span_metrics(start_time, end_time))
         return result
 
 
@@ -211,17 +207,13 @@ async def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: An
                 _maybe_create_tool_spans_from_messages(final_result)
 
             output = None
-            metrics = {
-                "start": start_time,
-                "end": end_time,
-                "duration": end_time - start_time,
+            metrics: dict[str, float] = {
+                **_wrapper_span_metrics(start_time, end_time),
                 "event_count": event_count,
             }
 
             if final_result:
                 output = _serialize_result_output(final_result)
-                usage_metrics = _extract_usage_metrics(final_result, start_time, end_time)
-                metrics.update(usage_metrics)
 
             agent_span.log(output=output, metrics=metrics)
         finally:
@@ -245,9 +237,7 @@ def _create_direct_model_request_wrapper():
             end_time = time.time()
 
             output = _serialize_model_response(result)
-            metrics = _extract_response_metrics(result, start_time, end_time)
-
-            span.log(output=output, metrics=metrics)
+            span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
             return result
 
     return wrapper
@@ -270,9 +260,7 @@ def _create_direct_model_request_sync_wrapper():
             end_time = time.time()
 
             output = _serialize_model_response(result)
-            metrics = _extract_response_metrics(result, start_time, end_time)
-
-            span.log(output=output, metrics=metrics)
+            span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
             return result
 
     return wrapper
@@ -326,9 +314,7 @@ def wrap_model_request(original_func: Any) -> Any:
             end_time = time.time()
 
             output = _serialize_model_response(result)
-            metrics = _extract_response_metrics(result, start_time, end_time)
-
-            span.log(output=output, metrics=metrics)
+            span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
             return result
 
     return wrapper
@@ -349,9 +335,7 @@ def wrap_model_request_sync(original_func: Any) -> Any:
             end_time = time.time()
 
             output = _serialize_model_response(result)
-            metrics = _extract_response_metrics(result, start_time, end_time)
-
-            span.log(output=output, metrics=metrics)
+            span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
             return result
 
     return wrapper
@@ -492,10 +476,10 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
                 _maybe_create_tool_spans_from_messages(self.stream_result)
 
                 output = _serialize_stream_output(self.stream_result)
-                metrics = _extract_stream_usage_metrics(
-                    self.stream_result, self.start_time, end_time, self._first_token_time
+                self.span_cm.log(
+                    output=output,
+                    metrics=_wrapper_span_metrics(self.start_time, end_time, self._first_token_time),
                 )
-                self.span_cm.log(output=output, metrics=metrics)
 
             # Clean up span context
             if self.span_cm:
@@ -593,9 +577,12 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
                 try:
                     final_response = self.stream.get()
                     output = _serialize_model_response(final_response)
-                    metrics = _extract_response_metrics(
-                        final_response, self.start_time, end_time, self._first_token_time
-                    )
+                    if self.span_type == SpanTypeAttribute.LLM:
+                        metrics = _extract_response_metrics(
+                            final_response, self.start_time, end_time, self._first_token_time
+                        )
+                    else:
+                        metrics = _wrapper_span_metrics(self.start_time, end_time, self._first_token_time)
                     self.span_cm.log(output=output, metrics=metrics)
                 except Exception as e:
                     logger.debug(f"Failed to extract stream output/metrics: {e}")
@@ -700,10 +687,10 @@ class _AgentStreamResultSyncProxy:
                 _maybe_create_tool_spans_from_messages(self._stream_result)
 
                 output = _serialize_stream_output(self._stream_result)
-                metrics = _extract_stream_usage_metrics(
-                    self._stream_result, self._start_time, end_time, self._first_token_time
+                self._span.log(
+                    output=output,
+                    metrics=_wrapper_span_metrics(self._start_time, end_time, self._first_token_time),
                 )
-                self._span.log(output=output, metrics=metrics)
                 self._logged = True
             finally:
                 try:
@@ -761,10 +748,10 @@ class _DirectStreamWrapperSync:
                 try:
                     final_response = self.stream.get()
                     output = _serialize_model_response(final_response)
-                    metrics = _extract_response_metrics(
-                        final_response, self.start_time, end_time, self._first_token_time
+                    self.span_cm.log(
+                        output=output,
+                        metrics=_wrapper_span_metrics(self.start_time, end_time, self._first_token_time),
                     )
-                    self.span_cm.log(output=output, metrics=metrics)
                 except Exception as e:
                     logger.debug(f"Failed to extract stream output/metrics: {e}")
 
@@ -1155,105 +1142,20 @@ def _parse_model_string(model: Any) -> tuple[str | None, str | None]:
     return model_str, None
 
 
-def _extract_usage_metrics(result: Any, start_time: float, end_time: float) -> dict[str, float] | None:
-    """Extract usage metrics from agent run result."""
-    metrics: dict[str, float] = {}
-
-    metrics["start"] = start_time
-    metrics["end"] = end_time
-    metrics["duration"] = end_time - start_time
-
-    usage = None
-    if hasattr(result, "response"):
-        try:
-            response = result.response
-            if hasattr(response, "usage"):
-                usage = response.usage
-        except (AttributeError, ValueError):
-            pass
-
-    if usage is None and hasattr(result, "usage"):
-        usage = result.usage
-
-    if usage is None:
-        return metrics
-
-    if hasattr(usage, "input_tokens"):
-        input_tokens = usage.input_tokens
-        if input_tokens is not None:
-            metrics["prompt_tokens"] = float(input_tokens)
-
-    if hasattr(usage, "output_tokens"):
-        output_tokens = usage.output_tokens
-        if output_tokens is not None:
-            metrics["completion_tokens"] = float(output_tokens)
-
-    if hasattr(usage, "total_tokens"):
-        total_tokens = usage.total_tokens
-        if total_tokens is not None:
-            metrics["tokens"] = float(total_tokens)
-
-    if hasattr(usage, "cache_read_tokens") and usage.cache_read_tokens is not None:
-        metrics["prompt_cached_tokens"] = float(usage.cache_read_tokens)
-
-    if hasattr(usage, "cache_write_tokens") and usage.cache_write_tokens is not None:
-        metrics["prompt_cache_creation_tokens"] = float(usage.cache_write_tokens)
-
-    if hasattr(usage, "input_audio_tokens") and usage.input_audio_tokens is not None:
-        metrics["prompt_audio_tokens"] = float(usage.input_audio_tokens)
-
-    if hasattr(usage, "output_audio_tokens") and usage.output_audio_tokens is not None:
-        metrics["completion_audio_tokens"] = float(usage.output_audio_tokens)
-
-    if hasattr(usage, "details") and isinstance(usage.details, dict):
-        details = usage.details
-
-        if "reasoning_tokens" in details:
-            metrics["completion_reasoning_tokens"] = float(details["reasoning_tokens"])
-
-        if "cached_tokens" in details:
-            metrics["prompt_cached_tokens"] = float(details["cached_tokens"])
-
-    return metrics if metrics else None
-
-
-def _extract_stream_usage_metrics(
-    stream_result: Any, start_time: float, end_time: float, first_token_time: float | None
-) -> dict[str, float] | None:
-    """Extract usage metrics from stream result."""
-    metrics: dict[str, float] = {}
-
-    metrics["start"] = start_time
-    metrics["end"] = end_time
-    metrics["duration"] = end_time - start_time
-
-    if first_token_time:
+def _wrapper_span_metrics(
+    start_time: float, end_time: float, first_token_time: float | None = None
+) -> dict[str, float]:
+    # Wrapper spans (agent_run, model_request, streaming wrappers) must NOT log token or
+    # cost metrics. The leaf `chat <model>` span already logs them, and trace-tree rollup
+    # (self + descendants) would then double-count tokens/cost at every wrapper ancestor.
+    metrics: dict[str, float] = {
+        "start": start_time,
+        "end": end_time,
+        "duration": end_time - start_time,
+    }
+    if first_token_time is not None:
         metrics["time_to_first_token"] = first_token_time - start_time
-
-    if hasattr(stream_result, "usage"):
-        usage_func = stream_result.usage
-        if callable(usage_func):
-            usage = usage_func()
-        else:
-            usage = usage_func
-
-        if usage:
-            if hasattr(usage, "input_tokens") and usage.input_tokens is not None:
-                metrics["prompt_tokens"] = float(usage.input_tokens)
-
-            if hasattr(usage, "output_tokens") and usage.output_tokens is not None:
-                metrics["completion_tokens"] = float(usage.output_tokens)
-
-            if hasattr(usage, "total_tokens") and usage.total_tokens is not None:
-                metrics["tokens"] = float(usage.total_tokens)
-
-            if hasattr(usage, "cache_read_tokens") and usage.cache_read_tokens is not None:
-                metrics["prompt_cached_tokens"] = float(usage.cache_read_tokens)
-
-            if hasattr(usage, "cache_write_tokens") and usage.cache_write_tokens is not None:
-                metrics["prompt_cache_creation_tokens"] = float(usage.cache_write_tokens)
-
-    return metrics if metrics else None
+    return metrics
 
 
 def _extract_response_metrics(
@@ -1287,10 +1189,26 @@ def _extract_response_metrics(
         if hasattr(usage, "cache_write_tokens") and usage.cache_write_tokens is not None:
             metrics["prompt_cache_creation_tokens"] = float(usage.cache_write_tokens)
 
-        # Extract reasoning tokens for reasoning models (o1/o3)
-        if hasattr(usage, "details") and usage.details is not None:
-            if hasattr(usage.details, "reasoning_tokens") and usage.details.reasoning_tokens is not None:
-                metrics["completion_reasoning_tokens"] = float(usage.details.reasoning_tokens)
+        if hasattr(usage, "input_audio_tokens") and usage.input_audio_tokens is not None:
+            metrics["prompt_audio_tokens"] = float(usage.input_audio_tokens)
+
+        if hasattr(usage, "output_audio_tokens") and usage.output_audio_tokens is not None:
+            metrics["completion_audio_tokens"] = float(usage.output_audio_tokens)
+
+        # pydantic_ai's RequestUsage.details is dict[str, int]. Providers stash extra
+        # token counts here -- e.g. OpenAI's responses API puts reasoning_tokens here,
+        # and chat completions spreads completion_tokens_details (reasoning_tokens,
+        # audio_tokens, ...). cached_tokens may also surface here on some providers
+        # alongside the top-level cache_read_tokens. Reading attributes off `details`
+        # would silently drop everything since dict has no such attrs.
+        details = getattr(usage, "details", None)
+        if isinstance(details, dict):
+            reasoning = details.get("reasoning_tokens")
+            if reasoning is not None:
+                metrics["completion_reasoning_tokens"] = float(reasoning)
+            cached = details.get("cached_tokens")
+            if cached is not None:
+                metrics["prompt_cached_tokens"] = float(cached)
 
     return metrics if metrics else None
 

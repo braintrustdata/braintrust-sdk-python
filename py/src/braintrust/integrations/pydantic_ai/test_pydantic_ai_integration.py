@@ -67,6 +67,46 @@ def _assert_metrics_are_valid(metrics, start, end):
         assert metrics["completion_tokens"] > 0
 
 
+def test_extract_response_metrics_leaf_fields():
+    """`_extract_response_metrics` is the only path that populates token metrics on
+    the leaf chat span post-#312/strip-wrapper-tokens. Verify the audio-token and
+    dict-style `details` fields that were dropped when `_extract_usage_metrics`
+    went away are read back. `RequestUsage.details` is `dict[str, int]`, so
+    attribute-style lookups on it (the prior implementation) silently no-op.
+    """
+    from types import SimpleNamespace
+
+    from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
+    from pydantic_ai.usage import RequestUsage
+
+    usage = RequestUsage(
+        input_tokens=100,
+        output_tokens=50,
+        cache_read_tokens=10,
+        cache_write_tokens=20,
+        input_audio_tokens=7,
+        output_audio_tokens=11,
+        details={"reasoning_tokens": 13, "cached_tokens": 17},
+    )
+    response = SimpleNamespace(usage=usage)
+
+    maybe_metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
+    assert maybe_metrics is not None
+
+    # pylint: disable=unsupported-membership-test,unsubscriptable-object
+    assert maybe_metrics["prompt_tokens"] == 100
+    assert maybe_metrics["completion_tokens"] == 50
+    assert maybe_metrics["tokens"] == 150  # total_tokens is a property: input + output
+    assert maybe_metrics["prompt_cache_creation_tokens"] == 20
+    assert maybe_metrics["prompt_audio_tokens"] == 7
+    assert maybe_metrics["completion_audio_tokens"] == 11
+    assert maybe_metrics["completion_reasoning_tokens"] == 13
+    # details["cached_tokens"] is read after cache_read_tokens, so it wins when both
+    # are populated; this preserves the pre-strip behavior of `_extract_usage_metrics`.
+    assert maybe_metrics["prompt_cached_tokens"] == 17
+    # pylint: enable=unsupported-membership-test,unsubscriptable-object
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_direct_model_request_creates_nested_chat_span_without_class_scan(memory_logger, direct):
@@ -140,23 +180,21 @@ async def test_agent_run_async(memory_logger):
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
-    assert agent_span["metrics"]["prompt_tokens"] > 0
-    assert agent_span["metrics"]["completion_tokens"] > 0
+    # Regression: wrapper agent_run span must NOT log token metrics. The leaf chat
+    # span already logs them, and trace-tree rollup (self + descendants) plus any
+    # unfiltered sum over metrics would otherwise double-count tokens/cost at the
+    # parent regardless of span type.
+    for token_key in ("prompt_tokens", "completion_tokens", "tokens", "prompt_cached_tokens"):
+        assert token_key not in agent_span["metrics"], (
+            f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
+        )
 
-    # Regression: no double-counting of cost/tokens. Experiment-level aggregations
-    # sum metrics across type='llm' spans, so a single agent turn must contribute
-    # its tokens exactly once. The wrapper agent_run span logs the same usage as
-    # the leaf chat span; only the leaf should be type=LLM.
+    # Only the leaf chat span should be type=LLM, and it must own the token totals.
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     assert len(llm_spans) == 1, f"expected exactly one LLM-typed span, got {len(llm_spans)}"
     assert llm_spans[0]["span_id"] == chat_span["span_id"]
-    llm_prompt_tokens_sum = sum(s["metrics"].get("prompt_tokens", 0) for s in llm_spans)
-    llm_completion_tokens_sum = sum(s["metrics"].get("completion_tokens", 0) for s in llm_spans)
-    assert llm_prompt_tokens_sum == chat_span["metrics"]["prompt_tokens"]
-    assert llm_completion_tokens_sum == chat_span["metrics"]["completion_tokens"]
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 @pytest.mark.vcr
@@ -245,9 +283,12 @@ def test_agent_run_sync(memory_logger):
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_sync_span["metrics"]
-    assert "completion_tokens" in agent_sync_span["metrics"]
+    # Wrapper agent_run_sync span must not log token metrics (would double-count at rollup).
+    assert "prompt_tokens" not in agent_sync_span["metrics"]
+    assert "completion_tokens" not in agent_sync_span["metrics"]
+    # Tokens live on the leaf chat span only.
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 def test_agent_to_cli_sync(memory_logger, monkeypatch):
@@ -544,9 +585,12 @@ async def test_agent_run_stream(memory_logger):
     print(f"span_parents: {chat_span['span_parents']}")
     print(f"metrics: {chat_span['metrics']}")
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
+    # Wrapper stream span must not log token metrics (would double-count at rollup).
+    # time_to_first_token is asserted above; it's a non-summable timing metric and stays.
+    assert "prompt_tokens" not in agent_span["metrics"]
+    assert "completion_tokens" not in agent_span["metrics"]
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 @pytest.mark.vcr
@@ -741,6 +785,15 @@ async def test_direct_model_request_stream(memory_logger, direct):
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
     assert ttft < 3.0, f"time_to_first_token should be < 3s for API call, got {ttft}s"
 
+    # Regression: model_request_stream wrapper span (TASK) must NOT log token metrics.
+    # `_DirectStreamWrapper` here is constructed with span_type=TASK, so __aexit__
+    # routes to `_wrapper_span_metrics`. The leaf chat span (when present) is the only
+    # place tokens should be recorded.
+    for token_key in ("prompt_tokens", "completion_tokens", "tokens", "prompt_cached_tokens"):
+        assert token_key not in direct_span["metrics"], (
+            f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
+        )
+
     print(f"✓ Direct stream time_to_first_token: {ttft}s (duration: {duration}s)")
 
 
@@ -842,9 +895,11 @@ async def test_agent_structured_output(memory_logger):
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
+    # Wrapper agent_run span must not log token metrics (would double-count at rollup).
+    assert "prompt_tokens" not in agent_span["metrics"]
+    assert "completion_tokens" not in agent_span["metrics"]
+    assert chat_span["metrics"]["prompt_tokens"] > 0
+    assert chat_span["metrics"]["completion_tokens"] > 0
 
 
 @pytest.mark.vcr
@@ -1143,9 +1198,9 @@ def test_agent_run_stream_sync(memory_logger):
     # Chat span may not have complete metrics since it's an intermediate span
     assert "start" in chat_span["metrics"]
 
-    # Agent spans should have token metrics
-    assert "prompt_tokens" in agent_span["metrics"]
-    assert "completion_tokens" in agent_span["metrics"]
+    # Wrapper agent_run_stream_sync span must not log token metrics.
+    assert "prompt_tokens" not in agent_span["metrics"]
+    assert "completion_tokens" not in agent_span["metrics"]
 
 
 @pytest.mark.vcr
@@ -1182,6 +1237,14 @@ async def test_agent_run_stream_events(memory_logger):
     assert "5+5" in str(agent_span["input"]) or "What" in str(agent_span["input"])
     assert agent_span["metrics"]["event_count"] == event_count
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
+
+    # Regression: wrapper agent_run_stream_events span must NOT log token metrics.
+    # Trace-tree rollup over non-scorer spans plus experiment-level token sums would
+    # otherwise double-count against the leaf chat span.
+    for token_key in ("prompt_tokens", "completion_tokens", "tokens", "prompt_cached_tokens"):
+        assert token_key not in agent_span["metrics"], (
+            f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
+        )
 
 
 @pytest.mark.vcr
@@ -1222,6 +1285,15 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
     assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
     assert ttft < 3.0, f"time_to_first_token should be < 3s for API call, got {ttft}s"
+
+    # Regression: model_request_stream_sync wrapper span must NOT log token metrics.
+    # `_DirectStreamWrapperSync.__exit__` always uses `_wrapper_span_metrics`; sync
+    # direct streaming has no leaf chat span, so this is the only span we emit and
+    # token totals would otherwise be derived twice once a leaf is added.
+    for token_key in ("prompt_tokens", "completion_tokens", "tokens", "prompt_cached_tokens"):
+        assert token_key not in span["metrics"], (
+            f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
+        )
 
     print(f"✓ Direct sync stream time_to_first_token: {ttft}s (duration: {duration}s)")
 
@@ -2030,53 +2102,40 @@ def test_explicit_toolsets_kwarg_in_input():
 def test_reasoning_tokens_extraction(memory_logger):
     """Test that reasoning tokens are extracted from model responses.
 
-    For reasoning models like o1/o3, usage.details.reasoning_tokens should be
-    captured in the metrics field.
+    For reasoning models like o1/o3, providers (e.g. OpenAI) populate
+    `usage.details["reasoning_tokens"]` (a dict entry, not an attribute) and
+    `_extract_response_metrics` must surface it as `completion_reasoning_tokens`.
     """
     assert not memory_logger.pop()
 
-    # Mock a response that has reasoning tokens
-    from unittest.mock import MagicMock
+    from types import SimpleNamespace
 
-    # Create a mock response with reasoning tokens
-    mock_response = MagicMock()
-    mock_response.parts = [
-        MagicMock(
-            part_kind="thinking",
-            content="Let me think about this...",
-        ),
-        MagicMock(
-            part_kind="text",
-            content="The answer is 42",
-        ),
-    ]
-    mock_response.usage = MagicMock()
-    mock_response.usage.input_tokens = 10
-    mock_response.usage.output_tokens = 20
-    mock_response.usage.total_tokens = 30
-    mock_response.usage.cache_read_tokens = 0
-    mock_response.usage.cache_write_tokens = 0
-    mock_response.usage.details = MagicMock()
-    mock_response.usage.details.reasoning_tokens = 128
-
-    # Test the metric extraction function directly
     from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
+    from pydantic_ai.usage import RequestUsage
+
+    # Use a real RequestUsage so `details` is the actual dict[str, int] shape
+    # pydantic_ai produces. A MagicMock would falsely satisfy attribute-style
+    # lookups and hide real-world dict-only behavior.
+    usage = RequestUsage(
+        input_tokens=10,
+        output_tokens=20,
+        cache_read_tokens=0,
+        cache_write_tokens=0,
+        details={"reasoning_tokens": 128},
+    )
+    response = SimpleNamespace(parts=[], usage=usage)
 
     start_time = time.time()
     end_time = start_time + 5.0
 
-    metrics = _extract_response_metrics(mock_response, start_time, end_time)
+    metrics = _extract_response_metrics(response, start_time, end_time)
 
     # Verify all metrics are present
     assert metrics is not None, "Should extract metrics"
     # pylint: disable=unsupported-membership-test,unsubscriptable-object
-    assert "prompt_tokens" in metrics, "Should have prompt_tokens"
     assert metrics["prompt_tokens"] == 10.0
-    assert "completion_tokens" in metrics, "Should have completion_tokens"
     assert metrics["completion_tokens"] == 20.0
-    assert "tokens" in metrics, "Should have total tokens"
-    assert metrics["tokens"] == 30.0
-    assert "completion_reasoning_tokens" in metrics, "Should have completion_reasoning_tokens"
+    assert metrics["tokens"] == 30.0  # total_tokens is a property: input + output
     assert metrics["completion_reasoning_tokens"] == 128.0, (
         f"Expected 128.0, got {metrics['completion_reasoning_tokens']}"
     )

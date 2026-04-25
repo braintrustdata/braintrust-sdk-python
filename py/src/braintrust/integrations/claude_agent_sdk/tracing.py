@@ -680,10 +680,17 @@ class ContextTracker:
         ctx = self._get_context(incoming_parent)
 
         # Close dangling tool spans from the previous turn in this context.
-        if ctx.llm_span and self._tool_tracker.has_active_spans:
+        #
+        # Only run cleanup when a user tool_result has advanced the clock
+        # (``ctx.next_llm_start`` is set), which marks a real turn boundary.
+        # Starting in claude-agent-sdk 0.1.61, a subagent may emit multiple
+        # ``tool_use`` AssistantMessages back-to-back (merged into one LLM
+        # turn) before any ``tool_result`` arrives. In that case the earlier
+        # tool spans are still awaiting their results and must not be closed.
+        if ctx.llm_span and ctx.next_llm_start is not None and self._tool_tracker.has_active_spans:
             self._tool_tracker.cleanup_context(
                 incoming_parent,
-                end_time=ctx.next_llm_start or time.time(),
+                end_time=ctx.next_llm_start,
                 exclude_ids=self._live_agent_tool_use_ids(),
             )
 

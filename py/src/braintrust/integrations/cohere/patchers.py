@@ -15,10 +15,12 @@ can instrument a single instance without touching global class state.
 from braintrust.integrations.base import CompositeFunctionWrapperPatcher, FunctionWrapperPatcher
 
 from .tracing import (
+    _async_audio_transcription_wrapper,
     _async_chat_stream_wrapper,
     _async_chat_wrapper,
     _async_embed_wrapper,
     _async_rerank_wrapper,
+    _audio_transcription_wrapper,
     _chat_stream_wrapper,
     _chat_wrapper,
     _embed_wrapper,
@@ -159,6 +161,28 @@ class AsyncV2RerankPatcher(FunctionWrapperPatcher):
 
 
 # ---------------------------------------------------------------------------
+# Audio — transcriptions (added in cohere==6.1.0)
+#
+# The transcription surface lives in its own module and is exposed on v1
+# clients (``client.audio.transcriptions.create``) but not on v2 clients.
+# ---------------------------------------------------------------------------
+
+
+class TranscriptionsCreatePatcher(FunctionWrapperPatcher):
+    name = "cohere.audio.transcriptions.create"
+    target_module = "cohere.audio.transcriptions.client"
+    target_path = "TranscriptionsClient.create"
+    wrapper = _audio_transcription_wrapper
+
+
+class AsyncTranscriptionsCreatePatcher(FunctionWrapperPatcher):
+    name = "cohere.audio.transcriptions.async.create"
+    target_module = "cohere.audio.transcriptions.client"
+    target_path = "AsyncTranscriptionsClient.create"
+    wrapper = _async_audio_transcription_wrapper
+
+
+# ---------------------------------------------------------------------------
 # Composite patchers — group all sync/async variants by execution surface.
 # ---------------------------------------------------------------------------
 
@@ -200,4 +224,12 @@ class CohereRerankPatcher(CompositeFunctionWrapperPatcher):
         AsyncRerankPatcher,
         V2RerankPatcher,
         AsyncV2RerankPatcher,
+    )
+
+
+class CohereAudioTranscriptionsPatcher(CompositeFunctionWrapperPatcher):
+    name = "cohere.audio.transcriptions.all"
+    sub_patchers = (
+        TranscriptionsCreatePatcher,
+        AsyncTranscriptionsCreatePatcher,
     )

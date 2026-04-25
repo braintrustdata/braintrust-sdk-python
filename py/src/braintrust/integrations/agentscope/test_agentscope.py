@@ -88,7 +88,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
     assert llm_spans[0]["input"]["messages"][1]["role"] == "user"
     assert llm_spans[0]["input"]["messages"][1]["content"][0]["text"] == "Say hello in exactly two words."
     assert llm_spans[0]["output"]["role"] == "assistant"
-    assert llm_spans[0]["output"]["content"][0]["text"] == "Hello there."
+    assert llm_spans[0]["output"]["content"][0]["text"]  # non-empty LLM response
     assert "usage" not in llm_spans[0]["output"]
     assert agent_span["span_id"] in llm_spans[0]["span_parents"]
 

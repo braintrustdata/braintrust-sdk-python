@@ -16,7 +16,7 @@ from braintrust.integrations.utils import (
 )
 from braintrust.logger import Span, start_span
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import clean_nones, merge_dicts
+from braintrust.util import clean_nones, is_numeric, merge_dicts
 
 
 # LiteLLM's representation to Braintrust's representation
@@ -482,6 +482,44 @@ async def _aspeech_wrapper_async(wrapped, instance, args, kwargs):
         return speech_response
 
 
+def _rerank_wrapper(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.rerank."""
+    updated_span_payload = _update_rerank_span_payload_from_params(kwargs)
+
+    with start_span(
+        **merge_dicts(dict(name="Rerank", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
+    ) as span:
+        start = time.time()
+        rerank_response = wrapped(*args, **kwargs)
+        log_response = _try_to_dict(rerank_response)
+        metrics = _timing_metrics(start, time.time())
+        metrics.update(_parse_rerank_metrics(log_response))
+        span.log(
+            metrics=metrics,
+            output=_extract_rerank_output(log_response),
+        )
+        return rerank_response
+
+
+async def _arerank_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.arerank."""
+    updated_span_payload = _update_rerank_span_payload_from_params(kwargs)
+
+    with start_span(
+        **merge_dicts(dict(name="Rerank", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
+    ) as span:
+        start = time.time()
+        rerank_response = await wrapped(*args, **kwargs)
+        log_response = _try_to_dict(rerank_response)
+        metrics = _timing_metrics(start, time.time())
+        metrics.update(_parse_rerank_metrics(log_response))
+        span.log(
+            metrics=metrics,
+            output=_extract_rerank_output(log_response),
+        )
+        return rerank_response
+
+
 def _transcription_wrapper(wrapped, instance, args, kwargs):
     """wrapt wrapper for litellm.transcription."""
     updated_span_payload = _update_audio_span_payload_from_params(kwargs)
@@ -662,6 +700,32 @@ def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "i
     )
 
 
+def _update_rerank_span_payload_from_params(params: dict[str, Any]) -> dict[str, Any]:
+    """Build the span payload for a LiteLLM rerank/arerank call.
+
+    The request shape is modeled after Cohere's rerank API: ``query`` plus a
+    list of ``documents``.  The span input captures both, metadata records the
+    model and reranker-specific request parameters, and ``document_count`` is
+    derived for convenience.
+    """
+    params = params.copy()
+    span_info_d = params.pop("span_info", {})
+
+    params = _prettify_response_params(params)
+    query = params.pop("query", None)
+    documents = params.pop("documents", None)
+    model = params.pop("model", None)
+
+    metadata: dict[str, Any] = {**params, "provider": "litellm", "model": model}
+    if isinstance(documents, (list, tuple)):
+        metadata["document_count"] = len(documents)
+
+    return merge_dicts(
+        span_info_d,
+        {"input": {"query": query, "documents": documents}, "metadata": metadata},
+    )
+
+
 def _update_audio_span_payload_from_params(params: dict[str, Any]) -> dict[str, Any]:
     """Update the span payload for audio transcription calls."""
     params = params.copy()
@@ -695,3 +759,87 @@ def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
         token_name_map=TOKEN_NAME_MAP,
         token_prefix_map=TOKEN_PREFIX_MAP,
     )
+
+
+_RERANK_BILLED_UNITS_MAP: dict[str, str] = {
+    "input_tokens": "prompt_tokens",
+    "output_tokens": "completion_tokens",
+    "search_units": "search_units",
+    "classifications": "classifications",
+    "total_tokens": "tokens",
+}
+
+_RERANK_TOKENS_MAP: dict[str, str] = {
+    "input_tokens": "prompt_tokens",
+    "output_tokens": "completion_tokens",
+    "total_tokens": "tokens",
+}
+
+
+def _parse_rerank_metrics(response: Any) -> dict[str, Any]:
+    """Parse token / billed-unit metrics from a LiteLLM rerank response.
+
+    LiteLLM follows Cohere's rerank response shape: usage lives under
+    ``meta.billed_units`` (the authoritative billing counter) and
+    ``meta.tokens``.  ``billed_units`` wins when both are present.
+    """
+    metrics: dict[str, Any] = {}
+    response_dict = _try_to_dict(response)
+    if not isinstance(response_dict, dict):
+        return metrics
+
+    meta = _try_to_dict(response_dict.get("meta"))
+    if not isinstance(meta, dict):
+        return metrics
+
+    tokens_block = _try_to_dict(meta.get("tokens"))
+    if isinstance(tokens_block, dict):
+        for src_key, dst_key in _RERANK_TOKENS_MAP.items():
+            value = tokens_block.get(src_key)
+            if is_numeric(value):
+                metrics[dst_key] = value
+
+    # ``billed_units`` is Cohere's authoritative billing counter and
+    # intentionally overrides values from ``tokens`` when both are present.
+    billed = _try_to_dict(meta.get("billed_units"))
+    if isinstance(billed, dict):
+        for src_key, dst_key in _RERANK_BILLED_UNITS_MAP.items():
+            value = billed.get(src_key)
+            if is_numeric(value):
+                metrics[dst_key] = value
+
+    if "tokens" not in metrics and "prompt_tokens" in metrics and "completion_tokens" in metrics:
+        metrics["tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
+
+    return metrics
+
+
+def _extract_rerank_output(response: Any) -> list[dict[str, Any]] | None:
+    """Return the ranked ``{index, relevance_score}`` list from a rerank response.
+
+    The document payload (returned when ``return_documents=True``) is dropped
+    on purpose to keep the span compact and avoid logging the raw corpus.
+    Results are capped at 100 entries.
+    """
+    response_dict = _try_to_dict(response)
+    if not isinstance(response_dict, dict):
+        return None
+
+    results = response_dict.get("results")
+    if not isinstance(results, list):
+        return None
+
+    out: list[dict[str, Any]] = []
+    for item in results[:100]:
+        if item is None:
+            continue
+        item_dict = _try_to_dict(item)
+        if not isinstance(item_dict, dict):
+            continue
+        out.append(
+            {
+                "index": item_dict.get("index"),
+                "relevance_score": item_dict.get("relevance_score"),
+            }
+        )
+    return out

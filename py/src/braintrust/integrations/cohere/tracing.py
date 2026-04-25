@@ -17,6 +17,7 @@ from typing import Any
 from braintrust.integrations.utils import (
     _log_and_end_span,
     _log_error_and_end_span,
+    _materialize_attachment,
     _timing_metrics,
     _try_to_dict,
 )
@@ -71,6 +72,11 @@ _RERANK_METADATA_KEYS = (
     "max_tokens_per_doc",
     "rank_fields",
     "priority",
+)
+_AUDIO_TRANSCRIPTION_METADATA_KEYS = (
+    "model",
+    "language",
+    "temperature",
 )
 _RESPONSE_METADATA_KEYS = (
     "id",
@@ -213,6 +219,32 @@ def _rerank_metadata(kwargs: dict[str, Any]) -> dict[str, Any]:
     if isinstance(documents, (list, tuple)):
         metadata["document_count"] = len(documents)
     return metadata
+
+
+def _audio_transcription_input(kwargs: dict[str, Any]) -> dict[str, Any] | None:
+    """Normalize the ``file=`` parameter into a traced ``Attachment`` input.
+
+    Cohere's ``TranscriptionsClient.create`` accepts a ``core.File`` input,
+    which can be bytes, a file-like object, or a ``(filename, content,
+    content_type[, headers])`` tuple.  ``_materialize_attachment`` already
+    unpacks those tuple shapes, so we hand it the raw value and fall back
+    to a placeholder only when materialization fails.
+    """
+    file_value = kwargs.get("file")
+    if file_value is None:
+        return None
+
+    resolved = _materialize_attachment(file_value, prefix="input_audio")
+    attachment = resolved.attachment if resolved is not None else None
+    return {"file": attachment if attachment is not None else "[audio]"}
+
+
+def _audio_transcription_output(result: Any) -> str | None:
+    """Return the transcribed text string for a transcription response."""
+    if result is None:
+        return None
+    text = _get(result, "text")
+    return text if isinstance(text, str) else None
 
 
 # ---------------------------------------------------------------------------
@@ -585,6 +617,20 @@ def _rerank_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
     return _trace_sync_call("cohere.rerank", span_input, metadata, _rerank_output, wrapped, args, kwargs)
 
 
+def _audio_transcription_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
+    span_input = _audio_transcription_input(kwargs)
+    metadata = _pick_allowed_metadata(kwargs, _AUDIO_TRANSCRIPTION_METADATA_KEYS)
+    return _trace_sync_call(
+        "cohere.audio.transcriptions.create",
+        span_input,
+        metadata,
+        _audio_transcription_output,
+        wrapped,
+        args,
+        kwargs,
+    )
+
+
 def _chat_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
     span_input = _chat_input(kwargs)
     metadata = _pick_allowed_metadata(kwargs, _CHAT_METADATA_KEYS)
@@ -617,6 +663,20 @@ async def _async_rerank_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG00
     span_input = _rerank_input(kwargs)
     metadata = _rerank_metadata(kwargs)
     return await _trace_async_call("cohere.rerank", span_input, metadata, _rerank_output, wrapped, args, kwargs)
+
+
+async def _async_audio_transcription_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
+    span_input = _audio_transcription_input(kwargs)
+    metadata = _pick_allowed_metadata(kwargs, _AUDIO_TRANSCRIPTION_METADATA_KEYS)
+    return await _trace_async_call(
+        "cohere.audio.transcriptions.create",
+        span_input,
+        metadata,
+        _audio_transcription_output,
+        wrapped,
+        args,
+        kwargs,
+    )
 
 
 async def _async_chat_stream_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
@@ -738,18 +798,42 @@ def _patch_v1_client(client: Any) -> None:
         AsyncChatStreamPatcher,
         AsyncEmbedPatcher,
         AsyncRerankPatcher,
+        AsyncTranscriptionsCreatePatcher,
         ChatPatcher,
         ChatStreamPatcher,
         EmbedPatcher,
         RerankPatcher,
+        TranscriptionsCreatePatcher,
     )
 
     if _client_is_async(client):
         for patcher in (AsyncChatPatcher, AsyncChatStreamPatcher, AsyncEmbedPatcher, AsyncRerankPatcher):
             patcher.wrap_target(client)
+        _patch_audio_transcriptions(client, AsyncTranscriptionsCreatePatcher)
     else:
         for patcher in (ChatPatcher, ChatStreamPatcher, EmbedPatcher, RerankPatcher):
             patcher.wrap_target(client)
+        _patch_audio_transcriptions(client, TranscriptionsCreatePatcher)
+
+
+def _patch_audio_transcriptions(client: Any, patcher: Any) -> None:
+    """Patch ``client.audio.transcriptions.create`` for manual ``wrap_cohere``.
+
+    ``client.audio`` is a lazy Cohere property that constructs an
+    ``AudioClient`` on first access, and ``.transcriptions`` in turn
+    constructs a ``TranscriptionsClient``.  We instrument the leaf
+    ``create`` method on the instance so per-client wrapping does not
+    affect global class state.
+
+    Skips silently on older Cohere SDKs that predate the audio surface.
+    """
+    audio = getattr(client, "audio", None)
+    if audio is None:
+        return
+    transcriptions = getattr(audio, "transcriptions", None)
+    if transcriptions is None:
+        return
+    patcher.wrap_target(transcriptions)
 
 
 def _patch_v2_client(client: Any) -> None:

@@ -11,6 +11,18 @@ from .tracing import (
     _chat_complete_wrapper,
     _chat_stream_async_wrapper,
     _chat_stream_wrapper,
+    _conversations_append_async_wrapper,
+    _conversations_append_stream_async_wrapper,
+    _conversations_append_stream_wrapper,
+    _conversations_append_wrapper,
+    _conversations_restart_async_wrapper,
+    _conversations_restart_stream_async_wrapper,
+    _conversations_restart_stream_wrapper,
+    _conversations_restart_wrapper,
+    _conversations_start_async_wrapper,
+    _conversations_start_stream_async_wrapper,
+    _conversations_start_stream_wrapper,
+    _conversations_start_wrapper,
     _embeddings_create_async_wrapper,
     _embeddings_create_wrapper,
     _fim_complete_async_wrapper,
@@ -383,6 +395,216 @@ class AgentsPatcher(CompositeFunctionWrapperPatcher):
         _AgentsStreamV1Patcher,
         _AgentsStreamAsyncV2Patcher,
         _AgentsStreamAsyncV1Patcher,
+    )
+
+
+class _ConversationsStartV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.start"
+    wrapper = _conversations_start_wrapper
+
+
+class _ConversationsStartV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.start"
+    wrapper = _conversations_start_wrapper
+    superseded_by = (_ConversationsStartV2Patcher,)
+
+
+class _ConversationsStartAsyncV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start_async.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.start_async"
+    wrapper = _conversations_start_async_wrapper
+
+
+class _ConversationsStartAsyncV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start_async.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.start_async"
+    wrapper = _conversations_start_async_wrapper
+    superseded_by = (_ConversationsStartAsyncV2Patcher,)
+
+
+class _ConversationsStartStreamV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start_stream.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.start_stream"
+    wrapper = _conversations_start_stream_wrapper
+
+
+class _ConversationsStartStreamV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start_stream.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.start_stream"
+    wrapper = _conversations_start_stream_wrapper
+    superseded_by = (_ConversationsStartStreamV2Patcher,)
+
+
+class _ConversationsStartStreamAsyncV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start_stream_async.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.start_stream_async"
+    wrapper = _conversations_start_stream_async_wrapper
+
+
+class _ConversationsStartStreamAsyncV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.start_stream_async.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.start_stream_async"
+    wrapper = _conversations_start_stream_async_wrapper
+    superseded_by = (_ConversationsStartStreamAsyncV2Patcher,)
+
+
+class _ConversationsAppendV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.append"
+    wrapper = _conversations_append_wrapper
+
+
+class _ConversationsAppendV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.append"
+    wrapper = _conversations_append_wrapper
+    superseded_by = (_ConversationsAppendV2Patcher,)
+
+
+class _ConversationsAppendAsyncV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append_async.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.append_async"
+    wrapper = _conversations_append_async_wrapper
+
+
+class _ConversationsAppendAsyncV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append_async.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.append_async"
+    wrapper = _conversations_append_async_wrapper
+    superseded_by = (_ConversationsAppendAsyncV2Patcher,)
+
+
+class _ConversationsAppendStreamV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append_stream.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.append_stream"
+    wrapper = _conversations_append_stream_wrapper
+
+
+class _ConversationsAppendStreamV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append_stream.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.append_stream"
+    wrapper = _conversations_append_stream_wrapper
+    superseded_by = (_ConversationsAppendStreamV2Patcher,)
+
+
+class _ConversationsAppendStreamAsyncV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append_stream_async.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.append_stream_async"
+    wrapper = _conversations_append_stream_async_wrapper
+
+
+class _ConversationsAppendStreamAsyncV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.append_stream_async.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.append_stream_async"
+    wrapper = _conversations_append_stream_async_wrapper
+    superseded_by = (_ConversationsAppendStreamAsyncV2Patcher,)
+
+
+class _ConversationsRestartV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.restart"
+    wrapper = _conversations_restart_wrapper
+
+
+class _ConversationsRestartV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.restart"
+    wrapper = _conversations_restart_wrapper
+    superseded_by = (_ConversationsRestartV2Patcher,)
+
+
+class _ConversationsRestartAsyncV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart_async.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.restart_async"
+    wrapper = _conversations_restart_async_wrapper
+
+
+class _ConversationsRestartAsyncV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart_async.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.restart_async"
+    wrapper = _conversations_restart_async_wrapper
+    superseded_by = (_ConversationsRestartAsyncV2Patcher,)
+
+
+class _ConversationsRestartStreamV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart_stream.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.restart_stream"
+    wrapper = _conversations_restart_stream_wrapper
+
+
+class _ConversationsRestartStreamV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart_stream.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.restart_stream"
+    wrapper = _conversations_restart_stream_wrapper
+    superseded_by = (_ConversationsRestartStreamV2Patcher,)
+
+
+class _ConversationsRestartStreamAsyncV2Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart_stream_async.v2"
+    target_module = "mistralai.client.conversations"
+    target_path = "Conversations.restart_stream_async"
+    wrapper = _conversations_restart_stream_async_wrapper
+
+
+class _ConversationsRestartStreamAsyncV1Patcher(FunctionWrapperPatcher):
+    name = "mistral.beta.conversations.restart_stream_async.v1"
+    target_module = "mistralai.conversations"
+    target_path = "Conversations.restart_stream_async"
+    wrapper = _conversations_restart_stream_async_wrapper
+    superseded_by = (_ConversationsRestartStreamAsyncV2Patcher,)
+
+
+class ConversationsPatcher(CompositeFunctionWrapperPatcher):
+    name = "mistral.beta.conversations"
+    sub_patchers = (
+        _ConversationsStartV2Patcher,
+        _ConversationsStartV1Patcher,
+        _ConversationsStartAsyncV2Patcher,
+        _ConversationsStartAsyncV1Patcher,
+        _ConversationsStartStreamV2Patcher,
+        _ConversationsStartStreamV1Patcher,
+        _ConversationsStartStreamAsyncV2Patcher,
+        _ConversationsStartStreamAsyncV1Patcher,
+        _ConversationsAppendV2Patcher,
+        _ConversationsAppendV1Patcher,
+        _ConversationsAppendAsyncV2Patcher,
+        _ConversationsAppendAsyncV1Patcher,
+        _ConversationsAppendStreamV2Patcher,
+        _ConversationsAppendStreamV1Patcher,
+        _ConversationsAppendStreamAsyncV2Patcher,
+        _ConversationsAppendStreamAsyncV1Patcher,
+        _ConversationsRestartV2Patcher,
+        _ConversationsRestartV1Patcher,
+        _ConversationsRestartAsyncV2Patcher,
+        _ConversationsRestartAsyncV1Patcher,
+        _ConversationsRestartStreamV2Patcher,
+        _ConversationsRestartStreamV1Patcher,
+        _ConversationsRestartStreamAsyncV2Patcher,
+        _ConversationsRestartStreamAsyncV1Patcher,
     )
 
 

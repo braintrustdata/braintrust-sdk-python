@@ -4,15 +4,17 @@ import asyncio
 import inspect
 import os
 import time
+from pathlib import Path
 
 import pytest
-from braintrust import logger
+from braintrust import Attachment, logger
 from braintrust.integrations.cohere import CohereIntegration, wrap_cohere
 from braintrust.integrations.cohere.patchers import (
     AsyncChatPatcher,
     AsyncChatStreamPatcher,
     AsyncEmbedPatcher,
     AsyncRerankPatcher,
+    AsyncTranscriptionsCreatePatcher,
     AsyncV2ChatPatcher,
     AsyncV2ChatStreamPatcher,
     AsyncV2EmbedPatcher,
@@ -21,6 +23,7 @@ from braintrust.integrations.cohere.patchers import (
     ChatStreamPatcher,
     EmbedPatcher,
     RerankPatcher,
+    TranscriptionsCreatePatcher,
     V2ChatPatcher,
     V2ChatStreamPatcher,
     V2EmbedPatcher,
@@ -39,6 +42,8 @@ PROJECT_NAME = "test-cohere-sdk"
 CHAT_MODEL = "command-a-03-2025"
 EMBED_MODEL = "embed-english-v3.0"
 RERANK_MODEL = "rerank-english-v3.0"
+TRANSCRIBE_MODEL = "cohere-transcribe-03-2026"
+TEST_AUDIO_FILE = Path(__file__).resolve().parents[2] / "fixtures" / "test_audio.wav"
 COHERE_API_KEY = os.getenv("CO_API_KEY") or os.getenv("COHERE_API_KEY") or "co-test-dummy-api-key-for-vcr-tests"
 
 
@@ -104,6 +109,15 @@ def clean_cohere_methods():
                 if hasattr(cls, attr):
                     targets.append((cls, attr))
 
+    try:
+        from cohere.audio.transcriptions.client import AsyncTranscriptionsClient, TranscriptionsClient
+    except ImportError:
+        pass
+    else:
+        for cls in (TranscriptionsClient, AsyncTranscriptionsClient):
+            if hasattr(cls, "create"):
+                targets.append((cls, "create"))
+
     originals = [(cls, attr, inspect.getattr_static(cls, attr)) for cls, attr in targets]
     # Also capture patch markers so we can clear them.
     marker_attrs = set()
@@ -124,6 +138,8 @@ def clean_cohere_methods():
         AsyncV2ChatStreamPatcher,
         AsyncV2EmbedPatcher,
         AsyncV2RerankPatcher,
+        TranscriptionsCreatePatcher,
+        AsyncTranscriptionsCreatePatcher,
     ):
         marker_attrs.add(patcher.patch_marker_attr())
 
@@ -132,12 +148,20 @@ def clean_cohere_methods():
     finally:
         for cls, attr, original in originals:
             setattr(cls, attr, original)
-        # Clear any patch markers that setup() may have added.
-        for cls, _, _ in originals:
+        # Clear any patch markers that setup() may have added. wrapt can forward
+        # setattr from a FunctionWrapper onto the wrapped function, so the
+        # restored original may still carry the marker; clear it from both
+        # class and restored function.
+        for cls, _, original in originals:
             for marker in marker_attrs:
                 if hasattr(cls, marker):
                     try:
                         delattr(cls, marker)
+                    except AttributeError:
+                        pass
+                if hasattr(original, marker):
+                    try:
+                        delattr(original, marker)
                     except AttributeError:
                         pass
 
@@ -171,7 +195,30 @@ def test_cohere_integration_available_patchers_ids():
         "cohere.chat_stream.all",
         "cohere.embed.all",
         "cohere.rerank.all",
+        "cohere.audio.transcriptions.all",
     }
+
+
+def test_audio_transcriptions_patchers_target_sdk_surface():
+    """The audio transcription patchers must point at the Cohere SDK classes.
+
+    Regression guard for https://github.com/braintrustdata/braintrust-sdk-python/issues/327:
+    we must instrument both ``TranscriptionsClient.create`` and
+    ``AsyncTranscriptionsClient.create`` on the ``cohere.audio.transcriptions``
+    surface introduced in cohere>=6.1.0.
+    """
+    try:
+        import cohere.audio.transcriptions.client as transcriptions_module
+    except ImportError:
+        pytest.skip("cohere SDK does not expose audio.transcriptions")
+
+    assert TranscriptionsCreatePatcher.target_module == "cohere.audio.transcriptions.client"
+    assert TranscriptionsCreatePatcher.target_path == "TranscriptionsClient.create"
+    assert AsyncTranscriptionsCreatePatcher.target_module == "cohere.audio.transcriptions.client"
+    assert AsyncTranscriptionsCreatePatcher.target_path == "AsyncTranscriptionsClient.create"
+
+    assert hasattr(transcriptions_module.TranscriptionsClient, "create")
+    assert hasattr(transcriptions_module.AsyncTranscriptionsClient, "create")
 
 
 # ---------------------------------------------------------------------------
@@ -495,6 +542,114 @@ def test_cohere_integration_setup_patches_v2_chat(memory_logger, clean_cohere_me
     assert spans[0]["span_attributes"]["name"] == "cohere.chat"
     assert spans[0]["metadata"]["provider"] == "cohere"
     assert spans[0]["metadata"]["model"] == CHAT_MODEL
+
+
+@pytest.mark.vcr
+def test_wrap_cohere_audio_transcription_sync(memory_logger):
+    pytest.importorskip("cohere.audio.transcriptions.client")
+    assert not memory_logger.pop()
+
+    client = wrap_cohere(_v1_client())
+
+    start = time.time()
+    with open(TEST_AUDIO_FILE, "rb") as file_obj:
+        response = client.audio.transcriptions.create(
+            model=TRANSCRIBE_MODEL,
+            language="en",
+            file=(TEST_AUDIO_FILE.name, file_obj, "audio/wav"),
+            temperature=0.0,
+        )
+    end = time.time()
+
+    # Provider behavior preserved.
+    assert isinstance(response.text, str)
+    assert response.text  # non-empty
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    assert span["span_attributes"]["name"] == "cohere.audio.transcriptions.create"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["metadata"]["provider"] == "cohere"
+    assert span["metadata"]["model"] == TRANSCRIBE_MODEL
+    assert span["metadata"]["language"] == "en"
+    assert span["metadata"]["temperature"] == 0.0
+
+    # Input carries the audio file as an Attachment.
+    file_attachment = span["input"]["file"]
+    assert isinstance(file_attachment, Attachment)
+    assert file_attachment.reference["filename"] == TEST_AUDIO_FILE.name
+    assert file_attachment.reference["content_type"] == "audio/wav"
+
+    # Output is the transcribed text.
+    assert span["output"] == response.text
+
+    # Cohere's transcription response does not expose token counts, so we
+    # only assert the timing metrics we always record.
+    metrics = span["metrics"]
+    assert start <= metrics["start"] <= metrics["end"] <= end
+    assert metrics["duration"] >= 0
+
+
+@pytest.mark.vcr
+def test_wrap_cohere_audio_transcription_async(memory_logger):
+    pytest.importorskip("cohere.audio.transcriptions.client")
+    assert not memory_logger.pop()
+
+    async def _run():
+        client = wrap_cohere(_v1_async_client())
+        with open(TEST_AUDIO_FILE, "rb") as file_obj:
+            return await client.audio.transcriptions.create(
+                model=TRANSCRIBE_MODEL,
+                language="en",
+                file=(TEST_AUDIO_FILE.name, file_obj, "audio/wav"),
+            )
+
+    response = asyncio.run(_run())
+    assert isinstance(response.text, str)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    assert span["span_attributes"]["name"] == "cohere.audio.transcriptions.create"
+    assert span["metadata"]["provider"] == "cohere"
+    assert span["metadata"]["model"] == TRANSCRIBE_MODEL
+    assert span["metadata"]["language"] == "en"
+
+    file_attachment = span["input"]["file"]
+    assert isinstance(file_attachment, Attachment)
+    assert file_attachment.reference["filename"] == TEST_AUDIO_FILE.name
+
+    assert span["output"] == response.text
+
+
+@pytest.mark.vcr
+def test_cohere_integration_setup_patches_audio_transcriptions(memory_logger, clean_cohere_methods):
+    """``CohereIntegration.setup()`` must wire up audio transcription tracing."""
+    pytest.importorskip("cohere.audio.transcriptions.client")
+    assert not memory_logger.pop()
+
+    assert CohereIntegration.setup() is True
+    # Second call is a no-op but still reports success.
+    assert CohereIntegration.setup() is True
+
+    client = _v1_client()  # NOT manually wrapped
+    with open(TEST_AUDIO_FILE, "rb") as file_obj:
+        response = client.audio.transcriptions.create(
+            model=TRANSCRIBE_MODEL,
+            language="en",
+            file=(TEST_AUDIO_FILE.name, file_obj, "audio/wav"),
+            temperature=0.0,
+        )
+    assert isinstance(response.text, str)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["span_attributes"]["name"] == "cohere.audio.transcriptions.create"
+    assert spans[0]["metadata"]["provider"] == "cohere"
+    assert spans[0]["metadata"]["model"] == TRANSCRIBE_MODEL
 
 
 class TestAutoInstrumentCohere:

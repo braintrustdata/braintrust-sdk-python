@@ -4,6 +4,7 @@ Tests to ensure we reliably wrap the Anthropic API.
 
 import inspect
 import json
+import os
 import time
 import unittest.mock
 from types import SimpleNamespace
@@ -24,7 +25,9 @@ from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_
 
 
 PROJECT_NAME = "test-anthropic-app"
-MODEL = "claude-3-haiku-20240307"  # use the cheapest model since answers dont matter
+LEGACY_MODEL = "claude-3-haiku-20240307"
+LATEST_MODEL = "claude-haiku-4-5-20251001"
+MODEL = LATEST_MODEL if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else LEGACY_MODEL
 MULTIMODAL_MODEL = "claude-haiku-4-5-20251001"
 STRUCTURED_OUTPUT_MODEL = "claude-haiku-4-5"
 STRUCTURED_OUTPUT_SCHEMA = {
@@ -501,9 +504,10 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         "max_tokens": 300,
         "system": "just return the number",
         "messages": [{"role": "user", "content": "what is 1+1?"}],
-        "temperature": 0.5,
         "top_p": 0.5,
     }
+    if MODEL == LEGACY_MODEL:
+        kw["temperature"] = 0.5
 
     def _with_messages_create():
         return client.messages.create(**kw)
@@ -525,7 +529,8 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         assert "2" in log["output"]["content"][0]["text"]
         assert log["metadata"]["model"] == MODEL
         assert log["metadata"]["max_tokens"] == 300
-        assert log["metadata"]["temperature"] == 0.5
+        if MODEL == LEGACY_MODEL:
+            assert log["metadata"]["temperature"] == 0.5
         assert log["metadata"]["top_p"] == 0.5
 
 
@@ -1420,7 +1425,7 @@ class TestBatchesCreateSpans:
             {
                 "custom_id": "req-1",
                 "params": {
-                    "model": "claude-3-haiku-20240307",
+                    "model": MODEL,
                     "max_tokens": 100,
                     "messages": [{"role": "user", "content": "Hi"}],
                 },
@@ -1441,7 +1446,7 @@ class TestBatchesCreateSpans:
         assert len(spans) == 1
         span = spans[0]
         assert "model" not in span["metadata"]
-        assert span["metadata"]["models"] == sorted(["claude-3-haiku-20240307", "claude-3-5-haiku-latest"])
+        assert span["metadata"]["models"] == sorted([MODEL, "claude-3-5-haiku-latest"])
 
 
 class TestBatchesResultsSpans:
