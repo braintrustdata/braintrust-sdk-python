@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 0a2373633d8deec4) -- do not modify"""
+"""Auto-generated file (content hash 0f1f3f6a1bd64d86) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -30,9 +30,6 @@ from ._generated_types import (
     DatasetEvent,
     DatasetSnapshot,
     EnvVar,
-    EvalStatusPage,
-    EvalStatusPageConfig,
-    EvalStatusPageTheme,
     Experiment,
     ExperimentEvent,
     ExtendedSavedFunctionId,
@@ -148,9 +145,6 @@ __all__ = [
     "DatasetEvent",
     "DatasetSnapshot",
     "EnvVar",
-    "EvalStatusPage",
-    "EvalStatusPageConfig",
-    "EvalStatusPageTheme",
     "Experiment",
     "ExperimentEvent",
     "ExtendedSavedFunctionId",
