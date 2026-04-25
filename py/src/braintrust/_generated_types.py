@@ -624,13 +624,6 @@ class ExperimentInternalMetadata(TypedDict):
     """
 
 
-class ExperimentInternalMetadata(TypedDict):
-    dataset_filter: NotRequired[Mapping[str, Any] | None]
-    """
-    BTQL filter payload used to evaluate a subset of a linked dataset.
-    """
-
-
 class ExperimentEventMetadata(TypedDict):
     model: NotRequired[str | None]
     """
