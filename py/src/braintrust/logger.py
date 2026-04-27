@@ -28,7 +28,6 @@ from typing import (
     Literal,
     TypedDict,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -1600,7 +1599,7 @@ def init(
     base_experiment_id: str | None = None,
     repo_info: RepoInfo | None = None,
     state: BraintrustState | None = None,
-) -> Union["Experiment", "ReadonlyExperiment"]:
+) -> "Experiment | ReadonlyExperiment":
     """
     Log in, and then initialize a new experiment in a specified project. If the project does not exist, it will be created.
 
@@ -1767,7 +1766,7 @@ def init(
     return ret
 
 
-def init_experiment(*args, **kwargs) -> Union["Experiment", "ReadonlyExperiment"]:
+def init_experiment(*args, **kwargs) -> "Experiment | ReadonlyExperiment":
     """Alias for `init`"""
 
     return init(*args, **kwargs)
@@ -2392,7 +2391,7 @@ def parent_context(parent: str | None, state: BraintrustState | None = None):
 
 def get_span_parent_object(
     parent: str | None = None, state: BraintrustState | None = None
-) -> Union[SpanComponentsV4, "Logger", "Experiment", Span]:
+) -> "SpanComponentsV4 | Logger | Experiment | Span":
     """Mainly for internal use. Return the parent object for starting a span in a global context.
     Applies precedence: current span > propagated parent string > experiment > logger."""
 
@@ -4857,7 +4856,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
 def render_message(render: Callable[[str], str], message: PromptMessage):
     base = {k: v for (k, v) in message.as_dict().items() if v is not None}
     # TODO: shouldn't load_prompt guarantee content is a PromptMessage?
-    content = cast(Union[str, list[Union[TextPart, ImagePart]], dict[str, Any]], message.content)
+    content = cast(str | list[TextPart | ImagePart] | dict[str, Any], message.content)
     if content is not None:
         if isinstance(content, str):
             base["content"] = render(content)

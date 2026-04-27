@@ -7,7 +7,7 @@ import threading
 import urllib.parse
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Generic, Literal, TypedDict, TypeVar, Union
+from typing import Any, Generic, Literal, TypedDict, TypeVar
 
 from requests import HTTPError, Response
 
@@ -179,7 +179,7 @@ class _LazyValuePendingState:
     has_succeeded: Literal[False] = False
 
 
-_LazyValueState = Union[_LazyValueResolvedState[T], _LazyValuePendingState]
+_LazyValueState = _LazyValueResolvedState[T] | _LazyValuePendingState
 
 
 class LazyValue(Generic[T]):

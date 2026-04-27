@@ -7,7 +7,6 @@ from re import Pattern
 from typing import (
     Any,
     TypedDict,
-    Union,
 )
 from uuid import UUID
 
@@ -528,7 +527,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self,
         token: str,
         *,
-        chunk: Union["GenerationChunk", "ChatGenerationChunk"] | None = None,  # type: ignore
+        chunk: "GenerationChunk | ChatGenerationChunk | None" = None,  # type: ignore
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
