@@ -4,7 +4,7 @@ import asyncio
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import pytest_asyncio
@@ -31,7 +31,7 @@ class TestHeaderSerialization:
     def test_span_context_to_headers_with_valid_context(self):
         interceptor = BraintrustInterceptor()
         span_context = {"trace_id": "test-trace-id", "span_id": "test-span-id"}
-        headers: Dict[str, temporalio.api.common.v1.Payload] = {}
+        headers: dict[str, temporalio.api.common.v1.Payload] = {}
 
         result_headers = interceptor._span_context_to_headers(span_context, headers)
 
@@ -40,8 +40,8 @@ class TestHeaderSerialization:
 
     def test_span_context_to_headers_with_empty_context(self):
         interceptor = BraintrustInterceptor()
-        span_context: Dict[str, Any] = {}
-        headers: Dict[str, temporalio.api.common.v1.Payload] = {}
+        span_context: dict[str, Any] = {}
+        headers: dict[str, temporalio.api.common.v1.Payload] = {}
 
         result_headers = interceptor._span_context_to_headers(span_context, headers)
 
@@ -78,7 +78,7 @@ class TestHeaderSerialization:
 
     def test_span_context_from_headers_with_missing_header(self):
         interceptor = BraintrustInterceptor()
-        headers: Dict[str, temporalio.api.common.v1.Payload] = {}
+        headers: dict[str, temporalio.api.common.v1.Payload] = {}
 
         result = interceptor._span_context_from_headers(headers)
 

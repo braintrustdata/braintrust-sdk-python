@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
 from types import MappingProxyType
-from typing import Final, Mapping
+from collections.abc import Mapping
+from typing import Final
 
 
 class MessageClassName(str, Enum):

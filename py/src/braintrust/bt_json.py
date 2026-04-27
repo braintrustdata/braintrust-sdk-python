@@ -2,7 +2,8 @@ import dataclasses
 import json
 import math
 import warnings
-from typing import Any, Callable, Mapping, NamedTuple, cast, overload
+from collections.abc import Callable, Mapping
+from typing import Any, NamedTuple, cast, overload
 
 
 # Try to import orjson for better performance

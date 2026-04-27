@@ -1,6 +1,5 @@
 import importlib.util
 import re
-from typing import List
 from unittest.mock import MagicMock
 
 import pytest
@@ -213,7 +212,7 @@ async def test_run_evaluator_with_many_scorers():
 @pytest.mark.asyncio
 async def test_hooks_trial_index():
     """Test that trial_index is correctly passed to task via hooks."""
-    trial_indices: List[int] = []
+    trial_indices: list[int] = []
 
     # Task that captures trial indices
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
@@ -253,7 +252,7 @@ async def test_hooks_trial_index():
 @pytest.mark.asyncio
 async def test_hooks_trial_index_multiple_inputs():
     """Test trial_index with multiple inputs to ensure proper indexing."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))
@@ -293,7 +292,7 @@ async def test_hooks_trial_index_multiple_inputs():
 @pytest.mark.asyncio
 async def test_per_input_trial_count_overrides_global():
     """Test that per-input trial_count overrides the global trial_count."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))
@@ -332,7 +331,7 @@ async def test_per_input_trial_count_overrides_global():
 @pytest.mark.asyncio
 async def test_per_input_trial_count_without_global():
     """Test that per-input trial_count works when no global trial_count is set."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))
@@ -367,7 +366,7 @@ async def test_per_input_trial_count_without_global():
 @pytest.mark.asyncio
 async def test_per_input_trial_count_with_dict_data():
     """Test that per-input trial_count works when data items are plain dicts."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))

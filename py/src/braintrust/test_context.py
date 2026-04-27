@@ -24,7 +24,8 @@ import concurrent.futures
 import subprocess
 import sys
 import threading
-from typing import AsyncGenerator, Callable, Generator, TypeVar
+from collections.abc import AsyncGenerator, Callable, Generator
+from typing import TypeVar
 
 import braintrust
 import pytest

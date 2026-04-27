@@ -6,7 +6,8 @@ spans from the current evaluation task without making server round-trips.
 """
 
 import asyncio
-from typing import Any, Awaitable, Callable, Protocol, TypedDict
+from collections.abc import Awaitable, Callable
+from typing import Any, Protocol, TypedDict
 
 from braintrust.functions.invoke import invoke
 from braintrust.logger import BraintrustState, ObjectFetcher
