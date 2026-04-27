@@ -17,13 +17,14 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Protocol,
+    TypedDict,
     TypeVar,
     Union,
 )
 
 from tqdm.asyncio import tqdm as async_tqdm
 from tqdm.auto import tqdm as std_tqdm
-from typing_extensions import Protocol, TypedDict
 
 from .generated_types import FunctionFormat, FunctionOutputType, ObjectReference
 from .git_fields import GitMetadataSettings, RepoInfo
