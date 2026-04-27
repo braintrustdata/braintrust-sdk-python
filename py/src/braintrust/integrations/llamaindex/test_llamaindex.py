@@ -92,7 +92,7 @@ async def test_coroutine_outputs_are_not_stringified():
     try:
         assert _extract_response_output(coro) is None
     finally:
-        coro.close()
+        getattr(coro, "close")()
 
 
 @pytest.mark.vcr
