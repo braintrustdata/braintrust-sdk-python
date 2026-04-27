@@ -10,6 +10,7 @@ from .dspy import DSPyIntegration
 from .google_genai import GoogleGenAIIntegration
 from .langchain import LangChainIntegration
 from .litellm import LiteLLMIntegration
+from .llamaindex import LlamaIndexIntegration
 from .mistral import MistralIntegration
 from .openai import OpenAIIntegration
 from .openai_agents import OpenAIAgentsIntegration
@@ -31,6 +32,7 @@ __all__ = [
     "GoogleGenAIIntegration",
     "LiteLLMIntegration",
     "LangChainIntegration",
+    "LlamaIndexIntegration",
     "MistralIntegration",
     "OpenAIIntegration",
     "OpenAIAgentsIntegration",

@@ -20,6 +20,7 @@ from braintrust.integrations import (
     GoogleGenAIIntegration,
     LangChainIntegration,
     LiteLLMIntegration,
+    LlamaIndexIntegration,
     MistralIntegration,
     OpenAIAgentsIntegration,
     OpenAIIntegration,
@@ -61,6 +62,7 @@ def auto_instrument(
     dspy: bool = True,
     adk: bool = True,
     langchain: bool = True,
+    llamaindex: bool = True,
     openai_agents: bool = True,
     cohere: bool = True,
     autogen: bool = True,
@@ -90,6 +92,7 @@ def auto_instrument(
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
         langchain: Enable LangChain instrumentation (default: True)
+        llamaindex: Enable LlamaIndex instrumentation (default: True)
         openai_agents: Enable OpenAI Agents SDK instrumentation (default: True)
         cohere: Enable Cohere instrumentation (default: True)
         autogen: Enable AutoGen instrumentation (default: True)
@@ -168,6 +171,8 @@ def auto_instrument(
         results["adk"] = _instrument_integration(ADKIntegration)
     if langchain:
         results["langchain"] = _instrument_integration(LangChainIntegration)
+    if llamaindex:
+        results["llamaindex"] = _instrument_integration(LlamaIndexIntegration)
     if openai_agents:
         results["openai_agents"] = _instrument_integration(OpenAIAgentsIntegration)
     if cohere:
