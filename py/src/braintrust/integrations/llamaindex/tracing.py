@@ -16,11 +16,30 @@ def _openai_owns_leaf_span() -> bool:
     span would double-count during trace-tree rollup.
     """
     try:
-        from openai.resources.chat.completions import Completions
-
-        return bool(getattr(Completions.create, "__braintrust_patched_openai_chat_completions_create_sync__", False))
-    except Exception:
+        from openai.resources.chat.completions import AsyncCompletions, Completions
+    except ImportError:
         return False
+
+    return bool(
+        getattr(Completions.create, "__braintrust_patched_openai_chat_completions_create_sync__", False)
+        or getattr(AsyncCompletions.create, "__braintrust_patched_openai_chat_completions_create_async__", False)
+    )
+
+
+def _extract_block_content(message: Any) -> str | None:
+    if not hasattr(message, "blocks"):
+        return None
+    text_parts = [block.text for block in message.blocks if hasattr(block, "text") and block.text]
+    if text_parts:
+        return "\n".join(text_parts)
+    return None
+
+
+def _extract_message_content(message: Any) -> Any:
+    content = getattr(message, "content", None)
+    if content:
+        return content
+    return _extract_block_content(message)
 
 
 def _extract_messages(messages: Any) -> list[dict[str, Any]] | None:
@@ -31,12 +50,9 @@ def _extract_messages(messages: Any) -> list[dict[str, Any]] | None:
         entry: dict[str, Any] = {}
         if hasattr(msg, "role"):
             entry["role"] = str(msg.role.value) if hasattr(msg.role, "value") else str(msg.role)
-        if hasattr(msg, "content"):
-            entry["content"] = msg.content
-        elif hasattr(msg, "blocks"):
-            text_parts = [block.text for block in msg.blocks if hasattr(block, "text")]
-            if text_parts:
-                entry["content"] = "\n".join(text_parts)
+        content = _extract_message_content(msg)
+        if content is not None:
+            entry["content"] = content
         result.append(entry)
     return result
 
@@ -51,12 +67,9 @@ def _extract_response_output(result: Any) -> Any:
             return None
         output: dict[str, Any] = {}
         output["role"] = str(msg.role.value) if hasattr(msg.role, "value") else str(msg.role)
-        if hasattr(msg, "content"):
-            output["content"] = msg.content
-        elif hasattr(msg, "blocks"):
-            text_parts = [b.text for b in msg.blocks if hasattr(b, "text")]
-            if text_parts:
-                output["content"] = "\n".join(text_parts)
+        content = _extract_message_content(msg)
+        if content is not None:
+            output["content"] = content
         return output
     # CompletionResponse
     if hasattr(result, "text") and hasattr(result, "raw"):
@@ -276,7 +289,7 @@ try:
                 return None
 
             bt_span = record.bt_span
-            bt_span.log(error=str(err) if err else "Unknown error")
+            bt_span.log(error=f"{type(err).__name__}: {err}" if err else "Unknown error")
 
             bt_span.unset_current()
             bt_span.end()

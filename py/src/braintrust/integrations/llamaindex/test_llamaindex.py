@@ -1,7 +1,5 @@
 """Tests for the LlamaIndex integration."""
 
-# pylint: disable=import-error
-
 import pytest
 from braintrust import logger
 from braintrust.integrations.llamaindex import BraintrustSpanHandler, LlamaIndexIntegration
@@ -239,6 +237,7 @@ def test_span_hierarchy(logger_memory_logger):
         assert span["root_span_id"] == root_span_id
 
 
+@pytest.mark.vcr
 def test_llm_error_handling(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()

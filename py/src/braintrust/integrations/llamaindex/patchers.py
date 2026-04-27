@@ -1,7 +1,5 @@
 """LlamaIndex patchers."""
 
-# pylint: disable=import-error
-
 from braintrust.integrations.base import CallbackPatcher
 
 
@@ -14,13 +12,11 @@ except ImportError:
 def _has_braintrust_handlers() -> bool:
     if BraintrustSpanHandler is None:
         return False
-    try:
-        from llama_index.core.instrumentation import get_dispatcher
 
-        dispatcher = get_dispatcher()
-        return any(isinstance(h, BraintrustSpanHandler) for h in dispatcher.span_handlers)
-    except Exception:
-        return False
+    from llama_index.core.instrumentation import get_dispatcher
+
+    dispatcher = get_dispatcher()
+    return any(isinstance(h, BraintrustSpanHandler) for h in dispatcher.span_handlers)
 
 
 def _register_braintrust_handlers() -> None:
