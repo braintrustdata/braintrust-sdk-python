@@ -252,7 +252,8 @@ try:
                 return None
 
             bt_span = record.bt_span
-            bt_span.log(error=f"{type(err).__name__}: {err}" if err else "Unknown error")
+            if err is not None:
+                bt_span.log(error=err)
 
             bt_span.unset_current()
             bt_span.end()

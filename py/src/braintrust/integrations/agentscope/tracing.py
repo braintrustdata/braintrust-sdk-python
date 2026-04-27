@@ -167,7 +167,7 @@ def _make_task_wrapper(
                 span.log(output=result)
                 return result
             except Exception as exc:
-                span.log(error=str(exc))
+                span.log(error=exc)
                 raise
 
     return _wrapper
@@ -238,7 +238,7 @@ async def _toolkit_call_tool_function_wrapper(wrapped: Any, instance: Any, args:
             span.log(output=result)
             return result
         except Exception as exc:
-            span.log(error=str(exc))
+            span.log(error=exc)
             raise
 
 
@@ -265,5 +265,5 @@ async def _model_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: di
             span.log(output=_model_call_output(result), metrics=_extract_metrics(result))
             return result
         except Exception as exc:
-            span.log(error=str(exc))
+            span.log(error=exc)
             raise

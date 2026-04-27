@@ -84,7 +84,7 @@ def _end_span_for_otel(
     if span is None:
         return
     if error is not None:
-        span.log(error=repr(error))
+        span.log(error=error)
     span.log(output=output, metadata=metadata, metrics=metrics)
     span.end()
 

@@ -56,7 +56,7 @@ class _ActiveToolSpan:
         self.span.set_current()
 
     def log_error(self, exc: Exception) -> None:
-        self.span.log(error=str(exc))
+        self.span.log(error=exc)
 
     def release(self) -> None:
         if not self.handler_active:
@@ -911,7 +911,7 @@ class RequestTracker:
         self._context_tracker.add(message)
 
     def log_error(self, exc: Exception) -> None:
-        self._root_span.log(error=str(exc))
+        self._root_span.log(error=exc)
 
     async def trace_hook_callback(
         self,
@@ -932,7 +932,7 @@ class RequestTracker:
             try:
                 result = await callback(input_data, tool_use_id, context)
             except Exception as exc:
-                span.log(error=str(exc))
+                span.log(error=exc)
                 raise
 
             span.log(output=_serialize_hook_value(result))

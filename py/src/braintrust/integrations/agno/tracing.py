@@ -381,7 +381,7 @@ def _trace_sync_stream(result: Any, span: Any, start: float):
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -409,7 +409,7 @@ def _trace_async_stream(result: Any, span: Any, start: float):
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -494,7 +494,7 @@ def _agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -535,7 +535,7 @@ def _agent_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -610,7 +610,7 @@ def _team_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -651,7 +651,7 @@ def _team_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -698,7 +698,7 @@ def _run_public_dispatch_wrapper(
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise
@@ -742,7 +742,7 @@ def _arun_public_dispatch_wrapper(
                     span.log(output=awaited, metrics=extract_metrics(awaited))
                     return awaited
                 except Exception as e:
-                    span.log(error=str(e))
+                    span.log(error=e)
                     raise
                 finally:
                     if should_end_span:
@@ -759,7 +759,7 @@ def _arun_public_dispatch_wrapper(
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise
@@ -1113,7 +1113,7 @@ def _workflow_execute_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwa
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -1171,7 +1171,7 @@ def _workflow_aexecute_stream_wrapper(wrapped: Any, instance: Any, args: Any, kw
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -1218,7 +1218,7 @@ def _workflow_execute_workflow_agent_wrapper(wrapped: Any, instance: Any, args: 
                     should_unset = False
                     raise
                 except Exception as e:
-                    span.log(error=str(e))
+                    span.log(error=e)
                     raise
                 finally:
                     if should_unset:
@@ -1232,7 +1232,7 @@ def _workflow_execute_workflow_agent_wrapper(wrapped: Any, instance: Any, args: 
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise
@@ -1275,7 +1275,7 @@ async def _workflow_aexecute_workflow_agent_wrapper(wrapped: Any, instance: Any,
                     should_unset = False
                     raise
                 except Exception as e:
-                    span.log(error=str(e))
+                    span.log(error=e)
                     raise
                 finally:
                     if should_unset:
@@ -1289,7 +1289,7 @@ async def _workflow_aexecute_workflow_agent_wrapper(wrapped: Any, instance: Any,
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise

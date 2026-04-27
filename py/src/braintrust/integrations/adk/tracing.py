@@ -534,7 +534,7 @@ async def _tool_call_async_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
             tool_span.log(output=result)
             return result
         except Exception as e:
-            tool_span.log(error=str(e))
+            tool_span.log(error=e)
             raise
 
 
@@ -555,5 +555,5 @@ async def _mcp_tool_run_async_wrapper_async(wrapped: Any, instance: Any, args: A
             return result
         except Exception as e:
             # Log error to span but re-raise for ADK to handle
-            tool_span.log(error=str(e))
+            tool_span.log(error=e)
             raise

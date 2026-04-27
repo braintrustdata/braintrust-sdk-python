@@ -6,7 +6,7 @@ from typing import Any
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import log_exc_info_to_span, start_span
+from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import is_numeric
 
@@ -648,22 +648,22 @@ class TracedMessageStreamManager(Wrapper):
         try:
             return self.__msg_stream_mgr.__aexit__(exc_type, exc_value, traceback)
         finally:
-            self.__close(exc_type, exc_value, traceback)
+            self.__close(exc_value)
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             return self.__msg_stream_mgr.__exit__(exc_type, exc_value, traceback)
         finally:
-            self.__close(exc_type, exc_value, traceback)
+            self.__close(exc_value)
 
-    def __close(self, exc_type, exc_value, traceback):
+    def __close(self, exc_value):
         tms = self.__traced_message_stream
         msg = tms._get_final_traced_message()
         if msg:
             ttft = tms._get_time_to_first_token()
             _log_message_to_span(msg, self.__span, time_to_first_token=ttft)
-        if exc_type:
-            log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
+        if exc_value is not None:
+            self.__span.log(error=exc_value)
         self.__span.end()
 
 
@@ -765,7 +765,7 @@ class TracedManagedAgentsEventStream(Wrapper):
         try:
             return self.__stream.__exit__(exc_type, exc_value, traceback)
         finally:
-            self._finish(exc_type=exc_type, exc_value=exc_value, traceback=traceback)
+            self._finish(exc_value=exc_value)
 
     def close(self):
         try:
@@ -775,7 +775,7 @@ class TracedManagedAgentsEventStream(Wrapper):
         finally:
             self._finish()
 
-    def _finish(self, exc_type=None, exc_value=None, traceback=None, error=None):
+    def _finish(self, exc_value=None, error=None):
         if self.__finished:
             return
         self.__finished = True
@@ -783,8 +783,8 @@ class TracedManagedAgentsEventStream(Wrapper):
         _log_managed_agents_stream_to_span(self.__events, self.__span)
         if error is not None:
             self.__span.log(error=error)
-        elif exc_type is not None:
-            log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
+        elif exc_value is not None:
+            self.__span.log(error=exc_value)
         self.__span.end()
 
 
@@ -822,7 +822,7 @@ class AsyncTracedManagedAgentsEventStream(Wrapper):
         try:
             return await self.__stream.__aexit__(exc_type, exc_value, traceback)
         finally:
-            await self._finish(exc_type=exc_type, exc_value=exc_value, traceback=traceback)
+            await self._finish(exc_value=exc_value)
 
     async def close(self):
         try:
@@ -832,7 +832,7 @@ class AsyncTracedManagedAgentsEventStream(Wrapper):
         finally:
             await self._finish()
 
-    async def _finish(self, exc_type=None, exc_value=None, traceback=None, error=None):
+    async def _finish(self, exc_value=None, error=None):
         if self.__finished:
             return
         self.__finished = True
@@ -840,8 +840,8 @@ class AsyncTracedManagedAgentsEventStream(Wrapper):
         _log_managed_agents_stream_to_span(self.__events, self.__span)
         if error is not None:
             self.__span.log(error=error)
-        elif exc_type is not None:
-            log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
+        elif exc_value is not None:
+            self.__span.log(error=exc_value)
         self.__span.end()
 
 

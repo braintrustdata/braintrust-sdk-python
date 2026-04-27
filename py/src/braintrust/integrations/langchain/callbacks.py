@@ -217,7 +217,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,  # TODO: response=
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
+        self._end_span(run_id, error=error, metadata={**kwargs})
 
         self._start_times.pop(run_id, None)
         self._first_token_times.pop(run_id, None)
@@ -231,7 +231,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,  # TODO: some metadata
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
+        self._end_span(run_id, error=error, metadata={**kwargs})
 
     def on_tool_error(
         self,
@@ -241,7 +241,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
+        self._end_span(run_id, error=error, metadata={**kwargs})
 
     def on_retriever_error(
         self,
@@ -251,7 +251,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
+        self._end_span(run_id, error=error, metadata={**kwargs})
 
     # Agent Methods
     def on_agent_action(
