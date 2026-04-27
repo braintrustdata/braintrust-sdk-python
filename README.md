@@ -52,18 +52,24 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 
 | Integration | Auto-instrumented | Min version |
 | --- | --- | --- |
-| [OpenAI](py/src/braintrust/oai.py) | Yes | `openai>=1.71` |
+| [OpenAI](py/src/braintrust/integrations/openai/) | Yes | `openai>=1.71.0` |
 | [Anthropic](py/src/braintrust/integrations/anthropic/) | Yes | `anthropic>=0.48.0` |
+| [Cohere](py/src/braintrust/integrations/cohere/) | Yes | `cohere>=5.0.0` |
+| [Mistral](py/src/braintrust/integrations/mistral/) | Yes | `mistralai>=1.12.4` |
 | [LiteLLM](py/src/braintrust/integrations/litellm/) | Yes | `litellm>=1.74.0` |
-| [Pydantic AI](py/src/braintrust/integrations/pydantic_ai/) | Yes | `pydantic_ai>=1.10.0` |
+| [OpenRouter](py/src/braintrust/integrations/openrouter/) | Yes | `openrouter>=0.6.0` |
 | [Google GenAI](py/src/braintrust/integrations/google_genai/) | Yes | `google-genai>=1.30.0` |
 | [Google ADK](py/src/braintrust/integrations/adk/) | Yes | `google-adk>=1.14.1` |
+| [Pydantic AI](py/src/braintrust/integrations/pydantic_ai/) | Yes | `pydantic_ai>=1.10.0` |
 | [LangChain](py/src/braintrust/integrations/langchain/) | Yes | `langchain-core>=0.3.28` |
-| [OpenRouter](py/src/braintrust/integrations/openrouter/) | Yes | `openrouter>=0.6.0` |
+| [DSPy](py/src/braintrust/integrations/dspy/) | Yes | `dspy>=2.6.0` |
+| [OpenAI Agents](py/src/braintrust/integrations/openai_agents/) | Yes | `openai-agents>=0.0.19` |
+| [Claude Agent SDK](py/src/braintrust/integrations/claude_agent_sdk/) | Yes | `claude_agent_sdk>=0.1.10` |
+| [AutoGen](py/src/braintrust/integrations/autogen/) | Yes | `autogen-agentchat>=0.7.0` |
+| [CrewAI](py/src/braintrust/integrations/crewai/) | Yes | `crewai>=1.13.0` |
+| [Strands](py/src/braintrust/integrations/strands/) | Yes | `strands-agents>=1.20.0` |
 | [Agno](py/src/braintrust/integrations/agno/) | Yes | `agno>=2.1.0` |
 | [AgentScope](py/src/braintrust/integrations/agentscope/) | Yes | `agentscope>=1.0.0` |
-| [Claude Agent SDK](py/src/braintrust/integrations/claude_agent_sdk/) | Yes | `claude_agent_sdk>=0.1.10` |
-| [DSPy](py/src/braintrust/integrations/dspy/) | Yes | `dspy>=2.6.0` |
 | [pytest plugin](py/src/braintrust/wrappers/pytest_plugin/README.md) | No | `pytest>=8` |
 
 ## Documentation
