@@ -1,9 +1,8 @@
 """Tests for the LlamaIndex integration."""
 
 import pytest
-
 from braintrust import logger
-from braintrust.integrations.llamaindex import LlamaIndexIntegration, BraintrustSpanHandler
+from braintrust.integrations.llamaindex import BraintrustSpanHandler, LlamaIndexIntegration
 from braintrust.test_helpers import init_test_logger
 
 
@@ -34,9 +33,7 @@ def setup_and_cleanup():
     yield
 
     dispatcher = get_dispatcher()
-    dispatcher.span_handlers = [
-        h for h in dispatcher.span_handlers if not isinstance(h, BraintrustSpanHandler)
-    ]
+    dispatcher.span_handlers = [h for h in dispatcher.span_handlers if not isinstance(h, BraintrustSpanHandler)]
 
 
 def test_integration_setup():
@@ -259,6 +256,7 @@ def test_llm_error_handling(logger_memory_logger):
 
 
 @pytest.mark.vcr
+@pytest.mark.asyncio
 async def test_async_llm_complete(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
@@ -278,6 +276,7 @@ async def test_async_llm_complete(logger_memory_logger):
 
 
 @pytest.mark.vcr
+@pytest.mark.asyncio
 async def test_async_llm_chat(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
