@@ -42,6 +42,10 @@ def _extract_messages(messages: Any) -> list[dict[str, Any]] | None:
 def _extract_response_output(result: Any) -> Any:
     if result is None:
         return None
+    # Streaming/coroutine responses are consumed outside this span handler.
+    # Do not log unstable object reprs such as "<generator object ...>".
+    if inspect.isgenerator(result) or inspect.isasyncgen(result) or inspect.iscoroutine(result):
+        return None
     # ChatResponse
     if hasattr(result, "message") and hasattr(result, "raw"):
         msg = result.message
@@ -95,8 +99,7 @@ def _classify_instance(instance: Any) -> tuple[SpanTypeAttribute, str]:
     mro_names = {c.__name__ for c in type(instance).__mro__}
 
     if "BaseLLM" in mro_names or "LLM" in mro_names:
-        model = getattr(instance, "model", None) or getattr(instance, "model_name", None)
-        return SpanTypeAttribute.LLM, f"{cls_name} ({model})" if model else cls_name
+        return SpanTypeAttribute.LLM, cls_name
 
     if "BaseTool" in mro_names or "FunctionTool" in mro_names:
         return SpanTypeAttribute.TOOL, getattr(instance, "name", None) or cls_name
@@ -150,6 +153,24 @@ try:
         def class_name(cls) -> str:
             return "BraintrustSpanHandler"
 
+        def _find_parent_bt_span(self, parent_span_id: str | None) -> Span | None:
+            if parent_span_id is None:
+                cs = current_span()
+                return cs if cs != NOOP_SPAN else None
+
+            span_id = parent_span_id
+            while span_id:
+                record = self._bt_spans.get(span_id)
+                if record is not None:
+                    return record.bt_span
+
+                parent_span = self.open_spans.get(span_id)
+                if parent_span is None:
+                    return None
+                span_id = parent_span.parent_id
+
+            return None
+
         def new_span(
             self,
             id_: str,
@@ -171,14 +192,7 @@ try:
                     if val is not None:
                         metadata[attr] = val
 
-            # Find parent Braintrust span
-            parent_bt_span = None
-            if parent_span_id and parent_span_id in self._bt_spans:
-                parent_bt_span = self._bt_spans[parent_span_id].bt_span
-            else:
-                cs = current_span()
-                if cs != NOOP_SPAN:
-                    parent_bt_span = cs
+            parent_bt_span = self._find_parent_bt_span(parent_span_id)
 
             event: dict[str, Any] = {}
             if metadata:

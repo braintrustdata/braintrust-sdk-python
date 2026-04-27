@@ -63,6 +63,38 @@ def test_auto_instrument_includes_llamaindex():
     assert result["llamaindex"] is True
 
 
+@pytest.mark.asyncio
+async def test_streaming_outputs_are_not_stringified():
+    from braintrust.integrations.llamaindex.tracing import _extract_response_output
+
+    def stream():
+        yield "chunk"
+
+    async def async_stream():
+        yield "chunk"
+
+    async_gen = async_stream()
+    try:
+        assert _extract_response_output(stream()) is None
+        assert _extract_response_output(async_gen) is None
+    finally:
+        await async_gen.aclose()
+
+
+@pytest.mark.asyncio
+async def test_coroutine_outputs_are_not_stringified():
+    from braintrust.integrations.llamaindex.tracing import _extract_response_output
+
+    async def coroutine():
+        return "result"
+
+    coro = coroutine()
+    try:
+        assert _extract_response_output(coro) is None
+    finally:
+        coro.close()
+
+
 @pytest.mark.vcr
 def test_llm_complete(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
@@ -82,9 +114,11 @@ def test_llm_complete(logger_memory_logger):
     assert len(llm_spans) >= 1
 
     llm_span = llm_spans[0]
+    assert llm_span["span_attributes"]["name"] == "OpenAI"
     assert llm_span["input"] is not None
     assert llm_span["output"] is not None
     assert llm_span["metadata"]["class"] == "OpenAI"
+    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
 
 
 @pytest.mark.vcr
@@ -232,8 +266,8 @@ def test_llm_error_handling(logger_memory_logger):
     assert len(spans) >= 2
 
     llm_spans = _find_spans_by_attributes(spans, type="llm")
-    if llm_spans:
-        assert llm_spans[0].get("error") is not None
+    assert len(llm_spans) >= 1
+    assert llm_spans[0].get("error") is not None
 
 
 @pytest.mark.vcr
