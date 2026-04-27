@@ -16,4 +16,5 @@ class LlamaIndexIntegration(BaseIntegration):
 
     name = "llamaindex"
     import_names = ("llama_index.core",)
+    min_version = "0.13.0"
     patchers = (DispatcherHandlerPatcher,)
