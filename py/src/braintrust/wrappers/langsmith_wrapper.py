@@ -40,8 +40,8 @@ Usage:
 import inspect
 import logging
 import os
-from collections.abc import Iterable, Iterator
-from typing import Any, Callable, ParamSpec, TypeVar
+from collections.abc import Callable, Iterable, Iterator
+from typing import Any, ParamSpec, TypeVar
 
 from braintrust.framework import EvalCase
 from braintrust.logger import NOOP_SPAN, current_span, init_logger, traced

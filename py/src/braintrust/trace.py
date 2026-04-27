@@ -144,7 +144,7 @@ class CachedSpanFetcher:
         object_type: str | None = None,  # Literal["experiment", "project_logs", "playground_logs"]
         object_id: str | None = None,
         root_span_id: str | None = None,
-        get_state: Callable[[], Awaitable[BraintrustState] | None] = None,
+        get_state: Callable[[], Awaitable[BraintrustState]] | None = None,
         fetch_fn: SpanFetchFn | None = None,
     ):
         self._span_cache: dict[str, list[SpanData]] = {}
@@ -308,7 +308,7 @@ class LocalTrace(dict):
         object_type: str,  # Literal["experiment", "project_logs", "playground_logs"]
         object_id: str,
         root_span_id: str,
-        ensure_spans_flushed: Callable[[], Awaitable[None] | None],
+        ensure_spans_flushed: Callable[[], Awaitable[None]] | None,
         state: BraintrustState,
     ):
         # Initialize dict with trace_ref for JSON serialization
