@@ -1,15 +1,11 @@
 """Braintrust span handler for LlamaIndex instrumentation."""
 
 import inspect
-import logging
 import time
 from typing import Any
 
 from braintrust.logger import NOOP_SPAN, Span, current_span, start_span
 from braintrust.span_types import SpanTypeAttribute
-
-
-_logger = logging.getLogger("braintrust.integrations.llamaindex")
 
 
 def _extract_messages(messages: Any) -> list[dict[str, Any]] | None:
@@ -209,21 +205,17 @@ try:
             if input_data is not None:
                 event["input"] = input_data
 
-            try:
-                if parent_bt_span is not None:
-                    bt_span = parent_bt_span.start_span(
-                        name=span_name, type=span_type, start_time=start_time, **event
-                    )
-                else:
-                    bt_span = start_span(
-                        name=span_name, type=span_type, start_time=start_time, **event
-                    )
+            if parent_bt_span is not None:
+                bt_span = parent_bt_span.start_span(
+                    name=span_name, type=span_type, start_time=start_time, **event
+                )
+            else:
+                bt_span = start_span(
+                    name=span_name, type=span_type, start_time=start_time, **event
+                )
 
-                bt_span.set_current()
-                self._bt_spans[id_] = _SpanRecord(bt_span=bt_span, start_time=start_time)
-
-            except Exception:
-                _logger.debug("Failed to create span for %s", id_, exc_info=True)
+            bt_span.set_current()
+            self._bt_spans[id_] = _SpanRecord(bt_span=bt_span, start_time=start_time)
 
             return BaseSpan(id_=id_, parent_id=parent_span_id)
 
@@ -255,12 +247,7 @@ try:
             if log_kwargs:
                 bt_span.log(**log_kwargs)
 
-            try:
-                bt_span.unset_current()
-            except ValueError as e:
-                if "was created in a different Context" not in str(e):
-                    raise
-
+            bt_span.unset_current()
             bt_span.end()
             return self.open_spans.get(id_)
 
@@ -279,12 +266,7 @@ try:
             bt_span = record.bt_span
             bt_span.log(error=str(err) if err else "Unknown error")
 
-            try:
-                bt_span.unset_current()
-            except ValueError as e:
-                if "was created in a different Context" not in str(e):
-                    raise
-
+            bt_span.unset_current()
             bt_span.end()
             return self.open_spans.get(id_)
 
