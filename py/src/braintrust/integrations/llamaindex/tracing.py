@@ -8,24 +8,6 @@ from braintrust.logger import NOOP_SPAN, Span, current_span, start_span
 from braintrust.span_types import SpanTypeAttribute
 
 
-def _openai_owns_leaf_span() -> bool:
-    """Return True when the OpenAI integration has patched completion entry points.
-
-    When OpenAI is patched, it creates a child ``Chat Completion`` span with
-    its own token accounting. Emitting tokens on the enclosing LlamaIndex LLM
-    span would double-count during trace-tree rollup.
-    """
-    try:
-        from openai.resources.chat.completions import AsyncCompletions, Completions
-    except ImportError:
-        return False
-
-    return bool(
-        getattr(Completions.create, "__braintrust_patched_openai_chat_completions_create_sync__", False)
-        or getattr(AsyncCompletions.create, "__braintrust_patched_openai_chat_completions_create_async__", False)
-    )
-
-
 def _extract_block_content(message: Any) -> str | None:
     if not hasattr(message, "blocks"):
         return None
@@ -103,35 +85,6 @@ def _extract_nodes(nodes: list[Any]) -> list[dict[str, Any]]:
             entry["metadata"] = node.metadata
         result.append(entry)
     return result
-
-
-def _extract_token_usage(raw: Any) -> dict[str, int | float]:
-    metrics: dict[str, int | float] = {}
-    if raw is None:
-        return metrics
-
-    usage = getattr(raw, "usage", None)
-    if usage is None and isinstance(raw, dict):
-        usage = raw.get("usage")
-
-    if usage is not None:
-        for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
-            val = usage.get(key) if isinstance(usage, dict) else getattr(usage, key, None)
-            if val is not None:
-                metrics[key] = val
-
-    # Anthropic-style fallback
-    if not metrics:
-        for src, dst in [("input_tokens", "prompt_tokens"), ("output_tokens", "completion_tokens")]:
-            val = getattr(raw, src, None)
-            if val is None and isinstance(raw, dict):
-                val = raw.get(src)
-            if val is not None:
-                metrics[dst] = val
-        if "prompt_tokens" in metrics and "completion_tokens" in metrics:
-            metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
-
-    return metrics
 
 
 def _classify_instance(instance: Any) -> tuple[SpanTypeAttribute, str]:
@@ -258,17 +211,13 @@ try:
             bt_span = record.bt_span
             output = _extract_response_output(result)
 
-            metrics: dict[str, int | float] = {}
-            if not _openai_owns_leaf_span():
-                raw = getattr(result, "raw", None)
-                if raw is not None:
-                    metrics.update(_extract_token_usage(raw))
-
+            # Token usage is intentionally not logged on LlamaIndex spans.
+            # LlamaIndex is an orchestration layer; provider integrations own
+            # token accounting. Emitting usage here would double-count when
+            # provider spans are also present.
             log_kwargs: dict[str, Any] = {}
             if output is not None:
                 log_kwargs["output"] = output
-            if metrics:
-                log_kwargs["metrics"] = metrics
             if log_kwargs:
                 bt_span.log(**log_kwargs)
 

@@ -117,30 +117,6 @@ def test_llm_chat(logger_memory_logger):
     assert "content" in llm_span["output"] or "role" in llm_span["output"]
 
 
-@pytest.mark.vcr
-def test_llm_chat_metrics(logger_memory_logger):
-    test_logger, memory_logger = logger_memory_logger
-    assert not memory_logger.pop()
-
-    from llama_index.llms.openai import OpenAI
-
-    llm = OpenAI(model="gpt-4o-mini", temperature=0)
-
-    with test_logger.start_span(name="test-metrics"):
-        llm.complete("Say hello")
-
-    spans = memory_logger.pop()
-    llm_spans = _find_spans_by_attributes(spans, type="llm")
-    assert len(llm_spans) >= 1
-
-    # Token metrics may be on the LlamaIndex LLM span or on the OpenAI leaf
-    # span (when the OpenAI integration is also active). Check all LLM spans.
-    all_metrics = {}
-    for s in llm_spans:
-        all_metrics.update(s.get("metrics", {}))
-    assert "prompt_tokens" in all_metrics or "total_tokens" in all_metrics or "tokens" in all_metrics
-
-
 def test_document_processing(logger_memory_logger):
     test_logger, memory_logger = logger_memory_logger
     assert not memory_logger.pop()
