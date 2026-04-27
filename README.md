@@ -62,6 +62,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [Google ADK](py/src/braintrust/integrations/adk/) | Yes | `google-adk>=1.14.1` |
 | [Pydantic AI](py/src/braintrust/integrations/pydantic_ai/) | Yes | `pydantic_ai>=1.10.0` |
 | [LangChain](py/src/braintrust/integrations/langchain/) | Yes | `langchain-core>=0.3.28` |
+| [LlamaIndex](py/src/braintrust/integrations/llamaindex/) | Yes | `llama-index-core>=0.13.0` |
 | [DSPy](py/src/braintrust/integrations/dspy/) | Yes | `dspy>=2.6.0` |
 | [OpenAI Agents](py/src/braintrust/integrations/openai_agents/) | Yes | `openai-agents>=0.0.19` |
 | [Claude Agent SDK](py/src/braintrust/integrations/claude_agent_sdk/) | Yes | `claude_agent_sdk>=0.1.10` |
