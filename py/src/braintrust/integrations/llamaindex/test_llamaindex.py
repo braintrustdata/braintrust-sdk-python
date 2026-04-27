@@ -1,5 +1,7 @@
 """Tests for the LlamaIndex integration."""
 
+# pylint: disable=import-error
+
 import pytest
 from braintrust import logger
 from braintrust.integrations.llamaindex import BraintrustSpanHandler, LlamaIndexIntegration
@@ -133,8 +135,12 @@ def test_llm_chat_metrics(logger_memory_logger):
     llm_spans = _find_spans_by_attributes(spans, type="llm")
     assert len(llm_spans) >= 1
 
-    metrics = llm_spans[0].get("metrics", {})
-    assert "prompt_tokens" in metrics or "total_tokens" in metrics or "completion_tokens" in metrics
+    # Token metrics may be on the LlamaIndex LLM span or on the OpenAI leaf
+    # span (when the OpenAI integration is also active). Check all LLM spans.
+    all_metrics = {}
+    for s in llm_spans:
+        all_metrics.update(s.get("metrics", {}))
+    assert "prompt_tokens" in all_metrics or "total_tokens" in all_metrics or "tokens" in all_metrics
 
 
 def test_document_processing(logger_memory_logger):

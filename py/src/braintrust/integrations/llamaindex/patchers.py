@@ -1,5 +1,7 @@
 """LlamaIndex patchers."""
 
+# pylint: disable=import-error
+
 from braintrust.integrations.base import CallbackPatcher
 
 

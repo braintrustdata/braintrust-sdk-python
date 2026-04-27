@@ -8,6 +8,21 @@ from braintrust.logger import NOOP_SPAN, Span, current_span, start_span
 from braintrust.span_types import SpanTypeAttribute
 
 
+def _openai_owns_leaf_span() -> bool:
+    """Return True when the OpenAI integration has patched completion entry points.
+
+    When OpenAI is patched, it creates a child ``Chat Completion`` span with
+    its own token accounting. Emitting tokens on the enclosing LlamaIndex LLM
+    span would double-count during trace-tree rollup.
+    """
+    try:
+        from openai.resources.chat.completions import Completions
+
+        return bool(getattr(Completions.create, "__braintrust_patched_openai_chat_completions_create_sync__", False))
+    except Exception:
+        return False
+
+
 def _extract_messages(messages: Any) -> list[dict[str, Any]] | None:
     if not messages:
         return None
@@ -206,13 +221,9 @@ try:
                 event["input"] = input_data
 
             if parent_bt_span is not None:
-                bt_span = parent_bt_span.start_span(
-                    name=span_name, type=span_type, start_time=start_time, **event
-                )
+                bt_span = parent_bt_span.start_span(name=span_name, type=span_type, start_time=start_time, **event)
             else:
-                bt_span = start_span(
-                    name=span_name, type=span_type, start_time=start_time, **event
-                )
+                bt_span = start_span(name=span_name, type=span_type, start_time=start_time, **event)
 
             bt_span.set_current()
             self._bt_spans[id_] = _SpanRecord(bt_span=bt_span, start_time=start_time)
@@ -235,9 +246,10 @@ try:
             output = _extract_response_output(result)
 
             metrics: dict[str, int | float] = {}
-            raw = getattr(result, "raw", None)
-            if raw is not None:
-                metrics.update(_extract_token_usage(raw))
+            if not _openai_owns_leaf_span():
+                raw = getattr(result, "raw", None)
+                if raw is not None:
+                    metrics.update(_extract_token_usage(raw))
 
             log_kwargs: dict[str, Any] = {}
             if output is not None:
