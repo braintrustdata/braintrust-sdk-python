@@ -4,7 +4,7 @@ from braintrust.integrations.base import CallbackPatcher
 
 
 try:
-    from .span_handler import BraintrustSpanHandler
+    from .tracing import BraintrustSpanHandler
 except ImportError:
     BraintrustSpanHandler = None
 

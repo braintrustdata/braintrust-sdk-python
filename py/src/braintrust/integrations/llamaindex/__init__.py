@@ -6,7 +6,7 @@ from .integration import LlamaIndexIntegration
 
 
 try:
-    from .span_handler import BraintrustSpanHandler
+    from .tracing import BraintrustSpanHandler
 except ImportError as exc:
     _IMPORT_ERROR = exc
 
