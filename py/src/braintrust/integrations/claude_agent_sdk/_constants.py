@@ -1,7 +1,7 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
 from types import MappingProxyType
-from collections.abc import Mapping
 from typing import Final
 
 

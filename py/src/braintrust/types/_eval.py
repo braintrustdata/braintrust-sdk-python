@@ -6,9 +6,9 @@ underscore-prefixed so pyright strict mode doesn't flag them as private.
 """
 
 from collections.abc import Sequence
-from typing import Any, Generic, TypedDict, TypeVar
+from typing import Any, Generic, TypeVar
 
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypedDict
 
 
 Input = TypeVar("Input")

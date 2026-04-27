@@ -80,11 +80,7 @@ class BraintrustInvokeError(ValueError):
 
 
 BraintrustStreamChunk = (
-    BraintrustTextChunk
-    | BraintrustJsonChunk
-    | BraintrustErrorChunk
-    | BraintrustConsoleChunk
-    | BraintrustProgressChunk
+    BraintrustTextChunk | BraintrustJsonChunk | BraintrustErrorChunk | BraintrustConsoleChunk | BraintrustProgressChunk
 )
 
 

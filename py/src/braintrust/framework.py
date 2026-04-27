@@ -217,12 +217,7 @@ class EvalScorerArgs(SerializableDataClass, Generic[Input, Output, Expected]):
 
 
 OneOrMoreScores = float | int | bool | None | Score | list[Score]
-OneOrMoreClassifications = (
-    None
-    | Classification
-    | Mapping[str, Any]
-    | list[Classification | Mapping[str, Any]]
-)
+OneOrMoreClassifications = None | Classification | Mapping[str, Any] | list[Classification | Mapping[str, Any]]
 
 
 # Synchronous scorer interface - implements callable
@@ -278,10 +273,7 @@ class BaseExperiment:
 
 
 _AnyEvalCase = (
-    EvalCase[Input, Expected]
-    | EvalCaseDict[Input, Expected]
-    | EvalCaseDictNoOutput[Input]
-    | ExperimentDatasetEvent
+    EvalCase[Input, Expected] | EvalCaseDict[Input, Expected] | EvalCaseDictNoOutput[Input] | ExperimentDatasetEvent
 )
 
 _EvalDataObject = (
@@ -295,8 +287,7 @@ _EvalDataObject = (
 EvalData = _EvalDataObject[Input, Expected] | type[_EvalDataObject[Input, Expected]] | Dataset
 
 EvalTask = (
-    Callable[[Input], Output | Awaitable[Output]]
-    | Callable[[Input, EvalHooks[Expected]], Output | Awaitable[Output]]
+    Callable[[Input], Output | Awaitable[Output]] | Callable[[Input, EvalHooks[Expected]], Output | Awaitable[Output]]
 )
 
 ErrorScoreHandler = Callable[[Span, EvalCase[Input, Expected], Sequence[str]], dict[str, float] | None]

@@ -204,9 +204,7 @@ def wrap_client(
     return Client
 
 
-def make_evaluate_wrapper(
-    *, project_name: str | None = None, project_id: str | None = None, standalone: bool = False
-):
+def make_evaluate_wrapper(*, project_name: str | None = None, project_id: str | None = None, standalone: bool = False):
     def evaluate_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
         result = None
         if not standalone:
