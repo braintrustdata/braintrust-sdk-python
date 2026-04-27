@@ -399,7 +399,7 @@ def test_parallel_execution(logger_memory_logger):
 
     map_chain.invoke({"topic": "bear"}, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
 
-    spans = cast(List, memory_logger.pop())
+    spans = cast(list, memory_logger.pop())
 
     # Find the LLM spans
     llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI")

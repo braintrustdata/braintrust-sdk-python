@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import types
 from typing import Union, get_origin
 
 
@@ -39,7 +40,7 @@ class SerializableDataClass:
                 and issubclass(fields[k].type, SerializableDataClass)
             ):
                 filtered[k] = fields[k].type.from_dict_deep(v)
-            elif get_origin(fields[k].type) == Union:
+            elif get_origin(fields[k].type) is Union or isinstance(fields[k].type, types.UnionType):
                 for t in fields[k].type.__args__:
                     if t == type(None) and v is None:
                         filtered[k] = None
