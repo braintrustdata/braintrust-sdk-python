@@ -43,7 +43,8 @@ def get_signature(fn: Callable) -> inspect.Signature:
     if sys.version_info >= (3, 14):
         import annotationlib
 
-        return inspect.signature(fn, annotation_format=annotationlib.Format.FORWARDREF)
+        kwargs = {"annotation_format": annotationlib.Format.FORWARDREF}
+        return inspect.signature(fn, **kwargs)  # pylint: disable=unexpected-keyword-arg
     return inspect.signature(fn)
 
 
