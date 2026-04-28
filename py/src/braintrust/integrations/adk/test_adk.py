@@ -1479,9 +1479,10 @@ async def test_capture_config_handles_all_schema_fields():
         assert field in serialized, f"Missing {field}"
         schema = serialized[field]
         assert isinstance(schema, dict)
-        assert "properties" in schema
-        assert "value" in schema["properties"]
-        assert schema["properties"]["value"]["description"] == "Test value"
+        properties = schema.get("properties")
+        assert isinstance(properties, dict)
+        assert "value" in properties
+        assert properties["value"]["description"] == "Test value"
 
     # Other fields should be preserved
     assert "other_field" in serialized
