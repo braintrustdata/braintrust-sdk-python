@@ -88,6 +88,7 @@ from .util import (
     encode_uri_component,
     eprint,
     get_caller_location,
+    get_signature,
     mask_api_key,
     merge_dicts,
     parse_env_var_float,
@@ -2466,7 +2467,7 @@ def traced(*span_args: Any, **span_kwargs: Any) -> Callable[[F], F]:
             span_args += (f.__name__,)
 
         try:
-            f_sig = inspect.signature(f)
+            f_sig = get_signature(f)
         except:
             f_sig = None
 

@@ -52,7 +52,7 @@ from .score import Classification, ClassificationItem, Score, is_classification,
 from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
 from .types._eval import EvalCaseDict, EvalCaseDictNoOutput, ExperimentDatasetEvent
-from .util import bt_iscoroutinefunction, eprint, merge_dicts
+from .util import bt_iscoroutinefunction, eprint, get_signature, merge_dicts
 
 
 Input = TypeVar("Input")
@@ -471,7 +471,7 @@ async def await_or_run(event_loop, f, *args, **kwargs):
 
 def _call_user_fn_args(fn, kwargs):
     try:
-        signature = inspect.signature(fn)
+        signature = get_signature(fn)
     except:
         return [], kwargs
 
@@ -1585,7 +1585,7 @@ async def _run_evaluator_internal_impl(
                 # Check if the task takes a hooks argument
                 task_args = [datum.input]
                 try:
-                    if len(inspect.signature(evaluator.task).parameters) == 2:
+                    if len(get_signature(evaluator.task).parameters) == 2:
                         task_args.append(hooks)
                 except:
                     pass

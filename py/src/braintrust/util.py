@@ -34,6 +34,19 @@ GLOBAL_PROJECT = "Global"
 BT_IS_ASYNC_ATTRIBUTE = "_BT_IS_ASYNC"
 
 
+def get_signature(fn: Callable) -> inspect.Signature:
+    # On Python 3.14+ (PEP 649), inspect.signature evaluates annotations
+    # eagerly in VALUE format by default. Annotations referencing
+    # TYPE_CHECKING-only imports raise NameError. Use FORWARDREF so
+    # unresolvable names become ForwardRef objects; callers here only
+    # inspect parameter names/kinds, not annotation values.
+    if sys.version_info >= (3, 14):
+        import annotationlib
+
+        return inspect.signature(fn, annotation_format=annotationlib.Format.FORWARDREF)
+    return inspect.signature(fn)
+
+
 # Taken from
 # https://stackoverflow.com/questions/5574702/how-do-i-print-to-stderr-in-python.
 def is_numeric(v):
