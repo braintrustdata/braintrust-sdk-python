@@ -1,14 +1,14 @@
-from braintrust.wrappers.agno import setup_agno
+import braintrust
 
 
-setup_agno(project_name="simple-agent-project")
+braintrust.auto_instrument()
+braintrust.init_logger(project="simple-agent-project")
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools.yfinance import YFinanceTools
 
 
-# Create and configure the agent
 agent = Agent(
     name="Stock Price Agent",
     model=OpenAIChat(id="gpt-4o-mini"),

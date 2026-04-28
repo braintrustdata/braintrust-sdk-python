@@ -1,10 +1,10 @@
 import asyncio
 
-from braintrust.wrappers.agno import setup_agno
+import braintrust
 
 
-# Set up Braintrust observability
-setup_agno(project_name="async-team-agent-project")
+braintrust.auto_instrument()
+braintrust.init_logger(project="async-team-agent-project")
 
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
@@ -13,7 +13,6 @@ from agno.tools.yfinance import YFinanceTools
 
 
 async def main():
-    # Create specialized agents for the team
     research_agent = Agent(
         name="Research Analyst",
         model=OpenAIChat(id="gpt-4o-mini"),
@@ -37,7 +36,6 @@ async def main():
         debug_mode=True,
     )
 
-    # Create a team with both agents
     investment_team = Team(
         name="Investment Research Team",
         model=OpenAIChat(id="gpt-4o-mini"),

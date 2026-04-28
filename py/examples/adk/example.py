@@ -1,18 +1,12 @@
-"""Manually patch Google ADK with Braintrust tracing.
-
-Usage:
-    export BRAINTRUST_API_KEY="your-api-key"
-    export GOOGLE_API_KEY="your-google-api-key"
-    python manual_patching.py
-"""
+"""Google ADK weather agent traced via braintrust.auto_instrument()."""
 
 import asyncio
 
-from braintrust.wrappers.adk import setup_adk
+import braintrust
 
 
-# Setup ADK tracing with a specific project
-setup_adk(project_name="my-adk-project")
+braintrust.auto_instrument()
+braintrust.init_logger(project="example-adk")
 
 from google.adk import Agent
 from google.adk.runners import Runner

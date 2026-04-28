@@ -1,15 +1,16 @@
 #!/usr/bin/env python
-"""
-An app demonstrating how to wrap the sync Anthropic Client.
-"""
+"""Sync Anthropic client traced via braintrust.auto_instrument()."""
 
-import anthropic
 import braintrust
 
 
-# Initialize Anthropic client (needs ANTHROPIC_API_KEY)
-client = braintrust.wrap_anthropic(anthropic.Anthropic())
+braintrust.auto_instrument()
 braintrust.init_logger(project="example-anthropic-app")
+
+import anthropic
+
+
+client = anthropic.Anthropic()
 
 
 @braintrust.traced
@@ -45,9 +46,8 @@ def ask_anthropic_stream(question, system=None):
 @braintrust.traced
 def ask_anthropic():
     print("asking questions")
-    # Ask each question and display the response
     ask_anthropic_sync("What is the capital of Canada?")
-    ask_anthropic_stream("What is the date tomrrow?", "today is 2025-03-26")
+    ask_anthropic_stream("What is the date tomorrow?", "today is 2025-03-26")
 
 
 def main():

@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 
-from braintrust import init_logger, traced, wrap_openai
+import braintrust
+
+
+braintrust.auto_instrument()
+braintrust.init_logger(project="example-openai-project")
+
 from openai import OpenAI
 
 
-logger = init_logger(project="example-openai-project")
-client = wrap_openai(OpenAI())
+client = OpenAI()
 
 
 # @traced automatically logs the input (args) and output (return value)
 # of this function to a span. To ensure the span is named `answer_question`,
 # you should name the function `answer_question`.
-@traced
+@braintrust.traced
 def answer_question(body: str) -> str:
     prompt = [
         {"role": "system", "content": "You are a helpful assistant."},

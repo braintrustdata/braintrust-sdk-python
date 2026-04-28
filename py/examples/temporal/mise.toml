@@ -16,11 +16,11 @@ postinstall = "mise run install"
 
 [tasks.install]
 description = "Install requirements"
-run = "uv pip install -r requirements.txt"
+run = "uv sync"
 
 [tasks.server]
 description = "Run temporal server"
 run = "overmind s"
 
 [tasks.workflow]
-run = "python run.py"
+run = "uv run python run.py"

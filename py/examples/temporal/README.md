@@ -4,19 +4,20 @@ This example demonstrates distributed tracing for Temporal workflows using Brain
 
 ## Setup
 
-1. Install Braintrust with Temporal support:
+1. Install dependencies. This is a uv project that installs `braintrust[temporal]` from the local checkout:
 
    ```bash
-   pip install "braintrust[temporal]"
+   uv sync
    ```
 
-   Or if using mise:
+   Or if using mise (which also installs the `temporal` and `overmind` CLIs):
 
    ```bash
    mise install
    ```
 
 2. Configure your Braintrust API key in `.env`:
+
    ```bash
    cp .env.example .env
    # Edit .env and add your BRAINTRUST_API_KEY
