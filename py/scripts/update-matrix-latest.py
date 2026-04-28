@@ -25,7 +25,7 @@ _PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
 _PYPROJECT = _PROJECT_DIR / "pyproject.toml"
 _MATRIX_SECTION_PREFIX = "[tool.braintrust.matrix."
 _LATEST_LINE_RE = re.compile(r'^(?P<indent>\s*)latest\s*=\s*"(?P<req>[^"]+)"(?P<suffix>\s*(?:#.*)?)$')
-_EXACT_REQ_RE = re.compile(r"^(?P<name>[A-Za-z0-9_.-]+)==(?P<version>[^\s]+)$")
+_EXACT_REQ_RE = re.compile(r"^(?P<name>[A-Za-z0-9_.-]+)(?P<extras>\[[A-Za-z0-9_,.-]+\])?==(?P<version>[^\s]+)$")
 _USER_AGENT = "braintrust-sdk-python dependency updater"
 _TIMEOUT_SECS = 30
 
@@ -46,11 +46,11 @@ def _load_matrix() -> dict[str, str]:
     return latest_reqs
 
 
-def _parse_exact_req(req: str) -> tuple[str, str]:
+def _parse_exact_req(req: str) -> tuple[str, str, str]:
     match = _EXACT_REQ_RE.fullmatch(req.strip())
     if not match:
-        raise UpdateError(f"Expected an exact 'package==version' requirement, got: {req}")
-    return match.group("name"), match.group("version")
+        raise UpdateError(f"Expected an exact 'package[extras]==version' requirement, got: {req}")
+    return match.group("name"), match.group("extras") or "", match.group("version")
 
 
 def _fetch_latest_version(package_name: str) -> str:
@@ -77,14 +77,14 @@ def _compute_updates() -> dict[str, tuple[str, str]]:
     updates: dict[str, tuple[str, str]] = {}
 
     for matrix_key, current_req in latest_reqs.items():
-        package_name, current_version = _parse_exact_req(current_req)
+        package_name, extras, current_version = _parse_exact_req(current_req)
         latest_version = package_cache.get(package_name)
         if latest_version is None:
             latest_version = _fetch_latest_version(package_name)
             package_cache[package_name] = latest_version
 
         if latest_version != current_version:
-            updates[matrix_key] = (current_req, f"{package_name}=={latest_version}")
+            updates[matrix_key] = (current_req, f"{package_name}{extras}=={latest_version}")
 
     return updates
 
