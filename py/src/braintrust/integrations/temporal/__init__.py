@@ -7,6 +7,7 @@ from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
 from .integration import TemporalIntegration
 
+
 if TYPE_CHECKING:
     from .plugin import BraintrustInterceptor, BraintrustPlugin
 
