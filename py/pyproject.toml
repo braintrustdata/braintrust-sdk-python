@@ -108,6 +108,11 @@ test-openai-http2 = [
     "h2==4.3.0",
 ]
 
+test-openai-ddtrace = [
+    {include-group = "test"},
+    "ddtrace==4.1.0",
+]
+
 test-openai-agents = [
     {include-group = "test"},
     # openai is an auxiliary dep (matrix dep is openai-agents); pin here.

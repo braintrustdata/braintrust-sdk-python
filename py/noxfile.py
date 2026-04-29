@@ -195,6 +195,14 @@ def test_openai_http2_streaming(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py", version=version)
 
 
+@nox.session()
+def test_openai_ddtrace(session):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", LATEST)
+    _install_group_locked(session, "test-openai-ddtrace")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_ddtrace.py", version=LATEST)
+
+
 OPENAI_AGENTS_VERSIONS = _get_matrix_versions("openai-agents")
 
 
