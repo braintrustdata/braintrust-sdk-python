@@ -1468,6 +1468,51 @@ async def test_openai_async_parallel_requests(memory_logger):
 
 
 @pytest.mark.vcr
+def test_openai_chat_metadata_with_store_true(memory_logger, vcr_cassette_dir):
+    """Test wrapped chat completions preserve OpenAI metadata when store=True is enabled."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+
+    response = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        metadata={"braintrust_test": "store_true"},
+        store=True,
+    )
+
+    assert response
+    assert response.choices[0].message.content
+    assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
+
+    # VCR matches on request body, so playback already fails if Braintrust strips
+    # store=True before the request reaches OpenAI. Keep this explicit assertion
+    # to make the regression this test guards obvious.
+    cassette_path = os.path.join(vcr_cassette_dir, "test_openai_chat_metadata_with_store_true.yaml")
+    with open(cassette_path, encoding="utf-8") as f:
+        cassette_text = f.read()
+    assert '"metadata":{"braintrust_test":"store_true"}' in cassette_text
+    assert '"store":true' in cassette_text
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    assert_dict_matches(
+        span,
+        {
+            "input": [{"role": "user", "content": TEST_PROMPT}],
+            "metadata": {
+                "model": TEST_MODEL,
+                "provider": "openai",
+                "metadata": {"braintrust_test": "store_true"},
+                "store": True,
+            },
+        },
+    )
+
+
+@pytest.mark.vcr
 def test_openai_not_given_filtering(memory_logger):
     """Test that NOT_GIVEN values are filtered out of logged inputs but API call still works."""
     assert not memory_logger.pop()
