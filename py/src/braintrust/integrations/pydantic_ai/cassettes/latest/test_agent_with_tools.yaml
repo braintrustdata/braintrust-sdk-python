@@ -17,7 +17,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.86.0
+      - pydantic-ai/1.88.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -27,11 +27,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.33.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,11 +40,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DXqFxUKjhW0Y8Ge2y8cyns8M5vxM9\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776958069,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Da1YQ0TwnBuaOQsRDO9eqQQHaURTd\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1777478154,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_7N2hWbdbtML3nLuBwE98qtby\",\n            \"type\":
+        \           \"id\": \"call_daVNjlXKwd14ZVbMrTPRh1Cc\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -54,18 +54,18 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e2f9fd5023\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_b86b5e7355\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f0de4f9ad8eab00-YYZ
+      - 9f3f7e5fdd5f4c9b-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Apr 2026 15:27:49 GMT
+      - Wed, 29 Apr 2026 15:55:54 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -83,15 +83,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '472'
+      - '653'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=oVvWprp5o4J969ul3_1qbSR4_kOoH_rKkXj0jY8ifFw-1776958068.7486885-1.0.1.1-SdJpQXWAR.xSQeehrXJJHowad5_BoEqV9.BjREDsPpL5EZ..9UuRqoFkR5LDqoHwUty0HVLuZcO8Xq6CylrAmPrxQJ0hGZcr6ECxEUjTmp40d4S.NoyEYlCnMDbyZ3lR;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 23 Apr 2026
-        15:57:49 GMT
+      - __cf_bm=UbYYu2JEJWm4YKgo0GSxF5638I9RutcffFPCZs6EZJ4-1777478154.2156339-1.0.1.1-Cs6eKvjqXMVN61qoIu8ZnTn5x.zsI0m6Tmx2MvA894o4sLYWcoC8wsXwJHjILUKrcGfMEd3_ExlIyMnMNYuhOx3Hy8wk7etoCLg6h3V_PHp97gLsJ5XEQViQUBZWrfrR;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 29 Apr 2026
+        16:25:54 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -107,12 +107,12 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b09a68d0982c4e4b8fa4093180576bab
+      - req_dc8e3bba3ee14eb68a6314ac35d2759f
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","content":null,"tool_calls":[{"id":"call_7N2hWbdbtML3nLuBwE98qtby","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},{"role":"tool","tool_call_id":"call_7N2hWbdbtML3nLuBwE98qtby","content":"It''s
+    body: '{"messages":[{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","content":null,"tool_calls":[{"id":"call_daVNjlXKwd14ZVbMrTPRh1Cc","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},{"role":"tool","tool_call_id":"call_daVNjlXKwd14ZVbMrTPRh1Cc","content":"It''s
       sunny in Paris"}],"model":"gpt-4o-mini","max_completion_tokens":200,"stream":false,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"get_weather","description":"Get
       weather for a city.","parameters":{"additionalProperties":false,"properties":{"city":{"description":"The
       city name","type":"string"}},"required":["city"],"type":"object"},"strict":true}}]}'
@@ -128,11 +128,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=oVvWprp5o4J969ul3_1qbSR4_kOoH_rKkXj0jY8ifFw-1776958068.7486885-1.0.1.1-SdJpQXWAR.xSQeehrXJJHowad5_BoEqV9.BjREDsPpL5EZ..9UuRqoFkR5LDqoHwUty0HVLuZcO8Xq6CylrAmPrxQJ0hGZcr6ECxEUjTmp40d4S.NoyEYlCnMDbyZ3lR
+      - __cf_bm=UbYYu2JEJWm4YKgo0GSxF5638I9RutcffFPCZs6EZJ4-1777478154.2156339-1.0.1.1-Cs6eKvjqXMVN61qoIu8ZnTn5x.zsI0m6Tmx2MvA894o4sLYWcoC8wsXwJHjILUKrcGfMEd3_ExlIyMnMNYuhOx3Hy8wk7etoCLg6h3V_PHp97gLsJ5XEQViQUBZWrfrR
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.86.0
+      - pydantic-ai/1.88.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -142,11 +142,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.33.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -155,8 +155,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DXqFydmmPXVNgpHmUpBn83taTuTE1\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776958070,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Da1YR3bbvPXSLJH2r2YNqTG0w7cWm\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1777478155,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"The weather in Paris is sunny.\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
@@ -165,18 +165,18 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e2f9fd5023\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_576e90e2be\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f0de503fd13aaa4-YYZ
+      - 9f3f7e650c924cc4-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Apr 2026 15:27:51 GMT
+      - Wed, 29 Apr 2026 15:55:55 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -194,7 +194,7 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '378'
+      - '582'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -214,7 +214,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1b11b38ba9784ca081dff7dea32cd945
+      - req_d6e69ed9b478411188b549c3a350a8ef
     status:
       code: 200
       message: OK
