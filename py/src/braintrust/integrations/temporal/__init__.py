@@ -1,11 +1,14 @@
 """Braintrust integration for Temporal workflows and activities."""
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from braintrust.logger import NOOP_SPAN, current_span, init_logger
 
 from .integration import TemporalIntegration
+
+if TYPE_CHECKING:
+    from .plugin import BraintrustInterceptor, BraintrustPlugin
 
 
 logger = logging.getLogger(__name__)
