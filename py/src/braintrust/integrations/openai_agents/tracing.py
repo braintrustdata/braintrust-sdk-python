@@ -187,8 +187,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
         if ttft is not None:
             data["metrics"]["time_to_first_token"] = ttft
         if span.span_data.response is not None and span.span_data.response.usage is not None:
-            usage = span.span_data.response.usage
-            usage_dict = usage.model_dump() if hasattr(usage, "model_dump") else dict(usage)
+            usage_dict = span.span_data.response.usage.model_dump()
             data["metrics"].update(_usage_to_metrics(usage_dict))
 
         return data

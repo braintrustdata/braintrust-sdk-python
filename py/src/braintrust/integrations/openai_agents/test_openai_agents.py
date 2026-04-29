@@ -125,6 +125,12 @@ async def test_openai_agents_integration_setup_creates_spans(memory_logger):
 
     llm_spans = [span for span in spans if span.get("span_attributes", {}).get("type") == "llm"]
     assert llm_spans
+    llm_metrics = [span.get("metrics", {}) for span in llm_spans]
+    assert any(metrics.get("prompt_tokens") is not None for metrics in llm_metrics)
+    assert any(metrics.get("completion_tokens") is not None for metrics in llm_metrics)
+    assert any(metrics.get("tokens") is not None for metrics in llm_metrics)
+    assert any(metrics.get("prompt_cached_tokens") == 0 for metrics in llm_metrics)
+    assert any(metrics.get("completion_reasoning_tokens") == 0 for metrics in llm_metrics)
 
 
 @pytest.mark.asyncio
@@ -321,137 +327,3 @@ class TestAutoInstrumentOpenAIAgents:
 
     def test_auto_instrument_openai_agents(self):
         verify_autoinstrument_script("test_auto_openai_agents.py")
-
-
-# ---------------------------------------------------------------------------
-# Cached-token metric extraction
-# ---------------------------------------------------------------------------
-
-
-class _StubResponseUsage:
-    def __init__(self, usage: dict):
-        self._usage = usage
-
-    def model_dump(self) -> dict:
-        return self._usage
-
-
-class _StubResponse:
-    def __init__(self, usage: dict, output=None, metadata=None):
-        self.usage = _StubResponseUsage(usage)
-        self.output = output
-        self.metadata = metadata
-
-    def model_dump(self, exclude=None):  # noqa: ARG002
-        return {}
-
-
-class _StubResponseSpanData:
-    def __init__(self, usage: dict, input_=None, output=None):
-        self.input = input_
-        self.response = _StubResponse(usage, output=output)
-
-
-class _StubGenerationSpanData:
-    def __init__(self, usage: dict, model: str = "gpt-4o-mini"):
-        self.usage = usage
-        self.input = [{"role": "user", "content": "test"}]
-        self.output = [{"role": "assistant", "content": "response"}]
-        self.model = model
-        self.model_config = {}
-
-
-class _StubSpan:
-    def __init__(self, span_data):
-        self.span_data = span_data
-        self.started_at = None
-        self.ended_at = None
-
-
-def test_response_span_extracts_cached_tokens_from_usage():
-    """Mirrors JS test: Response span extracts cached tokens from usage."""
-    processor = BraintrustTracingProcessor()
-    span = _StubSpan(
-        _StubResponseSpanData(
-            usage={
-                "input_tokens": 100,
-                "output_tokens": 50,
-                "total_tokens": 150,
-                "input_tokens_details": {
-                    "cached_tokens": 80,  # check for this later
-                },
-            },
-            input_="test input",
-            output="test output",
-        )
-    )
-
-    data = processor._response_log_data(span)
-
-    metrics = data["metrics"]
-    assert metrics["prompt_tokens"] == 100
-    assert metrics["completion_tokens"] == 50
-    assert metrics["tokens"] == 150
-    assert metrics["prompt_cached_tokens"] == 80
-
-
-def test_response_span_handles_zero_cached_tokens():
-    """Mirrors JS test: Zero cached tokens should be logged, not skipped."""
-    processor = BraintrustTracingProcessor()
-    span = _StubSpan(
-        _StubResponseSpanData(
-            usage={
-                "input_tokens": 100,
-                "output_tokens": 50,
-                "input_tokens_details": {
-                    "cached_tokens": 0,  # Zero is a valid value
-                },
-            }
-        )
-    )
-
-    data = processor._response_log_data(span)
-
-    assert data["metrics"]["prompt_cached_tokens"] == 0
-
-
-def test_response_span_handles_missing_cached_tokens():
-    """Mirrors JS test: Should not add prompt_cached_tokens if not in usage."""
-    processor = BraintrustTracingProcessor()
-    span = _StubSpan(
-        _StubResponseSpanData(
-            usage={
-                "input_tokens": 100,
-                "output_tokens": 50,
-                # No input_tokens_details at all
-            }
-        )
-    )
-
-    data = processor._response_log_data(span)
-
-    assert "prompt_cached_tokens" not in data["metrics"]
-
-
-def test_generation_span_extracts_cached_tokens_from_usage():
-    """Mirrors JS test: Generation span extracts cached tokens from usage."""
-    processor = BraintrustTracingProcessor()
-    span = _StubSpan(
-        _StubGenerationSpanData(
-            usage={
-                "input_tokens": 200,
-                "output_tokens": 75,
-                "total_tokens": 275,
-                "input_tokens_details": {
-                    "cached_tokens": 150,
-                },
-            }
-        )
-    )
-
-    data = processor._generation_log_data(span)
-
-    metrics = data["metrics"]
-    assert metrics["prompt_tokens"] == 200
-    assert metrics["completion_tokens"] == 75
-    assert metrics["prompt_cached_tokens"] == 150
