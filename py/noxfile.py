@@ -538,9 +538,7 @@ def pylint(session):
     files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
     # Also lint repo-root examples/ — they live outside py/ but rely on the
     # same `lint` dependency-group, so we cover them in the same invocation.
-    examples_result = session.run(
-        "git", "-C", "../examples", "ls-files", "**/*.py", silent=True, log=False
-    )
+    examples_result = session.run("git", "-C", "../examples", "ls-files", "**/*.py", silent=True, log=False)
     files += [f"../examples/{path}" for path in examples_result.strip().splitlines() if path]
     if not files:
         return
