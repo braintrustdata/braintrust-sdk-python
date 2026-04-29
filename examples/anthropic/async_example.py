@@ -19,7 +19,7 @@ async def stream():
     async with client.messages.stream(
         max_tokens=1024,
         messages=[{"role": "user", "content": "Write me a haiku about a stream."}],
-        model="claude-3-5-sonnet-latest",
+        model="claude-haiku-4-5",
     ) as stream:
         async for event in stream:
             pass
@@ -30,7 +30,7 @@ async def stream():
 
 async def create():
     msg = await client.messages.create(
-        model="claude-3-5-sonnet-latest",
+        model="claude-haiku-4-5",
         max_tokens=1024,
         messages=[{"role": "user", "content": "Write me a haiku about creation."}],
     )
@@ -39,7 +39,7 @@ async def create():
 
 async def create_with_stream():
     stream = await client.messages.create(
-        model="claude-3-5-sonnet-latest",
+        model="claude-haiku-4-5",
         max_tokens=1024,
         messages=[{"role": "user", "content": "Write me a haiku about creation."}],
         stream=True,

@@ -23,7 +23,7 @@ def answer_question(body: str) -> str:
     ]
 
     result = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=prompt,
         temperature=0.5,
     )

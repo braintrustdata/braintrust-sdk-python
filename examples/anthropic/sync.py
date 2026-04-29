@@ -16,7 +16,7 @@ client = anthropic.Anthropic()
 @braintrust.traced
 def ask_anthropic_sync(question, system=None):
     args = {
-        "model": "claude-3-haiku-20240307",
+        "model": "claude-haiku-4-5",
         "max_tokens": 300,
         "temperature": 0.5,
         "messages": [{"role": "user", "content": question}],
@@ -31,7 +31,7 @@ def ask_anthropic_sync(question, system=None):
 def ask_anthropic_stream(question, system=None):
     args = {
         "max_tokens": 1024,
-        "model": "claude-3-haiku-20240307",
+        "model": "claude-haiku-4-5",
         "messages": [{"role": "user", "content": question}],
     }
     if system:
