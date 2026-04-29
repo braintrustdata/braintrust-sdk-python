@@ -444,7 +444,7 @@ TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 def test_temporal(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "temporalio", version)
-    _run_tests(session, "braintrust/contrib/temporal")
+    _run_tests(session, f"{INTEGRATION_DIR}/temporal")
 
 
 PYTEST_VERSIONS = _get_matrix_versions("pytest-matrix")

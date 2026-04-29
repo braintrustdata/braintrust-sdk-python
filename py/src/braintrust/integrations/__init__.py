@@ -17,6 +17,7 @@ from .openai_agents import OpenAIAgentsIntegration
 from .openrouter import OpenRouterIntegration
 from .pydantic_ai import PydanticAIIntegration
 from .strands import StrandsIntegration
+from .temporal import TemporalIntegration
 
 
 __all__ = [
@@ -39,4 +40,5 @@ __all__ = [
     "OpenRouterIntegration",
     "PydanticAIIntegration",
     "StrandsIntegration",
+    "TemporalIntegration",
 ]

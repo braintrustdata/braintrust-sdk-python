@@ -27,6 +27,7 @@ from braintrust.integrations import (
     OpenRouterIntegration,
     PydanticAIIntegration,
     StrandsIntegration,
+    TemporalIntegration,
 )
 from braintrust.integrations.base import BaseIntegration
 
@@ -68,6 +69,7 @@ def auto_instrument(
     autogen: bool = True,
     crewai: bool = True,
     strands: bool = True,
+    temporal: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -98,6 +100,7 @@ def auto_instrument(
         autogen: Enable AutoGen instrumentation (default: True)
         crewai: Enable CrewAI instrumentation (default: True)
         strands: Enable Strands Agents instrumentation (default: True)
+        temporal: Enable Temporal instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -183,6 +186,8 @@ def auto_instrument(
         results["crewai"] = _instrument_integration(CrewAIIntegration)
     if strands:
         results["strands"] = _instrument_integration(StrandsIntegration)
+    if temporal:
+        results["temporal"] = _instrument_integration(TemporalIntegration)
 
     return results
 

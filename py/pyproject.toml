@@ -55,6 +55,8 @@ otel = [
 performance = [
     "orjson; platform_python_implementation != 'PyPy'",
 ]
+# Deprecated: Temporal is now available via braintrust.auto_instrument();
+# keep this extra as a compatibility alias until a future major release.
 temporal = [
     "temporalio>=1.19.0; python_version>='3.10'",
 ]

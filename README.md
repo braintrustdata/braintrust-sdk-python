@@ -71,6 +71,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [Strands](py/src/braintrust/integrations/strands/) | Yes | `strands-agents>=1.20.0` |
 | [Agno](py/src/braintrust/integrations/agno/) | Yes | `agno>=2.1.0` |
 | [AgentScope](py/src/braintrust/integrations/agentscope/) | Yes | `agentscope>=1.0.0` |
+| [Temporal](py/src/braintrust/integrations/temporal/) | Yes | `temporalio>=1.19.0` |
 | [pytest plugin](py/src/braintrust/wrappers/pytest_plugin/README.md) | No | `pytest>=8` |
 
 ## Documentation

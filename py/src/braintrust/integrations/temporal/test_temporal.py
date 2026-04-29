@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 
 
 pytest.importorskip("temporalio")
@@ -19,7 +20,7 @@ import temporalio.converter
 import temporalio.testing
 import temporalio.worker
 import temporalio.workflow
-from braintrust.contrib.temporal import BraintrustInterceptor, BraintrustPlugin
+from braintrust.integrations.temporal import BraintrustInterceptor, BraintrustPlugin
 from braintrust.test_helpers import init_test_logger
 from temporalio.common import RetryPolicy
 from temporalio.worker import Worker
@@ -218,6 +219,23 @@ class ParentWorkflow:
         )
 
         return child_result
+
+
+class TestAutoInstrumentation:
+    """Tests for Temporal auto-instrumentation helpers."""
+
+    def test_auto_instrument_temporal_subprocess(self):
+        verify_autoinstrument_script("test_auto_temporal.py")
+
+    def test_contrib_temporal_compat_import_deprecated(self):
+        with pytest.warns(DeprecationWarning, match="braintrust.contrib.temporal is deprecated"):
+            import importlib
+            import sys
+
+            sys.modules.pop("braintrust.contrib.temporal", None)
+            compat = importlib.import_module("braintrust.contrib.temporal")
+
+        assert compat.BraintrustPlugin is BraintrustPlugin
 
 
 # Integration Tests
