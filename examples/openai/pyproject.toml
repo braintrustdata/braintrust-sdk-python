@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-openai-example"
+version = "0.1.0"
+description = "Trace OpenAI calls with Braintrust via wrap_openai"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "openai",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-litellm-example"
+version = "0.1.0"
+description = "LiteLLM completion traced with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "litellm",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

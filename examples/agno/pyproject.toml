@@ -1,0 +1,14 @@
+[project]
+name = "braintrust-agno-example"
+version = "0.1.0"
+description = "Agno agents and teams traced via Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "agno",
+    "openai",
+    "yfinance",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

@@ -1454,9 +1454,9 @@ async def test_adk_complex_nested_schema(memory_logger):
 
 
 @pytest.mark.asyncio
-async def test_serialize_config_handles_all_schema_fields():
-    """Test that _serialize_config handles all 4 schema fields."""
-    from braintrust.integrations.adk.tracing import _serialize_config
+async def test_capture_config_handles_all_schema_fields():
+    """Test that _capture_config handles all 4 schema fields."""
+    from braintrust.integrations.adk.tracing import _capture_config
 
     class TestSchema(BaseModel):
         value: str = Field(description="Test value")
@@ -1470,7 +1470,7 @@ async def test_serialize_config_handles_all_schema_fields():
         "other_field": "keep me",
     }
 
-    serialized = _serialize_config(config)
+    serialized = _capture_config(config)
 
     assert isinstance(serialized, dict)
 
@@ -1479,23 +1479,24 @@ async def test_serialize_config_handles_all_schema_fields():
         assert field in serialized, f"Missing {field}"
         schema = serialized[field]
         assert isinstance(schema, dict)
-        assert "properties" in schema
-        assert "value" in schema["properties"]
-        assert schema["properties"]["value"]["description"] == "Test value"
+        properties = schema.get("properties")
+        assert isinstance(properties, dict)
+        assert "value" in properties
+        assert properties["value"]["description"] == "Test value"
 
     # Other fields should be preserved
     assert "other_field" in serialized
 
 
 @pytest.mark.asyncio
-async def test_serialize_config_handles_non_pydantic():
-    """Test that _serialize_config handles non-Pydantic values gracefully."""
-    from braintrust.integrations.adk.tracing import _serialize_config
+async def test_capture_config_handles_non_pydantic():
+    """Test that _capture_config handles non-Pydantic values gracefully."""
+    from braintrust.integrations.adk.tracing import _capture_config
 
     # Test with non-Pydantic values
     config = {"response_schema": "not a pydantic model", "other_field": {"key": "value"}}
 
-    serialized = _serialize_config(config)
+    serialized = _capture_config(config)
 
     assert isinstance(serialized, dict)
     # Non-Pydantic schema should remain as-is
@@ -1695,28 +1696,28 @@ async def test_adk_response_json_schema_dict(memory_logger):
 
 
 @pytest.mark.asyncio
-async def test_serialize_config_preserves_none():
-    """Test that _serialize_config returns None when config is None (not empty dict)."""
-    from braintrust.integrations.adk.tracing import _serialize_config
+async def test_capture_config_preserves_none():
+    """Test that _capture_config returns None when config is None (not empty dict)."""
+    from braintrust.integrations.adk.tracing import _capture_config
 
     # None should be preserved as None, not converted to {}
-    result = _serialize_config(None)
+    result = _capture_config(None)
     assert result is None, f"Expected None, got {result}"
 
     # Empty dict should remain empty dict
-    result = _serialize_config({})
+    result = _capture_config({})
     assert result == {}
 
     # False should be preserved as False
-    result = _serialize_config(False)
+    result = _capture_config(False)
     assert result is False
 
     # 0 should be preserved as 0
-    result = _serialize_config(0)
+    result = _capture_config(0)
     assert result == 0
 
     # Empty string should be preserved
-    result = _serialize_config("")
+    result = _capture_config("")
     assert result == ""
 
 

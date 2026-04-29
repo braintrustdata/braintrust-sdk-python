@@ -100,7 +100,7 @@ class EvalResult(SerializableDataClass, Generic[Input, Output, Expected]):
 
     input: Input
     output: Output
-    scores: dict[str, float | None]
+    scores: Mapping[str, float | None]
     classifications: dict[str, list[ClassificationItem]] | None = None
     expected: Expected | None = None
     metadata: Metadata | None = None

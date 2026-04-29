@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-pydantic-ai-example"
+version = "0.1.0"
+description = "Trace a Pydantic AI agent via braintrust.auto_instrument()"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "pydantic-ai",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

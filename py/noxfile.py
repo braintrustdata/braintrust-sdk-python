@@ -536,12 +536,20 @@ def pylint(session):
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
+    # Also lint repo-root examples/ — they live outside py/ but rely on the
+    # same `lint` dependency-group, so we cover them in the same invocation.
+    examples_result = session.run("git", "-C", "../examples", "ls-files", "**/*.py", silent=True, log=False)
+    files += [f"../examples/{path}" for path in examples_result.strip().splitlines() if path]
     if not files:
         return
     # scripts/ may use APIs only available in the latest pinned Python version
     # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
     if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
         files = [f for f in files if not f.startswith("scripts/")]
+    # The lint group skips crewai on Python 3.14 (its transitive pydantic-core
+    # has no 3.14 wheel yet), so skip the matching example too.
+    if sys.version_info[:2] >= (3, 14):
+        files = [f for f in files if not f.startswith("../examples/crewai/")]
     session.run("pylint", "--errors-only", *files)
 
 

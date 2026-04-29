@@ -1,0 +1,26 @@
+import asyncio
+
+import braintrust
+
+
+braintrust.auto_instrument()
+braintrust.init_logger(project="simple-agent-project")
+
+from agno.agent import Agent
+from agno.models.openai import OpenAIChat
+from agno.tools.yfinance import YFinanceTools
+
+
+async def main():
+    agent = Agent(
+        name="Stock Price Agent",
+        model=OpenAIChat(id="gpt-4o-mini"),
+        tools=[YFinanceTools()],
+        instructions="You are a stock price agent. Answer questions in the style of a stock analyst.",
+    )
+
+    async for message in agent.arun("What is the current price of FIG?", stream=True):
+        print(message)
+
+
+asyncio.run(main())

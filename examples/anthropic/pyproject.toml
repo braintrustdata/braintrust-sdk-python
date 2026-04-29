@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-anthropic-example"
+version = "0.1.0"
+description = "Trace the sync and async Anthropic clients with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "anthropic",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }
