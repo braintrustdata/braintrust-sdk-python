@@ -6,7 +6,8 @@ This repository contains Braintrust's Python SDKs and integrations, including:
 
 - The main `braintrust` SDK package in [`./py`](./py)
 - Built-in integrations under [`py/src/braintrust/integrations`](py/src/braintrust/integrations) and related compatibility packages under [`./integrations`](./integrations)
-- Examples, tests, and local development tooling for Python SDK development
+- Self-contained `uv`-project examples for every integration in [`./examples`](./examples)
+- Tests and local development tooling for Python SDK development
 
 ## Quickstart
 

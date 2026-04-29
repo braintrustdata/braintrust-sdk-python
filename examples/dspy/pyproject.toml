@@ -1,0 +1,14 @@
+[project]
+name = "braintrust-dspy-example"
+version = "0.1.0"
+description = "DSPy ReAct agent traced via Braintrust + LiteLLM token metrics"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "dspy",
+    "litellm",
+    "openai",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }
