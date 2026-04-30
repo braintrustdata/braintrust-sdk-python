@@ -682,8 +682,14 @@ class _TracedStream(NamedWrapper):
     """Traced sync stream. Iterates via the traced generator while delegating
     SDK-specific attributes (e.g. .close(), .response) to the original stream."""
 
-    def __init__(self, original_stream: Any, traced_generator: Any) -> None:
+    def __init__(
+        self,
+        original_stream: Any,
+        traced_generator: Any,
+        on_close: Callable[[], Any] | None = None,
+    ) -> None:
         self._traced_generator = traced_generator
+        self._on_close = on_close
         super().__init__(original_stream)
 
     def __iter__(self) -> Any:
@@ -697,18 +703,53 @@ class _TracedStream(NamedWrapper):
             self._wrapped.__enter__()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> Any:
-        if hasattr(self._wrapped, "__exit__"):
-            return self._wrapped.__exit__(exc_type, exc_val, exc_tb)
+    def _close_traced_generator(self) -> None:
+        close = getattr(self._traced_generator, "close", None)
+        if callable(close):
+            close()
+        # Closing a generator that was never advanced does not run its
+        # ``finally`` block. The explicit close callback lets callers finalize
+        # spans for streams that are opened and then closed before iteration.
+        if self._on_close is not None:
+            self._on_close()
+
+    def close(self) -> Any:
+        close = getattr(self._wrapped, "close", None)
+        try:
+            self._close_traced_generator()
+        except Exception:
+            if callable(close):
+                close()
+            raise
+        if callable(close):
+            return close()
         return None
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> Any:
+        result = None
+        try:
+            self._close_traced_generator()
+        except Exception:
+            if exc_type is None:
+                raise
+        finally:
+            if hasattr(self._wrapped, "__exit__"):
+                result = self._wrapped.__exit__(exc_type, exc_val, exc_tb)
+        return result
 
 
 class _AsyncTracedStream(NamedWrapper):
     """Traced async stream. Iterates via the traced generator while delegating
     SDK-specific attributes (e.g. .close(), .response) to the original stream."""
 
-    def __init__(self, original_stream: Any, traced_generator: Any) -> None:
+    def __init__(
+        self,
+        original_stream: Any,
+        traced_generator: Any,
+        on_close: Callable[[], Any] | None = None,
+    ) -> None:
         self._traced_generator = traced_generator
+        self._on_close = on_close
         super().__init__(original_stream)
 
     def __aiter__(self) -> Any:
@@ -722,10 +763,55 @@ class _AsyncTracedStream(NamedWrapper):
             await self._wrapped.__aenter__()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> Any:
-        if hasattr(self._wrapped, "__aexit__"):
-            return await self._wrapped.__aexit__(exc_type, exc_val, exc_tb)
+    async def _aclose_traced_generator(self) -> None:
+        aclose = getattr(self._traced_generator, "aclose", None)
+        if callable(aclose):
+            await aclose()
+        else:
+            close = getattr(self._traced_generator, "close", None)
+            if callable(close):
+                close()
+        # Closing a generator that was never advanced does not run its
+        # ``finally`` block. The explicit close callback lets callers finalize
+        # spans for streams that are opened and then closed before iteration.
+        if self._on_close is not None:
+            result = self._on_close()
+            if inspect.isawaitable(result):
+                await result
+
+    async def aclose(self) -> Any:
+        aclose = getattr(self._wrapped, "aclose", None)
+        close = getattr(self._wrapped, "close", None)
+        try:
+            await self._aclose_traced_generator()
+        except Exception:
+            if callable(aclose):
+                await aclose()
+            elif callable(close):
+                result = close()
+                if inspect.isawaitable(result):
+                    await result
+            raise
+        if callable(aclose):
+            return await aclose()
+        if callable(close):
+            result = close()
+            if inspect.isawaitable(result):
+                return await result
+            return result
         return None
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> Any:
+        result = None
+        try:
+            await self._aclose_traced_generator()
+        except Exception:
+            if exc_type is None:
+                raise
+        finally:
+            if hasattr(self._wrapped, "__aexit__"):
+                result = await self._wrapped.__aexit__(exc_type, exc_val, exc_tb)
+        return result
 
 
 class _RawResponseWithTracedStream(NamedWrapper):
@@ -1411,6 +1497,177 @@ class _AudioFileWrapper(BaseWrapper):
 class TranscriptionWrapper(_AudioFileWrapper):
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         super().__init__(create_fn, acreate_fn, "Transcription")
+
+    @staticmethod
+    def _stream_event_type(event: Any) -> str | None:
+        if isinstance(event, dict):
+            value = event.get("type")
+            return value if isinstance(value, str) else None
+        value = getattr(event, "type", None)
+        return value if isinstance(value, str) else None
+
+    @staticmethod
+    def _stream_event_value(event: Any, key: str) -> Any:
+        if isinstance(event, dict):
+            return event.get(key)
+        return getattr(event, key, None)
+
+    @classmethod
+    def _postprocess_streaming_results(
+        cls,
+        all_results: list[Any],
+        *,
+        start: float,
+        end: float,
+        first_token_time: float | None,
+    ) -> dict[str, Any]:
+        deltas = []
+        segments = []
+        done_text = None
+        usage = None
+
+        for result in all_results:
+            event_type = cls._stream_event_type(result)
+            if event_type == "transcript.text.delta":
+                delta = cls._stream_event_value(result, "delta")
+                if isinstance(delta, str):
+                    deltas.append(delta)
+                continue
+            if event_type == "transcript.text.done":
+                text = cls._stream_event_value(result, "text")
+                if isinstance(text, str):
+                    done_text = text
+                event_usage = cls._stream_event_value(result, "usage")
+                if event_usage is not None:
+                    usage = event_usage
+                continue
+            if event_type == "transcript.text.segment":
+                text = cls._stream_event_value(result, "text")
+                if isinstance(text, str):
+                    segments.append(text)
+
+        output = done_text if done_text is not None else "".join(deltas)
+        if not output and segments:
+            output = "".join(segments)
+
+        metrics = _timing_metrics(start, end, first_token_time)
+        metrics.update(_parse_metrics_from_usage(usage))
+        result: dict[str, Any] = {"metrics": metrics}
+        if output:
+            result["output"] = output
+        return result
+
+    def create(self, *args: Any, **kwargs: Any) -> Any:
+        if kwargs.get("stream", False) is not True:
+            return super().create(*args, **kwargs)
+
+        params = self._parse_params(kwargs)
+        span = start_span(
+            **merge_dicts(dict(name=self._name, span_attributes={"type": SpanTypeAttribute.LLM}), params)
+        )
+        should_end = True
+
+        try:
+            start = time.time()
+            raw_response = self._create_fn(*args, **kwargs)
+            all_results = []
+            first_token_time = None
+            last_event_time = None
+            finalized = False
+
+            def finalize() -> None:
+                nonlocal finalized
+                if finalized:
+                    return
+                finalized = True
+                span.log(
+                    **self._postprocess_streaming_results(
+                        all_results,
+                        start=start,
+                        end=last_event_time or time.time(),
+                        first_token_time=first_token_time,
+                    )
+                )
+                span.end()
+
+            def gen():
+                nonlocal first_token_time, last_event_time
+                try:
+                    for item in raw_response:
+                        event_time = time.time()
+                        event = _try_to_dict(item)
+                        if first_token_time is None and self._stream_event_type(event) in {
+                            "transcript.text.delta",
+                            "transcript.text.done",
+                        }:
+                            first_token_time = event_time
+                        last_event_time = event_time
+                        all_results.append(event)
+                        yield item
+                finally:
+                    finalize()
+
+            should_end = False
+            return _TracedStream(raw_response, gen(), on_close=finalize)
+        finally:
+            if should_end:
+                span.end()
+
+    async def acreate(self, *args: Any, **kwargs: Any) -> Any:
+        if kwargs.get("stream", False) is not True:
+            return await super().acreate(*args, **kwargs)
+
+        params = self._parse_params(kwargs)
+        span = start_span(
+            **merge_dicts(dict(name=self._name, span_attributes={"type": SpanTypeAttribute.LLM}), params)
+        )
+        should_end = True
+
+        try:
+            start = time.time()
+            raw_response = await self._acreate_fn(*args, **kwargs)
+            all_results = []
+            first_token_time = None
+            last_event_time = None
+            finalized = False
+
+            def finalize() -> None:
+                nonlocal finalized
+                if finalized:
+                    return
+                finalized = True
+                span.log(
+                    **self._postprocess_streaming_results(
+                        all_results,
+                        start=start,
+                        end=last_event_time or time.time(),
+                        first_token_time=first_token_time,
+                    )
+                )
+                span.end()
+
+            async def gen():
+                nonlocal first_token_time, last_event_time
+                try:
+                    async for item in raw_response:
+                        event_time = time.time()
+                        event = _try_to_dict(item)
+                        if first_token_time is None and self._stream_event_type(event) in {
+                            "transcript.text.delta",
+                            "transcript.text.done",
+                        }:
+                            first_token_time = event_time
+                        last_event_time = event_time
+                        all_results.append(event)
+                        yield item
+                finally:
+                    finalize()
+
+            should_end = False
+            return _AsyncTracedStream(raw_response, gen(), on_close=finalize)
+        finally:
+            if should_end:
+                span.end()
 
     def process_output(self, response: Any, span: Span):
         metrics = {}
