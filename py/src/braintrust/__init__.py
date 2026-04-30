@@ -62,6 +62,7 @@ if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"
 
 from .audit import *
 from .auto import auto_instrument as auto_instrument
+from .dataset_pipeline import *
 from .framework import *
 from .framework2 import *
 from .functions.invoke import *
