@@ -24,10 +24,15 @@ from google.genai.client import Client
 
 
 PROJECT_NAME = "test-genai-app"
-MODEL = "gemini-2.0-flash-001"
+MODEL = (
+    "gemini-3.1-flash-lite-preview"
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+    else "gemini-2.0-flash-001"
+)
 EMBEDDING_MODEL = "gemini-embedding-001"
 IMAGE_MODEL = "imagen-4.0-fast-generate-001"
 REASONING_MODEL = "gemini-2.5-flash"
+TOOL_MODEL = "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else MODEL
 INTERACTIONS_MODEL = "gemini-2.5-flash"
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
@@ -469,6 +474,7 @@ def test_image_input_wrapped_in_content(memory_logger):
 def test_tool_use(memory_logger, mode):
     """Test function calling / tool use in sync modes."""
     assert not memory_logger.pop()
+    model = TOOL_MODEL
 
     def get_weather(location: str, unit: str = "celsius") -> str:
         """Get the current weather for a location.
@@ -485,7 +491,7 @@ def test_tool_use(memory_logger, mode):
 
     if mode == "sync":
         response = client.models.generate_content(
-            model=MODEL,
+            model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
@@ -498,7 +504,7 @@ def test_tool_use(memory_logger, mode):
         )
     elif mode == "stream":
         stream = client.models.generate_content_stream(
-            model=MODEL,
+            model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
@@ -523,7 +529,7 @@ def test_tool_use(memory_logger, mode):
     assert len(spans) >= 1
     # Check the first span (initial request with tool call)
     span = spans[0]
-    assert span["metadata"]["model"] == MODEL
+    assert span["metadata"]["model"] == model
     assert "Paris" in str(span["input"]) or "weather" in str(span["input"])
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
@@ -539,6 +545,7 @@ def test_tool_use(memory_logger, mode):
 async def test_tool_use_async(memory_logger, mode):
     """Test function calling / tool use in async modes."""
     assert not memory_logger.pop()
+    model = TOOL_MODEL
 
     def get_weather(location: str, unit: str = "celsius") -> str:
         """Get the current weather for a location.
@@ -555,7 +562,7 @@ async def test_tool_use_async(memory_logger, mode):
 
     if mode == "async":
         response = await client.aio.models.generate_content(
-            model=MODEL,
+            model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
@@ -568,7 +575,7 @@ async def test_tool_use_async(memory_logger, mode):
         )
     elif mode == "async_stream":
         stream = await client.aio.models.generate_content_stream(
-            model=MODEL,
+            model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
                 tools=[get_weather],
@@ -595,7 +602,7 @@ async def test_tool_use_async(memory_logger, mode):
     assert len(spans) >= 1
     # Check the first span (initial request with tool call)
     span = spans[0]
-    assert span["metadata"]["model"] == MODEL
+    assert span["metadata"]["model"] == model
     assert "Paris" in str(span["input"]) or "weather" in str(span["input"])
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
@@ -804,6 +811,7 @@ def test_short_max_tokens(memory_logger):
 def test_tool_use_with_result(memory_logger):
     """Verify function-response turns are captured in traced conversation history."""
     assert not memory_logger.pop()
+    model = TOOL_MODEL
 
     client = Client()
 
@@ -827,7 +835,7 @@ def test_tool_use_with_result(memory_logger):
     tool = types.Tool(function_declarations=[function])
 
     first_response = client.models.generate_content(
-        model=MODEL,
+        model=model,
         contents="What is 127 multiplied by 49?",
         config=types.GenerateContentConfig(
             tools=[tool],
@@ -841,7 +849,7 @@ def test_tool_use_with_result(memory_logger):
     assert tool_call.name == "calculate"
 
     second_response = client.models.generate_content(
-        model=MODEL,
+        model=model,
         contents=[
             types.Content(role="user", parts=[types.Part.from_text(text="What is 127 multiplied by 49?")]),
             first_response.candidates[0].content,
@@ -862,20 +870,20 @@ def test_tool_use_with_result(memory_logger):
     )
 
     assert second_response.text
-    assert "6223" in second_response.text
+    assert "6223" in second_response.text.replace(",", "")
 
     spans = memory_logger.pop()
     assert len(spans) == 2
 
     first_span, second_span = spans
-    assert first_span["metadata"]["model"] == MODEL
+    assert first_span["metadata"]["model"] == model
     assert "calculate" in str(first_span["input"])
     assert first_span["output"]
 
-    assert second_span["metadata"]["model"] == MODEL
+    assert second_span["metadata"]["model"] == model
     assert "function_response" in str(second_span["input"])
     assert "6223" in str(second_span["input"])
-    assert "6223" in str(second_span["output"])
+    assert "6223" in str(second_span["output"]).replace(",", "")
 
 
 @pytest.mark.vcr
@@ -1406,12 +1414,14 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
     second_response = client.interactions.create(
         model=INTERACTIONS_MODEL,
         previous_interaction_id=first_response.id,
-        input=interactions.FunctionResultContent(
-            type="function_result",
-            call_id=tool_call.id,
-            name=tool_call.name,
-            result={"forecast": "sunny"},
-        ),
+        input=[
+            interactions.FunctionResultContent(
+                type="function_result",
+                call_id=tool_call.id,
+                name=tool_call.name,
+                result={"forecast": "sunny"},
+            )
+        ],
         tools=[tool],
     )
 
@@ -1457,12 +1467,14 @@ def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logge
     second_response = client.interactions.create(
         model=INTERACTIONS_MODEL,
         previous_interaction_id=first_response.id,
-        input=interactions.FunctionResultContent(
-            type="function_result",
-            call_id=tool_call.id,
-            name=tool_call.name,
-            result={"forecast": "sunny"},
-        ),
+        input=[
+            interactions.FunctionResultContent(
+                type="function_result",
+                call_id=tool_call.id,
+                name=tool_call.name,
+                result={"forecast": "sunny"},
+            )
+        ],
         tools=[tool],
     )
 

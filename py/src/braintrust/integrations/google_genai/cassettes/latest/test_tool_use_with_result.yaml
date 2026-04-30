@@ -22,36 +22,36 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
-        \             \"args\": {\n                \"b\": 49,\n                \"a\":
-        127,\n                \"operation\": \"multiply\"\n              }\n            }\n
+        \             \"args\": {\n                \"operation\": \"multiply\",\n
+        \               \"b\": 49,\n                \"a\": 127\n              }\n
+        \           },\n            \"thoughtSignature\": \"Cv4BAQw51seil+EEX28D5/5Me3tGSc78yrwazJxiiYpYxSK2l9rdb47bocEJ1fI9xwg9SPZDHQLdMY5345JebHRLqy7+d9tvdsYjGfN3bhqkhafvdadQNEsdXj9iiICGoUTW7i6xRAZkA9u4v5s/L8AC+j4ye/riZN/n0H3XkJ1qlajXmQcEuOZPPPAbC00p8GmHYQb5SD6dGfdR+JW0nClZxUu0yk45CYN5zFsdj3/im091SbeD773fAz4SWwA1oRUCsy+XSeeMnYtJROwtRVb4vs/18KPKhUpZ2+0k1C4mfjGwJ9ZbZgm6y9kkwlfuGsRvYNOY76w5h7TF35zARe0=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.05700718079294477\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 17,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\":
-        24,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 17\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      }\n
-        \   ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
-        \"vazNabecOo7RjMcP4tTv-Ag\"\n}\n"
+        \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
+        function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 165,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 55\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash\",\n  \"responseId\": \"PHPzafHGKe2Y_uMP0PS8wAE\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Wed, 01 Apr 2026 23:39:42 GMT
+      - Thu, 30 Apr 2026 15:20:29 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=611
+      - gfet4t7; dur=922
       Transfer-Encoding:
       - chunked
       Vary:
@@ -67,21 +67,22 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '835'
+      - '1170'
     status:
       code: 200
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"args": {"b": 49, "a": 127, "operation":
-      "multiply"}, "name": "calculate"}}], "role": "model"}, {"parts": [{"functionResponse":
-      {"name": "calculate", "response": {"result": 6223}}}], "role": "user"}], "tools":
-      [{"functionDeclarations": [{"description": "Perform a mathematical calculation",
-      "name": "calculate", "parameters_json_schema": {"type": "object", "properties":
-      {"operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"],
-      "description": "The mathematical operation"}, "a": {"type": "number", "description":
-      "First number"}, "b": {"type": "number", "description": "Second number"}}, "required":
-      ["operation", "a", "b"]}}]}], "generationConfig": {"maxOutputTokens": 500}}'
+      "user"}, {"parts": [{"functionCall": {"args": {"operation": "multiply", "b":
+      49, "a": 127}, "name": "calculate"}, "thoughtSignature": "Cv4BAQw51seil-EEX28D5_5Me3tGSc78yrwazJxiiYpYxSK2l9rdb47bocEJ1fI9xwg9SPZDHQLdMY5345JebHRLqy7-d9tvdsYjGfN3bhqkhafvdadQNEsdXj9iiICGoUTW7i6xRAZkA9u4v5s_L8AC-j4ye_riZN_n0H3XkJ1qlajXmQcEuOZPPPAbC00p8GmHYQb5SD6dGfdR-JW0nClZxUu0yk45CYN5zFsdj3_im091SbeD773fAz4SWwA1oRUCsy-XSeeMnYtJROwtRVb4vs_18KPKhUpZ2-0k1C4mfjGwJ9ZbZgm6y9kkwlfuGsRvYNOY76w5h7TF35zARe0="}],
+      "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
+      {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
+      "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
+      {"type": "object", "properties": {"operation": {"type": "string", "enum": ["add",
+      "subtract", "multiply", "divide"], "description": "The mathematical operation"},
+      "a": {"type": "number", "description": "First number"}, "b": {"type": "number",
+      "description": "Second number"}}, "required": ["operation", "a", "b"]}}]}],
+      "generationConfig": {"maxOutputTokens": 500}}'
     headers:
       Accept:
       - '*/*'
@@ -90,40 +91,38 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '817'
+      - '1185'
       Content-Type:
       - application/json
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"127 multiplied by 49 is 6223.\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -4.5294407755136488e-06\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 27,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\":
-        42,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 27\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 15\n
-        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
-        \"vqzNaZffKurQjMcPrdDCuQ8\"\n}\n"
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        126,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\": 141,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 126\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\":
+        \"PXPzafGmLKea_uMPnuKamAc\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Wed, 01 Apr 2026 23:39:43 GMT
+      - Thu, 30 Apr 2026 15:20:30 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=497
+      - gfet4t7; dur=688
       Transfer-Encoding:
       - chunked
       Vary:
@@ -139,151 +138,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '682'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}], "tools": [{"functionDeclarations": [{"description": "Perform a mathematical
-      calculation", "name": "calculate", "parameters_json_schema": {"type": "object",
-      "properties": {"operation": {"type": "string", "enum": ["add", "subtract", "multiply",
-      "divide"], "description": "The mathematical operation"}, "a": {"type": "number",
-      "description": "First number"}, "b": {"type": "number", "description": "Second
-      number"}}, "required": ["operation", "a", "b"]}}]}], "generationConfig": {"maxOutputTokens":
-      500}}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '588'
-      Content-Type:
-      - application/json
-      Host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
-      x-goog-api-client:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
-  response:
-    body:
-      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
-        \             \"args\": {\n                \"a\": 127,\n                \"b\":
-        49,\n                \"operation\": \"multiply\"\n              }\n            }\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.25179011481148855\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 17,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\":
-        24,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 17\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      }\n
-        \   ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
-        \"56zNaYn_H5qW1MkPnoKR-AU\"\n}\n"
-    headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
-      - application/json; charset=UTF-8
-      Date:
-      - Wed, 01 Apr 2026 23:40:24 GMT
-      Server:
-      - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=645
-      Transfer-Encoding:
-      - chunked
-      Vary:
-      - Origin
-      - X-Origin
-      - Referer
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Gemini-Service-Tier:
-      - standard
-      X-XSS-Protection:
-      - '0'
-      content-length:
-      - '835'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"args": {"a": 127, "b": 49, "operation":
-      "multiply"}, "name": "calculate"}}], "role": "model"}, {"parts": [{"functionResponse":
-      {"name": "calculate", "response": {"result": 6223}}}], "role": "user"}], "tools":
-      [{"functionDeclarations": [{"description": "Perform a mathematical calculation",
-      "name": "calculate", "parameters_json_schema": {"type": "object", "properties":
-      {"operation": {"type": "string", "enum": ["add", "subtract", "multiply", "divide"],
-      "description": "The mathematical operation"}, "a": {"type": "number", "description":
-      "First number"}, "b": {"type": "number", "description": "Second number"}}, "required":
-      ["operation", "a", "b"]}}]}], "generationConfig": {"maxOutputTokens": 500}}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '817'
-      Content-Type:
-      - application/json
-      Host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
-      x-goog-api-client:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
-  response:
-    body:
-      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"127 multiplied by 49 is 6223.\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -4.5294407755136488e-06\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 27,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\":
-        42,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 27\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 15\n
-        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
-        \"6KzNaZ3BEdSu1MkPhtztoQ4\"\n}\n"
-    headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
-      - application/json; charset=UTF-8
-      Date:
-      - Wed, 01 Apr 2026 23:40:24 GMT
-      Server:
-      - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=537
-      Transfer-Encoding:
-      - chunked
-      Vary:
-      - Origin
-      - X-Origin
-      - Referer
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Gemini-Service-Tier:
-      - standard
-      X-XSS-Protection:
-      - '0'
-      content-length:
-      - '682'
+      - '544'
     status:
       code: 200
       message: OK
