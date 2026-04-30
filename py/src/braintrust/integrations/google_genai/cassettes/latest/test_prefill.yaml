@@ -17,101 +17,33 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"\\n\\nFingers tap the keys,\\nLogic
-        flows, a screen's bright gleam,\\nWorld from just a thought.\\n\"\n          }\n
-        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.54307379041399273\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 13,\n    \"candidatesTokenCount\": 28,\n    \"totalTokenCount\":
-        41,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 13\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 28\n
-        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
-        \"vKzNac_jIe6x1MkPjP3x6AQ\"\n}\n"
-    headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
-      - application/json; charset=UTF-8
-      Date:
-      - Wed, 01 Apr 2026 23:39:41 GMT
-      Server:
-      - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=657
-      Transfer-Encoding:
-      - chunked
-      Vary:
-      - Origin
-      - X-Origin
-      - Referer
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Gemini-Service-Tier:
-      - standard
-      X-XSS-Protection:
-      - '0'
-      content-length:
-      - '744'
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"contents": [{"parts": [{"text": "Write a haiku about coding."}], "role":
-      "user"}, {"parts": [{"text": "Here is a haiku:"}], "role": "model"}], "generationConfig":
-      {"maxOutputTokens": 200}}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '190'
-      Content-Type:
-      - application/json
-      Host:
-      - generativelanguage.googleapis.com
-      user-agent:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
-      x-goog-api-client:
-      - google-genai-sdk/1.70.0 gl-python/3.13.3
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
-  response:
-    body:
-      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"\\n\\nFingers tap the keys,\\nLogic
-        blooms in lines of code,\\nA new world takes form.\"\n          }\n        ],\n
+        [\n          {\n            \"text\": \"\\n\\nLogic flows in lines,\\nSilent
+        keys tap out the code,\\nWorld built out of light.\"\n          }\n        ],\n
         \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
-        \     \"avgLogprobs\": -0.46169886381729791\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 13,\n    \"candidatesTokenCount\": 23,\n    \"totalTokenCount\":
-        36,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 13\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 23\n
-        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\":
-        \"5qzNaeNYxbPUyQ_-tpf5Bw\"\n}\n"
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        15,\n    \"candidatesTokenCount\": 21,\n    \"totalTokenCount\": 36,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 15\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n
+        \ \"responseId\": \"O3PzaY-LFZ-8_uMP0IucgA0\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Wed, 01 Apr 2026 23:40:22 GMT
+      - Thu, 30 Apr 2026 15:20:27 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=552
+      - gfet4t7; dur=790
       Transfer-Encoding:
       - chunked
       Vary:
@@ -127,7 +59,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '731'
+      - '608'
     status:
       code: 200
       message: OK
