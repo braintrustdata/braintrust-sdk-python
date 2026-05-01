@@ -231,7 +231,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     # per-evaluator-name auto-created project (Eval(project_id=None) uses
     # name as the project name) instead of the project the evaluator was
     # registered against.
-    project_id = eval_data.get("project_id", evaluator.project_id)
+    project_id = eval_data.get("project_id") or evaluator.project_id
 
     try:
         eval_task = asyncio.create_task(

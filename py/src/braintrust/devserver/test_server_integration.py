@@ -300,8 +300,11 @@ def test_eval_uses_inline_request_parameters(api_key, org_name, monkeypatch):
     assert response.status_code == 200
 
 
-def test_eval_falls_back_to_evaluator_project_id_when_request_omits_it(api_key, org_name, monkeypatch):
-    """run_eval must honor the registered evaluator's project_id when the request omits it.
+@pytest.mark.parametrize("request_project_id", [pytest.param("", id="empty"), pytest.param("__omit__", id="omitted")])
+def test_eval_falls_back_to_evaluator_project_id_when_request_omits_or_empty_it(
+    api_key, org_name, monkeypatch, request_project_id
+):
+    """run_eval must honor the registered evaluator's project_id when the request omits/empties it.
 
     Regression: ``run_eval`` builds ``EvalAsync(...)`` kwargs with
     ``{**eval_kwargs, ..., "project_id": eval_data.get("project_id")}``.
@@ -348,6 +351,14 @@ def test_eval_falls_back_to_evaluator_project_id_when_request_omits_it(api_key, 
     monkeypatch.setattr(devserver_module, "cached_login", fake_cached_login)
     monkeypatch.setattr(devserver_module, "EvalAsync", fake_eval_async)
 
+    eval_request = {
+        "name": "project-id-fallback-eval",
+        "stream": False,
+        "data": [{"input": "ping", "expected": "pong"}],
+    }
+    if request_project_id != "__omit__":
+        eval_request["project_id"] = request_project_id
+
     response = TestClient(create_app([evaluator])).post(
         "/eval",
         headers={
@@ -355,11 +366,7 @@ def test_eval_falls_back_to_evaluator_project_id_when_request_omits_it(api_key, 
             "x-bt-org-name": org_name,
             "Content-Type": "application/json",
         },
-        json={
-            "name": "project-id-fallback-eval",
-            "stream": False,
-            "data": [{"input": "ping", "expected": "pong"}],
-        },
+        json=eval_request,
     )
 
     assert response.status_code == 200
