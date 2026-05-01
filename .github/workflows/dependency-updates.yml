@@ -1,7 +1,7 @@
 name: Dependency updates
 on:
   schedule:
-    - cron: "0 6 * * 1-5" # weekdays 6am UTC
+    - cron: "0 6 * * 1" # Mondays 6am UTC
   workflow_dispatch:
 
 permissions:
@@ -36,16 +36,16 @@ jobs:
         id: date
         run: echo "date=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
-      - name: Close stale daily dependency update PRs
+      - name: Close stale weekly dependency update PRs
         if: steps.labels.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CURRENT_BRANCH: deps/daily-update-${{ steps.date.outputs.date }}
+          CURRENT_BRANCH: deps/weekly-update-${{ steps.date.outputs.date }}
         run: |
           gh pr list \
             --state open \
             --json number,title,headRefName \
-            --jq ".[] | select(.title == \"chore(deps): daily dependency update\") | select(.headRefName != \"$CURRENT_BRANCH\") | .number" \
+            --jq ".[] | select(.title == \"chore(deps): weekly dependency update\") | select(.headRefName != \"$CURRENT_BRANCH\") | .number" \
           | while read -r pr; do
               echo "Closing stale dependency update PR #$pr"
               gh pr close "$pr" --comment "Superseded by a newer automated dependency update." --delete-branch
@@ -55,12 +55,12 @@ jobs:
         if: steps.labels.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          title: "chore(deps): daily dependency update"
+          title: "chore(deps): weekly dependency update"
           body: |
-            Automated daily dependency update via `python scripts/update-matrix-latest.py && uv lock --upgrade`.
+            Automated weekly dependency update via `python scripts/update-matrix-latest.py && uv lock --upgrade`.
 
             ${{ steps.labels.outputs.needs_rerecord == 'true' && '⚠️ **Provider SDK packages changed.** A human needs to re-record cassettes locally before merging.' || '✅ Only test infrastructure deps changed. Safe to merge if CI passes.' }}
-          branch: deps/daily-update-${{ steps.date.outputs.date }}
+          branch: deps/weekly-update-${{ steps.date.outputs.date }}
           labels: |
             dependencies
             ${{ steps.labels.outputs.needs_rerecord == 'true' && 'needs-cassette-rerecord' || 'auto-merge-candidate' }}

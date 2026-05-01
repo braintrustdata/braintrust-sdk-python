@@ -278,7 +278,7 @@ conflicts = [
 #
 # Each key is a provider prefix.  The value is a dict mapping human-readable
 # version tags to the pip requirement string.  "latest" is pinned to an
-# explicit version and bumped by the daily dependency-update workflow.
+# explicit version and bumped by the weekly dependency-update workflow.
 # ---------------------------------------------------------------------------
 
 [tool.braintrust.matrix]
@@ -298,7 +298,7 @@ latest = "cohere==6.1.0"
 "5.0.0" = "cohere==5.0.0"
 
 [tool.braintrust.matrix.openai-agents]
-latest = "openai-agents==0.14.8"
+latest = "openai-agents==0.15.0"
 "0.13.6" = "openai-agents==0.13.6"
 "0.0.19" = "openai-agents==0.0.19"
 
@@ -307,7 +307,7 @@ latest = "litellm==1.83.14"
 "1.74.0" = "litellm==1.74.0"
 
 [tool.braintrust.matrix.claude-agent-sdk]
-latest = "claude-agent-sdk==0.1.71"
+latest = "claude-agent-sdk==0.1.72"
 "0.1.10" = "claude-agent-sdk==0.1.10"
 
 [tool.braintrust.matrix.agno]
@@ -328,15 +328,15 @@ latest = "autogen-ext[openai]==0.7.5"
 "0.7.0" = "autogen-ext[openai]==0.7.0"
 
 [tool.braintrust.matrix.strands-agents]
-latest = "strands-agents==1.37.0"
+latest = "strands-agents==1.38.0"
 "1.20.0" = "strands-agents==1.20.0"
 
 [tool.braintrust.matrix.pydantic-ai-integration]
-latest = "pydantic-ai==1.88.0"
+latest = "pydantic-ai==1.89.0"
 "1.10.0" = "pydantic-ai==1.10.0"
 
 [tool.braintrust.matrix.pydantic-ai-wrap-openai]
-latest = "pydantic-ai==1.88.0"
+latest = "pydantic-ai==1.89.0"
 "1.0.1" = "pydantic-ai==1.0.1"
 "0.1.9" = "pydantic-ai==0.1.9"
 
@@ -356,11 +356,11 @@ latest = "dspy==3.2.0"
 # 1.13.0 is the first release with the full causal-id surface (event_id /
 # parent_event_id / started_event_id on BaseEvent) plus the ``usage`` field on
 # LLMCallCompletedEvent that the Braintrust CrewAI integration depends on.
-latest = "crewai==1.14.3"
+latest = "crewai==1.14.4"
 "1.13.0" = "crewai==1.13.0"
 
 [tool.braintrust.matrix.google-adk]
-latest = "google-adk==1.31.1"
+latest = "google-adk==1.32.0"
 "1.14.1" = "google-adk==1.14.1"
 
 [tool.braintrust.matrix.langchain-core]
@@ -376,11 +376,11 @@ latest = "openrouter==0.9.1"
 "0.6.0" = "openrouter==0.6.0"
 
 [tool.braintrust.matrix.mistralai]
-latest = "mistralai==2.4.3"
+latest = "mistralai==2.4.4"
 "1.12.4" = "mistralai==1.12.4"
 
 [tool.braintrust.matrix.temporalio]
-latest = "temporalio==1.26.0"
+latest = "temporalio==1.27.0"
 "1.20.0" = "temporalio==1.20.0"
 "1.19.0" = "temporalio==1.19.0"
 
