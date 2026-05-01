@@ -1,5 +1,6 @@
 """Mistral-specific tracing helpers."""
 
+import json
 import logging
 import re
 import time
@@ -17,6 +18,7 @@ from braintrust.integrations.utils import (
 )
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
+from braintrust.util import clean_nones
 
 
 logger = logging.getLogger(__name__)
@@ -952,11 +954,75 @@ def _aggregate_conversation_events(items: list[Any]) -> dict[str, Any]:
     return result
 
 
+def _maybe_parse_tool_arguments(arguments: Any) -> Any:
+    if not isinstance(arguments, str):
+        return arguments
+    try:
+        return json.loads(arguments)
+    except json.JSONDecodeError:
+        return arguments
+
+
+def _completion_tool_calls(response_data: dict[str, Any] | None) -> list[tuple[int, int, dict[str, Any]]]:
+    if not response_data:
+        return []
+
+    tool_calls = []
+    choices = response_data.get("choices")
+    if not isinstance(choices, list):
+        return []
+
+    for choice_index, choice in enumerate(choices):
+        if not isinstance(choice, dict):
+            continue
+        message = choice.get("message")
+        if not isinstance(message, dict):
+            continue
+        choice_tool_calls = message.get("tool_calls")
+        if not isinstance(choice_tool_calls, list):
+            continue
+        for tool_index, tool_call in enumerate(choice_tool_calls):
+            if isinstance(tool_call, dict):
+                tool_calls.append((choice_index, tool_index, tool_call))
+    return tool_calls
+
+
+def _log_completion_tool_spans(response_data: dict[str, Any] | None, *, parent_span: Any) -> None:
+    tool_calls = _completion_tool_calls(response_data)
+    if not tool_calls:
+        return
+
+    parent_export = parent_span.export() if parent_span is not None else None
+    for choice_index, tool_index, tool_call in tool_calls:
+        function = tool_call.get("function") if isinstance(tool_call.get("function"), dict) else {}
+        tool_type = tool_call.get("type") or ("function" if function else None)
+        name = function.get("name") or tool_type or "tool"
+        span_args = {
+            "name": f"tool: {name}",
+            "type": SpanTypeAttribute.TOOL,
+            "input": _maybe_parse_tool_arguments(function.get("arguments")),
+            "metadata": clean_nones(
+                {
+                    "tool_call_id": tool_call.get("id"),
+                    "tool_type": tool_type,
+                    "tool_index": tool_call.get("index", tool_index),
+                    "choice_index": choice_index,
+                }
+            )
+            or None,
+        }
+        if parent_export is not None:
+            span_args["parent"] = parent_export
+        with start_span(**span_args):
+            pass
+
+
 def _finalize_completion_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
     response_data = _normalized_mistral_dict(response)
     response_metadata = _response_data_to_metadata(response_data)
     usage = response_data.get("usage") if response_data else None
 
+    _log_completion_tool_spans(response_data, parent_span=span)
     _log_and_end_span(
         span,
         output=response_data.get("choices") if response_data else None,
@@ -1028,6 +1094,7 @@ def _finalize_completion_stream(
 ):
     response = _aggregate_completion_events(items)
     response_metadata = _response_data_to_metadata(response)
+    _log_completion_tool_spans(response, parent_span=span)
     _log_and_end_span(
         span,
         output=response.get("choices"),
