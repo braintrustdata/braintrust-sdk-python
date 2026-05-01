@@ -2321,7 +2321,7 @@ def test_openai_audio_transcription_streaming_early_close(memory_logger):
     assert metrics["time_to_first_token"] >= 0
 
 
-@pytest.mark.vcr(cassette_name="test_openai_audio_transcription_streaming_early_close")
+@pytest.mark.vcr
 def test_openai_audio_transcription_streaming_no_events_omits_output(memory_logger):
     assert not memory_logger.pop()
 
@@ -2515,7 +2515,7 @@ async def test_openai_audio_transcription_streaming_early_close_async(memory_log
 
 
 @pytest.mark.asyncio
-@pytest.mark.vcr(cassette_name="test_openai_audio_transcription_streaming_early_close_async")
+@pytest.mark.vcr
 async def test_openai_audio_transcription_streaming_no_events_omits_output_async(memory_logger):
     assert not memory_logger.pop()
 
