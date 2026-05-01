@@ -246,15 +246,19 @@ class TestAutoInstrumentation:
 async def temporal_env():
     """Create a Temporal test environment.
 
-    If ``BRAINTRUST_TEMPORAL_TEST_SERVER_PATH`` is set and points at an existing file,
-    use it as the test server binary instead of downloading. CI sets this to a cached
-    binary to avoid hitting temporal.download rate limits; locally the var is unset
-    and the SDK falls back to its normal download behavior.
+    If ``BRAINTRUST_TEMPORAL_TEST_SERVER_DIR`` is set, point the SDK's binary
+    download cache at that directory and pin a long TTL so existing binaries
+    are reused. CI sets this so a cached directory restored from the GitHub
+    Actions cache shortcuts the download to temporal.download (which rate
+    limits CI runners). When the var is unset (the local default), the SDK
+    falls back to its built-in temp-dir download behavior.
     """
     kwargs: dict[str, Any] = {}
-    cached_path = os.environ.get("BRAINTRUST_TEMPORAL_TEST_SERVER_PATH")
-    if cached_path and os.path.isfile(cached_path):
-        kwargs["test_server_existing_path"] = cached_path
+    cache_dir = os.environ.get("BRAINTRUST_TEMPORAL_TEST_SERVER_DIR")
+    if cache_dir:
+        os.makedirs(cache_dir, exist_ok=True)
+        kwargs["download_dest_dir"] = cache_dir
+        kwargs["test_server_download_ttl"] = timedelta(days=365)
     async with await temporalio.testing.WorkflowEnvironment.start_time_skipping(**kwargs) as env:
         yield env
 
