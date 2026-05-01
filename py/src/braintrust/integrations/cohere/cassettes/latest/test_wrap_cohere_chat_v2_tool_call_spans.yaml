@@ -1,0 +1,81 @@
+interactions:
+- request:
+    body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"Use
+      the get_weather tool for Paris."}],"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      the weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}],"max_tokens":64,"tool_choice":"REQUIRED","stream":false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '361'
+      Host:
+      - api.cohere.com
+      User-Agent:
+      - cohere/6.1.0
+      X-Fern-Language:
+      - Python
+      X-Fern-Platform:
+      - darwin/25.2.0
+      X-Fern-Runtime:
+      - python/3.12.12
+      X-Fern-SDK-Name:
+      - cohere
+      X-Fern-SDK-Version:
+      - 6.1.0
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.cohere.com/v2/chat
+  response:
+    body:
+      string: '{"id":"74529407-6112-4e14-9cb3-41ab95fe7725","message":{"role":"assistant","tool_plan":"I
+        will use one or more of the available tools to find the answer","tool_calls":[{"id":"get_weather_p1927913dgpp","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},"finish_reason":"TOOL_CALL","usage":{"billed_units":{"input_tokens":37,"output_tokens":22},"tokens":{"input_tokens":1455,"output_tokens":33},"cached_tokens":0}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-length:
+      - '451'
+      content-type:
+      - application/json
+      date:
+      - Fri, 01 May 2026 17:34:51 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      num_chars:
+      - '6866'
+      num_tokens:
+      - '59'
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      vary:
+      - Origin,Accept-Encoding
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - b3c262976868c73da50611172c4163a1
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '913'
+      x-trial-endpoint-call-limit:
+      - '20'
+      x-trial-endpoint-call-remaining:
+      - '18'
+    status:
+      code: 200
+      message: OK
+version: 1
