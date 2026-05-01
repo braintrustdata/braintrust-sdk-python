@@ -263,6 +263,35 @@ class TestLogger(TestCase):
             {"version": "v1"},
         )
 
+    def test_load_prompt_exposes_pretty_version(self):
+        mock_api_conn = MagicMock()
+        mock_api_conn.get_json.return_value = {
+            "objects": [
+                {
+                    "id": "prompt-123",
+                    "project_id": "project-123",
+                    "name": "Saved prompt",
+                    "slug": "saved-prompt",
+                    "_xact_id": "123456789",
+                    "description": None,
+                    "tags": None,
+                    "prompt_data": {
+                        "prompt": {
+                            "type": "chat",
+                            "messages": [{"role": "user", "content": "Hello"}],
+                        },
+                        "options": {"model": "gpt-5-mini"},
+                    },
+                }
+            ]
+        }
+
+        simulate_login()
+        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+            prompt = braintrust.load_prompt(project="test-project", slug="saved-prompt")
+            assert prompt.version == "123456789"
+            assert prompt.version_pretty == "f2be28742b0b0c2d"
+
     def test_load_parameters_returns_remote_object(self):
         mock_api_conn = MagicMock()
         mock_api_conn.get_json.return_value = {

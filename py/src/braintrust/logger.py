@@ -5071,6 +5071,11 @@ class Prompt:
         return self._lazy_metadata.get()._xact_id
 
     @property
+    def version_pretty(self) -> str | None:
+        version = cast(str | None, self.version)
+        return prettify_xact(version) if version is not None else None
+
+    @property
     def options(self) -> PromptOptions:
         return self._lazy_metadata.get().prompt_data.options or {}
 
