@@ -7,7 +7,7 @@ import threading
 import urllib.parse
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Generic, Literal, TypedDict, TypeVar, Union
+from typing import Any, Generic, Literal, TypedDict, TypeVar
 
 from requests import HTTPError, Response
 
@@ -32,6 +32,20 @@ def parse_env_var_float(name: str, default: float) -> float:
 
 GLOBAL_PROJECT = "Global"
 BT_IS_ASYNC_ATTRIBUTE = "_BT_IS_ASYNC"
+
+
+def get_signature(fn: Callable) -> inspect.Signature:
+    # On Python 3.14+ (PEP 649), inspect.signature evaluates annotations
+    # eagerly in VALUE format by default. Annotations referencing
+    # TYPE_CHECKING-only imports raise NameError. Use FORWARDREF so
+    # unresolvable names become ForwardRef objects; callers here only
+    # inspect parameter names/kinds, not annotation values.
+    if sys.version_info >= (3, 14):
+        import annotationlib
+
+        kwargs = {"annotation_format": annotationlib.Format.FORWARDREF}
+        return inspect.signature(fn, **kwargs)  # pylint: disable=unexpected-keyword-arg
+    return inspect.signature(fn)
 
 
 # Taken from
@@ -179,7 +193,7 @@ class _LazyValuePendingState:
     has_succeeded: Literal[False] = False
 
 
-_LazyValueState = Union[_LazyValueResolvedState[T], _LazyValuePendingState]
+_LazyValueState = _LazyValueResolvedState[T] | _LazyValuePendingState
 
 
 class LazyValue(Generic[T]):

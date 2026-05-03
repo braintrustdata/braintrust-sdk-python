@@ -6,7 +6,11 @@ import litellm
 import pytest
 from braintrust import Attachment, logger
 from braintrust.integrations.litellm import patch_litellm
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import (
+    assert_metrics_are_valid,
+    run_in_subprocess,
+    verify_autoinstrument_script,
+)
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 
 
@@ -719,6 +723,45 @@ async def test_litellm_async_streaming_with_break(memory_logger):
 def test_patch_litellm_responses():
     """Test that patch_litellm() patches responses (subprocess to avoid global state pollution)."""
     verify_autoinstrument_script("test_patch_litellm_responses.py")
+
+
+def test_is_litellm_patched_internal_helper():
+    """Internal ``_is_litellm_patched()`` flips True after setup and honors manual wrap.
+
+    Run in a subprocess so that marker attributes set by other tests in this
+    module do not leak into the assertion.
+    """
+    result = run_in_subprocess(
+        """
+        from braintrust.integrations.litellm import _is_litellm_patched, patch_litellm, wrap_litellm
+        assert _is_litellm_patched() is False, 'expected unpatched at startup'
+        assert patch_litellm() is True
+        assert _is_litellm_patched() is True, 'expected True after patch_litellm()'
+        # idempotent wrap on the already-patched module stays True.
+        import litellm
+        wrap_litellm(litellm)
+        assert _is_litellm_patched() is True
+        print("SUCCESS")
+        """
+    )
+    assert result.returncode == 0, result.stderr
+    assert "SUCCESS" in result.stdout
+
+
+def test_is_litellm_patched_returns_false_without_litellm_installed():
+    """``_is_litellm_patched()`` must not raise when ``litellm`` is absent."""
+    result = run_in_subprocess(
+        """
+        import sys
+        # Simulate a missing litellm install.
+        sys.modules['litellm'] = None
+        from braintrust.integrations.litellm import _is_litellm_patched
+        assert _is_litellm_patched() is False
+        print("SUCCESS")
+        """
+    )
+    assert result.returncode == 0, result.stderr
+    assert "SUCCESS" in result.stdout
 
 
 def test_patch_litellm_aresponses():

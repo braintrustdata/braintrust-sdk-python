@@ -19,7 +19,7 @@ from braintrust.integrations.mistral.tracing import (
 )
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.test_helpers import init_test_logger
+from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
 
 pytest.importorskip("mistralai")
@@ -179,6 +179,21 @@ def _get_client():
     return Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
 
 
+def _weather_tool():
+    return {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the weather for a city.",
+            "parameters": {
+                "type": "object",
+                "properties": {"city": {"type": "string"}},
+                "required": ["city"],
+            },
+        },
+    }
+
+
 def _assert_ocr_metrics_are_valid(metrics, start, end):
     assert metrics["duration"] >= 0
     assert metrics["pages_processed"] >= 1
@@ -228,6 +243,47 @@ def test_wrap_mistral_chat_complete_sync(memory_logger):
     assert span["metadata"]["model"] == CHAT_MODEL
     assert "4" in str(span["output"])
     assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_chat_complete_tool_spans(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    response = client.chat.complete(
+        model=CHAT_MODEL,
+        messages=[{"role": "user", "content": "Use get_weather for Paris. Do not answer directly."}],
+        tools=[_weather_tool()],
+        tool_choice="any",
+        max_tokens=100,
+    )
+
+    assert response.choices[0].message.tool_calls
+    assert response.choices[0].message.tool_calls[0].function.name == "get_weather"
+
+    spans = memory_logger.pop()
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_chat_stream_tool_spans(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    with client.chat.stream(
+        model=CHAT_MODEL,
+        messages=[{"role": "user", "content": "Use get_weather for Paris. Do not answer directly."}],
+        tools=[_weather_tool()],
+        tool_choice="any",
+        max_tokens=100,
+    ) as stream:
+        chunks = list(stream)
+
+    assert chunks
+    spans = memory_logger.pop()
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
 
 
 @pytest.mark.vcr
@@ -409,6 +465,48 @@ def test_wrap_mistral_beta_conversations_restart_sync(memory_logger):
         end,
         expected_content="12",
     )
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_agents_complete_tool_spans(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    with _temporary_agent(client) as agent_id:
+        response = client.agents.complete(
+            agent_id=agent_id,
+            messages=[{"role": "user", "content": "Use get_weather for Paris. Do not answer directly."}],
+            tools=[_weather_tool()],
+            tool_choice="any",
+            max_tokens=100,
+        )
+
+    assert response.choices[0].message.tool_calls
+    assert response.choices[0].message.tool_calls[0].function.name == "get_weather"
+    spans = memory_logger.pop()
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_agents_stream_tool_spans(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    with _temporary_agent(client) as agent_id:
+        with client.agents.stream(
+            agent_id=agent_id,
+            messages=[{"role": "user", "content": "Use get_weather for Paris. Do not answer directly."}],
+            tools=[_weather_tool()],
+            tool_choice="any",
+            max_tokens=100,
+        ) as stream:
+            chunks = list(stream)
+
+    assert chunks
+    spans = memory_logger.pop()
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
 
 
 @pytest.mark.vcr

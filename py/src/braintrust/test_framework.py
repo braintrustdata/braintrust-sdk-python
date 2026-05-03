@@ -1,6 +1,6 @@
 import importlib.util
 import re
-from typing import List
+import sys
 from unittest.mock import MagicMock
 
 import pytest
@@ -211,9 +211,59 @@ async def test_run_evaluator_with_many_scorers():
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason="PEP 649 lazy annotation evaluation is 3.14+",
+)
+async def test_hooks_with_type_checking_only_annotation():
+    """Regression test for #263.
+
+    On Python 3.14 (PEP 649), `inspect.signature(fn)` defaults to VALUE
+    format, which eagerly evaluates annotations and raises `NameError` for
+    TYPE_CHECKING-only imports. The bare except in `_call_user_fn_args`
+    used to fall back to passing every kwarg through, and the separate
+    signature call that decides whether to inject `hooks` would also raise,
+    leaving the task to crash on a missing `hooks` argument.
+    """
+    # The unresolved name in the annotation must be unquoted to trigger the
+    # PEP 649 lazy-eval path; defining this at module top-level would fail
+    # on Python <3.14, so build it via exec inside the 3.14-only branch.
+    saw_hooks: list[bool] = []
+    ns: dict = {"saw_hooks": saw_hooks, "EvalHooks": EvalHooks}
+    exec(
+        "def task_with_unresolvable_hooks_annotation(\n"
+        "    input_value: int,\n"
+        "    hooks: EvalHooks[frozenset[SomeType]],\n"
+        ") -> int:\n"
+        "    saw_hooks.append(hooks is not None)\n"
+        "    return input_value * 2\n",
+        ns,
+    )
+    task = ns["task_with_unresolvable_hooks_annotation"]
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-pep649-typecheck-only",
+        data=[EvalCase(input=1, expected=2)],
+        task=task,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        trial_count=1,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    assert len(result.results) == 1
+    assert saw_hooks == [True]
+    assert result.results[0].error is None
+    assert result.results[0].output == 2
+
+
+@pytest.mark.asyncio
 async def test_hooks_trial_index():
     """Test that trial_index is correctly passed to task via hooks."""
-    trial_indices: List[int] = []
+    trial_indices: list[int] = []
 
     # Task that captures trial indices
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
@@ -253,7 +303,7 @@ async def test_hooks_trial_index():
 @pytest.mark.asyncio
 async def test_hooks_trial_index_multiple_inputs():
     """Test trial_index with multiple inputs to ensure proper indexing."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))
@@ -293,7 +343,7 @@ async def test_hooks_trial_index_multiple_inputs():
 @pytest.mark.asyncio
 async def test_per_input_trial_count_overrides_global():
     """Test that per-input trial_count overrides the global trial_count."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))
@@ -332,7 +382,7 @@ async def test_per_input_trial_count_overrides_global():
 @pytest.mark.asyncio
 async def test_per_input_trial_count_without_global():
     """Test that per-input trial_count works when no global trial_count is set."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))
@@ -367,7 +417,7 @@ async def test_per_input_trial_count_without_global():
 @pytest.mark.asyncio
 async def test_per_input_trial_count_with_dict_data():
     """Test that per-input trial_count works when data items are plain dicts."""
-    trial_data: List[tuple] = []  # (input, trial_index)
+    trial_data: list[tuple] = []  # (input, trial_index)
 
     def task_with_hooks(input_value: int, hooks: EvalHooks) -> int:
         trial_data.append((input_value, hooks.trial_index))

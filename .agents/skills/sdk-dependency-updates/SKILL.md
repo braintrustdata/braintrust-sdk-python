@@ -1,11 +1,11 @@
 ---
 name: sdk-dependency-updates
-description: "Review and refresh Braintrust Python SDK dependency update PRs, especially automated `chore(deps): daily dependency update` PRs. Use when Codex needs to inspect `py/pyproject.toml` and `py/uv.lock`, reproduce the workflow's label decision, decide whether provider `latest` cassettes need re-recording, run the exact nox sessions, and validate playback before merge."
+description: "Review and refresh Braintrust Python SDK dependency update PRs, especially automated `chore(deps): weekly dependency update` PRs. Use when Codex needs to inspect `py/pyproject.toml` and `py/uv.lock`, reproduce the workflow's label decision, decide whether provider `latest` cassettes need re-recording, run the exact nox sessions, and validate playback before merge."
 ---
 
 # SDK Dependency Updates
 
-Use this skill for dependency bump PRs in this repo, especially the daily automation from `.github/workflows/dependency-updates.yml`.
+Use this skill for dependency bump PRs in this repo, especially the weekly automation from `.github/workflows/dependency-updates.yml`.
 
 Keep the work narrow. These PRs should usually stay limited to:
 

@@ -1,7 +1,7 @@
 """Unified context management using OTEL's built-in context."""
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from braintrust.context import ParentSpanIds, SpanInfo
 from braintrust.logger import Span
@@ -18,7 +18,7 @@ class ContextManager:
     def __init__(self):
         pass
 
-    def get_current_span_info(self) -> Optional["SpanInfo"]:
+    def get_current_span_info(self) -> "SpanInfo | None":
         """Get information about the currently active span from OTEL context."""
 
         # Get the current span from OTEL context

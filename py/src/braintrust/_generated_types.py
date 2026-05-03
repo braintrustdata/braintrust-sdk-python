@@ -453,10 +453,19 @@ class CodeBundleLocationPosition1(TypedDict):
     index: int
 
 
+class CodeBundleLocationPosition2(TypedDict):
+    type: Literal['classifier']
+    index: int
+
+
 class CodeBundleLocation(TypedDict):
     type: Literal['experiment']
     eval_name: str
-    position: CodeBundleLocationPosition | CodeBundleLocationPosition1
+    position: (
+        CodeBundleLocationPosition
+        | CodeBundleLocationPosition1
+        | CodeBundleLocationPosition2
+    )
 
 
 class CodeBundleLocation1(TypedDict):
@@ -3358,6 +3367,10 @@ class TopicMapData(TypedDict):
     Mapping from topic_id to topic name
     """
     generation_settings: NotRequired[TopicMapGenerationSettings | None]
+    disable_reconciliation: NotRequired[bool | None]
+    """
+    Whether new topic generation should ignore the previously saved report during reconciliation. Defaults to false when omitted.
+    """
     distance_threshold: NotRequired[float | None]
     """
     Maximum distance to nearest centroid. If exceeded, returns no_match.

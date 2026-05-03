@@ -1,5 +1,5 @@
 from collections.abc import Callable, Sequence
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from .db_fields import IS_MERGE_FIELD
 
@@ -8,7 +8,7 @@ T = TypeVar("T")
 from .util import merge_dicts
 
 
-_MergedRowKey = tuple[Optional[Any], ...]
+_MergedRowKey = tuple[Any | None, ...]
 
 
 def _generate_merged_row_key(row: dict[str, Any]) -> _MergedRowKey:

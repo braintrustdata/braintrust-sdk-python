@@ -9,7 +9,7 @@ import dataclasses
 import json
 from collections.abc import Generator, Iterable
 from itertools import tee
-from typing import Literal, Union
+from typing import Literal
 
 from sseclient import SSEClient
 
@@ -79,13 +79,9 @@ class BraintrustInvokeError(ValueError):
     pass
 
 
-BraintrustStreamChunk = Union[
-    BraintrustTextChunk,
-    BraintrustJsonChunk,
-    BraintrustErrorChunk,
-    BraintrustConsoleChunk,
-    BraintrustProgressChunk,
-]
+BraintrustStreamChunk = (
+    BraintrustTextChunk | BraintrustJsonChunk | BraintrustErrorChunk | BraintrustConsoleChunk | BraintrustProgressChunk
+)
 
 
 class BraintrustStream:

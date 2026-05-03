@@ -298,3 +298,133 @@ def test_eval_uses_inline_request_parameters(api_key, org_name, monkeypatch):
     )
 
     assert response.status_code == 200
+
+
+@pytest.mark.parametrize("request_project_id", [pytest.param("", id="empty"), pytest.param("__omit__", id="omitted")])
+def test_eval_falls_back_to_evaluator_project_id_when_request_omits_or_empty_it(
+    api_key, org_name, monkeypatch, request_project_id
+):
+    """run_eval must honor the registered evaluator's project_id when the request omits/empties it.
+
+    Regression: ``run_eval`` builds ``EvalAsync(...)`` kwargs with
+    ``{**eval_kwargs, ..., "project_id": eval_data.get("project_id")}``.
+    The trailing key always wins in dict-spread merging, so a request
+    that omits ``project_id`` clobbers the registered evaluator's
+    ``project_id`` to ``None``. ``EvalAsync`` then falls back to using
+    ``name`` as the project name (per ``framework.Eval`` docstring),
+    routing experiments into a per-evaluator-name auto-created project
+    instead of the project the evaluator was registered against.
+    """
+    from braintrust import Evaluator
+    from braintrust.devserver import server as devserver_module
+    from braintrust.devserver.server import create_app
+    from braintrust.logger import BraintrustState
+    from starlette.testclient import TestClient
+
+    evaluator = Evaluator(
+        project_name="ignored-project-name",
+        eval_name="project-id-fallback-eval",
+        data=lambda: [{"input": "ping", "expected": "pong"}],
+        task=lambda input, _hooks: "pong",
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        project_id="evaluator-registered-project-id",
+    )
+
+    captured: dict[str, Any] = {}
+
+    async def fake_cached_login(**_kwargs):
+        return BraintrustState()
+
+    class FakeSummary:
+        def as_dict(self):
+            return {"experiment_name": evaluator.eval_name, "project_name": "", "scores": {}}
+
+    class FakeResult:
+        summary = FakeSummary()
+
+    async def fake_eval_async(*, project_id, **_kwargs):
+        captured["project_id"] = project_id
+        return FakeResult()
+
+    monkeypatch.setattr(devserver_module, "cached_login", fake_cached_login)
+    monkeypatch.setattr(devserver_module, "EvalAsync", fake_eval_async)
+
+    eval_request = {
+        "name": "project-id-fallback-eval",
+        "stream": False,
+        "data": [{"input": "ping", "expected": "pong"}],
+    }
+    if request_project_id != "__omit__":
+        eval_request["project_id"] = request_project_id
+
+    response = TestClient(create_app([evaluator])).post(
+        "/eval",
+        headers={
+            "x-bt-auth-token": api_key,
+            "x-bt-org-name": org_name,
+            "Content-Type": "application/json",
+        },
+        json=eval_request,
+    )
+
+    assert response.status_code == 200
+    assert captured["project_id"] == "evaluator-registered-project-id"
+
+
+def test_eval_request_project_id_overrides_evaluator(api_key, org_name, monkeypatch):
+    """An explicit ``project_id`` in the request body still takes precedence."""
+    from braintrust import Evaluator
+    from braintrust.devserver import server as devserver_module
+    from braintrust.devserver.server import create_app
+    from braintrust.logger import BraintrustState
+    from starlette.testclient import TestClient
+
+    evaluator = Evaluator(
+        project_name="ignored-project-name",
+        eval_name="project-id-override-eval",
+        data=lambda: [{"input": "ping", "expected": "pong"}],
+        task=lambda input, _hooks: "pong",
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        project_id="evaluator-registered-project-id",
+    )
+
+    captured: dict[str, Any] = {}
+
+    async def fake_cached_login(**_kwargs):
+        return BraintrustState()
+
+    class FakeSummary:
+        def as_dict(self):
+            return {"experiment_name": evaluator.eval_name, "project_name": "", "scores": {}}
+
+    class FakeResult:
+        summary = FakeSummary()
+
+    async def fake_eval_async(*, project_id, **_kwargs):
+        captured["project_id"] = project_id
+        return FakeResult()
+
+    monkeypatch.setattr(devserver_module, "cached_login", fake_cached_login)
+    monkeypatch.setattr(devserver_module, "EvalAsync", fake_eval_async)
+
+    response = TestClient(create_app([evaluator])).post(
+        "/eval",
+        headers={
+            "x-bt-auth-token": api_key,
+            "x-bt-org-name": org_name,
+            "Content-Type": "application/json",
+        },
+        json={
+            "name": "project-id-override-eval",
+            "stream": False,
+            "data": [{"input": "ping", "expected": "pong"}],
+            "project_id": "request-explicit-project-id",
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["project_id"] == "request-explicit-project-id"

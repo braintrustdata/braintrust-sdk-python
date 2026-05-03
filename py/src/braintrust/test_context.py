@@ -24,7 +24,8 @@ import concurrent.futures
 import subprocess
 import sys
 import threading
-from typing import AsyncGenerator, Callable, Generator, TypeVar
+from collections.abc import AsyncGenerator, Callable, Generator
+from typing import TypeVar
 
 import braintrust
 import pytest
@@ -277,7 +278,6 @@ async def test_asyncio_create_task_preserves_context(test_logger, with_memory_lo
     assert parent_log["span_id"] in worker_log.get("span_parents", []), "Worker should have parent as parent"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="to_thread requires Python 3.9+")
 @pytest.mark.asyncio
 async def test_to_thread_preserves_context(test_logger, with_memory_logger):
     """

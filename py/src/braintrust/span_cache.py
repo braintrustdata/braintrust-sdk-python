@@ -11,7 +11,7 @@ import json
 import os
 import tempfile
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from braintrust.types import Metadata
 from braintrust.util import merge_dicts
@@ -28,11 +28,11 @@ class CachedSpan:
     def __init__(
         self,
         span_id: str,
-        input: Optional[Any] = None,
-        output: Optional[Any] = None,
+        input: Any | None = None,
+        output: Any | None = None,
         metadata: Metadata | None = None,
-        span_parents: Optional[list[str]] = None,
-        span_attributes: Optional[dict[str, Any]] = None,
+        span_parents: list[str] | None = None,
+        span_attributes: dict[str, Any] | None = None,
     ):
         self.span_id = span_id
         self.input = input
@@ -104,7 +104,7 @@ class SpanCache:
     """
 
     def __init__(self, disabled: bool = False):
-        self._cache_file_path: Optional[str] = None
+        self._cache_file_path: str | None = None
         self._initialized = False
         # Tracks whether the cache was explicitly disabled (via constructor or disable())
         self._explicitly_disabled = disabled
@@ -226,7 +226,7 @@ class SpanCache:
             # This can happen if disk is full or file permissions changed
             pass
 
-    def get_by_root_span_id(self, root_span_id: str) -> Optional[list[CachedSpan]]:
+    def get_by_root_span_id(self, root_span_id: str) -> list[CachedSpan] | None:
         """
         Get all cached spans for a given rootSpanId.
 

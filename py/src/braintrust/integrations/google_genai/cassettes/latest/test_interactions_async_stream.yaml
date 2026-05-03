@@ -5,7 +5,7 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate, zstd
+      - gzip, deflate
       Connection:
       - keep-alive
       Content-Length:
@@ -15,21 +15,21 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       User-Agent:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.start
 
-        data: {"interaction":{"id":"v1_ChdtUkxWYWVqRUVZQ3YxTWtQb2IydS1RRRIXbVJMVmFlakVFWUN2MU1rUG9iMnUtUUU","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.start"}
+        data: {"interaction":{"id":"v1_ChdYSFB6YVpqZ01hbWJfdU1QOXJuRG1RYxIXWEhQemFaamdNYW1iX3VNUDlybkRtUWM","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.start"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdtUkxWYWVqRUVZQ3YxTWtQb2IydS1RRRIXbVJMVmFlakVFWUN2MU1rUG9iMnUtUUU","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_ChdYSFB6YVpqZ01hbWJfdU1QOXJuRG1RYxIXWEhQemFaamdNYW1iX3VNUDlybkRtUWM","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: content.start
@@ -39,7 +39,7 @@ interactions:
 
         event: content.delta
 
-        data: {"index":0,"delta":{"signature":"ClUBvj72+9F73CQIW9AyrjKse6nIY6vxogBksIaH5zxIIsOMHbbkpLYbB3nSdvBf3485j4bntqHPZjSbypKwI84aO8RagejmAGNRu/Ss+Mebq15i5UIuCnUBvj72+0Ewr8MFjWarSxByDjIn8WzosxL4jSr61M/Cdf2bvYpcks9icyyuHi+zvrfpTOop2ODlpoa7Y/UexoemmbjdKpZeXy5wHb4R3eaiRAeucVPtpoMNFQi5TocaZXfK9hP5BP4p44e9zrJBVUYigBehaec=","type":"thought_signature"},"event_type":"content.delta"}
+        data: {"index":0,"delta":{"signature":"CmoBDDnWxxsFfIXWgR31K/+1c2WdbFv6+2nMW4Fjdyvu0oXMGCsi2UyHJr8cqIo1Ja2eVuEoHOl9IsK024woUgszUySfnDvFRLRocrEih22qm+0UHVHFEoQTjv/aRsGcpZFVkbUFuIpGvLkoCisBDDnWx8F8iGhB97tTixwjfoqKbvR/Y0wyuHlFUu6ZF0wJmRHzH4SXfLax","type":"thought_signature"},"event_type":"content.delta"}
 
 
         event: content.stop
@@ -64,7 +64,7 @@ interactions:
 
         event: interaction.complete
 
-        data: {"interaction":{"id":"v1_ChdtUkxWYWVqRUVZQ3YxTWtQb2IydS1RRRIXbVJMVmFlakVFWUN2MU1rUG9iMnUtUUU","status":"completed","usage":{"total_tokens":42,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":35},"role":"model","created":"2026-04-07T14:20:10Z","updated":"2026-04-07T14:20:10Z","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.complete"}
+        data: {"interaction":{"id":"v1_ChdYSFB6YVpqZ01hbWJfdU1QOXJuRG1RYxIXWEhQemFaamdNYW1iX3VNUDlybkRtUWM","status":"completed","usage":{"total_tokens":26,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":19},"role":"model","created":"2026-04-30T15:21:01Z","updated":"2026-04-30T15:21:01Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.complete"}
 
 
         event: done
@@ -79,11 +79,11 @@ interactions:
       Content-Type:
       - text/event-stream
       Date:
-      - Tue, 07 Apr 2026 14:20:10 GMT
+      - Thu, 30 Apr 2026 15:21:01 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=795
+      - gfet4t7; dur=598
       Transfer-Encoding:
       - chunked
       Vary:
@@ -97,7 +97,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1816'
+      - '1770'
     status:
       code: 200
       message: OK

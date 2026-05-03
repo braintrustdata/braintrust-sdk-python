@@ -434,15 +434,20 @@ _WRAP_TARGETS: tuple[tuple[str, type[CompositeFunctionWrapperPatcher]], ...] = (
 # ---------------------------------------------------------------------------
 
 
-def _is_class_method_wrapped(resource: Any, method_name: str) -> bool:
+def _is_class_method_wrapped(
+    resource: Any,
+    method_name: str,
+    patcher: type[FunctionWrapperPatcher],
+) -> bool:
     """Return ``True`` if *method_name* on the **class** of *resource* is
-    already a wrapt ``FunctionWrapper`` (i.e. patched by ``setup()``).
+    already wrapped by the matching Braintrust ``setup()`` patcher.
 
-    This prevents double-tracing when both ``setup()`` and ``wrap_openai()``
-    are active for the same client.
+    Other libraries (for example ddtrace) may also use wrapt wrappers on OpenAI
+    class methods. Only Braintrust's own patch marker should make
+    ``wrap_openai()`` skip instance-level instrumentation.
     """
     cls_attr = inspect.getattr_static(type(resource), method_name, None)
-    return isinstance(cls_attr, FunctionWrapper)
+    return patcher.has_patch_marker(cls_attr)
 
 
 def _delegates_to_wrapped_method(resource: Any, method_name: str) -> bool:
@@ -480,7 +485,7 @@ def _wrap_resource(
     # level patchers are active and we can skip instance-level wrapping.
     for sub in patcher.sub_patchers:
         attr = sub.target_path.rsplit(".", 1)[-1]
-        if _is_class_method_wrapped(resource, attr):
+        if _is_class_method_wrapped(resource, attr, sub):
             return
         if attr_path.endswith("with_raw_response") and _delegates_to_wrapped_method(resource, attr):
             return

@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-openrouter-example"
+version = "0.1.0"
+description = "OpenRouter client traced with Braintrust via wrap_openrouter"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "openrouter",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

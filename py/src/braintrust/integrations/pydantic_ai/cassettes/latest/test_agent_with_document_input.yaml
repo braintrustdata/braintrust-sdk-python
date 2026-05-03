@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.86.0
+      - pydantic-ai/1.89.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,11 +26,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.33.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,30 +39,30 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DXqGQving5tlhh6UkVI6vSem7r1Ja\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776958098,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DalhKAzg0rJyZzsPe5FsmTCdK5EN1\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1777655530,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The document appears to be a test document.
-        If you have specific questions or need information about a particular section,
-        please let me know!\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 231,\n    \"completion_tokens\":
-        27,\n    \"total_tokens\": 258,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"The document is titled \\\"Test Document\\\"
+        and appears to contain parsed text but no specific content details are provided.
+        If you want to know something particular about it, please let me know!\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        231,\n    \"completion_tokens\": 37,\n    \"total_tokens\": 268,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_4debc47fe0\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_ed279b101f\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f0de5b0d807982f-YYZ
+      - 9f5068d8a891cceb-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Apr 2026 15:28:18 GMT
+      - Fri, 01 May 2026 17:12:11 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -76,19 +76,19 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '951'
+      - '1001'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '697'
+      - '1161'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=CjfdvkGUYvBX6CjjrTso2co1gdnF8JW34N7ZYyco7Ig-1776958098.0577972-1.0.1.1-tfbmv1FVkBDYEMk9ooGZWZAbQuQ.sl.O.zlQhY1z.kqpWnAZZzMe8VdTvCVtM1jhmLAEB7ikhomY68cvwSAaFhqWvpzyr.Xpx4APgL8LqQM_3rC5T_Q_CxkdhvUUB1My;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 23 Apr 2026
-        15:58:18 GMT
+      - __cf_bm=okJtEBVwpYFju_xfSLyLDm5mRwZf5s48IJ3egctoTng-1777655530.3501227-1.0.1.1-ZsBwckZsEl0671AX5gRD_yQ0PsdXEqpT82XYcVmpBVs8uGUoYlLPk6tGMabClfoGgf07_L8qQgf4UZ3Cwuc0wcl0.6KrDaStdtdA6HHOFSmbW1Tl4N6VFoKiz95X2F_W;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
+        17:42:11 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -98,13 +98,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999225'
+      - '149999227'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_8d2a2859008b47db88bb1f7ba34fee7d
+      - req_60323e75deb2435e8e6c1e629bf41dbe
     status:
       code: 200
       message: OK

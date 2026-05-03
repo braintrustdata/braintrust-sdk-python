@@ -297,7 +297,7 @@ All nox session dependency pins are centralized in `py/pyproject.toml`:
 
 The `LATEST` sentinel in the noxfile maps to the `latest` key in the matrix table — it is no longer a floating install.
 
-A daily GitHub Actions workflow (`.github/workflows/dependency-updates.yml`) runs `uv lock --upgrade`, classifies changes by reading group names from `pyproject.toml`, and opens a PR labeled `needs-cassette-rerecord` (provider SDK bumps) or `auto-merge-candidate` (infra-only bumps).
+A weekly GitHub Actions workflow (`.github/workflows/dependency-updates.yml`) runs `uv lock --upgrade`, classifies changes by reading group names from `pyproject.toml`, and opens a PR labeled `needs-cassette-rerecord` (provider SDK bumps) or `auto-merge-candidate` (infra-only bumps).
 
 ## Editing Guidelines
 

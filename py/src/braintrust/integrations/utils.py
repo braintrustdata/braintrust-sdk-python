@@ -343,6 +343,77 @@ def _materialize_attachment(
     return None
 
 
+def _materialize_chat_message_content_part(part: Any) -> Any:
+    """Materialize binary payloads inside one OpenAI-style message content part.
+
+    Handles the three part types that Braintrust integrations commonly see in
+    chat-completions ``messages``:
+
+    - ``{"type": "image_url", "image_url": {"url": ...}}``
+    - ``{"type": "input_audio", "input_audio": {"data": ..., "format": ...}}``
+    - ``{"type": "file", "file": {"file_data": ..., "filename": ...}}``
+
+    Data URLs, raw base64 strings, and bytes are converted into
+    :class:`braintrust.logger.Attachment` objects; plain remote URLs and
+    already-materialized attachments pass through unchanged. Unrecognized part
+    shapes are returned untouched.
+    """
+    if not isinstance(part, dict):
+        return part
+
+    part_type = part.get("type")
+    if part_type == "image_url":
+        image_url = part.get("image_url")
+        url = image_url.get("url") if isinstance(image_url, dict) else image_url
+        if isinstance(url, str) and url.startswith("data:"):
+            resolved = _materialize_attachment(url)
+            if resolved is not None:
+                return {**part, "image_url": {"url": resolved.attachment}}
+    elif part_type == "input_audio":
+        audio = part.get("input_audio") if isinstance(part.get("input_audio"), dict) else {}
+        data = audio.get("data")
+        fmt = audio.get("format")
+        if isinstance(data, str) and data:
+            mime = f"audio/{fmt}" if fmt else None
+            resolved = _materialize_attachment(data, mime_type=mime)
+            if resolved is not None:
+                return {**part, "input_audio": {**audio, "data": resolved.attachment}}
+    elif part_type == "file":
+        file_obj = part.get("file") if isinstance(part.get("file"), dict) else {}
+        data = file_obj.get("file_data")
+        if isinstance(data, str) and data:
+            filename = file_obj.get("filename")
+            resolved = _materialize_attachment(data, filename=filename if isinstance(filename, str) else None)
+            if resolved is not None:
+                return {**part, "file": {**file_obj, "file_data": resolved.attachment}}
+
+    return part
+
+
+def _normalize_chat_messages(messages: Any) -> Any:
+    """Return *messages* with binary multimodal content parts materialized.
+
+    Plain strings, ``None`` and non-list inputs are returned unchanged. Each
+    list element with ``list`` content has its parts walked through
+    :func:`_materialize_chat_message_content_part`; messages with string
+    content pass through untouched.
+    """
+    if not isinstance(messages, list):
+        return messages
+
+    normalized: list[Any] = []
+    for msg in messages:
+        if not isinstance(msg, dict):
+            normalized.append(msg)
+            continue
+        content = msg.get("content")
+        if isinstance(content, list):
+            normalized.append({**msg, "content": [_materialize_chat_message_content_part(p) for p in content]})
+        else:
+            normalized.append(msg)
+    return normalized
+
+
 _AUDIO_FORMAT_TO_MIME_TYPE = {
     "mp3": "audio/mpeg",
     "wav": "audio/wav",

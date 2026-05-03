@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-google-genai-example"
+version = "0.1.0"
+description = "Google GenAI client traced with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "google-genai",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

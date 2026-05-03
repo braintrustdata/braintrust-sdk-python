@@ -6,7 +6,8 @@ spans from the current evaluation task without making server round-trips.
 """
 
 import asyncio
-from typing import Any, Awaitable, Callable, Optional, Protocol, TypedDict
+from collections.abc import Awaitable, Callable
+from typing import Any, Protocol, TypedDict
 
 from braintrust.functions.invoke import invoke
 from braintrust.logger import BraintrustState, ObjectFetcher
@@ -18,12 +19,12 @@ class SpanData:
 
     def __init__(
         self,
-        input: Optional[Any] = None,
-        output: Optional[Any] = None,
+        input: Any | None = None,
+        output: Any | None = None,
         metadata: Metadata | None = None,
-        span_id: Optional[str] = None,
-        span_parents: Optional[list[str]] = None,
-        span_attributes: Optional[dict[str, Any]] = None,
+        span_id: str | None = None,
+        span_parents: list[str] | None = None,
+        span_attributes: dict[str, Any] | None = None,
         **kwargs: Any,
     ):
         self.input = input
@@ -62,7 +63,7 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
         object_id: str,
         root_span_id: str,
         state: BraintrustState,
-        span_type_filter: Optional[list[str]] = None,
+        span_type_filter: list[str] | None = None,
         include_scorers: bool = False,
     ):
         # Build the filter expression for root_span_id and optionally span_attributes.type
@@ -78,7 +79,7 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
     @staticmethod
     def _build_filter(
         root_span_id: str,
-        span_type_filter: Optional[list[str]] = None,
+        span_type_filter: list[str] | None = None,
         include_scorers: bool = False,
     ) -> dict[str, Any]:
         """Build BTQL filter expression."""
@@ -135,8 +136,8 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
         return self._state
 
 
-SpanFetchFn = Callable[[Optional[list[str]]], Awaitable[list[SpanData]]]
-SpanFetchWithOptionsFn = Callable[[Optional[list[str]], bool], Awaitable[list[SpanData]]]
+SpanFetchFn = Callable[[list[str] | None], Awaitable[list[SpanData]]]
+SpanFetchWithOptionsFn = Callable[[list[str] | None, bool], Awaitable[list[SpanData]]]
 
 
 class GetThreadOptions(TypedDict, total=False):
@@ -155,11 +156,11 @@ class CachedSpanFetcher:
 
     def __init__(
         self,
-        object_type: Optional[str] = None,  # Literal["experiment", "project_logs", "playground_logs"]
-        object_id: Optional[str] = None,
-        root_span_id: Optional[str] = None,
-        get_state: Optional[Callable[[], Awaitable[BraintrustState]]] = None,
-        fetch_fn: Optional[SpanFetchFn] = None,
+        object_type: str | None = None,  # Literal["experiment", "project_logs", "playground_logs"]
+        object_id: str | None = None,
+        root_span_id: str | None = None,
+        get_state: Callable[[], Awaitable[BraintrustState]] | None = None,
+        fetch_fn: SpanFetchFn | None = None,
     ):
         self._span_cache: dict[str, list[SpanData]] = {}
         self._all_fetched = False
@@ -167,7 +168,7 @@ class CachedSpanFetcher:
         if fetch_fn is not None:
             # Direct fetch function injection (for testing)
             async def _fetch_fn(
-                span_type: Optional[list[str]],
+                span_type: list[str] | None,
                 include_scorers: bool = False,
             ) -> list[SpanData]:
                 del include_scorers
@@ -182,7 +183,7 @@ class CachedSpanFetcher:
                 )
 
             async def _fetch_fn(
-                span_type: Optional[list[str]],
+                span_type: list[str] | None,
                 include_scorers: bool = False,
             ) -> list[SpanData]:
                 state = await get_state()
@@ -218,7 +219,7 @@ class CachedSpanFetcher:
 
     async def get_spans(
         self,
-        span_type: Optional[list[str]] = None,
+        span_type: list[str] | None = None,
         *,
         include_scorers: bool = False,
     ) -> list[SpanData]:
@@ -257,7 +258,7 @@ class CachedSpanFetcher:
         await self._fetch_spans(missing_types)
         return self._get_from_cache(span_type)
 
-    async def _fetch_spans(self, span_type: Optional[list[str]]) -> None:
+    async def _fetch_spans(self, span_type: list[str] | None) -> None:
         """Fetch spans from the server."""
         spans = await self._fetch_fn(span_type, False)
 
@@ -268,7 +269,7 @@ class CachedSpanFetcher:
                 self._span_cache[span_type_str] = []
             self._span_cache[span_type_str].append(span)
 
-    def _get_from_cache(self, span_type: Optional[list[str]]) -> list[SpanData]:
+    def _get_from_cache(self, span_type: list[str] | None) -> list[SpanData]:
         """Get spans from cache, optionally filtering by type."""
         if not span_type or len(span_type) == 0:
             # Return all spans
@@ -297,7 +298,7 @@ class Trace(Protocol):
 
     async def get_spans(
         self,
-        span_type: Optional[list[str]] = None,
+        span_type: list[str] | None = None,
         *,
         include_scorers: bool = False,
     ) -> list[SpanData]:
@@ -342,7 +343,7 @@ class LocalTrace(dict):
         object_type: str,  # Literal["experiment", "project_logs", "playground_logs"]
         object_id: str,
         root_span_id: str,
-        ensure_spans_flushed: Optional[Callable[[], Awaitable[None]]],
+        ensure_spans_flushed: Callable[[], Awaitable[None]] | None,
         state: BraintrustState,
     ):
         # Initialize dict with trace_ref for JSON serialization
@@ -362,7 +363,7 @@ class LocalTrace(dict):
         self._ensure_spans_flushed = ensure_spans_flushed
         self._state = state
         self._spans_flushed = False
-        self._spans_flush_promise: Optional[asyncio.Task[None]] = None
+        self._spans_flush_promise: asyncio.Task[None] | None = None
         self._thread_cache: dict[str, asyncio.Task[list[Any]]] = {}
 
         async def get_state() -> BraintrustState:
@@ -388,7 +389,7 @@ class LocalTrace(dict):
 
     async def get_spans(
         self,
-        span_type: Optional[list[str]] = None,
+        span_type: list[str] | None = None,
         *,
         include_scorers: bool = False,
     ) -> list[SpanData]:

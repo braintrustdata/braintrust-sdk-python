@@ -5,47 +5,46 @@ interactions:
       [{"text": "What did I just tell you my name was?"}], "role": "user"}], "generationConfig":
       {"maxOutputTokens": 200}}'
     headers:
-      accept:
+      Accept:
       - '*/*'
-      accept-encoding:
+      Accept-Encoding:
       - gzip, deflate
-      connection:
+      Connection:
       - keep-alive
-      content-length:
+      Content-Length:
       - '278'
-      content-type:
+      Content-Type:
       - application/json
-      host:
+      Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61RTU/DMAy991dEOdMpawlft4lxmLbBBNU0BAiF1esCaVKaFDGm/XeSdt1SzuQQ
-        WX7PfvbzNkAIL5lMecoMaHyFnmwGoW39O0xJA9JYoE3ZZMFKc+Q2b+vFlmLg2xXhR1Wh90obZJRI
-        UQ5oo6oSSWYjrtFA8CX0niX2ineH+OXkKFkqAa5frlIQLX3XEvCKS67X98C0ko72kNzN8AFlX9lE
-        ZUWp3tzUIekRGseXNDqj8Sm5IJRQGrTStSiuNMtgCoZZW9hheWxb5IVJ1AfIa1XVtkS0kfFc7OB9
-        sseNMkx0oLgt9drqoRXlwnfXM95uzwQ3G7dicrNIsOeQ6U7VWhR4Tv6d8Z/E+qQrFuwv0xxrDqXm
-        zVUyyO2dwqhHwpVgeh0S0q+74hJ0oaSGUep4w/GCs8l4dDv9XP+cj2biNeKbgcLBLvgFeALyD7EC
-        AAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"You told me your name is Alice.\",\n
+        \           \"thoughtSignature\": \"EjQKMgEMOdbHNj+5wq7sOtMcTxFaMOvvTpGE2DcFYfXfV0lVaT6o18+5lVJQNSgoa4fpWCMD\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        28,\n    \"candidatesTokenCount\": 8,\n    \"totalTokenCount\": 36,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 28\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n
+        \ \"responseId\": \"NnPzae3kAp-8_uMP0IucgA0\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Sun, 05 Oct 2025 17:04:13 GMT
+      - Thu, 30 Apr 2026 15:20:22 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=427
+      - gfet4t7; dur=1395
       Transfer-Encoding:
       - chunked
       Vary:
@@ -56,8 +55,12 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '663'
     status:
       code: 200
       message: OK

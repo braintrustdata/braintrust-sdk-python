@@ -5,7 +5,8 @@ generated documentation, while the class names themselves are *not*
 underscore-prefixed so pyright strict mode doesn't flag them as private.
 """
 
-from typing import Any, Generic, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 
 from typing_extensions import NotRequired, TypedDict
 

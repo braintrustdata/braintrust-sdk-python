@@ -69,6 +69,14 @@ def _maybe_timestamp_elapsed(end: str | None, start: str | None) -> float | None
     return (datetime.datetime.fromisoformat(end) - datetime.datetime.fromisoformat(start)).total_seconds()
 
 
+# Maps the prefix of an OpenAI usage `*_tokens_details` field to the Braintrust
+# metric prefix (e.g. `input_tokens_details.cached_tokens` → `prompt_cached_tokens`).
+_TOKEN_PREFIX_MAP = {
+    "input": "prompt",
+    "output": "completion",
+}
+
+
 def _usage_to_metrics(usage: dict[str, Any]) -> dict[str, Any]:
     """Convert an OpenAI-style usage dict to Braintrust metrics."""
     metrics: dict[str, Any] = {}
@@ -86,6 +94,19 @@ def _usage_to_metrics(usage: dict[str, Any]) -> dict[str, Any]:
         metrics["tokens"] = usage["total_tokens"]
     elif "input_tokens" in usage and "output_tokens" in usage:
         metrics["tokens"] = usage["input_tokens"] + usage["output_tokens"]
+
+    # Walk *_tokens_details sub-objects so we capture cached / reasoning / audio
+    # token counts (e.g. input_tokens_details.cached_tokens → prompt_cached_tokens).
+    for key, value in usage.items():
+        if not key.endswith("_tokens_details") or not isinstance(value, dict):
+            continue
+        raw_prefix = key[: -len("_tokens_details")]
+        prefix = _TOKEN_PREFIX_MAP.get(raw_prefix, raw_prefix)
+        for sub_key, sub_value in value.items():
+            if isinstance(sub_value, bool) or not isinstance(sub_value, (int, float)):
+                continue
+            metrics[f"{prefix}_{sub_key}"] = sub_value
+
     return metrics
 
 
@@ -166,9 +187,8 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
         if ttft is not None:
             data["metrics"]["time_to_first_token"] = ttft
         if span.span_data.response is not None and span.span_data.response.usage is not None:
-            data["metrics"]["tokens"] = span.span_data.response.usage.total_tokens
-            data["metrics"]["prompt_tokens"] = span.span_data.response.usage.input_tokens
-            data["metrics"]["completion_tokens"] = span.span_data.response.usage.output_tokens
+            usage_dict = span.span_data.response.usage.model_dump()
+            data["metrics"].update(_usage_to_metrics(usage_dict))
 
         return data
 

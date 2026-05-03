@@ -16,8 +16,9 @@ Before editing:
 1. Read the shared integration primitives.
 2. Read the target provider package.
 3. Pick the nearest existing integration as a reference.
-4. Decide the span shape before writing patchers.
-5. Run the narrowest provider nox session first.
+4. Confirm provider versions and nox sessions from source files, not memory.
+5. Decide the span shape before writing patchers.
+6. Run the narrowest provider nox session first.
 
 Do not design a new integration shape from scratch if an existing provider already matches the problem.
 
@@ -29,6 +30,7 @@ Always read:
 - `py/src/braintrust/integrations/versioning.py`
 - `py/src/braintrust/integrations/__init__.py`
 - `py/src/braintrust/integrations/utils.py`
+- `py/pyproject.toml` for provider matrix pins and cassette directory mappings
 - `py/noxfile.py`
 
 Read these when working on an existing integration:
@@ -50,6 +52,25 @@ Read these when relevant:
 - `py/src/braintrust/integrations/adk/tracing.py`, `py/src/braintrust/integrations/anthropic/tracing.py`, and `py/src/braintrust/integrations/google_genai/tracing.py` when handling multimodal content, binary inputs, generated media, or attachment materialization behavior
 
 Do not forget `auto.py` and `auto_test_scripts/`. Import-order and subprocess regressions often only show up there.
+
+## Version And CI Routing
+
+Do not guess which provider versions or sessions apply.
+
+Use these files as the routing chain:
+
+- `py/pyproject.toml` `[tool.braintrust.matrix]`: supported provider versions and what `latest` resolves to
+- `py/pyproject.toml` `[tool.braintrust.cassette-dirs]`: versioned cassette directory ownership
+- `py/src/braintrust/integrations/versioning.py`: supported version helpers and gates
+- `py/noxfile.py`: actual session names, package installation, and `BRAINTRUST_TEST_PACKAGE_VERSION`
+- `.github/workflows/checks.yaml`: CI matrix and which sessions run in shards or static checks
+
+When changing version-gated behavior:
+
+1. Identify every matrix version for the provider.
+2. Check whether the integration has `min_version`, `max_version`, `superseded_by`, or feature-detection branches.
+3. Test the narrowest affected version first.
+4. Add or update cassettes only for versions whose observable provider behavior intentionally changed.
 
 ## Pick A Reference
 
@@ -121,6 +142,16 @@ Do not start by wiring wrappers and only later decide what the span should conta
 3. Add the integration import near the other integration imports.
 4. Add or update the relevant subprocess auto-instrument test.
 
+### Setup, manual wrapping, and auto-instrument
+
+Treat these as distinct entry points:
+
+- `setup_<provider>()`: explicit package-level patching
+- public `wrap_*()` helpers: manual wrapping of a provided class, function, or client
+- `auto_instrument()`: import-order-sensitive discovery and setup
+
+When changing one entry point, check whether the other two should keep equivalent span behavior. If `auto_instrument()` changes or could be affected by import timing, validate it with a subprocess test instead of only calling the integration in-process.
+
 ## Package Layout Rules
 
 Keep provider-specific behavior in `py/src/braintrust/integrations/<provider>/`.
@@ -171,14 +202,24 @@ Use this rubric:
 - `metrics`: timing and numeric accounting such as token counts or elapsed time
 - `error`: exceptions or failure information
 
+Avoid double-counting token metrics:
+
+- the integration that directly owns the model/provider API response should own token accounting
+- orchestration/framework integrations should usually not log token metrics when underlying provider integrations can create leaf spans with usage metrics
+- do not add fragile provider-specific ownership checks such as "if OpenAI is patched, skip metrics"; prefer a clear span ownership rule instead
+
 Good span shaping usually means:
 
 - flatten positional arguments into named fields
-- normalize provider SDK objects into dicts, lists, or scalars
+- normalize provider SDK objects into dicts, lists, or scalars when that improves readability
 - drop duplicate or noisy transport fields
 - aggregate streaming chunks into one final `output` plus stream-specific `metrics`
 
+Do not over-serialize in integration code. Braintrust handles serialization when sending/logging spans, so integration tracing helpers usually only need to shape readable Python dicts/lists/scalars and materialize attachments where appropriate. Avoid unnecessary JSON dumps/loads, recursive conversion, or stringification just to make values serializable.
+
 Keep wrapper bodies thin: prepare traced input, open the span, call the provider, normalize the result, and log `output`/`metadata`/`metrics`.
+
+Braintrust span logging methods are boundary-safe and should not throw during normal integration use. Do not wrap `span.log(...)`, `span.set_attributes(...)`, or similar Braintrust span methods in broad `try`/`except` blocks. Only catch exceptions around provider calls or around integration-owned conversion code when there is a specific expected failure mode and a clear fallback.
 
 Prefer provider-local helpers in `tracing.py`, for example:
 
@@ -321,4 +362,8 @@ Avoid these failures:
 - re-recording cassettes when behavior did not intentionally change
 - adding a custom `_instrument_*` helper where `_instrument_integration()` already fits
 - forgetting `target_module` for deep or optional patch targets
+- double-counting token metrics in both orchestration/framework spans and provider leaf spans
+- adding provider-specific token ownership detection instead of defining clear metric ownership for the integration
+- doing excessive serialization/stringification in tracing code even though Braintrust serializes span payloads at send/log time
+- wrapping Braintrust span logging methods in broad `try`/`except` blocks even though those methods are designed not to throw
 - forcing non-image attachments through `image_url` shims, dropping unrecognized file inputs, or re-serializing non-attachment values while materializing payloads

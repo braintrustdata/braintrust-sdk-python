@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.86.0
+      - pydantic-ai/1.89.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,11 +26,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.33.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,33 +39,32 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DXqG6guvCsBUHoohxtwLIp1R6E3IV\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776958078,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Dalh4OujtjPvaImXRIzAONCj0Wfpw\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1777655514,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_3M60iOAijP59yBGFVPMk76DG\",\n            \"type\":
+        \           \"id\": \"call_pBshM26tneBkctQtNgjkcVC6\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"final_result\",\n
         \             \"arguments\": \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"10
-        + 15 equals 25 by adding the two numbers together.\\\"}\"\n            }\n
-        \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 57,\n    \"completion_tokens\":
-        32,\n    \"total_tokens\": 89,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        plus 15 equals 25.\\\"}\"\n            }\n          }\n        ],\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        57,\n    \"completion_tokens\": 26,\n    \"total_tokens\": 83,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e61ea1dda4\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_576e90e2be\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f0de537e877369d-YYZ
+      - 9f5068732e89086a-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 23 Apr 2026 15:28:00 GMT
+      - Fri, 01 May 2026 17:11:55 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -79,19 +78,19 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '1154'
+      - '1122'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1421'
+      - '837'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=8IxYTiRHy4gz6d9GXpZoNgzi7ultXDBSZuIlGqt3Tvc-1776958078.706586-1.0.1.1-q1dpKrzQ0_M9mslgDV8VQsLU2rQwLGLnx3S_Cv9c3Ix8SSVTwbY5eKy8HwNcgQ85RG52kEzvuwGqW2oNm6I4icq37Rda.Rmh.4aY_ZZJv9FRrLXi.Ru0kaQlkxaBYWnc;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 23 Apr 2026
-        15:58:00 GMT
+      - __cf_bm=V_uALZjmpHWMmPVY8HMmf8P4Ia_vedbR4b8KkOen60g-1777655514.107892-1.0.1.1-9R3JIRiOyuFyaH6B36jeFhpQXalJJmxO3hKctqXiRSWa19fDAtABO9EuEr0mItRXfTuTC8QSiSPb_O9UsSHOEvq_cauw0xZqNbC.Ix05jjBEwakhfSL9Y8oBiyJRX3u7;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
+        17:41:55 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -107,7 +106,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3a3ba59143d840369aa9896bde18c971
+      - req_63c8b54b149943d98cf5f39457a7dc31
     status:
       code: 200
       message: OK

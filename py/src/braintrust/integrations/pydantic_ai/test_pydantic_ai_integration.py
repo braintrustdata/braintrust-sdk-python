@@ -2333,19 +2333,19 @@ def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
     assert agent_graph_module.ToolManager.__dict__[tool_method_name] is tool_method
 
 
-def test_serialize_content_part_with_binary_content():
-    """Unit test to verify _serialize_content_part handles BinaryContent correctly.
+def test_shape_content_part_with_binary_content():
+    """Unit test to verify _shape_content_part handles BinaryContent correctly.
 
-    This tests the direct serialization of BinaryContent objects and verifies
+    This tests the direct shaping of BinaryContent objects and verifies
     they are converted to Braintrust Attachment objects.
     """
-    from braintrust.integrations.pydantic_ai.tracing import _serialize_content_part
+    from braintrust.integrations.pydantic_ai.tracing import _shape_content_part
     from braintrust.logger import Attachment
     from pydantic_ai.models.function import BinaryContent
 
     # Test 1: Direct BinaryContent serialization
     binary = BinaryContent(data=b"test pdf data", media_type="application/pdf")
-    result = _serialize_content_part(binary)
+    result = _shape_content_part(binary)
 
     assert result is not None, "Should serialize BinaryContent"
     assert result["type"] == "binary", "Should have type 'binary'"
@@ -2356,14 +2356,14 @@ def test_serialize_content_part_with_binary_content():
     assert result["attachment"]._reference["content_type"] == "application/pdf"
 
 
-def test_serialize_content_part_with_user_prompt_part():
-    """Unit test to verify _serialize_content_part handles UserPromptPart with nested BinaryContent.
+def test_shape_content_part_with_user_prompt_part():
+    """Unit test to verify _shape_content_part handles UserPromptPart with nested BinaryContent.
 
     This is the critical test for the bug: when a UserPromptPart has a content list
-    containing BinaryContent, we need to recursively serialize the content items
+    containing BinaryContent, we need to recursively shape the content items
     so that BinaryContent is converted to Braintrust Attachment.
     """
-    from braintrust.integrations.pydantic_ai.tracing import _serialize_content_part
+    from braintrust.integrations.pydantic_ai.tracing import _shape_content_part
     from braintrust.logger import Attachment
     from pydantic_ai.messages import UserPromptPart
     from pydantic_ai.models.function import BinaryContent
@@ -2373,10 +2373,10 @@ def test_serialize_content_part_with_user_prompt_part():
     binary = BinaryContent(data=pdf_data, media_type="application/pdf")
     user_prompt_part = UserPromptPart(content=[binary, "What is in this document?"])
 
-    # Serialize the UserPromptPart
-    result = _serialize_content_part(user_prompt_part)
+    # Shape the UserPromptPart
+    result = _shape_content_part(user_prompt_part)
 
-    # Verify the result is a dict with serialized content
+    # Verify the result is a dict with shaped content
     assert isinstance(result, dict), f"Should return dict, got {type(result)}"
     assert "content" in result, f"Should have 'content' key. Keys: {result.keys()}"
 
@@ -2384,7 +2384,7 @@ def test_serialize_content_part_with_user_prompt_part():
     assert isinstance(content, list), f"Content should be a list, got {type(content)}"
     assert len(content) == 2, f"Should have 2 content items, got {len(content)}"
 
-    # CRITICAL: First item should be serialized BinaryContent with Attachment
+    # CRITICAL: First item should be shaped BinaryContent with Attachment
     binary_item = content[0]
     assert isinstance(binary_item, dict), f"Binary item should be dict, got {type(binary_item)}"
     assert binary_item.get("type") == "binary", f"Binary item should have type='binary'. Got: {binary_item}"
@@ -2398,13 +2398,13 @@ def test_serialize_content_part_with_user_prompt_part():
     assert content[1] == "What is in this document?"
 
 
-def test_serialize_messages_with_binary_content():
-    """Unit test to verify _serialize_messages handles ModelRequest with BinaryContent in parts.
+def test_shape_messages_with_binary_content():
+    """Unit test to verify _shape_messages handles ModelRequest with BinaryContent in parts.
 
-    This tests the full message serialization path that's used for the chat span,
+    This tests the full message shaping path that's used for the chat span,
     ensuring that nested BinaryContent in UserPromptPart is properly converted.
     """
-    from braintrust.integrations.pydantic_ai.tracing import _serialize_messages
+    from braintrust.integrations.pydantic_ai.tracing import _shape_messages
     from braintrust.logger import Attachment
     from pydantic_ai.messages import ModelRequest, UserPromptPart
     from pydantic_ai.models.function import BinaryContent
@@ -2415,9 +2415,9 @@ def test_serialize_messages_with_binary_content():
     user_prompt_part = UserPromptPart(content=[binary, "What is in this document?"])
     model_request = ModelRequest(parts=[user_prompt_part])
 
-    # Serialize the messages
+    # Shape the messages
     messages = [model_request]
-    result = _serialize_messages(messages)
+    result = _shape_messages(messages)
 
     # Verify structure
     assert len(result) == 1, f"Should have 1 message, got {len(result)}"
@@ -2435,7 +2435,7 @@ def test_serialize_messages_with_binary_content():
     assert isinstance(content, list), f"Content should be list, got {type(content)}"
     assert len(content) == 2, f"Should have 2 content items, got {len(content)}"
 
-    # CRITICAL: First content item should be serialized BinaryContent with Attachment
+    # CRITICAL: First content item should be shaped BinaryContent with Attachment
     binary_item = content[0]
     assert isinstance(binary_item, dict), f"Binary item should be dict, got {type(binary_item)}"
     assert binary_item.get("type") == "binary", f"Binary item should have type='binary'. Got: {binary_item}"
