@@ -659,30 +659,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.43.1"
+version = "1.43.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/98/36/028c12ed6ed85009a21b5472eb76c27f9b0341c6986f06f83475b40aaf51/boto3-1.43.1.tar.gz", hash = "sha256:9e4f85a7884797ff0f52c257094730ed228aaa07fa8134775ff8f86909cf4f2a", size = 113175, upload-time = "2026-04-30T20:27:04.569Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/95/cd/bba36079f5d4bd63db7385e6b9dc1845db32407c3f18f56aaddafb75097f/boto3-1.43.2.tar.gz", hash = "sha256:be951cc22769fbcda73fac523b031ee38db45c3ae2b0d828c76b8f6e8e683073", size = 113108, upload-time = "2026-05-01T19:43:13.632Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/d1/b8b2d5420c51cd8f7ec044ceecbf24b060156680b26519e1d482e160c3c8/boto3-1.43.1-py3-none-any.whl", hash = "sha256:3840bf0345b9aefcc5915176a19d227f63cfba7778c65e6e52d61c6ea0a10fdc", size = 140498, upload-time = "2026-04-30T20:27:01.791Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/e5/c9cee72ef678dabcc27acaf8228a2d4157ad26b00e1cc5d48886f8a94c2c/boto3-1.43.2-py3-none-any.whl", hash = "sha256:796e859cfb5e93c55276ce746f8020f691eda6b68a0ec4ce4f6fd07a1cca6859", size = 140501, upload-time = "2026-05-01T19:43:10.5Z" },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.43.1"
+version = "1.43.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/03/b7/416ae6f1461d6fec3b3aaffc4759371319c71a21f7ab4c3106ee574fda8d/botocore-1.43.1.tar.gz", hash = "sha256:270d6357d662550fdb84973ec247e02bece0b6283d90bf37319c7753515336e4", size = 15296915, upload-time = "2026-04-30T20:26:50.962Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/b0/65d4c85f16367fb6147d391652d0c386f24b029536f7026e7b98740166cd/botocore-1.43.2.tar.gz", hash = "sha256:7b2ec87b6d0720bff920451ce930e71c2a99cdea48d0eaa66ccf0b21ea747e03", size = 15301186, upload-time = "2026-05-01T19:42:59.748Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/48/dc2290d2af8b1dc3a44d210555a90f0cb76ef913c52b0c4f31a43cce27b8/botocore-1.43.1-py3-none-any.whl", hash = "sha256:955edc6a398b9c4100cf0d5a31433fdba3835500bf38c1ef171e6e75f4b477d2", size = 14979119, upload-time = "2026-04-30T20:26:46.031Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/52/f57ded73f1527a18e0712281eb49c4ae240038bb4dc7083fd288b4adc811/botocore-1.43.2-py3-none-any.whl", hash = "sha256:b823454d751a1c24bb403b5b07ab65007689654abb21787df923684e0743976c", size = 14982693, upload-time = "2026-05-01T19:42:54.602Z" },
 ]
 
 [[package]]
@@ -709,7 +709,7 @@ all = [
     { name = "boto3" },
     { name = "openai-agents", version = "0.2.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agentscope') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-openai-agents' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-pydantic-ai-logfire') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agno' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agno' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands')" },
     { name = "openai-agents", version = "0.10.5", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-test-crewai' or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agentscope') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-openai-agents' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-pydantic-ai-logfire') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands')" },
-    { name = "openai-agents", version = "0.15.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra != 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm')" },
+    { name = "openai-agents", version = "0.15.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra != 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm')" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-sdk" },
@@ -734,7 +734,7 @@ cli = [
 openai-agents = [
     { name = "openai-agents", version = "0.2.9", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-test-litellm' or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agentscope') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-openai-agents' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-pydantic-ai-logfire') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agno' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agno' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands')" },
     { name = "openai-agents", version = "0.10.5", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-test-crewai' or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agentscope') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-openai-agents' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-pydantic-ai-logfire') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands')" },
-    { name = "openai-agents", version = "0.15.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra != 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm')" },
+    { name = "openai-agents", version = "0.15.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra != 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm')" },
 ]
 otel = [
     { name = "opentelemetry-api" },
@@ -787,7 +787,7 @@ lint = [
     { name = "mistralai" },
     { name = "onnxruntime", marker = "python_full_version < '3.11'" },
     { name = "openai", version = "2.32.0", source = { registry = "https://pypi.org/simple" } },
-    { name = "openai-agents", version = "0.15.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "openai-agents", version = "0.15.1", source = { registry = "https://pypi.org/simple" } },
     { name = "openrouter" },
     { name = "opentelemetry-instrumentation-openai" },
     { name = "pydantic-ai" },
@@ -1103,11 +1103,11 @@ wheels = [
 
 [[package]]
 name = "cachetools"
-version = "7.0.6"
+version = "7.1.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/76/7b/1755ed2c6bfabd1d98b37ae73152f8dcf94aa40fee119d163c19ed484704/cachetools-7.0.6.tar.gz", hash = "sha256:e5d524d36d65703a87243a26ff08ad84f73352adbeafb1cde81e207b456aaf24", size = 37526, upload-time = "2026-04-20T19:02:23.289Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ff/e2/85f227594656000ff4d8adadae91a21f536d4a84c6c716a86bd6685874be/cachetools-7.1.1.tar.gz", hash = "sha256:27bdf856d68fd3c71c26c01b5edc312124ed427524d1ddb31aa2b7746fe20d4b", size = 40202, upload-time = "2026-05-03T20:00:29.391Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/c4/cf76242a5da1410917107ff14551764aa405a5fd10cd10cf9a5ca8fa77f4/cachetools-7.0.6-py3-none-any.whl", hash = "sha256:4e94956cfdd3086f12042cdd29318f5ced3893014f7d0d059bf3ead3f85b7f8b", size = 13976, upload-time = "2026-04-20T19:02:21.187Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/0f/f897abe4ea0a8c408ae65c8c83bffab4936ad65d6032d4fb4cd35bbdc3ee/cachetools-7.1.1-py3-none-any.whl", hash = "sha256:0335cd7a0952d2b22327441fb0628139e234c565559eeb91a8a4ac7551c5353d", size = 16775, upload-time = "2026-05-03T20:00:27.857Z" },
 ]
 
 [[package]]
@@ -1654,7 +1654,7 @@ wheels = [
 
 [[package]]
 name = "cyclopts"
-version = "4.11.0"
+version = "4.11.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -1664,9 +1664,9 @@ dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f9/fa/eff8f1abae783bade9b5e9bafafd0040d4dbf51988f9384bfdc0326ba1fc/cyclopts-4.11.0.tar.gz", hash = "sha256:1ffcb9990dbd56b90da19980d31596de9e99019980a215a5d76cf88fe452e94d", size = 170690, upload-time = "2026-04-23T00:23:36.858Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/f7/3ee212c1bc314551094fc8fda7b4b63c647ac5c32d06daa285d04d33edfc/cyclopts-4.11.2.tar.gz", hash = "sha256:8c9b77921660fa1ee52c150e2217ced672323efb3434e9b338077de1bc551ff4", size = 175935, upload-time = "2026-05-04T00:11:57.857Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/37/197db187c260d24d4be1f09d427f59f3fb9a89bcf1354e23865c7bff7607/cyclopts-4.11.0-py3-none-any.whl", hash = "sha256:34318e3823b44b5baa754a5e37ec70a5c17dc81c65e4295ed70e17bc1aeae50d", size = 208494, upload-time = "2026-04-23T00:23:34.948Z" },
+    { url = "https://files.pythonhosted.org/packages/23/18/4cedda786e7da429e7489549a9e5461530d4133130e541f25fb94f015776/cyclopts-4.11.2-py3-none-any.whl", hash = "sha256:838020120b939549ff7c8423aca29c86764b5dd1d8a5d7f3753a6327861f537b", size = 213537, upload-time = "2026-05-04T00:11:56.103Z" },
 ]
 
 [[package]]
@@ -4090,14 +4090,14 @@ wheels = [
 
 [[package]]
 name = "langchain-protocol"
-version = "0.0.14"
+version = "0.0.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/05/bf/efb5e2ed832e4d6d45590e25a9e5191986b291b543bc6a807b48bee070b0/langchain_protocol-0.0.14.tar.gz", hash = "sha256:bc1e8553122e6ede310280462d5813023a172ff2785ccbbdec54d43f3a15e5f2", size = 5862, upload-time = "2026-04-29T16:40:18.657Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/24/9777489d6fbbee64af0c8f96d4f840239c408cf694f3394672807dafc490/langchain_protocol-0.0.15.tar.gz", hash = "sha256:9ab2d11ee73944754f10e037e717098d3a6796f0e58afa9cadda6154e7655ade", size = 5862, upload-time = "2026-05-01T22:30:04.748Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/e9/06c47ecb2aff08f83dfa30058da3bf86be64862c19569043ed5331bbeecd/langchain_protocol-0.0.14-py3-none-any.whl", hash = "sha256:ffc35089779bd8ca217015180cef5e660fc3b074efdaa0f2e95df73583f1a047", size = 6984, upload-time = "2026-04-29T16:40:17.841Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/7a/9c97a7b9cbe4c5dc6a44cdb1545450c28f0c8ce89b9c1f0ee7fbad896263/langchain_protocol-0.0.15-py3-none-any.whl", hash = "sha256:461eb794358f83d5e42635a5797799ffec7b4702314e34edf73ac21e75d3ef79", size = 6982, upload-time = "2026-05-01T22:30:03.877Z" },
 ]
 
 [[package]]
@@ -5542,7 +5542,7 @@ wheels = [
 
 [[package]]
 name = "openai-agents"
-version = "0.15.0"
+version = "0.15.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and extra != 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-agno' and extra != 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-langchain' and extra != 'group-10-braintrust-test-litellm' and extra != 'group-10-braintrust-test-openai-agents' and extra == 'group-10-braintrust-test-strands'",
@@ -5602,9 +5602,9 @@ dependencies = [
     { name = "websockets", version = "15.0.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-lint' or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-openai-agents' and extra == 'group-10-braintrust-test-strands')" },
     { name = "websockets", version = "16.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra == 'group-10-braintrust-test-langchain' or extra == 'group-10-braintrust-test-openai-agents' or extra == 'group-10-braintrust-test-strands' or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-crewai') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-litellm') or (extra != 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-pydantic-ai-logfire') or (extra != 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra != 'group-10-braintrust-test-litellm')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/21/0669d917831e15f0f3c3767be021aa1b95b5a5259954358d9d2b924baa4f/openai_agents-0.15.0.tar.gz", hash = "sha256:45f78c5d399cabdeaa5047c083a66c3b7bc3721bd39d0dbb5790c933356a8f11", size = 5315598, upload-time = "2026-05-01T06:45:08.162Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/52/125891e56b67ec78bef08d91dc0a8d39457088cd0f59bf8e74a37e5e591c/openai_agents-0.15.1.tar.gz", hash = "sha256:78c3f1226e1d6d34dd7566e211c8345e996629d1704335153d1728995a3a7775", size = 5319915, upload-time = "2026-05-02T02:20:53.631Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/c0/7dbe95a150293dbfe2bfac466ed4b7975d7b0f0404ca47a2079b0e8c27c3/openai_agents-0.15.0-py3-none-any.whl", hash = "sha256:d5200d70cd87c211a4207fca2a1936ad8f4b416f05470ffebaaf679028d2f67c", size = 817869, upload-time = "2026-05-01T06:45:03.682Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/7b/69a33975b3610300219e1d25185c46280814cdb87e69a779acf0c9b9166a/openai_agents-0.15.1-py3-none-any.whl", hash = "sha256:2d304a5dcb919bc4fa1de5c7c9c93a4353a8a79d87d582d6170929390b7b3cef", size = 818627, upload-time = "2026-05-02T02:20:50.932Z" },
 ]
 
 [[package]]
@@ -7879,11 +7879,11 @@ wheels = [
 
 [[package]]
 name = "pytz"
-version = "2026.1.post1"
+version = "2026.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/56/db/b8721d71d945e6a8ac63c0fc900b2067181dbb50805958d4d4661cf7d277/pytz-2026.1.post1.tar.gz", hash = "sha256:3378dde6a0c3d26719182142c56e60c7f9af7e968076f31aae569d72a0358ee1", size = 321088, upload-time = "2026-03-03T07:47:50.683Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ff/46/dd499ec9038423421951e4fad73051febaa13d2df82b4064f87af8b8c0c3/pytz-2026.2.tar.gz", hash = "sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a", size = 320861, upload-time = "2026-05-04T01:35:29.667Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/99/781fe0c827be2742bcc775efefccb3b048a3a9c6ce9aec0cbf4a101677e5/pytz-2026.1.post1-py2.py3-none-any.whl", hash = "sha256:f2fd16142fda348286a75e1a524be810bb05d444e5a081f37f7affc635035f7a", size = 510489, upload-time = "2026-03-03T07:47:49.167Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/dd/96da98f892250475bdf2328112d7468abdd4acc7b902b6af23f4ed958ea0/pytz-2026.2-py2.py3-none-any.whl", hash = "sha256:04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126", size = 510141, upload-time = "2026-05-04T01:35:27.408Z" },
 ]
 
 [[package]]
@@ -8890,14 +8890,14 @@ wheels = [
 
 [[package]]
 name = "types-requests"
-version = "2.33.0.20260408"
+version = "2.33.0.20260503"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/69/6a/749dc53a54a3f35842c1f8197b3ca6b54af6d7458a1bfc75f6629b6da666/types_requests-2.33.0.20260408.tar.gz", hash = "sha256:95b9a86376807a216b2fb412b47617b202091c3ea7c078f47cc358d5528ccb7b", size = 23882, upload-time = "2026-04-08T04:34:49.33Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a1/b8/57e94268c0d82ac3eaa2fc35aa8ca7bbc2542f726b67dcf90b0b00a3b14d/types_requests-2.33.0.20260503.tar.gz", hash = "sha256:9721b2d9dbee7131f2fb39f20f0ebb1999c18cef4b512c9a7932f3722de7c5f4", size = 23931, upload-time = "2026-05-03T05:20:08.882Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/b8/78fd6c037de4788c040fdd323b3369804400351b7827473920f6c1d03c10/types_requests-2.33.0.20260408-py3-none-any.whl", hash = "sha256:81f31d5ea4acb39f03be7bc8bed569ba6d5a9c5d97e89f45ac43d819b68ca50f", size = 20739, upload-time = "2026-04-08T04:34:48.325Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/82/959113a6351f3ca046cd0a8cd2cee071d7ea47473560557a01eeae9a6fe2/types_requests-2.33.0.20260503-py3-none-any.whl", hash = "sha256:02aaa7e3577a13471715bb1bddb693cc985ea514f754b503bf033e6a09a3e528", size = 20736, upload-time = "2026-05-03T05:20:07.858Z" },
 ]
 
 [[package]]
@@ -9358,11 +9358,11 @@ wheels = [
 
 [[package]]
 name = "wcwidth"
-version = "0.6.0"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/35/a2/8e3becb46433538a38726c948d3399905a4c7cabd0df578ede5dc51f0ec2/wcwidth-0.6.0.tar.gz", hash = "sha256:cdc4e4262d6ef9a1a57e018384cbeb1208d8abbc64176027e2c2455c81313159", size = 159684, upload-time = "2026-02-06T19:19:40.919Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/ee/afaf0f85a9a18fe47a67f1e4422ed6cf1fe642f0ae0a2f81166231303c52/wcwidth-0.7.0.tar.gz", hash = "sha256:90e3a7ea092341c44b99562e75d09e4d5160fe7a3974c6fb842a101a95e7eed0", size = 182132, upload-time = "2026-05-02T16:04:12.653Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/5a/199c59e0a824a3db2b89c5d2dade7ab5f9624dbf6448dc291b46d5ec94d3/wcwidth-0.6.0-py3-none-any.whl", hash = "sha256:1a3a1e510b553315f8e146c54764f4fb6264ffad731b3d78088cdb1478ffbdad", size = 94189, upload-time = "2026-02-06T19:19:39.646Z" },
+    { url = "https://files.pythonhosted.org/packages/41/52/e465037f5375f43533d1a80b6923955201596a99142ed524d77b571a1418/wcwidth-0.7.0-py3-none-any.whl", hash = "sha256:5d69154c429a82910e241c738cd0e2976fac8a2dd47a1a805f4afed1c0f136f2", size = 110825, upload-time = "2026-05-02T16:04:11.033Z" },
 ]
 
 [[package]]
