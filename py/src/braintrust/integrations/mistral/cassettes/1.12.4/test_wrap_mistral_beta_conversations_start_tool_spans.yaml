@@ -1,0 +1,86 @@
+interactions:
+- request:
+    body: '{"inputs":"Use the code interpreter to calculate 21 * 2. Return only the
+      result.","stream":false,"tools":[{"type":"code_interpreter"}],"model":"mistral-small-latest"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '166'
+      Host:
+      - api.mistral.ai
+      content-type:
+      - application/json
+      user-agent:
+      - mistral-client-python/1.12.4
+    method: POST
+    uri: https://api.mistral.ai/v1/conversations
+  response:
+    body:
+      string: '{"object":"conversation.response","conversation_id":"conv_019df4349547763ab5a0acfe1591236d","outputs":[{"object":"entry","type":"tool.execution","created_at":"2026-05-04T18:16:20.369317Z","completed_at":"2026-05-04T18:16:21.125072Z","model":"mistral-small-latest","id":"tool_exec_019df43496917039a5066b144b0542b6","name":"code_interpreter","arguments":"{\"code\":
+        \"21 * 2\"}","function":"code_interpreter","info":{"code":"21 * 2","code_output":"42\n"}},{"object":"entry","type":"message.output","created_at":"2026-05-04T18:16:21.242155Z","completed_at":"2026-05-04T18:16:21.272804Z","model":"mistral-small-latest","id":"msg_019df43499fa767a8fb220270fd7ce5b","role":"assistant","content":"42"}],"usage":{"prompt_tokens":86,"completion_tokens":19,"total_tokens":110,"connector_tokens":5,"connectors":{"code_interpreter":1}},"guardrails":null}'
+    headers:
+      CF-RAY:
+      - 9f697ef48c7849fc-SJC
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 04 May 2026 18:16:21 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '841'
+      mistral-correlation-id:
+      - 019df434-952c-75b8-a13c-105b7be69de3
+      set-cookie:
+      - __cf_bm=srYdq.iW.XvPJCfCeOzjZi.Zj_lMoQjIq_WJsNR9CuE-1777918579.925641-1.0.1.1-tzEi4sdxAdz2irm_6.4lxf1GK.l8x4oyTxQEgn7FYZiSIUkpToQU.ZlVanS4aqidM4ENwJ1kO1d0ZLh3xj1jp.Pa.c2kaZCka52mZkBySQBH1u6_AETzHR.A0EAWJThk;
+        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 04 May 2026 18:46:21
+        GMT
+      - _cfuvid=Bs59mRiaoolnsjmFFfsJgMjpGWlBsQqzeA4B8Hpaztg-1777918579.925641-1.0.1.1-o3wi.3vNmTIzNBz5H38Uyb5lDmnUlSYDin8o1i1BWmM;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      x-envoy-upstream-service-time:
+      - '1275'
+      x-kong-proxy-latency:
+      - '18'
+      x-kong-request-id:
+      - 019df434-952c-75b8-a13c-105b7be69de3
+      x-kong-upstream-latency:
+      - '1277'
+      x-ratelimit-limit-code-interpreter-day:
+      - '10'
+      x-ratelimit-limit-code-interpreter-minute:
+      - '3'
+      x-ratelimit-limit-tokens-minute:
+      - '500000'
+      x-ratelimit-limit-tokens-month:
+      - '1000000000'
+      x-ratelimit-remaining-code-interpreter-day:
+      - '9'
+      x-ratelimit-remaining-code-interpreter-minute:
+      - '2'
+      x-ratelimit-remaining-tokens-minute:
+      - '499890'
+      x-ratelimit-remaining-tokens-month:
+      - '999999392'
+    status:
+      code: 200
+      message: OK
+version: 1
