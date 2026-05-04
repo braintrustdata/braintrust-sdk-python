@@ -568,6 +568,53 @@ def test_wrap_cohere_chat_stream_v2_sync(memory_logger):
 
 
 @pytest.mark.vcr
+def test_wrap_cohere_chat_stream_v2_rag_citations(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("v2 RAG citation cassette is recorded for the latest Cohere SDK")
+
+    assert not memory_logger.pop()
+    client = wrap_cohere(_v2_client(require_methods=("chat_stream",)))
+    documents = [
+        {
+            "data": {
+                "title": "Braintrust overview",
+                "snippet": "Braintrust is a platform for evaluating, logging, and improving AI applications.",
+            }
+        }
+    ]
+    citation_options = {"mode": "fast"}
+
+    events = list(
+        client.chat_stream(
+            model=CHAT_MODEL,
+            messages=[{"role": "user", "content": "What is Braintrust? Cite the provided document."}],
+            documents=documents,
+            citation_options=citation_options,
+            max_tokens=80,
+        )
+    )
+
+    assert events
+    event_types = [getattr(event, "type", None) or getattr(event, "event_type", None) for event in events]
+    assert "citation-start" in event_types
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    assert span["metadata"]["documents"] == documents
+    assert span["metadata"]["citation_options"] == citation_options
+    output = span["output"]
+    assert isinstance(output, dict)
+    citations = output.get("citations")
+    assert isinstance(citations, list) and citations
+    assert citations[0].get("start") is not None
+    assert citations[0].get("end") is not None
+    assert citations[0].get("text")
+    assert citations[0].get("sources")
+
+
+@pytest.mark.vcr
 def test_wrap_cohere_chat_v1_async(memory_logger):
     assert not memory_logger.pop()
 

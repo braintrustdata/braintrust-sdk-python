@@ -50,6 +50,8 @@ _CHAT_METADATA_KEYS = (
     "presence_penalty",
     "raw_prompting",
     "search_queries_only",
+    "documents",
+    "citation_options",
     "strict_tools",
     "tool_choice",
     "tools",
@@ -393,7 +395,7 @@ def _delta_message_tool_calls(chunk: Any) -> list[Any]:
 
 
 def _as_merge_dict(value: Any) -> dict[str, Any] | None:
-    """Coerce a tool-call delta to a plain dict for merging, or return ``None``."""
+    """Coerce a provider object to a plain dict for merging, or return ``None``."""
     if isinstance(value, dict):
         return value
     converted = _try_to_dict(value)
@@ -455,6 +457,8 @@ def _aggregate_chat_stream(chunks: list[Any]) -> tuple[Any, dict[str, float], di
     finish_reason: str | None = None
     metadata: dict[str, Any] = {}
     metrics: dict[str, float] = {}
+    citations_by_index: dict[int, dict[str, Any]] = {}
+    citation_order: list[int] = []
 
     for chunk in chunks:
         if chunk is None:
@@ -516,6 +520,16 @@ def _aggregate_chat_stream(chunks: list[Any]) -> tuple[Any, dict[str, float], di
                 merge=True,
             )
             continue
+        if event_type == "citation-start":
+            citation = _get_field(_get_field(_get_field(chunk, "delta"), "message"), "citations")
+            citation_dict = _as_merge_dict(citation)
+            chunk_index = _get_field(chunk, "index")
+            idx = chunk_index if isinstance(chunk_index, int) else len(citation_order)
+            if citation_dict is not None:
+                if idx not in citation_order:
+                    citation_order.append(idx)
+                citations_by_index[idx] = citation_dict
+            continue
         if event_type == "message-end":
             delta = _get_field(chunk, "delta")
             fr = _get_field(delta, "finish_reason")
@@ -531,18 +545,28 @@ def _aggregate_chat_stream(chunks: list[Any]) -> tuple[Any, dict[str, float], di
     merged_tool_calls = [
         tool_calls_by_index[i] for i in sorted(tool_call_order) if isinstance(tool_calls_by_index.get(i), dict)
     ]
+    merged_citations = [
+        citations_by_index[i] for i in sorted(citation_order) if isinstance(citations_by_index.get(i), dict)
+    ]
 
     output: Any = _chat_output(terminal_response) if terminal_response is not None else None
     if output is None:
+        output_dict = {}
         merged_text = "".join(text_parts)
-        if merged_tool_calls or role or merged_text:
-            output = {}
-            if role:
-                output["role"] = role
-            if merged_text:
-                output["content"] = merged_text
-            if merged_tool_calls:
-                output["tool_calls"] = merged_tool_calls
+        if role:
+            output_dict["role"] = role
+        if merged_text:
+            output_dict["content"] = merged_text
+        if merged_tool_calls:
+            output_dict["tool_calls"] = merged_tool_calls
+        if merged_citations:
+            output_dict["citations"] = merged_citations
+        output = output_dict or None
+    elif merged_citations:
+        output_dict = output if isinstance(output, dict) else _try_to_dict(output)
+        if isinstance(output_dict, dict):
+            output_dict.setdefault("citations", merged_citations)
+            output = output_dict
 
     if finish_reason is not None:
         metadata["finish_reason"] = finish_reason
