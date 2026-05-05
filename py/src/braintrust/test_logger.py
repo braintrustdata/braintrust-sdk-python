@@ -137,6 +137,69 @@ class TestInit(TestCase):
             _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
             mock_register.assert_called()
 
+    def test_records_write_xact_id_from_logs3_response(self):
+        from braintrust.logger import _HTTPBackgroundLogger, stringify_with_overflow_meta
+
+        class FakeResponse:
+            ok = True
+            headers = {"x-bt-write-xact-id": "12345"}
+
+        mock_conn = MagicMock()
+        mock_conn.post.return_value = FakeResponse()
+        recorded = []
+        bg_logger = _HTTPBackgroundLogger(
+            LazyValue(lambda: mock_conn, use_mutex=False),
+            record_write_xact_id=lambda object_id, root_span_id, xact_id: recorded.append(
+                (object_id, root_span_id, xact_id)
+            ),
+        )
+
+        bg_logger._submit_logs_request(
+            [
+                stringify_with_overflow_meta(
+                    {
+                        "experiment_id": "exp-123",
+                        "root_span_id": "root-456",
+                        "span_id": "span-789",
+                    }
+                )
+            ],
+            {"max_request_size": 1024 * 1024, "can_use_overflow": False},
+        )
+
+        assert recorded == [("exp-123", "root-456", "12345")]
+
+    def test_trace_write_xact_id_keeps_high_watermark(self):
+        from braintrust.logger import BraintrustState
+
+        state = BraintrustState()
+        state.record_trace_write_xact_id("exp-123", "root-456", "200")
+        state.record_trace_write_xact_id("exp-123", "root-456", "100")
+        state.record_trace_write_xact_id("exp-123", "root-other", "50")
+
+        assert state.get_trace_write_xact_id("exp-123", "root-456") == "200"
+        assert state.get_trace_write_xact_id("exp-123", "root-other") == "50"
+
+    def test_trace_write_xact_id_rejects_non_numeric_values(self):
+        from braintrust.logger import BraintrustState
+
+        state = BraintrustState()
+        with pytest.raises(ValueError):
+            state.record_trace_write_xact_id("exp-123", "root-456", "not-numeric")
+
+    def test_trace_write_xact_ids_are_bounded(self):
+        from braintrust.logger import BraintrustState
+
+        with patch.dict(os.environ, {"BRAINTRUST_TRACE_WRITE_XACT_IDS_MAX_SIZE": "2"}):
+            state = BraintrustState()
+        state.record_trace_write_xact_id("exp-123", "root-1", "1")
+        state.record_trace_write_xact_id("exp-123", "root-2", "2")
+        state.record_trace_write_xact_id("exp-123", "root-3", "3")
+
+        assert state.get_trace_write_xact_id("exp-123", "root-1") is None
+        assert state.get_trace_write_xact_id("exp-123", "root-2") == "2"
+        assert state.get_trace_write_xact_id("exp-123", "root-3") == "3"
+
     def test_init_disable_atexit_flush(self):
         from braintrust.logger import _HTTPBackgroundLogger
 

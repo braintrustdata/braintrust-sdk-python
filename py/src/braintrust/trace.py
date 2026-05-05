@@ -407,6 +407,8 @@ class LocalTrace(dict):
         await asyncio.get_event_loop().run_in_executor(None, lambda: self._state.login())
         preprocessor = options.get("preprocessor") if options and options.get("preprocessor") else None
 
+        trace_min_xact_id = self._state.get_trace_write_xact_id(self._object_id, self._root_span_id)
+
         result = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: invoke(
@@ -420,6 +422,7 @@ class LocalTrace(dict):
                         "root_span_id": self._root_span_id,
                     }
                 },
+                trace_min_xact_id=trace_min_xact_id,
             ),
         )
 

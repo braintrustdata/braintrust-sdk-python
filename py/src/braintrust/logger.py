@@ -18,6 +18,7 @@ import traceback
 import types
 import uuid
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from functools import partial, wraps
 from multiprocessing import cpu_count
@@ -119,6 +120,8 @@ class Logs3OverflowInputRow:
 class LogItemWithMeta:
     str_value: str
     overflow_meta: Logs3OverflowInputRow
+    root_span_id: str | None = None
+    object_ids: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
 class DatasetRef(TypedDict, total=False):
@@ -419,7 +422,11 @@ class BraintrustState:
         # We lazily-initialize the logger so that it does any initialization
         # (including reading env variables) upon the first actual usage.
         self._global_bg_logger = LazyValue(
-            lambda: _HTTPBackgroundLogger(LazyValue(default_get_api_conn, use_mutex=True)), use_mutex=True
+            lambda: _HTTPBackgroundLogger(
+                LazyValue(default_get_api_conn, use_mutex=True),
+                record_write_xact_id=self.record_trace_write_xact_id,
+            ),
+            use_mutex=True,
         )
 
         self._id_generator = None
@@ -462,6 +469,9 @@ class BraintrustState:
         from braintrust.span_cache import SpanCache
 
         self.span_cache = SpanCache()
+        self._trace_write_xact_ids: OrderedDict[tuple[str, str], str] = OrderedDict()
+        self._trace_write_xact_ids_max_size = int(os.environ.get("BRAINTRUST_TRACE_WRITE_XACT_IDS_MAX_SIZE", "10000"))
+        self._trace_write_xact_ids_lock = threading.Lock()
         self._otel_flush_callback: Any | None = None
 
     def reset_login_info(self):
@@ -521,6 +531,23 @@ class BraintrustState:
 
         return self._context_manager
 
+    def record_trace_write_xact_id(self, object_id: str, root_span_id: str, xact_id: str) -> None:
+        """Record the highest ingestion xact ID observed for a trace."""
+        parsed_xact_id = int(xact_id)
+        key = (object_id, root_span_id)
+        with self._trace_write_xact_ids_lock:
+            current_xact_id = self._trace_write_xact_ids.get(key)
+            if current_xact_id is None or parsed_xact_id > int(current_xact_id):
+                self._trace_write_xact_ids[key] = xact_id
+            self._trace_write_xact_ids.move_to_end(key)
+            while len(self._trace_write_xact_ids) > self._trace_write_xact_ids_max_size:
+                self._trace_write_xact_ids.popitem(last=False)
+
+    def get_trace_write_xact_id(self, object_id: str, root_span_id: str) -> str | None:
+        """Return the highest ingestion xact ID recorded for a trace."""
+        with self._trace_write_xact_ids_lock:
+            return self._trace_write_xact_ids.get((object_id, root_span_id))
+
     def register_otel_flush(self, callback: Any) -> None:
         """
         Register an OTEL flush callback. This is called by the OTEL integration
@@ -554,6 +581,9 @@ class BraintrustState:
                     "_context_manager",
                     "_last_otel_setting",
                     "_context_manager_lock",
+                    "_trace_write_xact_ids",
+                    "_trace_write_xact_ids_max_size",
+                    "_trace_write_xact_ids_lock",
                 )
             }
         )
@@ -864,14 +894,17 @@ def pick_logs3_overflow_object_ids(row: Mapping[str, Any]) -> dict[str, Any]:
 
 def stringify_with_overflow_meta(item: dict[str, Any]) -> LogItemWithMeta:
     str_value = bt_dumps(item)
+    object_ids = pick_logs3_overflow_object_ids(item)
     return LogItemWithMeta(
         str_value=str_value,
         overflow_meta=Logs3OverflowInputRow(
-            object_ids=pick_logs3_overflow_object_ids(item),
+            object_ids=object_ids,
             has_comment="comment" in item,
             is_delete=item.get(OBJECT_DELETE_FIELD) is True,
             byte_size=utf8_byte_length(str_value),
         ),
+        root_span_id=item.get("root_span_id") if isinstance(item.get("root_span_id"), str) else None,
+        object_ids=object_ids,
     )
 
 
@@ -1004,8 +1037,13 @@ BACKGROUND_LOGGER_BASE_SLEEP_TIME_S = 1.0
 # instances of this class, because concurrent _BackgroundLoggers will not log to
 # the backend in a deterministic order.
 class _HTTPBackgroundLogger:
-    def __init__(self, api_conn: LazyValue[HTTPConnection]):
+    def __init__(
+        self,
+        api_conn: LazyValue[HTTPConnection],
+        record_write_xact_id: Callable[[str, str, str], None] | None = None,
+    ):
         self.api_conn = api_conn
+        self._record_write_xact_id = record_write_xact_id
         self.masking_function: Callable[[Any], Any] | None = None
         self.outfile = sys.stderr
         self.flush_lock = threading.RLock()
@@ -1383,6 +1421,7 @@ class _HTTPBackgroundLogger:
             if error is None and resp is not None and resp.ok:
                 if overflow_rows:
                     self._overflow_upload_count += 1
+                self._record_batch_write_xact_id(items, resp.headers.get("x-bt-write-xact-id"))
                 return
             if error is None and resp is not None:
                 resp_errmsg = f"{resp.status_code}: {resp.text}"
@@ -1409,6 +1448,16 @@ class _HTTPBackgroundLogger:
                     time.sleep(sleep_time_s)
 
         print(f"log request failed after {self.num_tries} retries. Dropping batch", file=self.outfile)
+
+    def _record_batch_write_xact_id(self, items: Sequence[LogItemWithMeta], xact_id: str | None) -> None:
+        if not xact_id or self._record_write_xact_id is None:
+            return
+        for item in items:
+            if not item.root_span_id:
+                continue
+            for object_id in item.object_ids.values():
+                if isinstance(object_id, str):
+                    self._record_write_xact_id(object_id, item.root_span_id, xact_id)
 
     def _dump_dropped_events(self, wrapped_items):
         publish_payloads_dir = [x for x in [self.all_publish_payloads_dir, self.failed_publish_payloads_dir] if x]
@@ -1480,7 +1529,9 @@ _logger = logging.getLogger("braintrust")
 
 @contextlib.contextmanager
 def _internal_with_custom_background_logger():
-    custom_logger = _HTTPBackgroundLogger(LazyValue(lambda: _state.api_conn(), use_mutex=True))
+    custom_logger = _HTTPBackgroundLogger(
+        LazyValue(lambda: _state.api_conn(), use_mutex=True), record_write_xact_id=_state.record_trace_write_xact_id
+    )
     _state._override_bg_logger.logger = custom_logger
     try:
         yield custom_logger

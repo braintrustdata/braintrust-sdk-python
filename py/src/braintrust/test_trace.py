@@ -306,11 +306,15 @@ class _DummySpanCache:
 
 
 class _DummyState:
-    def __init__(self):
+    def __init__(self, xact_id: str | None = None):
         self.span_cache = _DummySpanCache()
+        self.xact_id = xact_id
 
     def login(self):
         return None
+
+    def get_trace_write_xact_id(self, object_id: str, root_span_id: str):
+        return self.xact_id
 
 
 class TestLocalTraceGetThread:
@@ -349,7 +353,32 @@ class TestLocalTraceGetThread:
                 "root_span_id": "root-456",
             }
         }
+        assert calls[0]["trace_min_xact_id"] is None
         assert result == mock_thread
+
+    @pytest.mark.asyncio
+    async def test_passes_trace_min_xact_id_with_recorded_xact_id(self, monkeypatch):
+        calls = []
+
+        def fake_invoke(**kwargs):
+            calls.append(kwargs)
+            return []
+
+        monkeypatch.setattr("braintrust.trace.invoke", fake_invoke)
+
+        trace = LocalTrace(
+            object_type="experiment",
+            object_id="exp-123",
+            root_span_id="root-456",
+            ensure_spans_flushed=None,
+            state=_DummyState(xact_id="12345"),
+        )
+
+        await trace.get_thread()
+
+        assert calls[0]["trace_min_xact_id"] == "12345"
+        assert "trace_read" not in calls[0]
+        assert "skip_realtime" not in calls[0]["input"]["trace_ref"]
 
     @pytest.mark.asyncio
     async def test_uses_custom_preprocessor(self, monkeypatch):

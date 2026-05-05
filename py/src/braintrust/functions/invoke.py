@@ -57,6 +57,7 @@ def invoke(
     api_key: str | None = None,
     app_url: str | None = None,
     force_login: bool = False,
+    trace_min_xact_id: str | None = None,
 ) -> T: ...
 
 
@@ -85,6 +86,7 @@ def invoke(
     api_key: str | None = None,
     app_url: str | None = None,
     force_login: bool = False,
+    trace_min_xact_id: str | None = None,
 ) -> BraintrustStream: ...
 
 
@@ -112,6 +114,7 @@ def invoke(
     api_key: str | None = None,
     app_url: str | None = None,
     force_login: bool = False,
+    trace_min_xact_id: str | None = None,
 ) -> BraintrustStream | T:
     """
     Invoke a Braintrust function, returning a `BraintrustStream` or the value as a plain
@@ -151,6 +154,7 @@ def invoke(
         global_function: The name of the global function to invoke.
         function_type: The type of the global function to invoke. If unspecified, defaults to 'scorer'
             for backward compatibility.
+        trace_min_xact_id: Optional minimum ingestion xact ID for compacted trace-ref reads.
 
     Returns:
         The output of the function. If `stream` is True, returns a `BraintrustStream`,
@@ -198,6 +202,8 @@ def invoke(
         request["mode"] = mode
     if strict is not None:
         request["strict"] = strict
+    if trace_min_xact_id is not None:
+        request["trace_min_xact_id"] = trace_min_xact_id
 
     headers = {
         "Accept": "text/event-stream" if stream else "application/json",

@@ -118,6 +118,32 @@ def test_invoke_serializes_google_messages():
     assert isinstance(parsed, dict) and parsed
 
 
+def test_invoke_serializes_trace_min_xact_id():
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {}
+    mock_conn = MagicMock()
+    mock_conn.post.return_value = mock_resp
+
+    with (
+        patch("braintrust.functions.invoke.login"),
+        patch("braintrust.functions.invoke.get_span_parent_object") as mock_parent,
+        patch("braintrust.functions.invoke.proxy_conn", return_value=mock_conn),
+    ):
+        mock_parent.return_value.export.return_value = "span-export"
+        invoke(
+            global_function="project_default",
+            function_type="preprocessor",
+            input={"trace_ref": {"object_id": "exp-123", "root_span_id": "root-456"}},
+            trace_min_xact_id="12345",
+        )
+
+    data = mock_conn.post.call_args.kwargs["data"]
+    parsed = json.loads(data.decode("utf-8"))
+    assert parsed["trace_min_xact_id"] == "12345"
+    assert "trace_read" not in parsed
+
+
 @pytest.mark.vcr
 def test_invoke_encodes_body_as_utf8_bytes(monkeypatch):
     """Regression test for BT-4620: non-Latin-1 Unicode must not be corrupted.
