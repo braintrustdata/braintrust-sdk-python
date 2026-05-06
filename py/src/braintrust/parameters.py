@@ -18,12 +18,9 @@ if TYPE_CHECKING:
     from .logger import Prompt
 
 
-class PromptDataDefaultDict(TypedDict):
+class PromptDataDict(TypedDict):
     prompt: NotRequired[PromptBlockDataNullish | None]
     options: NotRequired[PromptOptionsNullish | None]
-
-
-PromptParameterDefault = PromptDataDefaultDict
 
 
 class PromptParameter(TypedDict):
@@ -31,7 +28,7 @@ class PromptParameter(TypedDict):
 
     type: Literal["prompt"]
     name: NotRequired[str | None]
-    default: NotRequired[PromptParameterDefault | None]
+    default: NotRequired[PromptDataDict | None]
     description: NotRequired[str | None]
 
 
@@ -219,7 +216,7 @@ def is_eval_parameter_schema(schema: Any) -> bool:
 
 
 def _prompt_data_to_dict(
-    prompt_data: PromptParameterDefault | PromptData | None,
+    prompt_data: PromptDataDict | PromptData | None,
 ) -> dict[str, Any] | None:
     if prompt_data is None:
         return None
