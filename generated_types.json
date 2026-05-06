@@ -168,6 +168,14 @@
             ],
             "additionalProperties": {}
           },
+          "secret_updated_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "User id of the last update to the encrypted secret value"
+          },
           "preview_secret": {
             "type": [
               "string",
@@ -2337,6 +2345,14 @@
             ],
             "format": "date-time",
             "description": "Date of last update to the encrypted secret value itself"
+          },
+          "secret_updated_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "User id of the last update to the encrypted secret value"
           },
           "used": {
             "type": [

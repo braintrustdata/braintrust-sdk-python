@@ -57,6 +57,10 @@ class AISecret(TypedDict):
     """
     type: NotRequired[str | None]
     metadata: NotRequired[Mapping[str, Any] | None]
+    secret_updated_by_user_id: NotRequired[str | None]
+    """
+    User id of the last update to the encrypted secret value
+    """
     preview_secret: NotRequired[str | None]
 
 
@@ -615,6 +619,10 @@ class EnvVar(TypedDict):
     secret_updated_at: NotRequired[str | None]
     """
     Date of last update to the encrypted secret value itself
+    """
+    secret_updated_by_user_id: NotRequired[str | None]
+    """
+    User id of the last update to the encrypted secret value
     """
     used: NotRequired[str | None]
     """
