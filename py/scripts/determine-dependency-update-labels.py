@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Determine GitHub Actions outputs for the daily dependency update workflow.
+"""Determine GitHub Actions outputs for the weekly dependency update workflow.
 
 Inspects the working-tree diff of ``py/pyproject.toml`` and ``py/uv.lock`` to
 decide whether anything changed and, if so, whether any provider SDK pins

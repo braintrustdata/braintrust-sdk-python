@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from openai import AsyncOpenAI
@@ -61,7 +61,7 @@ def memory_logger():
         yield bgl
 
 
-def _assert_metrics_are_valid(metrics: Dict[str, Any]):
+def _assert_metrics_are_valid(metrics: dict[str, Any]):
     assert metrics["tokens"] > 0
     assert metrics["prompt_tokens"] > 0
     assert metrics["completion_tokens"] > 0

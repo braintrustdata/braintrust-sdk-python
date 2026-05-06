@@ -5,48 +5,53 @@ interactions:
       respond in pirate speak."}], "role": "user"}, "generationConfig": {"maxOutputTokens":
       150}}'
     headers:
-      accept:
+      Accept:
       - '*/*'
-      accept-encoding:
+      Accept-Encoding:
       - gzip, deflate
-      connection:
+      Connection:
       - keep-alive
-      content-length:
+      Content-Length:
       - '242'
-      content-type:
+      Content-Type:
       - application/json
-      host:
+      Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.41.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
   response:
     body:
-      string: !!binary |
-        H4sIAAAAAAAC/61SwW7bMAy9+ys4XXJxAttdHKy3oduwDNnarUZRYN2BrplYiCwJktzMDfLvk5w6
-        dbbrfDAk8j0+kk/7CIA9oqx4hY4su4SfPgKw7/8hp6Qj6XxiCPmgRuNescdvPzp7iKPfgcTe16oD
-        V5OhGBov0b2B25o/kYGGwPGmJGNjWEJJIJTacjkBdIEAdsvJwloZ6GgGD/JBFiREoO1COR8NJElU
-        BVJg7AiDEhjSyrgY/FiwnHiO1VwGPEKHRgKWqnW+ihdSYgJf8HELn4yy/mp8IR+2KFwH30i7VvYy
-        paHdREKrQydsNOrhdP4Vvy7IKEFh+kZVJAb4YQCwNZfc1j8IrZIBdltc37BTFp82K7XRRpVhx9Nk
-        ll9kWZrM0zzNk/nF22weDcq9JmstbugrOfQe4skp5is02hVqS/JKtb2H6eKoMrL8LJ9nL3mnHIqz
-        1OJd/E9Z+8GLcjF+CqNX4odHwV0XJiw+3hdstCB33tWwoWi0yL97/E9ieXYuFr0Yc/Tqzj9HfjRl
-        Q423aZrNkulaoK2nSZL2VZkhq5W0tKwC7iq/53j9GVfzQj8vljd8teC774pFh+gPyUgRkV4DAAA=
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Ahoy there, matey! \\n\\nCast yer
+        gaze toward the horizon! The sky be lookin' a mite moody today. The wind be
+        whistlin' through the riggin' like a banshee in a gale, and there be clouds
+        gatherin' thick as black ink over the fo'c'sle. \\n\\nIf ye be plannin' to
+        weigh anchor, ye\u2019d best batten down the hatches and lash yer gear tight!
+        The sea be churnin' like a witch\u2019s cauldron, and I reckon we\u2019ve
+        got a proper squall brewin'. Either that, or the sun be playin' peek-a-boo
+        behind the mist, hopin' to lure us into\",\n            \"thoughtSignature\":
+        \"EjQKMgEMOdbHrxjIC8bbpCwek/nM72SWnNVTv2PavOcK2VCILrpI+b39KWLpVlClYbpfnE8C\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
+        \   \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 146,\n    \"totalTokenCount\":
+        165,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 19\n      }\n    ]\n  },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n
+        \ \"responseId\": \"NHPzabTBH4ud_uMP3ZrJmAc\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Sun, 05 Oct 2025 17:04:12 GMT
+      - Thu, 30 Apr 2026 15:20:20 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=892
+      - gfet4t7; dur=1540
       Transfer-Encoding:
       - chunked
       Vary:
@@ -57,8 +62,12 @@ interactions:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '1155'
     status:
       code: 200
       message: OK

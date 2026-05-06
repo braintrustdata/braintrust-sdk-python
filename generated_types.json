@@ -138,6 +138,14 @@
             "format": "date-time",
             "description": "Date of last AI secret update"
           },
+          "secret_updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of last update to the encrypted secret value itself"
+          },
           "org_id": {
             "type": "string",
             "format": "uuid",
@@ -159,6 +167,14 @@
               "null"
             ],
             "additionalProperties": {}
+          },
+          "secret_updated_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "User id of the last update to the encrypted secret value"
           },
           "preview_secret": {
             "type": [
@@ -1802,6 +1818,26 @@
                           "index"
                         ],
                         "title": "scorer"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "classifier"
+                            ]
+                          },
+                          "index": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "index"
+                        ],
+                        "title": "classifier"
                       }
                     ]
                   }
@@ -2302,6 +2338,22 @@
             "format": "date-time",
             "description": "Date of environment variable creation"
           },
+          "secret_updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of last update to the encrypted secret value itself"
+          },
+          "secret_updated_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "User id of the last update to the encrypted secret value"
+          },
           "used": {
             "type": [
               "string",
@@ -2317,6 +2369,13 @@
             ],
             "additionalProperties": {},
             "description": "Optional metadata associated with the environment variable when managed via the function secrets API"
+          },
+          "preview_secret": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Redacted preview of the stored secret value"
           },
           "secret_type": {
             "type": [
@@ -7847,6 +7906,10 @@
           },
           "generation_settings": {
             "$ref": "#/components/schemas/TopicMapGenerationSettings"
+          },
+          "disable_reconciliation": {
+            "type": "boolean",
+            "description": "Whether new topic generation should ignore the previously saved report during reconciliation. Defaults to false when omitted."
           },
           "distance_threshold": {
             "type": "number",

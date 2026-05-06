@@ -487,6 +487,32 @@ def test_openai_chat_streaming_sync(memory_logger):
 
 
 @pytest.mark.vcr
+def test_openai_chat_streaming_sync_context_manager_partial_close(memory_logger):
+    """Partial context-manager exit should close the span without fabricating final output."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    with client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream=True,
+        stream_options={"include_usage": True},
+    ) as stream:
+        first_chunk = next(stream)
+
+    assert first_chunk.choices
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert metrics["time_to_first_token"] >= 0
+    assert span["metadata"]["stream"] == True
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert TEST_PROMPT in str(span["input"])
+    assert "output" not in span
+
+
+@pytest.mark.vcr
 def test_openai_chat_stream_helper_sync(memory_logger):
     assert not memory_logger.pop()
 
@@ -1003,6 +1029,34 @@ async def test_openai_chat_streaming_async(memory_logger):
         # assert span["metadata"]["provider"] == "openai"
         assert TEST_PROMPT in str(span["input"])
         assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_chat_streaming_async_context_manager_partial_close(memory_logger):
+    """Partial async context-manager exit should close the span without fabricating final output."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+    stream = await client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        stream=True,
+        stream_options={"include_usage": True},
+    )
+    async with stream as traced_stream:
+        first_chunk = await traced_stream.__anext__()
+
+    assert first_chunk.choices
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    metrics = span["metrics"]
+    assert metrics["time_to_first_token"] >= 0
+    assert span["metadata"]["stream"] == True
+    assert TEST_MODEL in span["metadata"]["model"]
+    assert TEST_PROMPT in str(span["input"])
+    assert "output" not in span
 
 
 @pytest.mark.asyncio
@@ -1974,6 +2028,33 @@ def _is_wrapped(client):
 
 
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
+STREAMING_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
+
+
+def _collect_transcription_stream_text(stream) -> tuple[str, list[str]]:
+    event_types = []
+    deltas = []
+    done_text = None
+    for event in stream:
+        event_types.append(event.type)
+        if event.type == "transcript.text.delta":
+            deltas.append(event.delta)
+        elif event.type == "transcript.text.done":
+            done_text = event.text
+    return done_text or "".join(deltas), event_types
+
+
+async def _collect_transcription_stream_text_async(stream) -> tuple[str, list[str]]:
+    event_types = []
+    deltas = []
+    done_text = None
+    async for event in stream:
+        event_types.append(event.type)
+        if event.type == "transcript.text.delta":
+            deltas.append(event.delta)
+        elif event.type == "transcript.text.done":
+            done_text = event.text
+    return done_text or "".join(deltas), event_types
 
 
 def _assert_audio_input_attachment(span) -> None:
@@ -2182,6 +2263,89 @@ def test_openai_audio_transcription(memory_logger):
 
 
 @pytest.mark.vcr
+def test_openai_audio_transcription_streaming(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    start = time.time()
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        stream = client.audio.transcriptions.create(
+            model=STREAMING_TRANSCRIPTION_MODEL,
+            file=f,
+            stream=True,
+        )
+        transcript, event_types = _collect_transcription_stream_text(stream)
+    end = time.time()
+
+    assert "transcript.text.delta" in event_types
+    assert "transcript.text.done" in event_types
+    assert transcript
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
+    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["stream"] == True
+    _assert_audio_input_attachment(span)
+    assert span["output"] == transcript
+    assert_metrics_are_valid(span["metrics"], start, end)
+    assert span["metrics"]["time_to_first_token"] >= 0
+
+
+@pytest.mark.vcr
+def test_openai_audio_transcription_streaming_early_close(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    start = time.time()
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        with client.audio.transcriptions.create(
+            model=STREAMING_TRANSCRIPTION_MODEL,
+            file=f,
+            stream=True,
+        ) as stream:
+            first_event = next(stream)
+    end = time.time()
+
+    assert first_event.type == "transcript.text.delta"
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
+    assert span["metadata"]["stream"] == True
+    assert span["output"] == first_event.delta
+    metrics = span["metrics"]
+    assert start <= metrics["start"] <= metrics["end"] <= end
+    assert metrics["duration"] >= 0
+    assert metrics["time_to_first_token"] >= 0
+
+
+@pytest.mark.vcr
+def test_openai_audio_transcription_streaming_no_events_omits_output(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        with client.audio.transcriptions.create(
+            model=STREAMING_TRANSCRIPTION_MODEL,
+            file=f,
+            stream=True,
+        ):
+            pass
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
+    assert span["metadata"]["stream"] == True
+    assert "output" not in span
+    metrics = span["metrics"]
+    assert metrics["duration"] >= 0
+    assert "time_to_first_token" not in metrics
+
+
+@pytest.mark.vcr
 def test_openai_audio_transcription_text_format(memory_logger):
     """When response_format='text', the API returns a plain string (not JSON)."""
     assert not memory_logger.pop()
@@ -2286,6 +2450,94 @@ async def test_openai_audio_transcription_async(memory_logger):
         assert span["metadata"]["provider"] == "openai"
         _assert_audio_input_attachment(span)
         assert span["output"] == "you"
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_audio_transcription_streaming_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+    start = time.time()
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        stream = await client.audio.transcriptions.create(
+            model=STREAMING_TRANSCRIPTION_MODEL,
+            file=f,
+            stream=True,
+        )
+        transcript, event_types = await _collect_transcription_stream_text_async(stream)
+    end = time.time()
+
+    assert "transcript.text.delta" in event_types
+    assert "transcript.text.done" in event_types
+    assert transcript
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
+    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["stream"] == True
+    _assert_audio_input_attachment(span)
+    assert span["output"] == transcript
+    assert_metrics_are_valid(span["metrics"], start, end)
+    assert span["metrics"]["time_to_first_token"] >= 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_audio_transcription_streaming_early_close_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+    start = time.time()
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        stream = await client.audio.transcriptions.create(
+            model=STREAMING_TRANSCRIPTION_MODEL,
+            file=f,
+            stream=True,
+        )
+        async with stream as traced_stream:
+            first_event = await traced_stream.__anext__()
+    end = time.time()
+
+    assert first_event.type == "transcript.text.delta"
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
+    assert span["metadata"]["stream"] == True
+    assert span["output"] == first_event.delta
+    metrics = span["metrics"]
+    assert start <= metrics["start"] <= metrics["end"] <= end
+    assert metrics["duration"] >= 0
+    assert metrics["time_to_first_token"] >= 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_openai_audio_transcription_streaming_no_events_omits_output_async(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_openai(AsyncOpenAI())
+    with open(TEST_AUDIO_FILE, "rb") as f:
+        stream = await client.audio.transcriptions.create(
+            model=STREAMING_TRANSCRIPTION_MODEL,
+            file=f,
+            stream=True,
+        )
+        async with stream:
+            pass
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == STREAMING_TRANSCRIPTION_MODEL
+    assert span["metadata"]["stream"] == True
+    assert "output" not in span
+    metrics = span["metrics"]
+    assert metrics["duration"] >= 0
+    assert "time_to_first_token" not in metrics
 
 
 @pytest.mark.asyncio

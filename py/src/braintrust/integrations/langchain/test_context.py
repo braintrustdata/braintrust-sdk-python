@@ -1,5 +1,4 @@
 # pyright: reportTypedDictNotRequiredAccess=none
-from typing import Dict
 from unittest.mock import ANY
 
 import pytest
@@ -57,7 +56,7 @@ def test_global_handler(logger_memory_logger):
         presence_penalty=0,
         n=1,
     )
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
     message = chain.invoke({"number": "2"})
 

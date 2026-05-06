@@ -43,6 +43,10 @@ class AISecret(TypedDict):
     """
     Date of last AI secret update
     """
+    secret_updated_at: NotRequired[str | None]
+    """
+    Date of last update to the encrypted secret value itself
+    """
     org_id: str
     """
     Unique identifier for the organization
@@ -53,6 +57,10 @@ class AISecret(TypedDict):
     """
     type: NotRequired[str | None]
     metadata: NotRequired[Mapping[str, Any] | None]
+    secret_updated_by_user_id: NotRequired[str | None]
+    """
+    User id of the last update to the encrypted secret value
+    """
     preview_secret: NotRequired[str | None]
 
 
@@ -453,10 +461,19 @@ class CodeBundleLocationPosition1(TypedDict):
     index: int
 
 
+class CodeBundleLocationPosition2(TypedDict):
+    type: Literal['classifier']
+    index: int
+
+
 class CodeBundleLocation(TypedDict):
     type: Literal['experiment']
     eval_name: str
-    position: CodeBundleLocationPosition | CodeBundleLocationPosition1
+    position: (
+        CodeBundleLocationPosition
+        | CodeBundleLocationPosition1
+        | CodeBundleLocationPosition2
+    )
 
 
 class CodeBundleLocation1(TypedDict):
@@ -599,6 +616,14 @@ class EnvVar(TypedDict):
     """
     Date of environment variable creation
     """
+    secret_updated_at: NotRequired[str | None]
+    """
+    Date of last update to the encrypted secret value itself
+    """
+    secret_updated_by_user_id: NotRequired[str | None]
+    """
+    User id of the last update to the encrypted secret value
+    """
     used: NotRequired[str | None]
     """
     Date the environment variable was last used
@@ -606,6 +631,10 @@ class EnvVar(TypedDict):
     metadata: NotRequired[Mapping[str, Any] | None]
     """
     Optional metadata associated with the environment variable when managed via the function secrets API
+    """
+    preview_secret: NotRequired[str | None]
+    """
+    Redacted preview of the stored secret value
     """
     secret_type: NotRequired[str | None]
     """
@@ -3358,6 +3387,10 @@ class TopicMapData(TypedDict):
     Mapping from topic_id to topic name
     """
     generation_settings: NotRequired[TopicMapGenerationSettings | None]
+    disable_reconciliation: NotRequired[bool | None]
+    """
+    Whether new topic generation should ignore the previously saved report during reconciliation. Defaults to false when omitted.
+    """
     distance_threshold: NotRequired[float | None]
     """
     Maximum distance to nearest centroid. If exceeded, returns no_match.

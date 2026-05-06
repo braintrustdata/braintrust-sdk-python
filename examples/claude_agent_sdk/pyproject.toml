@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-claude-agent-sdk-example"
+version = "0.1.0"
+description = "Claude Agent SDK traced with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "claude-agent-sdk",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

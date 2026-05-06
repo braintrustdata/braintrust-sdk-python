@@ -1,5 +1,7 @@
 """Test auto_instrument for Google GenAI (no uninstrument available)."""
 
+import os
+
 from braintrust.auto import auto_instrument
 from braintrust.integrations.test_utils import autoinstrument_test_context
 
@@ -19,7 +21,11 @@ with autoinstrument_test_context("test_auto_google_genai", integration="google_g
 
     client = Client()
     response = client.models.generate_content(
-        model="gemini-2.0-flash-001",
+        model=(
+            "gemini-3.1-flash-lite-preview"
+            if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+            else "gemini-2.0-flash-001"
+        ),
         contents="Say hi",
         config=types.GenerateContentConfig(max_output_tokens=100),
     )

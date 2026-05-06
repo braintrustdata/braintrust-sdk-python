@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import time
-from typing import AsyncGenerator, List
+from collections.abc import AsyncGenerator
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -384,7 +384,7 @@ class TestLogger(TestCase):
         assert "environment" not in mock_api_conn.get_json.call_args.args[1]
 
     def test_extract_attachments_no_op(self):
-        attachments: List[BaseAttachment] = []
+        attachments: list[BaseAttachment] = []
 
         _extract_attachments({}, attachments)
         self.assertEqual(len(attachments), 0)
@@ -441,7 +441,7 @@ class TestLogger(TestCase):
         }
         saved_nested = event["nested"]
 
-        attachments: List[BaseAttachment] = []
+        attachments: list[BaseAttachment] = []
         _extract_attachments(event, attachments)
 
         self.assertEqual(
@@ -3135,7 +3135,7 @@ class TestJSONAttachment(TestCase):
             },
         }
 
-        attachments: List[BaseAttachment] = []
+        attachments: list[BaseAttachment] = []
         _extract_attachments(event, attachments)
 
         self.assertEqual(len(attachments), 1)

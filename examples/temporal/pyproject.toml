@@ -1,0 +1,11 @@
+[project]
+name = "braintrust-temporal-example"
+version = "0.1.0"
+description = "Distributed Temporal workflow tracing with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust[temporal]",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

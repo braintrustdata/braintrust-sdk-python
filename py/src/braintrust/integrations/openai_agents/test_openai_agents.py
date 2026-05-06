@@ -125,6 +125,12 @@ async def test_openai_agents_integration_setup_creates_spans(memory_logger):
 
     llm_spans = [span for span in spans if span.get("span_attributes", {}).get("type") == "llm"]
     assert llm_spans
+    llm_metrics = [span.get("metrics", {}) for span in llm_spans]
+    assert any(metrics.get("prompt_tokens") is not None for metrics in llm_metrics)
+    assert any(metrics.get("completion_tokens") is not None for metrics in llm_metrics)
+    assert any(metrics.get("tokens") is not None for metrics in llm_metrics)
+    assert any(metrics.get("prompt_cached_tokens") == 0 for metrics in llm_metrics)
+    assert any(metrics.get("completion_reasoning_tokens") == 0 for metrics in llm_metrics)
 
 
 @pytest.mark.asyncio

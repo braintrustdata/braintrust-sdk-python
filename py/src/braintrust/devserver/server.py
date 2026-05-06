@@ -225,6 +225,14 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     if validated_parameters is not None and not isinstance(evaluator.parameters, RemoteEvalParameters):
         eval_kwargs["parameters"] = validated_parameters
 
+    # Honor an explicit project_id from the request when present; otherwise
+    # fall back to the registered evaluator's project_id. Without this
+    # fallback, requests that omit project_id silently route into a
+    # per-evaluator-name auto-created project (Eval(project_id=None) uses
+    # name as the project name) instead of the project the evaluator was
+    # registered against.
+    project_id = eval_data.get("project_id") or evaluator.project_id
+
     try:
         eval_task = asyncio.create_task(
             EvalAsync(
@@ -243,7 +251,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
                     "task": task,
                     "experiment_name": eval_data.get("experiment_name"),
                     "parent": parent,
-                    "project_id": eval_data.get("project_id"),
+                    "project_id": project_id,
                 },
             )
         )

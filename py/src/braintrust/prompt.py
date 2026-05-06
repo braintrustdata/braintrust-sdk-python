@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal
 
 from .generated_types import PromptOptions
 from .serializable_data_class import SerializableDataClass
@@ -61,7 +61,7 @@ class PromptChatBlock(SerializableDataClass):
     type: Literal["chat"] = "chat"
 
 
-PromptBlockData = Union[PromptCompletionBlock, PromptChatBlock]
+PromptBlockData = PromptCompletionBlock | PromptChatBlock
 
 
 @dataclass

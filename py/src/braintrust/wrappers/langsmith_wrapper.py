@@ -40,7 +40,8 @@ Usage:
 import inspect
 import logging
 import os
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, ParamSpec, TypeVar
+from collections.abc import Callable, Iterable, Iterator
+from typing import Any, ParamSpec, TypeVar
 
 from braintrust.framework import EvalCase
 from braintrust.logger import NOOP_SPAN, current_span, init_logger, traced
@@ -50,7 +51,7 @@ from wrapt import wrap_function_wrapper
 logger = logging.getLogger(__name__)
 
 # Global list to store Braintrust eval results when running in tandem mode
-_braintrust_eval_results: List[Any] = []
+_braintrust_eval_results: list[Any] = []
 
 # TODO: langsmith.test/unit/expect, langsmith.AsyncClient, trace
 __all__ = [
@@ -68,7 +69,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def get_braintrust_results() -> List[Any]:
+def get_braintrust_results() -> list[Any]:
     """Get all Braintrust eval results collected during tandem mode."""
     return _braintrust_eval_results.copy()
 
@@ -79,9 +80,9 @@ def clear_braintrust_results() -> None:
 
 
 def setup_langsmith(
-    api_key: Optional[str] = None,
-    project_id: Optional[str] = None,
-    project_name: Optional[str] = None,
+    api_key: str | None = None,
+    project_id: str | None = None,
+    project_name: str | None = None,
     standalone: bool = False,
 ) -> bool:
     """
@@ -169,7 +170,7 @@ def wrap_traceable(traceable: F, standalone: bool = False) -> F:
 
 
 def wrap_client(
-    Client: Any, project_name: Optional[str] = None, project_id: Optional[str] = None, standalone: bool = False
+    Client: Any, project_name: str | None = None, project_id: str | None = None, standalone: bool = False
 ) -> Any:
     """
     Wrap langsmith.Client to redirect evaluate() and aevaluate() to Braintrust's Eval.
@@ -203,9 +204,7 @@ def wrap_client(
     return Client
 
 
-def make_evaluate_wrapper(
-    *, project_name: Optional[str] = None, project_id: Optional[str] = None, standalone: bool = False
-):
+def make_evaluate_wrapper(*, project_name: str | None = None, project_id: str | None = None, standalone: bool = False):
     def evaluate_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
         result = None
         if not standalone:
@@ -231,7 +230,7 @@ def make_evaluate_wrapper(
 
 
 def make_aevaluate_wrapper(
-    *, project_name: Optional[str] = None, project_id: Optional[str] = None, standalone: bool = False
+    *, project_name: str | None = None, project_id: str | None = None, standalone: bool = False
 ):
     async def aevaluate_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
         result = None
@@ -258,7 +257,7 @@ def make_aevaluate_wrapper(
 
 
 def wrap_evaluate(
-    evaluate: F, project_name: Optional[str] = None, project_id: Optional[str] = None, standalone: bool = False
+    evaluate: F, project_name: str | None = None, project_id: str | None = None, standalone: bool = False
 ) -> F:
     """
     Wrap module-level langsmith.evaluate to redirect to Braintrust's Eval.
@@ -282,8 +281,8 @@ def wrap_evaluate(
 
 def wrap_aevaluate(
     aevaluate: F,
-    project_name: Optional[str] = None,
-    project_id: Optional[str] = None,
+    project_name: str | None = None,
+    project_id: str | None = None,
     standalone: bool = False,
 ) -> F:
     """
@@ -318,8 +317,8 @@ def _is_patched(obj: Any) -> bool:
 def _run_braintrust_eval(
     args: Any,
     kwargs: Any,
-    project_name: Optional[str] = None,
-    project_id: Optional[str] = None,
+    project_name: str | None = None,
+    project_id: str | None = None,
 ) -> Any:
     """Run Braintrust Eval with LangSmith-style arguments."""
     from braintrust.framework import Eval
@@ -356,8 +355,8 @@ def _run_braintrust_eval(
 async def _run_braintrust_eval_async(
     args: Any,
     kwargs: Any,
-    project_name: Optional[str] = None,
-    project_id: Optional[str] = None,
+    project_name: str | None = None,
+    project_id: str | None = None,
 ) -> Any:
     """Run Braintrust EvalAsync with LangSmith-style arguments."""
     from braintrust.framework import EvalAsync
@@ -396,7 +395,7 @@ async def _run_braintrust_eval_async(
 # =============================================================================
 
 
-def _wrap_output(output: Any) -> Dict[str, Any]:
+def _wrap_output(output: Any) -> dict[str, Any]:
     """Wrap non-dict outputs the same way LangSmith does."""
     if not isinstance(output, dict):
         return {"output": output}
@@ -413,7 +412,7 @@ def _make_braintrust_scorer(
     """
     evaluator_name = getattr(evaluator, "__name__", "score")
 
-    def braintrust_scorer(input: Any, output: Any, expected: Optional[Any] = None, **kwargs: Any) -> Any:
+    def braintrust_scorer(input: Any, output: Any, expected: Any | None = None, **kwargs: Any) -> Any:
         from braintrust.score import Score
 
         # Run the evaluator with LangSmith's signature

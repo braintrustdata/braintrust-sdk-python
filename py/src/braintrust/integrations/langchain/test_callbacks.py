@@ -3,7 +3,7 @@ import base64
 import time
 import uuid
 from pathlib import Path
-from typing import Dict, List, Union, cast
+from typing import cast
 
 import pytest
 from braintrust import logger
@@ -56,7 +56,7 @@ def test_llm_calls(logger_memory_logger):
         presence_penalty=0,
         n=1,
     )
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
     chain.invoke({"number": "2"}, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
 
     spans = memory_logger.pop()
@@ -159,7 +159,7 @@ def test_chain_with_memory(logger_memory_logger):
     handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("{history} User: {input}")
     model = ChatOpenAI(model="gpt-4o-mini")
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
     memory = {"history": "Assistant: Hello! How can I assist you today?"}
     chain.invoke(
@@ -399,7 +399,7 @@ def test_parallel_execution(logger_memory_logger):
 
     map_chain.invoke({"topic": "bear"}, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
 
-    spans = cast(List, memory_logger.pop())
+    spans = cast(list, memory_logger.pop())
 
     # Find the LLM spans
     llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI")
@@ -480,16 +480,16 @@ def test_langgraph_state_management(logger_memory_logger):
         n=1,
     )
 
-    def say_hello(state: Dict[str, str]):
+    def say_hello(state: dict[str, str]):
         response = model.invoke("Say hello")
-        return cast(Union[str, List[str], Dict[str, str]], response.content)
+        return cast(str | list[str] | dict[str, str], response.content)
 
-    def say_bye(state: Dict[str, str]):
+    def say_bye(state: dict[str, str]):
         print("From the 'sayBye' node: Bye world!")
         return "Bye"
 
     workflow = (
-        StateGraph(state_schema=Dict[str, str])
+        StateGraph(state_schema=dict[str, str])
         .add_node("sayHello", say_hello)
         .add_node("sayBye", say_bye)
         .add_edge(START, "sayHello")
@@ -837,10 +837,10 @@ def test_streaming_ttft(logger_memory_logger):
         max_completion_tokens=50,
         streaming=True,
     )
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
     # Collect chunks to verify streaming works
-    chunks: List[str] = []
+    chunks: list[str] = []
     for chunk in chain.stream({}, config={"callbacks": [cast(BaseCallbackHandler, handler)]}):
         if chunk.content:
             chunks.append(str(chunk.content))
@@ -1272,9 +1272,9 @@ async def test_async_streaming(logger_memory_logger):
     handler = BraintrustCallbackHandler(logger=test_logger)
     prompt = ChatPromptTemplate.from_template("Count from 1 to 3.")
     model = ChatOpenAI(model="gpt-4o-mini", max_completion_tokens=20, streaming=True)
-    chain: RunnableSerializable[Dict[str, str], BaseMessage] = prompt.pipe(model)
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
 
-    chunks: List[str] = []
+    chunks: list[str] = []
     async for chunk in chain.astream({}, config={"callbacks": [cast(BaseCallbackHandler, handler)]}):
         if chunk.content:
             chunks.append(str(chunk.content))

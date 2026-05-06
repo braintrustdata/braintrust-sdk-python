@@ -123,6 +123,7 @@ INTEGRATION_DIR = "braintrust/integrations"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
 TYPE_TESTS_DIR = "braintrust/type_tests"
+BTX_DIR = "braintrust/btx"
 
 
 SILENT_INSTALLS = True
@@ -195,6 +196,24 @@ def test_openai_http2_streaming(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py", version=version)
 
 
+@nox.session()
+@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
+def test_btx_openai(session, version):
+    """Run the BTX cross-language LLM-span spec tests (OpenAI provider)."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", version)
+    session.install("pyyaml")
+    _run_tests(session, "braintrust/btx", version=version, env={"BTX_PROVIDER": "openai", "BTX_CLIENT": "openai"})
+
+
+@nox.session()
+def test_openai_ddtrace(session):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", LATEST)
+    _install_group_locked(session, "test-openai-ddtrace")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_ddtrace.py", version=LATEST)
+
+
 OPENAI_AGENTS_VERSIONS = _get_matrix_versions("openai-agents")
 
 
@@ -245,6 +264,18 @@ def test_agno(session, version):
     _install_group_locked(session, "test-agno")
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py", version=version)
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py", version=version)
+
+
+STRANDS_VERSIONS = _get_matrix_versions("strands-agents")
+
+
+@nox.session()
+@nox.parametrize("version", STRANDS_VERSIONS, ids=STRANDS_VERSIONS)
+def test_strands(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "strands-agents", version)
+    _install_group_locked(session, "test-strands")
+    _run_tests(session, f"{INTEGRATION_DIR}/strands/test_strands.py", version=version)
 
 
 AGENTSCOPE_VERSIONS = _get_matrix_versions("agentscope")
@@ -343,6 +374,22 @@ def test_dspy(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version)
 
 
+CREWAI_VERSIONS = _get_matrix_versions("crewai")
+
+
+@nox.session()
+@nox.parametrize("version", CREWAI_VERSIONS, ids=CREWAI_VERSIONS)
+def test_crewai(session, version):
+    if sys.version_info >= (3, 14):
+        session.skip(
+            "CrewAI currently resolves instructor -> pydantic-core builds that do not ship Python 3.14 wheels"
+        )
+    _install_test_deps(session)
+    _install_group_locked(session, "test-crewai")
+    _install_matrix_dep(session, "crewai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/crewai/test_crewai.py", version=version)
+
+
 GOOGLE_ADK_VERSIONS = _get_matrix_versions("google-adk")
 
 
@@ -367,6 +414,21 @@ def test_langchain(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_callbacks.py", version=version)
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_context.py", version=version)
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py", version=version)
+
+
+LLAMAINDEX_VERSIONS = _get_matrix_versions("llama-index-core")
+
+
+@nox.session()
+@nox.parametrize("version", LLAMAINDEX_VERSIONS, ids=LLAMAINDEX_VERSIONS)
+def test_llamaindex(session, version):
+    _install_test_deps(session)
+    _install_group_locked(session, "test-llamaindex")
+    _install_matrix_dep(session, "llama-index-core", version)
+    # These packages are tightly version-coupled to llama-index-core, so we
+    # install them unpinned and let pip resolve compatible versions.
+    session.install("llama-index-llms-openai", "llama-index-embeddings-openai", silent=SILENT_INSTALLS)
+    _run_tests(session, f"{INTEGRATION_DIR}/llamaindex/test_llamaindex.py", version=version)
 
 
 OPENROUTER_VERSIONS = _get_matrix_versions("openrouter")
@@ -401,7 +463,7 @@ TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 def test_temporal(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "temporalio", version)
-    _run_tests(session, "braintrust/contrib/temporal")
+    _run_tests(session, f"{INTEGRATION_DIR}/temporal")
 
 
 PYTEST_VERSIONS = _get_matrix_versions("pytest-matrix")
@@ -493,12 +555,20 @@ def pylint(session):
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
     files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
+    # Also lint repo-root examples/ — they live outside py/ but rely on the
+    # same `lint` dependency-group, so we cover them in the same invocation.
+    examples_result = session.run("git", "-C", "../examples", "ls-files", "**/*.py", silent=True, log=False)
+    files += [f"../examples/{path}" for path in examples_result.strip().splitlines() if path]
     if not files:
         return
     # scripts/ may use APIs only available in the latest pinned Python version
     # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
     if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
         files = [f for f in files if not f.startswith("scripts/")]
+    # The lint group skips crewai on Python 3.14 (its transitive pydantic-core
+    # has no 3.14 wheel yet), so skip the matching example too.
+    if sys.version_info[:2] >= (3, 14):
+        files = [f for f in files if not f.startswith("../examples/crewai/")]
     session.run("pylint", "--errors-only", *files)
 
 
@@ -560,6 +630,7 @@ def _run_core_tests(session):
             CONTRIB_DIR,
             DEVSERVER_DIR,
             TYPE_TESTS_DIR,
+            BTX_DIR,
         ],
     )
 

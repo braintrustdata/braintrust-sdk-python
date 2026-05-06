@@ -2,63 +2,26 @@ interactions:
 - request:
     body: '{"requests": [{"content": {"parts": [{"text": "This is a test"}], "role":
       "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality": 32, "model":
-      "models/text-embedding-004"}, {"content": {"parts": [{"text": "This is another
-      test"}], "role": "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality":
-      32, "model": "models/text-embedding-004"}]}'
-    headers:
-      Content-Type:
-      - application/json
-      user-agent:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3
-      x-goog-api-client:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3
-    method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents
-  response:
-    body:
-      string: "{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"models/text-embedding-004
-        is not found for API version v1beta, or is not supported for embedContent.
-        Call ListModels to see the list of available models and their supported methods.\",\n
-        \   \"status\": \"NOT_FOUND\"\n  }\n}\n"
-    headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
-      - application/json; charset=UTF-8
-      Date:
-      - Fri, 20 Mar 2026 17:24:34 GMT
-      Server:
-      - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=61
-      Transfer-Encoding:
-      - chunked
-      Vary:
-      - Origin
-      - X-Origin
-      - Referer
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-XSS-Protection:
-      - '0'
-    status:
-      code: 404
-      message: Not Found
-- request:
-    body: '{"requests": [{"content": {"parts": [{"text": "This is a test"}], "role":
-      "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality": 32, "model":
       "models/gemini-embedding-001"}, {"content": {"parts": [{"text": "This is another
       test"}], "role": "user"}, "taskType": "RETRIEVAL_DOCUMENT", "outputDimensionality":
       32, "model": "models/gemini-embedding-001"}]}'
     headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '364'
       Content-Type:
       - application/json
+      Host:
+      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.66.0 gl-python/3.13.3
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents
   response:
@@ -87,11 +50,11 @@ interactions:
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Fri, 20 Mar 2026 17:28:26 GMT
+      - Thu, 30 Apr 2026 15:20:05 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=142
+      - gfet4t7; dur=135
       Transfer-Encoding:
       - chunked
       Vary:
@@ -104,6 +67,8 @@ interactions:
       - SAMEORIGIN
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '1499'
     status:
       code: 200
       message: OK

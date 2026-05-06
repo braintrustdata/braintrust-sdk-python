@@ -30,7 +30,8 @@ from braintrust.integrations.cohere.patchers import (
     V2RerankPatcher,
 )
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
-from braintrust.test_helpers import init_test_logger
+from braintrust.span_types import SpanTypeAttribute
+from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
 
 pytest.importorskip("cohere")
@@ -258,6 +259,91 @@ def test_wrap_cohere_chat_v2_sync(memory_logger):
     assert span["output"]["role"] == "assistant"
 
     assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@pytest.mark.vcr
+def test_wrap_cohere_chat_v2_tool_call_spans(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("v2 tool-call cassette is recorded for the latest Cohere SDK")
+
+    assert not memory_logger.pop()
+    client = wrap_cohere(_v2_client(require_methods=("chat",)))
+
+    response = client.chat(
+        model=CHAT_MODEL,
+        messages=[{"role": "user", "content": "Use the get_weather tool for Paris."}],
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get the weather for a city.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"city": {"type": "string"}},
+                        "required": ["city"],
+                    },
+                },
+            }
+        ],
+        tool_choice="REQUIRED",
+        max_tokens=64,
+    )
+
+    tool_calls = response.message.tool_calls
+    assert tool_calls
+    assert tool_calls[0].function.name == "get_weather"
+
+    spans = memory_logger.pop()
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    assert len(llm_spans) == 1
+    assert len(tool_spans) == 1
+    tool_span = tool_spans[0]
+    assert tool_span["span_attributes"]["name"] == "tool: get_weather"
+    assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
+    assert tool_span["metadata"]["tool_call_id"] == tool_calls[0].id
+    assert tool_span["metadata"]["tool_type"] == "function"
+    assert "Paris" in str(tool_span["input"])
+
+
+@pytest.mark.vcr
+def test_wrap_cohere_chat_v1_tool_call_spans(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("v1 tool-call cassette is recorded for the latest Cohere SDK")
+
+    assert not memory_logger.pop()
+    client = wrap_cohere(_v1_client())
+
+    response = client.chat(
+        model=CHAT_MODEL,
+        message="Use the get_weather tool for Paris.",
+        tools=[
+            {
+                "name": "get_weather",
+                "description": "Get the weather for a city.",
+                "parameter_definitions": {"city": {"description": "City name", "type": "str", "required": True}},
+            }
+        ],
+        force_single_step=True,
+        max_tokens=64,
+    )
+
+    tool_calls = response.tool_calls
+    assert tool_calls
+    assert tool_calls[0].name == "get_weather"
+
+    spans = memory_logger.pop()
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    assert len(llm_spans) == 1
+    assert len(tool_spans) == 1
+    tool_span = tool_spans[0]
+    assert tool_span["span_attributes"]["name"] == "tool: get_weather"
+    assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
+    assert "Paris" in str(tool_span["input"])
 
 
 @pytest.mark.vcr
