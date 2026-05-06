@@ -56,10 +56,21 @@ def _is_reasoning_message(value: Any) -> bool:
     return True
 
 
+def _is_positive_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
+
+
+def _undefined_or_null(value: Any) -> bool:
+    """True if the value is absent (None/null) — used for fields that must not be populated."""
+    return value is None
+
+
 _NAMED_MATCHERS: dict[str, Any] = {
     "is_non_negative_number": _is_non_negative_number,
+    "is_positive_number": _is_positive_number,
     "is_non_empty_string": _is_non_empty_string,
     "is_reasoning_message": _is_reasoning_message,
+    "undefined_or_null": _undefined_or_null,
 }
 
 

@@ -122,7 +122,7 @@ def _dispatch(spec: LlmSpanSpec, client: Any) -> None:
         _execute_responses(spec.requests, client)
 
     elif provider == "anthropic" and endpoint == "/v1/messages":
-        _execute_anthropic_messages(spec.requests, client)
+        _execute_anthropic_messages(spec.requests, client, extra_headers=spec.headers or {})
 
     else:
         raise NotImplementedError(f"BTX executor: provider={provider!r} endpoint={endpoint!r} not implemented")
@@ -191,7 +191,9 @@ def _execute_responses(requests: list[dict[str, Any]], client: Any) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _execute_anthropic_messages(requests: list[dict[str, Any]], client: Any) -> None:
+def _execute_anthropic_messages(
+    requests: list[dict[str, Any]], client: Any, extra_headers: dict[str, str] | None = None
+) -> None:
     """Execute Anthropic messages requests.
 
     Handles streaming (stream=True) by consuming the stream context manager.
@@ -209,14 +211,20 @@ def _execute_anthropic_messages(requests: list[dict[str, Any]], client: Any) -> 
         is_streaming = full_req.get("stream", False)
         conversation_history.extend(req.get("messages", []))
 
+        create_kwargs: dict[str, Any] = dict(full_req)
+        if extra_headers:
+            create_kwargs["extra_headers"] = extra_headers
+
         if is_streaming:
-            with client.messages.create(**full_req) as stream:
-                final = stream.get_final_message()
-            if hasattr(final, "content") and final.content:
-                text_blocks = [b.text for b in final.content if hasattr(b, "text")]
-                conversation_history.append({"role": "assistant", "content": " ".join(text_blocks)})
+            # Iterate the stream to exhaustion — the Braintrust TracedMessageStream
+            # context manager captures metrics and logs the span on __exit__.
+            # We can't call get_final_message() on the traced wrapper, so we
+            # skip history accumulation for streaming (no multi-turn streaming specs).
+            with client.messages.create(**create_kwargs) as stream:
+                for _ in stream:
+                    pass
         else:
-            response = client.messages.create(**full_req)
+            response = client.messages.create(**create_kwargs)
             if hasattr(response, "content") and response.content:
                 text_blocks = [b.text for b in response.content if hasattr(b, "text")]
                 conversation_history.append({"role": "assistant", "content": " ".join(text_blocks)})

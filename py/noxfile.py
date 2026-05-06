@@ -280,6 +280,18 @@ def test_btx_openai(session, version):
 
 
 @nox.session()
+@nox.parametrize("version", ANTHROPIC_VERSIONS, ids=ANTHROPIC_VERSIONS)
+def test_btx_anthropic(session, version):
+    """Run the BTX cross-language LLM-span spec tests (Anthropic provider)."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "anthropic", version)
+    session.install("pyyaml")
+    _run_tests(
+        session, "braintrust/btx", version=version, env={"BTX_PROVIDER": "anthropic", "BTX_CLIENT": "anthropic"}
+    )
+
+
+@nox.session()
 def test_openai_ddtrace(session):
     _install_test_deps(session)
     _install_matrix_dep(session, "openai", LATEST)
