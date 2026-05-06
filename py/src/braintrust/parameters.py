@@ -5,8 +5,8 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Protocol, TypedDict, cast
 
-from jsonschema import Draft7Validator  # type: ignore[import-untyped]
-from jsonschema.exceptions import ValidationError as JSONSchemaValidationError  # type: ignore[import-untyped]
+from jsonschema import Draft7Validator
+from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
 from typing_extensions import NotRequired, TypeGuard
 
 from .generated_types import PromptBlockDataNullish, PromptOptionsNullish
