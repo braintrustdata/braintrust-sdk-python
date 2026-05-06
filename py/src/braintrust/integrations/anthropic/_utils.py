@@ -82,14 +82,18 @@ def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any
         for source_name, value in server_tool_use.items():
             _set_numeric_metric(metrics, f"server_tool_use_{source_name}", value)
 
-    if "prompt_cache_creation_tokens" not in metrics and cache_creation_breakdown:
-        metrics["prompt_cache_creation_tokens"] = sum(cache_creation_breakdown)
+    if any(v > 0 for v in cache_creation_breakdown):
+        # Per-TTL breakdown has non-zero values — omit the aggregate so consumers
+        # can rely on the breakdown fields exclusively (spec: undefined_or_null).
+        metrics.pop("prompt_cache_creation_tokens", None)
+        cache_creation_total = sum(cache_creation_breakdown)
+    else:
+        # No breakdown or all-zero breakdown — keep the aggregate.
+        cache_creation_total = metrics.get("prompt_cache_creation_tokens", 0)
 
     if metrics:
         total_prompt_tokens = (
-            metrics.get("prompt_tokens", 0)
-            + metrics.get("prompt_cached_tokens", 0)
-            + metrics.get("prompt_cache_creation_tokens", 0)
+            metrics.get("prompt_tokens", 0) + metrics.get("prompt_cached_tokens", 0) + cache_creation_total
         )
         metrics["prompt_tokens"] = total_prompt_tokens
         metrics["tokens"] = total_prompt_tokens + metrics.get("completion_tokens", 0)

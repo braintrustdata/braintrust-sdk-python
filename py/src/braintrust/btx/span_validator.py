@@ -157,6 +157,9 @@ def _validate_value(actual: Any, expected: Any, path: str, errors: list[str]) ->
             return
         for key, exp_val in expected.items():
             if key not in actual:
+                # A missing key satisfies undefined_or_null — treat absence as None.
+                if isinstance(exp_val, FnMatcher) and exp_val.expr == "undefined_or_null":
+                    continue
                 errors.append(f"{path}.{key}: key not found in actual span")
             else:
                 _validate_value(actual[key], exp_val, f"{path}.{key}", errors)

@@ -337,7 +337,6 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
         "prompt_tokens": 21.0,
         "completion_tokens": 7.0,
         "prompt_cached_tokens": 3.0,
-        "prompt_cache_creation_tokens": 7.0,
         "prompt_cache_creation_5m_tokens": 2.0,
         "prompt_cache_creation_1h_tokens": 5.0,
         "server_tool_use_web_search_requests": 2.0,
@@ -371,7 +370,7 @@ def test_anthropic_messages_create_prompt_cache_5m_metrics(memory_logger):
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert span["output"]["role"] == response.role
-    assert span["metrics"]["prompt_cache_creation_tokens"] == response.usage.cache_creation_input_tokens
+    assert "prompt_cache_creation_tokens" not in span["metrics"]
     assert (
         span["metrics"]["prompt_cache_creation_5m_tokens"] == response.usage.cache_creation.ephemeral_5m_input_tokens
     )
@@ -403,7 +402,7 @@ def test_anthropic_messages_create_prompt_cache_1h_metrics(memory_logger):
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert span["output"]["role"] == response.role
-    assert span["metrics"]["prompt_cache_creation_tokens"] == response.usage.cache_creation_input_tokens
+    assert "prompt_cache_creation_tokens" not in span["metrics"]
     assert (
         span["metrics"]["prompt_cache_creation_5m_tokens"] == response.usage.cache_creation.ephemeral_5m_input_tokens
     )
@@ -1342,7 +1341,10 @@ def test_setup_creates_spans(memory_logger):
         usage.input_tokens + usage.cache_read_input_tokens + usage.cache_creation_input_tokens
     )
     assert metrics["completion_tokens"] == usage.output_tokens
-    assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+    # When breakdown is all zeros, the aggregate is still reported.
+    # When breakdown has non-zero values, the aggregate is omitted.
+    if ephemeral_5m > 0 or ephemeral_1h > 0:
+        assert "prompt_cache_creation_tokens" not in metrics
     assert metrics["prompt_cache_creation_5m_tokens"] == ephemeral_5m
     assert metrics["prompt_cache_creation_1h_tokens"] == ephemeral_1h
     assert "service_tier" not in metrics
@@ -1373,7 +1375,7 @@ def test_extract_anthropic_usage_preserves_nested_numeric_fields():
     assert metrics["prompt_tokens"] == 15
     assert metrics["completion_tokens"] == 12
     assert metrics["tokens"] == 27
-    assert metrics["prompt_cache_creation_tokens"] == 7
+    assert "prompt_cache_creation_tokens" not in metrics
     assert metrics["prompt_cache_creation_5m_tokens"] == 3
     assert metrics["prompt_cache_creation_1h_tokens"] == 4
     assert metrics["server_tool_use_web_search_requests"] == 2
