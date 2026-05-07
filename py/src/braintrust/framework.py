@@ -685,6 +685,7 @@ def _EvalCommon(
     error_score_handler: ErrorScoreHandler | None = None,
     parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
+    on_complete: Callable[[ExperimentSummary], Any] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
     state: BraintrustState | None = None,
@@ -783,15 +784,21 @@ def _EvalCommon(
 
         async def run_to_completion():
             with parent_context(parent, state):
+                ret = None
                 try:
                     ret = await run_evaluator(experiment, evaluator, 0, [], stream, state, enable_cache)
                     reporter.report_eval(evaluator, ret, verbose=True, jsonl=False)
-                    return ret
                 finally:
                     if experiment:
                         experiment.flush()
                     elif state is not None:
                         state.flush()
+                if ret is None:
+                    raise ValueError("Evaluation did not produce a result")
+                if on_complete:
+                    event_loop = asyncio.get_event_loop()
+                    await call_user_fn(event_loop, on_complete, summary=ret.summary)
+                return ret
 
         return run_to_completion
 
@@ -821,6 +828,7 @@ async def EvalAsync(
     no_send_logs: bool = False,
     parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
+    on_complete: Callable[[ExperimentSummary], Any] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
     state: BraintrustState | None = None,
@@ -878,6 +886,8 @@ async def EvalAsync(
     :param parameters: A set of parameters that will be passed to the evaluator.
     :param on_start: An optional callback that will be called when the evaluation starts. It receives the
     `ExperimentSummary` object, which can be used to display metadata about the experiment.
+    :param on_complete: An optional callback that will be called after the evaluation finishes and flushes.
+    It receives the final `ExperimentSummary` object.
     :param stream: A function that will be called with progress events, which can be used to
     display intermediate progress.
     :param parent: If specified, instead of creating a new experiment object, the Eval() will populate
@@ -911,6 +921,7 @@ async def EvalAsync(
         no_send_logs=no_send_logs,
         parameters=parameters,
         on_start=on_start,
+        on_complete=on_complete,
         stream=stream,
         parent=parent,
         state=state,
@@ -948,6 +959,7 @@ def Eval(
     no_send_logs: bool = False,
     parameters: EvalParameters | RemoteEvalParameters | None = None,
     on_start: Callable[[ExperimentSummary], None] | None = None,
+    on_complete: Callable[[ExperimentSummary], Any] | None = None,
     stream: Callable[[SSEProgressEvent], None] | None = None,
     parent: str | None = None,
     state: BraintrustState | None = None,
@@ -1005,6 +1017,8 @@ def Eval(
     :param parameters: A set of parameters that will be passed to the evaluator.
     :param on_start: An optional callback that will be called when the evaluation starts. It receives the
     `ExperimentSummary` object, which can be used to display metadata about the experiment.
+    :param on_complete: An optional callback that will be called after the evaluation finishes and flushes.
+    It receives the final `ExperimentSummary` object.
     :param stream: A function that will be called with progress events, which can be used to
     display intermediate progress.
     :param parent: If specified, instead of creating a new experiment object, the Eval() will populate
@@ -1040,6 +1054,7 @@ def Eval(
         no_send_logs=no_send_logs,
         parameters=parameters,
         on_start=on_start,
+        on_complete=on_complete,
         stream=stream,
         parent=parent,
         state=state,

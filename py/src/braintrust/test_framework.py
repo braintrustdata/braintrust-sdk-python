@@ -388,6 +388,66 @@ async def test_eval_no_send_logs_true(with_memory_logger, simple_scorer):
     assert len(logs) == 0
 
 
+def test_eval_on_complete_called_once(simple_scorer):
+    callback_summaries = []
+
+    def on_complete(summary):
+        callback_summaries.append(summary)
+
+    result = Eval(
+        "test-on-complete",
+        data=[{"input": "hello", "expected": "hello world"}],
+        task=lambda input_val: input_val + " world",
+        scores=[simple_scorer],
+        no_send_logs=True,
+        on_complete=on_complete,
+    )
+
+    assert len(callback_summaries) == 1
+    assert callback_summaries[0] == result.summary
+
+
+def test_eval_on_complete_runs_after_flush(simple_scorer, monkeypatch):
+    state = BraintrustState()
+    order = []
+
+    def fake_flush():
+        order.append("flush")
+
+    monkeypatch.setattr(state, "flush", fake_flush)
+
+    def on_complete(_summary):
+        order.append("on_complete")
+
+    Eval(
+        "test-on-complete-order",
+        data=[{"input": "hello", "expected": "hello world"}],
+        task=lambda input_val: input_val + " world",
+        scores=[simple_scorer],
+        no_send_logs=True,
+        state=state,
+        on_complete=on_complete,
+    )
+
+    flush_positions = [i for i, value in enumerate(order) if value == "flush"]
+    assert flush_positions
+    assert "on_complete" in order
+    assert order.index("on_complete") > max(flush_positions)
+
+
+def test_eval_unchanged_when_on_complete_omitted(simple_scorer):
+    result = Eval(
+        "test-without-on-complete",
+        data=[{"input": "hello", "expected": "hello world"}],
+        task=lambda input_val: input_val + " world",
+        scores=[simple_scorer],
+        no_send_logs=True,
+    )
+
+    assert len(result.results) == 1
+    assert result.summary.project_name == "test-without-on-complete"
+
+
 @pytest.mark.asyncio
 async def test_eval_no_send_logs_with_none_score(with_memory_logger):
     """Test that scorers returning None don't crash local mode."""

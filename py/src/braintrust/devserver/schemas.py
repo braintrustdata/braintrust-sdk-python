@@ -42,6 +42,7 @@ class ParsedEvalBody(TypedDict, total=False):
     scores: list[ParsedFunctionId]
     experiment_name: str
     project_id: str
+    on_complete_webhook: str
     parent: str | ParsedParent
     stream: bool
 
@@ -243,6 +244,11 @@ def parse_eval_body(request_data: str | bytes | dict) -> ParsedEvalBody:
         if not isinstance(data["project_id"], str):
             raise ValidationError("project_id must be a string")
         parsed["project_id"] = data["project_id"]
+
+    if "on_complete_webhook" in data:
+        if not isinstance(data["on_complete_webhook"], str):
+            raise ValidationError("on_complete_webhook must be a string")
+        parsed["on_complete_webhook"] = data["on_complete_webhook"]
 
     if "parent" in data:
         parent = data["parent"]

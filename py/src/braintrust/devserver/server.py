@@ -2,6 +2,9 @@ import asyncio
 import json
 import sys
 import textwrap
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -51,6 +54,80 @@ from .schemas import ValidationError, parse_eval_body
 
 
 _all_evaluators: dict[str, Evaluator[Any, Any]] = {}
+
+WEBHOOK_ATTEMPTS = 3
+WEBHOOK_BACKOFF_SECONDS = (1.0, 2.0, 4.0)
+WEBHOOK_TIMEOUT_SECONDS = 10.0
+
+
+def _pick_string(data: dict[str, Any], keys: list[str]) -> str | None:
+    for key in keys:
+        value = data.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
+def build_completion_webhook_payload(summary: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "event": "experiment.completed",
+        "summary": summary,
+        "experiment": {
+            "projectId": _pick_string(summary, ["projectId", "project_id"]),
+            "projectName": _pick_string(summary, ["projectName", "project_name"]),
+            "projectUrl": _pick_string(summary, ["projectUrl", "project_url"]),
+            "experimentId": _pick_string(summary, ["experimentId", "experiment_id"]),
+            "experimentName": _pick_string(summary, ["experimentName", "experiment_name"]),
+            "experimentUrl": _pick_string(summary, ["experimentUrl", "experiment_url"]),
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _post_completion_webhook_request(webhook_url: str, body: dict[str, Any], timeout: float) -> None:
+    payload = json.dumps(body).encode("utf-8")
+    request = urllib.request.Request(
+        webhook_url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        status = response.getcode()
+        if status < 200 or status >= 300:
+            raise RuntimeError(f"Webhook request failed with status {status}")
+
+
+async def _send_completion_webhook_request(webhook_url: str, body: dict[str, Any], timeout: float) -> None:
+    await asyncio.to_thread(_post_completion_webhook_request, webhook_url, body, timeout)
+
+
+async def dispatch_completion_webhook(
+    webhook_url: str,
+    summary: dict[str, Any],
+    *,
+    attempts: int = WEBHOOK_ATTEMPTS,
+    backoff_seconds: tuple[float, ...] = WEBHOOK_BACKOFF_SECONDS,
+    timeout_seconds: float = WEBHOOK_TIMEOUT_SECONDS,
+) -> None:
+    payload = build_completion_webhook_payload(summary)
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            await _send_completion_webhook_request(
+                webhook_url,
+                payload,
+                timeout_seconds,
+            )
+            return
+        except Exception as e:
+            last_error = e
+            if attempt < attempts:
+                backoff = backoff_seconds[min(attempt - 1, len(backoff_seconds) - 1)]
+                await asyncio.sleep(backoff)
+
+    if last_error:
+        raise last_error
 
 
 class _ParameterOverrideHooks:
@@ -177,6 +254,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
 
     # Check if streaming is requested
     stream = eval_data.get("stream", False)
+    on_complete_webhook = eval_data.get("on_complete_webhook")
 
     # Set up SSE headers for streaming
     sse_queue = SSEQueue()
@@ -210,6 +288,20 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
             # Use create_task to schedule the async write without blocking
             asyncio.create_task(sse_queue.put_event("progress", event))
 
+    async def on_complete_fn(summary: ExperimentSummary):
+        if not on_complete_webhook:
+            return
+        try:
+            await dispatch_completion_webhook(
+                on_complete_webhook,
+                format_summary(summary),
+            )
+        except Exception as e:
+            print(
+                f"Failed to deliver completion webhook to {on_complete_webhook}: {e}",
+                file=sys.stderr,
+            )
+
     parent = eval_data.get("parent")
     if parent:
         parent = parse_parent(parent)
@@ -234,6 +326,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
                     ],
                     "stream": stream_fn,
                     "on_start": on_start_fn,
+                    "on_complete": on_complete_fn,
                     "data": dataset,
                     "task": task,
                     "experiment_name": eval_data.get("experiment_name"),
