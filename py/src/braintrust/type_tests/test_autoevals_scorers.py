@@ -2,7 +2,7 @@
 
 import pytest
 from autoevals import Levenshtein  # type: ignore[import-untyped]
-from braintrust.framework import EvalAsync, EvalCase, EvalScorer
+from braintrust.framework import Eval, EvalAsync, EvalCase, EvalScorer
 
 
 def accepts_autoevals_scorer(
@@ -22,17 +22,103 @@ async def autoevals_task(input: str) -> str:
 autoevals_scores: list[EvalScorer[str, str, str]] = [
     accepts_autoevals_scorer(Levenshtein()),
     accepts_autoevals_scorer(Levenshtein),
-    accepts_autoevals_scorer(Levenshtein.partial(hehe="hoho")),
+    accepts_autoevals_scorer(Levenshtein.partial(foo="bar")),
+]
+
+autoevals_scores_untyped = [
+    Levenshtein(),
+    Levenshtein,
+    Levenshtein.partial(foo="bar"),
 ]
 
 
+async def test_eval_accepts_autoevals_scorers_typed():
+    result = Eval(
+        "test-autoevals-scorers",
+        data=autoevals_data,
+        task=autoevals_task,
+        scores=autoevals_scores,
+        no_send_logs=True,
+    )
+
+    score = result.results[0].scores["Levenshtein"]
+    assert score is not None
+    assert score > 0
+
+
+async def test_eval_accepts_autoevals_scorers_untyped():
+    result = Eval(
+        "test-autoevals-scorers",
+        data=autoevals_data,
+        task=autoevals_task,
+        scores=autoevals_scores,
+        no_send_logs=True,
+    )
+
+    score = result.results[0].scores["Levenshtein"]
+    assert score is not None
+    assert score > 0
+
+
+async def test_eval_accepts_autoevals_scorers_inline():
+    result = Eval(
+        "test-autoevals-scorers",
+        data=autoevals_data,
+        task=autoevals_task,
+        scores=[
+            Levenshtein(),
+            Levenshtein,
+            Levenshtein.partial(foo="bar"),
+        ],
+        no_send_logs=True,
+    )
+
+    score = result.results[0].scores["Levenshtein"]
+    assert score is not None
+    assert score > 0
+
+
 @pytest.mark.asyncio
-async def test_eval_accepts_autoevals_scorers():
+async def test_eval_async_accepts_autoevals_scorers_typed():
     result = await EvalAsync(
         "test-autoevals-scorers",
         data=autoevals_data,
         task=autoevals_task,
         scores=autoevals_scores,
+        no_send_logs=True,
+    )
+
+    score = result.results[0].scores["Levenshtein"]
+    assert score is not None
+    assert score > 0
+
+
+@pytest.mark.asyncio
+async def test_eval_async_accepts_autoevals_scorers_untyped():
+    result = await EvalAsync(
+        "test-autoevals-scorers",
+        data=autoevals_data,
+        task=autoevals_task,
+        scores=autoevals_scores,
+        no_send_logs=True,
+    )
+
+    score = result.results[0].scores["Levenshtein"]
+    assert score is not None
+    assert score > 0
+
+
+@pytest.mark.asyncio
+async def test_eval_async_accepts_autoevals_scorers_inline():
+    result = await EvalAsync(
+        "test-autoevals-scorers",
+        data=autoevals_data,
+        task=autoevals_task,
+        scores=[
+            Levenshtein(),
+            Levenshtein,
+            Levenshtein.partial(foo="bar"),
+        ],
         no_send_logs=True,
     )
 
