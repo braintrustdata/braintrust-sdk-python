@@ -28,7 +28,7 @@ class PromptParameter(TypedDict):
 
     type: Literal["prompt"]
     name: NotRequired[str | None]
-    default: NotRequired[PromptDataDict | None]
+    default: NotRequired[PromptDataDict | PromptData | None]
     description: NotRequired[str | None]
 
 
