@@ -160,8 +160,10 @@ test-langchain = [
 test-crewai = [
     {include-group = "test"},
     # CrewAI's no-network smoke test forces the LiteLLM fallback path via
-    # ``is_litellm=True`` + ``mock_response``.
-    "litellm==1.83.10",
+    # ``is_litellm=True`` + ``mock_response``. Bumped to 1.83.14 so the
+    # transitive python-dotenv lands on 1.2.2 (CVE-2026-28684) instead of
+    # the 1.0.1 that older litellm hard-pins.
+    "litellm==1.83.14",
 ]
 
 test-llamaindex = [
