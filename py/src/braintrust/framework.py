@@ -48,7 +48,7 @@ from .parameters import (
     validate_parameters,
 )
 from .resource_manager import ResourceManager
-from .score import Classification, ClassificationItem, Score, is_classification, is_score, is_scorer
+from .score import Classification, ClassificationItem, Score, ScoreLike, is_classification, is_score, is_scorer
 from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
 from .types._eval import EvalCaseDict, EvalCaseDictNoOutput, ExperimentDatasetEvent
@@ -216,7 +216,7 @@ class EvalScorerArgs(SerializableDataClass, Generic[Input, Output, Expected]):
     metadata: Metadata | None = None
 
 
-OneOrMoreScores = float | int | bool | None | Score | list[Score]
+OneOrMoreScores = float | int | bool | None | ScoreLike | list[Score]
 OneOrMoreClassifications = None | Classification | Mapping[str, Any] | list[Classification | Mapping[str, Any]]
 
 
@@ -1286,7 +1286,7 @@ def _classifier_name(classifier, classifier_idx):
     return _callable_name(classifier, classifier_idx, "classifier")
 
 
-def _build_span_metadata(results: list[Score] | list[Classification]) -> Metadata | None:
+def _build_span_metadata(results: list[ScoreLike] | list[Classification]) -> Metadata | None:
     if not results:
         return None
     if len(results) == 1:

@@ -471,7 +471,8 @@ version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "chevron" },
-    { name = "jsonschema", version = "4.26.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "jsonschema", version = "4.23.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-test-crewai' or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agentscope') or (extra == 'group-10-braintrust-lint' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agentscope' and extra == 'group-10-braintrust-test-agno') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agno' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-langchain' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-litellm' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-openai-agents' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-pydantic-ai-logfire') or (extra == 'group-10-braintrust-lint' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-agentscope' and extra != 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands')" },
+    { name = "jsonschema", version = "4.26.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-10-braintrust-lint' or extra == 'group-10-braintrust-test-agentscope' or extra == 'group-10-braintrust-test-agno' or extra != 'group-10-braintrust-test-crewai' or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-langchain') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-litellm') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-openai-agents') or (extra == 'group-10-braintrust-test-crewai' and extra == 'group-10-braintrust-test-strands')" },
     { name = "polyleven" },
     { name = "pyyaml" },
 ]
@@ -882,6 +883,7 @@ test-strands = [
     { name = "pytest-vcr" },
 ]
 test-types = [
+    { name = "autoevals" },
     { name = "mypy" },
     { name = "pyright" },
     { name = "pytest" },
@@ -1055,6 +1057,7 @@ test-strands = [
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-types = [
+    { name = "autoevals", specifier = "==0.2.0" },
     { name = "mypy", specifier = "==1.20.0" },
     { name = "pyright", specifier = "==1.1.408" },
     { name = "pytest", specifier = "==9.0.2" },

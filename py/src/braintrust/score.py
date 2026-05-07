@@ -2,9 +2,10 @@ import dataclasses
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, TypedDict
+from collections.abc import Mapping
+from typing import Any, Protocol, TypedDict
 
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypeGuard
 
 from .serializable_data_class import SerializableDataClass
 from .types import Metadata
@@ -53,6 +54,19 @@ class Score(SerializableDataClass):
             )
 
 
+class ScoreLike(Protocol):
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def score(self) -> float | None: ...
+
+    @property
+    def metadata(self) -> Metadata: ...
+
+    def as_dict(self) -> Mapping[str, Any]: ...
+
+
 class ClassificationItem(TypedDict):
     id: str
     label: NotRequired[str]
@@ -76,7 +90,7 @@ class Classification(SerializableDataClass):
     """Optional metadata attached to the classification result."""
 
     def as_dict(self):
-        result = {"id": self.id}
+        result: Mapping[str, Any] = {"id": self.id}
         if self.name is not None:
             result["name"] = self.name
         if self.label is not None:
@@ -102,7 +116,7 @@ class Classification(SerializableDataClass):
             raise ValueError("classification label must be a string when provided")
 
 
-def is_score(obj):
+def is_score(obj: object) -> TypeGuard[ScoreLike]:
     return hasattr(obj, "name") and hasattr(obj, "score") and hasattr(obj, "metadata") and hasattr(obj, "as_dict")
 
 
@@ -151,6 +165,7 @@ __all__ = [
     "Classification",
     "ClassificationItem",
     "Score",
+    "ScoreLike",
     "Scorer",
     "is_classification",
     "is_score",
