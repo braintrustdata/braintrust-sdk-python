@@ -2,7 +2,7 @@
 
 import pytest
 from autoevals import Levenshtein  # type: ignore[import-untyped]
-from braintrust.framework import Eval, EvalAsync, EvalCase, EvalScorer
+from braintrust.framework import Eval, EvalCase, EvalScorer
 
 
 def accepts_autoevals_scorer(
@@ -15,7 +15,11 @@ def autoevals_data():
     return iter([EvalCase(input="query", expected="hello world")])
 
 
-async def autoevals_task(input: str) -> str:
+def autoevals_task(input: str) -> str:
+    return "hello world"
+
+
+async def autoevals_task_async(input: str) -> str:
     return "hello world"
 
 
@@ -32,7 +36,7 @@ autoevals_scores_untyped = [
 ]
 
 
-async def test_eval_accepts_autoevals_scorers_typed():
+def test_eval_accepts_autoevals_scorers_typed():
     result = Eval(
         "test-autoevals-scorers",
         data=autoevals_data,
@@ -46,7 +50,7 @@ async def test_eval_accepts_autoevals_scorers_typed():
     assert score > 0
 
 
-async def test_eval_accepts_autoevals_scorers_untyped():
+def test_eval_accepts_autoevals_scorers_untyped():
     result = Eval(
         "test-autoevals-scorers",
         data=autoevals_data,
@@ -60,7 +64,7 @@ async def test_eval_accepts_autoevals_scorers_untyped():
     assert score > 0
 
 
-async def test_eval_accepts_autoevals_scorers_inline():
+def test_eval_accepts_autoevals_scorers_inline():
     result = Eval(
         "test-autoevals-scorers",
         data=autoevals_data,
@@ -83,7 +87,7 @@ async def test_eval_async_accepts_autoevals_scorers_typed():
     result = await EvalAsync(
         "test-autoevals-scorers",
         data=autoevals_data,
-        task=autoevals_task,
+        task=autoevals_task_async,
         scores=autoevals_scores,
         no_send_logs=True,
     )
@@ -98,7 +102,7 @@ async def test_eval_async_accepts_autoevals_scorers_untyped():
     result = await EvalAsync(
         "test-autoevals-scorers",
         data=autoevals_data,
-        task=autoevals_task,
+        task=autoevals_task_async,
         scores=autoevals_scores,
         no_send_logs=True,
     )
@@ -113,7 +117,7 @@ async def test_eval_async_accepts_autoevals_scorers_inline():
     result = await EvalAsync(
         "test-autoevals-scorers",
         data=autoevals_data,
-        task=autoevals_task,
+        task=autoevals_task_async,
         scores=[
             Levenshtein(),
             Levenshtein,
