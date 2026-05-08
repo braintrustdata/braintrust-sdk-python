@@ -863,7 +863,7 @@ async def EvalAsync(
     summarized and compared to this experiment.
     :param base_experiment_id: An optional experiment id to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment. This takes precedence over `base_experiment_name` if specified.
-    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect all git metadata fields allowed in org-level settings.
+    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect git metadata fields allowed in org-level settings, excluding diff content unless the org opts in.
     :param repo_info: Optionally explicitly specify the git metadata for this experiment. This takes precedence over `git_metadata_settings` if specified.
     :param error_score_handler: Optionally supply a custom function to specifically handle score values when tasks or scoring functions have errored.
     :param description: An optional description for the experiment.
@@ -991,7 +991,7 @@ def Eval(
     summarized and compared to this experiment.
     :param base_experiment_id: An optional experiment id to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment. This takes precedence over `base_experiment_name` if specified.
-    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect all git metadata fields allowed in org-level settings.
+    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect git metadata fields allowed in org-level settings, excluding diff content unless the org opts in.
     :param repo_info: Optionally explicitly specify the git metadata for this experiment. This takes precedence over `git_metadata_settings` if specified.
     :param error_score_handler: Optionally supply a custom function to specifically handle score values when tasks or scoring functions have errored.
     :param description: An optional description for the experiment.

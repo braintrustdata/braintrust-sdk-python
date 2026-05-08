@@ -60,7 +60,7 @@ from .generated_types import (
     PromptOptions,
     SpanAttributes,
 )
-from .git_fields import GitMetadataSettings, RepoInfo
+from .git_fields import GitMetadataSettings, RepoInfo, default_git_metadata_settings
 from .gitutil import get_past_n_ancestors, get_repo_info
 from .merge_row_batch import batch_items, merge_row_batch
 from .object import DEFAULT_IS_LEGACY_DATASET, ensure_dataset_record
@@ -1620,7 +1620,7 @@ def init(
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :param metadata: (Optional) a dictionary with additional data about the test example, model outputs, or just about anything else that's relevant, that you can use to help find and analyze examples later. For example, you could log the `prompt`, example's `id`, or anything else that would be useful to slice/dice later. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
     :param tags: (Optional) a list of strings to tag the experiment with. Tags can be used to filter and organize experiments.
-    :param git_metadata_settings: (Optional) Settings for collecting git metadata. By default, will collect all git metadata fields allowed in org-level settings.
+    :param git_metadata_settings: (Optional) Settings for collecting git metadata. By default, will collect git metadata fields allowed in org-level settings, excluding diff content unless the org opts in.
     :param set_current: If true (the default), set the global current-experiment to the newly-created one.
     :param open: If the experiment already exists, open it in read-only mode. Throws an error if the experiment does not already exist.
     :param project_id: The id of the project to create the experiment in. This takes precedence over `project` if specified.
@@ -2667,7 +2667,9 @@ def _check_org_info(state, org_info, org_name):
             state.org_name = orgs["name"]
             state.api_url = os.environ.get("BRAINTRUST_API_URL", orgs["api_url"])
             state.proxy_url = os.environ.get("BRAINTRUST_PROXY_URL", orgs["proxy_url"])
-            state.git_metadata_settings = GitMetadataSettings(**(orgs.get("git_metadata") or {}))
+            state.git_metadata_settings = GitMetadataSettings(
+                **(orgs.get("git_metadata") or default_git_metadata_settings().as_dict())
+            )
             break
 
     if state.org_id is None:

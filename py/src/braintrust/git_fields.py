@@ -43,3 +43,22 @@ class GitMetadataSettings(SerializableDataClass):
         if not ret.fields:
             ret.collect = "none"
         return ret
+
+
+DEFAULT_GIT_METADATA_FIELDS = [
+    "commit",
+    "branch",
+    "tag",
+    "dirty",
+    "author_name",
+    "author_email",
+    "commit_message",
+    "commit_time",
+]
+
+
+def default_git_metadata_settings() -> GitMetadataSettings:
+    return GitMetadataSettings(
+        collect="some",
+        fields=list(DEFAULT_GIT_METADATA_FIELDS),
+    )
