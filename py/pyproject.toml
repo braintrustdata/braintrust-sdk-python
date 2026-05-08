@@ -157,6 +157,15 @@ test-langchain = [
     "langgraph==1.1.6",
 ]
 
+test-livekit-agents = [
+    {include-group = "test"},
+    "livekit-plugins-openai",
+    "livekit-plugins-silero",
+    # livekit-agents 1.3.x imports opentelemetry.sdk._logs.LogData, removed in newer SDKs.
+    # This is a LiveKit runtime compatibility constraint, not a Braintrust OTel integration dependency.
+    "opentelemetry-sdk<1.39",
+]
+
 test-crewai = [
     {include-group = "test"},
     # CrewAI's no-network smoke test forces the LiteLLM fallback path via
@@ -212,6 +221,8 @@ lint = [
     "google-adk",
     "google-genai",
     "litellm>=1.83.10",
+    "livekit-agents",
+    "livekit-plugins-openai",
     "mistralai",
     "openai",
     "openai-agents",
@@ -263,12 +274,14 @@ conflicts = [
         {group = "test-agentscope"},
         {group = "test-strands"},
         {group = "test-langchain"},
+        {group = "test-livekit-agents"},
         {group = "lint"},
     ],
-    # opentelemetry-sdk version conflicts (google-adk vs logfire).
+    # opentelemetry-sdk version conflicts (google-adk/livekit vs logfire).
     [
         {group = "lint"},
         {group = "test-pydantic-ai-logfire"},
+        {group = "test-livekit-agents"},
     ],
 ]
 
@@ -308,6 +321,10 @@ latest = "openai-agents==0.17.1"
 [tool.braintrust.matrix.litellm]
 latest = "litellm==1.83.14"
 "1.74.0" = "litellm==1.74.0"
+
+[tool.braintrust.matrix.livekit-agents]
+latest = "livekit-agents==1.3.6"
+"1.3.1" = "livekit-agents==1.3.1"
 
 [tool.braintrust.matrix.claude-agent-sdk]
 latest = "claude-agent-sdk==0.1.80"
@@ -427,6 +444,7 @@ dspy = ["dspy"]
 google_genai = ["google-genai"]
 langchain = ["langchain-core"]
 litellm = ["litellm"]
+livekit_agents = ["livekit-agents"]
 llamaindex = ["llama-index-core"]
 mistral = ["mistralai"]
 openai = ["openai"]
@@ -449,6 +467,7 @@ dspy = "dspy"
 google-adk = "google.adk"
 google-genai = "google.genai"
 litellm = "litellm"
+livekit-agents = "livekit.agents"
 mistralai = "mistralai"
 openai = "openai"
 openai-agents = "agents"

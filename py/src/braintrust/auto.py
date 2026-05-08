@@ -20,6 +20,7 @@ from braintrust.integrations import (
     GoogleGenAIIntegration,
     LangChainIntegration,
     LiteLLMIntegration,
+    LiveKitAgentsIntegration,
     LlamaIndexIntegration,
     MistralIntegration,
     OpenAIAgentsIntegration,
@@ -70,6 +71,7 @@ def auto_instrument(
     crewai: bool = True,
     strands: bool = True,
     temporal: bool = True,
+    livekit_agents: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -101,6 +103,7 @@ def auto_instrument(
         crewai: Enable CrewAI instrumentation (default: True)
         strands: Enable Strands Agents instrumentation (default: True)
         temporal: Enable Temporal instrumentation (default: True)
+        livekit_agents: Enable LiveKit Agents instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -188,6 +191,8 @@ def auto_instrument(
         results["strands"] = _instrument_integration(StrandsIntegration)
     if temporal:
         results["temporal"] = _instrument_integration(TemporalIntegration)
+    if livekit_agents:
+        results["livekit_agents"] = _instrument_integration(LiveKitAgentsIntegration)
 
     return results
 

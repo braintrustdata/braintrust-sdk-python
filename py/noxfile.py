@@ -12,11 +12,16 @@ works with and without different dependencies. A few commands to check out:
 
 import functools
 import glob
+import hashlib
 import os
 import pathlib
+import platform
 import re
+import shutil
 import sys
+import tarfile
 import tempfile
+import urllib.request
 
 from packaging.version import Version
 
@@ -44,6 +49,54 @@ _MATRIX = _PYPROJECT.get("tool", {}).get("braintrust", {}).get("matrix", {})
 
 
 _PROJECT_DIR = str(pathlib.Path(__file__).parent)
+
+
+def _ensure_livekit_server(session: nox.Session) -> str:
+    """Ensure a standalone livekit-server binary is available for LiveKit e2e tests."""
+    existing = shutil.which("livekit-server")
+    if existing:
+        return os.path.dirname(existing)
+
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    arch = {"x86_64": "amd64", "amd64": "amd64", "aarch64": "arm64", "arm64": "arm64"}.get(machine)
+    if arch is None:
+        session.skip(f"No pinned livekit-server binary for architecture {machine!r}")
+
+    if system != "linux":
+        session.skip(
+            "No pinned standalone livekit-server release asset is available for this platform; "
+            "install livekit-server on PATH to run LiveKit e2e tests locally"
+        )
+
+    cache_root = pathlib.Path(os.environ.get("BRAINTRUST_LIVEKIT_SERVER_DIR", ".nox/livekit-server"))
+    install_dir = cache_root / LIVEKIT_SERVER_VERSION / f"{system}_{arch}"
+    binary = install_dir / "livekit-server"
+    if binary.exists():
+        return str(install_dir.resolve())
+
+    install_dir.mkdir(parents=True, exist_ok=True)
+    asset = f"livekit_{LIVEKIT_SERVER_VERSION}_{system}_{arch}.tar.gz"
+    url = f"https://github.com/livekit/livekit/releases/download/v{LIVEKIT_SERVER_VERSION}/{asset}"
+    archive = install_dir / asset
+    expected_sha256 = LIVEKIT_SERVER_SHA256[f"{system}_{arch}"]
+    session.log(f"Downloading {url}")
+    urllib.request.urlretrieve(url, archive)  # noqa: S310 - pinned public release asset for test infra.
+    actual_sha256 = hashlib.sha256(archive.read_bytes()).hexdigest()
+    if actual_sha256 != expected_sha256:
+        archive.unlink(missing_ok=True)
+        session.error(
+            f"SHA256 mismatch for {asset}: expected {expected_sha256}, got {actual_sha256}. "
+            "Refusing to extract downloaded livekit-server archive."
+        )
+    with tarfile.open(archive, "r:gz") as tar:
+        if sys.version_info >= (3, 12):
+            tar.extract("livekit-server", path=install_dir, filter="data")
+        else:
+            tar.extract("livekit-server", path=install_dir)  # noqa: S202
+    binary.chmod(0o755)
+    archive.unlink()
+    return str(install_dir.resolve())
 
 
 def _install_group_locked(session: nox.Session, *group_names: str) -> None:
@@ -128,6 +181,11 @@ BTX_DIR = "braintrust/btx"
 
 SILENT_INSTALLS = True
 LATEST = "latest"
+LIVEKIT_SERVER_VERSION = "1.11.0"
+LIVEKIT_SERVER_SHA256 = {
+    "linux_amd64": "3e76ed51ecdfefc3005e4257095dccd1ccc8f8b77517d9f2353de7906650b68b",
+    "linux_arm64": "6741466bc12e75544338292ab2c1c02c02f3c626568230b5548fffc53e5a87ff",
+}
 ERROR_CODES = tuple(range(1, 256))
 INTERNAL_TEST_FLAGS = {"--wheel", "--disable-vcr"}
 GENERATED_LINT_EXCLUDES = {
@@ -264,6 +322,27 @@ def test_agno(session, version):
     _install_group_locked(session, "test-agno")
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py", version=version)
     _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py", version=version)
+
+
+LIVEKIT_AGENTS_VERSIONS = _get_matrix_versions("livekit-agents")
+
+
+@nox.session()
+@nox.parametrize("version", LIVEKIT_AGENTS_VERSIONS, ids=LIVEKIT_AGENTS_VERSIONS)
+def test_livekit_agents(session, version):
+    if sys.version_info >= (3, 14):
+        session.skip("LiveKit Agents Silero VAD depends on onnxruntime, which does not ship Python 3.14 wheels")
+    _install_test_deps(session)
+    _install_matrix_dep(session, "livekit-agents", version)
+    _install_group_locked(session, "test-livekit-agents")
+    livekit_server_dir = _ensure_livekit_server(session)
+    env = {
+        "LIVEKIT_URL": os.environ.get("LIVEKIT_URL", "ws://localhost:7880"),
+        "LIVEKIT_API_KEY": os.environ.get("LIVEKIT_API_KEY", "devkey"),
+        "LIVEKIT_API_SECRET": os.environ.get("LIVEKIT_API_SECRET", "secret"),
+        "PATH": f"{livekit_server_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+    }
+    _run_tests(session, f"{INTEGRATION_DIR}/livekit_agents/test_livekit_agents.py", version=version, env=env)
 
 
 STRANDS_VERSIONS = _get_matrix_versions("strands-agents")

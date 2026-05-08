@@ -100,7 +100,7 @@ def _raw_response_requested(kwargs: dict[str, Any]) -> bool:
     for key, value in extra_headers.items():
         if isinstance(key, str) and key.lower() == RAW_RESPONSE_HEADER:
             if isinstance(value, str):
-                return value.lower() == "true"
+                return value.lower() in {"true", "stream"}
             return bool(value)
 
     return False
@@ -334,6 +334,8 @@ def _make_base_wrapper_callback(
     """Create a wrapt callback that routes through with_raw_response for header capture."""
 
     def wrapper(wrapped, instance, args, kwargs):
+        if type(instance).__name__.endswith("WithStreamingResponse") or _raw_response_requested(kwargs):
+            return wrapped(*args, **kwargs)
         stream = bool(kwargs.get("stream", False))
         create_fn = wrapped if stream else (_get_raw_callable(instance, method_name) or wrapped)
         if _is_async_callable(wrapped):
@@ -1319,6 +1321,8 @@ class BaseWrapper(abc.ABC):
             create_response = await self._acreate_fn(*args, **kwargs)
             if hasattr(create_response, "parse"):
                 raw_response = create_response.parse()
+                if inspect.isawaitable(raw_response):
+                    raw_response = await raw_response
                 log_headers(create_response, span)
             else:
                 raw_response = create_response

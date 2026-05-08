@@ -2608,6 +2608,25 @@ async def test_openai_audio_translation_async(memory_logger):
 class TestOpenAIIntegrationSetupSpans:
     """VCR-based tests verifying that OpenAIIntegration.setup() produces spans."""
 
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_setup_preserves_async_audio_speech_streaming_response(self, memory_logger):
+        assert not memory_logger.pop()
+
+        OpenAIIntegration.setup()
+        client = AsyncOpenAI()
+
+        async with client.audio.speech.with_streaming_response.create(
+            model="tts-1",
+            voice="alloy",
+            input="Hello, this is a streaming response test.",
+        ) as response:
+            assert hasattr(response, "request_id")
+            chunks = [chunk async for chunk in response.iter_bytes()]
+
+        assert chunks
+        assert not memory_logger.pop()
+
     @pytest.mark.vcr
     def test_setup_creates_spans(self, memory_logger):
         """OpenAIIntegration.setup() should create spans when making API calls."""
