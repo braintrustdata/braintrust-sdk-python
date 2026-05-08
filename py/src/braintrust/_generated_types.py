@@ -416,6 +416,7 @@ class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2(TypedDic
     name: NotRequired[str | None]
     tool_calls: NotRequired[Sequence[ChatCompletionMessageToolCall] | None]
     reasoning: NotRequired[Sequence[ChatCompletionMessageReasoning] | None]
+    reasoning_signature: NotRequired[str | None]
 
 
 class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam3(TypedDict):
@@ -2776,6 +2777,7 @@ class ChatCompletionMessageParamChatCompletionMessageParam2(TypedDict):
     name: NotRequired[str | None]
     tool_calls: NotRequired[Sequence[ChatCompletionMessageToolCall] | None]
     reasoning: NotRequired[Sequence[ChatCompletionMessageReasoning] | None]
+    reasoning_signature: NotRequired[str | None]
 
 
 ChatCompletionMessageParam: TypeAlias = (
