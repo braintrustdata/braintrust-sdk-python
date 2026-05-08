@@ -11,6 +11,7 @@ from .tracing import (
     _arerank_wrapper_async,
     _aresponses_wrapper_async,
     _aspeech_wrapper_async,
+    _atext_completion_wrapper_async,
     _atranscription_wrapper_async,
     _completion_wrapper,
     _embedding_wrapper,
@@ -19,6 +20,7 @@ from .tracing import (
     _rerank_wrapper,
     _responses_wrapper,
     _speech_wrapper,
+    _text_completion_wrapper,
     _transcription_wrapper,
 )
 
@@ -38,6 +40,18 @@ class LiteLLMAcompletionPatcher(FunctionWrapperPatcher):
     name = "litellm.acompletion"
     target_path = "acompletion"
     wrapper = _acompletion_wrapper_async
+
+
+class LiteLLMTextCompletionPatcher(FunctionWrapperPatcher):
+    name = "litellm.text_completion"
+    target_path = "text_completion"
+    wrapper = _text_completion_wrapper
+
+
+class LiteLLMATextCompletionPatcher(FunctionWrapperPatcher):
+    name = "litellm.atext_completion"
+    target_path = "atext_completion"
+    wrapper = _atext_completion_wrapper_async
 
 
 class LiteLLMResponsesPatcher(FunctionWrapperPatcher):
@@ -125,6 +139,8 @@ class LiteLLMArerankPatcher(FunctionWrapperPatcher):
 _ALL_LITELLM_PATCHERS = (
     LiteLLMCompletionPatcher,
     LiteLLMAcompletionPatcher,
+    LiteLLMTextCompletionPatcher,
+    LiteLLMATextCompletionPatcher,
     LiteLLMResponsesPatcher,
     LiteLLMAresponsesPatcher,
     LiteLLMImageGenerationPatcher,
@@ -153,9 +169,10 @@ def wrap_litellm(litellm: Any) -> Any:
     module, this function instruments a specific module object (or any object
     that exposes the same top-level callables such as ``completion``,
     ``acompletion``, ``responses``, ``aresponses``, ``image_generation``,
-    ``aimage_generation``, ``embedding``, ``aembedding``, ``moderation``,
-    ``speech``, ``aspeech``, ``transcription``, ``atranscription``,
-    ``rerank``, and ``arerank``). Each patcher is applied idempotently — calling
+    ``text_completion``, ``atext_completion``, ``aimage_generation``,
+    ``embedding``, ``aembedding``, ``moderation``, ``speech``, ``aspeech``,
+    ``transcription``, ``atranscription``, ``rerank``, and ``arerank``). Each
+    patcher is applied idempotently — calling
     ``wrap_litellm`` twice on the same object is safe.
 
     Args:
