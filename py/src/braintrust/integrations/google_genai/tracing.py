@@ -488,9 +488,30 @@ def _extract_interaction_text(outputs: list[dict[str, Any]]) -> str | None:
     return "".join(text_parts) or None
 
 
+def _interaction_outputs_from_steps(response: "Interaction") -> list[dict[str, Any]]:
+    """Extract response outputs from google-genai 2.x interaction steps."""
+    steps = _materialize_interaction_value(getattr(response, "steps", None))
+    if not isinstance(steps, list):
+        return []
+
+    outputs: list[dict[str, Any]] = []
+    for step in steps:
+        if not isinstance(step, dict) or step.get("type") == "thought":
+            continue
+        if step.get("type") == "model_output" and isinstance(step.get("content"), list):
+            outputs.extend(item for item in step["content"] if isinstance(item, dict))
+        else:
+            outputs.append(step)
+    return outputs
+
+
 def _serialize_interaction_outputs(response: "Interaction") -> list[dict[str, Any]]:
     outputs = _materialize_interaction_value(getattr(response, "outputs", None))
-    return outputs if isinstance(outputs, list) else ([] if outputs is None else [outputs])
+    if isinstance(outputs, list):
+        return outputs
+    if outputs is not None:
+        return [outputs]
+    return _interaction_outputs_from_steps(response)
 
 
 def _extract_interaction_output(
@@ -718,7 +739,7 @@ def _aggregate_generate_content_chunks(
 
 
 def _is_interaction_content_event(event: Any) -> bool:
-    return getattr(event, "event_type", None) in {"content.start", "content.delta"}
+    return getattr(event, "event_type", None) in {"content.start", "content.delta", "step.start"}
 
 
 def _merge_interaction_content_delta(item: dict[str, Any], delta: dict[str, Any]) -> dict[str, Any]:
@@ -758,6 +779,12 @@ def _reconstruct_interaction_outputs_from_events(events: list[Any]) -> list[dict
 
         if event_type == "content.start":
             outputs_by_index[index] = _materialize_interaction_value(getattr(event, "content", None)) or {}
+        elif event_type == "step.start":
+            step = _materialize_interaction_value(getattr(event, "step", None)) or {}
+            if isinstance(step, dict) and step.get("type") == "model_output" and isinstance(step.get("content"), list):
+                outputs_by_index[index] = next((item for item in step["content"] if isinstance(item, dict)), {})
+            else:
+                outputs_by_index[index] = step if isinstance(step, dict) else {}
         elif event_type == "content.delta":
             item = outputs_by_index.setdefault(index, {})
             delta = _materialize_interaction_value(getattr(event, "delta", None)) or {}

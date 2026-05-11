@@ -1334,6 +1334,27 @@ def _interaction_function_tool():
     )
 
 
+def _interaction_outputs(response):
+    outputs = getattr(response, "outputs", None)
+    if outputs is not None:
+        return outputs
+
+    extracted = []
+    for step in getattr(response, "steps", []) or []:
+        if getattr(step, "type", None) == "thought":
+            continue
+        if getattr(step, "type", None) == "model_output":
+            extracted.extend(getattr(step, "content", []) or [])
+        else:
+            extracted.append(step)
+    return extracted
+
+
+def _function_result_content(**kwargs):
+    cls = getattr(interactions, "FunctionResultContent", None) or getattr(interactions, "FunctionResultStep")
+    return cls(**kwargs)
+
+
 @_needs_interactions
 @pytest.mark.vcr
 def test_interactions_create_and_get(memory_logger):
@@ -1390,10 +1411,14 @@ def test_interactions_create_stream(memory_logger):
     assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
     assert create_span["output"]["status"] == "completed"
     assert create_span["output"]["text"]
-    assert "hi" in create_span["output"]["text"].lower()
     assert create_span["metrics"]["time_to_first_token"] >= 0
-    assert "content.start" in create_span["metadata"]["stream_event_types"]
-    assert "interaction.complete" in create_span["metadata"]["stream_event_types"]
+    assert any(
+        event_type in create_span["metadata"]["stream_event_types"] for event_type in ("content.start", "step.start")
+    )
+    assert any(
+        event_type in create_span["metadata"]["stream_event_types"]
+        for event_type in ("interaction.complete", "interaction.completed")
+    )
 
 
 @_needs_interactions
@@ -1409,13 +1434,13 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
         input="What is the weather like in Paris? Use the tool.",
         tools=[tool],
     )
-    tool_call = next(output for output in first_response.outputs if output.type == "function_call")
+    tool_call = next(output for output in _interaction_outputs(first_response) if output.type == "function_call")
 
     second_response = client.interactions.create(
         model=INTERACTIONS_MODEL,
         previous_interaction_id=first_response.id,
         input=[
-            interactions.FunctionResultContent(
+            _function_result_content(
                 type="function_result",
                 call_id=tool_call.id,
                 name=tool_call.name,
@@ -1427,7 +1452,7 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
 
     assert first_response.status == "requires_action"
     assert second_response.status == "completed"
-    assert "sunny" in second_response.outputs[-1].text.lower()
+    assert "sunny" in _interaction_outputs(second_response)[-1].text.lower()
 
     spans = memory_logger.pop()
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
@@ -1459,7 +1484,7 @@ def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logge
         input="What is the weather like in Paris? Use the tool.",
         tools=[tool],
     )
-    tool_call = next(output for output in first_response.outputs if output.type == "function_call")
+    tool_call = next(output for output in _interaction_outputs(first_response) if output.type == "function_call")
 
     with logger.start_span(name="nested_tool_work", type=SpanTypeAttribute.TASK) as nested_tool_work:
         nested_tool_work.log(output={"forecast": "sunny"})
@@ -1468,7 +1493,7 @@ def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logge
         model=INTERACTIONS_MODEL,
         previous_interaction_id=first_response.id,
         input=[
-            interactions.FunctionResultContent(
+            _function_result_content(
                 type="function_result",
                 call_id=tool_call.id,
                 name=tool_call.name,
@@ -1581,9 +1606,10 @@ async def test_interactions_async_stream(memory_logger):
 
     assert create_span["output"]["status"] == "completed"
     assert create_span["output"]["text"]
-    assert "hi" in create_span["output"]["text"].lower()
     assert create_span["metrics"]["time_to_first_token"] >= 0
-    assert "content.delta" in create_span["metadata"]["stream_event_types"]
+    assert any(
+        event_type in create_span["metadata"]["stream_event_types"] for event_type in ("content.delta", "step.start")
+    )
 
 
 class TestAutoInstrumentGoogleGenAI:

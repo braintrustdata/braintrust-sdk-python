@@ -1,0 +1,105 @@
+interactions:
+- request:
+    body: '{"input":"What is the capital of France?","model":"gemini-2.5-flash"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '69'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      User-Agent:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions
+  response:
+    body:
+      string: '{"id":"v1_ChYyZWNCYXB4M2tMZi00dy1YeTQtd0FREhYyZWNCYXB4M2tMZi00dy1YeTQtd0FR","status":"completed","outputs":[{"signature":"CpwBAQw51sdsio/UCEQGVEVvBQYGzMY1gv2hunNurnRW6dpZw178QjXh8hkWg61LNWmJBmIJvJmFNgN36+x34Q/VmInCD5YeZN/C0KpaUgTkT0Fs45RmFcWLHcF5I1YTnpYXIf6kF7Y0WhIwtfs8AIkkT/MPl2L0mviU0jmqSUTg1vXmC4+vpPX3N0T2GcsOhFO13JLycv3fYdbX6bTx","type":"thought"},{"text":"The
+        capital of France is **Paris**.","type":"text"}],"usage":{"total_tokens":41,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":25},"role":"model","created":"2026-05-11T14:29:46Z","updated":"2026-05-11T14:29:46Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 11 May 2026 14:29:46 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=1133
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '784'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - generativelanguage.googleapis.com
+      User-Agent:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+    method: GET
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChYyZWNCYXB4M2tMZi00dy1YeTQtd0FREhYyZWNCYXB4M2tMZi00dy1YeTQtd0FR?include_input=true
+  response:
+    body:
+      string: '{"id":"v1_ChYyZWNCYXB4M2tMZi00dy1YeTQtd0FREhYyZWNCYXB4M2tMZi00dy1YeTQtd0FR","status":"completed","outputs":[{"signature":"CpwBAQw51sdsio/UCEQGVEVvBQYGzMY1gv2hunNurnRW6dpZw178QjXh8hkWg61LNWmJBmIJvJmFNgN36+x34Q/VmInCD5YeZN/C0KpaUgTkT0Fs45RmFcWLHcF5I1YTnpYXIf6kF7Y0WhIwtfs8AIkkT/MPl2L0mviU0jmqSUTg1vXmC4+vpPX3N0T2GcsOhFO13JLycv3fYdbX6bTx","type":"thought"},{"text":"The
+        capital of France is **Paris**.","type":"text"}],"usage":{"total_tokens":41,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":25},"role":"model","created":"2026-05-11T14:29:45Z","updated":"2026-05-11T14:29:45Z","service_tier":"standard","object":"interaction","input":[{"role":"user","content":[{"text":"What
+        is the capital of France?","type":"text"}]}],"model":"gemini-2.5-flash"}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 11 May 2026 14:29:46 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=162
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '878'
+    status:
+      code: 200
+      message: OK
+version: 1
