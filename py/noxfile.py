@@ -123,6 +123,7 @@ INTEGRATION_DIR = "braintrust/integrations"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
 TYPE_TESTS_DIR = "braintrust/type_tests"
+BTX_DIR = "braintrust/btx"
 
 
 SILENT_INSTALLS = True
@@ -193,6 +194,16 @@ def test_openai_http2_streaming(session, version):
     # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
     _install_group_locked(session, "test-openai-http2")
     _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py", version=version)
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
+def test_btx_openai(session, version):
+    """Run the BTX cross-language LLM-span spec tests (OpenAI provider)."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", version)
+    session.install("pyyaml")
+    _run_tests(session, "braintrust/btx", version=version, env={"BTX_PROVIDER": "openai", "BTX_CLIENT": "openai"})
 
 
 @nox.session()
@@ -619,6 +630,7 @@ def _run_core_tests(session):
             CONTRIB_DIR,
             DEVSERVER_DIR,
             TYPE_TESTS_DIR,
+            BTX_DIR,
         ],
     )
 

@@ -179,6 +179,34 @@ def test_validate_remote_parameters_allows_prompt_overrides():
     assert built["model"] == "gpt-5-nano"
 
 
+def test_validate_local_parameters_accepts_v1_and_v2_pydantic_shapes():
+    class LegacyParameter:
+        @classmethod
+        def parse_obj(cls, value):
+            return {"validated_by": "parse_obj", "value": value}
+
+    class ModernParameter:
+        @classmethod
+        def model_validate(cls, value):
+            return {"validated_by": "model_validate", "value": value}
+
+    result = validate_parameters(
+        {
+            "legacy": {"input": "legacy"},
+            "modern": {"input": "modern"},
+        },
+        {
+            "legacy": LegacyParameter,
+            "modern": ModernParameter,
+        },
+    )
+
+    assert result == {
+        "legacy": {"validated_by": "parse_obj", "value": {"input": "legacy"}},
+        "modern": {"validated_by": "model_validate", "value": {"input": "modern"}},
+    }
+
+
 @pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
 def test_parameters_to_json_schema_uses_scalar_schema_for_single_value_models():
     from pydantic import BaseModel
