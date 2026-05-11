@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.89.0
+      - pydantic-ai/1.93.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.33.0
+      - 2.36.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,30 +39,32 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DalhAwdkwWyEEmZP9wlEzZHhJLD0a\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1777655520,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DeMgkkVs0TerrMA2aRPx7BKKovSFv\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1778512706,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Arrr, matey! I be not havin' the ability
-        to check the weather in real time. Ye can consult a trusty weather app or
-        look outside to see what the skies be tellin' ye! What say ye?\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        28,\n    \"completion_tokens\": 47,\n    \"total_tokens\": 75,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"Arrr, me hearty! I be no weather bard,
+        but ye can find the day\u2019s forecast by consultin\u2019 yer trusty weather
+        maps or apps. Just as the tides be ever-changin\u2019, so be the weather,
+        savvy? If ye be lookin\u2019 fer sunny skies or a stormy sea, ye best be checkin'
+        the charts!\",\n        \"refusal\": null,\n        \"annotations\": []\n
+        \     },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
+        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 28,\n    \"completion_tokens\":
+        72,\n    \"total_tokens\": 100,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_845d726e38\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_6b1e1d7ece\"\n}\n"
     headers:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f50689728393b8e-YYZ
+      - 9fa227faab99ac03-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 01 May 2026 17:12:01 GMT
+      - Mon, 11 May 2026 15:18:28 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -76,19 +78,19 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '984'
+      - '1080'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1392'
+      - '2130'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=S.oo83Qm4qH5.d.1TITlRhWgnIQfw1kzJKEv6AuUvwo-1777655519.8612294-1.0.1.1-ODDj.OAbv3tehwdgKaSTN4JZyZ.CSJAWP8wK32zww6xsGZATD4982b_eGmQmgNIo7tG4nQU9b7tgVGwMCnZFyBwokwnRsS7jXJ1nHtMBxgbqujaVbTWg1RcWVxKiY63t;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
-        17:42:01 GMT
+      - __cf_bm=jU69clO5_wcBLNBc0jQ8yuc7AkNSxYdLBz.aX8z..yk-1778512705.702994-1.0.1.1-ICAjV8.z2gGEshllSQPOPg9RhD4_nxrVUIiFO2pMQYeXrOQ4vSIHj1wQld4uEYbkq3AoACfBMuL3uoxIKOU_bXf19upEQlp3soB4Shq6iu0fhyHZxGYtConhDAtixDo6;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        11 May 2026 15:48:28 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -98,13 +100,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999977'
+      - '149999980'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_47851b58b690461fabc87a4861414568
+      - req_2b296f7abf61491a905dece5d34cbacf
     status:
       code: 200
       message: OK

@@ -17,34 +17,35 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.74.0 gl-python/3.12.12
+      - google-genai-sdk/2.0.1 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/1.74.0 gl-python/3.12.12
+      - google-genai-sdk/2.0.1 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The image is red.\",\n            \"thoughtSignature\":
-        \"EjQKMgEMOdbHgCbiCzbJd4gEOwEOD2kv8LtFDjIS+RCUmRZVXESrl4UmVWlSLMvabZCaQdYC\"\n
+        [\n          {\n            \"text\": \"This image is red.\",\n            \"thoughtSignature\":
+        \"EjQKMgEMOdbHzc7Q7uV710+H/O2NkH8LxsLqnejAfJBic+dV3OgLS3mJkjgWV9GovLWbCQ9i\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
         1096,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\": 1101,\n
         \   \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 7\n      },\n      {\n        \"modality\": \"IMAGE\",\n
-        \       \"tokenCount\": 1089\n      }\n    ]\n  },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n
-        \ \"responseId\": \"KXPzaZXpLJ-b_uMP6u--iQg\"\n}\n"
+        \       \"tokenCount\": 1089\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n  \"responseId\":
+        \"MekBasblO9i8_uMPgIzg8AU\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Thu, 30 Apr 2026 15:20:09 GMT
+      - Mon, 11 May 2026 14:35:30 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=992
+      - gfet4t7; dur=717
       Transfer-Encoding:
       - chunked
       Vary:
@@ -60,7 +61,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '725'
+      - '757'
     status:
       code: 200
       message: OK

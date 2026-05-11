@@ -1,0 +1,109 @@
+interactions:
+- request:
+    body: '{"input":"What is the weather like in Paris? Use the tool.","model":"gemini-2.5-flash","tools":[{"type":"function","description":"Get
+      the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '293'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      User-Agent:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions
+  response:
+    body:
+      string: '{"id":"v1_ChczT2NCYW9DU0VKbWtfdU1QaW9XdDRRcxIXM09jQmFvQ1NFSm1rX3VNUGlvV3Q0UXM","status":"requires_action","outputs":[{"signature":"Cv4BAQw51sfMqJElhR8s+DD8pzZPz0aUXXHEMloB99OURH2517EqKc6BY6g/nYDFf2+fMkTZTOWbTQlQU7DfUzivYX/HPCw6F1TKJdyGS5M+0Wl98RO3L/yZtH65RdXpaTMfn1ryP5Cr+Y0QsSn+cceYGw9hjO8uHJ7bFFa6/fA6wM2kDDsOsY0EFCoXc6fXFXKAXGo29xmfjZEC87NgKX2iZnsX3QRqKojnIOhLWHJOAadslfTrNNYQTiQiH3vmm6RPu9SUOZfRH8ZiBERaVSXIKMoF+LxfDuHP3S8eSC6BUrYMbp6YJaxa4w7zbEYT14MlL3R+UJGRAtiFQteuq58=","type":"thought"},{"id":"kptu1hoq","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"usage":{"total_tokens":119,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":51},"role":"model","created":"2026-05-11T14:29:49Z","updated":"2026-05-11T14:29:49Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 11 May 2026 14:29:49 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=1147
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '963'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"input":[{"call_id":"kptu1hoq","result":{"forecast":"sunny"},"type":"function_result","name":"get_weather"}],"model":"gemini-2.5-flash","previous_interaction_id":"v1_ChczT2NCYW9DU0VKbWtfdU1QaW9XdDRRcxIXM09jQmFvQ1NFSm1rX3VNUGlvV3Q0UXM","tools":[{"type":"function","description":"Get
+      the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '442'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      User-Agent:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions
+  response:
+    body:
+      string: '{"id":"v1_ChczT2NCYW9DU0VKbWtfdU1QaW9XdDRRcxIXM2VjQmF1NzJKNlctX3VNUDNxdU5rQUk","status":"completed","outputs":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"text":"The
+        weather in Paris is sunny.","type":"text"}],"usage":{"total_tokens":61,"total_input_tokens":54,"input_tokens_by_modality":[{"modality":"text","tokens":54}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"role":"model","created":"2026-05-11T14:29:50Z","updated":"2026-05-11T14:29:50Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 11 May 2026 14:29:50 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=935
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '623'
+    status:
+      code: 200
+      message: OK
+version: 1

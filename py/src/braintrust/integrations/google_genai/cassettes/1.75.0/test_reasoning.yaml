@@ -1,0 +1,192 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Look at this sequence: 2, 6, 12, 20,
+      30. What is the pattern and what would be the formula for the nth term?"}],
+      "role": "user"}], "generationConfig": {"maxOutputTokens": 512, "thinkingConfig":
+      {"include_thoughts": true, "thinking_budget": 128}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '281'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"**Deconstructing the Sequence**\\n\\nAlright,
+        let's break this down. My objective is clear: I need to identify the underlying
+        pattern in the sequence 2, 6, 12, 20, 30 and then derive a formula, a_n, to
+        calculate any term. This is straightforward enough. First I will write out
+        the sequence and analyze each term:\\n\\n*   n=1: a_1 = 2\\n*   n=2: a_2 =
+        6\\n*   n=3: a_3 = 12\\n*   ...and so on.\\n\",\n            \"thought\":
+        true\n          },\n          {\n            \"text\": \"Let's break down
+        the sequence: 2, 6, 12, 20, 30.\\n\\n**1. Finding the Pattern**\\n\\n*   **First
+        differences:**\\n    *   6 - 2 = 4\\n    *   12 - 6 = 6\\n    *   20 - 12
+        = 8\\n    *   30 - 20 = 10\\n    The first differences are 4, 6, 8, 10. This
+        shows a consistent increase, meaning the original sequence is not arithmetic.\\n\\n*
+        \  **Second differences:**\\n    *   6 - 4 = 2\\n    *   8 - 6 = 2\\n    *
+        \  10 - 8 = 2\\n    The second differences are constant (2). This indicates
+        that the formula for the nth term will be a **quadratic** equation of the
+        form $an^2 + bn + c$.\\n\\n**2. Finding the Formula for the nth term ($a_n$)**\\n\\nFor
+        a quadratic sequence $an^2 + bn + c$:\\n*   The second difference is equal
+        to $2a$.\\n*   The first term of the first differences is equal to $3a + b$.\\n*
+        \  The first term of the sequence is equal to $a + b + c$.\\n\\nFrom our analysis:\\n1.
+        \ **$2a = 2$**\\n    So, $a = 1$.\\n\\n2.  **$3a + b = \\\\text{first term
+        of first differences}$**\\n    $3(1) + b = 4$\\n    $3 + b = 4$\\n    $b =
+        1$.\\n\\n3.  **$a + b + c = \\\\text{first term of\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        39,\n    \"candidatesTokenCount\": 383,\n    \"totalTokenCount\": 547,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 39\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 125,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"vecBapWOFJe__uMPlMfmoAs\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Mon, 11 May 2026 14:29:20 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=3563
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '2097'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"contents": [{"parts": [{"text": "Look at this sequence: 2, 6, 12, 20,
+      30. What is the pattern and what would be the formula for the nth term?"}],
+      "role": "user"}, {"parts": [{"text": "**Deconstructing the Sequence**\n\nAlright,
+      let''s break this down. My objective is clear: I need to identify the underlying
+      pattern in the sequence 2, 6, 12, 20, 30 and then derive a formula, a_n, to
+      calculate any term. This is straightforward enough. First I will write out the
+      sequence and analyze each term:\n\n*   n=1: a_1 = 2\n*   n=2: a_2 = 6\n*   n=3:
+      a_3 = 12\n*   ...and so on.\n", "thought": true}, {"text": "Let''s break down
+      the sequence: 2, 6, 12, 20, 30.\n\n**1. Finding the Pattern**\n\n*   **First
+      differences:**\n    *   6 - 2 = 4\n    *   12 - 6 = 6\n    *   20 - 12 = 8\n    *   30
+      - 20 = 10\n    The first differences are 4, 6, 8, 10. This shows a consistent
+      increase, meaning the original sequence is not arithmetic.\n\n*   **Second differences:**\n    *   6
+      - 4 = 2\n    *   8 - 6 = 2\n    *   10 - 8 = 2\n    The second differences are
+      constant (2). This indicates that the formula for the nth term will be a **quadratic**
+      equation of the form $an^2 + bn + c$.\n\n**2. Finding the Formula for the nth
+      term ($a_n$)**\n\nFor a quadratic sequence $an^2 + bn + c$:\n*   The second
+      difference is equal to $2a$.\n*   The first term of the first differences is
+      equal to $3a + b$.\n*   The first term of the sequence is equal to $a + b +
+      c$.\n\nFrom our analysis:\n1.  **$2a = 2$**\n    So, $a = 1$.\n\n2.  **$3a +
+      b = \\text{first term of first differences}$**\n    $3(1) + b = 4$\n    $3 +
+      b = 4$\n    $b = 1$.\n\n3.  **$a + b + c = \\text{first term of"}], "role":
+      "model"}, {"parts": [{"text": "Using the pattern you discovered, what would
+      be the 10th term? And can you find the sum of the first 10 terms?"}], "role":
+      "user"}], "generationConfig": {"maxOutputTokens": 512, "thinkingConfig": {"include_thoughts":
+      true, "thinking_budget": 128}}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1947'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Okay, here's my interpretation of
+        this process, presented as if I were working through it myself:\\n\\n**Calculating
+        the 10th Term and Summation - Let's Get This Done**\\n\\nAlright, let's see,
+        we've got a sequence defined, and I need to figure out the 10th term and then
+        the sum of the first ten terms. Hmm, let me pull up that formula we just established:
+        $a_n = n^2 + n$. Okay, good, that's it. That simplifies things quite a bit.\\n\\nNow,
+        I need the 10th term, right? That's $a_{10}$. I've done enough of these to
+        know I just need to plug '10' in for 'n' in the formula. Simple substitution,
+        no tricks. So, $a_{10} = (10)^2 + 10$. And from here, I'll calculate, I will
+        then know the term I need.\\n\",\n            \"thought\": true\n          },\n
+        \         {\n            \"text\": \"Okay, let's use the pattern and formula
+        we discovered:\\n\\nThe formula for the nth term is:\\n$a_n = n^2 + n$\\n\\n**1.
+        Finding the 10th term ($a_{10}$)**\\n\\nSubstitute $n=10$ into the formula:\\n$a_{10}
+        = (10)^2 + 10$\\n$a_{10} = 100 + 10$\\n$a_{10} = 110$\\n\\nSo, the 10th term
+        is **110**.\\n\\nLet's list the first few terms to confirm and see the progression:\\n$a_1
+        = 1^2 + 1 = 2$\\n$a_2 = 2^2 + 2 = 6$\\n$a_3 = 3^2 + 3 = 12$\\n$a_4 = 4^2 +
+        4 = 20$\\n$a_5 = 5^2 + 5 = 30$\\n$a_6 = 6^2 + 6 = 42$\\n$a_7 = 7^2 + 7 = 56$\\n$a_8
+        = 8^2 + 8 = 72$\\n$a_9 = 9^2 + 9 = 90$\\n$a_{10} = 10^2 + 10 = 110$\\n\\n**2.
+        Finding the Sum of the First 10 terms ($\\\\sum_{n=1}^{10} a_n$)**\\n\\nWe
+        need to sum the terms $n^2 + n$ from $n=1$ to $n=10$.\\n$\\\\sum_{n=1}^{10}
+        (n^2 + n) = \\\\sum_{n=1}^{10} n^2 + \\\\sum\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        583,\n    \"candidatesTokenCount\": 417,\n    \"totalTokenCount\": 1091,\n
+        \   \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 583\n      }\n    ],\n    \"thoughtsTokenCount\":
+        91,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"wecBaok-6K789Q_1nr_YCw\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Mon, 11 May 2026 14:29:24 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=4008
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '2126'
+    status:
+      code: 200
+      message: OK
+version: 1

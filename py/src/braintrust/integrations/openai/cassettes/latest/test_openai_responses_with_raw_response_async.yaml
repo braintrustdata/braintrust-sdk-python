@@ -15,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.32.0
+      - AsyncOpenAI/Python 2.36.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -25,13 +25,13 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.36.0
       X-Stainless-Raw-Response:
       - 'true'
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -40,38 +40,40 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0971040668da56ad0069e107cbb340819e928280163dc48f67\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355275,\n  \"status\":
+      string: "{\n  \"id\": \"resp_06cf64ad22fd126f006a01eb437b408194b0d8bcfa52be3df0\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1778510659,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355276,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1778510660,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0971040668da56ad0069e107cced94819ea474ecb1a2b31a74\",\n
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_06cf64ad22fd126f006a01eb4423f0819493589c8d51d2e142\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
         \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\":
+        [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\": {\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ed468589cdcade0-YYZ
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fa1f6053975ac1b-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:01:17 GMT
+      - Mon, 11 May 2026 14:44:20 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -80,24 +82,24 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '1549'
+      - '1578'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1372'
+      - '945'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=TPiG_rUrr0rF33Uylzb8c6lG9DWLK_80L1gNStVe_1A-1776355275.6196468-1.0.1.1-znqaBwUWAk5KJHjQtiDRv_W_6u.EjTi6ODOVw.w90e_XlD2gWG..o9XPAmdAA35mm2_MgSmMTNJxbTUGgjrTY9_u9_dF3CEfptG2fxnSqW2Ii4DHXmmCw_UtGMma8r4U;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
-        16:31:17 GMT
+      - __cf_bm=clJPX0fWj7Mm.atwsYiIuOUDlHk5fH2jep8Nkzs1o1w-1778510659.3942933-1.0.1.1-6JTWRBJ.n80wkREnTxNEM7wEKT_xYsu4cWIudSh_CB.c5hOAzSsumxOqNK.wNnkfBraQBfcCdVIeg8RquU6niswz5VjdxP_zzcUnBJHx.mLsX0e6NEHYhY2cFlo_NAYg;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
+        15:14:20 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -111,7 +113,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_184df6a13b1d416ea13d994ed8c0976d
+      - req_766cce317db24e9fb504c131110d35a8
     status:
       code: 200
       message: OK
@@ -131,7 +133,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.32.0
+      - AsyncOpenAI/Python 2.36.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -141,13 +143,13 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.36.0
       X-Stainless-Raw-Response:
       - 'true'
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -156,38 +158,40 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_009678f46741f4b10069e107cd6738819fbcda0debe65ed173\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355277,\n  \"status\":
+      string: "{\n  \"id\": \"resp_07b2a97dc2f9e28e006a01eb455c2c81a1a633c2a76373aabb\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1778510661,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355278,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1778510661,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_009678f46741f4b10069e107cdff28819fad51db12afa92805\",\n
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_07b2a97dc2f9e28e006a01eb45c60881a1b294e04284bb5de7\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
         \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\":
+        [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\": {\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ed468637bdf9dab-YYZ
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fa1f6110e52e21a-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:01:18 GMT
+      - Mon, 11 May 2026 14:44:22 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -196,24 +200,24 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '1549'
+      - '1578'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '714'
+      - '706'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=15hqrri8z4X2z5lbGucRPmCuPIOQyjiE3LN9D4rc6vk-1776355277.3607185-1.0.1.1-c2sJaQXS3r05J5IEmf_81nn.HDKGvCbrVbG5pZVS_RUQ5eQ869x7KciUOt5bZmgT1IuIjb0kDaJt0aXgYBly_l5YxkEM_TsL7JUwzPdLke.5qd0cZlaf0kboGsREAeSw;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
-        16:31:18 GMT
+      - __cf_bm=SqSaPVkVfCKxUy5bk_mg6g13OBOI4oRF1X5bUJ7Se1Q-1778510661.2911415-1.0.1.1-8DIXRMnwDMAgyKG8cqbADg9dDYXnvfvz8.c0DyCu8ukrLTz5pzYpoi.Bv_l2mgUNAq7vX3bSjPiCAyvruzcU2upNLfE8O8Jcn78eLMzakfmyrOzdx3samk3kYZRzvix2;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
+        15:14:22 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -227,7 +231,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_fae53083aeef4c57b5ca132db481e8ac
+      - req_36fca677059b48ec8a0378b2194dd31c
     status:
       code: 200
       message: OK

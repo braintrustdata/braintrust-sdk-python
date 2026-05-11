@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"inlineData": {"data": "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs-9AAAAFElEQVR42mP4z8DwnxjMMKqQvgoBksPHOXvuG4oAAAAASUVORK5CYII=",
+      "mimeType": "image/png"}}, {"text": "What color is this image?"}], "role": "user"}],
+      "generationConfig": {"maxOutputTokens": 150}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '287'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The image is red.\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.25408761501312255\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 264,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\":
+        269,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"IMAGE\",\n
+        \       \"tokenCount\": 258\n      },\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 6\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 5\n      }\n
+        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n
+        \ \"responseId\": \"rOcBaqDCKYbe_uMP_petkQs\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Mon, 11 May 2026 14:29:01 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=833
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '769'
+    status:
+      code: 200
+      message: OK
+version: 1
