@@ -656,6 +656,19 @@ def _get_metrics_from_response(response: LLMResult):
                 if cache_creation is not None:
                     metrics["prompt_cache_creation_tokens"] = cache_creation
 
+                cache_tokens = (cache_read or 0) + (cache_creation or 0)
+                prompt_tokens = metrics.get("prompt_tokens")
+                completion_tokens = metrics.get("completion_tokens")
+                total_tokens = metrics.get("total_tokens")
+                if (
+                    cache_tokens
+                    and prompt_tokens is not None
+                    and completion_tokens is not None
+                    and total_tokens == prompt_tokens + completion_tokens
+                ):
+                    metrics["prompt_tokens"] = prompt_tokens + cache_tokens
+                    metrics["total_tokens"] = total_tokens + cache_tokens
+
     if not metrics or not any(metrics.values()):
         llm_output: dict[str, Any] = response.llm_output or {}
         metrics = llm_output.get("token_usage") or llm_output.get("estimatedTokens") or {}

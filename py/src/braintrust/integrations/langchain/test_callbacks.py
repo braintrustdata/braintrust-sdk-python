@@ -1087,6 +1087,8 @@ Remember: Testing is not just about finding bugs, it's about building confidence
     assert "prompt_cache_creation_tokens" in first_metrics
     assert first_metrics["prompt_cache_creation_tokens"] > 0
     assert first_metrics["prompt_cached_tokens"] == 0
+    assert first_metrics["prompt_tokens"] >= first_metrics["prompt_cache_creation_tokens"]
+    assert first_metrics["total_tokens"] == first_metrics["prompt_tokens"] + first_metrics["completion_tokens"]
 
     second_metrics = None
     for attempt in range(3):
@@ -1116,6 +1118,8 @@ Remember: Testing is not just about finding bugs, it's about building confidence
 
     assert second_metrics is not None
     assert second_metrics["prompt_cached_tokens"] > 0
+    assert second_metrics["prompt_tokens"] >= second_metrics["prompt_cached_tokens"]
+    assert second_metrics["total_tokens"] == second_metrics["prompt_tokens"] + second_metrics["completion_tokens"]
 
 
 @pytest.mark.vcr
