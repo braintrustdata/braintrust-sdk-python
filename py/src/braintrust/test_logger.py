@@ -187,6 +187,56 @@ class TestInit(TestCase):
         assert payload["parameters_version"] == "v1"
 
 
+class TestHTTPBackgroundLoggerLogs3(TestCase):
+    def test_submit_logs_request_413_skips_retries(self) -> None:
+        """Any 413 while publishing ``/logs3`` cannot succeed on retry with the same payload.
+
+        ``sync_flush`` controls whether the terminal failure raises instead of printing.
+        """
+        from braintrust.logger import (
+            LogItemWithMeta,
+            Logs3OverflowInputRow,
+            _HTTPBackgroundLogger,
+        )
+
+        item = LogItemWithMeta(
+            str_value="{}",
+            overflow_meta=Logs3OverflowInputRow(
+                object_ids={},
+                has_comment=False,
+                is_delete=False,
+                byte_size=2,
+            ),
+        )
+        max_result = {"max_request_size": 10**9, "can_use_overflow": True}
+
+        for response_text in ("Request Too Long", "", "Payload Too Large"):
+            for sync_flush in (False, True):
+                with self.subTest(response_text=response_text, sync_flush=sync_flush):
+                    mock_resp = MagicMock()
+                    mock_resp.ok = False
+                    mock_resp.status_code = 413
+                    mock_resp.text = response_text
+
+                    mock_conn = MagicMock()
+                    mock_conn.post.return_value = mock_resp
+
+                    bg = _HTTPBackgroundLogger(LazyValue(lambda: mock_conn, use_mutex=False))
+                    bg.num_tries = 5
+                    bg.sync_flush = sync_flush
+
+                    with patch("braintrust.logger.time.sleep") as mock_sleep:
+                        if sync_flush:
+                            with self.assertRaises(Exception) as cm:
+                                bg._submit_logs_request([item], max_result)
+                            self.assertIn("413", str(cm.exception))
+                        else:
+                            bg._submit_logs_request([item], max_result)
+
+                    self.assertEqual(mock_conn.post.call_count, 1)
+                    mock_sleep.assert_not_called()
+
+
 class TestLogger(TestCase):
     def test_load_prompt_prefers_version_over_environment_for_project_slug(self):
         mock_api_conn = MagicMock()

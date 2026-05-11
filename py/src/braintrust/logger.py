@@ -1389,6 +1389,22 @@ class _HTTPBackgroundLogger:
             else:
                 resp_errmsg = str(error)
 
+            # 413 Payload Too Large: retrying with the same batch cannot succeed; skip backoff.
+            if error is None and resp is not None and resp.status_code == 413:
+                errmsg = (
+                    f"log request failed. Elapsed time: {time.time() - start_time} seconds. "
+                    f"Payload size: {payload_bytes}. Error: {resp_errmsg}"
+                )
+                if self.failed_publish_payloads_dir:
+                    _HTTPBackgroundLogger._write_payload_to_dir(
+                        payload_dir=self.failed_publish_payloads_dir, payload=dataStr
+                    )
+                    self._log_failed_payloads_dir()
+                if self.sync_flush:
+                    raise Exception(errmsg)
+                print(errmsg, file=self.outfile)
+                return
+
             is_retrying = i + 1 < self.num_tries
             retrying_text = "" if is_retrying else " Retrying"
             errmsg = f"log request failed. Elapsed time: {time.time() - start_time} seconds. Payload size: {payload_bytes}.{retrying_text} Error: {resp_errmsg}"
