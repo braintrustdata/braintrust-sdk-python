@@ -15,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.32.0
+      - OpenAI/Python 2.36.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -25,11 +25,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.36.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,38 +38,40 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0026c3ea5fbe8bc10069e107926238819297f1b4b5f7e151a6\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355218,\n  \"status\":
+      string: "{\n  \"id\": \"resp_090322b492879438006a01eaed43d881948fe607e35593fb2e\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1778510573,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355218,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1778510574,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Respond with just the number\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0026c3ea5fbe8bc10069e10792c5f88192b8e440f8c239f020\",\n
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_090322b492879438006a01eaeef29881949cfe762a81b95079\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"20\"\n        }\n
         \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        24,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 26\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\":
+        [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 24,\n    \"input_tokens_details\": {\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 26\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ed466f29bdb713b-YYZ
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fa1f3e5ced7b5e5-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:00:18 GMT
+      - Mon, 11 May 2026 14:42:55 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -78,24 +80,24 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '1555'
+      - '1584'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '498'
+      - '1959'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=DNlHF.g9UWlwC.Dy9E9_7RTUmTDdfCAGYVwWdFjBWxc-1776355218.3400772-1.0.1.1-Qvmqdg3HZsObxzAuJFggmO_agPj4ouYSUQ.pY4b5uDHP35ft8AcqoV2dDUOaHeyJkK26_wtAMgzqOlq16mJ4qhCW4EueDqJguTU_ApT2Lmw64KDkD8eNQdc9WhaQlkfI;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
-        16:30:18 GMT
+      - __cf_bm=ow1r_xLPLI.UIlvxeW.uhRz0TbpXRP9vrh7R_9Bpcjw-1778510572.4453912-1.0.1.1-zgkBDl8DvtsqvuCyfo_wdXebFzXr2Psa6SRYxLrzffKzbZnmXpRGS2Tsal0M4E0EyaK2_cYRPk_DGd_l1_vGBK7FDFEUnnORDxXRapF87ezvvT8pXFbpdbu57HPG2Ztk;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
+        15:12:55 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -109,7 +111,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5c32b587be224470b8914b5f32aa4636
+      - req_c6e66e6e20694e2f82891be756203d53
     status:
       code: 200
       message: OK
@@ -127,11 +129,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=DNlHF.g9UWlwC.Dy9E9_7RTUmTDdfCAGYVwWdFjBWxc-1776355218.3400772-1.0.1.1-Qvmqdg3HZsObxzAuJFggmO_agPj4ouYSUQ.pY4b5uDHP35ft8AcqoV2dDUOaHeyJkK26_wtAMgzqOlq16mJ4qhCW4EueDqJguTU_ApT2Lmw64KDkD8eNQdc9WhaQlkfI
+      - __cf_bm=ow1r_xLPLI.UIlvxeW.uhRz0TbpXRP9vrh7R_9Bpcjw-1778510572.4453912-1.0.1.1-zgkBDl8DvtsqvuCyfo_wdXebFzXr2Psa6SRYxLrzffKzbZnmXpRGS2Tsal0M4E0EyaK2_cYRPk_DGd_l1_vGBK7FDFEUnnORDxXRapF87ezvvT8pXFbpdbu57HPG2Ztk
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.32.0
+      - OpenAI/Python 2.36.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -141,11 +143,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.36.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -154,42 +156,45 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0a23acefdde784a00069e1079318d48192857f7247d115c469\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355219,\n  \"status\":
+      string: "{\n  \"id\": \"resp_03acc527241b94ae006a01eaefd06c8193a7061abab07f281b\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1778510575,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355219,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1778510577,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n      \"id\": \"msg_0a23acefdde784a00069e10793c2bc81928f599c9219f07dfe\",\n
+        \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
+        \     \"id\": \"msg_03acc527241b94ae006a01eaf143008193b0daac4eee22e776\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":30}\"\n
         \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"json_schema\",\n      \"description\":
-        null,\n      \"name\": \"SimpleAnswer\",\n      \"schema\": {\n        \"properties\":
-        {\n          \"value\": {\n            \"title\": \"Value\",\n            \"type\":
-        \"integer\"\n          }\n        },\n        \"required\": [\n          \"value\"\n
-        \       ],\n        \"title\": \"SimpleAnswer\",\n        \"type\": \"object\",\n
-        \       \"additionalProperties\": false\n      },\n      \"strict\": true\n
-        \   },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"json_schema\",\n
+        \     \"description\": null,\n      \"name\": \"SimpleAnswer\",\n      \"schema\":
+        {\n        \"properties\": {\n          \"value\": {\n            \"title\":
+        \"Value\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\":
+        [\n          \"value\"\n        ],\n        \"title\": \"SimpleAnswer\",\n
+        \       \"type\": \"object\",\n        \"additionalProperties\": false\n      },\n
+        \     \"strict\": true\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 47,\n    \"input_tokens_details\":
         {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 6,\n    \"output_tokens_details\":
         {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 53\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ed466f6f9bede04-YYZ
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fa1f3f86c03a450-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:00:19 GMT
+      - Mon, 11 May 2026 14:42:58 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -198,16 +203,16 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '1930'
+      - '1959'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '845'
+      - '2521'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -225,7 +230,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6c552d3404ea4133b710469dbf0e1f5a
+      - req_172d4f8ada954cfb9025aa3fa4a50acd
     status:
       code: 200
       message: OK
