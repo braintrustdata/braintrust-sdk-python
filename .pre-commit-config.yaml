@@ -27,6 +27,12 @@ repos:
         language: python
         pass_filenames: false
         files: (pyproject\.toml|cassettes/)
+      - id: sync-pytest-pin
+        name: sync pytest pin (matrix -> dep group)
+        entry: python py/scripts/sync-pytest-pin.py --check
+        language: python
+        pass_filenames: false
+        files: ^py/pyproject\.toml$
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.5
     hooks:

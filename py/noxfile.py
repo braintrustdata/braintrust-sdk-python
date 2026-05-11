@@ -74,22 +74,13 @@ def _install_group_locked(session: nox.Session, *group_names: str) -> None:
         os.unlink(req_file)
 
 
-# Matrices in this set derive their "latest" pin from a base dependency group
-# in ``[dependency-groups]`` (via ``uv.lock``) rather than from a duplicate
-# string in ``[tool.braintrust.matrix]``. ``_install_matrix_dep`` naturally
-# no-ops for "latest" on these prefixes because no matrix entry exists; the
-# base test deps already installed the pinned version.
-_BASE_GROUP_FALLBACKS = {"pytest-matrix"}
-
-
 def _get_matrix_versions(prefix: str) -> tuple[str, ...]:
     """Read the version matrix for *prefix* from ``[tool.braintrust.matrix]``.
 
     Returns a tuple ordered with LATEST first, then descending version order.
     """
     matrix_entry = _MATRIX.get(prefix, {})
-    has_latest = "latest" in matrix_entry or prefix in _BASE_GROUP_FALLBACKS
-    latest = [LATEST] if has_latest else []
+    latest = [LATEST] if "latest" in matrix_entry else []
     rest = sorted([v for v in matrix_entry if v != "latest"], key=Version, reverse=True)
     return tuple(latest + rest)
 

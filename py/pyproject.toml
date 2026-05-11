@@ -388,8 +388,9 @@ latest = "temporalio==1.27.0"
 "1.19.0" = "temporalio==1.19.0"
 
 [tool.braintrust.matrix.pytest-matrix]
-# "latest" is derived from [dependency-groups].test in py/noxfile.py
-# (see _BASE_GROUP_FALLBACKS) — keep older overrides only.
+# Canonical pytest pin. The matching entry in [dependency-groups].test is
+# kept in sync by py/scripts/sync-pytest-pin.py (enforced by pre-commit).
+latest = "pytest==9.0.3"
 "8.4.2" = "pytest==8.4.2"
 
 [tool.braintrust.matrix.braintrust-core]
