@@ -266,7 +266,7 @@ requires-dist = [
     { name = "boto3", marker = "extra == 'cli'" },
     { name = "chevron" },
     { name = "exceptiongroup", specifier = ">=1.2.0" },
-    { name = "gitpython" },
+    { name = "gitpython", specifier = ">=3.1.50" },
     { name = "jsonschema" },
     { name = "openai-agents", marker = "extra == 'all'" },
     { name = "openai-agents", marker = "extra == 'openai-agents'" },
@@ -305,7 +305,7 @@ dev = [
     { name = "pre-commit", specifier = "==4.5.1" },
     { name = "pylint", specifier = "==4.0.5" },
     { name = "pyperf", specifier = "==2.10.0" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
     { name = "setuptools", specifier = ">=82.0.1" },
@@ -328,7 +328,7 @@ lint = [
     { name = "langchain-core" },
     { name = "langchain-openai" },
     { name = "langsmith", specifier = "==0.7.31" },
-    { name = "litellm" },
+    { name = "litellm", specifier = ">=1.83.10" },
     { name = "llama-index-core" },
     { name = "llama-index-embeddings-openai" },
     { name = "llama-index-llms-openai" },
@@ -345,40 +345,40 @@ lint = [
     { name = "temporalio" },
 ]
 test = [
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-agentscope = [
     { name = "openai", specifier = "==2.31.0" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-agno = [
     { name = "fastapi", specifier = "==0.135.3" },
     { name = "openai", specifier = "==2.31.0" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-cli = [
     { name = "httpx", specifier = "==0.28.1" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-crewai = [
-    { name = "litellm", specifier = "==1.83.10" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "litellm", specifier = "==1.83.14" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-langchain = [
     { name = "langchain-anthropic", specifier = "==1.4.0" },
-    { name = "langchain-openai", specifier = "==1.1.13" },
+    { name = "langchain-openai", specifier = "==1.1.14" },
     { name = "langgraph", specifier = "==1.1.6" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
@@ -386,49 +386,50 @@ test-litellm = [
     { name = "fastapi", specifier = "==0.135.3" },
     { name = "openai", specifier = "==1.99.9" },
     { name = "orjson", specifier = "==3.11.8" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-llamaindex = [
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-openai-agents = [
     { name = "openai", specifier = "==2.31.0" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-openai-ddtrace = [
     { name = "ddtrace", specifier = "==4.1.0" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-openai-http2 = [
     { name = "h2", specifier = "==4.3.0" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-pydantic-ai-logfire = [
     { name = "logfire", specifier = "==4.32.1" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-strands = [
     { name = "openai", specifier = "==2.32.0" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
 test-types = [
+    { name = "autoevals", specifier = "==0.2.0" },
     { name = "mypy", specifier = "==1.20.0" },
     { name = "pyright", specifier = "==1.1.408" },
-    { name = "pytest", specifier = "==9.0.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "pytest-asyncio", specifier = "==1.3.0" },
     { name = "pytest-vcr", specifier = "==1.0.2" },
 ]
@@ -3374,11 +3375,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.6.3"
+version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
 ]
 
 [[package]]
