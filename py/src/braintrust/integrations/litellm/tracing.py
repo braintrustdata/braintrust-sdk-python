@@ -168,9 +168,8 @@ def _handle_responses_streaming(
 # ---------------------------------------------------------------------------
 
 
-def _completion_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.completion."""
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="messages")
+def _completion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key=input_key)
     is_streaming = kwargs.get("stream", False)
 
     span = start_span(
@@ -185,20 +184,19 @@ def _completion_wrapper(wrapped, instance, args, kwargs):
         if is_streaming:
             should_end = False
             return _handle_completion_streaming(completion_response, span, start, is_async=False)
-        else:
-            log_response = _try_to_dict(completion_response)
-            metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
-            metrics["time_to_first_token"] = time.time() - start
-            span.log(metrics=metrics, output=log_response["choices"])
-            return completion_response
+
+        log_response = _try_to_dict(completion_response)
+        metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
+        metrics["time_to_first_token"] = time.time() - start
+        span.log(metrics=metrics, output=log_response["choices"])
+        return completion_response
     finally:
         if should_end:
             span.end()
 
 
-async def _acompletion_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.acompletion."""
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="messages")
+async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key=input_key)
     is_streaming = kwargs.get("stream", False)
 
     span = start_span(
@@ -213,15 +211,35 @@ async def _acompletion_wrapper_async(wrapped, instance, args, kwargs):
         if is_streaming:
             should_end = False
             return _handle_completion_streaming(completion_response, span, start, is_async=True)
-        else:
-            log_response = _try_to_dict(completion_response)
-            metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
-            metrics["time_to_first_token"] = time.time() - start
-            span.log(metrics=metrics, output=log_response["choices"])
-            return completion_response
+
+        log_response = _try_to_dict(completion_response)
+        metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
+        metrics["time_to_first_token"] = time.time() - start
+        span.log(metrics=metrics, output=log_response["choices"])
+        return completion_response
     finally:
         if should_end:
             span.end()
+
+
+def _completion_wrapper(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.completion."""
+    return _completion_wrapper_impl(wrapped, args, kwargs, input_key="messages")
+
+
+def _text_completion_wrapper(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.text_completion."""
+    return _completion_wrapper_impl(wrapped, args, kwargs, input_key="prompt")
+
+
+async def _acompletion_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.acompletion."""
+    return await _acompletion_wrapper_impl(wrapped, args, kwargs, input_key="messages")
+
+
+async def _atext_completion_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.atext_completion."""
+    return await _acompletion_wrapper_impl(wrapped, args, kwargs, input_key="prompt")
 
 
 def _responses_wrapper(wrapped, instance, args, kwargs):
@@ -563,6 +581,7 @@ def _postprocess_completion_streaming_results(all_results: list[dict[str, Any]])
     """Process streaming results to extract final response."""
     role = None
     content = None
+    text = None
     tool_calls: list[Any] | None = None
     finish_reason = None
     metrics: dict[str, float] = {}
@@ -575,7 +594,14 @@ def _postprocess_completion_streaming_results(all_results: list[dict[str, Any]])
         choices = result["choices"]
         if not choices:
             continue
-        delta = choices[0]["delta"]
+        choice = choices[0]
+        if choice.get("finish_reason") is not None:
+            finish_reason = choice.get("finish_reason")
+        if choice.get("text") is not None:
+            text = (text or "") + choice.get("text")
+            continue
+
+        delta = choice.get("delta")
         if not delta:
             continue
 
@@ -607,17 +633,19 @@ def _postprocess_completion_streaming_results(all_results: list[dict[str, Any]])
                 # pylint: disable=unsubscriptable-object
                 tool_calls[-1]["function"]["arguments"] += delta["tool_calls"][0]["function"]["arguments"]
 
-    return {
-        "metrics": metrics,
-        "output": [
+    if text is not None:
+        output = [{"index": 0, "text": text, "logprobs": None, "finish_reason": finish_reason}]
+    else:
+        output = [
             {
                 "index": 0,
                 "message": {"role": role, "content": content, "tool_calls": tool_calls},
                 "logprobs": None,
                 "finish_reason": finish_reason,
             }
-        ],
-    }
+        ]
+
+    return {"metrics": metrics, "output": output}
 
 
 def _postprocess_responses_streaming_results(all_results: list[Any]) -> dict[str, Any]:

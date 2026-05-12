@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"include":[],"input":[{"content":"What is 2+2? Just the number.","role":"user"}],"instructions":"You
-      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:09feed69efe74e0a81eda0fac0a9775a","tools":[]}'
+      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:873ee4e953a04c1db572b2a69adaef58","tools":[]}'
     headers:
       Accept:
       - application/json
@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - Agents/Python 0.15.0
+      - Agents/Python 0.17.1
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -39,20 +39,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_06aefc55e94728bd0069f4de79cd8081a3ae0cfa0aa810e4a9\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1777655417,\n  \"status\":
+      string: "{\n  \"id\": \"resp_08ef42c672599f51006a01f2fc33fc819fbc71510c80186a55\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1778512636,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1777655418,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1778512637,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_06aefc55e94728bd0069f4de7af03881a3a6181ebbfd64087c\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_08ef42c672599f51006a01f2fd0704819f8633da7ba51d9d2e\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:09feed69efe74e0a81eda0fac0a9775a\",\n  \"prompt_cache_retention\":
+        \"agents-sdk:run:873ee4e953a04c1db572b2a69adaef58\",\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\":
         null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
         \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
@@ -67,13 +67,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f506618eff935ae-YYZ
+      - 9fa22647ce250426-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 01 May 2026 17:10:19 GMT
+      - Mon, 11 May 2026 15:17:17 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -82,6 +82,8 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
@@ -89,15 +91,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1284'
+      - '1086'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=Lsg3i5bJ_YSfVsCGE7sw_iFX4Qp90m_L171lqpaHZw8-1777655417.741916-1.0.1.1-xeQrZUx4nKDTabAo0vQ0ci9mU3f5cHuXM2U0SwGCByuiwH3bdKgE_BumuBCeOo0TSvgJpslQNyLepu4lXj2vZ9r4JE7Hs.hk.gXswCT8005mg11.GuYDRFL9vUxmVQHY;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
-        17:40:19 GMT
+      - __cf_bm=YTVaMhspGvFIuf.FKJUtyqCwzo2L9q8w6WnVP34r6mE-1778512636.1222858-1.0.1.1-WyqpDPGV2Cp52BTmLtzHB19pYP8T_brVag2rfNT9Vq_pxUwCl_f1yZdYfRdqQnLDdavst1VfqVXvkIq_qPiIeeosP14fkHBL9JgglYpIKcD1jXGt7.JNXCnpCk1BJKPC;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
+        15:47:17 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -105,13 +107,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999947'
+      - '149999950'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_7ca2e623a9834128b8deeece1581f7e5
+      - req_6b3305fb8ee84526841c904526efc669
     status:
       code: 200
       message: OK

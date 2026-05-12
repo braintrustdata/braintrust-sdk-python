@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev test-core check-stale-cassettes _check-git-clean bench bench-compare
+.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev test-core check-stale-cassettes sync-pytest-pin _check-git-clean bench bench-compare
 
 clean:
 	rm -rf build dist
@@ -32,6 +32,9 @@ test-core:
 
 check-stale-cassettes:
 	$(PYTHON) scripts/check-stale-cassettes.py
+
+sync-pytest-pin:
+	$(PYTHON) scripts/sync-pytest-pin.py
 
 bench:
 	$(PYTHON) -m benchmarks $(BENCH_ARGS)
@@ -75,6 +78,7 @@ help:
 	@echo "  bench-compare       - Compare two benchmark results (BENCH_BASE=... BENCH_NEW=...)"
 	@echo "  build               - Build Python package"
 	@echo "  check-stale-cassettes - Detect orphaned cassette version directories"
+	@echo "  sync-pytest-pin     - Sync [dependency-groups].test pytest pin from matrix"
 	@echo "  clean               - Remove build artifacts"
 	@echo "  help                - Show this help message"
 	@echo "  install-build-deps  - Install build dependencies for CI"

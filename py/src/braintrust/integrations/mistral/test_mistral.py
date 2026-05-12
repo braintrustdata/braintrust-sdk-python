@@ -116,6 +116,13 @@ def _assert_speech_complete_span(span, start, end):
     assert span["metrics"]["duration"] >= 0
 
 
+def _assert_conversation_tool_span(span):
+    assert span["span_attributes"]["type"] == SpanTypeAttribute.TOOL
+    assert span["input"] in ({"code": "21 * 2"}, {"code": "print(21 * 2)"})
+    assert span["output"].get("stdout") == "42\n" or span["output"].get("code_output") == "42\n"
+    assert span["metadata"]["tool_type"] == "tool.execution"
+
+
 def _assert_conversation_span(span, expected_input, start, end, *, expected_content, stream=False):
     assert span["input"] == expected_input
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
@@ -370,6 +377,51 @@ def test_wrap_mistral_beta_conversations_start_sync(memory_logger):
         end,
         expected_content="4",
     )
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_beta_conversations_start_tool_spans(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    response = client.beta.conversations.start(
+        model=CHAT_MODEL,
+        inputs="Use the code interpreter to calculate 21 * 2. Return only the result.",
+        tools=[{"type": "code_interpreter"}],
+    )
+
+    assert response.outputs
+    assert any(output.type == "tool.execution" for output in response.outputs)
+
+    spans = memory_logger.pop()
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(task_spans) == 1
+    assert len(tool_spans) == 1
+    _assert_conversation_tool_span(tool_spans[0])
+
+
+@pytest.mark.vcr
+def test_wrap_mistral_beta_conversations_start_stream_tool_spans(memory_logger):
+    assert not memory_logger.pop()
+
+    client = wrap_mistral(_get_client())
+    with client.beta.conversations.start_stream(
+        model=CHAT_MODEL,
+        inputs="Use the code interpreter to calculate 21 * 2. Return only the result.",
+        tools=[{"type": "code_interpreter"}],
+    ) as stream:
+        events = list(stream)
+
+    assert events
+    assert any(getattr(event, "event", None) == "tool.execution.done" for event in events)
+
+    spans = memory_logger.pop()
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+    assert len(task_spans) == 1
+    assert len(tool_spans) == 1
+    _assert_conversation_tool_span(tool_spans[0])
 
 
 @pytest.mark.vcr

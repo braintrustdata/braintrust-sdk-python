@@ -1,0 +1,115 @@
+interactions:
+- request:
+    body: '{"inputs":"Use the code interpreter to calculate 21 * 2. Return only the
+      result.","stream":true,"tools":[{"type":"code_interpreter"}],"model":"mistral-small-latest"}'
+    headers:
+      Accept:
+      - text/event-stream
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '165'
+      Host:
+      - api.mistral.ai
+      content-type:
+      - application/json
+      user-agent:
+      - mistral-client-python/1.12.4
+    method: POST
+    uri: https://api.mistral.ai/v1/conversations
+  response:
+    body:
+      string: 'event: conversation.response.started
+
+        data: {"type":"conversation.response.started","created_at":"2026-05-04T18:17:38.536041Z","conversation_id":"conv_019df435c3a677148535d0889fa2490c"}
+
+
+        event: tool.execution.started
+
+        data: {"type":"tool.execution.started","created_at":"2026-05-04T18:17:38.540129Z","output_index":0,"id":"tool_exec_019df435c7ec7497b1feba55b9e05e09","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-05-04T18:17:38.550567Z","output_index":0,"id":"tool_exec_019df435c7ec7497b1feba55b9e05e09","name":"code_interpreter","arguments":"{\"code\":
+        \"","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-05-04T18:17:38.569375Z","output_index":0,"id":"tool_exec_019df435c7ec7497b1feba55b9e05e09","name":"code_interpreter","arguments":"21
+        * ","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-05-04T18:17:38.588794Z","output_index":0,"id":"tool_exec_019df435c7ec7497b1feba55b9e05e09","name":"code_interpreter","arguments":"2\"}","function":"code_interpreter"}
+
+
+        event: tool.execution.done
+
+        data: {"type":"tool.execution.done","created_at":"2026-05-04T18:17:39.246174Z","output_index":0,"id":"tool_exec_019df435c7ec7497b1feba55b9e05e09","name":"code_interpreter","function":"code_interpreter","info":{"code":"21
+        * 2","code_output":"42\n"}}
+
+
+        event: message.output.delta
+
+        data: {"type":"message.output.delta","created_at":"2026-05-04T18:17:39.496747Z","output_index":1,"id":"msg_019df435cba875c0be02cb5196bb0c6b","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
+
+
+        event: message.output.delta
+
+        data: {"type":"message.output.delta","created_at":"2026-05-04T18:17:39.512024Z","output_index":1,"id":"msg_019df435cba875c0be02cb5196bb0c6b","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
+
+
+        event: conversation.response.done
+
+        data: {"type":"conversation.response.done","created_at":"2026-05-04T18:17:39.534463Z","usage":{"prompt_tokens":86,"completion_tokens":19,"total_tokens":110,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
+
+
+        '
+    headers:
+      CF-RAY:
+      - 9f6980d85e564d21-SJC
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream; charset=utf-8
+      Date:
+      - Mon, 04 May 2026 18:17:38 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      mistral-correlation-id:
+      - 019df435-c391-7b83-a2d1-5055d23b514f
+      set-cookie:
+      - __cf_bm=zMcNJeDI01Cs_2HPmgcbx8NK2vBd6q0te_lJkWy.Chg-1777918657.3398619-1.0.1.1-UHlbO0PlTlqBzpH16gQaciZIDn9Vo25APxvWZIsXdG5D5HBmLAro4wQfeyVtRwVUkk8hy_8aO5R90xX_XAIj0A.Ki1OeI.miQRj.WtJ71y1OK8CKJeoIPp2mVPaq7K8V;
+        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 04 May 2026 18:47:38
+        GMT
+      - _cfuvid=v6_zR1PTQDx2W0GmJI_6mxxXKChwk4Yf3Pe6CfQjgsI-1777918657.3398619-1.0.1.1-MYti7JhXogZfcgmc7gCEjnj57SSCgtvPropKKHhzXYw;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      x-envoy-upstream-service-time:
+      - '1101'
+      x-kong-proxy-latency:
+      - '14'
+      x-kong-request-id:
+      - 019df435-c391-7b83-a2d1-5055d23b514f
+      x-kong-upstream-latency:
+      - '1102'
+    status:
+      code: 200
+      message: OK
+version: 1
