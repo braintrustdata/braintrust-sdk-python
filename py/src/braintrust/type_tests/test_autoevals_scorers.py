@@ -2,7 +2,7 @@
 
 import pytest
 from autoevals import Levenshtein  # type: ignore[import-untyped]
-from braintrust.framework import Eval, EvalCase, EvalScorer
+from braintrust.framework import Eval, EvalAsync, EvalCase, EvalScorer
 
 
 def accepts_autoevals_scorer(
