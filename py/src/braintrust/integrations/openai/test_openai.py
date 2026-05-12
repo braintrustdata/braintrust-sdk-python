@@ -20,7 +20,8 @@ from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 from openai import AsyncOpenAI
-from openai._types import NOT_GIVEN
+from openai._types import NOT_GIVEN, Omit
+from packaging.version import Version
 from pydantic import BaseModel
 
 
@@ -1566,6 +1567,45 @@ def test_openai_not_given_filtering(memory_logger):
     assert "NOT_GIVEN" not in str(meta)
     for k in ["max_tokens", "top_p", "frequency_penalty", "presence_penalty", "tools"]:
         assert k not in meta
+
+
+@pytest.mark.skipif(Version(openai.__version__) < Version("2.0.0"), reason="openai.Omit is not omitted by OpenAI 1.x")
+@pytest.mark.vcr
+def test_openai_omit_filtering(memory_logger):
+    """Test that Omit values are filtered out of logged inputs but API call still works."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+
+    response = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        temperature=0.5,
+        tools=Omit(),
+    )
+
+    assert response
+    assert response.choices[0].message.content
+    assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    assert_dict_matches(
+        span,
+        {
+            "input": [{"role": "user", "content": TEST_PROMPT}],
+            "metadata": {
+                "model": TEST_MODEL,
+                "provider": "openai",
+                "temperature": 0.5,
+            },
+        },
+    )
+    meta = span["metadata"]
+    assert "Omit" not in str(meta)
+    assert "tools" not in meta
 
 
 @pytest.mark.vcr
