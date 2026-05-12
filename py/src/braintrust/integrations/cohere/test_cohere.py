@@ -568,6 +568,34 @@ def test_wrap_cohere_chat_stream_v2_sync(memory_logger):
 
 
 @pytest.mark.vcr
+def test_wrap_cohere_chat_stream_v2_sync_context_manager(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_cohere(_v2_client(require_methods=("chat_stream",)))
+
+    start = time.time()
+    events = []
+    with client.chat_stream(
+        model=CHAT_MODEL,
+        messages=[{"role": "user", "content": "Say hi in one word."}],
+        max_tokens=8,
+    ) as stream:
+        for event in stream:
+            events.append(event)
+    end = time.time()
+
+    assert events
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "cohere.chat_stream"
+    assert span["metadata"]["provider"] == "cohere"
+    assert span["metadata"]["model"] == CHAT_MODEL
+    assert span["metrics"]["start"] <= span["metrics"]["end"]
+    assert start <= span["metrics"]["start"] <= span["metrics"]["end"] <= end
+
+
+@pytest.mark.vcr
 def test_wrap_cohere_chat_stream_v2_rag_citations(memory_logger):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("v2 RAG citation cassette is recorded for the latest Cohere SDK")

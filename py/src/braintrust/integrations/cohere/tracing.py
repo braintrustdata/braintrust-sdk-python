@@ -840,6 +840,26 @@ class _ChatStreamTracker:
 class _TracedChatStream(_ChatStreamTracker):
     """Wrap a sync chat-stream iterator so exhaustion logs the aggregated span."""
 
+    def __enter__(self):
+        context_manager = self._iterator
+        enter = getattr(context_manager, "__enter__", None)
+        if enter is not None:
+            self._iterator = enter()
+            self._context_manager = context_manager
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        suppress = False
+        context_manager = getattr(self, "_context_manager", self._iterator)
+        exit_method = getattr(context_manager, "__exit__", None)
+        if exit_method is not None:
+            suppress = bool(exit_method(exc_type, exc_value, traceback))
+        if exc_value is not None:
+            self._finish(error=exc_value)
+        else:
+            self._finish()
+        return suppress
+
     def __iter__(self):
         return self
 
@@ -858,6 +878,26 @@ class _TracedChatStream(_ChatStreamTracker):
 
 class _AsyncTracedChatStream(_ChatStreamTracker):
     """Async counterpart of :class:`_TracedChatStream`."""
+
+    async def __aenter__(self):
+        context_manager = self._iterator
+        aenter = getattr(context_manager, "__aenter__", None)
+        if aenter is not None:
+            self._iterator = await aenter()
+            self._context_manager = context_manager
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        suppress = False
+        context_manager = getattr(self, "_context_manager", self._iterator)
+        aexit = getattr(context_manager, "__aexit__", None)
+        if aexit is not None:
+            suppress = bool(await aexit(exc_type, exc_value, traceback))
+        if exc_value is not None:
+            self._finish(error=exc_value)
+        else:
+            self._finish()
+        return suppress
 
     def __aiter__(self):
         return self
