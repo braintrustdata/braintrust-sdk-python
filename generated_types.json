@@ -7733,6 +7733,9 @@
             "maximum": 1,
             "description": "The sampling rate for topic automation"
           },
+          "facet_model": {
+            "$ref": "#/components/schemas/TopicAutomationFacetModel"
+          },
           "facet_functions": {
             "type": "array",
             "items": {
@@ -7877,6 +7880,18 @@
           }
         ],
         "description": "Optional data scope for topic automation."
+      },
+      "TopicAutomationFacetModel": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "brain-facet-latest",
+          "brain-facet-1",
+          "brain-facet-2"
+        ],
+        "description": "Optional facet model override for topic automation"
       },
       "TopicMapData": {
         "type": "object",

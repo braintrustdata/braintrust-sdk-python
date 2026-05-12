@@ -2419,6 +2419,14 @@ Optional data scope for topic automation.
 """
 
 
+TopicAutomationFacetModel: TypeAlias = Literal[
+    'brain-facet-latest', 'brain-facet-1', 'brain-facet-2'
+]
+"""
+Optional facet model override for topic automation
+"""
+
+
 class Function1Function1(TypedDict):
     type: Literal['function']
     id: str
@@ -3333,6 +3341,7 @@ class TopicAutomationConfig(TypedDict):
     """
     The sampling rate for topic automation
     """
+    facet_model: NotRequired[TopicAutomationFacetModel | None]
     facet_functions: Sequence[SavedFunctionId]
     """
     Facet functions used by the topic automation
