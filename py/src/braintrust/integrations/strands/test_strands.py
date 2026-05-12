@@ -36,8 +36,16 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
     llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     names = [span["span_attributes"]["name"] for span in spans]
-    assert any(span["span_attributes"]["name"] == "bt-test-agent.invoke" for span in task_spans), names
-    assert any(span["span_attributes"]["name"] == "event_loop.cycle" for span in task_spans), names
+    agent_spans = [span for span in task_spans if span["span_attributes"]["name"] == "bt-test-agent.invoke"]
+    event_loop_spans = [span for span in task_spans if span["span_attributes"]["name"] == "event_loop.cycle"]
+    assert len(agent_spans) == 1, names
+    assert len(event_loop_spans) == 1, names
+    agent_span = agent_spans[0]
+    event_loop_span = event_loop_spans[0]
+    assert agent_span["output"]["message"]["role"] == "assistant"
+    assert "end" in agent_span["metrics"]
+    assert event_loop_span["output"]["message"]["role"] == "assistant"
+    assert "end" in event_loop_span["metrics"]
     assert len(llm_spans) == 1
     llm_span = llm_spans[0]
     assert llm_span["input"]["messages"][0]["role"] == "user"
