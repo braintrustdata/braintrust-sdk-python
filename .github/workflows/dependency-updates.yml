@@ -57,7 +57,7 @@ jobs:
         with:
           title: "chore(deps): weekly dependency update"
           body: |
-            Automated weekly dependency update via `python scripts/update-matrix-latest.py && uv lock --upgrade`.
+            Automated weekly dependency update via `python scripts/update-matrix-latest.py && uv lock --upgrade`, limited by `tool.uv.exclude-newer = "5 days"`.
 
             ${{ steps.labels.outputs.needs_rerecord == 'true' && '⚠️ **Provider SDK packages changed.** A human needs to re-record cassettes locally before merging.' || '✅ Only test infrastructure deps changed. Safe to merge if CI passes.' }}
           branch: deps/weekly-update-${{ steps.date.outputs.date }}

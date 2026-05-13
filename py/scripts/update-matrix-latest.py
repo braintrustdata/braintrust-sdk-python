@@ -17,8 +17,10 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timedelta, timezone
 
 import tomllib
+from packaging.version import InvalidVersion, Version
 
 
 _PROJECT_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -28,14 +30,20 @@ _LATEST_LINE_RE = re.compile(r'^(?P<indent>\s*)latest\s*=\s*"(?P<req>[^"]+)"(?P<
 _EXACT_REQ_RE = re.compile(r"^(?P<name>[A-Za-z0-9_.-]+)(?P<extras>\[[A-Za-z0-9_,.-]+\])?==(?P<version>[^\s]+)$")
 _USER_AGENT = "braintrust-sdk-python dependency updater"
 _TIMEOUT_SECS = 30
+_FRIENDLY_DURATION_RE = re.compile(r"^\s*(?P<count>\d+)\s*(?P<unit>hour|hours|day|days|week|weeks)\s*$")
+_ISO_DURATION_RE = re.compile(r"^P(?:(?P<days>\d+)D)?(?:T(?P<hours>\d+)H)?$")
 
 
 class UpdateError(RuntimeError):
     """Raised when the matrix latest pins cannot be updated safely."""
 
 
+def _load_pyproject() -> dict:
+    return tomllib.loads(_PYPROJECT.read_text())
+
+
 def _load_matrix() -> dict[str, str]:
-    pyproject = tomllib.loads(_PYPROJECT.read_text())
+    pyproject = _load_pyproject()
     matrix = pyproject.get("tool", {}).get("braintrust", {}).get("matrix", {})
 
     latest_reqs: dict[str, str] = {}
@@ -53,7 +61,56 @@ def _parse_exact_req(req: str) -> tuple[str, str, str]:
     return match.group("name"), match.group("extras") or "", match.group("version")
 
 
-def _fetch_latest_version(package_name: str) -> str:
+def _parse_exclude_newer(value: str) -> datetime:
+    now = datetime.now(timezone.utc)
+    friendly_match = _FRIENDLY_DURATION_RE.fullmatch(value)
+    if friendly_match:
+        count = int(friendly_match.group("count"))
+        unit = friendly_match.group("unit")
+        if unit.startswith("hour"):
+            return now - timedelta(hours=count)
+        if unit.startswith("day"):
+            return now - timedelta(days=count)
+        if unit.startswith("week"):
+            return now - timedelta(weeks=count)
+
+    iso_match = _ISO_DURATION_RE.fullmatch(value)
+    if iso_match and (iso_match.group("days") or iso_match.group("hours")):
+        return now - timedelta(days=int(iso_match.group("days") or 0), hours=int(iso_match.group("hours") or 0))
+
+    timestamp = value.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(timestamp)
+    except ValueError as exc:
+        raise UpdateError(f"Unsupported tool.uv.exclude-newer value: {value!r}") from exc
+    if parsed.tzinfo is None:
+        raise UpdateError(f"tool.uv.exclude-newer must include a timezone: {value!r}")
+    return parsed.astimezone(timezone.utc)
+
+
+def _load_exclude_newer() -> datetime | None:
+    value = _load_pyproject().get("tool", {}).get("uv", {}).get("exclude-newer")
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise UpdateError("tool.uv.exclude-newer must be a string")
+    return _parse_exclude_newer(value)
+
+
+def _uploaded_before_cutoff(files: list[dict], cutoff: datetime) -> bool:
+    for file_info in files:
+        if file_info.get("yanked"):
+            continue
+        upload_time = file_info.get("upload_time_iso_8601")
+        if not upload_time:
+            continue
+        uploaded_at = datetime.fromisoformat(str(upload_time).replace("Z", "+00:00")).astimezone(timezone.utc)
+        if uploaded_at <= cutoff:
+            return True
+    return False
+
+
+def _fetch_latest_version(package_name: str, *, exclude_newer: datetime | None = None) -> str:
     url = f"https://pypi.org/pypi/{urllib.parse.quote(package_name)}/json"
     request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
 
@@ -65,14 +122,31 @@ def _fetch_latest_version(package_name: str) -> str:
     except urllib.error.URLError as exc:
         raise UpdateError(f"Failed to fetch {package_name} metadata from PyPI: {exc.reason}") from exc
 
-    version = str(payload.get("info", {}).get("version", "")).strip()
-    if not version:
-        raise UpdateError(f"PyPI did not return a version for {package_name}")
-    return version
+    if exclude_newer is None:
+        version = str(payload.get("info", {}).get("version", "")).strip()
+        if not version:
+            raise UpdateError(f"PyPI did not return a version for {package_name}")
+        return version
+
+    candidates: list[Version] = []
+    for version, files in payload.get("releases", {}).items():
+        try:
+            parsed_version = Version(version)
+        except InvalidVersion:
+            continue
+        if parsed_version.is_prerelease:
+            continue
+        if files and _uploaded_before_cutoff(files, exclude_newer):
+            candidates.append(parsed_version)
+
+    if not candidates:
+        raise UpdateError(f"PyPI did not return a {package_name} version older than tool.uv.exclude-newer")
+    return str(max(candidates))
 
 
 def _compute_updates() -> dict[str, tuple[str, str]]:
     latest_reqs = _load_matrix()
+    exclude_newer = _load_exclude_newer()
     package_cache: dict[str, str] = {}
     updates: dict[str, tuple[str, str]] = {}
 
@@ -80,7 +154,7 @@ def _compute_updates() -> dict[str, tuple[str, str]]:
         package_name, extras, current_version = _parse_exact_req(current_req)
         latest_version = package_cache.get(package_name)
         if latest_version is None:
-            latest_version = _fetch_latest_version(package_name)
+            latest_version = _fetch_latest_version(package_name, exclude_newer=exclude_newer)
             package_cache[package_name] = latest_version
 
         if latest_version != current_version:
