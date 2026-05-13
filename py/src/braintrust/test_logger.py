@@ -224,8 +224,9 @@ class TestHTTPBackgroundLoggerLogs3(TestCase):
                     bg = _HTTPBackgroundLogger(LazyValue(lambda: mock_conn, use_mutex=False))
                     bg.num_tries = 5
                     bg.sync_flush = sync_flush
+                    bg.failed_publish_payloads_dir = "/tmp/failed-payloads"
 
-                    with patch("braintrust.logger.time.sleep") as mock_sleep:
+                    with patch.object(_HTTPBackgroundLogger, "_write_payload_to_dir") as mock_write_payload:
                         if sync_flush:
                             with self.assertRaises(Exception) as cm:
                                 bg._submit_logs_request([item], max_result)
@@ -234,7 +235,10 @@ class TestHTTPBackgroundLoggerLogs3(TestCase):
                             bg._submit_logs_request([item], max_result)
 
                     self.assertEqual(mock_conn.post.call_count, 1)
-                    mock_sleep.assert_not_called()
+                    mock_write_payload.assert_called_once()
+                    self.assertEqual(
+                        mock_write_payload.call_args.kwargs["payload_dir"], bg.failed_publish_payloads_dir
+                    )
 
 
 class TestLogger(TestCase):
