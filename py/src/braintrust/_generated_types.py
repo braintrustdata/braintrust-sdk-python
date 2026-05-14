@@ -2553,10 +2553,6 @@ class User(TypedDict):
     """
     Date of user creation
     """
-    last_active_at: NotRequired[float | None]
-    """
-    Unix timestamp in milliseconds of the user's last activity, when available
-    """
 
 
 class ViewDataSearch(TypedDict):
