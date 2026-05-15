@@ -22,6 +22,7 @@ from braintrust import (
     init_logger,
     logger,
 )
+from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.id_gen import OTELIDGenerator, get_id_generator
 from braintrust.logger import (
     RemoteEvalParameters,
@@ -858,20 +859,64 @@ def test_span_log_accepts_pydantic_model_metadata(with_memory_logger):
     assert logs[0]["metadata"] == {"foo": "bar"}
 
 
-def test_span_log_accepts_model_dump_metadata(with_memory_logger):
-    class MetadataModel:
-        def model_dump(self, **kwargs):
-            assert kwargs == {"exclude_none": True}
-            return {"foo": "bar"}
+class _ModelDumpMetadata:
+    def __init__(self, **values):
+        self.values = values
 
+    def model_dump(self, **kwargs):
+        assert kwargs == {"exclude_none": True}
+        return dict(self.values)
+
+
+def test_span_log_accepts_model_dump_metadata(with_memory_logger):
     logger = init_test_logger(__name__)
 
     with logger.start_span(name="test_span") as span:
-        span.log(metadata=MetadataModel())
+        span.log(metadata=_ModelDumpMetadata(foo="bar"))
 
     logs = with_memory_logger.pop()
     assert len(logs) == 1
     assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_logger_log_accepts_model_dump_metadata(with_memory_logger):
+    logger = init_test_logger(__name__)
+
+    logger.log(input="input", output="output", metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_experiment_log_accepts_model_dump_metadata(with_memory_logger):
+    experiment = init_test_exp("test-experiment", "test-project")
+
+    experiment.log(input="input", output="output", scores={"score": 1}, metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_logger_log_feedback_accepts_model_dump_metadata(with_memory_logger):
+    logger = init_test_logger(__name__)
+
+    logger.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
+
+
+def test_experiment_log_feedback_accepts_model_dump_metadata(with_memory_logger):
+    experiment = init_test_exp("test-experiment", "test-project")
+
+    experiment.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
 
 
 def test_span_log_rejects_metadata_with_non_string_keys(with_memory_logger):
@@ -2976,12 +3021,13 @@ def test_update_span_includes_span_id_and_root_span_id_from_export(with_memory_l
 
     with_memory_logger.pop()
 
-    braintrust.update_span(exported=exported, output="updated output")
+    braintrust.update_span(exported=exported, output="updated output", metadata=_ModelDumpMetadata(foo="bar"))
 
     logs = with_memory_logger.pop()
     updated_log = next(log for log in logs if log.get("output") == "updated output")
     assert updated_log["span_id"] == span_id
     assert updated_log["root_span_id"] == root_span_id
+    assert updated_log["metadata"] == {"foo": "bar"}
 
 
 def test_get_exporter_returns_v3_by_default():
