@@ -838,6 +838,63 @@ def test_span_log_with_simple_circular_reference(with_memory_logger):
     assert "circular" in logged_output["self"].lower()
 
 
+def test_span_log_accepts_pydantic_model_metadata(with_memory_logger):
+    try:
+        from pydantic import BaseModel
+    except ImportError:
+        pytest.skip("Pydantic not available")
+
+    class MetadataModel(BaseModel):
+        foo: str = "bar"
+
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        span.log(input=MetadataModel(), metadata=MetadataModel())
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["input"] == {"foo": "bar"}
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_span_log_accepts_model_dump_metadata(with_memory_logger):
+    class MetadataModel:
+        def model_dump(self, **kwargs):
+            assert kwargs == {"exclude_none": True}
+            return {"foo": "bar"}
+
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        span.log(metadata=MetadataModel())
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_span_log_rejects_metadata_with_non_string_keys(with_memory_logger):
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        with pytest.raises(ValueError, match="metadata keys must be strings"):
+            span.log(metadata={1: "bad"})
+
+
+def test_span_log_rejects_metadata_that_serializes_to_non_dict(with_memory_logger):
+    class BadMetadata:
+        def model_dump(self, **kwargs):
+            assert kwargs == {"exclude_none": True}
+            return ["not", "metadata"]
+
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        with pytest.raises(ValueError, match="metadata must be a dictionary or serialize to a dictionary"):
+            span.log(metadata=BadMetadata())
+
+
 def test_span_log_with_nested_circular_reference(with_memory_logger):
     """Test that span.log() with nested circular reference works gracefully."""
     logger = init_test_logger(__name__)
