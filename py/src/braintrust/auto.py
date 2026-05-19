@@ -17,6 +17,7 @@ from braintrust.integrations import (
     CohereIntegration,
     CrewAIIntegration,
     DSPyIntegration,
+    ElevenLabsIntegration,
     GoogleGenAIIntegration,
     LangChainIntegration,
     LiteLLMIntegration,
@@ -72,6 +73,7 @@ def auto_instrument(
     strands: bool = True,
     temporal: bool = True,
     livekit_agents: bool = True,
+    elevenlabs: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -104,6 +106,7 @@ def auto_instrument(
         strands: Enable Strands Agents instrumentation (default: True)
         temporal: Enable Temporal instrumentation (default: True)
         livekit_agents: Enable LiveKit Agents instrumentation (default: True)
+        elevenlabs: Enable ElevenLabs instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -193,6 +196,8 @@ def auto_instrument(
         results["temporal"] = _instrument_integration(TemporalIntegration)
     if livekit_agents:
         results["livekit_agents"] = _instrument_integration(LiveKitAgentsIntegration)
+    if elevenlabs:
+        results["elevenlabs"] = _instrument_integration(ElevenLabsIntegration)
 
     return results
 

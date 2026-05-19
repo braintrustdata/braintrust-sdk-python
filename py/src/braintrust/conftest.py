@@ -197,6 +197,7 @@ def get_vcr_config():
             "Authorization",
             "openai-organization",
             "x-api-key",
+            "xi-api-key",
             "api-key",
             "openai-api-key",
             "x-goog-api-key",

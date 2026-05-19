@@ -7,6 +7,7 @@ from .claude_agent_sdk import ClaudeAgentSDKIntegration
 from .cohere import CohereIntegration
 from .crewai import CrewAIIntegration
 from .dspy import DSPyIntegration
+from .elevenlabs import ElevenLabsIntegration
 from .google_genai import GoogleGenAIIntegration
 from .langchain import LangChainIntegration
 from .litellm import LiteLLMIntegration
@@ -31,6 +32,7 @@ __all__ = [
     "CohereIntegration",
     "CrewAIIntegration",
     "DSPyIntegration",
+    "ElevenLabsIntegration",
     "GoogleGenAIIntegration",
     "LiteLLMIntegration",
     "LiveKitAgentsIntegration",

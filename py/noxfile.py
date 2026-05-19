@@ -325,6 +325,16 @@ def test_agno(session, version):
 
 
 LIVEKIT_AGENTS_VERSIONS = _get_matrix_versions("livekit-agents")
+ELEVENLABS_VERSIONS = _get_matrix_versions("elevenlabs")
+
+
+@nox.session()
+@nox.parametrize("version", ELEVENLABS_VERSIONS, ids=ELEVENLABS_VERSIONS)
+def test_elevenlabs(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "elevenlabs", version)
+    _install_group_locked(session, "test-elevenlabs")
+    _run_tests(session, f"{INTEGRATION_DIR}/elevenlabs/test_elevenlabs.py", version=version)
 
 
 @nox.session()
