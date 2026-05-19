@@ -77,10 +77,6 @@ def attach_metrics_handler(obj: Any) -> bool:
                     parent=parent if isinstance(parent, str) else None,
                 )
             elif metrics_type == "eou_metrics":
-                _log_vad_endpointing_span(
-                    metrics_obj,
-                    parent=parent if isinstance(parent, str) else None,
-                )
                 _log_metric_span(
                     "eou_detection",
                     metrics_obj,
@@ -781,44 +777,29 @@ def _log_metric_span(
         event.update(_eou_detection_io(metrics_payload))
     if output is not None:
         event["output"] = output
-    start_time, end_time = _metric_span_times(metrics_payload)
+    if name == "eou_detection":
+        start_time, end_time = _eou_detection_span_times(metrics_payload)
+    else:
+        start_time, end_time = _metric_span_times(metrics_payload)
     span = start_span(name=name, type=span_type, start_time=start_time, set_current=False, parent=parent, input=input)
     span.log(**event)
     span.end(end_time=end_time)
 
 
-def _log_vad_endpointing_span(metrics_obj: Any, parent: str | None = None) -> None:
-    metrics_payload = _metrics_from_object(metrics_obj)
-    endpointing_delay = _first_numeric_metric(
+def _eou_detection_span_times(metrics_payload: dict[str, Any]) -> tuple[float | None, float | None]:
+    timestamp = metrics_payload.get("timestamp")
+    if not isinstance(timestamp, (int, float)) or isinstance(timestamp, bool):
+        return _metric_span_times(metrics_payload)
+    eou_delay = _first_numeric_metric(
         metrics_payload,
-        "endpointing_delay",
-        "end_of_turn_delay",
         "end_of_utterance_delay",
+        "end_of_turn_delay",
+        "endpointing_delay",
         "eou_delay",
     )
-    if endpointing_delay is None or endpointing_delay <= 0:
-        return
-    timestamp = metrics_payload.get("timestamp")
-    end_time = timestamp if isinstance(timestamp, (int, float)) and not isinstance(timestamp, bool) else None
-    start_time = end_time - endpointing_delay if end_time is not None else None
-    metadata = _promoted_metadata(metrics_payload)
-    metadata["livekit_metrics"] = {
-        key: value
-        for key, value in metrics_payload.items()
-        if key
-        not in {"metadata", "type", "endpointing_delay", "end_of_turn_delay", "end_of_utterance_delay", "eou_delay"}
-    }
-    if not metadata["livekit_metrics"]:
-        metadata.pop("livekit_metrics")
-    span = start_span(
-        name="vad_endpointing",
-        type=SpanTypeAttribute.TASK,
-        start_time=start_time,
-        set_current=False,
-        parent=parent,
-    )
-    span.log(metadata=metadata)
-    span.end(end_time=end_time)
+    if eou_delay is None or eou_delay <= 0:
+        return _metric_span_times(metrics_payload)
+    return timestamp - eou_delay, timestamp
 
 
 def _first_numeric_metric(metrics_payload: dict[str, Any], *keys: str) -> float | None:

@@ -447,6 +447,10 @@ def _assert_eou_spans(logs):
     if eou_logs:
         _assert_any_span(eou_logs, lambda log: log.get("input", {}).get("text"))
         _assert_any_span(eou_logs, lambda log: "is_end_of_turn" in log.get("output", {}))
+        _assert_any_span(
+            eou_logs,
+            lambda log: log.get("metrics", {}).get("end", 0) - log.get("metrics", {}).get("start", 0) > 0,
+        )
 
 
 def _assert_stt_spans(logs, speech_text):
