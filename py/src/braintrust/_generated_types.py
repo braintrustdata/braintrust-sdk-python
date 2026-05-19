@@ -43,6 +43,10 @@ class AISecret(TypedDict):
     """
     Date of last AI secret update
     """
+    secret_updated_at: NotRequired[str | None]
+    """
+    Date of last update to the encrypted secret value itself
+    """
     org_id: str
     """
     Unique identifier for the organization
@@ -608,6 +612,10 @@ class EnvVar(TypedDict):
     """
     Date of environment variable creation
     """
+    secret_updated_at: NotRequired[str | None]
+    """
+    Date of last update to the encrypted secret value itself
+    """
     used: NotRequired[str | None]
     """
     Date the environment variable was last used
@@ -615,6 +623,10 @@ class EnvVar(TypedDict):
     metadata: NotRequired[Mapping[str, Any] | None]
     """
     Optional metadata associated with the environment variable when managed via the function secrets API
+    """
+    preview_secret: NotRequired[str | None]
+    """
+    Redacted preview of the stored secret value
     """
     secret_type: NotRequired[str | None]
     """

@@ -138,6 +138,14 @@
             "format": "date-time",
             "description": "Date of last AI secret update"
           },
+          "secret_updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of last update to the encrypted secret value itself"
+          },
           "org_id": {
             "type": "string",
             "format": "uuid",
@@ -2322,6 +2330,14 @@
             "format": "date-time",
             "description": "Date of environment variable creation"
           },
+          "secret_updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of last update to the encrypted secret value itself"
+          },
           "used": {
             "type": [
               "string",
@@ -2337,6 +2353,13 @@
             ],
             "additionalProperties": {},
             "description": "Optional metadata associated with the environment variable when managed via the function secrets API"
+          },
+          "preview_secret": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Redacted preview of the stored secret value"
           },
           "secret_type": {
             "type": [
