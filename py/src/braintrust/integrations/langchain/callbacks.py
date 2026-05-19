@@ -617,6 +617,24 @@ def _get_model_name_from_response(response: LLMResult) -> str | None:
     return model_name
 
 
+def _cache_tokens_are_separate_from_input_tokens(input_token_details: dict[str, Any]) -> bool:
+    # LangChain provider packages use different cache-token conventions:
+    # - OpenAI-style responses report cache reads as a subset of input_tokens.
+    # - Anthropic-style responses report cache reads/creation separately from input_tokens.
+    #
+    # Avoid provider-name checks here so any LangChain integration using the same
+    # "separate cache tokens" schema gets normalized, while providers that only
+    # expose cache_read as input-token detail do not get double-counted.
+    return any(
+        key in input_token_details
+        for key in (
+            "cache_creation",
+            "ephemeral_5m_input_tokens",
+            "ephemeral_1h_input_tokens",
+        )
+    )
+
+
 def _get_metrics_from_response(response: LLMResult):
     metrics = {}
 
@@ -646,10 +664,14 @@ def _get_metrics_from_response(response: LLMResult):
                 # langchain-anthropic >= 1.4.0 maps cache_creation_input_tokens to
                 # ephemeral tier fields (ephemeral_5m_input_tokens, ephemeral_1h_input_tokens)
                 # rather than the top-level cache_creation field. Sum both for compat.
-                cache_creation = input_token_details.get("cache_creation") or (
-                    input_token_details.get("ephemeral_5m_input_tokens", 0)
-                    + input_token_details.get("ephemeral_1h_input_tokens", 0)
-                )
+                cache_creation = input_token_details.get("cache_creation")
+                if not cache_creation and (
+                    "ephemeral_5m_input_tokens" in input_token_details
+                    or "ephemeral_1h_input_tokens" in input_token_details
+                ):
+                    cache_creation = input_token_details.get("ephemeral_5m_input_tokens", 0) + input_token_details.get(
+                        "ephemeral_1h_input_tokens", 0
+                    )
 
                 if cache_read is not None:
                     metrics["prompt_cached_tokens"] = cache_read
@@ -665,6 +687,7 @@ def _get_metrics_from_response(response: LLMResult):
                     and prompt_tokens is not None
                     and completion_tokens is not None
                     and total_tokens == prompt_tokens + completion_tokens
+                    and _cache_tokens_are_separate_from_input_tokens(input_token_details)
                 ):
                     metrics["prompt_tokens"] = prompt_tokens + cache_tokens
                     metrics["total_tokens"] = total_tokens + cache_tokens
