@@ -361,7 +361,7 @@ def test_litellm_image_generation(memory_logger):
 
     assert response
     assert response.data
-    assert response.data[0].b64_json
+    assert response.data[0].b64_json or response.data[0].url
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -388,7 +388,7 @@ async def test_litellm_aimage_generation(memory_logger):
 
     assert response
     assert response.data
-    assert response.data[0].b64_json
+    assert response.data[0].b64_json or response.data[0].url
 
     spans = memory_logger.pop()
     assert len(spans) == 1

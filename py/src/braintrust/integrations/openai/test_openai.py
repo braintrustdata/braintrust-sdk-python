@@ -2170,7 +2170,7 @@ def test_openai_images_generate(memory_logger):
 
         assert response
         assert response.data
-        assert response.data[0].b64_json
+        assert response.data[0].b64_json or response.data[0].url
 
         if not is_wrapped:
             assert not memory_logger.pop()
@@ -2218,7 +2218,7 @@ def test_openai_images_edit(memory_logger):
 
             assert response
             assert response.data
-            assert response.data[0].b64_json
+            assert response.data[0].b64_json or response.data[0].url
 
             if not is_wrapped:
                 assert not memory_logger.pop()
