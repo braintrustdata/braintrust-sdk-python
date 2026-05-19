@@ -22,17 +22,27 @@ class SpanData:
         input: Any | None = None,
         output: Any | None = None,
         metadata: Metadata | None = None,
+        expected: Any | None = None,
+        error: Any | None = None,
+        scores: Any | None = None,
+        metrics: Any | None = None,
         span_id: str | None = None,
         span_parents: list[str] | None = None,
         span_attributes: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ):
         self.input = input
         self.output = output
         self.metadata = metadata
+        self.expected = expected
+        self.error = error
+        self.scores = scores
+        self.metrics = metrics
         self.span_id = span_id
         self.span_parents = span_parents
         self.span_attributes = span_attributes
+        self.tags = tags
         # Store any additional fields
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -201,6 +211,9 @@ class CachedSpanFetcher:
                         input=row.get("input"),
                         output=row.get("output"),
                         expected=row.get("expected"),
+                        error=row.get("error"),
+                        scores=row.get("scores"),
+                        metrics=row.get("metrics"),
                         metadata=row.get("metadata"),
                         span_id=row.get("span_id"),
                         span_parents=row.get("span_parents"),
@@ -425,10 +438,14 @@ class LocalTrace(dict):
                     input=span.input,
                     output=span.output,
                     expected=getattr(span, "expected", None),
+                    error=getattr(span, "error", None),
+                    scores=getattr(span, "scores", None),
+                    metrics=getattr(span, "metrics", None),
                     metadata=span.metadata,
                     span_id=span.span_id,
                     span_parents=span.span_parents,
                     span_attributes=span.span_attributes,
+                    tags=getattr(span, "tags", None),
                 )
                 for span in spans
             ]

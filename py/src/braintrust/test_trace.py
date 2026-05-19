@@ -42,6 +42,35 @@ class TestCachedSpanFetcher:
         assert {s.span_id for s in result} == {"span-1", "span-2", "span-3"}
 
     @pytest.mark.asyncio
+    async def test_fetch_preserves_span_result_fields(self):
+        """Test that fetched spans preserve fields needed for full trace attachments."""
+        mock_spans = [
+            make_span(
+                "span-1",
+                "tool",
+                expected={"answer": "ok"},
+                error={"message": "boom"},
+                metrics={"start": 1, "end": 2},
+                scores={"quality": 0},
+                tags=["debug"],
+            )
+        ]
+
+        async def fetch_fn(span_type):
+            del span_type
+            return mock_spans
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        result = await fetcher.get_spans()
+
+        assert result[0].expected == {"answer": "ok"}
+        assert result[0].error == {"message": "boom"}
+        assert result[0].metrics == {"start": 1, "end": 2}
+        assert result[0].scores == {"quality": 0}
+        assert result[0].tags == ["debug"]
+        assert result[0].to_dict()["error"] == {"message": "boom"}
+
+    @pytest.mark.asyncio
     async def test_fetch_specific_span_types(self):
         """Test fetching specific span types when filter specified."""
         llm_spans = [make_span("span-1", "llm"), make_span("span-2", "llm")]
