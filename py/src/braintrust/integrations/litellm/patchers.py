@@ -8,6 +8,7 @@ from .tracing import (
     _acompletion_wrapper_async,
     _aembedding_wrapper_async,
     _aimage_generation_wrapper_async,
+    _amoderation_wrapper_async,
     _arerank_wrapper_async,
     _aresponses_wrapper_async,
     _aspeech_wrapper_async,
@@ -96,6 +97,12 @@ class LiteLLMModerationPatcher(FunctionWrapperPatcher):
     wrapper = _moderation_wrapper
 
 
+class LiteLLMAModerationPatcher(FunctionWrapperPatcher):
+    name = "litellm.amoderation"
+    target_path = "amoderation"
+    wrapper = _amoderation_wrapper_async
+
+
 class LiteLLMSpeechPatcher(FunctionWrapperPatcher):
     name = "litellm.speech"
     target_path = "speech"
@@ -148,6 +155,7 @@ _ALL_LITELLM_PATCHERS = (
     LiteLLMEmbeddingPatcher,
     LiteLLMAembeddingPatcher,
     LiteLLMModerationPatcher,
+    LiteLLMAModerationPatcher,
     LiteLLMSpeechPatcher,
     LiteLLMAspeechPatcher,
     LiteLLMTranscriptionPatcher,
@@ -170,9 +178,9 @@ def wrap_litellm(litellm: Any) -> Any:
     that exposes the same top-level callables such as ``completion``,
     ``acompletion``, ``responses``, ``aresponses``, ``image_generation``,
     ``text_completion``, ``atext_completion``, ``aimage_generation``,
-    ``embedding``, ``aembedding``, ``moderation``, ``speech``, ``aspeech``,
-    ``transcription``, ``atranscription``, ``rerank``, and ``arerank``). Each
-    patcher is applied idempotently — calling
+    ``embedding``, ``aembedding``, ``moderation``, ``amoderation``, ``speech``,
+    ``aspeech``, ``transcription``, ``atranscription``, ``rerank``, and
+    ``arerank``). Each patcher is applied idempotently — calling
     ``wrap_litellm`` twice on the same object is safe.
 
     Args:

@@ -442,6 +442,16 @@ async def _aembedding_wrapper_async(wrapped, instance, args, kwargs):
         return embedding_response
 
 
+def _log_moderation_response(span: Span, moderation_response: Any) -> None:
+    log_response = _try_to_dict(moderation_response)
+    usage = log_response.get("usage")
+    metrics = _parse_metrics_from_usage(usage)
+    span.log(
+        metrics=metrics,
+        output=log_response["results"],
+    )
+
+
 def _moderation_wrapper(wrapped, instance, args, kwargs):
     """wrapt wrapper for litellm.moderation."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
@@ -450,13 +460,19 @@ def _moderation_wrapper(wrapped, instance, args, kwargs):
         **merge_dicts(dict(name="Moderation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
         moderation_response = wrapped(*args, **kwargs)
-        log_response = _try_to_dict(moderation_response)
-        usage = log_response.get("usage")
-        metrics = _parse_metrics_from_usage(usage)
-        span.log(
-            metrics=metrics,
-            output=log_response["results"],
-        )
+        _log_moderation_response(span, moderation_response)
+        return moderation_response
+
+
+async def _amoderation_wrapper_async(wrapped, instance, args, kwargs):
+    """wrapt wrapper for litellm.amoderation."""
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
+
+    with start_span(
+        **merge_dicts(dict(name="Moderation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
+    ) as span:
+        moderation_response = await wrapped(*args, **kwargs)
+        _log_moderation_response(span, moderation_response)
         return moderation_response
 
 

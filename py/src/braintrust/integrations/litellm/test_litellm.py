@@ -348,6 +348,24 @@ def test_litellm_moderation(memory_logger):
 
 
 @pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_litellm_amoderation(memory_logger):
+    assert not memory_logger.pop()
+
+    response = await litellm.amoderation(model="omni-moderation-latest", input="This is a test message")
+
+    assert response
+    assert response.results
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "omni-moderation-latest"
+    assert span["metadata"]["provider"] == "litellm"
+    assert "This is a test message" in str(span["input"])
+
+
+@pytest.mark.vcr
 def test_litellm_image_generation(memory_logger):
     assert not memory_logger.pop()
 
