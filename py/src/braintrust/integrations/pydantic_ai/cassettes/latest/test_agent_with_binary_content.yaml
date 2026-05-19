@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.93.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,28 +39,31 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMgxBfYwmj6MbwhzcF0koiHsrX8C\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778512719,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGvLxfQzjLG8S9DoU75IGHptYRwp\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205531,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The image appears to be black.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        8513,\n    \"completion_tokens\": 7,\n    \"total_tokens\": 8520,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"The image is in black and white, depicting
+        a simple outline or symbol.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 8513,\n    \"completion_tokens\":
+        15,\n    \"total_tokens\": 8528,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_3b264ad91d\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_a1feac4498\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa2284b6b06f41f-YYZ
+      - 9fe43aa87ba1a06e-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:18:39 GMT
+      - Tue, 19 May 2026 15:45:31 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -69,24 +72,22 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '840'
+      - '881'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '805'
+      - '667'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=tfHjjGfdlnHsbm2Bx8duBa9zLLKJmq1Zh2zFsDtiWlw-1778512718.6257966-1.0.1.1-W.oYNnDnGcfqcBFn3PIh402IE8JNA7VgCZiHPe3coygiO._TMauyq05rCWVQ60aGkXFjOxrax1Un7e.u2KNE7cRJn9u061HZg3OG7iC9QTIt4BwkGNsXzeVCaYbl667v;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:48:39 GMT
+      - __cf_bm=zriVIKOKIhh2yd8bMG2TWtBX.gq.7MJW_1HzkpbSZ3E-1779205530.9593875-1.0.1.1-yH_WFHEXMz7EhSfi2XsWU1abdfksqdMp1i4umpVQWH5M0.kmhnjWs4nizBfwTGAvdAuFrSGLAxF9LSyrnYsUDZjNASzLslbvNPoKHYV.psk1OcKzFiix5PKpWLQUFzp6;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:15:31 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
@@ -108,7 +109,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_d2351c9a61ca4f18b747682b59147508
+      - req_3de1ef53f38d4b9badc06a1fd9b35929
     status:
       code: 200
       message: OK

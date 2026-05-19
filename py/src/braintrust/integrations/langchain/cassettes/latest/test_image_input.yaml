@@ -14,11 +14,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=aHiFy8dyMX_.KjR_hcUfBr8yy72omboMYt0wigrrr9M-1776706703.1999166-1.0.1.1-LBlLDLOrErUEVw6xeJHqeNNvtbN.H3zTa8Y9Rww9wf_YQtPYfHRbehQuR9pWtN4uRvkc0g6aiuz.5Cd8TbHsYpqZlLRPdIKuygqb6g5oFwrpmzDSRBkBrMdWgq1ww1lr
+      - __cf_bm=R.jeaiBWNC_xqOEUC9UXOIAZA2H.kiGjGaoMEXiXYgU-1779202058.8184786-1.0.1.1-kmq2Z3HgDfKyVfwz61_rZkYNHuLgnoBlut73xkKzYRbqR3tZrk6nciqYomrjoeLOkZcePZZDf.nV6NskTLrTc71TXeAFZZDImx._YgvRXs3pDSSGHMjee.Zj.YxU5QFn
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.31.0
+      - OpenAI/Python 2.32.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -28,41 +28,43 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.31.0
+      - 2.32.0
       X-Stainless-Raw-Response:
       - 'true'
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-retry-count:
       - '0'
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DWmrlKRghOkBFU9KITp4I1o4osaxL\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1776706709,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhG1UKLpPWNOrGKnJUHAfiYrXiSla\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779202068,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The image is a solid red color.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        8513,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 8521,\n    \"prompt_tokens_details\":
+        \"assistant\",\n        \"content\": \"The image is red.\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        8513,\n    \"completion_tokens\": 5,\n    \"total_tokens\": 8518,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_4debc47fe0\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_0e72352265\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9ef5ec45cb92de74-YYZ
+      - 9fe3e61b6a2a78a5-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 20 Apr 2026 17:38:29 GMT
+      - Tue, 19 May 2026 14:47:49 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -71,16 +73,14 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '841'
+      - '827'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '462'
+      - '1655'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -98,7 +98,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999227'
+      - '149999225'
       x-ratelimit-reset-input-images:
       - 1ms
       x-ratelimit-reset-requests:
@@ -106,7 +106,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_24007700a147469481fb08147955ff43
+      - req_b591ad7738754749b09f78ae3860e0d6
     status:
       code: 200
       message: OK

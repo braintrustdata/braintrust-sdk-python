@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.36.0
+      - OpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,8 +39,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMBO6acGTm9UrdLhVyZQ7sPIoEu0\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778510762,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGWRARUSyrCQ9PybTshi3OoVRKS9\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779203987,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"The image is red.\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
@@ -49,18 +49,20 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_3b264ad91d\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_0e72352265\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa1f8859af25d15-YYZ
+      - 9fe414f4cfe0ac5e-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 14:46:02 GMT
+      - Tue, 19 May 2026 15:19:48 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -69,8 +71,6 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
@@ -78,15 +78,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '744'
+      - '1463'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=m1d2qbbC9otCsnsKbqpraRM14LwyQ4B6M4iwqI6D.2k-1778510761.8603745-1.0.1.1-8K46Je6pm7nhMSHQaSYTboQp4jcIXqFkahOmdGgo9tv6svjxNpiWDADJkstBQPL3pFFxvj.wkkU19efZzQj9roh7Gq4AWdQBSUQg2g2TyIIkBKA93R.YGxZ2XyfgP_Mb;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:16:02 GMT
+      - __cf_bm=xOR9ivR4pnnrqAQhYK7RGPyWsbPiaer1JM3vVjZli5M-1779203986.683621-1.0.1.1-bl55s1TRtQPq.4CMuNGm149YF2lM92iQ7iXpq1S.x_xZX6L2ff8disBsYLPaHVAkuLOfr4pST2zUiR.QadB73nqS4aJBvdujK195WzZ8WLWbMYg4UoLaZAPt20GDBiEZ;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 15:49:48 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
@@ -100,7 +100,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999227'
+      - '149999225'
       x-ratelimit-reset-input-images:
       - 1ms
       x-ratelimit-reset-requests:
@@ -108,7 +108,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_17b01a2f895e4106926dfd26f5a02a17
+      - req_573e074757a4403e8d8e4914649c1cdb
     status:
       code: 200
       message: OK

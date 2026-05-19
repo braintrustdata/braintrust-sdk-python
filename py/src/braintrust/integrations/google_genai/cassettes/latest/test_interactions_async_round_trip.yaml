@@ -17,14 +17,14 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       User-Agent:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdiZWtCYXNpLVBNUy1fdU1QODhLM3FRaxIXYmVrQmFzaS1QTVMtX3VNUDg4SzNxUWs","status":"completed","usage":{"total_tokens":41,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":25},"created":"2026-05-11T14:36:31Z","updated":"2026-05-11T14:36:31Z","service_tier":"standard","steps":[{"signature":"CpMBAQw51sdpBrry76L4M9dIQwFcIdcu3N9j4mZbjWt2wU2vu+zfl0jymZ50OuAKzD8gDylWR9eLPnqCvo1Y6yr3tQpwX2tjgkHHPzks1Dtd8yTN8GtTHV8CIWuW/naceTbLX32RBkoLDoQov8K3LJuCUtVl0GEjfy9AJQuH0Z5d+9nFZLoMv1ZYgVoMIKHSuhGg6WXp","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_ChdINFVNYXNhZkRkLWRfdU1QX3VxZXNBWRIXSDRVTWFzYWZEZC1kX3VNUF91cWVzQVk","status":"completed","usage":{"total_tokens":56,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":40},"created":"2026-05-19T15:43:28Z","updated":"2026-05-19T15:43:28Z","service_tier":"standard","steps":[{"signature":"CuMBAQw51sdgCF40DiQsBlhU8PcUOd1/VhLmV5jC/GdFw+diyKM4wQ2XBnucG5/SCs+UHVKALYQkXK/7e0+V+gWorCYEQA6rRsAsbzO7X9rUuRCm/NRRCkHXmh/ZcGY6ld1FHqjJ8yJlpiWUUcR8XYuZDydUhVYs01Jp+R7HUFasSVXN94tgDvOuzRmeNHP0pexcuMoR++JV2Xk36iSU/NAuCC9DhmRT55WwhWmBZDILWmwdBNrglfNK+ZHnz9etsmLi+FpOVIDo+SbXsiEEIEukK/XJRjCmvd2R+dFCYqeIhp7K/XQ=","type":"thought"},{"content":[{"text":"The
         capital of Italy is **Rome**.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       Alt-Svc:
@@ -32,11 +32,11 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 14:36:31 GMT
+      - Tue, 19 May 2026 15:43:28 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=1459
+      - gfet4t7; dur=1623
       Transfer-Encoding:
       - chunked
       Vary:
@@ -50,7 +50,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '792'
+      - '900'
     status:
       code: 200
       message: OK
@@ -68,28 +68,28 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       User-Agent:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
     method: GET
-    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdiZWtCYXNpLVBNUy1fdU1QODhLM3FRaxIXYmVrQmFzaS1QTVMtX3VNUDg4SzNxUWs?include_input=true
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdINFVNYXNhZkRkLWRfdU1QX3VxZXNBWRIXSDRVTWFzYWZEZC1kX3VNUF91cWVzQVk?include_input=true
   response:
     body:
-      string: '{"id":"v1_ChdiZWtCYXNpLVBNUy1fdU1QODhLM3FRaxIXYmVrQmFzaS1QTVMtX3VNUDg4SzNxUWs","status":"completed","usage":{"total_tokens":41,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":25},"created":"2026-05-11T14:36:31Z","updated":"2026-05-11T14:36:31Z","service_tier":"standard","steps":[{"content":[{"text":"What
-        is the capital of Italy?","type":"text"}],"type":"user_input"},{"signature":"CpMBAQw51sdpBrry76L4M9dIQwFcIdcu3N9j4mZbjWt2wU2vu+zfl0jymZ50OuAKzD8gDylWR9eLPnqCvo1Y6yr3tQpwX2tjgkHHPzks1Dtd8yTN8GtTHV8CIWuW/naceTbLX32RBkoLDoQov8K3LJuCUtVl0GEjfy9AJQuH0Z5d+9nFZLoMv1ZYgVoMIKHSuhGg6WXp","type":"thought"},{"content":[{"text":"The
-        capital of Italy is **Rome**.","type":"text"}],"type":"model_output"}],"object":"interaction","input":[{"role":"user","content":[{"text":"What
-        is the capital of Italy?","type":"text"}]}],"model":"gemini-2.5-flash"}'
+      string: '{"id":"v1_ChdINFVNYXNhZkRkLWRfdU1QX3VxZXNBWRIXSDRVTWFzYWZEZC1kX3VNUF91cWVzQVk","status":"completed","usage":{"total_tokens":56,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":40},"created":"2026-05-19T15:43:28Z","updated":"2026-05-19T15:43:28Z","service_tier":"standard","steps":[{"type":"user_input","content":[{"text":"What
+        is the capital of Italy?","type":"text"}]},{"type":"user_input","content":[{"text":"What
+        is the capital of Italy?","type":"text"}]},{"signature":"CuMBAQw51sdgCF40DiQsBlhU8PcUOd1/VhLmV5jC/GdFw+diyKM4wQ2XBnucG5/SCs+UHVKALYQkXK/7e0+V+gWorCYEQA6rRsAsbzO7X9rUuRCm/NRRCkHXmh/ZcGY6ld1FHqjJ8yJlpiWUUcR8XYuZDydUhVYs01Jp+R7HUFasSVXN94tgDvOuzRmeNHP0pexcuMoR++JV2Xk36iSU/NAuCC9DhmRT55WwhWmBZDILWmwdBNrglfNK+ZHnz9etsmLi+FpOVIDo+SbXsiEEIEukK/XJRjCmvd2R+dFCYqeIhp7K/XQ=","type":"thought"},{"content":[{"text":"The
+        capital of Italy is **Rome**.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 14:36:31 GMT
+      - Tue, 19 May 2026 15:43:29 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=149
+      - gfet4t7; dur=155
       Transfer-Encoding:
       - chunked
       Vary:
@@ -103,7 +103,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '974'
+      - '1078'
     status:
       code: 200
       message: OK
@@ -123,11 +123,11 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       User-Agent:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
     method: DELETE
-    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdiZWtCYXNpLVBNUy1fdU1QODhLM3FRaxIXYmVrQmFzaS1QTVMtX3VNUDg4SzNxUWs
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdINFVNYXNhZkRkLWRfdU1QX3VxZXNBWRIXSDRVTWFzYWZEZC1kX3VNUF91cWVzQVk
   response:
     body:
       string: '{}'
@@ -137,11 +137,11 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 14:36:32 GMT
+      - Tue, 19 May 2026 15:43:29 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=210
+      - gfet4t7; dur=259
       Transfer-Encoding:
       - chunked
       Vary:

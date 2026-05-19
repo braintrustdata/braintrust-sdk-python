@@ -739,12 +739,12 @@ def _aggregate_generate_content_chunks(
 
 
 def _is_interaction_content_event(event: Any) -> bool:
-    return getattr(event, "event_type", None) in {"content.start", "content.delta", "step.start"}
+    return getattr(event, "event_type", None) in {"content.start", "content.delta", "step.start", "step.delta"}
 
 
 def _merge_interaction_content_delta(item: dict[str, Any], delta: dict[str, Any]) -> dict[str, Any]:
     delta_type = delta.get("type")
-    if item.get("type") is None:
+    if item.get("type") is None or item.get("type") == "model_output":
         if delta_type == "thought_signature":
             item["type"] = "thought"
         elif delta_type == "thought_summary":
@@ -785,7 +785,7 @@ def _reconstruct_interaction_outputs_from_events(events: list[Any]) -> list[dict
                 outputs_by_index[index] = next((item for item in step["content"] if isinstance(item, dict)), {})
             else:
                 outputs_by_index[index] = step if isinstance(step, dict) else {}
-        elif event_type == "content.delta":
+        elif event_type in {"content.delta", "step.delta"}:
             item = outputs_by_index.setdefault(index, {})
             delta = _materialize_interaction_value(getattr(event, "delta", None)) or {}
             if isinstance(delta, dict):

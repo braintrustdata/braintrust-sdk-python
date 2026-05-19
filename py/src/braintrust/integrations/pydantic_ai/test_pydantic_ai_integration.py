@@ -2320,10 +2320,10 @@ def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
 
     run = AbstractAgent.__dict__["run"]
     prepare_model = direct_module.__dict__["_prepare_model"]
-    tool_method_name = (
-        "_execute_function_tool_call"
-        if "_execute_function_tool_call" in agent_graph_module.ToolManager.__dict__
-        else "_call_function_tool"
+    tool_method_name = next(
+        name
+        for name in ("_execute_function_tool_call", "execute_tool_call", "_call_function_tool")
+        if name in agent_graph_module.ToolManager.__dict__
     )
     tool_method = agent_graph_module.ToolManager.__dict__[tool_method_name]
 

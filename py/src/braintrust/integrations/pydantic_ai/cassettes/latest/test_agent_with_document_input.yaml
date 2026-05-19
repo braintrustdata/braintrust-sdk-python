@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.93.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,31 +39,32 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMgxtbEh3gq8VWQ8YPdtULIcPfew\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778512719,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGvMnt9FPbhyscaqIplNsKdC5PCx\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205532,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The document contains parsed text labeled
-        as \\\"Test Document.\\\" However, without access to specific images or additional
-        context related to the content, I can't provide further details. If there's
-        a specific area or section you're interested in, let me know!\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        231,\n    \"completion_tokens\": 47,\n    \"total_tokens\": 278,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"The document appears to be a single-page
+        test document. If you provide specific details or questions about its content,
+        I can assist you further!\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 231,\n    \"completion_tokens\":
+        28,\n    \"total_tokens\": 259,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_3b264ad91d\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_a1feac4498\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa22851bd0b3896-YYZ
+      - 9fe43aae5c9caafe-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:18:41 GMT
+      - Tue, 19 May 2026 15:45:32 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -72,24 +73,22 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '1067'
+      - '954'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1476'
+      - '862'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=ymQ60wCSMQUiYzqkJ2KRgSAos4dWvjd466d5bM.4qxM-1778512719.636425-1.0.1.1-Vrel3ufxOBpa1LsCdMlWd_yevv2_VvTMrGuUwcajfrHSZ7u67RMqSwKhPT0FuSrqK.JUXwL5J7CC48pmv3A6JgP9NAxEoElKAQLV4tWAH_goQGebvzGRRHTvnEJbRcUV;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:48:41 GMT
+      - __cf_bm=8EU3_bOn2.SLUHKhEmBbirfJD6WK.9TFfr8iI8QMIr8-1779205531.9004152-1.0.1.1-3zK0sxkwoDjRvT.TgkYXXZQ0woF_jlNw_y1_eJJraH9vwdCzmb.sbC.ZUaacQUOa2MOKWJAO0854rHLcjpp3_R8TzyPe2hG1iMRgRyhT0iXMRu6t3f6cWjf3My1noMVw;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:15:32 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -105,7 +104,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1e095e5e59a546d09530a86d6ffbdf3a
+      - req_771c1136fffe449e99e427962dda05a8
     status:
       code: 200
       message: OK

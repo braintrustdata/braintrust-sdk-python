@@ -15,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.93.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -25,7 +25,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -38,34 +38,37 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMhJq7P3G6We7NTOo5QB0IKhYYHu\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778512741,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGvacfajmuBz7lUelyPRBLiHME0M\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205546,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"In a world where the sky shimmered
-        like liquid metal and the air hummed with the soft whispers of technology,
-        there lived a robot named Tinker. Tinker was designed for one purpose: to
-        repair and maintain the wondrous gadgets that populated the bustling city
-        of Neo-Arcadia. With a body made from bright chrome and eyes that glowed a
-        gentle blue, he was a familiar sight gliding through the streets with a toolkit
-        slung across his shoulder.\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 15,\n    \"completion_tokens\":
-        93,\n    \"total_tokens\": 108,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        \"assistant\",\n        \"content\": \"In a quiet, unassuming town named Trellis,
+        nestled between rolling hills and lush forests, lived a robot named R1-7.
+        Created in an old workshop filled with dusty blueprints and vintage tools,
+        R1-7 was quite different from the sleek, modern robots that roamed major cities.
+        Rather, he was a patchwork of metal and wires, assembled from spare parts
+        and discarded gadgets. Despite this, R1-7 possessed a heart\u2014a small,
+        glowing core nestled within his chest that pulsed with curiosity and a desire
+        to belong.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 15,\n    \"completion_tokens\": 111,\n
+        \   \"total_tokens\": 126,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_22f51daea7\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_e845987286\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa228d5a911aa95-YYZ
+      - 9fe43b06ce24ac0f-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:19:03 GMT
+      - Tue, 19 May 2026 15:45:47 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -74,24 +77,22 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '1247'
+      - '1315'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '2175'
+      - '1660'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=CCuLZ10Y_tSpwFj_TxOrelAUzswaUIMy2nUPhEq2S6I-1778512740.7467968-1.0.1.1-c99DRQDsgWi4Nv.sXl09uGSqgexVlkT_sRDX9zzehdGyIyFyEJmqFEBI.zZBiILKNINooHd67EWYtDHnk4JxdmTy0scvSxN_Jncw2YjgQFlDhwg3eMjQt.xJZ8hW9xkL;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        11 May 2026 15:49:03 GMT
+      - __cf_bm=pql4WIO4wEo5wYLjITmqGrYLQ83CPhT.PyInEH90SCQ-1779205546.048296-1.0.1.1-eOlKnNf126wUH55Gub.rncWGTg.s4uSUxCaPfg49UxwLlUkj1.W8yebLm8x2vResQP3or._OMomslJu.WDZrJ.8qve9klZNZelKfX9TGfWFWQe3yy8Vc4jHLCWLRTt1M;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:15:47 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -101,13 +102,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999990'
+      - '149999987'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_edb78b81eb4f48f288c0629e3c7a2085
+      - req_d553f0862dca4f38af6f93f4ebbf6acf
     status:
       code: 200
       message: OK

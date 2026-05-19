@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.36.0
+      - OpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,16 +39,16 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0266169fb190604a006a01eaf25904819fbeccf47ee5764b7f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1778510578,\n  \"status\":
+      string: "{\n  \"id\": \"resp_06572f2bfe229fb4006a0c7e994e048196988162ef0d843f9a\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1779203737,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1778510580,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1779203745,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_0266169fb190604a006a01eaf4730c819fb534c59b8008faac\",\n
+        \     \"id\": \"fc_06572f2bfe229fb4006a0c7ea1bc6881969c62d1f4440c933c\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_ti1IQ42KVBOgpWgS71wRL5DR\",\n
+        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_LwQomBqqw00q0GNTvMzcI3Up\",\n
         \     \"name\": \"get_weather\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -68,16 +68,18 @@ interactions:
         {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 67\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa1f40a4d7090a8-YYZ
+      - 9fe40eddcdfaa2d9-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 14:43:00 GMT
+      - Tue, 19 May 2026 15:15:46 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -86,8 +88,6 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
@@ -95,15 +95,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '2548'
+      - '8822'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=B8iJTdPxdj9mcomnjj34J8bJIHEmgj8Secr00L25e8M-1778510578.2898426-1.0.1.1-hHN0SdzY.mLfMQ.yWYMLhngnDWicDykMY.3v4W8Q6lnx_lkUUASW1Iac1M1TwsLBAa2SQqHAAd_la8lQuA3OD.siKSV.vvVFsBdHo6TOOzWXuCWR4c8l6I8Z5.iGOLCJ;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:13:00 GMT
+      - __cf_bm=6ASs0QLtT.tmbnREUG8Dj5pi7YOaYTuxOyD.0v6Rupk-1779203737.2425354-1.0.1.1-OQIY8WnNnqaVII5.2F1A8bxv8mdnEByijMH36tYtTwwY6k9XPVSbstg.4HwZJ4qAn5E.P0v3YnjLKJvEa5oSDF8nI0Xx9ON0c0RDVdrREoXODj_fFkb0_ulOR.dHJYOB;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 15:45:46 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -117,7 +117,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_95f3b02e8da74864ba75372d0fbdbd4c
+      - req_6573792fcbd94b8f8a63981b861d035c
     status:
       code: 200
       message: OK

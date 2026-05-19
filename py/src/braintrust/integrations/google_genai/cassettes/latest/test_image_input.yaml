@@ -17,35 +17,34 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The color of the image is red.\",\n
-        \           \"thoughtSignature\": \"EjQKMgEMOdbHFdmV7I1KK1LpJFY37EklW+X1fqJ2VFbD5cTVUEUMk+twH+gpkkPUnSEFNOn/\"\n
+        [\n          {\n            \"text\": \"The color of this image is red.\",\n
+        \           \"thoughtSignature\": \"EjQKMgEMOdbHNh0+8WHyPkazPq3geft75JP4qBKw4Lz7hQrH/EqmlgOoisOoPivayZS42Kbg\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
         1096,\n    \"candidatesTokenCount\": 8,\n    \"totalTokenCount\": 1104,\n
-        \   \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 7\n      },\n      {\n        \"modality\": \"IMAGE\",\n
-        \       \"tokenCount\": 1089\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n  \"responseId\":
-        \"L-kBaq_uDsK8_uMP54rI0Qs\"\n}\n"
+        \   \"promptTokensDetails\": [\n      {\n        \"modality\": \"IMAGE\",\n
+        \       \"tokenCount\": 1089\n      },\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 7\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-3.1-flash-lite\",\n  \"responseId\": \"4YQMaubEOMW8_uMP1fOykAo\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 11 May 2026 14:35:27 GMT
+      - Tue, 19 May 2026 15:42:26 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=693
+      - gfet4t7; dur=1169
       Transfer-Encoding:
       - chunked
       Vary:
@@ -61,7 +60,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '769'
+      - '762'
     status:
       code: 200
       message: OK

@@ -27,7 +27,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.93.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -37,7 +37,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -50,29 +50,31 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMhOKZg6YpX3K1Iskvj0bcKW6xoF\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778512746,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGvdJW6ZiqeFEbJU5bVpkrlHA9Pw\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205549,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The word \\\"fox\\\" appears 20 times
-        in the text.\",\n        \"refusal\": null,\n        \"annotations\": []\n
-        \     },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
-        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 225,\n    \"completion_tokens\":
-        13,\n    \"total_tokens\": 238,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        \"assistant\",\n        \"content\": \"The word 'fox' appears 20 times in
+        the text.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 225,\n    \"completion_tokens\": 13,\n
+        \   \"total_tokens\": 238,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e88d325396\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_9837cb585a\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa228f548e8ab54-YYZ
+      - 9fe43b1b1b6eac58-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:19:06 GMT
+      - Tue, 19 May 2026 15:45:49 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -81,24 +83,22 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '855'
+      - '853'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '650'
+      - '509'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=syUErj7CSnsoSf_sNh3hdHpneO3ZpxFys9iPM0DroYc-1778512745.8039196-1.0.1.1-ffvenRDEiallFTnB2jmvFQRibAx5ZTe3zNtb68kTsSG17Ds5omlc1xSn_p_z23fHD4RTztkpI6QgIoy.kRljvxWIqPfeBT6WuuWbbU82IXEZNwcPBWzIIWsAKQYL1_l8;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:49:06 GMT
+      - __cf_bm=F2CmeXOp962ICI_9lJqZyIGGFPt1GEaoHFi67mVpp_0-1779205549.2990286-1.0.1.1-2MVbt.QVx1xvyyhmQancE1OADOcRq4VPEXWiA2FcDl9h6wsmmezbZNL3w00q.9UnZLRFXsxFcuauj0.31FtLF4VXY6uS.HEru1VJIgmHdvueh5wT4WTs0AtxVLM9D8zA;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:15:49 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -108,13 +108,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999757'
+      - '149999755'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ddb26b2cd2344e2784583e455a1667e2
+      - req_18691a731b9f4dcf9067ad26f9c35308
     status:
       code: 200
       message: OK

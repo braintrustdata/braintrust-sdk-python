@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS0xYjJiMTNjZGZhNWVkMGZkOGE0MmY0ZGFiODQ4ZWE4Ng0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tMWIyYjEzY2Rm
-      YTVlZDBmZDhhNDJmNGRhYjg0OGVhODYNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTFiMmIxM2NkZmE1ZWQwZmQ4YTQyZjRkYWI4NDhlYTg2
+      LS1mY2JmMjY1MWM3NmIzMWRmMWNhZTVjNGZjM2JiMDlhZg0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tZmNiZjI2NTFj
+      NzZiMzFkZjFjYWU1YzRmYzNiYjA5YWYNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWZjYmYyNjUxYzc2YjMxZGYxY2FlNWM0ZmMzYmIwOWFm
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tMWIyYjEzY2RmYTVlZDBmZDhhNDJmNGRhYjg0OGVhODYtLQ0K
+      Ci0tZmNiZjI2NTFjNzZiMzFkZjFjYWU1YzRmYzNiYjA5YWYtLQ0K
     headers:
       Accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       Content-Length:
       - '32415'
       Content-Type:
-      - multipart/form-data; boundary=1b2b13cdfa5ed0fd8a42f4dab848ea86
+      - multipart/form-data; boundary=fcbf2651c76b31df1cae5c4fc3bb09af
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.36.0
+      - AsyncOpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -594,7 +594,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -607,13 +607,16 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"The\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"odore\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"Theodore.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":15,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":5}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\u041D\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0438\u0447\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0435\u0433\u043E\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"\u041D\u0438\u0447\u0435\u0433\u043E.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-RAY:
-      - 9fa1f81b4e43f288-YYZ
+      - 9fe414715f3caaaa-YYZ
       Cache-Control:
       - no-store
       Connection:
@@ -621,7 +624,7 @@ interactions:
       Content-Type:
       - text/event-stream; charset=utf-8
       Date:
-      - Mon, 11 May 2026 14:45:45 GMT
+      - Tue, 19 May 2026 15:19:26 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -639,15 +642,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '252'
+      - '451'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=ldxmbMAWn_UZ3jClhYjkKMr1kRjZ0Hwe4WbCCdRVA4o-1778510744.840853-1.0.1.1-U_oPA.abr12D3s4.gzaZ_3FnOuDNumHx4Q4GBL.zBRB_CFNaeBp8kt5AbOPZ.xgeYjZpeBxAgF9amtCc_Msq0V0_7E6.m4QTLQ_ZDN.2JiYhjTt88M3ievn7BkgWKWqq;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:15:45 GMT
+      - __cf_bm=mBT8YB1Rz6wbMzozYxVypC1QhQU_LjywyzsNGpjpXoc-1779203965.658215-1.0.1.1-s3mtK_H2eR2VTVZjAgQTWKnH5YUtfNEdytuCQT.pxdrrvrtM9ETTXHyBaeoDhS7oEL4fbf5rDGlx3b8e6KWnEqM_P4D.cCBkFBIAZ20LNDvTEIuyppI2wF4lvJACNqcu;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 15:49:26 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -657,7 +660,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_e7b5687f29d941e1891332e417d255bf
+      - req_9b5b93d7b5d647c887d4d1ae5aedf162
     status:
       code: 200
       message: OK

@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"This is a test","model":"text-embedding-ada-002","encoding_format":null}'
+    body: '{"input":"This is a test","model":"text-embedding-ada-002","encoding_format":"float"}'
     headers:
       Accept:
       - application/json
@@ -9,13 +9,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '82'
+      - '85'
       Content-Type:
       - application/json
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.24.0
+      - OpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -25,13 +25,13 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.24.0
+      - 2.37.0
       X-Stainless-Raw-Response:
       - 'true'
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -431,16 +431,18 @@ interactions:
     headers:
       Access-Control-Allow-Origin:
       - '*'
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9ef5cf7bb8c6813d-YYZ
+      - 9fe42f2f7a6dde74-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 20 Apr 2026 17:18:51 GMT
+      - Tue, 19 May 2026 15:37:41 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -448,11 +450,9 @@ interactions:
       Transfer-Encoding:
       - chunked
       Via:
-      - envoy-router-7fcdb9c87b-ltbjb
+      - envoy-router-6958cc9d59-6p9bw
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
@@ -462,15 +462,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '73'
+      - '76'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=k.fPsjELGzN0ulYQCQY_cz7OetvpvrsH2IpeNBGldfc-1776705530.1943758-1.0.1.1-1CKJVlmC07LqH0_9PMM5INSwkEQnRa9316aBeL3pdM7cxBCIL5RQGhFQp9UYXGiNpcdK1v8ZXVkQw_zmJIbTjUMaOZW5Zppe3WQOqxM_d_HUadQvwlDadyESz0IYnFgg;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 20 Apr 2026
-        17:48:51 GMT
+      - __cf_bm=jWdIpTX0BntncatTmWw6TPaOhHaf2.rP6BmCnaMmR0s-1779205061.0389714-1.0.1.1-NvnLUcsfzUogiG4finwrX58SVIJ4s7Td0dhuARP6CgNl.K6nuDuz7sSddY5t0n38djHuucp38oAkWiQc8F7jJnMwu2WReH8CP2TFEJ2.pPlupFBbrIXmfkd4dsQS4Qjr;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:07:41 GMT
       x-engine-geography:
       - US
       x-openai-proxy-wasm:
@@ -488,7 +488,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b30d7bbc1c134528963ade189254b3b7
+      - req_485b5c4c4d294784aa7c23d7d1851cbb
     status:
       code: 200
       message: OK

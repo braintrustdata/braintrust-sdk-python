@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.93.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,29 +39,31 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMhLGQAfErgROsXbJ3xjZrSzjzY3\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778512743,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGvcCZdtiYEDtDcwXvdeZHLpScGN\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205548,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Lines of logic flow,  \\nSilent whispers
-        on the screen,  \\nDreams in code compile.  \",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 35,\n    \"completion_tokens\":
-        20,\n    \"total_tokens\": 55,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"Lines of logic flow,  \\nFingers dance
+        on midnight keys,  \\nDreams in code take form.  \",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        35,\n    \"completion_tokens\": 22,\n    \"total_tokens\": 57,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_134a436b39\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_47c002d708\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa228e47a0daabc-YYZ
+      - 9fe43b12bf17ac4b-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:19:04 GMT
+      - Tue, 19 May 2026 15:45:48 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -70,24 +72,22 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '890'
+      - '893'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '858'
+      - '627'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=B9wr2TLlpxmcqcPBV.42cEIZmJd0DFmP1ZcHK6QuETI-1778512743.1205306-1.0.1.1-BDZOo.AqrPJjczxcxYJWpoRd9x4sgj7tgcelJvn1tnP58H62icDZ2sSfHfYEvBfXqWovtuHamXzEXjuFioS4V8qWSLJm0LpQ17jl1D68BLqxqFPVWN86qKMlssSifX8g;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:49:04 GMT
+      - __cf_bm=vns89Utsa41vQ9JC0p0vccUYrugjq.gNSK5aPpuRk54-1779205547.9576917-1.0.1.1-6Zc.skX7A07M9WHQRgBP0yMoCnoGPOfy4CN.OJA_7xQD9m5sHplKMWLHzIcmDtvpUZR3Mm7gbPUPnt5amcRjp1DQ2xeS2cTxhrklgdSD_flRI_Mk3TBxCiY4eMHmXo76;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:15:48 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -103,7 +103,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b447399fef7647a2be8f04296d6ab4d3
+      - req_4d103632548e49269976a3e19423ba88
     status:
       code: 200
       message: OK

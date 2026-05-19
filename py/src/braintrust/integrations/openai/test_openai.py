@@ -672,7 +672,7 @@ def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger):
 
     client = wrap_openai(openai.OpenAI())
     stream = client.chat.completions.create(
-        model="gpt-4o-audio-preview",
+        model="gpt-audio-mini",
         messages=[{"role": "user", "content": "Say exactly hello."}],
         modalities=["text", "audio"],
         audio={"voice": "alloy", "format": "pcm16"},
@@ -2163,15 +2163,14 @@ def test_openai_images_generate(memory_logger):
 
     for client, is_wrapped in clients:
         response = client.images.generate(
-            model="dall-e-2",
+            model="gpt-image-1-mini",
             prompt=prompt,
-            size="256x256",
-            response_format="url",
+            size="1024x1024",
         )
 
         assert response
         assert response.data
-        assert response.data[0].url
+        assert response.data[0].b64_json
 
         if not is_wrapped:
             assert not memory_logger.pop()
@@ -2180,12 +2179,10 @@ def test_openai_images_generate(memory_logger):
         spans = memory_logger.pop()
         assert len(spans) == 1
         span = spans[0]
-        assert span["metadata"]["model"] == "dall-e-2"
+        assert span["metadata"]["model"] == "gpt-image-1-mini"
         assert span["metadata"]["provider"] == "openai"
-        assert span["metadata"]["response_format"] == "url"
         assert span["input"] == prompt
         assert span["output"]["images_count"] == 1
-        assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
         assert span["metrics"]["duration"] >= 0
 
 
@@ -2213,16 +2210,15 @@ def test_openai_images_edit(memory_logger):
         for client, is_wrapped in clients:
             with open(image_path, "rb") as image_file:
                 response = client.images.edit(
-                    model="dall-e-2",
+                    model="gpt-image-1-mini",
                     prompt=prompt,
                     image=image_file,
-                    size="256x256",
-                    response_format="url",
+                    size="1024x1024",
                 )
 
             assert response
             assert response.data
-            assert response.data[0].url
+            assert response.data[0].b64_json
 
             if not is_wrapped:
                 assert not memory_logger.pop()
@@ -2231,15 +2227,13 @@ def test_openai_images_edit(memory_logger):
             spans = memory_logger.pop()
             assert len(spans) == 1
             span = spans[0]
-            assert span["metadata"]["model"] == "dall-e-2"
+            assert span["metadata"]["model"] == "gpt-image-1-mini"
             assert span["metadata"]["provider"] == "openai"
-            assert span["metadata"]["response_format"] == "url"
             assert span["input"]["prompt"] == prompt
             assert isinstance(span["input"]["image"], Attachment)
             assert span["input"]["image"].reference["filename"] == "braintrust-test-image.png"
             assert span["input"]["image"].reference["content_type"] == "image/png"
             assert span["output"]["images_count"] == 1
-            assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
             assert span["metrics"]["duration"] >= 0
 
 

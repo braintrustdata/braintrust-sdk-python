@@ -22,36 +22,36 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
-        \             \"args\": {\n                \"b\": 49,\n                \"a\":
-        127,\n                \"operation\": \"multiply\"\n              }\n            },\n
-        \           \"thoughtSignature\": \"CuYBAQw51sfLcby2cQEkvTwZpEMc1XB+VT/GvYKyAuP33FrzPBSEyc24uCuIo+0n/7AfCXo8AjQBKeMd8Oc20grWMn8IprT3innLYCvfV/9Q47s0kHt3XRmuYli9QVf5/IpTcksvF6e3z6NV1BIllfcPx6mRXIlLBk7tphd6jqt7hK4yITUizNp8ja3eHHmSmVaQnYu1mxl31G3t4GLTfZ5e7vBIb1CAs3UM18hbKzzeD5SFh0BMMNGuj1Z5lzCGwR0qdlH+2F/2RkMlTG36J1vQE7rRR8mGdarjAop43R93MC+KkzYxA6I=\"\n
+        \             \"args\": {\n                \"operation\": \"multiply\",\n
+        \               \"a\": 127,\n                \"b\": 49\n              }\n
+        \           },\n            \"thoughtSignature\": \"CvsBAQw51sfkBjsn56NAMN8nac9Dnx3E7aLlGBX3sFaIlrXiDETue8R9VyMpeLUR5Y2o831y2OdfYlnzZq0pOAQKhnY/bzYcfFUe3gog/1tyGMHqAbLM1x94PvOr/S+uystxUCzj1evynvPxu+DsZlYQhVGelKkKIys2tm1PWhi3QnSancamDSFeRVV04Duno4bY4hgnx4tuwFgx9oebBHt4MoxNEdLWnCXbCOyOeykhbh0AIW7BTk+fClGybbfK8vGdudponorjuyeAb7/eWpTUhllU4OZywLqTe7nv7HcViRpLej5pkiSeMbqeLRLbqOw+6BeB5Xekogqsj1k=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 163,\n    \"promptTokensDetails\":
+        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 169,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 53,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"QukBavOVPMud_uMPuNbRmAc\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 59,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"9oQMaoeeGZGZ_uMPsvK3oAY\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 11 May 2026 14:35:47 GMT
+      - Tue, 19 May 2026 15:42:47 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=832
+      - gfet4t7; dur=853
       Transfer-Encoding:
       - chunked
       Vary:
@@ -67,14 +67,14 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1169'
+      - '1197'
     status:
       code: 200
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"args": {"b": 49, "a": 127, "operation":
-      "multiply"}, "name": "calculate"}, "thoughtSignature": "CuYBAQw51sfLcby2cQEkvTwZpEMc1XB-VT_GvYKyAuP33FrzPBSEyc24uCuIo-0n_7AfCXo8AjQBKeMd8Oc20grWMn8IprT3innLYCvfV_9Q47s0kHt3XRmuYli9QVf5_IpTcksvF6e3z6NV1BIllfcPx6mRXIlLBk7tphd6jqt7hK4yITUizNp8ja3eHHmSmVaQnYu1mxl31G3t4GLTfZ5e7vBIb1CAs3UM18hbKzzeD5SFh0BMMNGuj1Z5lzCGwR0qdlH-2F_2RkMlTG36J1vQE7rRR8mGdarjAop43R93MC-KkzYxA6I="}],
+      "user"}, {"parts": [{"functionCall": {"args": {"operation": "multiply", "a":
+      127, "b": 49}, "name": "calculate"}, "thoughtSignature": "CvsBAQw51sfkBjsn56NAMN8nac9Dnx3E7aLlGBX3sFaIlrXiDETue8R9VyMpeLUR5Y2o831y2OdfYlnzZq0pOAQKhnY_bzYcfFUe3gog_1tyGMHqAbLM1x94PvOr_S-uystxUCzj1evynvPxu-DsZlYQhVGelKkKIys2tm1PWhi3QnSancamDSFeRVV04Duno4bY4hgnx4tuwFgx9oebBHt4MoxNEdLWnCXbCOyOeykhbh0AIW7BTk-fClGybbfK8vGdudponorjuyeAb7_eWpTUhllU4OZywLqTe7nv7HcViRpLej5pkiSeMbqeLRLbqOw-6BeB5Xekogqsj1k="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
       {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
       "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
@@ -91,15 +91,15 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1153'
+      - '1181'
       Content-Type:
       - application/json
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -111,18 +111,18 @@ interactions:
         126,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\": 141,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 126\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash\",\n  \"responseId\": \"Q-kBaqmVN_Sd_uMP9--LsAc\"\n}\n"
+        \"gemini-2.5-flash\",\n  \"responseId\": \"94QMavb6F9qq_uMPxMbZ6AI\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 11 May 2026 14:35:48 GMT
+      - Tue, 19 May 2026 15:42:47 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=536
+      - gfet4t7; dur=503
       Transfer-Encoding:
       - chunked
       Vary:

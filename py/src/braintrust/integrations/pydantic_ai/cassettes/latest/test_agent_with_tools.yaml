@@ -17,7 +17,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.93.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -27,7 +27,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -40,11 +40,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMgVcbfRRhVyz5ySr72Dfifum8BK\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778512691,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGv2M6Fg8phTS9SeczUrPcq7MoDS\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205512,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_S5t3z2ml6Hhdn9Axs8D4cCG3\",\n            \"type\":
+        \           \"id\": \"call_6Wcp0O1zoE67Yo5s0A5Q7BWZ\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -54,18 +54,20 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_29ce089943\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_aca7e88f14\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa2279f18be57af-YYZ
+      - 9fe43a341ef4ab39-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:18:13 GMT
+      - Tue, 19 May 2026 15:45:12 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -74,8 +76,6 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
@@ -83,15 +83,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '2452'
+      - '525'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=XiVZQs2mQjhxOlxyIWYjq5mBQben9zcy9KNW5_YfQBg-1778512691.057321-1.0.1.1-0UjMhQ2C63Cnz5m5Fmc3YvRoDggEUsnboctMTHJvf_gFxaQ1eAcvdvWZgEVCtUKLn44ymJJzgKBhUCnGQa6byH0atqC8iHHbwDhArYR5QJbMY.xgn675CnRihdAkWW_t;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 11 May 2026
-        15:48:13 GMT
+      - __cf_bm=cQiBNAmzia5EP646wASpkcT1LqnViYK_DTEiK60R8LA-1779205512.3373153-1.0.1.1-jg6cHMPw.lEzvcpLmUlNp554.ukjKAub4E0a2QSmd1ku658387MGTgpaK1KVcOIomFEPFX.s3GDeDsDDD4I.5b2o2xZeF3dMeU73W9WXF2Cy0vJlQ8dG8iyIGqLcfXPJ;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:15:12 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -101,18 +101,18 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999990'
+      - '149999992'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1dfe005032eb43f9a292daef6ab973c5
+      - req_b29c2fe7577746d88c98415671e7e543
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","content":null,"tool_calls":[{"id":"call_S5t3z2ml6Hhdn9Axs8D4cCG3","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},{"role":"tool","tool_call_id":"call_S5t3z2ml6Hhdn9Axs8D4cCG3","content":"It''s
+    body: '{"messages":[{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","content":null,"tool_calls":[{"id":"call_6Wcp0O1zoE67Yo5s0A5Q7BWZ","type":"function","function":{"name":"get_weather","arguments":"{\"city\":\"Paris\"}"}}]},{"role":"tool","tool_call_id":"call_6Wcp0O1zoE67Yo5s0A5Q7BWZ","content":"It''s
       sunny in Paris"}],"model":"gpt-4o-mini","max_completion_tokens":200,"stream":false,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"get_weather","description":"Get
       weather for a city.","parameters":{"additionalProperties":false,"properties":{"city":{"description":"The
       city name","type":"string"}},"required":["city"],"type":"object"},"strict":true}}]}'
@@ -128,11 +128,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=XiVZQs2mQjhxOlxyIWYjq5mBQben9zcy9KNW5_YfQBg-1778512691.057321-1.0.1.1-0UjMhQ2C63Cnz5m5Fmc3YvRoDggEUsnboctMTHJvf_gFxaQ1eAcvdvWZgEVCtUKLn44ymJJzgKBhUCnGQa6byH0atqC8iHHbwDhArYR5QJbMY.xgn675CnRihdAkWW_t
+      - __cf_bm=cQiBNAmzia5EP646wASpkcT1LqnViYK_DTEiK60R8LA-1779205512.3373153-1.0.1.1-jg6cHMPw.lEzvcpLmUlNp554.ukjKAub4E0a2QSmd1ku658387MGTgpaK1KVcOIomFEPFX.s3GDeDsDDD4I.5b2o2xZeF3dMeU73W9WXF2Cy0vJlQ8dG8iyIGqLcfXPJ
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.93.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -142,7 +142,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.36.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -155,28 +155,30 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DeMgYvRfsrIm0KKVhMzfgx5zjN6rI\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1778512694,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGv3J2vh2pCgdigkafzdS7BWywCS\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205513,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The weather in Paris is sunny.\",\n
+        \"assistant\",\n        \"content\": \"The weather in Paris is currently sunny.\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
         null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        80,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 88,\n    \"prompt_tokens_details\":
+        80,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 89,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_29ce089943\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_aca7e88f14\"\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fa227b11ba1ab08-YYZ
+      - 9fe43a38b916b634-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:18:14 GMT
+      - Tue, 19 May 2026 15:45:13 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -185,16 +187,14 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '836'
+      - '846'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '475'
+      - '299'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -214,7 +214,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e3c6b689062742cb92654ae23a2912ca
+      - req_8173c234c6e34e3b8b0a6cc627f6e675
     status:
       code: 200
       message: OK

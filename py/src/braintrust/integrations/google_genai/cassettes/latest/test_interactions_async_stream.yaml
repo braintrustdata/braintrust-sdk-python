@@ -17,26 +17,31 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       User-Agent:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
       x-goog-api-client:
-      - google-genai-sdk/2.0.1 gl-python/3.12.12
+      - google-genai-sdk/2.4.0 gl-python/3.12.12
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChdjT2tCYXV2cUVhQzZfdU1QdGVPM21RdxIXY09rQmF1dnFFYUM2X3VNUHRlTzNtUXc","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
+        data: {"interaction":{"id":"v1_ChdJWVVNYXJLb0wtQzBfdU1QeklYbHlBcxIXSVlVTWFyS29MLUMwX3VNUHpJWGx5QXM","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdjT2tCYXV2cUVhQzZfdU1QdGVPM21RdxIXY09rQmF1dnFFYUM2X3VNUHRlTzNtUXc","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_ChdJWVVNYXJLb0wtQzBfdU1QeklYbHlBcxIXSVlVTWFyS29MLUMwX3VNUHpJWGx5QXM","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
 
-        data: {"index":0,"step":{"signature":"CmMBDDnWx+dTDFIUToFcc4OofqA/zu8+OBMS/xtr7yVRoQYJ1JaHq29Vo6kRTS4EwRTptvI6sbIlJHsPKPlAkX6kz+azsbBmuRZCUj+iZZCRxZrde5jtdwBe9E7sZkT5ybWzZ8wKNgEMOdbH/VDSmeGWBrNlZ4Nrkdp80JD4GSer7/s71uMW9cnrJX1b6wS+/zNq6OBfv69BxdUeRQ==","type":"thought"},"event_type":"step.start"}
+        data: {"index":0,"step":{"type":"thought"},"event_type":"step.start"}
+
+
+        event: step.delta
+
+        data: {"index":0,"delta":{"signature":"ClUBDDnWxwvuWGRLw4QJbLj0LoM0zBqNl410eRdpSxY3nkZAModOT9awG6KSbB+4MAaVhtMIivgPPDaiUXpiAJXH1JerCDcRVETEgy9+yOX4ULa0M5HmCmABDDnWxzk9jnYHXaVXZFFOsltmWOVDP7gF8QNGjVLyyS8qiiAoB6AyNp0XJyOE31rLYCLjdLOgKc4CdeWfGlVDtBIvC1eJ4eqz9dhZ2IQEmFQ4x1FkRL6GNliBaV/+V5A=","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -46,7 +51,12 @@ interactions:
 
         event: step.start
 
-        data: {"index":1,"step":{"content":[{"text":"Hi!","type":"text"}],"type":"model_output"},"event_type":"step.start"}
+        data: {"index":1,"step":{"type":"model_output"},"event_type":"step.start"}
+
+
+        event: step.delta
+
+        data: {"index":1,"delta":{"text":"Hi!","type":"text"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -56,7 +66,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChdjT2tCYXV2cUVhQzZfdU1QdGVPM21RdxIXY09rQmF1dnFFYUM2X3VNUHRlTzNtUXc","status":"completed","usage":{"total_tokens":28,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":21},"created":"2026-05-11T14:36:33Z","updated":"2026-05-11T14:36:33Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_ChdJWVVNYXJLb0wtQzBfdU1QeklYbHlBcxIXSVlVTWFyS29MLUMwX3VNUHpJWGx5QXM","status":"completed","usage":{"total_tokens":35,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":28},"created":"2026-05-19T15:43:30Z","updated":"2026-05-19T15:43:30Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -71,11 +81,11 @@ interactions:
       Content-Type:
       - text/event-stream
       Date:
-      - Mon, 11 May 2026 14:36:33 GMT
+      - Tue, 19 May 2026 15:43:30 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=818
+      - gfet4t7; dur=707
       Transfer-Encoding:
       - chunked
       Vary:
@@ -89,7 +99,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1576'
+      - '1771'
     status:
       code: 200
       message: OK

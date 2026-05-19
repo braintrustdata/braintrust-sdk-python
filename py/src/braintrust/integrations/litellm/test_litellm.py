@@ -354,25 +354,22 @@ def test_litellm_image_generation(memory_logger):
     prompt = "A tiny red square on a white background"
 
     response = litellm.image_generation(
-        model="dall-e-2",
+        model="gpt-image-1-mini",
         prompt=prompt,
-        size="256x256",
-        response_format="url",
+        size="1024x1024",
     )
 
     assert response
     assert response.data
-    assert response.data[0].url
+    assert response.data[0].b64_json
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["model"] == "dall-e-2"
+    assert span["metadata"]["model"] == "gpt-image-1-mini"
     assert span["metadata"]["provider"] == "litellm"
-    assert span["metadata"]["response_format"] == "url"
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
-    assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
     assert span["metrics"]["duration"] >= 0
 
 
@@ -384,25 +381,22 @@ async def test_litellm_aimage_generation(memory_logger):
     prompt = "A tiny blue square on a white background"
 
     response = await litellm.aimage_generation(
-        model="dall-e-2",
+        model="gpt-image-1-mini",
         prompt=prompt,
-        size="256x256",
-        response_format="url",
+        size="1024x1024",
     )
 
     assert response
     assert response.data
-    assert response.data[0].url
+    assert response.data[0].b64_json
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["model"] == "dall-e-2"
+    assert span["metadata"]["model"] == "gpt-image-1-mini"
     assert span["metadata"]["provider"] == "litellm"
-    assert span["metadata"]["response_format"] == "url"
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
-    assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
     assert span["metrics"]["duration"] >= 0
 
 
