@@ -222,6 +222,7 @@ class CachedSpanFetcher:
                         _xact_id=row.get("_xact_id"),
                         _pagination_key=row.get("_pagination_key"),
                         root_span_id=row.get("root_span_id"),
+                        is_root=row.get("is_root"),
                         created=row.get("created"),
                         tags=row.get("tags"),
                     )
