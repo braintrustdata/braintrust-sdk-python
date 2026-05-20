@@ -868,6 +868,15 @@ class _ModelDumpMetadata:
         return dict(self.values)
 
 
+def _init_test_dataset():
+    from braintrust.logger import Dataset, ObjectMetadata, ProjectDatasetMetadata
+
+    project_metadata = ObjectMetadata(id="test_project", name="test_project", full_info={})
+    dataset_metadata = ObjectMetadata(id="test_dataset", name="test_dataset", full_info={})
+    metadata = ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata)
+    return Dataset(lazy_metadata=LazyValue(lambda: metadata, use_mutex=False))
+
+
 def test_span_log_accepts_model_dump_metadata(with_memory_logger):
     logger = init_test_logger(__name__)
 
@@ -917,6 +926,26 @@ def test_experiment_log_feedback_accepts_model_dump_metadata(with_memory_logger)
     logs = with_memory_logger.pop()
     assert len(logs) == 1
     assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
+
+
+def test_dataset_insert_accepts_model_dump_metadata(with_memory_logger):
+    dataset = _init_test_dataset()
+
+    dataset.insert(input="input", expected="expected", metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_dataset_update_accepts_model_dump_metadata(with_memory_logger):
+    dataset = _init_test_dataset()
+
+    dataset.update(id="record-id", metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
 
 
 def test_span_log_rejects_metadata_with_non_string_keys(with_memory_logger):
