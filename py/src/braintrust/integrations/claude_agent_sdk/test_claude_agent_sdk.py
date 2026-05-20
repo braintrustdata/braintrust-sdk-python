@@ -351,7 +351,7 @@ async def test_agent_error_logged_on_spans(memory_logger):
             permission_mode="bypassPermissions",
         )
         transport = make_cassette_transport(
-            cassette_name="test_auto_claude_agent_sdk",
+            cassette_name="test_agent_error_logged_on_spans",
             prompt="",
             options=options,
         )
