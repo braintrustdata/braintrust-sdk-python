@@ -14,6 +14,8 @@ import urllib.request
 
 STABLE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 PRERELEASE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)[0-9]+$")
+RELEASE_TYPES = ("stable", "prerelease")
+VERSION_FILE = pathlib.Path("py/src/braintrust/version.py")
 
 
 def run(*args: str, check: bool = True) -> str:
@@ -25,22 +27,42 @@ def get_repo_root() -> pathlib.Path:
     return pathlib.Path(run("git", "rev-parse", "--show-toplevel"))
 
 
+def version_file(repo_root: pathlib.Path) -> pathlib.Path:
+    return repo_root / VERSION_FILE
+
+
 def get_version(repo_root: pathlib.Path) -> str:
-    version_file = repo_root / "py" / "src" / "braintrust" / "version.py"
-    version_line = next(
-        (line for line in version_file.read_text().splitlines() if line.startswith("VERSION = ")),
-        None,
-    )
-    if version_line is None:
-        raise ValueError(f"Could not find VERSION in {version_file}")
-    return version_line.split('"')[1]
+    path = version_file(repo_root)
+    match = re.search(r'^VERSION = "([^"]+)"$', path.read_text(), re.MULTILINE)
+    if match is None:
+        raise ValueError(f"Could not find VERSION in {path}")
+    return match.group(1)
+
+
+def set_version(repo_root: pathlib.Path, version: str) -> None:
+    path = version_file(repo_root)
+    text = path.read_text()
+    updated = re.sub(r'^VERSION = ".*"$', f'VERSION = "{version}"', text, count=1, flags=re.MULTILINE)
+    if updated == text:
+        raise ValueError(f"Could not update VERSION in {path}")
+    path.write_text(updated)
+
+
+def infer_release_type(version: str) -> str:
+    if STABLE_VERSION_RE.fullmatch(version):
+        return "stable"
+    if PRERELEASE_VERSION_RE.fullmatch(version):
+        return "prerelease"
+    raise ValueError(f"Version must be like X.Y.Z, X.Y.Zrc1, X.Y.Za1, or X.Y.Zb1; found '{version}'")
 
 
 def validate_release_type(release_type: str, version: str) -> None:
-    if release_type == "stable" and not STABLE_VERSION_RE.fullmatch(version):
-        raise ValueError(f"Stable releases require a version like X.Y.Z; found '{version}'")
-    if release_type == "prerelease" and not PRERELEASE_VERSION_RE.fullmatch(version):
-        raise ValueError(f"Prereleases require a version like X.Y.Zrc1, X.Y.Za1, or X.Y.Zb1; found '{version}'")
+    inferred_release_type = infer_release_type(version)
+    if release_type != inferred_release_type:
+        if release_type == "stable":
+            raise ValueError(f"Stable releases require a version like X.Y.Z; found '{version}'")
+        if release_type == "prerelease":
+            raise ValueError(f"Prereleases require a version like X.Y.Zrc1, X.Y.Za1, or X.Y.Zb1; found '{version}'")
 
 
 def check_tag_does_not_exist(tag: str) -> None:
@@ -84,8 +106,17 @@ def check_version_not_on_pypi(version: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("release_type", choices=("stable", "prerelease"))
+    parser.add_argument("release_type", choices=(*RELEASE_TYPES, "auto"))
     parser.add_argument("--github-output", type=pathlib.Path)
+    parser.add_argument("--allow-existing-tag", action="store_true")
+    parser.add_argument("--version", help="Validate this version instead of reading py/src/braintrust/version.py")
+    parser.add_argument("--set-version", action="store_true", help="Update py/src/braintrust/version.py to --version")
+    parser.add_argument(
+        "--validate-version-only", action="store_true", help="Only validate the version and release type"
+    )
+    parser.add_argument(
+        "--print-version", action="store_true", help="Print py/src/braintrust/version.py VERSION and exit"
+    )
     return parser.parse_args()
 
 
@@ -98,18 +129,33 @@ def write_github_output(output_path: pathlib.Path, values: dict[str, str]) -> No
 def main() -> int:
     args = parse_args()
     repo_root = get_repo_root()
-    version = get_version(repo_root)
+    if args.print_version:
+        print(get_version(repo_root))
+        return 0
+
+    if args.set_version and not args.version:
+        raise ValueError("--set-version requires --version")
+
+    version = args.version or get_version(repo_root)
+    release_type = infer_release_type(version) if args.release_type == "auto" else args.release_type
+    validate_release_type(release_type, version)
+
+    if args.set_version:
+        set_version(repo_root, version)
+    if args.validate_version_only or args.set_version:
+        return 0
+
     tag = f"py-sdk-v{version}"
 
-    validate_release_type(args.release_type, version)
     check_commit_on_main()
-    check_tag_does_not_exist(tag)
+    if not args.allow_existing_tag:
+        check_tag_does_not_exist(tag)
     check_version_not_on_pypi(version)
 
     outputs = {
         "commit_sha": run("git", "rev-parse", "HEAD"),
         "release_tag": tag,
-        "release_type": args.release_type,
+        "release_type": release_type,
         "version": version,
     }
     if args.github_output is not None:

@@ -250,10 +250,21 @@ Main workflows:
 - `checks.yaml`: merged SDK checks workflow, including lint, pinned-action validation, the Python test matrix, wheel build, and the `checks-passed` required-check aggregator
 - `langchain-py-test.yaml`: LangChain integration tests
 - `adk-py-test.yaml`: ADK integration tests
-- `publish-py-sdk.yaml`: PyPI release
+- `prepare-release.yml`: stable Python SDK version-bump PR creation
+- `publish-py-sdk.yaml`: PyPI release, including stable release PR merges
 - `test-publish-py-sdk.yaml`: TestPyPI release validation
 
 CI uses committed HTTP VCR cassettes and Claude Agent SDK subprocess cassettes, so forks do not need provider API secrets for normal replayed test runs.
+
+## Publishing
+
+See `docs/publishing.md` for the full Python SDK publishing playbook.
+
+Stable releases are started from GitHub Actions by running `Prepare Stable Python SDK Release` with a stable version such as `0.22.0`. That workflow opens a `release/py-sdk-v<version>` PR that updates `py/src/braintrust/version.py`. Merging the PR triggers `Publish Python SDK`. The stable PyPI publish job requires approval through the `pypi-publish` GitHub environment, then publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
+
+Prereleases use the manual `Publish Python SDK` workflow without a committed version bump: run the workflow against `main` or a commit on `main` with `release_type=prerelease` and the `version` input set to a prerelease version such as `0.22.0rc1`. Prereleases are not gated by the `pypi-publish` environment.
+
+Do not create or push release tags locally.
 
 ## Submitting Changes
 

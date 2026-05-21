@@ -1800,7 +1800,8 @@ def init_dataset(
     key is specified, will prompt the user to login.
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :param project_id: The id of the project to create the dataset in. This takes precedence over `project` if specified.
-    :param metadata: (Optional) a dictionary with additional data about the dataset. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
+    :param metadata: (Optional) a dictionary, or an object that serializes to a dictionary (such as a Pydantic model), with additional data about the dataset. The values in `metadata` can be any
+    JSON-serializable type, but its keys must be strings.
     :param use_output: (Deprecated) If True, records will be fetched from this dataset in the legacy format, with the "expected" field renamed to "output". This option will be removed in a future version of Braintrust.
     :param _internal_btql: (Internal) If specified, the dataset will be created with the given BTQL filters.
     :param state: (Internal) The Braintrust state to use. If not specified, will use the global state. For advanced use only.
@@ -2777,8 +2778,24 @@ def _enrich_attachments(event: TMutableMapping) -> TMutableMapping:
     return event
 
 
+def _validate_and_sanitize_metadata(metadata: Metadata) -> dict[str, Any]:
+    if isinstance(metadata, dict):
+        sanitized_metadata = metadata
+    else:
+        sanitized_metadata = bt_safe_deep_copy(metadata)
+        if not isinstance(sanitized_metadata, dict):
+            raise ValueError("metadata must be a dictionary or serialize to a dictionary")
+
+    for key in sanitized_metadata.keys():
+        if not isinstance(key, str):
+            raise ValueError("metadata keys must be strings")
+
+    return sanitized_metadata
+
+
 def _validate_and_sanitize_experiment_log_partial_args(event: Mapping[str, Any]) -> dict[str, Any]:
-    scores = event.get("scores")
+    sanitized_event = dict(event)
+    scores = sanitized_event.get("scores")
     if scores:
         for name, score in scores.items():
             if not isinstance(name, str):
@@ -2796,15 +2813,10 @@ def _validate_and_sanitize_experiment_log_partial_args(event: Mapping[str, Any])
             if score < 0 or score > 1:
                 raise ValueError("score values must be between 0 and 1")
 
-    metadata = event.get("metadata")
-    if metadata:
-        if not isinstance(metadata, dict):
-            raise ValueError("metadata must be a dictionary")
-        for key in metadata.keys():
-            if not isinstance(key, str):
-                raise ValueError("metadata keys must be strings")
+    if "metadata" in sanitized_event and sanitized_event["metadata"] is not None:
+        sanitized_event["metadata"] = _validate_and_sanitize_metadata(sanitized_event["metadata"])
 
-    metrics = event.get("metrics")
+    metrics = sanitized_event.get("metrics")
     if metrics:
         if not isinstance(metrics, dict):
             raise ValueError("metrics must be a dictionary")
@@ -2816,11 +2828,11 @@ def _validate_and_sanitize_experiment_log_partial_args(event: Mapping[str, Any])
             if not isinstance(value, (int, float)):
                 raise ValueError("metric values must be numbers")
 
-    tags = event.get("tags")
+    tags = sanitized_event.get("tags")
     if tags:
         validate_tags(tags)
 
-    span_attributes = event.get("span_attributes")
+    span_attributes = sanitized_event.get("span_attributes")
     if span_attributes:
         if not isinstance(span_attributes, dict):
             raise ValueError("span_attributes must be a dictionary")
@@ -2828,14 +2840,14 @@ def _validate_and_sanitize_experiment_log_partial_args(event: Mapping[str, Any])
             if not isinstance(key, str):
                 raise ValueError("span_attributes keys must be strings")
 
-    input = event.get("input")
-    inputs = event.get("inputs")
+    input = sanitized_event.get("input")
+    inputs = sanitized_event.get("inputs")
     if input is not None and inputs is not None:
         raise ValueError("Only one of input or inputs (deprecated) can be specified. Prefer input.")
     if inputs is not None:
-        return dict(**{k: v for k, v in event.items() if k not in ["input", "inputs"]}, input=inputs)
+        return dict(**{k: v for k, v in sanitized_event.items() if k not in ["input", "inputs"]}, input=inputs)
     else:
-        return {k: v for k, v in event.items()}
+        return {k: v for k, v in sanitized_event.items()}
 
 
 # Note that this only checks properties that are expected of a complete event.
@@ -3832,7 +3844,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         :param expected: (Optional) the ground truth value (an arbitrary, JSON serializable object) that you'd compare to `output` to determine if your `output` value is correct or not. Braintrust currently does not compare `output` to `expected` for you, since there are so many different ways to do that correctly. Instead, these values are just used to help you navigate your experiments while digging into analyses. However, we may later use these values to re-score outputs or fine-tune your models.
         :param error: (Optional) The error that occurred, if any. If you use tracing to run an experiment, errors are automatically logged when your code throws an exception.
         :param scores: A dictionary of numeric values (between 0 and 1) to log. The scores should give you a variety of signals that help you determine how accurate the outputs are compared to what you expect and diagnose failures. For example, a summarization app might have one score that tells you how accurate the summary is, and another that measures the word similarity between the generated and grouth truth summary. The word similarity score could help you determine whether the summarization was covering similar concepts or not. You can use these scores to help you sort, filter, and compare experiments.
-        :param metadata: (Optional) a dictionary with additional data about the test example, model outputs, or just about anything else that's relevant, that you can use to help find and analyze examples later. For example, you could log the `prompt`, example's `id`, or anything else that would be useful to slice/dice later. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
+        :param metadata: (Optional) a dictionary, or an object that serializes to a dictionary (such as a Pydantic model), with additional data about the test example, model outputs, or just about anything else that's relevant, that you can use to help find and analyze examples later. For example, you could log the `prompt`, example's `id`, or anything else that would be useful to slice/dice later. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
         :param tags: (Optional) a list of strings that you can use to filter and group records later.
         :param metrics: (Optional) a dictionary of metrics to log. The following keys are populated automatically: "start", "end".
         :param id: (Optional) a unique identifier for the event. If you don't provide one, BrainTrust will generate one for you.
@@ -3881,7 +3893,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         :param expected: (Optional) the ground truth value (an arbitrary, JSON serializable object) that you'd compare to `output` to determine if your `output` value is correct or not.
         :param tags: (Optional) a list of strings that you can use to filter and group records later.
         :param comment: (Optional) an optional comment string to log about the event.
-        :param metadata: (Optional) a dictionary with additional data about the feedback. If you have a `user_id`, you can log it here and access it in the Braintrust UI. Note, this metadata does not correspond to the main event itself, but rather the audit log attached to the event.
+        :param metadata: (Optional) a dictionary, or an object that serializes to a dictionary (such as a Pydantic model), with additional data about the feedback. If you have a `user_id`, you can log it here and access it in the Braintrust UI. Note, this metadata does not correspond to the main event itself, but rather the audit log attached to the event. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
         :param source: (Optional) the source of the feedback. Must be one of "external" (default), "app", or "api".
         """
         return _log_feedback_impl(
@@ -4653,18 +4665,10 @@ class Dataset(ObjectFetcher[DatasetEvent]):
 
     def _validate_event(
         self,
-        metadata: Metadata | None = None,
         expected: Any | None = None,
         output: Any | None = None,
         tags: Sequence[str] | None = None,
-    ):
-        if metadata is not None:
-            if not isinstance(metadata, dict):
-                raise ValueError("metadata must be a dictionary")
-            for key in metadata.keys():
-                if not isinstance(key, str):
-                    raise ValueError("metadata keys must be strings")
-
+    ) -> None:
         if expected is not None and output is not None:
             raise ValueError("Only one of expected or output (deprecated) can be specified. Prefer expected.")
 
@@ -4717,15 +4721,18 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         :param input: The argument that uniquely define an input case (an arbitrary, JSON serializable object).
         :param expected: The output of your application, including post-processing (an arbitrary, JSON serializable object).
         :param tags: (Optional) a list of strings that you can use to filter and group records later.
-        :param metadata: (Optional) a dictionary with additional data about the test example, model outputs, or just
-        about anything else that's relevant, that you can use to help find and analyze examples later. For example, you could log the
+        :param metadata: (Optional) a dictionary, or an object that serializes to a dictionary (such as a Pydantic model), with
+        additional data about the test example, model outputs, or just about anything else that's relevant, that you can use to help
+        find and analyze examples later. For example, you could log the
         `prompt`, example's `id`, or anything else that would be useful to slice/dice later. The values in `metadata` can be any
         JSON-serializable type, but its keys must be strings.
         :param id: (Optional) a unique identifier for the event. If you don't provide one, Braintrust will generate one for you.
         :param output: (Deprecated) The output of your application. Use `expected` instead.
         :returns: The `id` of the logged record.
         """
-        self._validate_event(metadata=metadata, expected=expected, output=output, tags=tags)
+        if metadata is not None:
+            metadata = _validate_and_sanitize_metadata(metadata)
+        self._validate_event(expected=expected, output=output, tags=tags)
 
         row_id = id or str(uuid.uuid4())
 
@@ -4760,11 +4767,13 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         :param input: (Optional) The new input value for the record (an arbitrary, JSON serializable object).
         :param expected: (Optional) The new expected output value for the record (an arbitrary, JSON serializable object).
         :param tags: (Optional) A list of strings to update the tags of the record.
-        :param metadata: (Optional) A dictionary to update the metadata of the record. The values in `metadata` can be any
-            JSON-serializable type, but its keys must be strings.
+        :param metadata: (Optional) A dictionary, or an object that serializes to a dictionary (such as a Pydantic model), to update
+            the metadata of the record. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
         :returns: The `id` of the updated record.
         """
-        self._validate_event(metadata=metadata, expected=expected, tags=tags)
+        if metadata is not None:
+            metadata = _validate_and_sanitize_metadata(metadata)
+        self._validate_event(expected=expected, tags=tags)
 
         args = self._create_args(
             id=id,
@@ -5265,7 +5274,7 @@ class Logger(Exportable):
         :param error: (Optional) The error that occurred, if any. If you use tracing to run an experiment, errors are automatically logged when your code throws an exception.
         :param tags: (Optional) a list of strings that you can use to filter and group records later.
         :param scores: (Optional) a dictionary of numeric values (between 0 and 1) to log. The scores should give you a variety of signals that help you determine how accurate the outputs are compared to what you expect and diagnose failures. For example, a summarization app might have one score that tells you how accurate the summary is, and another that measures the word similarity between the generated and grouth truth summary. The word similarity score could help you determine whether the summarization was covering similar concepts or not. You can use these scores to help you sort, filter, and compare logs.
-        :param metadata: (Optional) a dictionary with additional data about the test example, model outputs, or just about anything else that's relevant, that you can use to help find and analyze examples later. For example, you could log the `prompt`, example's `id`, or anything else that would be useful to slice/dice later. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
+        :param metadata: (Optional) a dictionary, or an object that serializes to a dictionary (such as a Pydantic model), with additional data about the test example, model outputs, or just about anything else that's relevant, that you can use to help find and analyze examples later. For example, you could log the `prompt`, example's `id`, or anything else that would be useful to slice/dice later. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
         :param metrics: (Optional) a dictionary of metrics to log. The following keys are populated automatically: "start", "end".
         :param id: (Optional) a unique identifier for the event. If you don't provide one, BrainTrust will generate one for you.
         :param allow_concurrent_with_spans: (Optional) in rare cases where you need to log at the top level separately from using spans on the logger elsewhere, set this to True.
@@ -5313,7 +5322,7 @@ class Logger(Exportable):
         :param expected: (Optional) the ground truth value (an arbitrary, JSON serializable object) that you'd compare to `output` to determine if your `output` value is correct or not.
         :param tags: (Optional) a list of strings that you can use to filter and group records later.
         :param comment: (Optional) an optional comment string to log about the event.
-        :param metadata: (Optional) a dictionary with additional data about the feedback. If you have a `user_id`, you can log it here and access it in the Braintrust UI. Note, this metadata does not correspond to the main event itself, but rather the audit log attached to the event.
+        :param metadata: (Optional) a dictionary, or an object that serializes to a dictionary (such as a Pydantic model), with additional data about the feedback. If you have a `user_id`, you can log it here and access it in the Braintrust UI. Note, this metadata does not correspond to the main event itself, but rather the audit log attached to the event. The values in `metadata` can be any JSON-serializable type, but its keys must be strings.
         :param source: (Optional) the source of the feedback. Must be one of "external" (default), "app", or "api".
         """
         return _log_feedback_impl(
