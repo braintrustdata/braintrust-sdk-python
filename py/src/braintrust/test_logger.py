@@ -22,9 +22,12 @@ from braintrust import (
     init_logger,
     logger,
 )
+from braintrust.gitutil import get_repo_info
 from braintrust.id_gen import OTELIDGenerator, get_id_generator
 from braintrust.logger import (
+    BraintrustState,
     RemoteEvalParameters,
+    _check_org_info,
     _extract_attachments,
     parent_context,
     render_message,
@@ -3699,3 +3702,40 @@ def test_traced_logs_exception_group_sub_exceptions(with_memory_logger):
     logs = with_memory_logger.pop()
     assert len(logs) == 1
     _assert_test_exception_group_contents(logs[0].get("error", ""))
+
+
+def test_check_org_info_no_git_metadata_defaults_to_none():
+    """When org has no git_metadata, state.git_metadata_settings should be collect='none'."""
+    state = BraintrustState()
+    org_info = [
+        {
+            "id": "org-1",
+            "name": "org1",
+            "api_url": "https://api.example.com",
+            "proxy_url": "https://proxy.example.com",
+        }
+    ]
+    _check_org_info(state, org_info, None)
+    assert state.git_metadata_settings.collect == "none"
+
+
+def test_check_org_info_with_git_metadata_uses_server_settings():
+    """When org provides git_metadata, it is used as-is."""
+    state = BraintrustState()
+    org_info = [
+        {
+            "id": "org-1",
+            "name": "org1",
+            "api_url": "https://api.example.com",
+            "proxy_url": "https://proxy.example.com",
+            "git_metadata": {"collect": "some", "fields": ["commit", "branch"]},
+        }
+    ]
+    _check_org_info(state, org_info, None)
+    assert state.git_metadata_settings.collect == "some"
+    assert set(state.git_metadata_settings.fields) == {"commit", "branch"}
+
+
+def test_get_repo_info_without_settings_returns_none():
+    """Direct call to get_repo_info with settings=None should return None."""
+    assert get_repo_info(None) is None

@@ -60,7 +60,7 @@ from .generated_types import (
     PromptOptions,
     SpanAttributes,
 )
-from .git_fields import GitMetadataSettings, RepoInfo, default_git_metadata_settings
+from .git_fields import GitMetadataSettings, RepoInfo
 from .gitutil import get_past_n_ancestors, get_repo_info
 from .merge_row_batch import batch_items, merge_row_batch
 from .object import DEFAULT_IS_LEGACY_DATASET, ensure_dataset_record
@@ -2669,7 +2669,7 @@ def _check_org_info(state, org_info, org_name):
             state.api_url = os.environ.get("BRAINTRUST_API_URL", orgs["api_url"])
             state.proxy_url = os.environ.get("BRAINTRUST_PROXY_URL", orgs["proxy_url"])
             state.git_metadata_settings = GitMetadataSettings(
-                **(orgs.get("git_metadata") or default_git_metadata_settings().as_dict())
+                **(orgs.get("git_metadata") or GitMetadataSettings(collect="none").as_dict())
             )
             break
 
