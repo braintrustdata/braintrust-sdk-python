@@ -1,0 +1,181 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - huggingface.co
+      X-Amzn-Trace-Id:
+      - b9aae0a8-096b-498c-ad20-90584fe69ccd
+      user-agent:
+      - unknown/None; hf_hub/1.15.0; python/3.14.3; agent/pi
+    method: GET
+    uri: https://huggingface.co/api/models/meta-llama/Llama-3.1-8B-Instruct?expand=inferenceProviderMapping
+  response:
+    body:
+      string: '{"_id":"6698d8a0653e4babe21e1e7d","id":"meta-llama/Llama-3.1-8B-Instruct","inferenceProviderMapping":{"novita":{"status":"live","providerId":"meta-llama/llama-3.1-8b-instruct","task":"conversational","isModelAuthor":false},"cerebras":{"status":"live","providerId":"llama3.1-8b","task":"conversational","isModelAuthor":false},"nscale":{"status":"live","providerId":"meta-llama/Llama-3.1-8B-Instruct","task":"conversational","isModelAuthor":false},"featherless-ai":{"status":"live","providerId":"meta-llama/Llama-3.1-8B-Instruct","task":"conversational","isModelAuthor":false},"scaleway":{"status":"live","providerId":"llama-3.1-8b-instruct","task":"conversational","isModelAuthor":false},"sambanova":{"status":"error","providerId":"Meta-Llama-3.1-8B-Instruct","task":"conversational","isModelAuthor":false}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - https://huggingface.co
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Access-Control-Max-Age:
+      - '86400'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '807'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 21 May 2026 15:06:45 GMT
+      ETag:
+      - W/"327-rGmaw5kJdg5YAxbzm0/YqcFylMQ"
+      RateLimit:
+      - '"api";r=999;t=200'
+      RateLimit-Policy:
+      - '"fixed window";"api";q=1000;w=300'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Vary:
+      - Origin
+      Via:
+      - 1.1 a7af18c87ffc07d74544efce5f2b0f9c.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - 7xdFffoUM5JqGzAJVWv8X5sR6dySp2RxlFYeDWqK1TdAKnC-INcUcg==
+      X-Amz-Cf-Pop:
+      - YTO50-P2
+      X-Cache:
+      - Miss from cloudfront
+      X-Powered-By:
+      - huggingface-moon
+      X-Request-Id:
+      - Root=1-6a0f1f84-564720282e66620f7abaa64a;b9aae0a8-096b-498c-ad20-90584fe69ccd
+      cross-origin-opener-policy:
+      - same-origin
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"Say hi in one word."}],"model":"llama3.1-8b","max_tokens":10,"stream":true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '114'
+      Host:
+      - router.huggingface.co
+      X-Amzn-Trace-Id:
+      - 801ebe1c-3d7c-4ce6-bf70-afc3fe297743
+      content-type:
+      - application/json
+      user-agent:
+      - unknown/None; hf_hub/1.15.0; python/3.14.3; agent/pi
+    method: POST
+    uri: https://router.huggingface.co/cerebras/v1/chat/completions
+  response:
+    body:
+      string: 'data: {"id":"chatcmpl-76a95507-d6bb-458d-8521-b05ebdab0519","choices":[{"delta":{"role":"assistant"},"index":0}],"created":1779376005,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk"}
+
+
+        data: {"id":"chatcmpl-76a95507-d6bb-458d-8521-b05ebdab0519","choices":[{"delta":{"content":"Hello"},"index":0}],"created":1779376005,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk"}
+
+
+        data: {"id":"chatcmpl-76a95507-d6bb-458d-8521-b05ebdab0519","choices":[{"delta":{"content":"."},"index":0}],"created":1779376005,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk"}
+
+
+        data: {"id":"chatcmpl-76a95507-d6bb-458d-8521-b05ebdab0519","choices":[{"delta":{},"finish_reason":"stop","index":0}],"created":1779376005,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk","usage":{"total_tokens":44,"completion_tokens":3,"completion_tokens_details":{"accepted_prediction_tokens":0,"rejected_prediction_tokens":0,"reasoning_tokens":0},"prompt_tokens":41,"prompt_tokens_details":{"cached_tokens":0}},"time_info":{"created":1779376005.2869308,"queue_time":0.000086339,"prompt_time":0.001840778,"completion_time":0.001195708,"total_time":0.004965305328369141}}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream; charset=utf-8
+      Date:
+      - Thu, 21 May 2026 15:06:45 GMT
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      Via:
+      - 1.1 f92b450b48c98e711c027c1986c59944.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - K_U4KAXq3N8qf6q893d_OL4G_BMXJTK_MugFx3qJNFkDoe5vS0ogDg==
+      X-Amz-Cf-Pop:
+      - YTO50-P1
+      X-Cache:
+      - Miss from cloudfront
+      X-Powered-By:
+      - huggingface-moon
+      X-Robots-Tag:
+      - none
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - 9ff47ca0bd3de60c-IAD
+      cross-origin-opener-policy:
+      - same-origin
+      inference-id:
+      - chatcmpl-76a95507-d6bb-458d-8521-b05ebdab0519
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - cloudflare
+      set-cookie:
+      - __cf_bm=DBhAKIgey8_p2UGQe3gMNvEU52F_FM9BmPkvQDk3M70-1779376005.2401628-1.0.1.1-zThLkm5nEKWPCgiA587DZIII5KVTDCwqqsh9hlxmC6SPOmRam4aRFWGa8TBYYOlYrBwqs5tUkEmZg3COj3_KSL4sQNEm7iTjf8TaVI8crhYs50kX1BPG.juvEqci6m2h;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.cerebras.ai; Expires=Thu,
+        21 May 2026 15:36:45 GMT
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-inference-provider:
+      - cerebras
+      x-ratelimit-limit-requests-day:
+      - '2880000'
+      x-ratelimit-limit-requests-hour:
+      - '120000'
+      x-ratelimit-limit-requests-minute:
+      - '2000'
+      x-ratelimit-limit-tokens-day:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-hour:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-minute:
+      - '9223372036854775807'
+      x-ratelimit-remaining-requests-day:
+      - '2879999'
+      x-ratelimit-remaining-requests-hour:
+      - '119999'
+      x-ratelimit-remaining-requests-minute:
+      - '1999'
+      x-ratelimit-remaining-tokens-day:
+      - '9223372036854775807'
+      x-ratelimit-remaining-tokens-hour:
+      - '9223372036854775807'
+      x-ratelimit-remaining-tokens-minute:
+      - '9223372036854775807'
+      x-request-id:
+      - 9ff47ca0bd3de60c-IAD
+    status:
+      code: 200
+      message: OK
+version: 1

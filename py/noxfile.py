@@ -534,6 +534,21 @@ def test_mistral(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/mistral/test_mistral.py", version=version)
 
 
+HUGGINGFACE_HUB_VERSIONS = _get_matrix_versions("huggingface-hub")
+
+
+@nox.session()
+@nox.parametrize("version", HUGGINGFACE_HUB_VERSIONS, ids=HUGGINGFACE_HUB_VERSIONS)
+def test_huggingface_hub(session, version):
+    """Test the native HuggingFace Hub SDK integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "huggingface-hub", version)
+    # numpy is required by ``InferenceClient.feature_extraction`` but is not
+    # an install_requires dep of ``huggingface_hub`` upstream.
+    _install_group_locked(session, "test-huggingface-hub")
+    _run_tests(session, f"{INTEGRATION_DIR}/huggingface_hub/test_huggingface_hub.py", version=version)
+
+
 TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 
 

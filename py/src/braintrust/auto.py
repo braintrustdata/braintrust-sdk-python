@@ -18,6 +18,7 @@ from braintrust.integrations import (
     CrewAIIntegration,
     DSPyIntegration,
     GoogleGenAIIntegration,
+    HuggingFaceHubIntegration,
     LangChainIntegration,
     LiteLLMIntegration,
     LiveKitAgentsIntegration,
@@ -58,6 +59,7 @@ def auto_instrument(
     google_genai: bool = True,
     openrouter: bool = True,
     mistral: bool = True,
+    huggingface_hub: bool = True,
     agno: bool = True,
     agentscope: bool = True,
     claude_agent_sdk: bool = True,
@@ -90,6 +92,7 @@ def auto_instrument(
         google_genai: Enable Google GenAI instrumentation (default: True)
         openrouter: Enable OpenRouter instrumentation (default: True)
         mistral: Enable Mistral instrumentation (default: True)
+        huggingface_hub: Enable HuggingFace Hub instrumentation (default: True)
         agno: Enable Agno instrumentation (default: True)
         agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
@@ -165,6 +168,8 @@ def auto_instrument(
         results["openrouter"] = _instrument_integration(OpenRouterIntegration)
     if mistral:
         results["mistral"] = _instrument_integration(MistralIntegration)
+    if huggingface_hub:
+        results["huggingface_hub"] = _instrument_integration(HuggingFaceHubIntegration)
     if agno:
         results["agno"] = _instrument_integration(AgnoIntegration)
     if agentscope:

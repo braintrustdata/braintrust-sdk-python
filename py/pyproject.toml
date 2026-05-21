@@ -179,6 +179,18 @@ test-llamaindex = [
     {include-group = "test"},
 ]
 
+test-huggingface-hub = [
+    {include-group = "test"},
+    # numpy is required by huggingface_hub.InferenceClient.feature_extraction
+    # but is not declared as an install_requires dep upstream.
+    "numpy",
+    # huggingface_hub<1.0 implements AsyncInferenceClient on top of aiohttp;
+    # newer versions ship with httpx already. Pinning aiohttp here keeps the
+    # 0.32.0 floor working without leaking the requirement onto the rest of
+    # the test environment.
+    "aiohttp",
+]
+
 test-cli = [
     {include-group = "test"},
     "httpx==0.28.1",
@@ -227,6 +239,8 @@ lint = [
     "openai",
     "openai-agents",
     "openrouter",
+    "huggingface-hub",
+    "numpy",
     "strands-agents",
     "temporalio",
     "pydantic-ai>=1.10.0",
@@ -400,6 +414,14 @@ latest = "openrouter==0.9.1"
 latest = "mistralai==2.4.5"
 "1.12.4" = "mistralai==1.12.4"
 
+[tool.braintrust.matrix.huggingface-hub]
+# Floor pinned to 0.32.0: the earliest release that exposes the
+# ``provider="auto"`` routing mode the integration relies on for multi-
+# provider use, while still keeping the same chat_completion /
+# text_generation / feature_extraction / sentence_similarity method names.
+latest = "huggingface-hub==1.15.0"
+"0.32.0" = "huggingface-hub==0.32.0"
+
 [tool.braintrust.matrix.temporalio]
 latest = "temporalio==1.27.2"
 "1.20.0" = "temporalio==1.20.0"
@@ -442,6 +464,7 @@ claude_agent_sdk = ["claude-agent-sdk"]
 crewai = ["crewai"]
 dspy = ["dspy"]
 google_genai = ["google-genai"]
+huggingface_hub = ["huggingface-hub"]
 langchain = ["langchain-core"]
 litellm = ["litellm"]
 livekit_agents = ["livekit-agents"]
@@ -469,6 +492,7 @@ google-genai = "google.genai"
 litellm = "litellm"
 livekit-agents = "livekit.agents"
 mistralai = "mistralai"
+huggingface-hub = "huggingface_hub"
 openai = "openai"
 openai-agents = "agents"
 openrouter = "openrouter"

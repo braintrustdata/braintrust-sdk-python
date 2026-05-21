@@ -1,0 +1,118 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": "Say hi in one word."}], "model":
+      "llama3.1-8b", "max_tokens": 10, "stream": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '124'
+      Content-Type:
+      - application/json
+      X-Amzn-Trace-Id:
+      - 8f2c2052-a61f-41c7-be91-349f5d410c28
+      user-agent:
+      - unknown/None; hf_hub/0.32.0; python/3.14.3
+    method: POST
+    uri: https://router.huggingface.co/cerebras/v1/chat/completions
+  response:
+    body:
+      string: 'data: {"id":"chatcmpl-cccb1f54-093f-4715-b6df-2099ceebeb91","choices":[{"delta":{"role":"assistant"},"index":0}],"created":1779375536,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk"}
+
+
+        data: {"id":"chatcmpl-cccb1f54-093f-4715-b6df-2099ceebeb91","choices":[{"delta":{"content":"Hello"},"index":0}],"created":1779375536,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk"}
+
+
+        data: {"id":"chatcmpl-cccb1f54-093f-4715-b6df-2099ceebeb91","choices":[{"delta":{"content":"."},"index":0}],"created":1779375536,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk"}
+
+
+        data: {"id":"chatcmpl-cccb1f54-093f-4715-b6df-2099ceebeb91","choices":[{"delta":{},"finish_reason":"stop","index":0}],"created":1779375536,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion.chunk","usage":{"total_tokens":44,"completion_tokens":3,"completion_tokens_details":{"accepted_prediction_tokens":0,"rejected_prediction_tokens":0,"reasoning_tokens":0},"prompt_tokens":41,"prompt_tokens_details":{"cached_tokens":0}},"time_info":{"created":1779375536.9417322,"queue_time":0.00022068,"prompt_time":0.002238242,"completion_time":0.001191913,"total_time":0.005280017852783203}}
+
+
+        data: [DONE]
+
+
+        '
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Connection:
+      - keep-alive
+      Content-Type:
+      - text/event-stream; charset=utf-8
+      Date:
+      - Thu, 21 May 2026 14:58:56 GMT
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      Via:
+      - 1.1 bb9ef32b857fc891bea749f3fa65f58a.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - N5SdGtsIc5AGQO8u8lUPwA3Bd0YX6AZcgB9ABhvYA9mw4Smr1xTePg==
+      X-Amz-Cf-Pop:
+      - YTO50-P1
+      X-Cache:
+      - Miss from cloudfront
+      X-Powered-By:
+      - huggingface-moon
+      X-Robots-Tag:
+      - none
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - 9ff471319d5be623-IAD
+      cross-origin-opener-policy:
+      - same-origin
+      inference-id:
+      - chatcmpl-cccb1f54-093f-4715-b6df-2099ceebeb91
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - cloudflare
+      set-cookie:
+      - __cf_bm=v996lszj1aANzhw_S2YhWe65nAVbvL5VRzifY1ohSXQ-1779375536.89956-1.0.1.1-UPXIMPSn6TdyiVWxMlExnvoxNUnFkVZ5v0w.o.rbBu7NhEH8ybM0.uY1tv.iPyg2yITQPiw1D17eJAM37SOY6l99FHoZxHA2jy7W3VbY8tOey85n7On76gUwvgPiOAEb;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.cerebras.ai; Expires=Thu,
+        21 May 2026 15:28:56 GMT
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-inference-provider:
+      - cerebras
+      x-ratelimit-limit-requests-day:
+      - '2880000'
+      x-ratelimit-limit-requests-hour:
+      - '120000'
+      x-ratelimit-limit-requests-minute:
+      - '2000'
+      x-ratelimit-limit-tokens-day:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-hour:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-minute:
+      - '9223372036854775807'
+      x-ratelimit-remaining-requests-day:
+      - '2879998'
+      x-ratelimit-remaining-requests-hour:
+      - '119998'
+      x-ratelimit-remaining-requests-minute:
+      - '1998'
+      x-ratelimit-remaining-tokens-day:
+      - '9223372036854775807'
+      x-ratelimit-remaining-tokens-hour:
+      - '9223372036854775807'
+      x-ratelimit-remaining-tokens-minute:
+      - '9223372036854775807'
+      x-request-id:
+      - 9ff471319d5be623-IAD
+    status:
+      code: 200
+      message: OK
+version: 1
