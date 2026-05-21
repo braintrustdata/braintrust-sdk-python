@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Awaitable, Sequence
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, Protocol, TypeAlias, TypeVar
@@ -9,6 +7,21 @@ from typing_extensions import NotRequired, TypedDict
 from .generated_types import ObjectReference
 from .logger import Metadata
 from .trace import Trace
+
+
+__all__ = [
+    "DatasetPipeline",
+    "DatasetPipelineDefinition",
+    "DatasetPipelineRow",
+    "DatasetPipelineScope",
+    "DatasetPipelineSource",
+    "DatasetPipelineTarget",
+    "DatasetPipelineTransform",
+    "DatasetPipelineTransformArgs",
+    "DatasetPipelineTransformResult",
+    "PipelineSource",
+    "PipelineTarget",
+]
 
 
 DatasetPipelineScope: TypeAlias = Literal["span", "trace"]
