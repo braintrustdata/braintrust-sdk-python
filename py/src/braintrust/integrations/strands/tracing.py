@@ -1,5 +1,6 @@
 """Strands Agents tracing helpers."""
 
+import uuid
 import weakref
 from typing import Any
 
@@ -9,6 +10,32 @@ from braintrust.span_types import SpanTypeAttribute
 
 
 _SPANS_BY_OTEL_SPAN: "weakref.WeakKeyDictionary[Any, Span]" = weakref.WeakKeyDictionary()
+_SPANS_BY_INVALID_OTEL_KEY: dict[uuid.UUID, Span] = {}
+
+
+class _InvalidOtelSpanKey:
+    """Per-call key for OTEL's shared INVALID_SPAN singleton.
+
+    Strands keeps using the returned span object as an OTEL span, so this proxy
+    delegates span methods to INVALID_SPAN while giving Braintrust a unique key
+    for matching each start/end lifecycle pair.
+    """
+
+    def __init__(self, otel_span: Any):
+        self.key = uuid.uuid4()
+        self._otel_span = otel_span
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._otel_span, name)
+
+    def __eq__(self, other: Any) -> bool:
+        return self._otel_span == other
+
+    def __hash__(self) -> int:
+        return hash(self.key)
+
+    def __bool__(self) -> bool:
+        return bool(self._otel_span)
 
 
 def _arg(args: Any, kwargs: dict[str, Any], index: int, name: str, default: Any = None) -> Any:
@@ -51,15 +78,23 @@ def _agent_metrics_and_metadata(result: Any) -> tuple[dict[str, Any], dict[str, 
     return bt_metrics, metadata
 
 
+def _is_valid_otel_span(otel_span: Any) -> bool:
+    span_context = getattr(otel_span, "get_span_context", lambda: None)()
+    return bool(getattr(span_context, "is_valid", False))
+
+
 def _span_for_otel(otel_span: Any) -> Span | None:
     if otel_span is None:
         return None
+    if isinstance(otel_span, _InvalidOtelSpanKey):
+        return _SPANS_BY_INVALID_OTEL_KEY.get(otel_span.key)
     return _SPANS_BY_OTEL_SPAN.get(otel_span)
 
 
 def _start_span_for_otel(otel_span: Any, *, name: str, span_type: str, input: Any = None, metadata: Any = None) -> Any:
     if otel_span is None:
         return otel_span
+    span_key = otel_span if _is_valid_otel_span(otel_span) else _InvalidOtelSpanKey(otel_span)
     parent = None
     # Strands passes parent OTEL spans into child start methods. If present, nest under the mirrored BT span.
     if isinstance(metadata, dict):
@@ -68,8 +103,11 @@ def _start_span_for_otel(otel_span: Any, *, name: str, span_type: str, input: An
     span = (parent.start_span if parent is not None else start_span)(
         name=name, type=span_type, input=input, metadata=metadata
     )
-    _SPANS_BY_OTEL_SPAN[otel_span] = span
-    return otel_span
+    if isinstance(span_key, _InvalidOtelSpanKey):
+        _SPANS_BY_INVALID_OTEL_KEY[span_key.key] = span
+    else:
+        _SPANS_BY_OTEL_SPAN[span_key] = span
+    return span_key
 
 
 def _end_span_for_otel(
@@ -80,7 +118,11 @@ def _end_span_for_otel(
     metrics: Any = None,
     error: BaseException | None = None,
 ) -> None:
-    span = _SPANS_BY_OTEL_SPAN.pop(otel_span, None)
+    span = (
+        _SPANS_BY_INVALID_OTEL_KEY.pop(otel_span.key, None)
+        if isinstance(otel_span, _InvalidOtelSpanKey)
+        else _SPANS_BY_OTEL_SPAN.pop(otel_span, None)
+    )
     if span is None:
         return
     if error is not None:

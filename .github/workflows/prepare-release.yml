@@ -1,0 +1,66 @@
+# Starts the stable Python SDK release process by opening a PR that bumps the
+# package version. Merge the PR to trigger the approval-gated publish workflow.
+name: Prepare Stable Python SDK Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Stable version to release (e.g., 0.22.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Validate version format
+        run: python py/scripts/validate-release.py stable --version "${{ inputs.version }}" --validate-version-only
+
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          app-id: ${{ secrets.BRAINTRUST_BOT_APP_ID }}
+          private-key: ${{ secrets.BRAINTRUST_BOT_PRIVATE_KEY }}
+
+      - name: Bump version
+        run: python py/scripts/validate-release.py stable --version "${{ inputs.version }}" --set-version
+
+      - name: Compute changeset link
+        id: changeset
+        env:
+          VERSION: ${{ inputs.version }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          LAST_TAG=$(git tag --sort=-version:refname 'py-sdk-v*' | head -n 1 || true)
+          if [[ -n "$LAST_TAG" ]]; then
+            URL="${REPO_URL}/compare/${LAST_TAG}...release/py-sdk-v${VERSION}"
+            echo "body=Changeset since [\`${LAST_TAG}\`](${REPO_URL}/releases/tag/${LAST_TAG}): ${URL}" >> "$GITHUB_OUTPUT"
+          else
+            URL="${REPO_URL}/commits/release/py-sdk-v${VERSION}"
+            echo "body=Changeset: ${URL}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          add-paths: py/src/braintrust/version.py
+          branch: release/py-sdk-v${{ inputs.version }}
+          commit-message: "chore: release Python SDK v${{ inputs.version }}"
+          title: "chore: release Python SDK v${{ inputs.version }}"
+          body: |
+            Automated stable Python SDK release PR for `${{ inputs.version }}`. Merging will trigger approval-gated publishing and create the `py-sdk-v${{ inputs.version }}` release tag.
+
+            ${{ steps.changeset.outputs.body }}

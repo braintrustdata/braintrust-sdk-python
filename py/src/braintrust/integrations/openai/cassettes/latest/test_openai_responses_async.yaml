@@ -15,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.32.0
+      - AsyncOpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -25,11 +25,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,38 +38,42 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_04c678b6048fad3e0069e107a85180819f932a0db9e914f793\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355240,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0e24bef155d1c07c006a0c7eb9aab0819698e7c09a12c55a16\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1779203769,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355240,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1779203771,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_04c678b6048fad3e0069e107a8f780819fbd9ee7b57d594806\",\n
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_0e24bef155d1c07c006a0c7ebb9e388196bf10885fa297f049\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
         \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\":
+        [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\": {\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ed4677bb93baab6-YYZ
+      Access-Control-Expose-Headers:
+      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fe40fa7fa71dda9-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:00:41 GMT
+      - Tue, 19 May 2026 15:16:11 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -80,22 +84,20 @@ interactions:
       - nosniff
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '1549'
+      - '1578'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '766'
+      - '2280'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=nnchCkmg_d0WDw8yvbXsqweC4mBJkglXInYgwMZEmXE-1776355240.276367-1.0.1.1-6sLVfca.0VI44lW8n7mGxK.0Grod8MywKa26x26.KNigbhH.artM3hFeYrGqUvczgZM.NkNkDibREg7AdAunKnNpwofCPsUSDeNUoMcHYutVc0Bb2Waj_dX1wUvECTOl;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
-        16:30:41 GMT
+      - __cf_bm=Uxayqp.mg2G7xdbK3L4I2mtCOkgEqX7wmmGXgJ0jDZY-1779203769.5967176-1.0.1.1-Fle6bBktUUaBxeI1dhhXpobqzuZoTiPJpmm47XMvP2DZGeprEZ2VZUFzanM2CStLkvu1MzmKZVvtoXECoC2xjanXENNKJov5VP193xX3pgOoBYL3y03ZwnUPeeTzodGJ;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 15:46:11 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -109,7 +111,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b010561709a34b72ae4d5a67bda09707
+      - req_5827634fd5b4443b860e7f438434ee30
     status:
       code: 200
       message: OK
@@ -129,7 +131,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.32.0
+      - AsyncOpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -139,11 +141,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -152,38 +154,42 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0ea666b83cc2c2830069e107a952108195b5e8532d4c3fe9f4\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355241,\n  \"status\":
+      string: "{\n  \"id\": \"resp_06b07b3a8addc94c006a0c7ebc3a848196a5e6283786a77889\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1779203772,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355241,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1779203772,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
-        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0ea666b83cc2c2830069e107a9d3fc81959b08648e5ce633da\",\n
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_06b07b3a8addc94c006a0c7ebcaf20819691b6554ad68861dc\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
         \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": null,\n  \"reasoning\": {\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        22,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 24\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\":
+        [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\": {\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ed46781edd652e6-YYZ
+      Access-Control-Expose-Headers:
+      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fe40fb7fe6dcbfd-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:00:41 GMT
+      - Tue, 19 May 2026 15:16:12 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -194,22 +200,20 @@ interactions:
       - nosniff
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '1549'
+      - '1578'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '649'
+      - '700'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=OsYWZbUljA14Jk__kSqSFl1iNY4sRf64p4JwKLT3AYE-1776355241.2621083-1.0.1.1-uTfOs1rU_x2ebs0sMXNk1qYb5YGlI3pd457czafsU5f1Y9eaCnYLUOxQDPG32Ggrr1SSKExz7WoD.QoOaEk7_px9txYAly0i_eyShzqpzC6VS3ZoSjd0GAeImZXPTZFq;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
-        16:30:41 GMT
+      - __cf_bm=4rY3SNsC3CSKCkXi4x4Gn0gJv6aC5iUFEtwXAM9yTHE-1779203772.1538463-1.0.1.1-fUHWwNWlOujQp1DOz88G54BHbYDfmBePG93LZ8awYpf6RIz4.veDssKBvp87kKdo.dfFfl97YsbVCmHlgaVt9sPhqSTnBweazus3qovK5ws3kt3dHiABQddTH2Yr8_9m;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 15:46:12 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -217,13 +221,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999957'
+      - '149999960'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5711a93548f44594b49235a88d94229b
+      - req_c9f6cced20374f089a1fe8a9b9b348db
     status:
       code: 200
       message: OK
@@ -241,11 +245,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=nnchCkmg_d0WDw8yvbXsqweC4mBJkglXInYgwMZEmXE-1776355240.276367-1.0.1.1-6sLVfca.0VI44lW8n7mGxK.0Grod8MywKa26x26.KNigbhH.artM3hFeYrGqUvczgZM.NkNkDibREg7AdAunKnNpwofCPsUSDeNUoMcHYutVc0Bb2Waj_dX1wUvECTOl
+      - __cf_bm=Uxayqp.mg2G7xdbK3L4I2mtCOkgEqX7wmmGXgJ0jDZY-1779203769.5967176-1.0.1.1-Fle6bBktUUaBxeI1dhhXpobqzuZoTiPJpmm47XMvP2DZGeprEZ2VZUFzanM2CStLkvu1MzmKZVvtoXECoC2xjanXENNKJov5VP193xX3pgOoBYL3y03ZwnUPeeTzodGJ
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.32.0
+      - AsyncOpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -255,11 +259,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -268,24 +272,26 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0828ff1ed02eb0c00069e107aa23388191b459bba44640fbe1\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355242,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0d6e885e00fc0170006a0c7ebd4104819a9af14bc63e3a468f\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1779203773,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355242,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1779203774,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n      \"id\": \"msg_0828ff1ed02eb0c00069e107aa75488191a4969c0ab81d34aa\",\n
+        \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
+        \     \"id\": \"msg_0d6e885e00fc0170006a0c7ebdebec819aba9439b6eefddf55\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
-        plus 12 equals 24 by simple addition.\\\"}\"\n        }\n      ],\n      \"role\":
-        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
-        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n
-        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"json_schema\",\n      \"description\": null,\n      \"name\": \"NumberAnswer\",\n
-        \     \"schema\": {\n        \"properties\": {\n          \"value\": {\n            \"title\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"Adding
+        the two numbers together: 12 + 12 equals 24.\\\"}\"\n        }\n      ],\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"json_schema\",\n
+        \     \"description\": null,\n      \"name\": \"NumberAnswer\",\n      \"schema\":
+        {\n        \"properties\": {\n          \"value\": {\n            \"title\":
         \"Value\",\n            \"type\": \"integer\"\n          },\n          \"reasoning\":
         {\n            \"title\": \"Reasoning\",\n            \"type\": \"string\"\n
         \         }\n        },\n        \"required\": [\n          \"value\",\n          \"reasoning\"\n
@@ -294,18 +300,22 @@ interactions:
         \   },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 21,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 80\n  },\n
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 25,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 84\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      CF-RAY:
-      - 9ed467871e40de44-YYZ
+      Access-Control-Expose-Headers:
+      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fe40fbe4b8fab46-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:00:42 GMT
+      - Tue, 19 May 2026 15:16:14 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -316,14 +326,12 @@ interactions:
       - nosniff
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '2114'
+      - '2154'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '724'
+      - '1526'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -341,7 +349,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6fdcccc4f5e34a0695e7eb8977629d98
+      - req_9e8f2627ab6740d88d8089ea11509c22
     status:
       code: 200
       message: OK
@@ -359,11 +367,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=OsYWZbUljA14Jk__kSqSFl1iNY4sRf64p4JwKLT3AYE-1776355241.2621083-1.0.1.1-uTfOs1rU_x2ebs0sMXNk1qYb5YGlI3pd457czafsU5f1Y9eaCnYLUOxQDPG32Ggrr1SSKExz7WoD.QoOaEk7_px9txYAly0i_eyShzqpzC6VS3ZoSjd0GAeImZXPTZFq
+      - __cf_bm=4rY3SNsC3CSKCkXi4x4Gn0gJv6aC5iUFEtwXAM9yTHE-1779203772.1538463-1.0.1.1-fUHWwNWlOujQp1DOz88G54BHbYDfmBePG93LZ8awYpf6RIz4.veDssKBvp87kKdo.dfFfl97YsbVCmHlgaVt9sPhqSTnBweazus3qovK5ws3kt3dHiABQddTH2Yr8_9m
       Host:
       - api.openai.com
       User-Agent:
-      - AsyncOpenAI/Python 2.32.0
+      - AsyncOpenAI/Python 2.37.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -373,11 +381,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.32.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.14.3
+      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -386,44 +394,51 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0d6bd2d11339f5af0069e107ab0b3c819caf158b7266e72171\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1776355243,\n  \"status\":
+      string: "{\n  \"id\": \"resp_01555bd290b5f026006a0c7ebf00d88199a48bd176394964e8\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1779203775,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1776355243,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1779203776,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"output\": [\n    {\n      \"id\": \"msg_0d6bd2d11339f5af0069e107ab786c819c96bc2358f29afaa7\",\n
+        \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
+        \     \"id\": \"msg_01555bd290b5f026006a0c7ebf7c4c819983a9ad8a56e41258\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"Adding
-        12 and 12 together gives 24.\\\"}\"\n        }\n      ],\n      \"role\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
+        plus 12 equals 24 because when you add two identical numbers together, you
+        simply double the value of one of them.\\\"}\"\n        }\n      ],\n      \"role\":
         \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
         0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        null,\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\": null\n
-        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"json_schema\",\n      \"description\": null,\n      \"name\": \"NumberAnswer\",\n
-        \     \"schema\": {\n        \"properties\": {\n          \"value\": {\n            \"title\":
-        \"Value\",\n            \"type\": \"integer\"\n          },\n          \"reasoning\":
-        {\n            \"title\": \"Reasoning\",\n            \"type\": \"string\"\n
-        \         }\n        },\n        \"required\": [\n          \"value\",\n          \"reasoning\"\n
-        \       ],\n        \"title\": \"NumberAnswer\",\n        \"type\": \"object\",\n
-        \       \"additionalProperties\": false\n      },\n      \"strict\": true\n
-        \   },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 21,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 80\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \"in_memory\",\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\":
+        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
+        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"json_schema\",\n      \"description\": null,\n      \"name\":
+        \"NumberAnswer\",\n      \"schema\": {\n        \"properties\": {\n          \"value\":
+        {\n            \"title\": \"Value\",\n            \"type\": \"integer\"\n
+        \         },\n          \"reasoning\": {\n            \"title\": \"Reasoning\",\n
+        \           \"type\": \"string\"\n          }\n        },\n        \"required\":
+        [\n          \"value\",\n          \"reasoning\"\n        ],\n        \"title\":
+        \"NumberAnswer\",\n        \"type\": \"object\",\n        \"additionalProperties\":
+        false\n      },\n      \"strict\": true\n    },\n    \"verbosity\": \"medium\"\n
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        59,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 36,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 95\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
-      CF-RAY:
-      - 9ed4678cbd928e83-YYZ
+      Access-Control-Expose-Headers:
+      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9fe40fc93bc5ac09-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Thu, 16 Apr 2026 16:00:44 GMT
+      - Tue, 19 May 2026 15:16:16 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -434,14 +449,12 @@ interactions:
       - nosniff
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
       content-length:
-      - '2109'
+      - '2220'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1048'
+      - '1460'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -453,13 +466,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999920'
+      - '149999922'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_7d161d4ca4674c3d8e6454e2dc4597f6
+      - req_cc9dee4d888a48d7a6dbfb903875e5ee
     status:
       code: 200
       message: OK

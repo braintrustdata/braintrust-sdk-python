@@ -168,6 +168,14 @@
             ],
             "additionalProperties": {}
           },
+          "secret_updated_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "User id of the last update to the encrypted secret value"
+          },
           "preview_secret": {
             "type": [
               "string",
@@ -1297,6 +1305,9 @@
                 "items": {
                   "$ref": "#/components/schemas/ChatCompletionMessageReasoning"
                 }
+              },
+              "reasoning_signature": {
+                "type": "string"
               }
             },
             "required": [
@@ -1597,6 +1608,9 @@
                 "items": {
                   "$ref": "#/components/schemas/ChatCompletionMessageReasoning"
                 }
+              },
+              "reasoning_signature": {
+                "type": "string"
               }
             },
             "required": [
@@ -2337,6 +2351,14 @@
             ],
             "format": "date-time",
             "description": "Date of last update to the encrypted secret value itself"
+          },
+          "secret_updated_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "User id of the last update to the encrypted secret value"
           },
           "used": {
             "type": [
@@ -7711,6 +7733,9 @@
             "maximum": 1,
             "description": "The sampling rate for topic automation"
           },
+          "facet_model": {
+            "$ref": "#/components/schemas/TopicAutomationFacetModel"
+          },
           "facet_functions": {
             "type": "array",
             "items": {
@@ -7855,6 +7880,18 @@
           }
         ],
         "description": "Optional data scope for topic automation."
+      },
+      "TopicAutomationFacetModel": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "brain-facet-latest",
+          "brain-facet-1",
+          "brain-facet-2"
+        ],
+        "description": "Optional facet model override for topic automation"
       },
       "TopicMapData": {
         "type": "object",
@@ -8137,13 +8174,6 @@
             ],
             "format": "date-time",
             "description": "Date of user creation"
-          },
-          "last_active_at": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "description": "Unix timestamp in milliseconds of the user's last activity, when available"
           }
         },
         "required": [

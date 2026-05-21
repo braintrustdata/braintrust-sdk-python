@@ -1,0 +1,115 @@
+interactions:
+- request:
+    body: '{"model":"gpt-3.5-turbo-instruct","prompt":"What''s 12 + 12?"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '61'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 1.99.9
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 1.99.9
+      X-Stainless-Raw-Response:
+      - 'true'
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.12.12
+      x-stainless-read-timeout:
+      - '600.0'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"cmpl-DdJ9HtCsgRTbqBUitaYeCb6F03nAP\",\n  \"object\":
+        \"text_completion\",\n  \"created\": 1778260771,\n  \"model\": \"gpt-3.5-turbo-instruct:20230824-v2\",\n
+        \ \"choices\": [\n    {\n      \"text\": \"\\n12 + 12 = 24\",\n      \"index\":
+        0,\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
+        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\":
+        8,\n    \"total_tokens\": 16\n  }\n}\n"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9f8a213fcfa034bd-SJC
+      Cache-Control:
+      - no-cache, must-revalidate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 08 May 2026 17:19:32 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - envoy-router-6bb47b9fb6-dlvwm
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '383'
+      openai-model:
+      - gpt-3.5-turbo-instruct:20230824-v2
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '183'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=J7BwJkU4m3tydxu1TkSveYALVcfIWtQLIywG_Z3ocQk-1778260771.8019595-1.0.1.1-58SjNkFWP1Gv_WcjPlzrr_En2YMwTJG.KPMIrIwd3zcJe9Di0qBgjsHtErhXq_sKTthex4_ynaF99wvwmCV3gaDS.LnE5NkagenL9n2DEQW3BCP13HK5FbW4LoU1u1sF;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 08 May 2026
+        17:49:32 GMT
+      x-engine-geography:
+      - US
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '3500'
+      x-ratelimit-limit-tokens:
+      - '90000'
+      x-ratelimit-remaining-requests:
+      - '3498'
+      x-ratelimit-remaining-tokens:
+      - '89995'
+      x-ratelimit-reset-requests:
+      - 17ms
+      x-ratelimit-reset-tokens:
+      - 2ms
+      x-request-id:
+      - req_9df32c1fe39a4e36b70eb5a753424340
+    status:
+      code: 200
+      message: OK
+version: 1

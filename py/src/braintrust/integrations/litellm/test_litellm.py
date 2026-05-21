@@ -17,6 +17,7 @@ from braintrust.test_helpers import assert_dict_matches, init_test_logger
 TEST_ORG_ID = "test-org-litellm-py-tracing"
 PROJECT_NAME = "test-project-litellm-py-tracing"
 TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
+TEST_TEXT_MODEL = "gpt-3.5-turbo-instruct"
 TEST_PROMPT = "What's 12 + 12?"
 TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
@@ -96,6 +97,55 @@ async def test_litellm_acompletion_metrics(memory_logger):
     assert span["metadata"]["model"] == TEST_MODEL
     assert span["metadata"]["provider"] == "litellm"
     assert TEST_PROMPT in str(span["input"])
+
+
+@pytest.mark.vcr
+def test_litellm_text_completion_metrics(memory_logger) -> None:
+    assert not memory_logger.pop()
+
+    start = time.time()
+    response = litellm.text_completion(model=TEST_TEXT_MODEL, prompt=TEST_PROMPT)
+    end = time.time()
+
+    assert response
+    assert response.choices[0].text
+    assert "24" in response.choices[0].text or "twenty-four" in response.choices[0].text.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["model"] == TEST_TEXT_MODEL
+    assert span["metadata"]["provider"] == "litellm"
+    assert TEST_PROMPT in str(span["input"])
+    assert "text" in span["output"][0]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_litellm_atext_completion_metrics(memory_logger):
+    assert not memory_logger.pop()
+
+    start = time.time()
+    response = await litellm.atext_completion(model=TEST_TEXT_MODEL, prompt=TEST_PROMPT)
+    end = time.time()
+
+    assert response
+    assert response.choices[0].text
+    assert "24" in response.choices[0].text or "twenty-four" in response.choices[0].text.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span
+    metrics = span["metrics"]
+    assert_metrics_are_valid(metrics, start, end)
+    assert span["metadata"]["model"] == TEST_TEXT_MODEL
+    assert span["metadata"]["provider"] == "litellm"
+    assert TEST_PROMPT in str(span["input"])
+    assert "text" in span["output"][0]
 
 
 @pytest.mark.vcr
@@ -298,31 +348,46 @@ def test_litellm_moderation(memory_logger):
 
 
 @pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_litellm_amoderation(memory_logger):
+    assert not memory_logger.pop()
+
+    response = await litellm.amoderation(model="omni-moderation-latest", input="This is a test message")
+
+    assert response
+    assert response.results
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["metadata"]["model"] == "omni-moderation-latest"
+    assert span["metadata"]["provider"] == "litellm"
+    assert "This is a test message" in str(span["input"])
+
+
+@pytest.mark.vcr
 def test_litellm_image_generation(memory_logger):
     assert not memory_logger.pop()
 
     prompt = "A tiny red square on a white background"
 
     response = litellm.image_generation(
-        model="dall-e-2",
+        model="gpt-image-1-mini",
         prompt=prompt,
-        size="256x256",
-        response_format="url",
+        size="1024x1024",
     )
 
     assert response
     assert response.data
-    assert response.data[0].url
+    assert response.data[0].b64_json or response.data[0].url
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["model"] == "dall-e-2"
+    assert span["metadata"]["model"] == "gpt-image-1-mini"
     assert span["metadata"]["provider"] == "litellm"
-    assert span["metadata"]["response_format"] == "url"
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
-    assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
     assert span["metrics"]["duration"] >= 0
 
 
@@ -334,25 +399,22 @@ async def test_litellm_aimage_generation(memory_logger):
     prompt = "A tiny blue square on a white background"
 
     response = await litellm.aimage_generation(
-        model="dall-e-2",
+        model="gpt-image-1-mini",
         prompt=prompt,
-        size="256x256",
-        response_format="url",
+        size="1024x1024",
     )
 
     assert response
     assert response.data
-    assert response.data[0].url
+    assert response.data[0].b64_json or response.data[0].url
 
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["metadata"]["model"] == "dall-e-2"
+    assert span["metadata"]["model"] == "gpt-image-1-mini"
     assert span["metadata"]["provider"] == "litellm"
-    assert span["metadata"]["response_format"] == "url"
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
-    assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
     assert span["metrics"]["duration"] >= 0
 
 

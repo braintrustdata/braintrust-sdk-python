@@ -57,6 +57,10 @@ class AISecret(TypedDict):
     """
     type: NotRequired[str | None]
     metadata: NotRequired[Mapping[str, Any] | None]
+    secret_updated_by_user_id: NotRequired[str | None]
+    """
+    User id of the last update to the encrypted secret value
+    """
     preview_secret: NotRequired[str | None]
 
 
@@ -412,6 +416,7 @@ class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam2(TypedDic
     name: NotRequired[str | None]
     tool_calls: NotRequired[Sequence[ChatCompletionMessageToolCall] | None]
     reasoning: NotRequired[Sequence[ChatCompletionMessageReasoning] | None]
+    reasoning_signature: NotRequired[str | None]
 
 
 class ChatCompletionOpenAIMessageParamChatCompletionOpenAIMessageParam3(TypedDict):
@@ -615,6 +620,10 @@ class EnvVar(TypedDict):
     secret_updated_at: NotRequired[str | None]
     """
     Date of last update to the encrypted secret value itself
+    """
+    secret_updated_by_user_id: NotRequired[str | None]
+    """
+    User id of the last update to the encrypted secret value
     """
     used: NotRequired[str | None]
     """
@@ -2410,6 +2419,14 @@ Optional data scope for topic automation.
 """
 
 
+TopicAutomationFacetModel: TypeAlias = Literal[
+    'brain-facet-latest', 'brain-facet-1', 'brain-facet-2'
+]
+"""
+Optional facet model override for topic automation
+"""
+
+
 class Function1Function1(TypedDict):
     type: Literal['function']
     id: str
@@ -2535,10 +2552,6 @@ class User(TypedDict):
     created: NotRequired[str | None]
     """
     Date of user creation
-    """
-    last_active_at: NotRequired[float | None]
-    """
-    Unix timestamp in milliseconds of the user's last activity, when available
     """
 
 
@@ -2768,6 +2781,7 @@ class ChatCompletionMessageParamChatCompletionMessageParam2(TypedDict):
     name: NotRequired[str | None]
     tool_calls: NotRequired[Sequence[ChatCompletionMessageToolCall] | None]
     reasoning: NotRequired[Sequence[ChatCompletionMessageReasoning] | None]
+    reasoning_signature: NotRequired[str | None]
 
 
 ChatCompletionMessageParam: TypeAlias = (
@@ -3323,6 +3337,7 @@ class TopicAutomationConfig(TypedDict):
     """
     The sampling rate for topic automation
     """
+    facet_model: NotRequired[TopicAutomationFacetModel | None]
     facet_functions: Sequence[SavedFunctionId]
     """
     Facet functions used by the topic automation

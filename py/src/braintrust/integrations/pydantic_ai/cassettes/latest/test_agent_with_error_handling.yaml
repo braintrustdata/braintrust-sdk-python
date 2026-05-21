@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.89.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.33.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -44,10 +44,12 @@ interactions:
         'gif', 'webp'].\",\n    \"type\": \"invalid_request_error\",\n    \"param\":
         null,\n    \"code\": \"invalid_image_format\"\n  }\n}"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f50695539a1b1a2-YYZ
+      - 9fe43b2019c90426-YYZ
       Connection:
       - keep-alive
       Content-Length:
@@ -55,7 +57,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Fri, 01 May 2026 17:12:30 GMT
+      - Tue, 19 May 2026 15:45:50 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -64,20 +66,21 @@ interactions:
       - nosniff
       access-control-expose-headers:
       - X-Request-ID
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '23'
+      - '10'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=B.5.W6yRE9IZgAZgHk83nz99.WuJmUmnScmEeSA1zOI-1777655550.2780886-1.0.1.1-_qHUI1NRl9THMwypvyUMBDOu8z6zGNMll.IL9JE8VRwlnodtTXfiQaDDvxHBAeB6RJMj7B3ywZGPJSFIJFFnaDmeSRYzRhMV2.sZa7maAVpDmzIlyxoCHRR_XqlLftgo;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
-        17:42:30 GMT
+      - __cf_bm=7gH3U8Ei7lzNzdhrpdCoIuHfyxijUL_u.8No5q510JM-1779205550.0918655-1.0.1.1-M9i83QNRL9MRZCNJsfhXD.sm3KUb9GzwfpMyH_aVOZVxSLf9bAKFq8T9CqpREmrYel1HwkMd0Goq_yu9r.CcVhgem6sOQ8R9V7mr3O3Q.6lCnpUBaynuQQ0HHnS6WV5M;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:15:50 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
@@ -99,7 +102,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_18694b72a4654f8692afff1f2c86efe3
+      - req_fa21aa4835a74c669778b7c14742d236
     status:
       code: 400
       message: Bad Request

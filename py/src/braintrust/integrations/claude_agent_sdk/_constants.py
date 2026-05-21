@@ -48,6 +48,7 @@ class MCPToolMetadataValues:
 DEFAULT_TOOL_NAME: Final[str] = "unknown"
 
 CLAUDE_AGENT_TASK_SPAN_NAME: Final[str] = "Claude Agent"
+CLAUDE_AGENT_RUN_FAILED_ERROR: Final[str] = "Claude Agent run failed"
 ANTHROPIC_MESSAGES_CREATE_SPAN_NAME: Final[str] = "anthropic.messages.create"
 
 MCP_TOOL_PREFIX: Final[str] = "mcp__"

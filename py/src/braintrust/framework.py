@@ -48,7 +48,7 @@ from .parameters import (
     validate_parameters,
 )
 from .resource_manager import ResourceManager
-from .score import Classification, ClassificationItem, Score, is_classification, is_score, is_scorer
+from .score import Classification, ClassificationItem, Score, ScoreLike, is_classification, is_score, is_scorer
 from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
 from .types._eval import EvalCaseDict, EvalCaseDictNoOutput, ExperimentDatasetEvent
@@ -216,7 +216,7 @@ class EvalScorerArgs(SerializableDataClass, Generic[Input, Output, Expected]):
     metadata: Metadata | None = None
 
 
-OneOrMoreScores = float | int | bool | None | Score | list[Score]
+OneOrMoreScores = float | int | bool | None | ScoreLike | Sequence[ScoreLike]
 OneOrMoreClassifications = None | Classification | Mapping[str, Any] | list[Classification | Mapping[str, Any]]
 
 
@@ -863,7 +863,7 @@ async def EvalAsync(
     summarized and compared to this experiment.
     :param base_experiment_id: An optional experiment id to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment. This takes precedence over `base_experiment_name` if specified.
-    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect all git metadata fields allowed in org-level settings.
+    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect git metadata fields allowed in org-level settings, excluding diff content unless the org opts in.
     :param repo_info: Optionally explicitly specify the git metadata for this experiment. This takes precedence over `git_metadata_settings` if specified.
     :param error_score_handler: Optionally supply a custom function to specifically handle score values when tasks or scoring functions have errored.
     :param description: An optional description for the experiment.
@@ -991,7 +991,7 @@ def Eval(
     summarized and compared to this experiment.
     :param base_experiment_id: An optional experiment id to use as a base. If specified, the new experiment will be
     summarized and compared to this experiment. This takes precedence over `base_experiment_name` if specified.
-    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect all git metadata fields allowed in org-level settings.
+    :param git_metadata_settings: Optional settings for collecting git metadata. By default, will collect git metadata fields allowed in org-level settings, excluding diff content unless the org opts in.
     :param repo_info: Optionally explicitly specify the git metadata for this experiment. This takes precedence over `git_metadata_settings` if specified.
     :param error_score_handler: Optionally supply a custom function to specifically handle score values when tasks or scoring functions have errored.
     :param description: An optional description for the experiment.
@@ -1286,7 +1286,7 @@ def _classifier_name(classifier, classifier_idx):
     return _callable_name(classifier, classifier_idx, "classifier")
 
 
-def _build_span_metadata(results: list[Score] | list[Classification]) -> Metadata | None:
+def _build_span_metadata(results: list[ScoreLike] | list[Classification]) -> Metadata | None:
     if not results:
         return None
     if len(results) == 1:

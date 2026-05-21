@@ -10,7 +10,7 @@
             "hooks": null,
             "subtype": "initialize"
           },
-          "request_id": "req_1_d3201ce9",
+          "request_id": "req_1_9dfd30e4",
           "type": "control_request"
         }
       }
@@ -19,7 +19,7 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_d3201ce9",
+          "request_id": "req_1_9dfd30e4",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
@@ -55,13 +55,15 @@
       "op": "read",
       "payload": {
         "agents": [
+          "claude",
           "Explore",
           "general-purpose",
           "Plan",
           "statusline-setup"
         ],
+        "analytics_disabled": false,
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.116",
+        "claude_code_version": "2.1.142",
         "cwd": "<REDACTED_CWD>",
         "fast_mode_state": "off",
         "mcp_servers": [
@@ -87,34 +89,8 @@
             "source": "rust-analyzer-lsp@claude-plugins-official"
           }
         ],
-        "session_id": "8bae544a-b00f-46ec-a367-a2a8f5ac28a3",
+        "session_id": "9b6e89c4-cb08-4bf9-8c49-6fa98e532202",
         "skills": [
-          "update-config",
-          "debug",
-          "simplify",
-          "batch",
-          "fewer-permission-prompts",
-          "loop",
-          "schedule",
-          "claude-api",
-          "create-braintrust-demo",
-          "braintrust",
-          "sdk-dependency-updates",
-          "sdk-integrations",
-          "sdk-vcr-workflows",
-          "sdk-ci-triage",
-          "commit-message",
-          "sdk-benchmarking"
-        ],
-        "slash_commands": [
-          "update-config",
-          "debug",
-          "simplify",
-          "batch",
-          "fewer-permission-prompts",
-          "loop",
-          "schedule",
-          "claude-api",
           "create-braintrust-demo",
           "braintrust",
           "sdk-dependency-updates",
@@ -123,14 +99,40 @@
           "sdk-ci-triage",
           "commit-message",
           "sdk-benchmarking",
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "claude-api"
+        ],
+        "slash_commands": [
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking",
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "claude-api",
+          "clear",
           "compact",
           "context",
-          "cost",
           "heapdump",
           "init",
           "review",
           "security-review",
+          "usage",
           "insights",
+          "goal",
           "team-onboarding"
         ],
         "subtype": "init",
@@ -155,12 +157,14 @@
           "PushNotification",
           "Read",
           "ReadMcpResourceTool",
-          "RemoteTrigger",
           "ScheduleWakeup",
           "Skill",
+          "TaskCreate",
+          "TaskGet",
+          "TaskList",
           "TaskOutput",
           "TaskStop",
-          "TodoWrite",
+          "TaskUpdate",
           "ToolSearch",
           "WebFetch",
           "WebSearch",
@@ -173,7 +177,7 @@
           "mcp__braintrust__sql_query",
           "mcp__braintrust__summarize_experiment",
           "mcp__linear-server__create_attachment",
-          "mcp__linear-server__create_document",
+          "mcp__linear-server__create_attachment_from_upload",
           "mcp__linear-server__create_issue_label",
           "mcp__linear-server__delete_attachment",
           "mcp__linear-server__delete_comment",
@@ -182,6 +186,8 @@
           "mcp__linear-server__delete_status_update",
           "mcp__linear-server__extract_images",
           "mcp__linear-server__get_attachment",
+          "mcp__linear-server__get_diff",
+          "mcp__linear-server__get_diff_threads",
           "mcp__linear-server__get_document",
           "mcp__linear-server__get_initiative",
           "mcp__linear-server__get_issue",
@@ -194,6 +200,7 @@
           "mcp__linear-server__list_comments",
           "mcp__linear-server__list_customers",
           "mcp__linear-server__list_cycles",
+          "mcp__linear-server__list_diffs",
           "mcp__linear-server__list_documents",
           "mcp__linear-server__list_initiatives",
           "mcp__linear-server__list_issue_labels",
@@ -204,19 +211,20 @@
           "mcp__linear-server__list_projects",
           "mcp__linear-server__list_teams",
           "mcp__linear-server__list_users",
+          "mcp__linear-server__prepare_attachment_upload",
           "mcp__linear-server__save_comment",
           "mcp__linear-server__save_customer",
           "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_document",
           "mcp__linear-server__save_initiative",
           "mcp__linear-server__save_issue",
           "mcp__linear-server__save_milestone",
           "mcp__linear-server__save_project",
           "mcp__linear-server__save_status_update",
-          "mcp__linear-server__search_documentation",
-          "mcp__linear-server__update_document"
+          "mcp__linear-server__search_documentation"
         ],
         "type": "system",
-        "uuid": "389677a5-fd7c-4eb6-bb92-150542ef2f49"
+        "uuid": "c9a781dd-6500-4e83-9cbd-1c1310bfc83e"
       }
     },
     {
@@ -232,9 +240,10 @@
             }
           ],
           "context_management": null,
-          "id": "49a3c5d0-1101-4c79-aa04-984d4e436a3e",
+          "id": "6ed07d52-6b92-417c-8f89-4b63a8da364e",
           "model": "<synthetic>",
           "role": "assistant",
+          "stop_details": null,
           "stop_reason": "stop_sequence",
           "stop_sequence": "",
           "type": "message",
@@ -258,9 +267,10 @@
           }
         },
         "parent_tool_use_id": null,
-        "session_id": "8bae544a-b00f-46ec-a367-a2a8f5ac28a3",
+        "request_id": "req_011CbC7pFUgYd4TsT5eWnmaZ",
+        "session_id": "9b6e89c4-cb08-4bf9-8c49-6fa98e532202",
         "type": "assistant",
-        "uuid": "b42e115b-9844-4698-82bc-63da0bdf1166"
+        "uuid": "90886438-cc93-4fb4-a96a-7a73870e55b4"
       }
     },
     {
@@ -268,14 +278,14 @@
       "payload": {
         "api_error_status": 404,
         "duration_api_ms": 0,
-        "duration_ms": 472,
+        "duration_ms": 492,
         "fast_mode_state": "off",
         "is_error": true,
         "modelUsage": {},
         "num_turns": 1,
         "permission_denials": [],
         "result": "There's an issue with the selected model (claude-3-5-haiku-20241022). It may not exist or you may not have access to it. Run --model to pick a different model.",
-        "session_id": "8bae544a-b00f-46ec-a367-a2a8f5ac28a3",
+        "session_id": "9b6e89c4-cb08-4bf9-8c49-6fa98e532202",
         "stop_reason": "stop_sequence",
         "subtype": "success",
         "terminal_reason": "completed",
@@ -299,9 +309,9 @@
           "service_tier": "standard",
           "speed": "standard"
         },
-        "uuid": "7081ed23-3e85-44e3-afaf-aa1b9e67d684"
+        "uuid": "05876312-f52b-4522-ba4b-950a3f992122"
       }
     }
   ],
-  "sdk_version": "0.1.64"
+  "sdk_version": "0.2.82"
 }

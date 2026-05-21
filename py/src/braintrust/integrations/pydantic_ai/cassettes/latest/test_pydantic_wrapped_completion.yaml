@@ -15,7 +15,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.89.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -25,7 +25,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.33.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -38,28 +38,30 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dali2m62wRyKKLIy2flpF5KGpB8ks\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1777655574,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGw1kTgq1hWk0JTEZQTxcNoeoDmO\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205573,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Rome\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 14,\n    \"completion_tokens\":
-        2,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"The capital of Italy is Rome.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        14,\n    \"completion_tokens\": 7,\n    \"total_tokens\": 21,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f5069eb98908bf1-YYZ
+      - 9fe43bb01e22f54f-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 01 May 2026 17:12:54 GMT
+      - Tue, 19 May 2026 15:46:13 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -68,24 +70,22 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '795'
+      - '820'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '303'
+      - '304'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=FBYOHKSfDsM._BvD6UDqw4KxGNCHluCnpgYejPomujY-1777655574.3367708-1.0.1.1-lIpc_MZgzmxfCZ9lr6hOHFHFHMvQR.iJ7slqRdhg6aWZ4gmH_61elm.KmJNdfT9B1.jHMjLQIcaFAoylH1DugIyLeAyb6TlD_3.G4F3yJeB_xzR.43xecP0LKp6Qeal7;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
-        17:42:54 GMT
+      - __cf_bm=AJK.zb16CNHF5PaeoyL0xsDqttWKNt7vDtvA.hK6p7Y-1779205573.14086-1.0.1.1-5yFVhcPPqcMGjGeR5eA2sW_X32ksjC.x7sKMh21pf4U1VEjlKZdLGIfLMsANsgJcdaJyEuANs21q3w5zYOfJcQIy5lA7M9J453Uzcfl2C5StvKftqbKCDgVNW_23.hXT;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:16:13 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -101,7 +101,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e9da53b24e694d8e9d1945a0991c9ab2
+      - req_7dc9193e858b46f6906d82b1c9ae7d9b
     status:
       code: 200
       message: OK
@@ -119,11 +119,11 @@ interactions:
       Content-Type:
       - application/json
       Cookie:
-      - __cf_bm=FBYOHKSfDsM._BvD6UDqw4KxGNCHluCnpgYejPomujY-1777655574.3367708-1.0.1.1-lIpc_MZgzmxfCZ9lr6hOHFHFHMvQR.iJ7slqRdhg6aWZ4gmH_61elm.KmJNdfT9B1.jHMjLQIcaFAoylH1DugIyLeAyb6TlD_3.G4F3yJeB_xzR.43xecP0LKp6Qeal7
+      - __cf_bm=AJK.zb16CNHF5PaeoyL0xsDqttWKNt7vDtvA.hK6p7Y-1779205573.14086-1.0.1.1-5yFVhcPPqcMGjGeR5eA2sW_X32ksjC.x7sKMh21pf4U1VEjlKZdLGIfLMsANsgJcdaJyEuANs21q3w5zYOfJcQIy5lA7M9J453Uzcfl2C5StvKftqbKCDgVNW_23.hXT
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.89.0
+      - pydantic-ai/1.97.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -133,7 +133,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.33.0
+      - 2.37.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -146,28 +146,30 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dali3eZ1MuX1BEjCdkAC8PKS7W8zn\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1777655575,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
+      string: "{\n  \"id\": \"chatcmpl-DhGw1EqtH6JQANnNp8OFHY98Nbw4W\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1779205573,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Rome\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 14,\n    \"completion_tokens\":
-        2,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"The capital of Italy is Rome.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        14,\n    \"completion_tokens\": 7,\n    \"total_tokens\": 21,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9f5069ef8ff790e5-YYZ
+      - 9fe43bb358c7180e-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Fri, 01 May 2026 17:12:56 GMT
+      - Tue, 19 May 2026 15:46:14 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -176,16 +178,14 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '795'
+      - '820'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1040'
+      - '320'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -205,7 +205,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ea234c37ac63426cbf620e930879a83f
+      - req_84d684bb6dde44a897d87b1147011393
     status:
       code: 200
       message: OK

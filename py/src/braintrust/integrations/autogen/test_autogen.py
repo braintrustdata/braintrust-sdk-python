@@ -112,6 +112,12 @@ async def test_autogen_team_run_creates_team_span(memory_logger):
     assert team_span["metadata"]["component"] == "team"
     assert team_span["metadata"]["team_name"] == "writing_team"
     assert team_span["metadata"]["participant_names"] == ["assistant"]
+    agent_span = next(span for span in spans if span["span_attributes"]["name"] == "assistant.run_stream")
+    assert _span_type(agent_span) == "task"
+    assert agent_span["metadata"]["component"] == "agent"
+    assert agent_span["metadata"]["agent_name"] == "assistant"
+    team_span_ids = {span["span_id"] for span in spans if span["metadata"].get("component") == "team"}
+    assert team_span_ids.intersection(agent_span["span_parents"])
 
 
 def test_autogen_auto_instrument_subprocess():

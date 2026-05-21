@@ -8,10 +8,12 @@ from typing import cast
 import pytest
 from braintrust import logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler
+from braintrust.integrations.langchain.callbacks import _get_metrics_from_response
 from braintrust.logger import flush
 from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import RunnableMap, RunnableSerializable
@@ -906,6 +908,34 @@ def test_streaming_ttft(logger_memory_logger):
     )
 
 
+def test_openai_cached_tokens_are_not_folded_into_prompt_tokens():
+    response = LLMResult(
+        generations=[
+            [
+                ChatGeneration(
+                    message=AIMessage(
+                        content="Done",
+                        response_metadata={"model_name": "gpt-4o-mini-2024-07-18"},
+                        usage_metadata={
+                            "input_tokens": 1000,
+                            "output_tokens": 200,
+                            "total_tokens": 1200,
+                            "input_token_details": {"cache_read": 500},
+                        },
+                    )
+                )
+            ]
+        ]
+    )
+
+    assert _get_metrics_from_response(response) == {
+        "prompt_tokens": 1000,
+        "completion_tokens": 200,
+        "total_tokens": 1200,
+        "prompt_cached_tokens": 500,
+    }
+
+
 @pytest.mark.vcr
 def test_prompt_caching_tokens(logger_memory_logger):
     from langchain_anthropic import ChatAnthropic
@@ -1087,6 +1117,8 @@ Remember: Testing is not just about finding bugs, it's about building confidence
     assert "prompt_cache_creation_tokens" in first_metrics
     assert first_metrics["prompt_cache_creation_tokens"] > 0
     assert first_metrics["prompt_cached_tokens"] == 0
+    assert first_metrics["prompt_tokens"] >= first_metrics["prompt_cache_creation_tokens"]
+    assert first_metrics["total_tokens"] == first_metrics["prompt_tokens"] + first_metrics["completion_tokens"]
 
     second_metrics = None
     for attempt in range(3):
@@ -1116,6 +1148,8 @@ Remember: Testing is not just about finding bugs, it's about building confidence
 
     assert second_metrics is not None
     assert second_metrics["prompt_cached_tokens"] > 0
+    assert second_metrics["prompt_tokens"] >= second_metrics["prompt_cached_tokens"]
+    assert second_metrics["total_tokens"] == second_metrics["prompt_tokens"] + second_metrics["completion_tokens"]
 
 
 @pytest.mark.vcr

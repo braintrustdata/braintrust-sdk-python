@@ -113,6 +113,25 @@ jobs:
           dir="$HOME/.cache/braintrust/temporal-test-server"
           mkdir -p "$dir"
           echo "BRAINTRUST_TEMPORAL_TEST_SERVER_DIR=$dir" >> "$GITHUB_ENV"
+      - name: Cache LiveKit server binaries
+        if: runner.os == 'Linux'
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          # The LiveKit Agents nox session downloads a pinned standalone
+          # livekit-server binary here when livekit-server is not already on
+          # PATH. Caching avoids repeated GitHub release downloads across CI shards.
+          path: ~/.cache/braintrust/livekit-server
+          key: livekit-server-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('py/noxfile.py') }}
+          restore-keys: |
+            livekit-server-${{ runner.os }}-${{ runner.arch }}-
+      - name: Configure LiveKit server cache dir
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$HOME/.cache/braintrust/livekit-server"
+          mkdir -p "$dir"
+          echo "BRAINTRUST_LIVEKIT_SERVER_DIR=$dir" >> "$GITHUB_ENV"
       - name: Run nox tests (shard ${{ matrix.shard }}/6)
         shell: bash
         run: |

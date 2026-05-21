@@ -1,6 +1,7 @@
 """Shared integration orchestration primitives."""
 
 import importlib
+import importlib.metadata
 import inspect
 import re
 import sys
@@ -309,6 +310,11 @@ class FunctionWrapperPatcher(BasePatcher):
         return f"__braintrust_patched_{suffix}__"
 
     @classmethod
+    def _wrapper(cls, wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+        """wrapt callback used to invoke the configured wrapper."""
+        return cls.wrapper(wrapped, instance, args, kwargs)
+
+    @classmethod
     def mark_patched(cls, obj: Any) -> None:
         """Mark a wrapped target so future patch attempts are idempotent."""
         try:
@@ -339,7 +345,7 @@ class FunctionWrapperPatcher(BasePatcher):
         if root is None or not cls.applies(module, version, target=target):
             return False
 
-        wrap_function_wrapper(root, cls.target_path, cls.wrapper)
+        wrap_function_wrapper(root, cls.target_path, cls._wrapper)
         resolved_target = _resolve_attr_path(root, cls.target_path)
         if resolved_target is None:
             return False
@@ -380,9 +386,55 @@ class FunctionWrapperPatcher(BasePatcher):
             superior_attr = superior.target_path.rsplit(".", 1)[-1]
             if _resolve_attr_path(target, superior_attr) is not None:
                 return target
-        wrap_function_wrapper(target, attr, cls.wrapper)
+        wrap_function_wrapper(target, attr, cls._wrapper)
         cls.mark_patched(target)
         return target
+
+
+def _call_wrapped(wrapped: Any, _instance: Any, args: Any, kwargs: Any) -> Any:
+    """Default wrapt callback that calls the wrapped target unchanged."""
+    return wrapped(*args, **kwargs)
+
+
+class InstanceSetupFunctionPatcher(FunctionWrapperPatcher):
+    """Function wrapper patcher that runs setup once per wrapped-method instance.
+
+    Use this for instrumentation that must be installed on each runtime object
+    encountered by a wrapped method, such as registering one event listener per
+    client/session instance. The regular ``FunctionWrapperPatcher`` marker still
+    tracks whether the function target is wrapped; this subclass adds a separate
+    per-instance marker for ``instance_setup``.
+    """
+
+    instance_setup: ClassVar[Any]
+    wrapper: ClassVar[Any] = staticmethod(_call_wrapped)
+
+    @classmethod
+    def instance_patch_marker_attr(cls) -> str:
+        """Return the sentinel attribute used to mark an instance as set up."""
+        suffix = re.sub(r"\W+", "_", cls.name).strip("_")
+        return f"__braintrust_instance_patched_{suffix}__"
+
+    @classmethod
+    def setup_instance(cls, instance: Any) -> None:
+        """Run one-time setup for the wrapped callable's instance."""
+        if instance is None:
+            return
+
+        marker = cls.instance_patch_marker_attr()
+        if getattr(instance, marker, False):
+            return
+
+        result = cls.instance_setup(instance)
+        if result is False:
+            return
+        setattr(instance, marker, True)
+
+    @classmethod
+    def _wrapper(cls, wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+        """wrapt callback that runs instance setup before the subclass wrapper."""
+        cls.setup_instance(instance)
+        return cls.wrapper(wrapped, instance, args, kwargs)
 
 
 class ClassReplacementPatcher(BasePatcher):
@@ -524,6 +576,7 @@ class BaseIntegration(ABC):
 
     name: ClassVar[str]
     import_names: ClassVar[tuple[str, ...]]
+    distribution_names: ClassVar[tuple[str, ...]] = ()
     patchers: ClassVar[tuple[type[BasePatcher], ...]] = ()
     min_version: ClassVar[str | None] = None
     max_version: ClassVar[str | None] = None
@@ -556,7 +609,7 @@ class BaseIntegration(ABC):
         module = _import_first_available(cls.import_names)
         if module is None:
             return False
-        version = detect_module_version(module, cls.import_names)
+        version = cls.detect_version(module)
         if not version_satisfies(version, make_specifier(min_version=cls.min_version, max_version=cls.max_version)):
             return False
 
@@ -571,6 +624,16 @@ class BaseIntegration(ABC):
             success = patcher.patch(module, version, target=target) or success
 
         return success
+
+    @classmethod
+    def detect_version(cls, module: Any) -> str | None:
+        """Return the installed provider version for this integration."""
+        for distribution_name in cls.distribution_names:
+            try:
+                return importlib.metadata.version(distribution_name)
+            except importlib.metadata.PackageNotFoundError:
+                continue
+        return detect_module_version(module, cls.import_names)
 
 
 def _import_first_available(import_names: Iterable[str]) -> Any | None:

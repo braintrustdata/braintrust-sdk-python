@@ -987,6 +987,27 @@ def _completion_tool_calls(response_data: dict[str, Any] | None) -> list[tuple[i
     return tool_calls
 
 
+def _start_child_tool_span(
+    *,
+    parent_export: Any,
+    name: str,
+    tool_input: Any,
+    output: Any = None,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    span_args = {
+        "name": f"tool: {name}",
+        "type": SpanTypeAttribute.TOOL,
+        "input": tool_input,
+        "output": output,
+        "metadata": clean_nones(metadata or {}) or None,
+    }
+    if parent_export is not None:
+        span_args["parent"] = parent_export
+    with start_span(**span_args):
+        pass
+
+
 def _log_completion_tool_spans(response_data: dict[str, Any] | None, *, parent_span: Any) -> None:
     tool_calls = _completion_tool_calls(response_data)
     if not tool_calls:
@@ -997,24 +1018,53 @@ def _log_completion_tool_spans(response_data: dict[str, Any] | None, *, parent_s
         function = tool_call.get("function") if isinstance(tool_call.get("function"), dict) else {}
         tool_type = tool_call.get("type") or ("function" if function else None)
         name = function.get("name") or tool_type or "tool"
-        span_args = {
-            "name": f"tool: {name}",
-            "type": SpanTypeAttribute.TOOL,
-            "input": _maybe_parse_tool_arguments(function.get("arguments")),
-            "metadata": clean_nones(
-                {
-                    "tool_call_id": tool_call.get("id"),
-                    "tool_type": tool_type,
-                    "tool_index": tool_call.get("index", tool_index),
-                    "choice_index": choice_index,
-                }
-            )
-            or None,
-        }
-        if parent_export is not None:
-            span_args["parent"] = parent_export
-        with start_span(**span_args):
-            pass
+        _start_child_tool_span(
+            parent_export=parent_export,
+            name=name,
+            tool_input=_maybe_parse_tool_arguments(function.get("arguments")),
+            metadata={
+                "tool_call_id": tool_call.get("id"),
+                "tool_type": tool_type,
+                "tool_index": tool_call.get("index", tool_index),
+                "choice_index": choice_index,
+            },
+        )
+
+
+def _conversation_tool_outputs(response_data: dict[str, Any] | None) -> list[tuple[int, dict[str, Any]]]:
+    tool_outputs = []
+    for output_index, output in enumerate(_conversation_outputs_data(response_data)):
+        if not isinstance(output, dict):
+            continue
+        output_type = output.get("type")
+        if output_type in {"tool.execution", "tool_execution"}:
+            tool_outputs.append((output_index, output))
+    return tool_outputs
+
+
+def _log_conversation_tool_spans(response_data: dict[str, Any] | None, *, parent_span: Any) -> None:
+    tool_outputs = _conversation_tool_outputs(response_data)
+    if not tool_outputs:
+        return
+
+    parent_export = parent_span.export() if parent_span is not None else None
+    for output_index, output in tool_outputs:
+        tool_type = output.get("type")
+        name = output.get("name") or tool_type or "tool"
+        tool_output = output.get("info") if "info" in output else output.get("output")
+        _start_child_tool_span(
+            parent_export=parent_export,
+            name=name,
+            tool_input=_maybe_parse_tool_arguments(output.get("arguments")),
+            output=tool_output,
+            metadata={
+                "tool_call_id": output.get("id") or output.get("tool_call_id"),
+                "tool_type": tool_type,
+                "tool_index": output_index,
+                "agent_id": output.get("agent_id"),
+                "model": output.get("model"),
+            },
+        )
 
 
 def _finalize_completion_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
@@ -1035,6 +1085,7 @@ def _finalize_conversation_response(span: Any, request_metadata: dict[str, Any],
     response_data = _normalized_mistral_dict(response)
     response_metadata = _conversation_response_data_to_metadata(response_data)
     usage = response_data.get("usage") if response_data else None
+    _log_conversation_tool_spans(response_data, parent_span=span)
     _log_and_end_span(
         span,
         output=_conversation_outputs_data(response_data),
@@ -1112,6 +1163,7 @@ def _finalize_conversation_stream(
 ):
     response = _aggregate_conversation_events(items)
     response_metadata = _conversation_response_data_to_metadata(response)
+    _log_conversation_tool_spans(response, parent_span=span)
     _log_and_end_span(
         span,
         output=response.get("outputs"),

@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"This is a test","model":"text-embedding-ada-002","encoding_format":null}'
+    body: '{"input":"This is a test","model":"text-embedding-ada-002","encoding_format":"float"}'
     headers:
       accept:
       - application/json
@@ -9,13 +9,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '82'
+      - '85'
       content-type:
       - application/json
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 2.24.0
+      - AsyncOpenAI/Python 2.37.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.24.0
+      - 2.37.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -35,7 +35,7 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.12.12
     method: POST
     uri: https://api.openai.com/v1/embeddings
   response:
@@ -433,28 +433,30 @@ interactions:
       - '*'
       Access-Control-Expose-Headers:
       - X-Request-ID
+      - CF-Ray
+      - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9ef5cf833ac1ac30-YYZ
+      - 9fe42f32bf32e21a-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 20 Apr 2026 17:18:51 GMT
+      - Tue, 19 May 2026 15:37:41 GMT
       Server:
       - cloudflare
       Set-Cookie:
-      - __cf_bm=b8K6aJvVWfJzwSqLluRUW_se3YdvxbgHpGnq5dEymR8-1776705531.3949425-1.0.1.1-bIAF71T2h9Yu2i26XfSWA1i7N2mdnm6O5KaGIf8he031V9ub1ECzVjnIv4CTAmzos.Iaqq.YkQaDckM2B_Ejr1rTFMMc6h7SD._mdkhzMbWw7sOuEKfdz351NbP.wLwF;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 20 Apr 2026
-        17:48:51 GMT
+      - __cf_bm=OavjMyQqScmEgq6WXkxFEU0kmG3Ckxpl.X_BQwaHUw8-1779205061.5572686-1.0.1.1-6Kbaomci9FPGkvTBHlsyGGFMuI6sbwAdp2DYIzMxOEJD6851MR0Woqq3KcXa.83QCr86TcRS1ea4ooPNga4kEuW2td7q1hXSzc4VPCu646q4O8BOyMv8MAQo.ynepv8G;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
+        19 May 2026 16:07:41 GMT
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
       - chunked
       Via:
-      - envoy-router-7fcdb9c87b-ltbjb
+      - envoy-router-55965bb97b-8wpvz
       X-Content-Type-Options:
       - nosniff
       alt-svc:
@@ -466,7 +468,7 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '163'
+      - '55'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -488,7 +490,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_80c83cb72ef04e36aae43e38ef29ca69
+      - req_cdaa373d905b47c4b82e2c63ec889e57
     status:
       code: 200
       message: OK

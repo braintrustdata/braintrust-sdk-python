@@ -482,7 +482,7 @@ def _extract_audio_output(
 
 
 def _is_not_given(value: object) -> bool:
-    """Return ``True`` when *value* is a provider ``NOT_GIVEN`` sentinel.
+    """Return ``True`` when *value* is a provider omitted-parameter sentinel.
 
     Works by type-name inspection so that Braintrust does not need a
     direct import dependency on any provider SDK.
@@ -490,7 +490,7 @@ def _is_not_given(value: object) -> bool:
     if value is None:
         return False
     try:
-        return type(value).__name__ == "NotGiven"
+        return type(value).__name__ in {"NotGiven", "Omit"}
     except Exception:
         return False
 

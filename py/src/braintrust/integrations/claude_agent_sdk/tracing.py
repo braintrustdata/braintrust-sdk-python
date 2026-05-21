@@ -10,6 +10,7 @@ from typing import Any
 from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk._constants import (
     ANTHROPIC_MESSAGES_CREATE_SPAN_NAME,
+    CLAUDE_AGENT_RUN_FAILED_ERROR,
     CLAUDE_AGENT_TASK_SPAN_NAME,
     DEFAULT_TOOL_NAME,
     MCP_TOOL_METADATA,
@@ -697,6 +698,10 @@ class ContextTracker:
         parent_export = self._llm_parent_for_message(message)
         final_content, extended = self._start_or_merge_llm_span(message, parent_export, ctx)
 
+        message_error = getattr(message, "error", None)
+        if message_error and ctx.llm_span is not None:
+            ctx.llm_span.log(error=str(message_error))
+
         llm_export = ctx.llm_span.export() if ctx.llm_span else None
         self._tool_tracker.start_tool_spans(message, llm_export)
 
@@ -746,6 +751,12 @@ class ContextTracker:
         }
         if result_metadata:
             self._root_span.log(metadata=result_metadata)
+
+        if getattr(message, "is_error", None) is True:
+            error_text = (
+                result_value if isinstance(result_value, str) and result_value else CLAUDE_AGENT_RUN_FAILED_ERROR
+            )
+            self._root_span.log(error=error_text)
 
     def _handle_system(self, message: Any) -> None:
         agent_span_export = self._tool_tracker.get_span_export(_msg_field(message, "tool_use_id"))

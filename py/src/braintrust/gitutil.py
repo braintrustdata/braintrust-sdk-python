@@ -5,7 +5,7 @@ import subprocess
 import threading
 from functools import lru_cache as _cache
 
-from .git_fields import GitMetadataSettings, RepoInfo
+from .git_fields import GitMetadataSettings, RepoInfo, default_git_metadata_settings
 
 
 # https://stackoverflow.com/questions/48399498/git-executable-not-found-in-python
@@ -123,7 +123,7 @@ def truncate_to_byte_limit(input_string, byte_limit=65536):
 
 def get_repo_info(settings: GitMetadataSettings | None = None):
     if settings is None:
-        settings = GitMetadataSettings()
+        settings = default_git_metadata_settings()
 
     if settings.collect == "none":
         return None

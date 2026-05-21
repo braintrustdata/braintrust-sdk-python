@@ -22,6 +22,7 @@ from braintrust import (
     init_logger,
     logger,
 )
+from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.id_gen import OTELIDGenerator, get_id_generator
 from braintrust.logger import (
     RemoteEvalParameters,
@@ -185,6 +186,60 @@ class TestInit(TestCase):
         _, payload = mock_conn.post_json.call_args.args
         assert payload["parameters_id"] == "params-123"
         assert payload["parameters_version"] == "v1"
+
+
+class TestHTTPBackgroundLoggerLogs3(TestCase):
+    def test_submit_logs_request_413_skips_retries(self) -> None:
+        """Any 413 while publishing ``/logs3`` cannot succeed on retry with the same payload.
+
+        ``sync_flush`` controls whether the terminal failure raises instead of printing.
+        """
+        from braintrust.logger import (
+            LogItemWithMeta,
+            Logs3OverflowInputRow,
+            _HTTPBackgroundLogger,
+        )
+
+        item = LogItemWithMeta(
+            str_value="{}",
+            overflow_meta=Logs3OverflowInputRow(
+                object_ids={},
+                has_comment=False,
+                is_delete=False,
+                byte_size=2,
+            ),
+        )
+        max_result = {"max_request_size": 10**9, "can_use_overflow": True}
+
+        for response_text in ("Request Too Long", "", "Payload Too Large"):
+            for sync_flush in (False, True):
+                with self.subTest(response_text=response_text, sync_flush=sync_flush):
+                    mock_resp = MagicMock()
+                    mock_resp.ok = False
+                    mock_resp.status_code = 413
+                    mock_resp.text = response_text
+
+                    mock_conn = MagicMock()
+                    mock_conn.post.return_value = mock_resp
+
+                    bg = _HTTPBackgroundLogger(LazyValue(lambda: mock_conn, use_mutex=False))
+                    bg.num_tries = 5
+                    bg.sync_flush = sync_flush
+                    bg.failed_publish_payloads_dir = "/tmp/failed-payloads"
+
+                    with patch.object(_HTTPBackgroundLogger, "_write_payload_to_dir") as mock_write_payload:
+                        if sync_flush:
+                            with self.assertRaises(Exception) as cm:
+                                bg._submit_logs_request([item], max_result)
+                            self.assertIn("413", str(cm.exception))
+                        else:
+                            bg._submit_logs_request([item], max_result)
+
+                    self.assertEqual(mock_conn.post.call_count, 1)
+                    mock_write_payload.assert_called_once()
+                    self.assertEqual(
+                        mock_write_payload.call_args.kwargs["payload_dir"], bg.failed_publish_payloads_dir
+                    )
 
 
 class TestLogger(TestCase):
@@ -782,6 +837,136 @@ def test_span_log_with_simple_circular_reference(with_memory_logger):
     # Circular reference should be replaced with a placeholder string
     assert isinstance(logged_output["self"], str)
     assert "circular" in logged_output["self"].lower()
+
+
+def test_span_log_accepts_pydantic_model_metadata(with_memory_logger):
+    try:
+        from pydantic import BaseModel
+    except ImportError:
+        pytest.skip("Pydantic not available")
+
+    class MetadataModel(BaseModel):
+        foo: str = "bar"
+
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        span.log(input=MetadataModel(), metadata=MetadataModel())
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["input"] == {"foo": "bar"}
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+class _ModelDumpMetadata:
+    def __init__(self, **values):
+        self.values = values
+
+    def model_dump(self, **kwargs):
+        assert kwargs == {"exclude_none": True}
+        return dict(self.values)
+
+
+def _init_test_dataset():
+    from braintrust.logger import Dataset, ObjectMetadata, ProjectDatasetMetadata
+
+    project_metadata = ObjectMetadata(id="test_project", name="test_project", full_info={})
+    dataset_metadata = ObjectMetadata(id="test_dataset", name="test_dataset", full_info={})
+    metadata = ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata)
+    return Dataset(lazy_metadata=LazyValue(lambda: metadata, use_mutex=False))
+
+
+def test_span_log_accepts_model_dump_metadata(with_memory_logger):
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        span.log(metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_logger_log_accepts_model_dump_metadata(with_memory_logger):
+    logger = init_test_logger(__name__)
+
+    logger.log(input="input", output="output", metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_experiment_log_accepts_model_dump_metadata(with_memory_logger):
+    experiment = init_test_exp("test-experiment", "test-project")
+
+    experiment.log(input="input", output="output", scores={"score": 1}, metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_logger_log_feedback_accepts_model_dump_metadata(with_memory_logger):
+    logger = init_test_logger(__name__)
+
+    logger.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
+
+
+def test_experiment_log_feedback_accepts_model_dump_metadata(with_memory_logger):
+    experiment = init_test_exp("test-experiment", "test-project")
+
+    experiment.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
+
+
+def test_dataset_insert_accepts_model_dump_metadata(with_memory_logger):
+    dataset = _init_test_dataset()
+
+    dataset.insert(input="input", expected="expected", metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_dataset_update_accepts_model_dump_metadata(with_memory_logger):
+    dataset = _init_test_dataset()
+
+    dataset.update(id="record-id", metadata=_ModelDumpMetadata(foo="bar"))
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_span_log_rejects_metadata_with_non_string_keys(with_memory_logger):
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        with pytest.raises(ValueError, match="metadata keys must be strings"):
+            span.log(metadata={1: "bad"})
+
+
+def test_span_log_rejects_metadata_that_serializes_to_non_dict(with_memory_logger):
+    class BadMetadata:
+        def model_dump(self, **kwargs):
+            assert kwargs == {"exclude_none": True}
+            return ["not", "metadata"]
+
+    logger = init_test_logger(__name__)
+
+    with logger.start_span(name="test_span") as span:
+        with pytest.raises(ValueError, match="metadata must be a dictionary or serialize to a dictionary"):
+            span.log(metadata=BadMetadata())
 
 
 def test_span_log_with_nested_circular_reference(with_memory_logger):
@@ -2865,12 +3050,13 @@ def test_update_span_includes_span_id_and_root_span_id_from_export(with_memory_l
 
     with_memory_logger.pop()
 
-    braintrust.update_span(exported=exported, output="updated output")
+    braintrust.update_span(exported=exported, output="updated output", metadata=_ModelDumpMetadata(foo="bar"))
 
     logs = with_memory_logger.pop()
     updated_log = next(log for log in logs if log.get("output") == "updated output")
     assert updated_log["span_id"] == span_id
     assert updated_log["root_span_id"] == root_span_id
+    assert updated_log["metadata"] == {"foo": "bar"}
 
 
 def test_get_exporter_returns_v3_by_default():

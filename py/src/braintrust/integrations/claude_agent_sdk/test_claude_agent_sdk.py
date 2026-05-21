@@ -341,6 +341,60 @@ async def test_query_async_iterable(memory_logger, cassette_name, input_factory,
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
+async def test_agent_error_logged_on_spans(memory_logger):
+    """AssistantMessage.error propagates to the LLM span; ResultMessage.is_error to the root span."""
+    assert not memory_logger.pop()
+
+    with _patched_claude_sdk(wrap_client=True):
+        options = claude_agent_sdk.ClaudeAgentOptions(
+            model="claude-3-5-haiku-20241022",
+            permission_mode="bypassPermissions",
+        )
+        transport = make_cassette_transport(
+            cassette_name="test_agent_error_logged_on_spans",
+            prompt="",
+            options=options,
+        )
+
+        assistant_error: Any = None
+        result_message: Any = None
+        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
+            await client.query("Say hi")
+            async for message in client.receive_response():
+                message_type = type(message).__name__
+                if message_type == "AssistantMessage" and assistant_error is None:
+                    assistant_error = getattr(message, "error", None)
+                if message_type == "ResultMessage":
+                    result_message = message
+                    break
+
+    assert result_message is not None and getattr(result_message, "is_error", False) is True, (
+        "Cassette must include a ResultMessage with is_error=True"
+    )
+
+    spans = memory_logger.pop()
+    task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+
+    root_error = task_span.get("error")
+    assert root_error, f"Root task span should log error when ResultMessage.is_error=True; got error={root_error!r}"
+    expected_result = getattr(result_message, "result", None)
+    if isinstance(expected_result, str) and expected_result:
+        assert expected_result == root_error, (
+            f"Root span error should match ResultMessage.result; expected {expected_result!r}, got {root_error!r}"
+        )
+
+    # claude-agent-sdk 0.1.10 doesn't parse the top-level `error` field onto AssistantMessage.
+    if assistant_error:
+        assert llm_spans, "Expected at least one LLM span"
+        llm_errors = [span.get("error") for span in llm_spans if span.get("error")]
+        assert llm_errors, (
+            f"At least one LLM span should log error when AssistantMessage.error is set; got llm spans: {llm_spans!r}"
+        )
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
 async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
     assert not memory_logger.pop()
     prompt = "Say hello in one short sentence."

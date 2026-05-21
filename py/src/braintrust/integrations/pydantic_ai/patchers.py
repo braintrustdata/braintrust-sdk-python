@@ -143,6 +143,14 @@ class _ToolManagerExecuteFunctionToolPatcher(FunctionWrapperPatcher):
     wrapper = _tool_manager_execute_function_tool_wrapper
 
 
+class _ToolManagerExecuteToolCallPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.tool_manager.execute_tool_call"
+    target_module = "pydantic_ai._agent_graph"
+    target_path = "ToolManager.execute_tool_call"
+    wrapper = _tool_manager_execute_function_tool_wrapper
+    superseded_by = (_ToolManagerExecuteFunctionToolPatcher,)
+
+
 class _ToolManagerCallFunctionToolPatcher(FunctionWrapperPatcher):
     name = "pydantic_ai.tool_manager.call_function_tool"
     target_module = "pydantic_ai._agent_graph"
@@ -155,6 +163,7 @@ class ToolManagerFunctionToolPatcher(CompositeFunctionWrapperPatcher):
     name = "pydantic_ai.tool_manager"
     sub_patchers = (
         _ToolManagerExecuteFunctionToolPatcher,
+        _ToolManagerExecuteToolCallPatcher,
         _ToolManagerCallFunctionToolPatcher,
     )
 

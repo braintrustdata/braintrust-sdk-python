@@ -20,7 +20,8 @@ from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 from openai import AsyncOpenAI
-from openai._types import NOT_GIVEN
+from openai._types import NOT_GIVEN, Omit
+from packaging.version import Version
 from pydantic import BaseModel
 
 
@@ -671,7 +672,7 @@ def test_openai_chat_streaming_sync_preserves_audio_attachment(memory_logger):
 
     client = wrap_openai(openai.OpenAI())
     stream = client.chat.completions.create(
-        model="gpt-4o-audio-preview",
+        model="gpt-audio-mini",
         messages=[{"role": "user", "content": "Say exactly hello."}],
         modalities=["text", "audio"],
         audio={"voice": "alloy", "format": "pcm16"},
@@ -1568,6 +1569,45 @@ def test_openai_not_given_filtering(memory_logger):
         assert k not in meta
 
 
+@pytest.mark.skipif(Version(openai.__version__) < Version("2.0.0"), reason="openai.Omit is not omitted by OpenAI 1.x")
+@pytest.mark.vcr
+def test_openai_omit_filtering(memory_logger):
+    """Test that Omit values are filtered out of logged inputs but API call still works."""
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+
+    response = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+        temperature=0.5,
+        tools=Omit(),
+    )
+
+    assert response
+    assert response.choices[0].message.content
+    assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    assert_dict_matches(
+        span,
+        {
+            "input": [{"role": "user", "content": TEST_PROMPT}],
+            "metadata": {
+                "model": TEST_MODEL,
+                "provider": "openai",
+                "temperature": 0.5,
+            },
+        },
+    )
+    meta = span["metadata"]
+    assert "Omit" not in str(meta)
+    assert "tools" not in meta
+
+
 @pytest.mark.vcr
 def test_openai_responses_not_given_filtering(memory_logger):
     """Test that NOT_GIVEN values are filtered out of logged inputs for responses API."""
@@ -2123,15 +2163,14 @@ def test_openai_images_generate(memory_logger):
 
     for client, is_wrapped in clients:
         response = client.images.generate(
-            model="dall-e-2",
+            model="gpt-image-1-mini",
             prompt=prompt,
-            size="256x256",
-            response_format="url",
+            size="1024x1024",
         )
 
         assert response
         assert response.data
-        assert response.data[0].url
+        assert response.data[0].b64_json or response.data[0].url
 
         if not is_wrapped:
             assert not memory_logger.pop()
@@ -2140,12 +2179,10 @@ def test_openai_images_generate(memory_logger):
         spans = memory_logger.pop()
         assert len(spans) == 1
         span = spans[0]
-        assert span["metadata"]["model"] == "dall-e-2"
+        assert span["metadata"]["model"] == "gpt-image-1-mini"
         assert span["metadata"]["provider"] == "openai"
-        assert span["metadata"]["response_format"] == "url"
         assert span["input"] == prompt
         assert span["output"]["images_count"] == 1
-        assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
         assert span["metrics"]["duration"] >= 0
 
 
@@ -2173,16 +2210,15 @@ def test_openai_images_edit(memory_logger):
         for client, is_wrapped in clients:
             with open(image_path, "rb") as image_file:
                 response = client.images.edit(
-                    model="dall-e-2",
+                    model="gpt-image-1-mini",
                     prompt=prompt,
                     image=image_file,
-                    size="256x256",
-                    response_format="url",
+                    size="1024x1024",
                 )
 
             assert response
             assert response.data
-            assert response.data[0].url
+            assert response.data[0].b64_json or response.data[0].url
 
             if not is_wrapped:
                 assert not memory_logger.pop()
@@ -2191,15 +2227,13 @@ def test_openai_images_edit(memory_logger):
             spans = memory_logger.pop()
             assert len(spans) == 1
             span = spans[0]
-            assert span["metadata"]["model"] == "dall-e-2"
+            assert span["metadata"]["model"] == "gpt-image-1-mini"
             assert span["metadata"]["provider"] == "openai"
-            assert span["metadata"]["response_format"] == "url"
             assert span["input"]["prompt"] == prompt
             assert isinstance(span["input"]["image"], Attachment)
             assert span["input"]["image"].reference["filename"] == "braintrust-test-image.png"
             assert span["input"]["image"].reference["content_type"] == "image/png"
             assert span["output"]["images_count"] == 1
-            assert span["output"]["images"][0]["image_url"]["url"].startswith("https://")
             assert span["metrics"]["duration"] >= 0
 
 
@@ -2567,6 +2601,25 @@ async def test_openai_audio_translation_async(memory_logger):
 
 class TestOpenAIIntegrationSetupSpans:
     """VCR-based tests verifying that OpenAIIntegration.setup() produces spans."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_setup_preserves_async_audio_speech_streaming_response(self, memory_logger):
+        assert not memory_logger.pop()
+
+        OpenAIIntegration.setup()
+        client = AsyncOpenAI()
+
+        async with client.audio.speech.with_streaming_response.create(
+            model="tts-1",
+            voice="alloy",
+            input="Hello, this is a streaming response test.",
+        ) as response:
+            assert hasattr(response, "request_id")
+            chunks = [chunk async for chunk in response.iter_bytes()]
+
+        assert chunks
+        assert not memory_logger.pop()
 
     @pytest.mark.vcr
     def test_setup_creates_spans(self, memory_logger):

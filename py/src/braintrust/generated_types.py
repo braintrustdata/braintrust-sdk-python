@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash fe93a84e058f7f2d) -- do not modify"""
+"""Auto-generated file (content hash a9097876f2d66816) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -101,6 +101,7 @@ from ._generated_types import (
     ToolFunctionDefinition,
     TopicAutomationConfig,
     TopicAutomationDataScope,
+    TopicAutomationFacetModel,
     TopicMapData,
     TopicMapFunctionAutomation,
     TopicMapGenerationSettings,
@@ -216,6 +217,7 @@ __all__ = [
     "ToolFunctionDefinition",
     "TopicAutomationConfig",
     "TopicAutomationDataScope",
+    "TopicAutomationFacetModel",
     "TopicMapData",
     "TopicMapFunctionAutomation",
     "TopicMapGenerationSettings",

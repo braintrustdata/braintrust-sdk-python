@@ -287,6 +287,21 @@ Caveat:
 
 Avoid editing `py/src/braintrust/version.py` while also running build commands.
 
+## Publishing Notes
+
+See `docs/publishing.md` for the full release playbook.
+
+Stable Python SDK releases:
+
+1. Run the `Prepare Stable Python SDK Release` workflow with a stable `X.Y.Z` version.
+2. Review and merge the generated `release/py-sdk-v<version>` PR.
+3. The merge triggers `Publish Python SDK`; the actual PyPI publish job is gated by the `pypi-publish` GitHub environment.
+4. After approval, the workflow publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
+
+Prereleases stay on the manual `Publish Python SDK` path, but do not require a committed version bump: run the workflow against `main` or a commit on `main` with `release_type=prerelease` and the `version` input set to `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`. Prereleases are not gated by the `pypi-publish` environment.
+
+Do not create or push release tags locally.
+
 ## Dependency Pinning
 
 All nox session dependency pins are centralized in `py/pyproject.toml`:
