@@ -661,36 +661,40 @@ def _get_metrics_from_response(response: LLMResult):
             input_token_details = usage_metadata.get("input_token_details")
             if input_token_details and isinstance(input_token_details, dict):
                 cache_read = input_token_details.get("cache_read")
-                # langchain-anthropic >= 1.4.0 maps cache_creation_input_tokens to
-                # ephemeral tier fields (ephemeral_5m_input_tokens, ephemeral_1h_input_tokens)
-                # rather than the top-level cache_creation field. Sum both for compat.
                 cache_creation = input_token_details.get("cache_creation")
-                if not cache_creation and (
-                    "ephemeral_5m_input_tokens" in input_token_details
-                    or "ephemeral_1h_input_tokens" in input_token_details
-                ):
-                    cache_creation = input_token_details.get("ephemeral_5m_input_tokens", 0) + input_token_details.get(
-                        "ephemeral_1h_input_tokens", 0
-                    )
+                cache_creation_5m = input_token_details.get("ephemeral_5m_input_tokens")
+                cache_creation_1h = input_token_details.get("ephemeral_1h_input_tokens")
+                has_cache_creation_breakdown = cache_creation_5m is not None or cache_creation_1h is not None
 
                 if cache_read is not None:
                     metrics["prompt_cached_tokens"] = cache_read
-                if cache_creation is not None:
-                    metrics["prompt_cache_creation_tokens"] = cache_creation
-
-                cache_tokens = (cache_read or 0) + (cache_creation or 0)
+                if has_cache_creation_breakdown:
+                    # Anthropic exposes TTL-specific cache creation buckets. Preserve the
+                    # split so downstream cost tooling can price 5m vs 1h writes correctly.
+                    if cache_creation_5m is not None:
+                        metrics["prompt_cache_creation_5m_tokens"] = cache_creation_5m
+                    if cache_creation_1h is not None:
+                        metrics["prompt_cache_creation_1h_tokens"] = cache_creation_1h
+                    effective_cache_creation = (cache_creation_5m or 0) + (cache_creation_1h or 0)
+                else:
+                    if cache_creation is not None:
+                        metrics["prompt_cache_creation_tokens"] = cache_creation
+                    effective_cache_creation = cache_creation or 0
+                cache_tokens = (cache_read or 0) + effective_cache_creation
                 prompt_tokens = metrics.get("prompt_tokens")
                 completion_tokens = metrics.get("completion_tokens")
                 total_tokens = metrics.get("total_tokens")
-                if (
-                    cache_tokens
-                    and prompt_tokens is not None
-                    and completion_tokens is not None
-                    and total_tokens == prompt_tokens + completion_tokens
-                    and _cache_tokens_are_separate_from_input_tokens(input_token_details)
-                ):
-                    metrics["prompt_tokens"] = prompt_tokens + cache_tokens
-                    metrics["total_tokens"] = total_tokens + cache_tokens
+                if prompt_tokens is not None and completion_tokens is not None:
+                    if (
+                        cache_tokens
+                        and total_tokens == prompt_tokens + completion_tokens
+                        and _cache_tokens_are_separate_from_input_tokens(input_token_details)
+                    ):
+                        prompt_tokens += cache_tokens
+                        metrics["prompt_tokens"] = prompt_tokens
+                        if total_tokens is not None:
+                            metrics["total_tokens"] = total_tokens + cache_tokens
+                    metrics["tokens"] = prompt_tokens + completion_tokens
 
     if not metrics or not any(metrics.values()):
         llm_output: dict[str, Any] = response.llm_output or {}
