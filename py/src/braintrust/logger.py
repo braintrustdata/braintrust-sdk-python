@@ -3687,20 +3687,10 @@ def _start_span_parent_args(
             f"Mismatch between expected span parent object type {parent_object_type} and provided type {parent_components.object_type}"
         )
 
-        parent_components_object_id_lambda = _span_components_to_object_id_lambda(parent_components)
-
-        if parent_object_id_override is None:
-
-            def compute_parent_object_id():
-                parent_components_object_id = parent_components_object_id_lambda()
-                assert parent_object_id.get() == parent_components_object_id, (
-                    f"Mismatch between expected span parent object id {parent_object_id.get()} and provided id {parent_components_object_id}"
-                )
-                return parent_object_id.get()
-
-            arg_parent_object_id = LazyValue(compute_parent_object_id, use_mutex=False)
-        else:
+        if parent_object_id_override is not None:
             arg_parent_object_id = LazyValue(lambda: parent_object_id_override, use_mutex=False)
+        else:
+            arg_parent_object_id = parent_object_id
         if parent_components.row_id:
             arg_parent_span_ids = ParentSpanIds(
                 span_id=parent_components.span_id, root_span_id=parent_components.root_span_id

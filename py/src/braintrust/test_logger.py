@@ -2601,6 +2601,27 @@ def test_parent_precedence_explicit_parent_with_project_override(with_memory_log
     assert outer_span_id in (forced_log.get("span_parents") or [])
 
 
+def test_logger_start_span_with_exported_parent_uses_receiver_project(with_memory_logger):
+    primary_logger = init_test_logger("test-project-a")
+    secondary_logger = init_test_logger("test-project-b")
+
+    with primary_logger.start_span(name="exported_parent") as exported_parent:
+        exported_parent.log(input="parent")
+        exported_parent_export = exported_parent.export()
+        exported_parent_span_id = exported_parent.span_id
+        exported_parent_root_span_id = exported_parent.root_span_id
+
+    with secondary_logger.start_span(name="child", parent=exported_parent_export) as child:
+        child.log(input="test")
+
+    logs = with_memory_logger.pop()
+    child_log = next(l for l in logs if l.get("span_attributes", {}).get("name") == "child")
+
+    assert child_log["project_id"] == "test-project-b"
+    assert child_log["root_span_id"] == exported_parent_root_span_id
+    assert exported_parent_span_id in (child_log.get("span_parents") or [])
+
+
 def test_parent_object_id_override_preserves_object_type_checks(with_memory_logger, with_simulate_login):
     """Test that overriding project id does not bypass parent object type validation."""
     test_logger = init_test_logger("test-logger")
@@ -2894,22 +2915,21 @@ def test_span_start_span_with_exported_span_parent(with_memory_logger):
     )
 
 
-def test_span_start_span_with_exported_span_parent_and_project_override(with_memory_logger):
-    """Test that span.start_span() supports overriding the project id with an exported parent."""
-    test_logger = init_test_logger("test-project-a")
+def test_span_start_span_with_exported_span_parent_uses_receiver_project(with_memory_logger):
+    primary_logger = init_test_logger("test-project-a")
+    secondary_logger = init_test_logger("test-project-b")
 
-    with test_logger.start_span(name="exported_parent") as exported_parent:
+    with primary_logger.start_span(name="exported_parent") as exported_parent:
         exported_parent.log(input="parent")
         exported_parent_export = exported_parent.export()
         exported_parent_span_id = exported_parent.span_id
         exported_parent_root_span_id = exported_parent.root_span_id
 
-    with test_logger.start_span(name="active_context") as active_context:
+    with secondary_logger.start_span(name="active_context") as active_context:
         active_context_span_id = active_context.span_id
 
         with active_context.start_span(
             parent=exported_parent_export,
-            parent_object_id="test-project-b",
             name="child",
         ) as child:
             child.log(input="test")
