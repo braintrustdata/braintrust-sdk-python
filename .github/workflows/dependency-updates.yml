@@ -1,0 +1,66 @@
+name: Dependency updates
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 6am UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up mise
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: true
+          experimental: true
+
+      - name: Update matrix latest pins
+        working-directory: py
+        run: python scripts/update-matrix-latest.py
+
+      - name: Upgrade lockfile
+        working-directory: py
+        run: uv lock --upgrade
+
+      - name: Determine labels
+        id: labels
+        working-directory: py
+        run: python scripts/determine-dependency-update-labels.py >> "$GITHUB_OUTPUT"
+
+      - name: Get date
+        id: date
+        run: echo "date=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Close stale weekly dependency update PRs
+        if: steps.labels.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_BRANCH: deps/weekly-update-${{ steps.date.outputs.date }}
+        run: |
+          gh pr list \
+            --state open \
+            --json number,title,headRefName \
+            --jq ".[] | select(.title == \"chore(deps): weekly dependency update\") | select(.headRefName != \"$CURRENT_BRANCH\") | .number" \
+          | while read -r pr; do
+              echo "Closing stale dependency update PR #$pr"
+              gh pr close "$pr" --comment "Superseded by a newer automated dependency update." --delete-branch
+            done
+
+      - name: Open PR
+        if: steps.labels.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          title: "chore(deps): weekly dependency update"
+          body: |
+            Automated weekly dependency update via `python scripts/update-matrix-latest.py && uv lock --upgrade`.
+
+            ${{ steps.labels.outputs.needs_rerecord == 'true' && '⚠️ **Provider SDK packages changed.** A human needs to re-record cassettes locally before merging.' || '✅ Only test infrastructure deps changed. Safe to merge if CI passes.' }}
+          branch: deps/weekly-update-${{ steps.date.outputs.date }}
+          labels: |
+            dependencies
+            ${{ steps.labels.outputs.needs_rerecord == 'true' && 'needs-cassette-rerecord' || 'auto-merge-candidate' }}

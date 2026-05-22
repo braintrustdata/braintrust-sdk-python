@@ -1,0 +1,83 @@
+name: update-session-weights
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  measure:
+    runs-on: windows-2025
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: "3.10"
+      - name: Run nox tests (shard ${{ matrix.shard }}/4)
+        shell: bash
+        run: |
+          mise exec python@3.10 -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
+            --exclude-static-checks \
+            --output-durations measured-durations-${{ matrix.shard }}.json
+      - name: Upload measured durations
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: session-durations-shard-${{ matrix.shard }}
+          path: measured-durations-${{ matrix.shard }}.json
+          retention-days: 5
+
+  update:
+    needs: [measure]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Download measured durations
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: session-durations-shard-*
+          merge-multiple: true
+      - name: Check for drift
+        id: check
+        run: |
+          if python ./py/scripts/check-session-weights.py measured-durations-*.json; then
+            echo "drifted=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "drifted=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Update weights
+        if: steps.check.outputs.drifted == 'true'
+        run: |
+          python ./py/scripts/check-session-weights.py --update measured-durations-*.json
+      - name: Remove temporary duration files
+        if: steps.check.outputs.drifted == 'true'
+        run: rm -f measured-durations-*.json
+      - name: Create pull request
+        if: steps.check.outputs.drifted == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          commit-message: "ci: update nox session weights"
+          branch: auto/update-session-weights
+          title: "ci: update nox session weights"
+          body: |
+            Automated weekly update of `py/scripts/session-weights.json`.
+
+            Session durations were re-measured on `windows-2025` with Python 3.10
+            and at least one session drifted beyond the 50% threshold.
+
+            This keeps nox shard balancing accurate.
+          labels: ci
+          delete-branch: true

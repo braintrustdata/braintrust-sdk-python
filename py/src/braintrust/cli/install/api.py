@@ -10,6 +10,7 @@ from braintrust.logger import app_conn, login
 from ...aws import cloudformation
 from ...util import response_raise_for_status
 
+
 _logger = logging.getLogger("braintrust.install.api")
 
 PARAMS = {

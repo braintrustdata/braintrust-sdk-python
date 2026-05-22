@@ -1,0 +1,106 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":[{"image_url":{"url":"data:image/png;base64,SU5WQUxJRF9QTkdfREFUQV9OT1RfQV9SRUFMX0lNQUdF"},"type":"image_url"},{"text":"What''s
+      in this image?","type":"text"}]}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '264'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - pydantic-ai/1.89.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.33.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.12.12
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"message\": \"You uploaded an unsupported image.
+        Please make sure your image has of one the following formats: ['png', 'jpeg',
+        'gif', 'webp'].\",\n    \"type\": \"invalid_request_error\",\n    \"param\":
+        null,\n    \"code\": \"invalid_image_format\"\n  }\n}"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9f50695539a1b1a2-YYZ
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '258'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 01 May 2026 17:12:30 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '23'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=B.5.W6yRE9IZgAZgHk83nz99.WuJmUmnScmEeSA1zOI-1777655550.2780886-1.0.1.1-_qHUI1NRl9THMwypvyUMBDOu8z6zGNMll.IL9JE8VRwlnodtTXfiQaDDvxHBAeB6RJMj7B3ywZGPJSFIJFFnaDmeSRYzRhMV2.sZa7maAVpDmzIlyxoCHRR_XqlLftgo;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
+        17:42:30 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999227'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_18694b72a4654f8692afff1f2c86efe3
+    status:
+      code: 400
+      message: Bad Request
+version: 1

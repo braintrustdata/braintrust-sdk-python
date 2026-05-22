@@ -1,7 +1,10 @@
 import dataclasses
 import json
 import math
-from typing import Any, Callable, Mapping, NamedTuple, cast, overload
+import warnings
+from collections.abc import Callable, Mapping
+from typing import Any, NamedTuple, cast, overload
+
 
 # Try to import orjson for better performance
 # If not available, we'll use standard json
@@ -13,11 +16,27 @@ except ImportError:
     _HAS_ORJSON = False
 
 
-
 def _to_bt_safe(v: Any) -> Any:
     """
     Converts the object to a Braintrust-safe representation (i.e. Attachment objects are safe (specially handled by background logger)).
     """
+    # Fast path: check primitives via type identity before hitting
+    # isinstance checks against abstract classes or Pydantic model_dump.
+    if v is None or v is True or v is False:
+        return v
+    tv = type(v)
+    if tv is int or tv is str:
+        return v
+    if tv is float or isinstance(v, float):
+        if math.isnan(v):
+            return "NaN"
+        if math.isinf(v):
+            return "Infinity" if v > 0 else "-Infinity"
+        return v
+    # Catch str/int subclasses (e.g. str-enums like SpanTypeAttribute)
+    if isinstance(v, (int, str)):
+        return v
+
     # avoid circular imports
     from braintrust.logger import BaseAttachment, Dataset, Experiment, Logger, ReadonlyAttachment, Span
 
@@ -53,30 +72,23 @@ def _to_bt_safe(v: Any) -> Any:
             pass
 
     # Attempt to dump a Pydantic v2 `BaseModel`.
-    try:
-        return cast(Any, v).model_dump(exclude_none=True)
-    except (AttributeError, TypeError):
-        pass
+    # Suppress Pydantic serializer warnings that arise from generic/discriminated-union
+    # models (e.g. OpenAI's ParsedResponse[T]).  See
+    # https://github.com/braintrustdata/braintrust-sdk-python/issues/60
+    if hasattr(v, "model_dump"):
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Pydantic serializer warnings", category=UserWarning)
+                return cast(Any, v).model_dump(exclude_none=True)
+        except (AttributeError, TypeError):
+            pass
 
     # Attempt to dump a Pydantic v1 `BaseModel`.
-    try:
-        return cast(Any, v).dict(exclude_none=True)
-    except (AttributeError, TypeError):
-        pass
-
-    if isinstance(v, float):
-        # Handle NaN and Infinity for JSON compatibility
-        if math.isnan(v):
-            return "NaN"
-
-        if math.isinf(v):
-            return "Infinity" if v > 0 else "-Infinity"
-
-        return v
-
-    if isinstance(v, (int, str, bool)) or v is None:
-        # Skip roundtrip for primitive types.
-        return v
+    if hasattr(v, "dict") and not isinstance(v, type):
+        try:
+            return cast(Any, v).dict(exclude_none=True)
+        except (AttributeError, TypeError):
+            pass
 
     # Note: we avoid using copy.deepcopy, because it's difficult to
     # guarantee the independence of such copied types from their origin.
@@ -87,11 +99,13 @@ def _to_bt_safe(v: Any) -> Any:
     # We pass `encoder=_str_encoder` since we've already tried converting rich objects to json safe objects.
     return bt_loads(bt_dumps(v, encoder=_str_encoder))
 
+
 @overload
 def bt_safe_deep_copy(
     obj: Mapping[str, Any],
     max_depth: int = ...,
 ) -> dict[str, Any]: ...
+
 
 @overload
 def bt_safe_deep_copy(
@@ -99,18 +113,18 @@ def bt_safe_deep_copy(
     max_depth: int = ...,
 ) -> list[Any]: ...
 
+
 @overload
 def bt_safe_deep_copy(
     obj: Any,
     max_depth: int = ...,
 ) -> Any: ...
-def bt_safe_deep_copy(obj: Any, max_depth: int=200):
+def bt_safe_deep_copy(obj: Any, max_depth: int = 200):
     """
     Creates a deep copy of the given object and converts rich objects to Braintrust-safe representations. See `_to_bt_safe` for more details.
 
     Args:
         obj: Object to deep copy and sanitize.
-        to_json_safe: Function to ensure the object is json safe.
         max_depth: Maximum depth to copy.
 
     Returns:
@@ -118,41 +132,88 @@ def bt_safe_deep_copy(obj: Any, max_depth: int=200):
     """
     # Track visited objects to detect circular references
     visited: set[int] = set()
+    visited_add = visited.add
+    visited_discard = visited.discard
 
     def _deep_copy_object(v: Any, depth: int = 0) -> Any:
-        # Check depth limit - use >= to stop before exceeding
+        # Fast path: primitives don't need deep copy or circular ref tracking.
+        if v is None or v is True or v is False:
+            return v
+        tv = type(v)
+        if tv is int or tv is str:
+            return v
+        if tv is float or isinstance(v, float):
+            if math.isnan(v):
+                return "NaN"
+            if math.isinf(v):
+                return "Infinity" if v > 0 else "-Infinity"
+            return v
+        # Catch str/int subclasses (e.g. str-enums)
+        if isinstance(v, (int, str)):
+            return v
+
         if depth >= max_depth:
             return "<max depth exceeded>"
 
-        # Check for circular references in mutable containers
-        # Use id() to track object identity
-        if isinstance(v, (Mapping, list, tuple, set)):
+        # Fast path for dict (the most common container in log data).
+        # Uses type identity instead of isinstance(v, Mapping) which is slow.
+        if tv is dict:
             obj_id = id(v)
             if obj_id in visited:
                 return "<circular reference>"
-            visited.add(obj_id)
+            visited_add(obj_id)
             try:
-                if isinstance(v, Mapping):
-                    # Prevent dict keys from holding references to user data. Note that
-                    # `bt_json` already coerces keys to string, a behavior that comes from
-                    # `json.dumps`. However, that runs at log upload time, while we want to
-                    # cut out all the references to user objects synchronously in this
-                    # function.
-                    result = {}
-                    for k in v:
+                result = {}
+                for k in v:
+                    if type(k) is str:
+                        key_str = k
+                    else:
                         try:
                             key_str = str(k)
                         except Exception:
-                            # If str() fails on the key, use a fallback representation
                             key_str = f"<non-stringifiable-key: {type(k).__name__}>"
-                        result[key_str] = _deep_copy_object(v[k], depth + 1)
-                    return result
-                elif isinstance(v, (list, tuple, set)):
-                    return [_deep_copy_object(x, depth + 1) for x in v]
+                    result[key_str] = _deep_copy_object(v[k], depth + 1)
+                return result
             finally:
-                # Remove from visited set after processing to allow the same object
-                # to appear in different branches of the tree
-                visited.discard(obj_id)
+                visited_discard(obj_id)
+        elif tv is list or tv is tuple:
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited_add(obj_id)
+            try:
+                return [_deep_copy_object(x, depth + 1) for x in v]
+            finally:
+                visited_discard(obj_id)
+        # Slow path for non-builtin Mapping/set types.
+        elif isinstance(v, Mapping):
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited_add(obj_id)
+            try:
+                result = {}
+                for k in v:
+                    if type(k) is str:
+                        key_str = k
+                    else:
+                        try:
+                            key_str = str(k)
+                        except Exception:
+                            key_str = f"<non-stringifiable-key: {type(k).__name__}>"
+                    result[key_str] = _deep_copy_object(v[k], depth + 1)
+                return result
+            finally:
+                visited_discard(obj_id)
+        elif isinstance(v, set):
+            obj_id = id(v)
+            if obj_id in visited:
+                return "<circular reference>"
+            visited_add(obj_id)
+            try:
+                return [_deep_copy_object(x, depth + 1) for x in v]
+            finally:
+                visited_discard(obj_id)
 
         try:
             return _to_bt_safe(v)
@@ -160,6 +221,7 @@ def bt_safe_deep_copy(obj: Any, max_depth: int=200):
             return f"<non-sanitizable: {type(v).__name__}>"
 
     return _deep_copy_object(obj)
+
 
 def _safe_str(obj: Any) -> str:
     try:
@@ -211,10 +273,12 @@ class Encoder(NamedTuple):
     native: type[json.JSONEncoder]
     orjson: Callable[[Any], Any]
 
+
 _json_encoder = Encoder(native=BraintrustJSONEncoder, orjson=_to_json_safe)
 _str_encoder = Encoder(native=BraintrustStrEncoder, orjson=_safe_str)
 
-def bt_dumps(obj: Any, encoder: Encoder | None=_json_encoder, **kwargs: Any) -> str:
+
+def bt_dumps(obj: Any, encoder: Encoder | None = _json_encoder, **kwargs: Any) -> str:
     """
     Serialize obj to a JSON-formatted string.
 

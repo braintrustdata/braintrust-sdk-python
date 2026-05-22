@@ -1,0 +1,14 @@
+[project]
+name = "braintrust-otel-example"
+version = "0.1.0"
+description = "OpenTelemetry interop via BraintrustSpanProcessor"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust[otel]",
+    "openai",
+    "autoevals",
+    "opentelemetry-instrumentation-openai",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

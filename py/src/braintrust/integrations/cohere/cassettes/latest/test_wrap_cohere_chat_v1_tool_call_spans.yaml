@@ -1,0 +1,83 @@
+interactions:
+- request:
+    body: '{"message":"Use the get_weather tool for Paris.","model":"command-a-03-2025","max_tokens":64,"tools":[{"name":"get_weather","description":"Get
+      the weather for a city.","parameter_definitions":{"city":{"description":"City
+      name","type":"str","required":true}}}],"force_single_step":true,"stream":false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '300'
+      Host:
+      - api.cohere.com
+      User-Agent:
+      - cohere/6.1.0
+      X-Fern-Language:
+      - Python
+      X-Fern-Platform:
+      - darwin/25.2.0
+      X-Fern-Runtime:
+      - python/3.12.12
+      X-Fern-SDK-Name:
+      - cohere
+      X-Fern-SDK-Version:
+      - 6.1.0
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.cohere.com/v1/chat
+  response:
+    body:
+      string: '{"response_id":"490af82c-d74b-4774-96aa-a48abc77b39d","text":"I will
+        use one or more of the available tools to find the answer","generation_id":"465b7c4c-823c-4932-bd72-cc91b3aa154d","chat_history":[{"role":"USER","message":"Use
+        the get_weather tool for Paris."},{"role":"CHATBOT","message":"I will use
+        one or more of the available tools to find the answer","tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":42,"output_tokens":22},"tokens":{"input_tokens":1462,"output_tokens":33},"cached_tokens":0},"tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-length:
+      - '684'
+      content-type:
+      - application/json
+      date:
+      - Fri, 01 May 2026 17:35:39 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      num_chars:
+      - '6894'
+      num_tokens:
+      - '64'
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      vary:
+      - Origin,Accept-Encoding
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - 9a84e7af81536f5a0ae6409b072713da
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '988'
+      x-trial-endpoint-call-limit:
+      - '20'
+      x-trial-endpoint-call-remaining:
+      - '17'
+    status:
+      code: 200
+      message: OK
+version: 1

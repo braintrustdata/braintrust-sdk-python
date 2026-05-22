@@ -1,0 +1,79 @@
+interactions:
+- request:
+    body: '{"message":"Say hi in one word.","model":"command-a-03-2025","max_tokens":10,"stream":false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '92'
+      Host:
+      - api.cohere.com
+      User-Agent:
+      - cohere/6.1.0
+      X-Fern-Language:
+      - Python
+      X-Fern-Platform:
+      - darwin/25.2.0
+      X-Fern-Runtime:
+      - python/3.14.3
+      X-Fern-SDK-Name:
+      - cohere
+      X-Fern-SDK-Version:
+      - 6.1.0
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.cohere.com/v1/chat
+  response:
+    body:
+      string: '{"response_id":"c5a7c7f7-9008-494a-b98f-0a4ba7884028","text":"Hi!","generation_id":"f65b695b-32c1-4bce-8181-301bad8e8629","chat_history":[{"role":"USER","message":"Say
+        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":4},"cached_tokens":0}}'
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      access-control-expose-headers:
+      - X-Debug-Trace-ID
+      cache-control:
+      - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
+      content-length:
+      - '406'
+      content-type:
+      - application/json
+      date:
+      - Thu, 16 Apr 2026 22:25:12 GMT
+      expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      num_chars:
+      - '2597'
+      num_tokens:
+      - '8'
+      pragma:
+      - no-cache
+      server:
+      - envoy
+      vary:
+      - Origin,Accept-Encoding
+      x-accel-expires:
+      - '0'
+      x-debug-trace-id:
+      - 86e32c7996b5cfbbb75c0d2092031db2
+      x-endpoint-monthly-call-limit:
+      - '1000'
+      x-envoy-upstream-service-time:
+      - '211'
+      x-trial-endpoint-call-limit:
+      - '20'
+      x-trial-endpoint-call-remaining:
+      - '18'
+    status:
+      code: 200
+      message: OK
+version: 1

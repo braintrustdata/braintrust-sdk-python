@@ -1,0 +1,13 @@
+[project]
+name = "braintrust-agentscope-example"
+version = "0.1.0"
+description = "AgentScope ReAct agent traced with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "agentscope",
+    "openai",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

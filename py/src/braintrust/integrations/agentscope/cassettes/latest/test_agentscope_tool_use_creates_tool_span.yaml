@@ -1,0 +1,462 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '897'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.31.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.31.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DX7NV1FgjSMVVHoIDjQuhW4xrd5Rt\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785557,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_mM5XjjIiNmRmMGfxWvn3SFzy\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"execute_python_code\",\n
+        \             \"arguments\": \"{\\\"code\\\":\\\"result = 6 * 7\\\\nprint(result)\\\"}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 152,\n    \"completion_tokens\":
+        25,\n    \"total_tokens\": 177,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_77c1b30b18\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9efd71474b96aac5-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 21 Apr 2026 15:32:38 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '1119'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '576'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=lS.ajlW6j7HaL8fbIF43ys0CO061IPH1p3a_GiwbBYA-1776785557.643128-1.0.1.1-iay6FrUN34y4BrWqivM802lbV9VeJzQrZ2ydocIPT2pVHJ.ygIxM4x4DQkBp.gc31L3kHS1ftnQ31JqrgvTxhRd26lYFOM3peACNPD2CTsZiVdAeD9VK_RIDmFganqnn;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Tue, 21 Apr 2026
+        16:02:38 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999965'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_dd579fe9dd994262b9358aa115a7cfb5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]},{"role":"assistant","name":"Jarvis","content":null,"tool_calls":[{"id":"call_mM5XjjIiNmRmMGfxWvn3SFzy","type":"function","function":{"name":"execute_python_code","arguments":"{\"code\":
+      \"result = 6 * 7\\nprint(result)\"}"}}]},{"role":"tool","tool_call_id":"call_mM5XjjIiNmRmMGfxWvn3SFzy","content":"<returncode>0</returncode><stdout>42\n</stdout><stderr></stderr>","name":"execute_python_code"}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1293'
+      Content-Type:
+      - application/json
+      Cookie:
+      - __cf_bm=lS.ajlW6j7HaL8fbIF43ys0CO061IPH1p3a_GiwbBYA-1776785557.643128-1.0.1.1-iay6FrUN34y4BrWqivM802lbV9VeJzQrZ2ydocIPT2pVHJ.ygIxM4x4DQkBp.gc31L3kHS1ftnQ31JqrgvTxhRd26lYFOM3peACNPD2CTsZiVdAeD9VK_RIDmFganqnn
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.31.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.31.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DX7NWBRaAl2coYGIIzGvr50SEkx9v\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785558,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The result of \\\\( 6 \\\\times 7 \\\\)
+        is 42.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 209,\n    \"completion_tokens\": 17,\n
+        \   \"total_tokens\": 226,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_77c1b30b18\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9efd714d5d10eff9-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 21 Apr 2026 15:32:39 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '849'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '475'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999945'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_f195553548304b83b2079ddada1917ef
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '897'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.31.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.31.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DX7O6opl2ppovW4SxZ3AqGhQmkcPe\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785594,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_hKaKsTiPvIg3byYoAoqAm0Nc\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"execute_python_code\",\n
+        \             \"arguments\": \"{\\\"code\\\":\\\"result = 6 * 7\\\\nprint(result)\\\"}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 152,\n    \"completion_tokens\":
+        25,\n    \"total_tokens\": 177,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_77c1b30b18\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9efd722bf8d1860b-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 21 Apr 2026 15:33:15 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '1119'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '588'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=2qQiga_y9S2sdgXSYFin8ICmGupzsHVfrlP.ylHr9N0-1776785594.2379313-1.0.1.1-6A2DGUueG8FwNuB97Pawero7GOmqOJhNi3wP8tw98v7Do0IUV_VipMvh2X5.qESceqlD5NxFcjlamalWaK9JZzPE9mLCStg9ykowI4qZZqFJz9NdbjB.CH9cvjaDkDgX;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Tue, 21 Apr 2026
+        16:03:15 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999965'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_fd911bb0a6de4e8c8431d504d855688e
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"system","name":"system","content":[{"type":"text","text":"You
+      are a helpful assistant. Use tools when required and keep answers brief."}]},{"role":"user","name":"user","content":[{"type":"text","text":"Use
+      Python to compute 6 * 7 and return just the result."}]},{"role":"assistant","name":"Jarvis","content":null,"tool_calls":[{"id":"call_hKaKsTiPvIg3byYoAoqAm0Nc","type":"function","function":{"name":"execute_python_code","arguments":"{\"code\":
+      \"result = 6 * 7\\nprint(result)\"}"}}]},{"role":"tool","tool_call_id":"call_hKaKsTiPvIg3byYoAoqAm0Nc","content":"<returncode>0</returncode><stdout>42\n</stdout><stderr></stderr>","name":"execute_python_code"}],"model":"gpt-4o-mini","stream":false,"temperature":0,"tools":[{"type":"function","function":{"name":"execute_python_code","parameters":{"properties":{"code":{"description":"The
+      Python code to be executed.","type":"string"},"timeout":{"default":300,"description":"The
+      maximum time (in seconds) allowed for the code to run.","type":"number"}},"required":["code"],"type":"object"},"description":"Execute
+      the given python code in a temp file and capture the return\ncode, standard
+      output and error. Note you must `print` the output to get\nthe result, and the
+      tmp file will be removed right after the execution."}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1293'
+      Content-Type:
+      - application/json
+      Cookie:
+      - __cf_bm=2qQiga_y9S2sdgXSYFin8ICmGupzsHVfrlP.ylHr9N0-1776785594.2379313-1.0.1.1-6A2DGUueG8FwNuB97Pawero7GOmqOJhNi3wP8tw98v7Do0IUV_VipMvh2X5.qESceqlD5NxFcjlamalWaK9JZzPE9mLCStg9ykowI4qZZqFJz9NdbjB.CH9cvjaDkDgX
+      Host:
+      - api.openai.com
+      User-Agent:
+      - AsyncOpenAI/Python 2.31.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.31.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DX7O7fv7EbcUjsmROugEtwNX54yg3\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776785595,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The result of \\\\( 6 \\\\times 7 \\\\)
+        is 42.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 209,\n    \"completion_tokens\": 17,\n
+        \   \"total_tokens\": 226,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_77c1b30b18\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9efd7232e996bf5d-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 21 Apr 2026 15:33:15 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '849'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '447'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999945'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_20ce97e1d8474231b8a5ce881a381f34
+    status:
+      code: 200
+      message: OK
+version: 1

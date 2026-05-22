@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 65ee1878ee4535ba) -- do not modify"""
+"""Auto-generated file (content hash fe93a84e058f7f2d) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -28,10 +28,8 @@ from ._generated_types import (
     CodeBundle,
     Dataset,
     DatasetEvent,
+    DatasetSnapshot,
     EnvVar,
-    EvalStatusPage,
-    EvalStatusPageConfig,
-    EvalStatusPageTheme,
     Experiment,
     ExperimentEvent,
     ExtendedSavedFunctionId,
@@ -105,6 +103,7 @@ from ._generated_types import (
     TopicAutomationDataScope,
     TopicMapData,
     TopicMapFunctionAutomation,
+    TopicMapGenerationSettings,
     TraceScope,
     TriggeredFunctionState,
     UploadStatus,
@@ -114,6 +113,7 @@ from ._generated_types import (
     ViewDataSearch,
     ViewOptions,
 )
+
 
 __all__ = [
     "AISecret",
@@ -143,10 +143,8 @@ __all__ = [
     "CodeBundle",
     "Dataset",
     "DatasetEvent",
+    "DatasetSnapshot",
     "EnvVar",
-    "EvalStatusPage",
-    "EvalStatusPageConfig",
-    "EvalStatusPageTheme",
     "Experiment",
     "ExperimentEvent",
     "ExtendedSavedFunctionId",
@@ -220,6 +218,7 @@ __all__ = [
     "TopicAutomationDataScope",
     "TopicMapData",
     "TopicMapFunctionAutomation",
+    "TopicMapGenerationSettings",
     "TraceScope",
     "TriggeredFunctionState",
     "UploadStatus",

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any, Literal, TypedDict, TypeVar, overload
 
 from sseclient import SSEClient
@@ -5,9 +6,11 @@ from sseclient import SSEClient
 from .._generated_types import FunctionTypeEnum
 from ..bt_json import bt_dumps
 from ..logger import Exportable, _internal_get_global_state, get_span_parent_object, login, proxy_conn
+from ..types import Metadata
 from ..util import response_raise_for_status
 from .constants import INVOKE_API_VERSION
 from .stream import BraintrustInvokeError, BraintrustStream
+
 
 T = TypeVar("T")
 ModeType = Literal["auto", "parallel", "json", "text"]
@@ -43,9 +46,9 @@ def invoke(
     function_type: FunctionTypeEnum | None = None,
     # arguments to the function
     input: Any = None,
-    messages: list[Any] | None = None,
-    metadata: dict[str, Any] | None = None,
-    tags: list[str] | None = None,
+    messages: Sequence[Any] | None = None,
+    metadata: Metadata | None = None,
+    tags: Sequence[str] | None = None,
     parent: Exportable | str | None = None,
     stream: Literal[False] | None = None,
     mode: ModeType | None = None,
@@ -71,9 +74,9 @@ def invoke(
     function_type: FunctionTypeEnum | None = None,
     # arguments to the function
     input: Any = None,
-    messages: list[Any] | None = None,
-    metadata: dict[str, Any] | None = None,
-    tags: list[str] | None = None,
+    messages: Sequence[Any] | None = None,
+    metadata: Metadata | None = None,
+    tags: Sequence[str] | None = None,
     parent: Exportable | str | None = None,
     stream: Literal[True] = True,
     mode: ModeType | None = None,
@@ -98,9 +101,9 @@ def invoke(
     function_type: FunctionTypeEnum | None = None,
     # arguments to the function
     input: Any = None,
-    messages: list[Any] | None = None,
-    metadata: dict[str, Any] | None = None,
-    tags: list[str] | None = None,
+    messages: Sequence[Any] | None = None,
+    metadata: Metadata | None = None,
+    tags: Sequence[str] | None = None,
     parent: Exportable | str | None = None,
     stream: bool = False,
     mode: ModeType | None = None,
@@ -196,14 +199,17 @@ def invoke(
     if strict is not None:
         request["strict"] = strict
 
-    headers = {"Accept": "text/event-stream" if stream else "application/json"}
+    headers = {
+        "Accept": "text/event-stream" if stream else "application/json",
+        "Content-Type": "application/json",
+    }
     if project_id is not None:
         headers["x-bt-project-id"] = project_id
     if org_name is not None:
         headers["x-bt-org-name"] = org_name
 
     request_json = bt_dumps(request)
-    resp = proxy_conn().post("function/invoke", data=request_json, headers=headers, stream=stream)
+    resp = proxy_conn().post("function/invoke", data=request_json.encode("utf-8"), headers=headers, stream=stream)
     if resp.status_code == 500:
         raise BraintrustInvokeError(resp.text)
 

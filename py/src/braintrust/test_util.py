@@ -1,6 +1,5 @@
 import os
 import unittest
-from typing import List
 
 import pytest
 
@@ -129,9 +128,9 @@ class TestLazyValue(unittest.TestCase):
         lazy = LazyValue(compute_value, use_mutex=True)
 
         # Launch multiple threads that all try to get() simultaneously
-        threads: List[threading.Thread] = []
-        results: List[str] = []
-        errors: List[Exception] = []
+        threads: list[threading.Thread] = []
+        results: list[str] = []
+        errors: list[Exception] = []
 
         def worker():
             try:

@@ -1,0 +1,650 @@
+{
+  "cassette_name": "test_bundled_subagent_creates_task_span",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_4a259d12",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_4a259d12",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "You must delegate this task to the bundled general-purpose agent. Have that agent inspect the current repository and reply with only the repository name. Do not answer directly without using the subagent.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.116",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [
+          {
+            "name": "linear-server",
+            "status": "connected"
+          }
+        ],
+        "memory_paths": {
+          "auto": "<REDACTED_PATH>"
+        },
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [
+          {
+            "name": "rust-analyzer-lsp",
+            "path": "<REDACTED_PATH>",
+            "source": "rust-analyzer-lsp@claude-plugins-official"
+          }
+        ],
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "skills": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking"
+        ],
+        "slash_commands": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "review",
+          "security-review",
+          "insights",
+          "team-onboarding"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "AskUserQuestion",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "Edit",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitPlanMode",
+          "ExitWorktree",
+          "Glob",
+          "Grep",
+          "LSP",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "RemoteTrigger",
+          "ScheduleWakeup",
+          "Skill",
+          "TaskOutput",
+          "TaskStop",
+          "TodoWrite",
+          "ToolSearch",
+          "WebFetch",
+          "WebSearch",
+          "Write",
+          "mcp__linear-server__create_attachment",
+          "mcp__linear-server__create_document",
+          "mcp__linear-server__create_issue_label",
+          "mcp__linear-server__delete_attachment",
+          "mcp__linear-server__delete_comment",
+          "mcp__linear-server__delete_customer",
+          "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_status_update",
+          "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_attachment",
+          "mcp__linear-server__get_document",
+          "mcp__linear-server__get_initiative",
+          "mcp__linear-server__get_issue",
+          "mcp__linear-server__get_issue_status",
+          "mcp__linear-server__get_milestone",
+          "mcp__linear-server__get_project",
+          "mcp__linear-server__get_status_updates",
+          "mcp__linear-server__get_team",
+          "mcp__linear-server__get_user",
+          "mcp__linear-server__list_comments",
+          "mcp__linear-server__list_customers",
+          "mcp__linear-server__list_cycles",
+          "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiatives",
+          "mcp__linear-server__list_issue_labels",
+          "mcp__linear-server__list_issue_statuses",
+          "mcp__linear-server__list_issues",
+          "mcp__linear-server__list_milestones",
+          "mcp__linear-server__list_project_labels",
+          "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_teams",
+          "mcp__linear-server__list_users",
+          "mcp__linear-server__save_comment",
+          "mcp__linear-server__save_customer",
+          "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_initiative",
+          "mcp__linear-server__save_issue",
+          "mcp__linear-server__save_milestone",
+          "mcp__linear-server__save_project",
+          "mcp__linear-server__save_status_update",
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__update_document"
+        ],
+        "type": "system",
+        "uuid": "0e979672-19ad-4e71-b753-5d6cab2ea4e1"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user is asking me to delegate this task to a general-purpose agent. They want me to have the agent inspect the current repository and reply with only the repository name. I should not answer directly.\n\nI need to use the Agent tool with subagent_type \"general-purpose\" to inspect the repository and find its name.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01HHUzdEzLD5Y5nKRbdrg3Aa",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 37857
+            },
+            "cache_creation_input_tokens": 37857,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 8,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "type": "assistant",
+        "uuid": "df244b3b-4ae6-488c-a135-b4f775330c70"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+              "input": {
+                "description": "Inspect repository and report name",
+                "prompt": "Inspect the current repository to determine its name. Look for clues like:\n- The repository name in git config\n- The package name in pyproject.toml or package.json\n- The .git directory or similar version control metadata\n- The directory structure and any obvious project naming\n\nReply with ONLY the repository name, nothing else.",
+                "subagent_type": "general-purpose"
+              },
+              "name": "Agent",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01HHUzdEzLD5Y5nKRbdrg3Aa",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 37857
+            },
+            "cache_creation_input_tokens": 37857,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 8,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "type": "assistant",
+        "uuid": "7bc5278e-b2bf-4fb7-9dbf-f105ffbd078f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Inspect repository and report name",
+        "prompt": "Inspect the current repository to determine its name. Look for clues like:\n- The repository name in git config\n- The package name in pyproject.toml or package.json\n- The .git directory or similar version control metadata\n- The directory structure and any obvious project naming\n\nReply with ONLY the repository name, nothing else.",
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "subtype": "task_started",
+        "task_id": "ac892cba969cee55e",
+        "task_type": "local_agent",
+        "tool_use_id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+        "type": "system",
+        "uuid": "d714513c-20de-494d-86c6-ef9476670343"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Inspect the current repository to determine its name. Look for clues like:\n- The repository name in git config\n- The package name in pyproject.toml or package.json\n- The .git directory or similar version control metadata\n- The directory structure and any obvious project naming\n\nReply with ONLY the repository name, nothing else.",
+              "type": "text"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "timestamp": "2026-04-21T15:33:52.437Z",
+        "type": "user",
+        "uuid": "68aac3e9-e2d4-47e7-af1a-e5809f7ac258"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Running git config --get remote.origin.url",
+        "last_tool_name": "Bash",
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "subtype": "task_progress",
+        "task_id": "ac892cba969cee55e",
+        "tool_use_id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+        "type": "system",
+        "usage": {
+          "duration_ms": 2021,
+          "tool_uses": 1,
+          "total_tokens": 32600
+        },
+        "uuid": "3566a88e-5420-459d-9847-acee830425bb"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_018XtEAJts6AAk13Yrm1sExG",
+              "input": {
+                "command": "git config --get remote.origin.url"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01K2vyW4mTTPNr7DbvpbgTPM",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 32595
+            },
+            "cache_creation_input_tokens": 32595,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "type": "assistant",
+        "uuid": "77eafb82-a67c-4848-bfdc-bcdb1cfa3819"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "git@github.com:braintrustdata/braintrust-sdk-python.git",
+              "is_error": false,
+              "tool_use_id": "toolu_018XtEAJts6AAk13Yrm1sExG",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "timestamp": "2026-04-21T15:33:54.718Z",
+        "type": "user",
+        "uuid": "76baad40-1ece-4570-a612-648c085538c9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "output_file": "",
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "status": "completed",
+        "subtype": "task_notification",
+        "summary": "Inspect repository and report name",
+        "task_id": "ac892cba969cee55e",
+        "tool_use_id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+        "type": "system",
+        "usage": {
+          "duration_ms": 3289,
+          "tool_uses": 1,
+          "total_tokens": 34173
+        },
+        "uuid": "5e6cf9a6-32d3-47c9-91e1-e578d5783c9d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "braintrust-sdk-python",
+                  "type": "text"
+                },
+                {
+                  "text": "agentId: ac892cba969cee55e (use SendMessage with to: 'ac892cba969cee55e' to continue this agent)\n<usage>total_tokens: 34180\ntool_uses: 1\nduration_ms: 3290</usage>",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01NeNeb1A6WaUXGWB9E79Vx6",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "timestamp": "2026-04-21T15:33:55.726Z",
+        "tool_use_result": {
+          "agentId": "ac892cba969cee55e",
+          "agentType": "general-purpose",
+          "content": [
+            {
+              "text": "braintrust-sdk-python",
+              "type": "text"
+            }
+          ],
+          "prompt": "Inspect the current repository to determine its name. Look for clues like:\n- The repository name in git config\n- The package name in pyproject.toml or package.json\n- The .git directory or similar version control metadata\n- The directory structure and any obvious project naming\n\nReply with ONLY the repository name, nothing else.",
+          "status": "completed",
+          "toolStats": {
+            "bashCount": 1,
+            "editFileCount": 0,
+            "linesAdded": 0,
+            "linesRemoved": 0,
+            "otherToolCount": 0,
+            "readCount": 0,
+            "searchCount": 0
+          },
+          "totalDurationMs": 3290,
+          "totalTokens": 34180,
+          "totalToolUseCount": 1,
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1570
+            },
+            "cache_creation_input_tokens": 1570,
+            "cache_read_input_tokens": 32595,
+            "inference_geo": "",
+            "input_tokens": 5,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 1570
+                },
+                "cache_creation_input_tokens": 1570,
+                "cache_read_input_tokens": 32595,
+                "input_tokens": 5,
+                "output_tokens": 10,
+                "type": "message"
+              }
+            ],
+            "output_tokens": 10,
+            "server_tool_use": {
+              "web_fetch_requests": 0,
+              "web_search_requests": 0
+            },
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "type": "user",
+        "uuid": "cb9f7a9f-27fc-424e-b2e8-b1fcee0aafc3"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The agent has returned the repository name: \"braintrust-sdk-python\"\n\nThe user asked me to have the agent inspect the current repository and reply with only the repository name, and not answer directly myself. The agent has done that, so I should just relay that information.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01TDNkc19sW2in8jJpvs1p4p",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 337
+            },
+            "cache_creation_input_tokens": 337,
+            "cache_read_input_tokens": 37857,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "type": "assistant",
+        "uuid": "dfddd05e-891b-4c69-ba8c-4379cbe03b08"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "braintrust-sdk-python",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01TDNkc19sW2in8jJpvs1p4p",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 337
+            },
+            "cache_creation_input_tokens": 337,
+            "cache_read_input_tokens": 37857,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "type": "assistant",
+        "uuid": "00d5fbb7-8063-40fc-86bf-83ac18bda63a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "api_error_status": null,
+        "duration_api_ms": 8526,
+        "duration_ms": 7754,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 72359,
+            "cacheReadInputTokens": 70452,
+            "contextWindow": 200000,
+            "costUSD": 0.10007295,
+            "inputTokens": 404,
+            "maxOutputTokens": 32000,
+            "outputTokens": 435,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 2,
+        "permission_denials": [],
+        "result": "braintrust-sdk-python",
+        "session_id": "fe79d59e-69ca-4f4d-b3b4-d0dc7dc9d953",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "terminal_reason": "completed",
+        "total_cost_usd": 0.10007295,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 38194
+          },
+          "cache_creation_input_tokens": 38194,
+          "cache_read_input_tokens": 37857,
+          "inference_geo": "",
+          "input_tokens": 18,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 337
+              },
+              "cache_creation_input_tokens": 337,
+              "cache_read_input_tokens": 37857,
+              "input_tokens": 8,
+              "output_tokens": 76,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 319,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "3b5be48c-aab1-4cab-bd8e-41910a5e4570"
+      }
+    }
+  ],
+  "sdk_version": "0.1.64"
+}

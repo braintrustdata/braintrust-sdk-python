@@ -1,6 +1,9 @@
 """Tests for push command serialization."""
 
+import sys
+
 import pytest
+
 
 pydantic = pytest.importorskip("pydantic")
 
@@ -8,7 +11,7 @@ from ..framework2 import (
     global_,
     projects,
 )
-from .push import _collect_function_function_defs
+from .push import _collect_function_function_defs, _validate_python_bundle_source_paths
 
 
 class ToolInput(pydantic.BaseModel):
@@ -99,3 +102,37 @@ class TestPushTags:
 
         assert len(functions) == 1
         assert "tags" not in functions[0]
+
+
+class TestValidatePythonBundleSourcePaths:
+    def _assert_whitespace_in_filename_rejected(self, tmp_path, filename: str):
+        source = tmp_path / filename
+        source.write_text("VALUE = 1\n")
+
+        with pytest.raises(ValueError, match="contains whitespace in path component"):
+            _validate_python_bundle_source_paths([str(source)], str(tmp_path))
+
+    def test_rejects_whitespace_in_filename(self, tmp_path):
+        self._assert_whitespace_in_filename_rejected(tmp_path, "my tool.py")
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="leading-space filenames are not portable on Windows")
+    def test_rejects_leading_whitespace_in_filename(self, tmp_path):
+        self._assert_whitespace_in_filename_rejected(tmp_path, " tool.py")
+
+    def test_rejects_whitespace_in_directory_name(self, tmp_path):
+        subdir = tmp_path / "my tools"
+        subdir.mkdir()
+        source = subdir / "tool.py"
+        source.write_text("VALUE = 1\n")
+
+        with pytest.raises(ValueError, match="contains whitespace in path component"):
+            _validate_python_bundle_source_paths([str(source)], str(tmp_path))
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="tab characters in filenames are not allowed on Windows")
+    def test_rejects_tab_in_filename(self, tmp_path):
+        self._assert_whitespace_in_filename_rejected(tmp_path, "my\ttool.py")
+
+    def test_accepts_valid_path(self, tmp_path):
+        source = tmp_path / "my_tool.py"
+        source.write_text("VALUE = 1\n")
+        _validate_python_bundle_source_paths([str(source)], str(tmp_path))

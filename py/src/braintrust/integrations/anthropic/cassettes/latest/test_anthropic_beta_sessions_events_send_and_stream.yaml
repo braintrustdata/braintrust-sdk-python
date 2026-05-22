@@ -1,0 +1,191 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      anthropic-beta:
+      - managed-agents-2026-04-01
+      anthropic-version:
+      - '2023-06-01'
+    method: GET
+    uri: https://api.anthropic.com/v1/environments?limit=1
+  response:
+    body:
+      string: '{"data":[{"id":"env_012W55H8BqqsSgp2XJ3uQmBK","type":"environment","name":"braintrust-sdk-test-env","description":"","created_at":"2026-04-13T16:41:51.307182Z","updated_at":"2026-04-13T16:41:51.307182Z","archived_at":null,"state":"active","config":{"type":"cloud","packages":{"type":"packages","pip":[],"npm":[],"apt":[],"cargo":[],"gem":[],"go":[]},"networking":{"type":"unrestricted"},"init_script":"","environment":{}},"metadata":{},"scope":"organization"}],"next_page":"page_ZW52XzAxMlc1NUg4QnFxc1NncDJYSjN1UW1CS3wx"}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-haiku-4-5","name":"braintrust-sdk-managed-agent-bash","description":"Uses bash for a single arithmetic command","tools":[{"type":"agent_toolset_20260401","default_config":{"enabled":false},"configs":[{"name":"bash","enabled":true,"permission_policy":{"type":"always_allow"}}]}],"system":"For arithmetic requests, use exactly one bash command and then answer with only the numeric result."}'
+    headers:
+      anthropic-beta:
+      - managed-agents-2026-04-01
+      anthropic-version:
+      - '2023-06-01'
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.anthropic.com/v1/agents?beta=true
+  response:
+    body:
+      string: '{"id":"agent_011Ca2FF3gXLbMKrSqqZj8k4","archived_at":null,"created_at":"2026-04-13 18:30:28.891213+00:00","description":"Uses bash for a single arithmetic command","mcp_servers":[],"metadata":{},"model":{"id":"claude-haiku-4-5","speed":"standard"},"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For arithmetic requests, use exactly one bash command and then answer with only the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","updated_at":"2026-04-13 18:30:28.891213+00:00","version":1}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"agent":"agent_011Ca2FF3gXLbMKrSqqZj8k4","environment_id":"env_012W55H8BqqsSgp2XJ3uQmBK","metadata":{"purpose":"test"},"title":"Issue 259 event stream"}'
+    headers:
+      anthropic-beta:
+      - managed-agents-2026-04-01
+      anthropic-version:
+      - '2023-06-01'
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.anthropic.com/v1/sessions?beta=true
+  response:
+    body:
+      string: '{"id":"sesn_011Ca2FF4rDgxQyGyz39EC2d","agent":{"id":"agent_011Ca2FF3gXLbMKrSqqZj8k4","description":"Uses bash for a single arithmetic command","mcp_servers":[],"model":{"id":"claude-haiku-4-5","speed":"standard"},"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For arithmetic requests, use exactly one bash command and then answer with only the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","version":1},"archived_at":null,"created_at":"2026-04-13 18:30:29.173545+00:00","environment_id":"env_012W55H8BqqsSgp2XJ3uQmBK","metadata":{"purpose":"test"},"resources":[],"stats":{"active_seconds":0.0,"duration_seconds":0.0},"status":"idle","title":"Issue 259 event stream","type":"session","updated_at":"2026-04-13 18:30:29.173545+00:00","usage":{"cache_creation":null,"cache_read_input_tokens":0,"input_tokens":0,"output_tokens":0},"vault_ids":[]}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"events":[{"type":"user.message","content":[{"type":"text","text":"Use bash once to print 2+2, then reply with only the number."}]}]}'
+    headers:
+      anthropic-beta:
+      - managed-agents-2026-04-01
+      anthropic-version:
+      - '2023-06-01'
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.anthropic.com/v1/sessions/sesn_011Ca2FF4rDgxQyGyz39EC2d/events?beta=true
+  response:
+    body:
+      string: '{"data":[{"id":"sevt_015sLSDzRxyCtPYxH8as4oTZ","content":[{"text":"Use bash once to print 2+2, then reply with only the number.","type":"text"}],"type":"user.message"}]}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      anthropic-beta:
+      - managed-agents-2026-04-01
+      anthropic-version:
+      - '2023-06-01'
+    method: GET
+    uri: https://api.anthropic.com/v1/sessions/sesn_011Ca2FF4rDgxQyGyz39EC2d/events/stream?beta=true
+  response:
+    body:
+      string: 'event: message
+
+        data: {"id":"sevt_01L2X1ULRQ3ChFRLzwxcekUy","processed_at":"2026-04-13T18:30:30.153Z","type":"session.status_running"}
+
+
+        event: message
+
+        data: {"content":[{"text":"Use bash once to print 2+2, then reply with only the number.","type":"text"}],"id":"sevt_015sLSDzRxyCtPYxH8as4oTZ","processed_at":"2026-04-13T18:30:30.614Z","type":"user.message"}
+
+
+        event: message
+
+        data: {"id":"sevt_01TXgSMcKrrJZ69EhenxVhzt","processed_at":"2026-04-13T18:30:30.720Z","type":"span.model_request_start"}
+
+
+        event: message
+
+        data: {"id":"sevt_017DMzp5Xnfgjxz6o7bHT8WM","processed_at":"2026-04-13T18:30:32.342Z","type":"agent.thinking"}
+
+
+        event: message
+
+        data: {"evaluated_permission":"allow","id":"sevt_01GrRZAZ8Nqcuv3VGmx2k765","input":{"command":"echo $((2+2))"},"name":"bash","processed_at":"2026-04-13T18:30:32.342Z","type":"agent.tool_use"}
+
+
+        event: message
+
+        data: {"id":"sevt_01KLKXathDbA8urqgm6VyeG2","is_error":false,"model_request_start_id":"sevt_01TXgSMcKrrJZ69EhenxVhzt","model_usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":2012,"output_tokens":134},"processed_at":"2026-04-13T18:30:32.673Z","type":"span.model_request_end"}
+
+
+        event: message
+
+        data: {"content":[{"text":"4\n","type":"text"}],"id":"sevt_0125HcaRaDq81rtK3DB1RUbc","is_error":false,"processed_at":"2026-04-13T18:30:36.038Z","tool_use_id":"sevt_01GrRZAZ8Nqcuv3VGmx2k765","type":"agent.tool_result"}
+
+
+        event: message
+
+        data: {"id":"sevt_0164cqfsmw6YW4omCGExX88D","processed_at":"2026-04-13T18:30:36.164Z","type":"span.model_request_start"}
+
+
+        event: message
+
+        data: {"content":[{"text":"4","type":"text"}],"id":"sevt_01UgzkbBHpf34iufDY2UrJL8","processed_at":"2026-04-13T18:30:37.217Z","type":"agent.message"}
+
+
+        event: message
+
+        data: {"id":"sevt_01CWW7Yh1FrASa9K7DVMMGBQ","is_error":false,"model_request_start_id":"sevt_0164cqfsmw6YW4omCGExX88D","model_usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":2160,"output_tokens":4},"processed_at":"2026-04-13T18:30:37.338Z","type":"span.model_request_end"}
+
+
+        event: message
+
+        data: {"id":"sevt_01JXMUBRBXXuCvcrNb2WJcEF","processed_at":"2026-04-13T18:30:37.497Z","stop_reason":{"type":"end_turn"},"type":"session.status_idle"}
+
+
+        '
+    headers:
+      Content-Type:
+      - text/event-stream
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      anthropic-beta:
+      - managed-agents-2026-04-01
+      anthropic-version:
+      - '2023-06-01'
+    method: DELETE
+    uri: https://api.anthropic.com/v1/sessions/sesn_011Ca2FF4rDgxQyGyz39EC2d?beta=true
+  response:
+    body:
+      string: '{"id":"sesn_011Ca2FF4rDgxQyGyz39EC2d","type":"session_deleted"}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      anthropic-beta:
+      - managed-agents-2026-04-01
+      anthropic-version:
+      - '2023-06-01'
+      content-type:
+      - application/json
+    method: POST
+    uri: https://api.anthropic.com/v1/agents/agent_011Ca2FF3gXLbMKrSqqZj8k4/archive?beta=true
+  response:
+    body:
+      string: '{"id":"agent_011Ca2FF3gXLbMKrSqqZj8k4","archived_at":"2026-04-13 18:30:39.986792+00:00","created_at":"2026-04-13 18:30:28.891213+00:00","description":"Uses bash for a single arithmetic command","mcp_servers":[],"metadata":{},"model":{"id":"claude-haiku-4-5","speed":"standard"},"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For arithmetic requests, use exactly one bash command and then answer with only the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","updated_at":"2026-04-13 18:30:39.986792+00:00","version":1}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+version: 1

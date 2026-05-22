@@ -1,0 +1,123 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Use the tool with query: test"}], "role":
+      "user"}], "systemInstruction": {"parts": [{"text": "You are a helpful assistant
+      with tools.\n\nYou are an agent. Your internal name is \"tool_agent\"."}], "role":
+      "user"}, "tools": [{"functionDeclarations": [{"description": "A simple tool.",
+      "name": "simple_tool", "parameters": {"properties": {"query": {"type": "STRING"}},
+      "required": ["query"], "type": "OBJECT"}}]}], "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
+      x-goog-api-client:
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"functionCall\": {\n              \"name\": \"simple_tool\",\n
+        \             \"args\": {\n                \"query\": \"test\"\n              }\n
+        \           }\n          }\n        ],\n        \"role\": \"model\"\n      },\n
+        \     \"finishReason\": \"STOP\",\n      \"avgLogprobs\": -0.00010093948803842067\n
+        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 41,\n    \"candidatesTokenCount\":
+        5,\n    \"totalTokenCount\": 46,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 41\n      }\n    ],\n
+        \   \"candidatesTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 5\n      }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n
+        \ \"responseId\": \"ej_iafmqB5Oa9MoPzOjrmQ4\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 17 Apr 2026 14:11:06 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=595
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"contents": [{"parts": [{"text": "Use the tool with query: test"}], "role":
+      "user"}, {"parts": [{"functionCall": {"args": {"query": "test"}, "name": "simple_tool"}}],
+      "role": "model"}, {"parts": [{"functionResponse": {"name": "simple_tool", "response":
+      {"result": "Processed: test"}}}], "role": "user"}], "systemInstruction": {"parts":
+      [{"text": "You are a helpful assistant with tools.\n\nYou are an agent. Your
+      internal name is \"tool_agent\"."}], "role": "user"}, "tools": [{"functionDeclarations":
+      [{"description": "A simple tool.", "name": "simple_tool", "parameters": {"properties":
+      {"query": {"type": "STRING"}}, "required": ["query"], "type": "OBJECT"}}]}],
+      "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
+      x-goog-api-client:
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"I have used the tool with the query
+        \\\"test\\\". The tool returned: \\\"Processed: test\\\".\\n\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.03503913538796561\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 53,\n    \"candidatesTokenCount\": 21,\n    \"totalTokenCount\":
+        74,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 53\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 21\n
+        \     }\n    ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
+        \"ej_iac6ZN_-g1MkP89XQ2Aw\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 17 Apr 2026 14:11:07 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=627
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

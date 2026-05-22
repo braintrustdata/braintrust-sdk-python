@@ -1,0 +1,110 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Say hello"}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false,"temperature":0.5}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '135'
+      Content-Type:
+      - application/json
+      Cookie:
+      - _cfuvid=VQg4i_utDK73HtVZX9MnimdbFMrcTwHiGTkj8zvaxBM-1766265730198-0.0.1.1-604800000
+      Host:
+      - api.openai.com
+      User-Agent:
+      - pydantic-ai/1.73.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.30.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DPB5LNj3De8GmyTYjsSCXBus7wf7B\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1774893183,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Hello! How can I assist you today?\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        9,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 18,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_ca3e7d71bf\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9e48f8ba4ee792c6-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 30 Mar 2026 17:53:04 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '839'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '637'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=K5ScKgWxKV8qrun72h6zWqwqzuox1P7HfwixJPaisaU-1774893183.0866485-1.0.1.1-aFlnpoUkbkAngI0favlhLoCOJtcaN7dUO6bYg0g4jfC.HRhU3s_NrZt7oH01lSi39dR_xL9hFmrQs2o5en0gk0jRe0MRJTasLHnGP6o4.yXI0SZeUn56WYYaGKfOKVTx;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 30 Mar 2026
+        18:23:04 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999995'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_1e2852cd7fd34d339ac251eeef0c0487
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,0 +1,13 @@
+[project]
+name = "braintrust-strands-example"
+version = "0.1.0"
+description = "Strands Agent traced with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "strands-agents",
+    "strands-agents[openai]",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

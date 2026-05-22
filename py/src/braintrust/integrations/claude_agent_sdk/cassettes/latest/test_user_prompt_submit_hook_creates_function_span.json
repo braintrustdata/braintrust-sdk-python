@@ -1,0 +1,409 @@
+{
+  "cassette_name": "test_user_prompt_submit_hook_creates_function_span",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "UserPromptSubmit": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": null
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_3e5c25bc",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_3e5c25bc",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Say hello in one short sentence.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "UserPromptSubmit",
+            "permission_mode": "bypassPermissions",
+            "prompt": "Say hello in one short sentence.",
+            "session_id": "630e3fba-6a05-475a-b360-a42298f30725",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "05d9cf81-8acc-43d2-a090-122a42370efc"
+        },
+        "request_id": "eba789fd-045c-44e4-9566-14c1bf14f014",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "eba789fd-045c-44e4-9566-14c1bf14f014",
+            "response": {
+              "hookSpecificOutput": {
+                "additionalContext": "Remember the answer should stay concise.",
+                "hookEventName": "UserPromptSubmit"
+              }
+            },
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.116",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [
+          {
+            "name": "braintrust",
+            "status": "connected"
+          },
+          {
+            "name": "linear-server",
+            "status": "connected"
+          }
+        ],
+        "memory_paths": {
+          "auto": "<REDACTED_PATH>"
+        },
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [
+          {
+            "name": "rust-analyzer-lsp",
+            "path": "<REDACTED_PATH>",
+            "source": "rust-analyzer-lsp@claude-plugins-official"
+          }
+        ],
+        "session_id": "630e3fba-6a05-475a-b360-a42298f30725",
+        "skills": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking"
+        ],
+        "slash_commands": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "review",
+          "security-review",
+          "insights",
+          "team-onboarding"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "AskUserQuestion",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "Edit",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitPlanMode",
+          "ExitWorktree",
+          "Glob",
+          "Grep",
+          "ListMcpResourcesTool",
+          "LSP",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "ReadMcpResourceTool",
+          "RemoteTrigger",
+          "ScheduleWakeup",
+          "Skill",
+          "TaskOutput",
+          "TaskStop",
+          "TodoWrite",
+          "ToolSearch",
+          "WebFetch",
+          "WebSearch",
+          "Write",
+          "mcp__braintrust__generate_permalink",
+          "mcp__braintrust__infer_schema",
+          "mcp__braintrust__list_recent_objects",
+          "mcp__braintrust__resolve_object",
+          "mcp__braintrust__search_docs",
+          "mcp__braintrust__sql_query",
+          "mcp__braintrust__summarize_experiment",
+          "mcp__linear-server__create_attachment",
+          "mcp__linear-server__create_document",
+          "mcp__linear-server__create_issue_label",
+          "mcp__linear-server__delete_attachment",
+          "mcp__linear-server__delete_comment",
+          "mcp__linear-server__delete_customer",
+          "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_status_update",
+          "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_attachment",
+          "mcp__linear-server__get_document",
+          "mcp__linear-server__get_initiative",
+          "mcp__linear-server__get_issue",
+          "mcp__linear-server__get_issue_status",
+          "mcp__linear-server__get_milestone",
+          "mcp__linear-server__get_project",
+          "mcp__linear-server__get_status_updates",
+          "mcp__linear-server__get_team",
+          "mcp__linear-server__get_user",
+          "mcp__linear-server__list_comments",
+          "mcp__linear-server__list_customers",
+          "mcp__linear-server__list_cycles",
+          "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiatives",
+          "mcp__linear-server__list_issue_labels",
+          "mcp__linear-server__list_issue_statuses",
+          "mcp__linear-server__list_issues",
+          "mcp__linear-server__list_milestones",
+          "mcp__linear-server__list_project_labels",
+          "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_teams",
+          "mcp__linear-server__list_users",
+          "mcp__linear-server__save_comment",
+          "mcp__linear-server__save_customer",
+          "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_initiative",
+          "mcp__linear-server__save_issue",
+          "mcp__linear-server__save_milestone",
+          "mcp__linear-server__save_project",
+          "mcp__linear-server__save_status_update",
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__update_document"
+        ],
+        "type": "system",
+        "uuid": "e7c9662e-b34a-42f3-9579-37f016a0d4cd"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user is asking me to say hello in one short sentence. This is a simple greeting request. I should keep it brief and friendly.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01S3PK2E1qp3c87bjqwWyR6n",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 41667
+            },
+            "cache_creation_input_tokens": 41667,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 7,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "630e3fba-6a05-475a-b360-a42298f30725",
+        "type": "assistant",
+        "uuid": "e491f534-e837-4275-83db-4a7069d3f1c9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Hey there! Ready to help with the Braintrust SDK.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01S3PK2E1qp3c87bjqwWyR6n",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 41667
+            },
+            "cache_creation_input_tokens": 41667,
+            "cache_read_input_tokens": 0,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 7,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "630e3fba-6a05-475a-b360-a42298f30725",
+        "type": "assistant",
+        "uuid": "1b554347-881e-4d0b-bcfe-09226fa9ccd0"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "api_error_status": null,
+        "duration_api_ms": 2772,
+        "duration_ms": 1496,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 41667,
+            "cacheReadInputTokens": 0,
+            "contextWindow": 200000,
+            "costUSD": 0.05276875,
+            "inputTokens": 355,
+            "maxOutputTokens": 32000,
+            "outputTokens": 66,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 1,
+        "permission_denials": [],
+        "result": "Hey there! Ready to help with the Braintrust SDK.",
+        "session_id": "630e3fba-6a05-475a-b360-a42298f30725",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "terminal_reason": "completed",
+        "total_cost_usd": 0.05276875,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 41667
+          },
+          "cache_creation_input_tokens": 41667,
+          "cache_read_input_tokens": 0,
+          "inference_geo": "",
+          "input_tokens": 10,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 41667
+              },
+              "cache_creation_input_tokens": 41667,
+              "cache_read_input_tokens": 0,
+              "input_tokens": 10,
+              "output_tokens": 53,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 53,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "273733df-a15e-4d1a-9449-3580beda2c06"
+      }
+    }
+  ],
+  "sdk_version": "0.1.64"
+}

@@ -1,0 +1,114 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"What''s the weather in New York?"}],"model":"gpt-4o-mini","temperature":0,"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      the weather for a location","parameters":{"type":"object","properties":{"location":{"type":"string","description":"The
+      location to get weather for"}},"required":["location"]}}}]}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '370'
+      Content-Type:
+      - application/json
+      Cookie:
+      - __cf_bm=iVojiUJMoE6Xggzhh8Xl6djpU3_KJwIiUKTtdJL6xzc-1776705517.7032545-1.0.1.1-Y9oRXXyfLSVqKSPP6rs24GyRV8AeJ5bSFY.naRS43JvsjnBp335Jk_F82tM1I3o7cAk01K34vjGy3CE0NzudvA.1OJLoOxgXDfL2bb3drNJsVnnnxnbB0XiAmH4RaccK
+      Host:
+      - api.openai.com
+      User-Agent:
+      - OpenAI/Python 2.24.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.24.0
+      X-Stainless-Raw-Response:
+      - 'true'
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600.0'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DWmZCDv6hLqxsR5QoJGLOGikXmj8z\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776705558,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_3RY0l6iv6bbRqFCNyZgB9fqw\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
+        \             \"arguments\": \"{\\\"location\\\":\\\"New York\\\"}\"\n            }\n
+        \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 59,\n    \"completion_tokens\":
+        15,\n    \"total_tokens\": 74,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_b8fcb14f26\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ef5d02bccfeb405-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 20 Apr 2026 17:19:18 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '1091'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '477'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999990'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_40661af463814de2a3980b230f15031d
+    status:
+      code: 200
+      message: OK
+version: 1

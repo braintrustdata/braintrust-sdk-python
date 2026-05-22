@@ -1,0 +1,30 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,SU5WQUxJRF9QTkdfREFUQV9OT1RfQV9SRUFMX0lNQUdF"}},{"type":"text","text":"What''s
+      in this image?"}]}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: '{"error":{"message":"Could not process image. The image data is not
+        valid.","type":"invalid_request_error","param":null,"code":"invalid_image"}}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 400
+      message: Bad Request
+version: 1

@@ -1,0 +1,122 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Tell me a story"}],"model":"gpt-4o-mini","max_completion_tokens":200,"stream":false,"temperature":0.9}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '141'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - pydantic-ai/1.89.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - async:asyncio
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.33.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.12.12
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-Dalh6O2sn7zDaNyVNEse4ISNcnlYq\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1777655516,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Once upon a time, in a small village
+        nestled between rolling hills and a sparkling river, there lived a young girl
+        named Elara. Known for her adventurous spirit and wild imagination, Elara
+        spent her days exploring the lush forests and meandering paths that surrounded
+        her home. She often dreamed of discovering hidden treasures and ancient secrets.\\n\\nOne
+        sunny morning, while wandering deeper into the woods than ever before, Elara
+        stumbled upon a peculiar sight\u2014a small, weathered door embedded in the
+        trunk of a massive oak tree. Intrigued, she approached the door, noticing
+        intricate carvings of mythical creatures and swirling patterns adorning its
+        surface. Her heart raced with excitement. What could lie behind this mysterious
+        door?\\n\\nGathering her courage, Elara knocked softly. To her surprise, the
+        door creaked open, revealing a narrow staircase spiraling down into darkness.
+        With a mix of fear and exhilaration, she stepped inside, her heart pounding
+        with each careful descent. The air grew cooler and filled with a curious\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"length\"\n    }\n  ],\n  \"usage\": {\n
+        \   \"prompt_tokens\": 11,\n    \"completion_tokens\": 200,\n    \"total_tokens\":
+        211,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_b6580bbee1\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9f50687f2b193905-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 01 May 2026 17:11:59 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '1848'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '3495'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=hS5IIE2pilpjAR6G.cf.jPiAJcMugBE8hmJ.3_Em7x0-1777655516.0238297-1.0.1.1-9VpUjDqxbYVMCOXHEfxe0xRBe7wjmN_tLNdDG2HdCf9e0KK8VETnBRDKF2kTlJegJB3l5LQeLKrY3ss2TT5YqHfvpt0Ia6rf.hVDxspCrW3VKGWAIt4lYAgWyByFdXdV;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 01 May 2026
+        17:41:59 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999995'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_b630756a627e4c93bf7d4ebff5f03120
+    status:
+      code: 200
+      message: OK
+version: 1

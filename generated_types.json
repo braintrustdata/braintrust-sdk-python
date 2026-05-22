@@ -138,6 +138,14 @@
             "format": "date-time",
             "description": "Date of last AI secret update"
           },
+          "secret_updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of last update to the encrypted secret value itself"
+          },
           "org_id": {
             "type": "string",
             "format": "uuid",
@@ -1802,6 +1810,26 @@
                           "index"
                         ],
                         "title": "scorer"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "classifier"
+                            ]
+                          },
+                          "index": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "index"
+                        ],
+                        "title": "classifier"
                       }
                     ]
                   }
@@ -1972,6 +2000,16 @@
             ],
             "format": "uuid",
             "description": "Identifies the user who created the dataset"
+          },
+          "tags": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of tags for the dataset"
           },
           "metadata": {
             "type": [
@@ -2213,6 +2251,51 @@
           "root_span_id"
         ]
       },
+      "DatasetSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the dataset snapshot"
+          },
+          "dataset_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the dataset that this snapshot belongs to"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the dataset snapshot"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "xact_id": {
+            "type": "string",
+            "description": "Transaction id of the brainstore version at the time of the snapshot"
+          },
+          "created": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of dataset snapshot creation"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "name",
+          "description",
+          "xact_id",
+          "created"
+        ]
+      },
       "EnvVar": {
         "type": "object",
         "properties": {
@@ -2247,6 +2330,14 @@
             "format": "date-time",
             "description": "Date of environment variable creation"
           },
+          "secret_updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of last update to the encrypted secret value itself"
+          },
           "used": {
             "type": [
               "string",
@@ -2262,6 +2353,13 @@
             ],
             "additionalProperties": {},
             "description": "Optional metadata associated with the environment variable when managed via the function secrets API"
+          },
+          "preview_secret": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Redacted preview of the stored secret value"
           },
           "secret_type": {
             "type": [
@@ -2287,150 +2385,6 @@
           "object_id",
           "name"
         ]
-      },
-      "EvalStatusPage": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Unique identifier for the eval status page"
-          },
-          "project_id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "Unique identifier for the project that the eval status page belongs under"
-          },
-          "user_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid",
-            "description": "Identifies the user who created the eval status page"
-          },
-          "created": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Date of eval status page creation"
-          },
-          "deleted_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Date of eval status page deletion, or null if the eval status page is still active"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the eval status page"
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Textual description of the eval status page"
-          },
-          "logo_url": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "URL of the logo to display on the page"
-          },
-          "theme": {
-            "$ref": "#/components/schemas/EvalStatusPageTheme"
-          },
-          "config": {
-            "$ref": "#/components/schemas/EvalStatusPageConfig"
-          }
-        },
-        "required": [
-          "id",
-          "project_id",
-          "name",
-          "theme",
-          "config"
-        ],
-        "description": "A public eval status page that displays aggregate experiment results"
-      },
-      "EvalStatusPageConfig": {
-        "type": "object",
-        "properties": {
-          "score_columns": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "type": "string"
-            },
-            "description": "The score columns to display on the page"
-          },
-          "metric_columns": {
-            "type": [
-              "array",
-              "null"
-            ],
-            "items": {
-              "type": "string"
-            },
-            "description": "The metric columns to display on the page"
-          },
-          "grouping_field": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The metadata field to use for grouping experiments (model)"
-          },
-          "filter": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "BTQL filter to apply to experiment data"
-          },
-          "sort_by": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Field to sort results by (format: 'score:<name>' or 'metric:<name>')"
-          },
-          "sort_order": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "enum": [
-              "asc",
-              "desc"
-            ],
-            "description": "Sort order (ascending or descending)"
-          },
-          "api_key": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The API key used for fetching experiment data"
-          }
-        },
-        "description": "Configuration for what data to display"
-      },
-      "EvalStatusPageTheme": {
-        "type": "string",
-        "enum": [
-          "light",
-          "dark"
-        ],
-        "description": "The theme for the page"
       },
       "Experiment": {
         "type": "object",
@@ -2504,6 +2458,24 @@
               "null"
             ],
             "description": "Version number of the linked dataset the experiment was run against. This can be used to reproduce the experiment after the dataset has been modified."
+          },
+          "internal_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "dataset_filter": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": {},
+                "description": "BTQL filter payload used to evaluate a subset of a linked dataset."
+              }
+            },
+            "additionalProperties": {},
+            "description": "Braintrust-controlled metadata about the experiment."
           },
           "parameters_id": {
             "type": [
@@ -5173,7 +5145,7 @@
             "description": "Textual description of the project automation"
           },
           "config": {
-            "anyOf": [
+            "oneOf": [
               {
                 "type": "object",
                 "properties": {
@@ -5318,6 +5290,23 @@
                     ],
                     "description": "The definition of what to export"
                   },
+                  "scope": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/SpanScope"
+                      },
+                      {
+                        "$ref": "#/components/schemas/TraceScope"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GroupScope"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "Execution scope for export automation. Defaults to span-level execution."
+                  },
                   "export_path": {
                     "type": "string",
                     "description": "The path to export the results to. It should include the storage protocol and prefix, e.g. s3://bucket-name/path/to/export"
@@ -5360,6 +5349,25 @@
                           "type",
                           "role_arn",
                           "external_id"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "gcp_service_account"
+                            ]
+                          },
+                          "service_account_email": {
+                            "type": "string",
+                            "description": "The GCP service account email to impersonate"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "service_account_email"
                         ]
                       }
                     ]
@@ -7075,6 +7083,20 @@
                   "dataset_id": {
                     "type": "string"
                   },
+                  "dataset_version": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The version of the dataset to evaluate"
+                  },
+                  "dataset_environment": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The environment tag that resolves to the dataset version to evaluate"
+                  },
                   "_internal_btql": {
                     "type": [
                       "object",
@@ -7097,6 +7119,20 @@
                   },
                   "dataset_name": {
                     "type": "string"
+                  },
+                  "dataset_version": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The version of the dataset to evaluate"
+                  },
+                  "dataset_environment": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The environment tag that resolves to the dataset version to evaluate"
                   },
                   "_internal_btql": {
                     "type": [
@@ -7415,6 +7451,16 @@
           },
           "type": {
             "$ref": "#/components/schemas/SpanType"
+          },
+          "purpose": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "scorer"
+            ],
+            "description": "A special value that indicates the span was generated by a scoring automation"
           }
         },
         "additionalProperties": {},
@@ -7706,6 +7752,22 @@
             ],
             "description": "Optional BTQL filter applied before topic automation."
           },
+          "rerun_seconds": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 600,
+            "description": "How often to recompute topic maps"
+          },
+          "relabel_overlap_seconds": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 60,
+            "description": "How much recent history to relabel after a new topic map version becomes active"
+          },
           "backfill_time_range": {
             "anyOf": [
               {
@@ -7730,7 +7792,7 @@
                 "type": "null"
               }
             ],
-            "description": "Optional default time range for backfill operations."
+            "description": "Topic window used for classification coverage and initial backfill."
           }
         },
         "required": [
@@ -7826,6 +7888,13 @@
             },
             "description": "Mapping from topic_id to topic name"
           },
+          "generation_settings": {
+            "$ref": "#/components/schemas/TopicMapGenerationSettings"
+          },
+          "disable_reconciliation": {
+            "type": "boolean",
+            "description": "Whether new topic generation should ignore the previously saved report during reconciliation. Defaults to false when omitted."
+          },
           "distance_threshold": {
             "type": "number",
             "description": "Maximum distance to nearest centroid. If exceeded, returns no_match."
@@ -7861,6 +7930,54 @@
         "required": [
           "function"
         ]
+      },
+      "TopicMapGenerationSettings": {
+        "type": "object",
+        "properties": {
+          "algorithm": {
+            "type": "string",
+            "enum": [
+              "hdbscan",
+              "kmeans"
+            ]
+          },
+          "dimension_reduction": {
+            "type": "string",
+            "enum": [
+              "umap",
+              "pca",
+              "none"
+            ]
+          },
+          "sample_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "n_clusters": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "min_cluster_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "min_samples": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "hierarchy_threshold": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "naming_model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "algorithm",
+          "dimension_reduction"
+        ],
+        "description": "Clustering and naming settings used to generate this topic map"
       },
       "TraceScope": {
         "type": "object",
@@ -8020,6 +8137,13 @@
             ],
             "format": "date-time",
             "description": "Date of user creation"
+          },
+          "last_active_at": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Unix timestamp in milliseconds of the user's last activity, when available"
           }
         },
         "required": [
@@ -8312,6 +8436,12 @@
                   "null"
                 ]
               },
+              "topicMapReportKey": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "chartHeight": {
                 "type": [
                   "number",
@@ -8477,7 +8607,14 @@
                 ],
                 "enum": [
                   "traces",
-                  "spans"
+                  "spans",
+                  "topics"
+                ]
+              },
+              "cluster": {
+                "type": [
+                  "string",
+                  "null"
                 ]
               },
               "freezeColumns": {

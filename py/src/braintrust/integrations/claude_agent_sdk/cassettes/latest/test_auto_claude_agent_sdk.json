@@ -1,0 +1,307 @@
+{
+  "cassette_name": "test_auto_claude_agent_sdk",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_d3201ce9",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_d3201ce9",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Say hi",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.116",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [
+          {
+            "name": "braintrust",
+            "status": "connected"
+          },
+          {
+            "name": "linear-server",
+            "status": "connected"
+          }
+        ],
+        "memory_paths": {
+          "auto": "<REDACTED_PATH>"
+        },
+        "model": "claude-3-5-haiku-20241022",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [
+          {
+            "name": "rust-analyzer-lsp",
+            "path": "<REDACTED_PATH>",
+            "source": "rust-analyzer-lsp@claude-plugins-official"
+          }
+        ],
+        "session_id": "8bae544a-b00f-46ec-a367-a2a8f5ac28a3",
+        "skills": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking"
+        ],
+        "slash_commands": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "sdk-ci-triage",
+          "commit-message",
+          "sdk-benchmarking",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "review",
+          "security-review",
+          "insights",
+          "team-onboarding"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "AskUserQuestion",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "Edit",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitPlanMode",
+          "ExitWorktree",
+          "Glob",
+          "Grep",
+          "ListMcpResourcesTool",
+          "LSP",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "ReadMcpResourceTool",
+          "RemoteTrigger",
+          "ScheduleWakeup",
+          "Skill",
+          "TaskOutput",
+          "TaskStop",
+          "TodoWrite",
+          "ToolSearch",
+          "WebFetch",
+          "WebSearch",
+          "Write",
+          "mcp__braintrust__generate_permalink",
+          "mcp__braintrust__infer_schema",
+          "mcp__braintrust__list_recent_objects",
+          "mcp__braintrust__resolve_object",
+          "mcp__braintrust__search_docs",
+          "mcp__braintrust__sql_query",
+          "mcp__braintrust__summarize_experiment",
+          "mcp__linear-server__create_attachment",
+          "mcp__linear-server__create_document",
+          "mcp__linear-server__create_issue_label",
+          "mcp__linear-server__delete_attachment",
+          "mcp__linear-server__delete_comment",
+          "mcp__linear-server__delete_customer",
+          "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_status_update",
+          "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_attachment",
+          "mcp__linear-server__get_document",
+          "mcp__linear-server__get_initiative",
+          "mcp__linear-server__get_issue",
+          "mcp__linear-server__get_issue_status",
+          "mcp__linear-server__get_milestone",
+          "mcp__linear-server__get_project",
+          "mcp__linear-server__get_status_updates",
+          "mcp__linear-server__get_team",
+          "mcp__linear-server__get_user",
+          "mcp__linear-server__list_comments",
+          "mcp__linear-server__list_customers",
+          "mcp__linear-server__list_cycles",
+          "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiatives",
+          "mcp__linear-server__list_issue_labels",
+          "mcp__linear-server__list_issue_statuses",
+          "mcp__linear-server__list_issues",
+          "mcp__linear-server__list_milestones",
+          "mcp__linear-server__list_project_labels",
+          "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_teams",
+          "mcp__linear-server__list_users",
+          "mcp__linear-server__save_comment",
+          "mcp__linear-server__save_customer",
+          "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_initiative",
+          "mcp__linear-server__save_issue",
+          "mcp__linear-server__save_milestone",
+          "mcp__linear-server__save_project",
+          "mcp__linear-server__save_status_update",
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__update_document"
+        ],
+        "type": "system",
+        "uuid": "389677a5-fd7c-4eb6-bb92-150542ef2f49"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "error": "invalid_request",
+        "message": {
+          "container": null,
+          "content": [
+            {
+              "text": "There's an issue with the selected model (claude-3-5-haiku-20241022). It may not exist or you may not have access to it. Run --model to pick a different model.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "49a3c5d0-1101-4c79-aa04-984d4e436a3e",
+          "model": "<synthetic>",
+          "role": "assistant",
+          "stop_reason": "stop_sequence",
+          "stop_sequence": "",
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "inference_geo": null,
+            "input_tokens": 0,
+            "iterations": null,
+            "output_tokens": 0,
+            "server_tool_use": {
+              "web_fetch_requests": 0,
+              "web_search_requests": 0
+            },
+            "service_tier": null,
+            "speed": null
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bae544a-b00f-46ec-a367-a2a8f5ac28a3",
+        "type": "assistant",
+        "uuid": "b42e115b-9844-4698-82bc-63da0bdf1166"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "api_error_status": 404,
+        "duration_api_ms": 0,
+        "duration_ms": 472,
+        "fast_mode_state": "off",
+        "is_error": true,
+        "modelUsage": {},
+        "num_turns": 1,
+        "permission_denials": [],
+        "result": "There's an issue with the selected model (claude-3-5-haiku-20241022). It may not exist or you may not have access to it. Run --model to pick a different model.",
+        "session_id": "8bae544a-b00f-46ec-a367-a2a8f5ac28a3",
+        "stop_reason": "stop_sequence",
+        "subtype": "success",
+        "terminal_reason": "completed",
+        "total_cost_usd": 0,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "inference_geo": "",
+          "input_tokens": 0,
+          "iterations": [],
+          "output_tokens": 0,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "7081ed23-3e85-44e3-afaf-aa1b9e67d684"
+      }
+    }
+  ],
+  "sdk_version": "0.1.64"
+}

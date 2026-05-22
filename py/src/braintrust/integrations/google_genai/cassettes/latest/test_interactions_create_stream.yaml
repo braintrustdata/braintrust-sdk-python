@@ -1,0 +1,104 @@
+interactions:
+- request:
+    body: '{"input":"Say hi in five words or less.","model":"gemini-2.5-flash","stream":true}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '82'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      User-Agent:
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions
+  response:
+    body:
+      string: 'event: interaction.start
+
+        data: {"interaction":{"id":"v1_ChdVblB6YVkyaUU1LThfdU1QMEl1Y2dBMBIXVW5QemFZMmlFNS04X3VNUDBJdWNnQTA","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.start"}
+
+
+        event: interaction.status_update
+
+        data: {"interaction_id":"v1_ChdVblB6YVkyaUU1LThfdU1QMEl1Y2dBMBIXVW5QemFZMmlFNS04X3VNUDBJdWNnQTA","status":"in_progress","event_type":"interaction.status_update"}
+
+
+        event: content.start
+
+        data: {"index":0,"content":{"type":"thought"},"event_type":"content.start"}
+
+
+        event: content.delta
+
+        data: {"index":0,"delta":{"signature":"Cl4BDDnWxwOR3YIawOrJJnTFQVPDlDYw9BtsfgZ7actVUXLOpfwM62WW5r+iGBdOI4m3E/Krw8CoUZjowLGh0+EXZxmnTnHKUHqQ43urUsZ5EXGVrGDBd9FXSLPLhUARCocBAQw51sfHzQIaLQDnsWRQeoFypupBJHTO6IJhq3mi0HcyUEeQ6r7jKv2ER4Z8adfDGCupmFNWJUAiav6iemlv3wixzLscOOsX1rXhS0ebh1FtUYe+EzD7PHoHuX9Fij46xgsUqgSuigdx/C5pzk7NWhnv/RnBbshQMABxiEQaTdD+Fqg7VVCT","type":"thought_signature"},"event_type":"content.delta"}
+
+
+        event: content.stop
+
+        data: {"index":0,"event_type":"content.stop"}
+
+
+        event: content.start
+
+        data: {"index":1,"content":{"type":"text"},"event_type":"content.start"}
+
+
+        event: content.delta
+
+        data: {"index":1,"delta":{"text":"Hi!","type":"text"},"event_type":"content.delta"}
+
+
+        event: content.stop
+
+        data: {"index":1,"event_type":"content.stop"}
+
+
+        event: interaction.complete
+
+        data: {"interaction":{"id":"v1_ChdVblB6YVkyaUU1LThfdU1QMEl1Y2dBMBIXVW5QemFZMmlFNS04X3VNUDBJdWNnQTA","status":"completed","usage":{"total_tokens":56,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":45},"role":"model","created":"2026-04-30T15:20:51Z","updated":"2026-04-30T15:20:51Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.complete"}
+
+
+        event: done
+
+        data: [DONE]
+
+
+        '
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - text/event-stream
+      Date:
+      - Thu, 30 Apr 2026 15:20:51 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=758
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '1878'
+    status:
+      code: 200
+      message: OK
+version: 1

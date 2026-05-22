@@ -41,6 +41,10 @@ else
     local type="$1"
     local msg="$2"
 
+    # Extract optional scope (e.g. "anthropic" from "fix(anthropic): foo")
+    local scope
+    scope=$(echo "$msg" | sed -En 's/^[a-zA-Z]+\(([^)]*)\):.*/\1/p')
+
     # Strip the conventional commit prefix (e.g. "feat: ", "fix(scope): ")
     local display
     display=$(echo "$msg" | sed -E 's/^[a-zA-Z]+(\([^)]*\))?:[[:space:]]*//')
@@ -48,9 +52,13 @@ else
     # Capitalize the first letter
     display="$(echo "${display:0:1}" | tr '[:lower:]' '[:upper:]')${display:1}"
 
-    # Label perf commits explicitly
-    if [ "$type" = "perf" ]; then
+    # Label perf commits explicitly, include scope if present
+    if [ "$type" = "perf" ] && [ -n "$scope" ]; then
+      display="(perf/${scope}) ${display}"
+    elif [ "$type" = "perf" ]; then
       display="(perf) ${display}"
+    elif [ -n "$scope" ]; then
+      display="(${scope}) ${display}"
     fi
 
     # Format PR link if present

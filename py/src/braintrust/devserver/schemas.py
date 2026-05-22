@@ -1,8 +1,7 @@
 import json
 from collections.abc import Sequence
-from typing import Any, Union, get_args, get_origin, get_type_hints
+from typing import Any, TypedDict, Union, get_args, get_origin, get_type_hints
 
-from typing_extensions import TypedDict
 
 # This is not beautiful code, but it saves us from introducing Pydantic as a dependency, and it is fairly
 # straightforward for an LLM to keep it up to date with runEvalBodySchema in JS.

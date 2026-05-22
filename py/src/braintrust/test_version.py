@@ -14,10 +14,13 @@ def test_version():
     # Basic assertions that should always pass
     assert version.VERSION
     assert version.GIT_COMMIT
+    assert version.RELEASE_CHANNEL
     assert isinstance(version.VERSION, str)
     assert isinstance(version.GIT_COMMIT, str)
+    assert isinstance(version.RELEASE_CHANNEL, str)
     assert len(version.VERSION) > 0
     assert len(version.GIT_COMMIT) > 0
+    assert len(version.RELEASE_CHANNEL) > 0
     if is_from_wheel:
         # When testing from the wheel, GIT_COMMIT
         # should be the actual commit hash, not the placeholder
@@ -25,3 +28,4 @@ def test_version():
     else:
         # When testing from source directly, we expect to see the placeholder
         assert version.GIT_COMMIT == "__GIT_COMMIT__"
+        assert version.RELEASE_CHANNEL == "source"

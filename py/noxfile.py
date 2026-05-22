@@ -10,84 +10,321 @@ works with and without different dependencies. A few commands to check out:
     nox -h                     Get help.
 """
 
+import functools
 import glob
 import os
+import pathlib
+import re
 import sys
 import tempfile
 
+from packaging.version import Version
+
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        import tomli as tomllib  # type: ignore[no-redef]
+
 import nox
+
+
+# ---------------------------------------------------------------------------
+# Dependency-group helpers
+#
+# All version pins live in pyproject.toml ``[dependency-groups]``.  The helpers
+# below read them once at import time so the noxfile never hardcodes versions.
+# ---------------------------------------------------------------------------
+
+_PYPROJECT = tomllib.loads((pathlib.Path(__file__).parent / "pyproject.toml").read_text())
+_MATRIX = _PYPROJECT.get("tool", {}).get("braintrust", {}).get("matrix", {})
+
+
+_PROJECT_DIR = str(pathlib.Path(__file__).parent)
+
+
+def _install_group_locked(session: nox.Session, *group_names: str) -> None:
+    """Install deps from one or more dependency groups using the lockfile.
+
+    Runs ``uv export --only-group <name>`` for each group, merges the output,
+    and installs the pre-resolved pins into the session venv.  This gives
+    reproducible installs without ad-hoc resolution at install time.
+    """
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+        req_file = f.name
+    try:
+        cmd = [
+            "uv",
+            "export",
+            "--project",
+            _PROJECT_DIR,
+            "--no-hashes",
+            "--no-emit-project",
+            "-o",
+            req_file,
+        ]
+        for name in group_names:
+            cmd.extend(["--only-group", name])
+        session.run_install(*cmd, silent=SILENT_INSTALLS)
+        session.install("-r", req_file, silent=SILENT_INSTALLS)
+    finally:
+        os.unlink(req_file)
+
+
+def _get_matrix_versions(prefix: str) -> tuple[str, ...]:
+    """Read the version matrix for *prefix* from ``[tool.braintrust.matrix]``.
+
+    Returns a tuple ordered with LATEST first, then descending version order.
+    """
+    matrix_entry = _MATRIX.get(prefix, {})
+    latest = [LATEST] if "latest" in matrix_entry else []
+    rest = sorted([v for v in matrix_entry if v != "latest"], key=Version, reverse=True)
+    return tuple(latest + rest)
+
+
+def _install_matrix_dep(session: nox.Session, prefix: str, version: str) -> None:
+    """Install the matrix dep for a provider at a specific version."""
+    matrix_entry = _MATRIX.get(prefix, {})
+    key = "latest" if version == LATEST else version
+    req = matrix_entry.get(key)
+    if req:
+        session.install(req, silent=SILENT_INSTALLS)
+
+
+# ---------------------------------------------------------------------------
+# General configuration
+# ---------------------------------------------------------------------------
+
+
+def _pinned_python_version():
+    """Return the (major, minor) Python version pinned in ../.tool-versions, or None."""
+    tool_versions = pathlib.Path(__file__).parent.parent / ".tool-versions"
+    try:
+        for line in tool_versions.read_text().splitlines():
+            m = re.match(r"^python\s+(\d+)\.(\d+)", line)
+            if m:
+                return (int(m.group(1)), int(m.group(2)))
+    except OSError:
+        pass
+    return None
+
+
+_PINNED_PYTHON = _pinned_python_version()
 
 # much faster than pip
 nox.options.default_venv_backend = "uv"
 
 SRC_DIR = "braintrust"
 WRAPPER_DIR = "braintrust/wrappers"
+INTEGRATION_DIR = "braintrust/integrations"
 CONTRIB_DIR = "braintrust/contrib"
 DEVSERVER_DIR = "braintrust/devserver"
+TYPE_TESTS_DIR = "braintrust/type_tests"
+BTX_DIR = "braintrust/btx"
 
 
 SILENT_INSTALLS = True
 LATEST = "latest"
 ERROR_CODES = tuple(range(1, 256))
 INTERNAL_TEST_FLAGS = {"--wheel", "--disable-vcr"}
+GENERATED_LINT_EXCLUDES = {
+    "src/braintrust/_generated_types.py",
+    "src/braintrust/generated_types.py",
+}
 
 
-# The minimal set of dependencies we need to run tests.
-BASE_TEST_DEPS = ("pytest", "pytest-asyncio", "pytest-vcr")
+# ---------------------------------------------------------------------------
+# Vendor packages — derived from [tool.braintrust.vendor-packages] in
+# pyproject.toml.  Each entry maps a matrix key to a Python import name.
+# ---------------------------------------------------------------------------
+_VENDOR_TABLE: dict[str, str] = _PYPROJECT.get("tool", {}).get("braintrust", {}).get("vendor-packages", {})
 
-# List your package here if it's not guaranteed to be installed. We'll (try to)
-# validate things work with or without them.
-VENDOR_PACKAGES = (
-    "agno",
-    "anthropic",
-    "dspy",
-    "openai",
-    "openai-agents",
-    # pydantic_ai is NOT included here - it has dedicated test sessions with version-specific handling
-    "autoevals",
-    "braintrust_core",
-    "litellm",
-    "opentelemetry-api",
-    "opentelemetry-sdk",
-    "opentelemetry-exporter-otlp-proto-http",
-    "google.genai",
-    "google.adk",
-    "temporalio",
-)
+# Import names — used by test_core to verify none are importable.
+_VENDOR_IMPORT_NAMES = tuple(_VENDOR_TABLE.values())
 
-# Test matrix
-ANTHROPIC_VERSIONS = (LATEST, "0.50.0", "0.49.0", "0.48.0")
-OPENAI_VERSIONS = (LATEST, "1.77.0", "1.71", "1.91", "1.92")
-# litellm latest requires Python >= 3.10
-LITELLM_VERSIONS = (LATEST, "1.74.0")
-# CLI bundling started in 0.1.10 - older versions require external Claude Code installation
-CLAUDE_AGENT_SDK_VERSIONS = (LATEST, "0.1.10")
-# Keep LATEST for newest API coverage, and pin 2.4.0 to cover the 2.4 -> 2.5 breaking change
-# to internals we leverage for instrumentation.
-AGNO_VERSIONS = (LATEST, "2.4.0", "2.1.0")
-# pydantic_ai 1.x requires Python >= 3.10
-# Two test suites with different version requirements:
-# 1. wrap_openai approach: works with older versions (0.1.9+)
-# 2. Direct wrapper (setup_pydantic_ai): requires 1.10.0+ for all features
-PYDANTIC_AI_WRAP_OPENAI_VERSIONS = (LATEST, "1.0.1", "0.1.9")
-PYDANTIC_AI_INTEGRATION_VERSIONS = (LATEST, "1.10.0")
+# ---------------------------------------------------------------------------
+# Version matrices — derived from dependency groups in pyproject.toml
+# ---------------------------------------------------------------------------
 
-AUTOEVALS_VERSIONS = (LATEST, "0.0.129")
-GENAI_VERSIONS = (LATEST,)
-DSPY_VERSIONS = (LATEST,)
-GOOGLE_ADK_VERSIONS = (LATEST, "1.14.1")
-# temporalio 1.19.0+ requires Python >= 3.10; skip Python 3.9 entirely
-TEMPORAL_VERSIONS = (LATEST, "1.20.0", "1.19.0")
-PYTEST_VERSIONS = (LATEST, "8.4.2")
+ANTHROPIC_VERSIONS = _get_matrix_versions("anthropic")
 
 
 @nox.session()
-def test_core(session):
+@nox.parametrize("version", ANTHROPIC_VERSIONS, ids=ANTHROPIC_VERSIONS)
+def test_anthropic(session, version):
     _install_test_deps(session)
-    # verify we haven't installed our 3p deps.
-    for p in VENDOR_PACKAGES:
-        session.run("python", "-c", f"import {p}", success_codes=ERROR_CODES, silent=True)
-    _run_core_tests(session)
+    _install_matrix_dep(session, "anthropic", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/anthropic/test_anthropic.py", version=version)
+
+
+COHERE_VERSIONS = _get_matrix_versions("cohere")
+
+
+@nox.session()
+@nox.parametrize("version", COHERE_VERSIONS, ids=COHERE_VERSIONS)
+def test_cohere(session, version):
+    """Test the native Cohere SDK integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "cohere", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/cohere/test_cohere.py", version=version)
+
+
+OPENAI_VERSIONS = _get_matrix_versions("openai")
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
+def test_openai(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_oai_attachments.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_openrouter_gateway.py", version=version)
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
+def test_openai_http2_streaming(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", version)
+    # h2 is isolated to this session because it's only needed to force the
+    # HTTP/2 LegacyAPIResponse streaming path used by the regression test.
+    _install_group_locked(session, "test-openai-http2")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_http2.py", version=version)
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
+def test_btx_openai(session, version):
+    """Run the BTX cross-language LLM-span spec tests (OpenAI provider)."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", version)
+    session.install("pyyaml")
+    _run_tests(session, "braintrust/btx", version=version, env={"BTX_PROVIDER": "openai", "BTX_CLIENT": "openai"})
+
+
+@nox.session()
+def test_openai_ddtrace(session):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", LATEST)
+    _install_group_locked(session, "test-openai-ddtrace")
+    _run_tests(session, f"{INTEGRATION_DIR}/openai/test_openai_ddtrace.py", version=LATEST)
+
+
+OPENAI_AGENTS_VERSIONS = _get_matrix_versions("openai-agents")
+
+
+@nox.session()
+@nox.parametrize("version", OPENAI_AGENTS_VERSIONS, ids=OPENAI_AGENTS_VERSIONS)
+def test_openai_agents(session, version):
+    _install_test_deps(session)
+    # openai is an auxiliary dep for openai-agents — locked from lockfile
+    _install_group_locked(session, "test-openai-agents")
+    _install_matrix_dep(session, "openai-agents", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openai_agents/test_openai_agents.py", version=version)
+
+
+LITELLM_VERSIONS = _get_matrix_versions("litellm")
+
+
+@nox.session()
+@nox.parametrize("version", LITELLM_VERSIONS, ids=LITELLM_VERSIONS)
+def test_litellm(session, version):
+    _install_test_deps(session)
+    # Auxiliary deps (openai upper-bounded, fastapi, orjson) are locked in the lockfile.
+    _install_group_locked(session, "test-litellm")
+    _install_matrix_dep(session, "litellm", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/litellm/test_litellm.py", version=version)
+
+
+# CLI bundling started in 0.1.10 - older versions require external Claude Code installation
+CLAUDE_AGENT_SDK_VERSIONS = _get_matrix_versions("claude-agent-sdk")
+
+
+@nox.session()
+@nox.parametrize("version", CLAUDE_AGENT_SDK_VERSIONS, ids=CLAUDE_AGENT_SDK_VERSIONS)
+def test_claude_agent_sdk(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "claude-agent-sdk", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py", version=version)
+
+
+# Pin 2.4.0 to cover the 2.4 -> 2.5 breaking change to internals we leverage for instrumentation.
+AGNO_VERSIONS = _get_matrix_versions("agno")
+
+
+@nox.session()
+@nox.parametrize("version", AGNO_VERSIONS, ids=AGNO_VERSIONS)
+def test_agno(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "agno", version)
+    _install_group_locked(session, "test-agno")
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py", version=version)
+
+
+STRANDS_VERSIONS = _get_matrix_versions("strands-agents")
+
+
+@nox.session()
+@nox.parametrize("version", STRANDS_VERSIONS, ids=STRANDS_VERSIONS)
+def test_strands(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "strands-agents", version)
+    _install_group_locked(session, "test-strands")
+    _run_tests(session, f"{INTEGRATION_DIR}/strands/test_strands.py", version=version)
+
+
+AGENTSCOPE_VERSIONS = _get_matrix_versions("agentscope")
+
+
+@nox.session()
+@nox.parametrize("version", AGENTSCOPE_VERSIONS, ids=AGENTSCOPE_VERSIONS)
+def test_agentscope(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "agentscope", version)
+    _install_group_locked(session, "test-agentscope")
+    _run_tests(session, f"{INTEGRATION_DIR}/agentscope/test_agentscope.py", version=version)
+
+
+AUTOGEN_VERSIONS = _get_matrix_versions("autogen-agentchat")
+
+
+@nox.session()
+@nox.parametrize("version", AUTOGEN_VERSIONS, ids=AUTOGEN_VERSIONS)
+def test_autogen(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "autogen-agentchat", version)
+    _install_matrix_dep(session, "autogen-ext", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/autogen/test_autogen.py", version=version)
+
+
+# Two test suites with different version requirements:
+# 1. wrap_openai approach: works with older versions (0.1.9+)
+# 2. Direct wrapper (setup_pydantic_ai): requires 1.10.0+ for all features
+PYDANTIC_AI_INTEGRATION_VERSIONS = _get_matrix_versions("pydantic-ai-integration")
+PYDANTIC_AI_WRAP_OPENAI_VERSIONS = _get_matrix_versions("pydantic-ai-wrap-openai")
+
+
+@nox.session()
+@nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
+def test_pydantic_ai_integration(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "pydantic-ai-integration", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_integration.py", version=version)
+
+
+@nox.session()
+@nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
+def test_pydantic_ai_logfire(session, version):
+    """Test pydantic_ai + logfire coexistence (issue #1324)."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "pydantic-ai-integration", version)
+    _install_group_locked(session, "test-pydantic-ai-logfire")
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_logfire.py", version=version)
 
 
 @nox.session()
@@ -95,132 +332,11 @@ def test_core(session):
 def test_pydantic_ai_wrap_openai(session, version):
     """Test pydantic_ai with wrap_openai() approach - supports older versions."""
     _install_test_deps(session)
-    _install(session, "pydantic_ai", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_pydantic_ai_wrap_openai.py")
-    _run_core_tests(session)
+    _install_matrix_dep(session, "pydantic-ai-wrap-openai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_wrap_openai.py", version=version)
 
 
-@nox.session()
-@nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
-def test_pydantic_ai_integration(session, version):
-    """Test pydantic_ai with setup_pydantic_ai() wrapper - requires 1.10.0+."""
-    # Skip on Python 3.9 - pydantic_ai 1.10.0+ requires Python 3.10+
-    if sys.version_info < (3, 10):
-        session.skip("pydantic_ai integration tests require Python >= 3.10 (pydantic_ai 1.10.0+)")
-    _install_test_deps(session)
-    _install(session, "pydantic_ai", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_pydantic_ai_integration.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-def test_pydantic_ai_logfire(session):
-    """Test pydantic_ai + logfire coexistence (issue #1324)."""
-    if sys.version_info < (3, 10):
-        session.skip("pydantic_ai + logfire tests require Python >= 3.10")
-    _install_test_deps(session)
-    _install(session, "pydantic_ai")
-    _install(session, "logfire")
-    _run_tests(session, f"{WRAPPER_DIR}/test_pydantic_ai_logfire.py")
-
-
-@nox.session()
-@nox.parametrize("version", CLAUDE_AGENT_SDK_VERSIONS, ids=CLAUDE_AGENT_SDK_VERSIONS)
-def test_claude_agent_sdk(session, version):
-    # claude_agent_sdk requires Python >= 3.10
-    # These tests use subprocess-transport cassettes, so they can replay in CI
-    # while still exercising the real Claude Agent SDK control protocol.
-    _install_test_deps(session)
-    _install(session, "claude_agent_sdk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/claude_agent_sdk/test_wrapper.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-@nox.parametrize("version", AGNO_VERSIONS, ids=AGNO_VERSIONS)
-def test_agno(session, version):
-    _install_test_deps(session)
-    _install(session, "agno", version)
-    _install(session, "openai")  # Required for agno.models.openai
-    _install(session, "fastapi")  # Required for agno.workflow
-    _run_tests(session, f"{WRAPPER_DIR}/agno/test_agno.py")
-    _run_tests(session, f"{WRAPPER_DIR}/agno/test_workflow.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-@nox.parametrize("version", ANTHROPIC_VERSIONS, ids=ANTHROPIC_VERSIONS)
-def test_anthropic(session, version):
-    _install_test_deps(session)
-    _install(session, "anthropic", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_anthropic.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-@nox.parametrize("version", GENAI_VERSIONS, ids=GENAI_VERSIONS)
-def test_google_genai(session, version):
-    _install_test_deps(session)
-    _install(session, "google-genai", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_google_genai.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-@nox.parametrize("version", GOOGLE_ADK_VERSIONS, ids=GOOGLE_ADK_VERSIONS)
-def test_google_adk(session, version):
-    """Test Google ADK integration."""
-    _install_test_deps(session)
-    _install(session, "google-adk", version)
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk.py")
-    _run_tests(session, f"{WRAPPER_DIR}/adk/test_adk_mcp_tool.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-@nox.parametrize("version", OPENAI_VERSIONS, ids=OPENAI_VERSIONS)
-def test_openai(session, version):
-    _install_test_deps(session)
-    _install(session, "openai", version)
-    # openai-agents requires Python >= 3.10
-    _install(session, "openai-agents")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openai.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-def test_openrouter(session):
-    """Test wrap_openai with OpenRouter. Requires OPENROUTER_API_KEY env var."""
-    _install_test_deps(session)
-    _install(session, "openai")
-    _run_tests(session, f"{WRAPPER_DIR}/test_openrouter.py")
-
-
-@nox.session()
-@nox.parametrize("version", LITELLM_VERSIONS, ids=LITELLM_VERSIONS)
-def test_litellm(session, version):
-    # litellm latest requires Python >= 3.10
-    if version == LATEST and sys.version_info < (3, 10):
-        session.skip("litellm latest requires Python >= 3.10")
-    _install_test_deps(session)
-    # Install a compatible version of openai (1.99.9 or lower) to avoid the ResponseTextConfig removal in 1.100.0
-    # https://github.com/BerriAI/litellm/issues/13711
-    # Install fastapi and orjson as they're required by litellm for proxy/responses operations
-    session.install("openai<=1.99.9", "--force-reinstall", "fastapi", "orjson")
-    _install(session, "litellm", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_litellm.py")
-    _run_core_tests(session)
-
-
-@nox.session()
-@nox.parametrize("version", DSPY_VERSIONS, ids=DSPY_VERSIONS)
-def test_dspy(session, version):
-    # dspy latest depends on litellm which requires Python >= 3.10
-    if sys.version_info < (3, 10):
-        session.skip("dspy latest requires Python >= 3.10 (litellm dependency)")
-    _install_test_deps(session)
-    _install(session, "dspy", version)
-    _run_tests(session, f"{WRAPPER_DIR}/test_dspy.py")
+AUTOEVALS_VERSIONS = _get_matrix_versions("autoevals")
 
 
 @nox.session()
@@ -230,7 +346,143 @@ def test_autoevals(session, version):
     # specifically validate scores from autoevals work properly, so
     # we need some tests with it installed.
     _install_test_deps(session)
-    _install(session, "autoevals", version)
+    _install_matrix_dep(session, "autoevals", version)
+    _run_core_tests(session)
+
+
+# google-genai 1.29.0 has a broken async streaming path unless aiohttp is installed.
+# 1.30.0 is the earliest version that passes our standard integration test session.
+GENAI_VERSIONS = _get_matrix_versions("google-genai")
+
+
+@nox.session()
+@nox.parametrize("version", GENAI_VERSIONS, ids=GENAI_VERSIONS)
+def test_google_genai(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "google-genai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/google_genai/test_google_genai.py", version=version)
+
+
+DSPY_VERSIONS = _get_matrix_versions("dspy")
+
+
+@nox.session()
+@nox.parametrize("version", DSPY_VERSIONS, ids=DSPY_VERSIONS)
+def test_dspy(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "dspy", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version)
+
+
+CREWAI_VERSIONS = _get_matrix_versions("crewai")
+
+
+@nox.session()
+@nox.parametrize("version", CREWAI_VERSIONS, ids=CREWAI_VERSIONS)
+def test_crewai(session, version):
+    if sys.version_info >= (3, 14):
+        session.skip(
+            "CrewAI currently resolves instructor -> pydantic-core builds that do not ship Python 3.14 wheels"
+        )
+    _install_test_deps(session)
+    _install_group_locked(session, "test-crewai")
+    _install_matrix_dep(session, "crewai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/crewai/test_crewai.py", version=version)
+
+
+GOOGLE_ADK_VERSIONS = _get_matrix_versions("google-adk")
+
+
+@nox.session()
+@nox.parametrize("version", GOOGLE_ADK_VERSIONS, ids=GOOGLE_ADK_VERSIONS)
+def test_google_adk(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "google-adk", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk_mcp_tool.py", version=version)
+
+
+LANGCHAIN_VERSIONS = _get_matrix_versions("langchain-core")
+
+
+@nox.session()
+@nox.parametrize("version", LANGCHAIN_VERSIONS, ids=LANGCHAIN_VERSIONS)
+def test_langchain(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "langchain-core", version)
+    _install_group_locked(session, "test-langchain")
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_callbacks.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_context.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py", version=version)
+
+
+LLAMAINDEX_VERSIONS = _get_matrix_versions("llama-index-core")
+
+
+@nox.session()
+@nox.parametrize("version", LLAMAINDEX_VERSIONS, ids=LLAMAINDEX_VERSIONS)
+def test_llamaindex(session, version):
+    _install_test_deps(session)
+    _install_group_locked(session, "test-llamaindex")
+    _install_matrix_dep(session, "llama-index-core", version)
+    # These packages are tightly version-coupled to llama-index-core, so we
+    # install them unpinned and let pip resolve compatible versions.
+    session.install("llama-index-llms-openai", "llama-index-embeddings-openai", silent=SILENT_INSTALLS)
+    _run_tests(session, f"{INTEGRATION_DIR}/llamaindex/test_llamaindex.py", version=version)
+
+
+OPENROUTER_VERSIONS = _get_matrix_versions("openrouter")
+
+
+@nox.session()
+@nox.parametrize("version", OPENROUTER_VERSIONS, ids=OPENROUTER_VERSIONS)
+def test_openrouter(session, version):
+    """Test the native OpenRouter SDK integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openrouter", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/openrouter/test_openrouter.py", version=version)
+
+
+MISTRAL_VERSIONS = _get_matrix_versions("mistralai")
+
+
+@nox.session()
+@nox.parametrize("version", MISTRAL_VERSIONS, ids=MISTRAL_VERSIONS)
+def test_mistral(session, version):
+    """Test the native Mistral SDK integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "mistralai", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/mistral/test_mistral.py", version=version)
+
+
+TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
+
+
+@nox.session()
+@nox.parametrize("version", TEMPORAL_VERSIONS, ids=TEMPORAL_VERSIONS)
+def test_temporal(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "temporalio", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/temporal")
+
+
+PYTEST_VERSIONS = _get_matrix_versions("pytest-matrix")
+
+
+@nox.session()
+@nox.parametrize("version", PYTEST_VERSIONS, ids=PYTEST_VERSIONS)
+def test_pytest_plugin(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "pytest-matrix", version)
+    _run_tests(session, f"{WRAPPER_DIR}/pytest_plugin/test_plugin.py")
+
+
+@nox.session()
+def test_core(session):
+    _install_test_deps(session)
+    # verify we haven't installed our 3p deps.
+    for p in _VENDOR_IMPORT_NAMES:
+        session.run("python", "-c", f"import {p}", success_codes=ERROR_CODES, silent=True)
     _run_core_tests(session)
 
 
@@ -240,7 +492,7 @@ def test_braintrust_core(session):
     # common tests with it installed. Testing the latest (aka the last ever version)
     # is enough.
     _install_test_deps(session)
-    _install(session, "braintrust_core")
+    _install_matrix_dep(session, "braintrust-core", LATEST)
     _run_core_tests(session)
 
 
@@ -249,16 +501,8 @@ def test_cli(session):
     """Test CLI/devserver with starlette installed."""
     _install_test_deps(session)
     session.install(".[cli]")
-    session.install("httpx")  # Required for starlette.testclient
-    _run_tests(session, "braintrust/devserver/test_server_integration.py")
-
-
-@nox.session()
-@nox.parametrize("version", PYTEST_VERSIONS, ids=PYTEST_VERSIONS)
-def test_pytest_plugin(session, version):
-    _install_test_deps(session)
-    _install(session, "pytest", version)
-    _run_tests(session, f"{WRAPPER_DIR}/pytest_plugin/test_plugin.py")
+    _install_group_locked(session, "test-cli")
+    _run_tests(session, DEVSERVER_DIR)
 
 
 @nox.session()
@@ -267,18 +511,6 @@ def test_otel(session):
     _install_test_deps(session)
     session.install(".[otel]")
     _run_tests(session, "braintrust/test_otel.py")
-
-
-@nox.session()
-@nox.parametrize("version", TEMPORAL_VERSIONS, ids=TEMPORAL_VERSIONS)
-def test_temporal(session, version):
-    """Test Temporal integration with temporalio installed."""
-    # temporalio 1.19.0+ requires Python >= 3.10
-    if sys.version_info < (3, 10):
-        session.skip("temporalio 1.19.0+ requires Python >= 3.10")
-    _install_test_deps(session)
-    _install(session, "temporalio", version)
-    _run_tests(session, "braintrust/contrib/temporal")
 
 
 @nox.session()
@@ -291,58 +523,53 @@ def test_otel_not_installed(session):
 
 
 @nox.session()
-def pylint(session):
-    # pylint needs everything so we don't trigger missing import errors
-    # Skip on Python < 3.10 because some deps (like temporalio 1.19+) require 3.10+
-    if sys.version_info < (3, 10):
-        session.skip("pylint requires Python >= 3.10 for full dependency support")
-    session.install(".[all]")
-    session.install("-r", "requirements-dev.txt")
-    session.install(*VENDOR_PACKAGES)
-    # pydantic_ai is not in VENDOR_PACKAGES (has dedicated test sessions),
-    # but pylint needs it with minimum version constraint for proper API checking
-    session.install("pydantic_ai>=1.10.0")
-    session.install("google-adk")
-    session.install("opentelemetry.instrumentation.openai")
-    # langsmith is needed for the wrapper module but not in VENDOR_PACKAGES
-    session.install("langsmith")
+def test_types(session):
+    """Run type-check tests with pyright, mypy, and pytest."""
+    _install_test_deps(session)
+    _install_group_locked(session, "test-types")
 
-    result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
-    files = result.strip().splitlines()
-    if not files:
-        return
-    session.run("pylint", "--errors-only", *files)
+    type_tests_dir = f"src/{TYPE_TESTS_DIR}"
+    test_files = glob.glob(os.path.join(type_tests_dir, "test_*.py"))
+    if not test_files:
+        session.skip("No type test files found")
+
+    # Run pyright on each file. The local pyrightconfig.json opts these tests
+    # into `reportPrivateImportUsage=error` so consumers catching the rule in
+    # their editor/IDE stay in sync with what we publish.
+    pyright_config = os.path.join(type_tests_dir, "pyrightconfig.json")
+    session.run("pyright", "-p", pyright_config, *test_files)
+
+    # Run mypy on each file (only check the test files themselves, not transitive deps)
+    session.run("mypy", "--follow-imports=silent", *test_files)
+
+    # Run pytest for the runtime assertions
+    _run_tests(session, TYPE_TESTS_DIR)
 
 
 @nox.session()
-def test_latest_wrappers_novcr(session):
-    """Run the latest wrapper tests without vcrpy."""
-    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
-        session.skip("Skipping novcr tests in CI (no real API keys available)")
-    # every test run we hit openai, anthropic,  at least once so we balance CI speed (with vcrpy)
-    # with testing reality.
-    args = session.posargs.copy()
-    if "--disable-vcr" not in args:
-        args.append("--disable-vcr")
-    session.notify("test_openai(latest)", posargs=args)
-    session.notify("test_anthropic(latest)", posargs=args)
-    session.notify("test_pydantic_ai_wrap_openai(latest)", posargs=args)
-    session.notify("test_pydantic_ai_integration(latest)", posargs=args)
-    session.notify("test_claude_agent_sdk(latest)", posargs=args)
+def pylint(session):
+    # pylint needs everything so we don't trigger missing import errors
+    session.install(".[all]")
+    # Base test deps + lint tools + all vendor packages, all from the lockfile.
+    _install_group_locked(session, "test", "lint")
 
-
-def _install_npm_in_session(session):
-    """Install Node.js and npm in the nox session using nodeenv."""
-    session.install("nodeenv", silent=SILENT_INSTALLS)
-    # Create a node environment in the session's temporary directory
-    node_dir = os.path.join(session.create_tmp(), "node_env")
-    session.run("nodeenv", node_dir, silent=SILENT_INSTALLS)
-    # Return the path to npm binary for direct use
-    if sys.platform == "win32":
-        npm_bin = os.path.join(node_dir, "Scripts", "npm.cmd")
-    else:
-        npm_bin = os.path.join(node_dir, "bin", "npm")
-    return npm_bin
+    result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
+    files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
+    # Also lint repo-root examples/ — they live outside py/ but rely on the
+    # same `lint` dependency-group, so we cover them in the same invocation.
+    examples_result = session.run("git", "-C", "../examples", "ls-files", "**/*.py", silent=True, log=False)
+    files += [f"../examples/{path}" for path in examples_result.strip().splitlines() if path]
+    if not files:
+        return
+    # scripts/ may use APIs only available in the latest pinned Python version
+    # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
+    if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
+        files = [f for f in files if not f.startswith("scripts/")]
+    # The lint group skips crewai on Python 3.14 (its transitive pydantic-core
+    # has no 3.14 wheel yet), so skip the matching example too.
+    if sys.version_info[:2] >= (3, 14):
+        files = [f for f in files if not f.startswith("../examples/crewai/")]
+    session.run("pylint", "--errors-only", *files)
 
 
 def _install_test_deps(session):
@@ -350,10 +577,12 @@ def _install_test_deps(session):
     install_wheel = "--wheel" in session.posargs
     bt = _get_braintrust_wheel() if install_wheel else "."
 
-    # Install _only_ the dependencies we need for testing (not lint, black,
-    # ipython, whatever). We want to carefully control the base
-    # testing environment so it should be truly minimal.
-    session.install(bt, *BASE_TEST_DEPS)
+    # Install braintrust itself (wheel or editable source).
+    session.install(bt)
+
+    # Install base test deps (pytest, pytest-asyncio, pytest-vcr) from the
+    # lockfile so transitive deps are pinned and reproducible.
+    _install_group_locked(session, "test")
 
     # Sanity check we have installed braintrust (and that it is from a wheel if needed)
     session.run("python", "-c", "import braintrust")
@@ -375,14 +604,42 @@ def _get_braintrust_wheel():
     return wheels[0]
 
 
+@functools.cache
+def _integration_subdirs_to_ignore() -> list[str]:
+    """Return integration subdirectories that require dedicated sessions.
+
+    Top-level tests in ``src/braintrust/integrations/`` (e.g. shared utils and
+    versioning tests) should still run in ``test_core``.
+    """
+    integrations_root = pathlib.Path("src") / INTEGRATION_DIR
+    return [
+        f"{INTEGRATION_DIR}/{child.name}"
+        for child in integrations_root.iterdir()
+        if child.is_dir() and child.name != "__pycache__"
+    ]
+
+
 def _run_core_tests(session):
     """Run all tests which don't require optional dependencies."""
-    _run_tests(session, SRC_DIR, ignore_paths=[WRAPPER_DIR, CONTRIB_DIR, DEVSERVER_DIR])
+    _run_tests(
+        session,
+        SRC_DIR,
+        ignore_paths=[
+            WRAPPER_DIR,
+            *_integration_subdirs_to_ignore(),
+            CONTRIB_DIR,
+            DEVSERVER_DIR,
+            TYPE_TESTS_DIR,
+            BTX_DIR,
+        ],
+    )
 
 
-def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
+def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None, version=None):
     """Run tests against a wheel or the source code. Paths should be relative and start with braintrust."""
     env = env.copy() if env else {}
+    if version:
+        env["BRAINTRUST_TEST_PACKAGE_VERSION"] = version
     wheel_flag = "--wheel" in session.posargs
     common_args = ["--disable-vcr"] if "--disable-vcr" in session.posargs else []
     pytest_posargs = [arg for arg in session.posargs if arg not in INTERNAL_TEST_FLAGS]
@@ -434,10 +691,3 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None):
 
     # And a final note ... if it's not clear from above, we include test files in our wheel, which
     # is perhaps not ideal?
-
-
-def _install(session, package, version=LATEST):
-    pkg_version = f"{package}=={version}"
-    if version == LATEST or not version:
-        pkg_version = package
-    session.install(pkg_version, silent=SILENT_INSTALLS)

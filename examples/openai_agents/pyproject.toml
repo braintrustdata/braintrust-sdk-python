@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-openai-agents-example"
+version = "0.1.0"
+description = "OpenAI Agents SDK traced via BraintrustTracingProcessor"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "openai-agents",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

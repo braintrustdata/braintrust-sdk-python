@@ -1,0 +1,87 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Hello"}],"model":"gpt-4o-mini","stream":false,"temperature":0.1}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '103'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - OpenAI/Python 2.32.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.32.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.12.12
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"message\": \"Incorrect API key provided: sk-inval**-key.
+        You can find your API key at https://platform.openai.com/account/api-keys.\",\n
+        \   \"type\": \"invalid_request_error\",\n    \"code\": \"invalid_api_key\",\n
+        \   \"param\": null\n  },\n  \"status\": 401\n}"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9f308ee39b2038e3-YYZ
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '260'
+      Content-Type:
+      - text/plain
+      Date:
+      - Mon, 27 Apr 2026 20:25:44 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      set-cookie:
+      - __cf_bm=Iwzzvi30_5LK0fu53ShBc5244y0DrkYdpZ0o.boIagU-1777321544.2581315-1.0.1.1-zXPpHC1dsc4UMQwgevXx9G8tcrqShZvJdM82Jki.zEy9kACcFA6bEChd12B6m2hxEO34wRAUewFGcq1MNWl3VXWINg.wN1MQE608RX6R.bWLFZzE5B6ivsEk4WGUUCIe;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 27 Apr 2026
+        20:55:44 GMT
+      - _cfuvid=qmeEYYNZiZb7mzrajkkavL4N6B.9v3oAoAQavjgi5P4-1777321544.2581315-1.0.1.1-U4zLudu5sH8BWvSY_6kqwzcgbMKpfsMSpLu3rjB63UE;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com
+      x-error-json:
+      - ewogICJlcnJvciI6IHsKICAgICJtZXNzYWdlIjogIkluY29ycmVjdCBBUEkga2V5IHByb3ZpZGVkOiBzay1pbnZhbCoqLWtleS4gWW91IGNhbiBmaW5kIHlvdXIgQVBJIGtleSBhdCBodHRwczovL3BsYXRmb3JtLm9wZW5haS5jb20vYWNjb3VudC9hcGkta2V5cy4iLAogICAgInR5cGUiOiAiaW52YWxpZF9yZXF1ZXN0X2Vycm9yIiwKICAgICJjb2RlIjogImludmFsaWRfYXBpX2tleSIsCiAgICAicGFyYW0iOiBudWxsCiAgfSwKICAic3RhdHVzIjogNDAxCn0=
+      x-openai-authorization-error:
+      - '401'
+      x-openai-ide-error-code:
+      - invalid_api_key
+      x-openai-internal-caller:
+      - unknown_through_ide
+      x-openai-proxy-wasm:
+      - v0.1
+      x-request-id:
+      - req_e142f7732b934f4289995bc168d6e0a6
+    status:
+      code: 401
+      message: Unauthorized
+version: 1

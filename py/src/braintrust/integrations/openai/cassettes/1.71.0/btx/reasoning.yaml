@@ -1,0 +1,429 @@
+interactions:
+- request:
+    body: '{"input":[{"role":"user","content":"Look at this sequence: 2, 6, 12, 20,
+      30. What is the pattern and what would be the formula for the nth term?\n"}],"model":"o4-mini","reasoning":{"effort":"high","summary":"detailed"}}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '219'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"id\": \"resp_0e8a51738b753ae40069ebed26c0cc8195bf51a41fc875aee1\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1777069350,\n  \"status\":
+        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": 1777069360,\n  \"error\": null,\n
+        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
+        \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
+        \     \"id\": \"rs_0e8a51738b753ae40069ebed27a91c81958edf1cb2ef5a43ce\",\n
+        \     \"type\": \"reasoning\",\n      \"summary\": [\n        {\n          \"type\":
+        \"summary_text\",\n          \"text\": \"**Identifying a number pattern**\\n\\nThe
+        user asks about the sequence: 2, 6, 12, 20, 30. I notice it\\u2019s likely
+        linked to triangular numbers, which are 1, 3, 6, 10, 15, each multiplied by
+        2. This leads me to the formula for the nth term: a_n = n(n+1). I see it represents
+        pronic numbers (the product of two consecutive integers). The difference between
+        terms increases by 2 each time, starting from 4. Therefore, a_n = 2 * T_n
+        for n \\u2265 1, where T_n = n(n+1)/2.\"\n        },\n        {\n          \"type\":
+        \"summary_text\",\n          \"text\": \"**Clarifying the series formula**\\n\\nI
+        could express the nth term as a_n = 2 + sum_{k=2}^n 2k, but a simpler way
+        is a_n = n(n+1). The user gives the sequence: 2, 6, 12, 20, 30, which clearly
+        reveals pronic numbers\\u2014products of consecutive integers. Each term follows
+        the pattern: 2=1\\u00b72, 6=2\\u00b73, and so on. The difference between the
+        terms is an increasing sequence (4, 6, 8, 10). So, I can confidently state
+        the formula for the nth term as a_n = n(n+1).\"\n        }\n      ]\n    },\n
+        \   {\n      \"id\": \"msg_0e8a51738b753ae40069ebed2f6838819597d64f386d767a88\",\n
+        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Each term is a \\u201cpronic\\u201d
+        (or oblong) number, i.e. the product of two consecutive integers:\\n\\n2 =
+        1\\u00b72  \\n6 = 2\\u00b73  \\n12 = 3\\u00b74  \\n20 = 4\\u00b75  \\n30 =
+        5\\u00b76  \\n\\nIf you label 2 as the 1st term, 6 as the 2nd, etc., then
+        the nth term is\\n\\na\\u2099 = n\\u00b7(n + 1)\\n\\nYou can also check that
+        the differences go 6\\u20132=4, 12\\u20136=6, 20\\u201312=8, \\u2026 increasing
+        by 2 each time.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
+        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
+        \ \"reasoning\": {\n    \"effort\": \"high\",\n    \"summary\": \"detailed\"\n
+        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 41,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 843,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 640\n    },\n    \"total_tokens\": 884\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 24 Apr 2026 22:22:40 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '3191'
+      openai-processing-ms:
+      - '9534'
+      openai-version:
+      - '2020-10-01'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999752'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"input\":[{\"role\":\"user\",\"content\":\"Look at this sequence: 2,
+      6, 12, 20, 30. What is the pattern and what would be the formula for the nth
+      term?\\n\"},{\"id\":\"rs_0e8a51738b753ae40069ebed27a91c81958edf1cb2ef5a43ce\",\"summary\":[{\"text\":\"**Identifying
+      a number pattern**\\n\\nThe user asks about the sequence: 2, 6, 12, 20, 30.
+      I notice it\u2019s likely linked to triangular numbers, which are 1, 3, 6, 10,
+      15, each multiplied by 2. This leads me to the formula for the nth term: a_n
+      = n(n+1). I see it represents pronic numbers (the product of two consecutive
+      integers). The difference between terms increases by 2 each time, starting from
+      4. Therefore, a_n = 2 * T_n for n \u2265 1, where T_n = n(n+1)/2.\",\"type\":\"summary_text\"},{\"text\":\"**Clarifying
+      the series formula**\\n\\nI could express the nth term as a_n = 2 + sum_{k=2}^n
+      2k, but a simpler way is a_n = n(n+1). The user gives the sequence: 2, 6, 12,
+      20, 30, which clearly reveals pronic numbers\u2014products of consecutive integers.
+      Each term follows the pattern: 2=1\xB72, 6=2\xB73, and so on. The difference
+      between the terms is an increasing sequence (4, 6, 8, 10). So, I can confidently
+      state the formula for the nth term as a_n = n(n+1).\",\"type\":\"summary_text\"}],\"type\":\"reasoning\"},{\"id\":\"msg_0e8a51738b753ae40069ebed2f6838819597d64f386d767a88\",\"content\":[{\"annotations\":[],\"text\":\"Each
+      term is a \u201Cpronic\u201D (or oblong) number, i.e. the product of two consecutive
+      integers:\\n\\n2 = 1\xB72  \\n6 = 2\xB73  \\n12 = 3\xB74  \\n20 = 4\xB75  \\n30
+      = 5\xB76  \\n\\nIf you label 2 as the 1st term, 6 as the 2nd, etc., then the
+      nth term is\\n\\na\u2099 = n\xB7(n + 1)\\n\\nYou can also check that the differences
+      go 6\u20132=4, 12\u20136=6, 20\u201312=8, \u2026 increasing by 2 each time.\",\"type\":\"output_text\",\"logprobs\":[]}],\"role\":\"assistant\",\"status\":\"completed\",\"type\":\"message\"},{\"role\":\"user\",\"content\":\"Using
+      the pattern you discovered, what would be the 10th term? And can you find the
+      sum of the first 10 terms?\"}],\"model\":\"o4-mini\",\"reasoning\":{\"effort\":\"high\",\"summary\":\"detailed\"}}"
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1994'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"id\": \"resp_0e8a51738b753ae40069ebed3084c88195979432aa80401334\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1777069360,\n  \"status\":
+        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": 1777069368,\n  \"error\": null,\n
+        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
+        \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
+        \     \"id\": \"rs_0e8a51738b753ae40069ebed315ed48195a8aee6ec68301ec7\",\n
+        \     \"type\": \"reasoning\",\n      \"summary\": [\n        {\n          \"type\":
+        \"summary_text\",\n          \"text\": \"**Calculating pronic numbers**\\n\\nThe
+        user is looking for the 10th term of the pronic number sequence and the sum
+        of the first 10 terms. I\\u2019ve computed that the 10th term, based on the
+        formula a_n = n(n+1), is 110. For the sum of the first 10 terms, I calculated
+        S_10 = 440 by adding the sums of squares and the first 10 natural numbers.
+        So, my final answers are: the 10th term is 110, and the sum of the first 10
+        terms is 440.\"\n        },\n        {\n          \"type\": \"summary_text\",\n
+        \         \"text\": \"**Finalizing pronic numbers**\\n\\nI\\u2019m thinking
+        about pronic numbers, like 2, 6, and 12, and how their differences are 4 and
+        6. I\\u2019ll confirm that the 10th term is 110 and the sum of the first 10
+        terms is 440. I can outline the calculations, like a_{10} = 10*11 = 110 and
+        S_10, which gives a sum of 440. There\\u2019s also a formula for this that
+        simplifies the process. So my final answers are: the 10th term is 110, and
+        the sum is 440.\"\n        }\n      ]\n    },\n    {\n      \"id\": \"msg_0e8a51738b753ae40069ebed38350881958d3154d04a7bf8d8\",\n
+        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"The 10th term is  \\na\\u2081\\u2080
+        = 10\\u00b7(10+1) = 10\\u00b711 = 110.  \\n\\nThe sum of the first 10 terms
+        is  \\nS\\u2081\\u2080 = \\u2211_{n=1}^{10} n(n+1) = \\u2211 n\\u00b2 + \\u2211
+        n  \\n      = (10\\u00b711\\u00b721)/6 + (10\\u00b711)/2  \\n      = 385 +
+        55  \\n      = 440.  \\n\\nEquivalently, one can use the closed\\u2010form
+        \ \\n\\u2211_{n=1}^N n(n+1) = N(N+1)(N+2)/3,  \\nso for N=10: 10\\u00b711\\u00b712/3
+        = 440.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n
+        \ \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
+        \ \"reasoning\": {\n    \"effort\": \"high\",\n    \"summary\": \"detailed\"\n
+        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 216,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 617,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 448\n    },\n    \"total_tokens\": 833\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 24 Apr 2026 22:22:49 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '3132'
+      openai-processing-ms:
+      - '8559'
+      openai-version:
+      - '2020-10-01'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999575'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"input":[{"role":"user","content":"Look at this sequence: 2, 6, 12, 20,
+      30. What is the pattern and what would be the formula for the nth term?\n"}],"model":"o4-mini","reasoning":{"effort":"high","summary":"detailed"}}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '219'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"id\": \"resp_0927450cca53dbe30069ebee9bea288197b06daeeff47a3a1a\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1777069723,\n  \"status\":
+        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": 1777069731,\n  \"error\": null,\n
+        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
+        \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
+        \     \"id\": \"rs_0927450cca53dbe30069ebee9c534881978ae034fc1a9d5085\",\n
+        \     \"type\": \"reasoning\",\n      \"summary\": [\n        {\n          \"type\":
+        \"summary_text\",\n          \"text\": \"**Identifying sequence patterns**\\n\\nThe
+        user shared a sequence: 2, 6, 12, 20, 30, which represents \\\"pronic\\\"
+        or \\\"rectangular\\\" numbers defined by the formula n(n+1). For instance,
+        2 is from 1*2, 6 is from 2*3, and so on. I see that this sequence can also
+        be viewed as double the triangular numbers, but the direct formula remains
+        n(n+1). I\\u2019ve noticed the differences between terms (4, 6, 8, 10) increase
+        by 2 each time, revealing it's a second-degree polynomial.\"\n        },\n
+        \       {\n          \"type\": \"summary_text\",\n          \"text\": \"**Clarifying
+        pronic numbers**\\n\\nI've realized that the sequence can be understood as
+        the x-th even triangular numbers, leading to the formula a_n = n(n+1) for
+        the nth term. This reflects the product of two consecutive natural numbers,
+        and I can also express it as a_n = n^2 + n. The differences between terms
+        form an arithmetic sequence increasing by 2 each time. So, I\\u2019ll confirm
+        the sequence of pronic numbers, summarizing that each term is derived from
+        n multiplied by the next integer.\"\n        }\n      ]\n    },\n    {\n      \"id\":
+        \"msg_0927450cca53dbe30069ebeea2cedc81978f9bcd1c18394e29\",\n      \"type\":
+        \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n
+        \         \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":
+        [],\n          \"text\": \"The terms are the \\u201cpronic\\u201d (or oblong)
+        numbers, i.e. the product of two consecutive integers:\\n\\n 2 = 1\\u00b72
+        \ \\n 6 = 2\\u00b73  \\n12 = 3\\u00b74  \\n20 = 4\\u00b75  \\n30 = 5\\u00b76
+        \ \\n\\nHence, if you index so that a\\u2081=2, a\\u2082=6, \\u2026, then\\n\\n
+        \ a\\u2099 = n\\u00b7(n + 1)\\n\\nYou can also write that as\\n\\n  a\\u2099
+        = n\\u00b2 + n.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
+        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
+        \ \"reasoning\": {\n    \"effort\": \"high\",\n    \"summary\": \"detailed\"\n
+        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 41,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 838,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 704\n    },\n    \"total_tokens\": 879\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 24 Apr 2026 22:28:51 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '3161'
+      openai-processing-ms:
+      - '7613'
+      openai-version:
+      - '2020-10-01'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999752'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"input\":[{\"role\":\"user\",\"content\":\"Look at this sequence: 2,
+      6, 12, 20, 30. What is the pattern and what would be the formula for the nth
+      term?\\n\"},{\"id\":\"rs_0927450cca53dbe30069ebee9c534881978ae034fc1a9d5085\",\"summary\":[{\"text\":\"**Identifying
+      sequence patterns**\\n\\nThe user shared a sequence: 2, 6, 12, 20, 30, which
+      represents \\\"pronic\\\" or \\\"rectangular\\\" numbers defined by the formula
+      n(n+1). For instance, 2 is from 1*2, 6 is from 2*3, and so on. I see that this
+      sequence can also be viewed as double the triangular numbers, but the direct
+      formula remains n(n+1). I\u2019ve noticed the differences between terms (4,
+      6, 8, 10) increase by 2 each time, revealing it's a second-degree polynomial.\",\"type\":\"summary_text\"},{\"text\":\"**Clarifying
+      pronic numbers**\\n\\nI've realized that the sequence can be understood as the
+      x-th even triangular numbers, leading to the formula a_n = n(n+1) for the nth
+      term. This reflects the product of two consecutive natural numbers, and I can
+      also express it as a_n = n^2 + n. The differences between terms form an arithmetic
+      sequence increasing by 2 each time. So, I\u2019ll confirm the sequence of pronic
+      numbers, summarizing that each term is derived from n multiplied by the next
+      integer.\",\"type\":\"summary_text\"}],\"type\":\"reasoning\"},{\"id\":\"msg_0927450cca53dbe30069ebeea2cedc81978f9bcd1c18394e29\",\"content\":[{\"annotations\":[],\"text\":\"The
+      terms are the \u201Cpronic\u201D (or oblong) numbers, i.e. the product of two
+      consecutive integers:\\n\\n 2 = 1\xB72  \\n 6 = 2\xB73  \\n12 = 3\xB74  \\n20
+      = 4\xB75  \\n30 = 5\xB76  \\n\\nHence, if you index so that a\u2081=2, a\u2082=6,
+      \u2026, then\\n\\n  a\u2099 = n\xB7(n + 1)\\n\\nYou can also write that as\\n\\n
+      \ a\u2099 = n\xB2 + n.\",\"type\":\"output_text\",\"logprobs\":[]}],\"role\":\"assistant\",\"status\":\"completed\",\"type\":\"message\"},{\"role\":\"user\",\"content\":\"Using
+      the pattern you discovered, what would be the 10th term? And can you find the
+      sum of the first 10 terms?\"}],\"model\":\"o4-mini\",\"reasoning\":{\"effort\":\"high\",\"summary\":\"detailed\"}}"
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1971'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/responses
+  response:
+    body:
+      string: "{\n  \"id\": \"resp_0927450cca53dbe30069ebeea3e89481979afa93837267ba7c\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1777069731,\n  \"status\":
+        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": 1777069736,\n  \"error\": null,\n
+        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
+        null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
+        \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
+        \     \"id\": \"rs_0927450cca53dbe30069ebeea455308197968f95c8e31142ec\",\n
+        \     \"type\": \"reasoning\",\n      \"summary\": []\n    },\n    {\n      \"id\":
+        \"msg_0927450cca53dbe30069ebeea6fd6c8197993b17ee71fb39e2\",\n      \"type\":
+        \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n
+        \         \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":
+        [],\n          \"text\": \"The 10th term is  \\n  a\\u2081\\u2080 = 10\\u00b7(10
+        + 1) = 10\\u00b711 = 110.  \\n\\nThe sum of the first 10 terms is  \\n  S\\u2081\\u2080
+        = \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070 n(n+1)  \\n       = \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070
+        (n\\u00b2 + n)  \\n       = (\\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070 n\\u00b2)
+        + (\\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070 n)  \\n       = 385 + 55  \\n
+        \      = 440.  \\n\\n(You can also use the closed\\u2010form S\\u2099 = n(n+1)(n+2)/3
+        \\u21d2 S\\u2081\\u2080 = 10\\u00b711\\u00b712/3 = 440.)\"\n        }\n      ],\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"effort\": \"high\",\n    \"summary\": \"detailed\"\n  },\n  \"safety_identifier\":
+        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
+        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
+        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\":
+        [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n
+        \ \"usage\": {\n    \"input_tokens\": 193,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 610,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 384\n    },\n    \"total_tokens\": 803\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 24 Apr 2026 22:28:56 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '2195'
+      openai-processing-ms:
+      - '4343'
+      openai-version:
+      - '2020-10-01'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999600'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -576,6 +576,7 @@ class TestSpanFiltering:
         assert "root_span" in names
         assert "child_span" not in names
 
+
 def test_parent_from_headers_invalid_inputs():
     """Test parent_from_headers with various invalid inputs."""
     if not _check_otel_installed():

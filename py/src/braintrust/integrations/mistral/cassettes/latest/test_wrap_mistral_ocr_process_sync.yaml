@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"model":"mistral-ocr-latest","document":{"document_url":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg==","type":"document_url","document_name":"test.pdf"}}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '530'
+      Host:
+      - api.mistral.ai
+      content-type:
+      - application/json
+      user-agent:
+      - mistral-client-python/2.4.0
+    method: POST
+    uri: https://api.mistral.ai/v1/ocr
+  response:
+    body:
+      string: '{"pages":[{"index":0,"markdown":".","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":93,"height":1023,"width":791},"confidence_scores":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":292}}'
+    headers:
+      CF-RAY:
+      - 9ed466f7ad6eab66-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Apr 2026 16:00:19 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15552000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-allow-origin:
+      - '*'
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '293'
+      mistral-correlation-id:
+      - 019d9705-970b-75b9-8203-9176cecad458
+      set-cookie:
+      - __cf_bm=cDMUTHSuB4wUbzx84RCmK6oOfV2RDlH.ejzkTXrwh3M-1776355219.1468973-1.0.1.1-s7wYtT5IShC0qNhbaLZkuymVkMlFXFxVjSrT6GMCgJQp70sBwU6W7wyt9bfAaX57LQKVseLIz2bIEWyD.wBfPlG3Su24x.roox6knxig06MUNP5GuTVKb2cuRPh3e.FO;
+        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 16 Apr 2026 16:30:19
+        GMT
+      - _cfuvid=SKaFiqFq64X613Z08uVL6K787ly51ZoauNhdBy4NvDA-1776355219.1468973-1.0.1.1-qNFmikKYupKF9G2Pr2HSK72UqEsJLsDsGGwsjLLRTTM;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      x-envoy-upstream-service-time:
+      - '27'
+      x-kong-proxy-latency:
+      - '10'
+      x-kong-request-id:
+      - 019d9705-970b-75b9-8203-9176cecad458
+      x-kong-upstream-latency:
+      - '28'
+    status:
+      code: 200
+      message: OK
+version: 1

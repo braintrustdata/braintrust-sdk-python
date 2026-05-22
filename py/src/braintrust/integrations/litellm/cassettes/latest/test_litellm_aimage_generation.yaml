@@ -1,0 +1,84 @@
+interactions:
+- request:
+    body: '{"prompt":"A tiny blue square on a white background","model":"dall-e-2","response_format":"url","size":"256x256"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '113'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.24.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.24.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
+    method: POST
+    uri: https://api.openai.com/v1/images/generations
+  response:
+    body:
+      string: "{\n  \"created\": 1776705552,\n  \"data\": [\n    {\n      \"url\":
+        \"https://oaidalleapiprodscus.blob.core.windows.net/private/org-gY2CWXtioLkEfpHBJTrcdNID/user-jIouncdtCNqBNU7Q41fsSvZ2/img-xo4aoKOqXJNakDEEeY58FJc7.png?st=2026-04-20T16%3A19%3A12Z&se=2026-04-20T18%3A19%3A12Z&sp=r&sv=2026-02-06&sr=b&rscd=inline&rsct=image/png&skoid=35890473-cca8-4a54-8305-05a39e0bc9c3&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-04-19T17%3A22%3A50Z&ske=2026-04-20T17%3A22%3A50Z&sks=b&skv=2026-02-06&sig=FY4dDF6ZMLCTB%2BwMod4wqfSVggk%2BXvru1Pmghdt8PDw%3D\"\n
+        \   }\n  ]\n}"
+    headers:
+      CF-RAY:
+      - 9ef5cfc67810f2bc-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 20 Apr 2026 17:19:12 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=VJL5zUclYuusE1IqSMpVZ1KRFT49dZ97XeZfRgjegTo-1776705542.1541994-1.0.1.1-m6kuUbSfxrzlPV_BU1d7ca4Tk8O2RCn_vtjOMaZPrsU1DSG.Jpzk2gTweRcleXD076YAvcDQGhu0knLbo3XaqCnmtgIgUp5S5WlXs5GDkY.Iuv4jpsKyFg_H1IhPJ1B2;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Mon, 20 Apr 2026
+        17:49:12 GMT
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      content-length:
+      - '548'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '10022'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      x-request-id:
+      - req_65aee88c861a4b5fa6e39dd416029be1
+    status:
+      code: 200
+      message: OK
+version: 1

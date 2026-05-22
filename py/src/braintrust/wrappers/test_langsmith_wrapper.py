@@ -9,7 +9,6 @@
 Tests for the LangSmith wrapper to ensure compatibility with LangSmith's API.
 """
 
-
 from braintrust.wrappers.langsmith_wrapper import (
     _convert_langsmith_data,
     _is_patched,
@@ -292,7 +291,11 @@ class TestTandemModeIntegration:
         def langsmith_evaluator(inputs, outputs, reference_outputs):
             # outputs will be wrapped as {"output": value} for non-dict results
             actual = outputs.get("output", outputs)
-            expected = reference_outputs.get("output", reference_outputs) if isinstance(reference_outputs, dict) else reference_outputs
+            expected = (
+                reference_outputs.get("output", reference_outputs)
+                if isinstance(reference_outputs, dict)
+                else reference_outputs
+            )
             return {"key": "match", "score": 1.0 if actual == expected else 0.0}
 
         converted = _make_braintrust_scorer(langsmith_evaluator)

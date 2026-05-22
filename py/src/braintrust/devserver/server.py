@@ -4,6 +4,7 @@ import sys
 import textwrap
 from typing import Any
 
+
 try:
     import uvicorn
     from starlette.applications import Starlette
@@ -24,10 +25,24 @@ except ModuleNotFoundError as e:
         )
     )
 
-from ..framework import EvalAsync, EvalScorer, Evaluator, ExperimentSummary, SSEProgressEvent
+from ..framework import (
+    EvalAsync,
+    EvalHooks,
+    EvalScorer,
+    Evaluator,
+    ExperimentSummary,
+    SSEProgressEvent,
+    _classifier_name,
+    _scorer_name,
+)
 from ..generated_types import FunctionId
 from ..logger import BraintrustState, bt_iscoroutinefunction
-from ..parameters import parameters_to_json_schema, validate_parameters
+from ..parameters import (
+    RemoteEvalParameters,
+    ValidatedParameters,
+    serialize_remote_eval_parameters_container,
+    validate_parameters,
+)
 from ..span_identifier_v4 import parse_parent
 from .auth import AuthorizationMiddleware
 from .cache import cached_login
@@ -36,7 +51,21 @@ from .dataset import get_dataset
 from .eval_hooks import SSEQueue
 from .schemas import ValidationError, parse_eval_body
 
-_all_evaluators: dict[str, Evaluator[Any, Any]] = {}
+
+_all_evaluators: dict[str, Evaluator[Any, Any, Any]] = {}
+
+
+class _ParameterOverrideHooks:
+    def __init__(self, hooks: EvalHooks[Any], parameters: ValidatedParameters):
+        self._hooks = hooks
+        self._parameters = parameters
+
+    @property
+    def parameters(self) -> ValidatedParameters:
+        return self._parameters
+
+    def __getattr__(self, name: str):
+        return getattr(self._hooks, name)
 
 
 class CheckAuthorizedMiddleware(BaseHTTPMiddleware):
@@ -93,8 +122,13 @@ async def list_evaluators(request: Request) -> JSONResponse:
     evaluator_list = {}
     for name, evaluator in _all_evaluators.items():
         evaluator_list[name] = {
-            "parameters": parameters_to_json_schema(evaluator.parameters) if evaluator.parameters else {},
-            "scores": [{"name": getattr(score, "name", f"score_{i}")} for i, score in enumerate(evaluator.scores)],
+            "parameters": (
+                serialize_remote_eval_parameters_container(evaluator.parameters) if evaluator.parameters else None
+            ),
+            "scores": [{"name": _scorer_name(score, i)} for i, score in enumerate(evaluator.scores or [])],
+            "classifiers": [
+                {"name": _classifier_name(classifier, i)} for i, classifier in enumerate(evaluator.classifiers or [])
+            ],
         }
 
     return JSONResponse(evaluator_list)
@@ -152,12 +186,13 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     # Set up SSE headers for streaming
     sse_queue = SSEQueue()
 
-    async def task(input, hooks):
+    async def task(input: Any, hooks: EvalHooks[Any]):
+        task_hooks = hooks if validated_parameters is None else _ParameterOverrideHooks(hooks, validated_parameters)
         if bt_iscoroutinefunction(evaluator.task):
-            result = await evaluator.task(input, hooks)
+            result = await evaluator.task(input, task_hooks)
         else:
-            result = evaluator.task(input, hooks)
-        hooks.report_progress(
+            result = evaluator.task(input, task_hooks)
+        task_hooks.report_progress(
             {
                 "format": "code",
                 "output_type": "completion",
@@ -184,10 +219,19 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
     if parent:
         parent = parse_parent(parent)
 
-    # Override evaluator parameters with validated ones if provided
-    eval_kwargs = {k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name"]}
-    if validated_parameters is not None:
+    eval_kwargs = {
+        k: v for (k, v) in evaluator.__dict__.items() if k not in ["eval_name", "project_name", "parameter_values"]
+    }
+    if validated_parameters is not None and not isinstance(evaluator.parameters, RemoteEvalParameters):
         eval_kwargs["parameters"] = validated_parameters
+
+    # Honor an explicit project_id from the request when present; otherwise
+    # fall back to the registered evaluator's project_id. Without this
+    # fallback, requests that omit project_id silently route into a
+    # per-evaluator-name auto-created project (Eval(project_id=None) uses
+    # name as the project name) instead of the project the evaluator was
+    # registered against.
+    project_id = eval_data.get("project_id") or evaluator.project_id
 
     try:
         eval_task = asyncio.create_task(
@@ -196,7 +240,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
                 **{
                     **eval_kwargs,
                     "state": state,
-                    "scores": evaluator.scores
+                    "scores": (evaluator.scores or [])
                     + [
                         make_scorer(state, score["name"], score["function_id"], ctx.project_id)
                         for score in eval_data.get("scores", [])
@@ -207,7 +251,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
                     "task": task,
                     "experiment_name": eval_data.get("experiment_name"),
                     "parent": parent,
-                    "project_id": eval_data.get("project_id"),
+                    "project_id": project_id,
                 },
             )
         )
@@ -258,7 +302,7 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
         return JSONResponse({"error": f"Failed to run evaluation: {str(e)}"}, status_code=500)
 
 
-def create_app(evaluators: list[Evaluator[Any, Any]], org_name: str | None = None):
+def create_app(evaluators: list[Evaluator[Any, Any, Any]], org_name: str | None = None):
     """Create and configure the Starlette app for the dev server.
 
     Args:
@@ -287,7 +331,10 @@ def create_app(evaluators: list[Evaluator[Any, Any]], org_name: str | None = Non
 
 
 def run_dev_server(
-    evaluators: list[Evaluator[Any, Any]], host: str = "localhost", port: int = 8300, org_name: str | None = None
+    evaluators: list[Evaluator[Any, Any, Any]],
+    host: str = "localhost",
+    port: int = 8300,
+    org_name: str | None = None,
 ):
     """Start the dev server.
 
@@ -312,7 +359,7 @@ def snake_to_camel(snake_str: str) -> str:
 
 def make_scorer(
     state: BraintrustState, name: str, score: FunctionId, project_id: str | None = None
-) -> EvalScorer[Any, Any]:
+) -> EvalScorer[Any, Any, Any]:
     def scorer_fn(input, output, expected, metadata):
         request = {
             **score,

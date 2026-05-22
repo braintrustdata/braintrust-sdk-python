@@ -1,0 +1,60 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"inlineData": {"data": "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs-9AAAAFElEQVR42mP4z8DwnxjMMKqQvgoBksPHOXvuG4oAAAAASUVORK5CYII=",
+      "mimeType": "image/png"}}, {"text": "What color is this image?"}], "role": "user"}],
+      "systemInstruction": {"parts": [{"text": "You are a helpful assistant that can
+      analyze images.\n\nYou are an agent. Your internal name is \"vision_agent\"."}],
+      "role": "user"}, "generationConfig": {"maxOutputTokens": 150}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
+      x-goog-api-client:
+      - google-genai-sdk/1.73.1 gl-python/3.14.3 google-adk/1.31.0 gl-python/3.14.3
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The image is red.\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"avgLogprobs\": -0.012568791210651398\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 289,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\":
+        294,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"IMAGE\",\n
+        \       \"tokenCount\": 258\n      },\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 31\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 5\n      }\n
+        \   ]\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
+        \"cT_iafXLI-2z1MkP9L7ykQc\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 17 Apr 2026 14:10:58 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=832
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

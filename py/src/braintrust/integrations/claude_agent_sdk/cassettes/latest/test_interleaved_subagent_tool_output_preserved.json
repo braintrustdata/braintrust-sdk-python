@@ -1,0 +1,1021 @@
+{
+  "cassette_name": "test_interleaved_subagent_tool_output_preserved",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": null,
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_dbf4ac90",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_dbf4ac90",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "apiProvider": "firstParty",
+              "tokenSource": "none"
+            },
+            "agents": [],
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Launch two bundled general-purpose subagents for two independent tasks. Start both Agent tool calls before waiting on either result if the tool API allows it. The first delegated subagent must use Bash to run `echo alpha-bash-output` and then use Read on alpha.txt. The second delegated subagent must use Bash to run `echo beta-bash-output` and then use Read on beta.txt. Each delegated subagent must return only its file contents after both tool calls complete. After both delegated agents finish, reply with exactly two lines in order alpha then beta. Do not ask clarifying questions. Do not answer directly without using both subagents.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.1.116",
+        "cwd": "<REDACTED_CWD>",
+        "fast_mode_state": "off",
+        "mcp_servers": [],
+        "memory_paths": {
+          "auto": "<REDACTED_PATH>"
+        },
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [
+          {
+            "name": "rust-analyzer-lsp",
+            "path": "<REDACTED_PATH>",
+            "source": "rust-analyzer-lsp@claude-plugins-official"
+          }
+        ],
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "skills": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust"
+        ],
+        "slash_commands": [
+          "update-config",
+          "debug",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "loop",
+          "schedule",
+          "claude-api",
+          "create-braintrust-demo",
+          "braintrust",
+          "compact",
+          "context",
+          "cost",
+          "heapdump",
+          "init",
+          "review",
+          "security-review",
+          "insights",
+          "team-onboarding"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "AskUserQuestion",
+          "Bash",
+          "CronCreate",
+          "CronDelete",
+          "CronList",
+          "Edit",
+          "EnterPlanMode",
+          "EnterWorktree",
+          "ExitPlanMode",
+          "ExitWorktree",
+          "Glob",
+          "Grep",
+          "LSP",
+          "Monitor",
+          "NotebookEdit",
+          "PushNotification",
+          "Read",
+          "RemoteTrigger",
+          "ScheduleWakeup",
+          "Skill",
+          "TaskOutput",
+          "TaskStop",
+          "TodoWrite",
+          "ToolSearch",
+          "WebFetch",
+          "WebSearch",
+          "Write"
+        ],
+        "type": "system",
+        "uuid": "aeec7c43-7255-46bb-8c98-9a526d372cf6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "The user is asking me to:\n1. Launch two general-purpose subagents in parallel\n2. First subagent: run `echo alpha-bash-output` via Bash, then Read alpha.txt\n3. Second subagent: run `echo beta-bash-output` via Bash, then Read beta.txt\n4. Each subagent returns only file contents after both tool calls complete\n5. After both agents finish, reply with exactly two lines: alpha then beta\n\nSince these are independent tasks, I should launch both agents in parallel using the Agent tool with subagent_type: \"general-purpose\".\n\nLet me craft the prompts for each agent:\n\nAgent 1 (alpha):\n- Run: `echo alpha-bash-output`\n- Then: Read alpha.txt\n- Return: only the contents of alpha.txt after both operations complete\n\nAgent 2 (beta):\n- Run: `echo beta-bash-output`\n- Then: Read beta.txt\n- Return: only the contents of beta.txt after both operations complete\n\nI need to make sure I call both agents in parallel (same function_calls block) since they're independent.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01U9qQetxPip2LPJuRyaxLdT",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23369,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 7,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "ec94bbd2-2fae-4a33-ac64-773126972c69"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+              "input": {
+                "description": "Alpha subagent: run echo and read alpha.txt",
+                "prompt": "Run the bash command `echo alpha-bash-output`, then use the Read tool to read the file alpha.txt. After both tool calls complete, return only the contents of alpha.txt.",
+                "subagent_type": "general-purpose"
+              },
+              "name": "Agent",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01U9qQetxPip2LPJuRyaxLdT",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23369,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 7,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "1f202e10-473d-4e13-af6a-a6f152c27139"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Alpha subagent: run echo and read alpha.txt",
+        "prompt": "Run the bash command `echo alpha-bash-output`, then use the Read tool to read the file alpha.txt. After both tool calls complete, return only the contents of alpha.txt.",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "subtype": "task_started",
+        "task_id": "a6d36a23b9c6d14bb",
+        "task_type": "local_agent",
+        "tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "type": "system",
+        "uuid": "6d561a91-d860-4ffb-9b6a-9b214eed0962"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Run the bash command `echo alpha-bash-output`, then use the Read tool to read the file alpha.txt. After both tool calls complete, return only the contents of alpha.txt.",
+              "type": "text"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:47.121Z",
+        "type": "user",
+        "uuid": "711bef15-d445-4263-ac82-55c3621e5751"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+              "input": {
+                "description": "Beta subagent: run echo and read beta.txt",
+                "prompt": "Run the bash command `echo beta-bash-output`, then use the Read tool to read the file beta.txt. After both tool calls complete, return only the contents of beta.txt.",
+                "subagent_type": "general-purpose"
+              },
+              "name": "Agent",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01U9qQetxPip2LPJuRyaxLdT",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23369,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 7,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "5753abba-1cde-4d79-a834-31c7834f7b82"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Beta subagent: run echo and read beta.txt",
+        "prompt": "Run the bash command `echo beta-bash-output`, then use the Read tool to read the file beta.txt. After both tool calls complete, return only the contents of beta.txt.",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "subtype": "task_started",
+        "task_id": "a7748793dbb037328",
+        "task_type": "local_agent",
+        "tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "type": "system",
+        "uuid": "a078c4b5-2a7a-4d4b-8e98-d6e88e37aaec"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "Run the bash command `echo beta-bash-output`, then use the Read tool to read the file beta.txt. After both tool calls complete, return only the contents of beta.txt.",
+              "type": "text"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:47.448Z",
+        "type": "user",
+        "uuid": "8452c55f-dc32-4483-b1d2-828ab1031070"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Running Run echo command to output text",
+        "last_tool_name": "Bash",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "subtype": "task_progress",
+        "task_id": "a6d36a23b9c6d14bb",
+        "tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "type": "system",
+        "usage": {
+          "duration_ms": 1211,
+          "tool_uses": 1,
+          "total_tokens": 17716
+        },
+        "uuid": "5f9cebfa-e05f-4a34-8baf-c6117a6e10cb"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01TUcn4sqbEDSAC5M5M7uGbz",
+              "input": {
+                "command": "echo alpha-bash-output",
+                "description": "Run echo command to output text"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01F1rc2hYAc8a6MvDeSXhfKm",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1068
+            },
+            "cache_creation_input_tokens": 1068,
+            "cache_read_input_tokens": 16629,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 8,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "ea22a5ad-0d34-414a-8991-30a1fe755b25"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Running Run echo command to output text",
+        "last_tool_name": "Bash",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "subtype": "task_progress",
+        "task_id": "a7748793dbb037328",
+        "tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "type": "system",
+        "usage": {
+          "duration_ms": 1048,
+          "tool_uses": 1,
+          "total_tokens": 17710
+        },
+        "uuid": "11402f29-daf4-4b89-8a95-e6c42efbd5f9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01CLMm9k9wVVQedfbBh9CfSm",
+              "input": {
+                "command": "echo beta-bash-output",
+                "description": "Run echo command to output text"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_015R84XWFB6jShnrxGBy2rtW",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1068
+            },
+            "cache_creation_input_tokens": 1068,
+            "cache_read_input_tokens": 16629,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 5,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "9825612b-c5c3-480a-9194-c73c2908beff"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "alpha-bash-output",
+              "is_error": false,
+              "tool_use_id": "toolu_01TUcn4sqbEDSAC5M5M7uGbz",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:48.511Z",
+        "type": "user",
+        "uuid": "dc381adf-b720-4f4a-b0cc-9d81fdcd6f0c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Reading alpha.txt",
+        "last_tool_name": "Read",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "subtype": "task_progress",
+        "task_id": "a6d36a23b9c6d14bb",
+        "tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "type": "system",
+        "usage": {
+          "duration_ms": 1721,
+          "tool_uses": 2,
+          "total_tokens": 17724
+        },
+        "uuid": "b6e3cbd7-0402-4827-8448-21ffb31892bf"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01PDm27LHAMQ1KMx35AXDZGi",
+              "input": {
+                "file_path": "/private/var/folders/1r/0r49yqc973s87vl4n1x_3j1m0000gn/T/pytest-of-abhijeetprasad/pytest-688/test_interleaved_subagent_tool1/interleaved_parenting_workspace/alpha.txt"
+              },
+              "name": "Read",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01F1rc2hYAc8a6MvDeSXhfKm",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1068
+            },
+            "cache_creation_input_tokens": 1068,
+            "cache_read_input_tokens": 16629,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 8,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "915dc2c5-388b-4f05-a7ef-f15984dd2d77"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "1\talpha_file_contents\n2\t\n\n<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n",
+              "tool_use_id": "toolu_01PDm27LHAMQ1KMx35AXDZGi",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:48.844Z",
+        "type": "user",
+        "uuid": "66ea2b4c-b9c7-4093-b8db-cf94daf5bfcc"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "beta-bash-output",
+              "is_error": false,
+              "tool_use_id": "toolu_01CLMm9k9wVVQedfbBh9CfSm",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:48.512Z",
+        "type": "user",
+        "uuid": "e0fa822d-aa46-41d9-95b1-0d936dd3a913"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "description": "Reading beta.txt",
+        "last_tool_name": "Read",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "subtype": "task_progress",
+        "task_id": "a7748793dbb037328",
+        "tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "type": "system",
+        "usage": {
+          "duration_ms": 1513,
+          "tool_uses": 2,
+          "total_tokens": 17715
+        },
+        "uuid": "f8d611a2-04c2-47ca-9502-609c84a6dd98"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_0133d4fwjeNzssakPaNpT9sw",
+              "input": {
+                "file_path": "/private/var/folders/1r/0r49yqc973s87vl4n1x_3j1m0000gn/T/pytest-of-abhijeetprasad/pytest-688/test_interleaved_subagent_tool1/interleaved_parenting_workspace/beta.txt"
+              },
+              "name": "Read",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_015R84XWFB6jShnrxGBy2rtW",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1068
+            },
+            "cache_creation_input_tokens": 1068,
+            "cache_read_input_tokens": 16629,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 5,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "c7ba42ab-2f87-4b3f-96c3-067f16107c8c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "1\tbeta_file_contents\n2\t\n\n<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n",
+              "tool_use_id": "toolu_0133d4fwjeNzssakPaNpT9sw",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:48.962Z",
+        "type": "user",
+        "uuid": "44fa17b4-3a17-4676-b60a-7b6d436bf4ad"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "output_file": "",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "status": "completed",
+        "subtype": "task_notification",
+        "summary": "Beta subagent: run echo and read beta.txt",
+        "task_id": "a7748793dbb037328",
+        "tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+        "type": "system",
+        "usage": {
+          "duration_ms": 2175,
+          "tool_uses": 2,
+          "total_tokens": 18904
+        },
+        "uuid": "e75055ec-52cc-4b44-bbfd-0d835ef8d77e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "beta_file_contents",
+                  "type": "text"
+                },
+                {
+                  "text": "agentId: a7748793dbb037328 (use SendMessage with to: 'a7748793dbb037328' to continue this agent)\n<usage>total_tokens: 18896\ntool_uses: 2\nduration_ms: 2176</usage>",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01MKskqy3YdZM33UBoNBcw7U",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:49.624Z",
+        "tool_use_result": {
+          "agentId": "a7748793dbb037328",
+          "agentType": "general-purpose",
+          "content": [
+            {
+              "text": "beta_file_contents",
+              "type": "text"
+            }
+          ],
+          "prompt": "Run the bash command `echo beta-bash-output`, then use the Read tool to read the file beta.txt. After both tool calls complete, return only the contents of beta.txt.",
+          "status": "completed",
+          "toolStats": {
+            "bashCount": 1,
+            "editFileCount": 0,
+            "linesAdded": 0,
+            "linesRemoved": 0,
+            "otherToolCount": 0,
+            "readCount": 1,
+            "searchCount": 0
+          },
+          "totalDurationMs": 2176,
+          "totalTokens": 18896,
+          "totalToolUseCount": 2,
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1622
+            },
+            "cache_creation_input_tokens": 1622,
+            "cache_read_input_tokens": 17259,
+            "inference_geo": "",
+            "input_tokens": 7,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 1622
+                },
+                "cache_creation_input_tokens": 1622,
+                "cache_read_input_tokens": 17259,
+                "input_tokens": 7,
+                "output_tokens": 8,
+                "type": "message"
+              }
+            ],
+            "output_tokens": 8,
+            "server_tool_use": {
+              "web_fetch_requests": 0,
+              "web_search_requests": 0
+            },
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "type": "user",
+        "uuid": "a5d5ade8-a72f-44a3-8dea-6cc52d5b9314"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "output_file": "",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "status": "completed",
+        "subtype": "task_notification",
+        "summary": "Alpha subagent: run echo and read alpha.txt",
+        "task_id": "a6d36a23b9c6d14bb",
+        "tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+        "type": "system",
+        "usage": {
+          "duration_ms": 2889,
+          "tool_uses": 2,
+          "total_tokens": 18915
+        },
+        "uuid": "4ac76750-7ef9-4730-8c70-d4bcfc898e80"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "text": "alpha_file_contents",
+                  "type": "text"
+                },
+                {
+                  "text": "agentId: a6d36a23b9c6d14bb (use SendMessage with to: 'a6d36a23b9c6d14bb' to continue this agent)\n<usage>total_tokens: 18898\ntool_uses: 2\nduration_ms: 2889</usage>",
+                  "type": "text"
+                }
+              ],
+              "tool_use_id": "toolu_01QjcRcedhKEYSycsjdP1qFG",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "timestamp": "2026-04-21T15:34:50.010Z",
+        "tool_use_result": {
+          "agentId": "a6d36a23b9c6d14bb",
+          "agentType": "general-purpose",
+          "content": [
+            {
+              "text": "alpha_file_contents",
+              "type": "text"
+            }
+          ],
+          "prompt": "Run the bash command `echo alpha-bash-output`, then use the Read tool to read the file alpha.txt. After both tool calls complete, return only the contents of alpha.txt.",
+          "status": "completed",
+          "toolStats": {
+            "bashCount": 1,
+            "editFileCount": 0,
+            "linesAdded": 0,
+            "linesRemoved": 0,
+            "otherToolCount": 0,
+            "readCount": 1,
+            "searchCount": 0
+          },
+          "totalDurationMs": 2889,
+          "totalTokens": 18898,
+          "totalToolUseCount": 2,
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 1186
+            },
+            "cache_creation_input_tokens": 1186,
+            "cache_read_input_tokens": 17697,
+            "inference_geo": "",
+            "input_tokens": 7,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 1186
+                },
+                "cache_creation_input_tokens": 1186,
+                "cache_read_input_tokens": 17697,
+                "input_tokens": 7,
+                "output_tokens": 8,
+                "type": "message"
+              }
+            ],
+            "output_tokens": 8,
+            "server_tool_use": {
+              "web_fetch_requests": 0,
+              "web_search_requests": 0
+            },
+            "service_tier": "standard",
+            "speed": "standard"
+          }
+        },
+        "type": "user",
+        "uuid": "d58e1e5e-29b2-48d4-8d28-8345217ae546"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Both agents have completed successfully. The first agent returned \"alpha_file_contents\" and the second agent returned \"beta_file_contents\". Now I need to reply with exactly two lines in order (alpha then beta) with these contents.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01LqPZLSoHVVXSqtGyZcLkQX",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 649
+            },
+            "cache_creation_input_tokens": 649,
+            "cache_read_input_tokens": 23369,
+            "inference_geo": "not_available",
+            "input_tokens": 113,
+            "output_tokens": 4,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "e52f283d-cd7b-4903-8e5f-f05a8ff7f8df"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "alpha_file_contents\nbeta_file_contents",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01LqPZLSoHVVXSqtGyZcLkQX",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 649
+            },
+            "cache_creation_input_tokens": 649,
+            "cache_read_input_tokens": 23369,
+            "inference_geo": "not_available",
+            "input_tokens": 113,
+            "output_tokens": 4,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "type": "assistant",
+        "uuid": "995a4ebb-9353-4d12-9f21-a3881676697b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "api_error_status": null,
+        "duration_api_ms": 11333,
+        "duration_ms": 7482,
+        "fast_mode_state": "off",
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 5593,
+            "cacheReadInputTokens": 114952,
+            "contextWindow": 200000,
+            "costUSD": 0.02432845,
+            "inputTokens": 627,
+            "maxOutputTokens": 32000,
+            "outputTokens": 1043,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 3,
+        "permission_denials": [],
+        "result": "alpha_file_contents\nbeta_file_contents",
+        "session_id": "a35b28ac-d4ee-4b76-b7f8-00b3b6c1cd24",
+        "stop_reason": "end_turn",
+        "subtype": "success",
+        "terminal_reason": "completed",
+        "total_cost_usd": 0.02432845,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 649
+          },
+          "cache_creation_input_tokens": 649,
+          "cache_read_input_tokens": 46738,
+          "inference_geo": "",
+          "input_tokens": 123,
+          "iterations": [
+            {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 649
+              },
+              "cache_creation_input_tokens": 649,
+              "cache_read_input_tokens": 23369,
+              "input_tokens": 113,
+              "output_tokens": 71,
+              "type": "message"
+            }
+          ],
+          "output_tokens": 598,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard",
+          "speed": "standard"
+        },
+        "uuid": "3beec45d-68b7-4acb-9984-ca4ad205cb78"
+      }
+    }
+  ],
+  "sdk_version": "0.1.64"
+}

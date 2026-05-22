@@ -1,0 +1,9 @@
+{
+  // Scoped override: this test simulates an external consumer of the
+  // published py.typed package, so we deliberately do not inherit the
+  // repo-root pyrightconfig.json (which maps `braintrust` to source via
+  // `extraPaths` and disables reportPrivateImportUsage). Keeping this
+  // isolated is what makes the test catch private-reexport regressions.
+  "typeCheckingMode": "basic",
+  "reportPrivateImportUsage": "error"
+}

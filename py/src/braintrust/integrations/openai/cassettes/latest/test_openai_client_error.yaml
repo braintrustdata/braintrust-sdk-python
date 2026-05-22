@@ -1,0 +1,80 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"What''s 12 + 12?"}],"model":"non-existent-model"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '87'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - OpenAI/Python 2.32.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.32.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n    \"error\": {\n        \"message\": \"The model `non-existent-model`
+        does not exist or you do not have access to it.\",\n        \"type\": \"invalid_request_error\",\n
+        \       \"param\": null,\n        \"code\": \"model_not_found\"\n    }\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9ed4676e8aad36bd-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Apr 2026 16:00:38 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '224'
+      set-cookie:
+      - __cf_bm=wZJ2.hjOuzWo4xQmKuwPuV3pZPIdfuE6ykhe5oFIjVM-1776355238.162921-1.0.1.1-dul618WGHnaVRBtRqZf8YfM.f4mkNvs6pf7J7EcOGlLwoR1HsU2D8AMN1Q6RVlOTYAaHcqExlfHxq.njPX9.at3mwnmcLRPYPTWae0H1ND98Fel3ssB77n67IOKy0fL3;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 16 Apr 2026
+        16:30:38 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-request-id:
+      - req_6cf1babf35b84d18beb0ab01ca2354ef
+    status:
+      code: 404
+      message: Not Found
+version: 1

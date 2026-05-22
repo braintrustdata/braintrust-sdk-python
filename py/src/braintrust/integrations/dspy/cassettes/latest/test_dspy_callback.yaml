@@ -1,0 +1,123 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"system","content":"Your input fields are:\n1. `question`
+      (str):\nYour output fields are:\n1. `reasoning` (str): \n2. `answer` (str):\nAll
+      interactions will be structured in the following way, with the appropriate values
+      filled in.\n\n[[ ## question ## ]]\n{question}\n\n[[ ## reasoning ## ]]\n{reasoning}\n\n[[
+      ## answer ## ]]\n{answer}\n\n[[ ## completed ## ]]\nIn adhering to this structure,
+      your objective is: \n        Given the fields `question`, produce the fields
+      `answer`."},{"role":"user","content":"[[ ## question ## ]]\nWhat is 2+2?\n\nRespond
+      with the corresponding output fields, starting with the field `[[ ## reasoning
+      ## ]]`, then `[[ ## answer ## ]]`, and then ending with the marker for `[[ ##
+      completed ## ]]`."}],"model":"gpt-4o-mini"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '777'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - DSPy/3.2.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.32.0
+      X-Stainless-Raw-Response:
+      - 'true'
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600.0'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DXqEkGXZ1XRCjUXGezfhOaRIGHHXk\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1776957994,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"[[ ## reasoning ## ]]\\nTo solve the
+        addition problem 2 + 2, we perform the operation of combining two identical
+        quantities. When we add 2 and 2 together, we count two units, then add another
+        two units, resulting in a total of four units.\\n\\n[[ ## answer ## ]]\\n4\\n\\n[[
+        ## completed ## ]]\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 170,\n    \"completion_tokens\":
+        67,\n    \"total_tokens\": 237,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_a7190374f3\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9f0de32209a4f00c-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 23 Apr 2026 15:26:35 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '1096'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '1790'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=gkAJnwwjzu20bnWYMQSTLsK61AT6_b8iW.oFj.QKLPQ-1776957993.282436-1.0.1.1-jw4S3w2KQ6zKShggLYTJFkqaQL3k_3LpTNh.dRpSqPl7UB4Ur7qKnvO2eSHBuQoC7dPmWFugZFA8wEpcUtZG91T33PftqSJXC.NYjq32_8OJeuUmLCDPSyd1LKvDSlhg;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 23 Apr 2026
+        15:56:35 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999832'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_0df1cc4259d14441a46f7af87b4b1e3c
+    status:
+      code: 200
+      message: OK
+version: 1

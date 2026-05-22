@@ -16,6 +16,7 @@ class SpanTypeAttribute(str, Enum):
     AUTOMATION = "automation"
     FACET = "facet"
     PREPROCESSOR = "preprocessor"
+    CLASSIFIER = "classifier"
     REVIEW = "review"
 
 

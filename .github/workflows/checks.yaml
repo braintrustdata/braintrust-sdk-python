@@ -1,0 +1,194 @@
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # Fetch full history for proper diff
+      - name: Set up mise
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: true
+          experimental: true
+      - name: Run pre-commit
+        run: |
+          mise exec -- pre-commit run --from-ref origin/${{ github.base_ref || 'main' }} --to-ref HEAD
+
+  ensure-pinned-actions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Ensure SHA pinned actions
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@70c4af2ed5282c51ba40566d026d6647852ffa3e # v5.0.1
+
+  static_checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run pylint and type tests
+        shell: bash
+        run: |
+          mise exec python@${{ matrix.python-version }} -- uv run --project ./py nox -f ./py/noxfile.py -s pylint test_types
+
+  smoke:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        os: [ubuntu-24.04, windows-2025]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test whether the Python SDK can be installed
+        run: |
+          # This is already done by make install-dev, but we're keeping this as a separate step
+          # to explicitly verify that installation works
+          mise exec python@${{ matrix.python-version }} -- uv sync --project ./py --all-extras
+      - name: Test whether the Python SDK can be imported
+        run: |
+          mise exec python@${{ matrix.python-version }} -- uv run --project ./py python -c 'import braintrust'
+
+  nox:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        os: [ubuntu-24.04, windows-2025]
+        shard: [0, 1, 2, 3, 4, 5]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Cache Temporal test server binaries
+        if: runner.os == 'Linux'
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          # The temporalio Python SDK downloads its test-server binary into
+          # this directory (filename keyed by SDK version), and reuses any
+          # existing binary on subsequent calls. Caching the directory lets
+          # CI shards share binaries and avoid temporal.download 429s.
+          path: ~/.cache/braintrust/temporal-test-server
+          key: temporal-test-server-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('py/pyproject.toml') }}
+          restore-keys: |
+            temporal-test-server-${{ runner.os }}-${{ runner.arch }}-
+      - name: Configure Temporal test server cache dir
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$HOME/.cache/braintrust/temporal-test-server"
+          mkdir -p "$dir"
+          echo "BRAINTRUST_TEMPORAL_TEST_SERVER_DIR=$dir" >> "$GITHUB_ENV"
+      - name: Run nox tests (shard ${{ matrix.shard }}/6)
+        shell: bash
+        run: |
+          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 6 \
+            --exclude-static-checks
+
+  adk-py:
+    uses: ./.github/workflows/adk-py-test.yaml
+
+  langchain-py:
+    uses: ./.github/workflows/langchain-py-test.yaml
+
+  upload-wheel:
+    needs:
+      - smoke
+      - nox
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up mise
+        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          cache: true
+          experimental: true
+      - name: Install build dependencies and build wheel
+        run: |
+          mise exec -- make -C py install-build-deps build
+      - name: Upload wheel as artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-wheel
+          path: py/dist/*.whl
+          retention-days: 5
+
+  checks-passed:
+    name: checks-passed
+    needs:
+      - lint
+      - ensure-pinned-actions
+      - static_checks
+      - smoke
+      - nox
+      - adk-py
+      - langchain-py
+      - upload-wheel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: always()
+    steps:
+      - name: Verify all required checks passed
+        run: |
+          FAILED=0
+
+          check_result() {
+            local job_name="$1"
+            local job_result="$2"
+
+            if [ "$job_result" != "success" ] && [ "$job_result" != "skipped" ]; then
+              echo "Job '$job_name' finished with result: $job_result"
+              FAILED=1
+            fi
+          }
+
+          check_result "lint" "${{ needs.lint.result }}"
+          check_result "ensure-pinned-actions" "${{ needs['ensure-pinned-actions'].result }}"
+          check_result "static_checks" "${{ needs.static_checks.result }}"
+          check_result "smoke" "${{ needs.smoke.result }}"
+          check_result "nox" "${{ needs.nox.result }}"
+          check_result "adk-py" "${{ needs['adk-py'].result }}"
+          check_result "langchain-py" "${{ needs['langchain-py'].result }}"
+          check_result "upload-wheel" "${{ needs['upload-wheel'].result }}"
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "One or more required checks failed"
+            exit 1
+          fi
+
+          echo "All required checks passed"

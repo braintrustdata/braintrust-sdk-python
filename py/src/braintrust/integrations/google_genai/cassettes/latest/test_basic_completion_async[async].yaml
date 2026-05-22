@@ -1,0 +1,65 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is the capital of France?"}], "role":
+      "user"}], "generationConfig": {"maxOutputTokens": 100}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '133'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The capital of France is Paris.\",\n
+        \           \"thoughtSignature\": \"EjQKMgEMOdbHMOZK43pYvf3A+807eMoGls15SwPG82ofiMkBO4hBMLEb5q8R+1pbHqySdVGP\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        8,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 15,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 8\n      }\n
+        \   ]\n  },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n  \"responseId\":
+        \"I3PzacShL_ac_uMP_rqQiQg\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 30 Apr 2026 15:20:03 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=808
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '661'
+    status:
+      code: 200
+      message: OK
+version: 1

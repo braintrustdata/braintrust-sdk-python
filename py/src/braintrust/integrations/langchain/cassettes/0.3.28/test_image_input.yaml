@@ -1,0 +1,145 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==","detail":"auto"}},{"type":"text","text":"What
+      color is this image?"}],"role":"user"}],"model":"gpt-4o-mini","stream":false}'
+    headers:
+      accept:
+      - application/json
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: '{"id":"chatcmpl-img001","object":"chat.completion","created":1762561359,"model":"gpt-4o-mini-2024-07-18","choices":[{"index":0,"message":{"role":"assistant","content":"The
+        image is a solid white pixel.","refusal":null,"annotations":[]},"logprobs":null,"finish_reason":"stop"}],"usage":{"prompt_tokens":85,"completion_tokens":9,"total_tokens":94,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"service_tier":"default","system_fingerprint":"fp_test"}'
+    headers:
+      Content-Type:
+      - application/json
+      openai-organization:
+      - test-org
+      openai-version:
+      - '2020-10-01'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg=="}},{"type":"text","text":"What
+      color is this image?"}],"role":"user"}],"model":"gpt-4o-mini","stream":false}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2611620'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - OpenAI/Python 2.31.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.31.0
+      X-Stainless-Raw-Response:
+      - 'true'
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.13.3
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DSVQ87v966X0mSkkofnHHz4EwHUQY\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1775686336,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The image primarily features dark hues
+        such as deep blues and grays, representing stormy skies and turbulent seas.
+        There are also vibrant turquoise and white tones in the waves, creating a
+        striking contrast against the darker backdrop. The overall mood is dramatic
+        and intense, reflecting a stormy maritime scene.\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        25514,\n    \"completion_tokens\": 58,\n    \"total_tokens\": 25572,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_a5086b7b9a\"\n}\n"
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - 9e949cc799cfb8f3-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 08 Apr 2026 22:12:18 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '1126'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '2465'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=G_Unvq0_4F3JXhBdmloUfKpQgDuRI1QdATA8QAYy8FM-1775686334.6570866-1.0.1.1-0kWt.Ec8Y93mWUCwh1emHBSSKY3oMRrEx46uvbbcgc_.RH2FT_1_QCJc_hxokqf7yt1X8qFtSbCulDMCm1I7Ftl_rfWFL9vdD07xEW0bFpsEhcnKow2yuq.SIgEe.0Lz;
+        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Wed, 08 Apr 2026
+        22:42:18 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999227'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_ca1b62c4dd0e49c680388c064f82ad3f
+    status:
+      code: 200
+      message: OK
+version: 1

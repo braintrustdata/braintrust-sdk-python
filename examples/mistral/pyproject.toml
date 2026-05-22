@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-mistral-example"
+version = "0.1.0"
+description = "Mistral client traced with Braintrust via wrap_mistral"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "mistralai",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

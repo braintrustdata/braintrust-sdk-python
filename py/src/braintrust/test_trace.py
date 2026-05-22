@@ -233,20 +233,53 @@ class TestCachedSpanFetcher:
         assert len(no_type_result) == 2
 
     @pytest.mark.asyncio
-    async def test_handle_empty_results(self):
-        """Test handling empty results."""
+    async def test_empty_then_populated_refetches(self):
+        """Test that empty results don't permanently cache, allowing re-fetch when data becomes available."""
+        call_count = 0
+        spans = [make_span("span-1", "llm"), make_span("span-2", "function")]
 
         async def fetch_fn(span_type):
-            return []
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return []
+            return spans
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
 
-        result = await fetcher.get_spans()
-        assert len(result) == 0
+        # First call returns empty
+        result1 = await fetcher.get_spans()
+        assert len(result1) == 0
+        assert call_count == 1
 
-        # Should still mark as fetched
-        await fetcher.get_spans(span_type=["llm"])
-        # No additional assertions, just making sure it doesn't crash
+        # Second call should re-fetch since first was empty
+        result2 = await fetcher.get_spans()
+        assert call_count == 2
+        assert len(result2) == 2
+        assert {s.span_id for s in result2} == {"span-1", "span-2"}
+
+    @pytest.mark.asyncio
+    async def test_empty_results_with_type_filter(self):
+        """Test that type-filtered fetches handle empty results correctly."""
+        call_count = 0
+
+        async def fetch_fn(span_type):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return []
+            return [make_span("span-1", "llm")]
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+
+        # First call with type filter returns empty
+        result1 = await fetcher.get_spans(span_type=["llm"])
+        assert len(result1) == 0
+
+        # Second call with same type should re-fetch since type wasn't cached with results
+        result2 = await fetcher.get_spans(span_type=["llm"])
+        assert call_count == 2
+        assert len(result2) == 1
 
     @pytest.mark.asyncio
     async def test_handle_empty_span_type_array(self):

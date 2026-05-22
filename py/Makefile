@@ -1,8 +1,6 @@
 PYTHON ?= python
-UV := $(PYTHON) -m uv
-UV_VERSION := $(shell awk '$$1=="uv" { print $$2 }' ../.tool-versions)
 
-.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev install-optional test-core _check-git-clean
+.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev test-core check-stale-cassettes _check-git-clean bench bench-compare
 
 clean:
 	rm -rf build dist
@@ -12,13 +10,13 @@ fixup:
 	cd .. && make fixup
 
 lint: fixup
-	nox -s pylint
+	uv run nox -s pylint
 
 pylint:
-	nox -s pylint
+	uv run nox -s pylint
 
 test:
-	nox -x
+	uv run nox -x
 
 test-wheel:
 	# This target runs a small set of sanity checks before we release our
@@ -27,16 +25,29 @@ test-wheel:
 	# integration tests and we don't want to block the release because
 	# some service is down, etc. This decision could be revisited anytime.
 	# Note: Caller must run 'make build' first.
-	nox -s test_core -- --wheel
+	uv run nox -s test_core -- --wheel
 
 test-core:
-	nox -s test_core
+	uv run nox -s test_core
+
+check-stale-cassettes:
+	$(PYTHON) scripts/check-stale-cassettes.py
+
+bench:
+	$(PYTHON) -m benchmarks $(BENCH_ARGS)
+
+bench-compare:
+	@if [ -z "$(BENCH_BASE)" ] || [ -z "$(BENCH_NEW)" ]; then \
+		echo "Usage: make bench-compare BENCH_BASE=/tmp/base.json BENCH_NEW=/tmp/new.json"; \
+		exit 1; \
+	fi
+	$(PYTHON) -m pyperf compare_to $(BENCH_BASE) $(BENCH_NEW)
 
 _template-version:
-	@bash scripts/template-version.sh
+	@$(PYTHON) scripts/template-version.py
 
 build: clean _template-version
-	$(PYTHON) -m build
+	uv build
 	# Restore the original version file after the build
 	git checkout src/braintrust/version.py
 
@@ -51,22 +62,19 @@ verify-build: _check-git-clean build test-wheel
 verify: lint test
 
 install-build-deps:
-	$(if $(UV_VERSION),,$(error Failed to read uv version from ../.tool-versions))
-	$(PYTHON) -m pip install uv==$(UV_VERSION)
-	$(UV) pip install -e .
-	$(UV) pip install -r requirements-build.txt
+	uv sync --group build --no-dev
 
 install-dev: install-build-deps
-	$(UV) pip install -r requirements-dev.txt
+	uv sync --group dev
 
-install-optional: install-dev
-	$(UV) pip install anthropic openai pydantic_ai litellm agno google-genai google-adk dspy langsmith
-	$(UV) pip install -e .[temporal,otel]
 
 .DEFAULT_GOAL := help
 help:
 	@echo "Available targets:"
+	@echo "  bench               - Run benchmarks (pass extra flags via BENCH_ARGS=, e.g. --fast)"
+	@echo "  bench-compare       - Compare two benchmark results (BENCH_BASE=... BENCH_NEW=...)"
 	@echo "  build               - Build Python package"
+	@echo "  check-stale-cassettes - Detect orphaned cassette version directories"
 	@echo "  clean               - Remove build artifacts"
 	@echo "  help                - Show this help message"
 	@echo "  install-build-deps  - Install build dependencies for CI"

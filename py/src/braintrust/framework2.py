@@ -1,6 +1,6 @@
 import dataclasses
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any, overload
 
 import slugify
@@ -16,6 +16,8 @@ from .generated_types import (
     SavedFunctionId,
     ToolFunctionDefinition,
 )
+from .parameters import EvalParameters, get_default_data_from_parameters_schema, parameters_to_json_schema
+from .types import Metadata
 from .util import eprint
 
 
@@ -40,6 +42,7 @@ class _GlobalState:
     def __init__(self):
         self.functions: list[CodeFunction] = []
         self.prompts: list[CodePrompt] = []
+        self.parameters: list["CodeParameters"] = []
 
 
 global_ = _GlobalState()
@@ -58,7 +61,7 @@ class CodeFunction:
     parameters: Any
     returns: Any
     if_exists: IfExists | None
-    metadata: dict[str, Any] | None = None
+    metadata: Metadata | None = None
     tags: Sequence[str] | None = None
 
 
@@ -75,7 +78,7 @@ class CodePrompt:
     function_type: str | None
     id: str | None
     if_exists: IfExists | None
-    metadata: dict[str, Any] | None = None
+    metadata: Metadata | None = None
     tags: Sequence[str] | None = None
 
     def to_function_definition(self, if_exists: IfExists | None, project_ids: ProjectIdCache) -> dict[str, Any]:
@@ -116,6 +119,36 @@ class CodePrompt:
         return j
 
 
+@dataclasses.dataclass
+class CodeParameters:
+    project: "Project"
+    name: str
+    slug: str
+    description: str | None
+    schema: EvalParameters
+    if_exists: IfExists | None
+    metadata: Mapping[str, Any] | None = None
+
+    def to_function_definition(self, if_exists: IfExists | None, project_ids: ProjectIdCache) -> dict[str, Any]:
+        schema = parameters_to_json_schema(self.schema)
+        j: dict[str, Any] = {
+            "project_id": project_ids.get(self.project),
+            "name": self.name,
+            "slug": self.slug,
+            "description": self.description or "",
+            "function_type": "parameters",
+            "function_data": {
+                "type": "parameters",
+                "data": get_default_data_from_parameters_schema(schema),
+                "__schema": schema,
+            },
+            "if_exists": self.if_exists if self.if_exists is not None else if_exists,
+        }
+        if self.metadata is not None:
+            j["metadata"] = self.metadata
+        return j
+
+
 class ToolBuilder:
     """Builder to create a tool in Braintrust."""
 
@@ -133,7 +166,7 @@ class ToolBuilder:
         parameters: Any = None,
         returns: Any = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ) -> CodeFunction:
         """Creates a tool.
@@ -196,9 +229,9 @@ class PromptBuilder:
         prompt: str,
         model: str,
         params: ModelParams | None = None,
-        tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
+        tools: Sequence[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ) -> CodePrompt: ...
 
@@ -210,12 +243,12 @@ class PromptBuilder:
         slug: str | None = None,
         description: str | None = None,
         id: str | None = None,
-        messages: list[ChatCompletionMessageParam],
+        messages: Sequence[ChatCompletionMessageParam],
         model: str,
         params: ModelParams | None = None,
-        tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
+        tools: Sequence[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ) -> CodePrompt: ...
 
@@ -227,12 +260,12 @@ class PromptBuilder:
         description: str | None = None,
         id: str | None = None,
         prompt: str | None = None,
-        messages: list[ChatCompletionMessageParam] | None = None,
+        messages: Sequence[ChatCompletionMessageParam] | None = None,
         model: str,
         params: ModelParams | None = None,
-        tools: list[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
+        tools: Sequence[CodeFunction | SavedFunctionId | ToolFunctionDefinition] | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
     ):
         """Creates a prompt.
@@ -305,6 +338,38 @@ class PromptBuilder:
         return p
 
 
+class ParametersBuilder:
+    """Builder to create saved parameters in Braintrust."""
+
+    def __init__(self, project: "Project"):
+        self.project = project
+
+    def create(
+        self,
+        *,
+        name: str,
+        schema: EvalParameters,
+        slug: str | None = None,
+        description: str | None = None,
+        if_exists: IfExists | None = None,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> EvalParameters:
+        if slug is None or len(slug) == 0:
+            slug = slugify.slugify(name)
+
+        parameters = CodeParameters(
+            project=self.project,
+            name=name,
+            slug=slug,
+            description=description,
+            schema=schema,
+            if_exists=if_exists,
+            metadata=metadata,
+        )
+        self.project.add_parameters(parameters)
+        return schema
+
+
 class ScorerBuilder:
     """Builder to create a scorer in Braintrust."""
 
@@ -321,7 +386,7 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
         handler: Callable[..., Any],
         parameters: Any,
@@ -337,13 +402,13 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
         prompt: str,
         model: str,
         params: ModelParams | None = None,
         use_cot: bool,
-        choice_scores: dict[str, float],
+        choice_scores: Mapping[str, float],
     ) -> CodePrompt: ...
 
     # LLM scorer with messages.
@@ -355,13 +420,13 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
-        messages: list[ChatCompletionMessageParam],
+        messages: Sequence[ChatCompletionMessageParam],
         model: str,
         params: ModelParams | None = None,
         use_cot: bool,
-        choice_scores: dict[str, float],
+        choice_scores: Mapping[str, float],
     ) -> CodePrompt: ...
 
     def create(
@@ -371,7 +436,7 @@ class ScorerBuilder:
         slug: str | None = None,
         description: str | None = None,
         if_exists: IfExists | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Metadata | None = None,
         tags: Sequence[str] | None = None,
         # Code scorer params.
         handler: Callable[..., Any] | None = None,
@@ -379,11 +444,11 @@ class ScorerBuilder:
         returns: Any = None,
         # LLM scorer params.
         prompt: str | None = None,
-        messages: list[ChatCompletionMessageParam] | None = None,
+        messages: Sequence[ChatCompletionMessageParam] | None = None,
         model: str | None = None,
         params: ModelParams | None = None,
         use_cot: bool | None = None,
-        choice_scores: dict[str, float] | None = None,
+        choice_scores: Mapping[str, float] | None = None,
     ) -> CodeFunction | CodePrompt:
         """Creates a scorer.
 
@@ -486,10 +551,12 @@ class Project:
         self.name = name
         self.tools = ToolBuilder(self)
         self.prompts = PromptBuilder(self)
+        self.parameters = ParametersBuilder(self)
         self.scorers = ScorerBuilder(self)
 
         self._publishable_code_functions: list[CodeFunction] = []
         self._publishable_prompts: list[CodePrompt] = []
+        self._publishable_parameters: list[CodeParameters] = []
 
     def add_code_function(self, fn: CodeFunction):
         self._publishable_code_functions.append(fn)
@@ -500,6 +567,11 @@ class Project:
         self._publishable_prompts.append(prompt)
         if _is_lazy_load():
             global_.prompts.append(prompt)
+
+    def add_parameters(self, parameters: CodeParameters):
+        self._publishable_parameters.append(parameters)
+        if _is_lazy_load():
+            global_.parameters.append(parameters)
 
     def publish(self):
         if _is_lazy_load():
@@ -518,6 +590,8 @@ class Project:
         for prompt in self._publishable_prompts:
             prompt_definition = prompt.to_function_definition(None, project_id_cache)
             definitions.append(prompt_definition)
+        for parameters in self._publishable_parameters:
+            definitions.append(parameters.to_function_definition(None, project_id_cache))
         return api_conn().post_json("insert-functions", {"functions": definitions})
 
 

@@ -2,6 +2,7 @@
 # pyright: reportUnknownArgumentType=false
 # pyright: reportPrivateUsage=false
 import json
+import warnings
 from typing import Any
 from unittest import TestCase
 
@@ -282,6 +283,59 @@ class TestBTJson(TestCase):
         self.assertTrue("(1, 2)" in result or "1, 2" in result)
         self.assertIn("None", result)
 
+    def test_model_dump_no_pydantic_serializer_warnings(self):
+        """Test that model_dump() calls in _to_bt_safe don't emit Pydantic serializer warnings.
+
+        Regression test for https://github.com/braintrustdata/braintrust-sdk-python/issues/60
+        OpenAI's parsed response models (e.g. ParsedResponse[T]) emit
+        PydanticSerializationUnexpectedValue warnings from model_dump().
+        Braintrust should suppress these warnings during serialization.
+        """
+        try:
+            from pydantic import BaseModel
+        except ImportError:
+            self.skipTest("Pydantic not available")
+
+        class WarningModel(BaseModel):
+            """A model whose model_dump() emits a UserWarning, simulating OpenAI parsed responses."""
+
+            name: str
+
+            def model_dump(self, **kwargs):
+                warnings.warn(
+                    "Pydantic serializer warnings:\n  PydanticSerializationUnexpectedValue: Expected `none`",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return {"name": self.name}
+
+        obj = WarningModel(name="test")
+
+        # _to_bt_safe (via bt_safe_deep_copy) should NOT propagate the warning
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            result = bt_safe_deep_copy({"response": obj})
+            pydantic_warnings = [w for w in caught if "Pydantic serializer warnings" in str(w.message)]
+            assert len(pydantic_warnings) == 0, (
+                f"Expected no Pydantic serializer warnings, but got {len(pydantic_warnings)}: "
+                f"{[str(w.message) for w in pydantic_warnings]}"
+            )
+
+        assert result["response"]["name"] == "test"
+
+        # bt_dumps should also NOT propagate the warning
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            json_str = bt_dumps(obj)
+            pydantic_warnings = [w for w in caught if "Pydantic serializer warnings" in str(w.message)]
+            assert len(pydantic_warnings) == 0, (
+                f"Expected no Pydantic serializer warnings, but got {len(pydantic_warnings)}: "
+                f"{[str(w.message) for w in pydantic_warnings]}"
+            )
+
+        assert "test" in json_str
+
+
 @pytest.mark.vcr
 def test_to_bt_safe_special_objects():
     """Test _to_bt_safe handling of Span, Experiment, Dataset, Logger objects."""
@@ -314,9 +368,7 @@ class TestBTJsonAttachments(TestCase):
         self.assertIs(result, attachment)
 
         # Test ExternalAttachment preservation
-        ext_attachment = ExternalAttachment(
-            url="s3://bucket/key", filename="ext.pdf", content_type="application/pdf"
-        )
+        ext_attachment = ExternalAttachment(url="s3://bucket/key", filename="ext.pdf", content_type="application/pdf")
         result_ext = _to_bt_safe(ext_attachment)
         self.assertIs(result_ext, ext_attachment)
 
@@ -418,9 +470,7 @@ class TestBTJsonAttachments(TestCase):
     def test_bt_safe_deep_copy_attachment_identity(self):
         """Test bt_safe_deep_copy preserves attachment object identity."""
         attachment1 = Attachment(data=b"data1", filename="file1.txt", content_type="text/plain")
-        attachment2 = ExternalAttachment(
-            url="s3://bucket/key", filename="file2.pdf", content_type="application/pdf"
-        )
+        attachment2 = ExternalAttachment(url="s3://bucket/key", filename="file2.pdf", content_type="application/pdf")
 
         original = {
             "field1": attachment1,

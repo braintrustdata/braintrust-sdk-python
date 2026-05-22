@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Say something creative."}], "role":
+      "user"}], "generationConfig": {"temperature": 0.7, "topP": 0.95, "maxOutputTokens":
+      50}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '159'
+      Content-Type:
+      - application/json
+      Host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
+      x-goog-api-client:
+      - google-genai-sdk/1.74.0 gl-python/3.12.12
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The moon is a silver needle stitching
+        the night to the morning, pulling the dark edges of the world together until
+        they fray into dawn. \\n\\nIf you listen closely, you can hear the stars humming\u2014not
+        a melody, but\",\n            \"thoughtSignature\": \"EjQKMgEMOdbHSRvhiINefe+vdhm3Q8dMrhDpjXwsnUWfuvgCKIiGUBnu07o0p3wuWjq7bpEU\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
+        \   \"promptTokenCount\": 5,\n    \"candidatesTokenCount\": 46,\n    \"totalTokenCount\":
+        51,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 5\n      }\n    ]\n  },\n  \"modelVersion\": \"gemini-3.1-flash-lite-preview\",\n
+        \ \"responseId\": \"N3PzafKvCI29_uMPvs3owAI\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Thu, 30 Apr 2026 15:20:23 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=917
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '850'
+    status:
+      code: 200
+      message: OK
+version: 1

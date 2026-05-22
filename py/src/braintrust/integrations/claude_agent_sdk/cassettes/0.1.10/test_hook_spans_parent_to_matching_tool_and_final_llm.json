@@ -1,0 +1,764 @@
+{
+  "cassette_name": "test_hook_spans_parent_to_matching_tool_and_final_llm",
+  "events": [
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "request": {
+            "hooks": {
+              "PostToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_1"
+                  ],
+                  "matcher": "Bash|Read"
+                }
+              ],
+              "PreToolUse": [
+                {
+                  "hookCallbackIds": [
+                    "hook_0"
+                  ],
+                  "matcher": "Bash|Read"
+                }
+              ],
+              "Stop": [
+                {
+                  "hookCallbackIds": [
+                    "hook_2"
+                  ],
+                  "matcher": null
+                }
+              ]
+            },
+            "subtype": "initialize"
+          },
+          "request_id": "req_1_183a17d5",
+          "type": "control_request"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "response": {
+          "request_id": "req_1_183a17d5",
+          "response": {
+            "account": {
+              "apiKeySource": "ANTHROPIC_API_KEY",
+              "tokenSource": "none"
+            },
+            "available_output_styles": [],
+            "commands": [],
+            "models": []
+          },
+          "subtype": "success"
+        },
+        "type": "control_response"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "message": {
+            "content": "Use Bash to run pwd and ls in the workspace, then use Read on trip_notes.md and summarize the current budget and hotel status.",
+            "role": "user"
+          },
+          "parent_tool_use_id": null,
+          "session_id": "default",
+          "type": "user"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "agents": [
+          "general-purpose",
+          "statusline-setup",
+          "Explore",
+          "Plan"
+        ],
+        "apiKeySource": "ANTHROPIC_API_KEY",
+        "claude_code_version": "2.0.53",
+        "cwd": "<REDACTED_CWD>",
+        "mcp_servers": [],
+        "model": "claude-haiku-4-5-20251001",
+        "output_style": "default",
+        "permissionMode": "bypassPermissions",
+        "plugins": [],
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "skills": [],
+        "slash_commands": [
+          "compact",
+          "context",
+          "cost",
+          "init",
+          "pr-comments",
+          "release-notes",
+          "todos",
+          "review",
+          "security-review"
+        ],
+        "subtype": "init",
+        "tools": [
+          "Task",
+          "Bash",
+          "Glob",
+          "Grep",
+          "ExitPlanMode",
+          "Read",
+          "Edit",
+          "Write",
+          "NotebookEdit",
+          "WebFetch",
+          "TodoWrite",
+          "WebSearch",
+          "BashOutput",
+          "KillShell",
+          "Skill",
+          "SlashCommand",
+          "EnterPlanMode"
+        ],
+        "type": "system",
+        "uuid": "fd5a920e-215e-454a-a766-e3a0650720a9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "I'll run those bash commands and read the file for you.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01BJdft9PPupabeRBsvdMFv7",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 13905,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "type": "assistant",
+        "uuid": "ad787f83-24df-4c1d-9789-b97d42369156"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_016XcheTkTgzL8S25j7MUokh",
+              "input": {
+                "command": "pwd",
+                "description": "Print current working directory"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01BJdft9PPupabeRBsvdMFv7",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 13905,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "type": "assistant",
+        "uuid": "c7885c0b-d327-4af1-8d57-5f42c799d042"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01FFLJtvMDUba1cj95ifbLs7",
+              "input": {
+                "command": "ls",
+                "description": "List files in current directory"
+              },
+              "name": "Bash",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01BJdft9PPupabeRBsvdMFv7",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 13905,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "type": "assistant",
+        "uuid": "5f5ae05f-a46e-42a8-b383-6b2e80f7e57b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_017QPVdgcD9dT6jd9AuZGxu1",
+              "input": {
+                "file_path": "/trip_notes.md"
+              },
+              "name": "Read",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01BJdft9PPupabeRBsvdMFv7",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 13905,
+            "inference_geo": "not_available",
+            "input_tokens": 3,
+            "output_tokens": 183,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "type": "assistant",
+        "uuid": "b6809bd3-6697-48e5-b439-4eeca4ec289a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+            "tool_input": {
+              "command": "pwd",
+              "description": "Print current working directory"
+            },
+            "tool_name": "Bash",
+            "tool_use_id": "toolu_016XcheTkTgzL8S25j7MUokh",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_016XcheTkTgzL8S25j7MUokh"
+        },
+        "request_id": "eb6fe231-13e9-4192-9c21-7f285bae2ea6",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "eb6fe231-13e9-4192-9c21-7f285bae2ea6",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_0",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+            "tool_input": {
+              "command": "ls",
+              "description": "List files in current directory"
+            },
+            "tool_name": "Bash",
+            "tool_use_id": "toolu_01FFLJtvMDUba1cj95ifbLs7",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01FFLJtvMDUba1cj95ifbLs7"
+        },
+        "request_id": "4b9df4f8-6d0e-4764-aae3-0ae1189b46a5",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "4b9df4f8-6d0e-4764-aae3-0ae1189b46a5",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "<tool_use_error>File does not exist.</tool_use_error>",
+              "is_error": true,
+              "tool_use_id": "toolu_017QPVdgcD9dT6jd9AuZGxu1",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "tool_use_result": "Error: File does not exist.",
+        "type": "user",
+        "uuid": "963021b4-34ca-47e2-a52f-b5a153c6efdd"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+            "tool_input": {
+              "command": "pwd",
+              "description": "Print current working directory"
+            },
+            "tool_name": "Bash",
+            "tool_response": {
+              "interrupted": false,
+              "isImage": false,
+              "stderr": "",
+              "stdout": "<REDACTED_PATH>"
+            },
+            "tool_use_id": "toolu_016XcheTkTgzL8S25j7MUokh",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_016XcheTkTgzL8S25j7MUokh"
+        },
+        "request_id": "666bbdc9-16d1-4e1c-a76a-e311dc036984",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "666bbdc9-16d1-4e1c-a76a-e311dc036984",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_1",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "PostToolUse",
+            "permission_mode": "bypassPermissions",
+            "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+            "tool_input": {
+              "command": "ls",
+              "description": "List files in current directory"
+            },
+            "tool_name": "Bash",
+            "tool_response": {
+              "interrupted": false,
+              "isImage": false,
+              "stderr": "",
+              "stdout": "__pycache__\nAGENTS.md\nbenchmarks\nbuild\nCLAUDE.md\ndist\nexamples\nMakefile\nnoxfile.py\npyproject.toml\nREADME.md\nscripts\nsrc\nuv.lock"
+            },
+            "tool_use_id": "toolu_01FFLJtvMDUba1cj95ifbLs7",
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "toolu_01FFLJtvMDUba1cj95ifbLs7"
+        },
+        "request_id": "f0081dc2-1f15-4551-9c34-4179305c100d",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "f0081dc2-1f15-4551-9c34-4179305c100d",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "<REDACTED_PATH>",
+              "is_error": false,
+              "tool_use_id": "toolu_016XcheTkTgzL8S25j7MUokh",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "tool_use_result": {
+          "interrupted": false,
+          "isImage": false,
+          "stderr": "",
+          "stdout": "<REDACTED_PATH>"
+        },
+        "type": "user",
+        "uuid": "c76f0816-a687-41e8-8ef8-e25dcb465f8d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "__pycache__\nAGENTS.md\nbenchmarks\nbuild\nCLAUDE.md\ndist\nexamples\nMakefile\nnoxfile.py\npyproject.toml\nREADME.md\nscripts\nsrc\nuv.lock",
+              "is_error": false,
+              "tool_use_id": "toolu_01FFLJtvMDUba1cj95ifbLs7",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "tool_use_result": {
+          "interrupted": false,
+          "isImage": false,
+          "stderr": "",
+          "stdout": "__pycache__\nAGENTS.md\nbenchmarks\nbuild\nCLAUDE.md\ndist\nexamples\nMakefile\nnoxfile.py\npyproject.toml\nREADME.md\nscripts\nsrc\nuv.lock"
+        },
+        "type": "user",
+        "uuid": "736111e9-e949-4452-afc0-d297644dfd40"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "The trip_notes.md file doesn't exist in the current directory. Let me search for it in case it's located elsewhere:",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01D7u6RStPDDHGNawjPTadT8",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 313
+            },
+            "cache_creation_input_tokens": 313,
+            "cache_read_input_tokens": 13905,
+            "inference_geo": "not_available",
+            "input_tokens": 46,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "type": "assistant",
+        "uuid": "9c8930da-1973-4e9d-8092-dbf9aeac979d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_01Gn2NejR629svLE19Dje4XS",
+              "input": {
+                "pattern": "**/trip_notes.md"
+              },
+              "name": "Glob",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_01D7u6RStPDDHGNawjPTadT8",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": "tool_use",
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 313
+            },
+            "cache_creation_input_tokens": 313,
+            "cache_read_input_tokens": 13905,
+            "inference_geo": "not_available",
+            "input_tokens": 46,
+            "output_tokens": 86,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "type": "assistant",
+        "uuid": "e7590bfe-e06d-4ec0-ba7b-00dd81484fd7"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": "No files found",
+              "tool_use_id": "toolu_01Gn2NejR629svLE19Dje4XS",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "tool_use_result": {
+          "durationMs": 1664,
+          "filenames": [],
+          "numFiles": 0,
+          "truncated": false
+        },
+        "type": "user",
+        "uuid": "3c6f8c81-7ae7-45cd-b423-77f6e53373b2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "**Summary:**\n\n**Current Working Directory:** `<REDACTED_PATH>\n\n**Files in Directory:**\n- __pycache__\n- AGENTS.md\n- benchmarks\n- build\n- CLAUDE.md\n- dist\n- examples\n- Makefile\n- noxfile.py\n- pyproject.toml\n- README.md\n- scripts\n- src\n- uv.lock\n\n**Trip Notes Status:** Unfortunately, the `trip_notes.md` file could not be found in the current directory or anywhere in the workspace. The file doesn't exist, so I'm unable to summarize the budget and hotel status. \n\nWould you like me to:\n1. Look for a file with a different name?\n2. Check a specific directory where the file might be located?\n3. Create a new trip_notes.md file?",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "id": "msg_019QHfriNNX2CwM5w6xX9d6K",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 141
+            },
+            "cache_creation_input_tokens": 141,
+            "cache_read_input_tokens": 14218,
+            "inference_geo": "not_available",
+            "input_tokens": 6,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "type": "assistant",
+        "uuid": "f9ca5439-20da-4135-9f50-0218eabd8080"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "request": {
+          "callback_id": "hook_2",
+          "input": {
+            "cwd": "<REDACTED_CWD>",
+            "hook_event_name": "Stop",
+            "permission_mode": "bypassPermissions",
+            "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+            "stop_hook_active": false,
+            "transcript_path": "<REDACTED_PATH>"
+          },
+          "subtype": "hook_callback",
+          "tool_use_id": "ccb7b275-a792-481c-8cf6-81056976eea1"
+        },
+        "request_id": "8dc6afc9-c9ff-476a-b4a0-d8153112bfba",
+        "type": "control_request"
+      }
+    },
+    {
+      "op": "write",
+      "payload": {
+        "kind": "json",
+        "value": {
+          "response": {
+            "request_id": "8dc6afc9-c9ff-476a-b4a0-d8153112bfba",
+            "response": {},
+            "subtype": "success"
+          },
+          "type": "control_response"
+        }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "duration_api_ms": 8231,
+        "duration_ms": 7384,
+        "is_error": false,
+        "modelUsage": {
+          "claude-haiku-4-5-20251001": {
+            "cacheCreationInputTokens": 454,
+            "cacheReadInputTokens": 49950,
+            "contextWindow": 200000,
+            "costUSD": 0.0093005,
+            "inputTokens": 748,
+            "outputTokens": 598,
+            "webSearchRequests": 0
+          }
+        },
+        "num_turns": 5,
+        "permission_denials": [],
+        "result": "**Summary:**\n\n**Current Working Directory:** `<REDACTED_PATH>\n\n**Files in Directory:**\n- __pycache__\n- AGENTS.md\n- benchmarks\n- build\n- CLAUDE.md\n- dist\n- examples\n- Makefile\n- noxfile.py\n- pyproject.toml\n- README.md\n- scripts\n- src\n- uv.lock\n\n**Trip Notes Status:** Unfortunately, the `trip_notes.md` file could not be found in the current directory or anywhere in the workspace. The file doesn't exist, so I'm unable to summarize the budget and hotel status. \n\nWould you like me to:\n1. Look for a file with a different name?\n2. Check a specific directory where the file might be located?\n3. Create a new trip_notes.md file?",
+        "session_id": "978a9d5f-bca0-41bc-bcc1-908ce68bdfa2",
+        "subtype": "success",
+        "total_cost_usd": 0.0093005,
+        "type": "result",
+        "usage": {
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 454
+          },
+          "cache_creation_input_tokens": 454,
+          "cache_read_input_tokens": 42028,
+          "input_tokens": 55,
+          "output_tokens": 474,
+          "server_tool_use": {
+            "web_fetch_requests": 0,
+            "web_search_requests": 0
+          },
+          "service_tier": "standard"
+        },
+        "uuid": "c3283e8c-1cb4-407b-873b-ccd85756f113"
+      }
+    }
+  ],
+  "sdk_version": "0.1.10"
+}

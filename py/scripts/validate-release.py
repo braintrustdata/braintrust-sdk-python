@@ -11,6 +11,7 @@ import sys
 import urllib.error
 import urllib.request
 
+
 STABLE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 PRERELEASE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)[0-9]+$")
 
@@ -39,9 +40,7 @@ def validate_release_type(release_type: str, version: str) -> None:
     if release_type == "stable" and not STABLE_VERSION_RE.fullmatch(version):
         raise ValueError(f"Stable releases require a version like X.Y.Z; found '{version}'")
     if release_type == "prerelease" and not PRERELEASE_VERSION_RE.fullmatch(version):
-        raise ValueError(
-            f"Prereleases require a version like X.Y.Zrc1, X.Y.Za1, or X.Y.Zb1; found '{version}'"
-        )
+        raise ValueError(f"Prereleases require a version like X.Y.Zrc1, X.Y.Za1, or X.Y.Zb1; found '{version}'")
 
 
 def check_tag_does_not_exist(tag: str) -> None:
