@@ -3836,8 +3836,8 @@ def test_traced_logs_exception_group_sub_exceptions(with_memory_logger):
     _assert_test_exception_group_contents(logs[0].get("error", ""))
 
 
-def test_check_org_info_no_git_metadata_defaults_to_none():
-    """When org has no git_metadata, state.git_metadata_settings should be collect='none'."""
+def test_check_org_info_no_git_metadata_leaves_settings_none():
+    """When org has no git_metadata, state.git_metadata_settings should be None (no org restriction)."""
     state = BraintrustState()
     org_info = [
         {
@@ -3848,7 +3848,7 @@ def test_check_org_info_no_git_metadata_defaults_to_none():
         }
     ]
     _check_org_info(state, org_info, None)
-    assert state.git_metadata_settings.collect == "none"
+    assert state.git_metadata_settings is None
 
 
 def test_check_org_info_with_git_metadata_uses_server_settings():

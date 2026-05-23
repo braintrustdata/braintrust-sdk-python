@@ -1692,11 +1692,10 @@ def init(
         if repo_info:
             repo_info_arg = repo_info
         else:
-            merged_git_metadata_settings = state.git_metadata_settings
-            if git_metadata_settings is not None:
-                merged_git_metadata_settings = GitMetadataSettings.merge(
-                    merged_git_metadata_settings, git_metadata_settings
-                )
+            merged_git_metadata_settings = GitMetadataSettings.merge(
+                state.git_metadata_settings or GitMetadataSettings(collect="all"),
+                git_metadata_settings or GitMetadataSettings(collect="none"),
+            )
             repo_info_arg = get_repo_info(merged_git_metadata_settings)
 
         if repo_info_arg:
@@ -2669,8 +2668,8 @@ def _check_org_info(state, org_info, org_name):
             state.org_name = orgs["name"]
             state.api_url = os.environ.get("BRAINTRUST_API_URL", orgs["api_url"])
             state.proxy_url = os.environ.get("BRAINTRUST_PROXY_URL", orgs["proxy_url"])
-            state.git_metadata_settings = GitMetadataSettings(
-                **(orgs.get("git_metadata") or GitMetadataSettings(collect="none").as_dict())
+            state.git_metadata_settings = (
+                GitMetadataSettings(**orgs["git_metadata"]) if orgs.get("git_metadata") else None
             )
             break
 
