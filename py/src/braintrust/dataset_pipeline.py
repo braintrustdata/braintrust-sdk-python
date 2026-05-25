@@ -19,8 +19,7 @@ __all__ = [
     "DatasetPipelineTransform",
     "DatasetPipelineTransformArgs",
     "DatasetPipelineTransformResult",
-    "PipelineSource",
-    "PipelineTarget",
+    "get_registered_dataset_pipelines",
 ]
 
 
@@ -35,26 +34,6 @@ class DatasetPipelineSource(TypedDict, total=False):
     scope: DatasetPipelineScope
 
 
-@dataclass(frozen=True)
-class PipelineSource:
-    filter: str | None = None
-    scope: DatasetPipelineScope | None = None
-    project_name: str | None = None
-    project_id: str | None = None
-    org_name: str | None = None
-
-    def as_dict(self) -> DatasetPipelineSource:
-        return _drop_none(
-            {
-                "project_id": self.project_id,
-                "project_name": self.project_name,
-                "org_name": self.org_name,
-                "filter": self.filter,
-                "scope": self.scope,
-            }
-        )
-
-
 class DatasetPipelineTarget(TypedDict):
     dataset_name: str
     project_id: NotRequired[str]
@@ -62,28 +41,6 @@ class DatasetPipelineTarget(TypedDict):
     org_name: NotRequired[str]
     description: NotRequired[str]
     metadata: NotRequired[Metadata]
-
-
-@dataclass(frozen=True)
-class PipelineTarget:
-    dataset_name: str
-    project_name: str | None = None
-    project_id: str | None = None
-    org_name: str | None = None
-    description: str | None = None
-    metadata: Metadata | None = None
-
-    def as_dict(self) -> DatasetPipelineTarget:
-        return _drop_none(
-            {
-                "project_id": self.project_id,
-                "project_name": self.project_name,
-                "org_name": self.org_name,
-                "dataset_name": self.dataset_name,
-                "description": self.description,
-                "metadata": self.metadata,
-            }
-        )
 
 
 class DatasetPipelineRow(TypedDict, total=False):
@@ -95,7 +52,7 @@ class DatasetPipelineRow(TypedDict, total=False):
     origin: ObjectReference
 
 
-Row = TypeVar("Row", bound=DatasetPipelineRow)
+Row = TypeVar("Row", bound=DatasetPipelineRow, covariant=True)
 
 
 class DatasetPipelineTransformArgs(TypedDict, total=False):
@@ -107,24 +64,6 @@ class DatasetPipelineTransformArgs(TypedDict, total=False):
 
 
 DatasetPipelineTransformResult: TypeAlias = Row | Sequence[Row] | None
-DatasetPipelineSourceLike: TypeAlias = DatasetPipelineSource | PipelineSource
-DatasetPipelineTargetLike: TypeAlias = DatasetPipelineTarget | PipelineTarget
-
-
-def _drop_none(values: dict[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in values.items() if value is not None}
-
-
-def _normalize_source(source: DatasetPipelineSourceLike) -> DatasetPipelineSource:
-    if isinstance(source, PipelineSource):
-        return source.as_dict()
-    return dict(source)
-
-
-def _normalize_target(target: DatasetPipelineTargetLike) -> DatasetPipelineTarget:
-    if isinstance(target, PipelineTarget):
-        return target.as_dict()
-    return dict(target)
 
 
 class DatasetPipelineTransform(Protocol[Row]):
@@ -153,22 +92,18 @@ def get_registered_dataset_pipelines() -> list[DatasetPipelineDefinition[Any]]:
     return list(_DATASET_PIPELINES)
 
 
-def is_dataset_pipeline_definition(value: object) -> bool:
-    return isinstance(value, DatasetPipelineDefinition)
-
-
 def DatasetPipeline(
     name: str | None = None,
     *,
-    source: DatasetPipelineSourceLike,
+    source: DatasetPipelineSource,
     transform: DatasetPipelineTransform[DatasetPipelineRow],
-    target: DatasetPipelineTargetLike,
+    target: DatasetPipelineTarget,
 ) -> DatasetPipelineDefinition[DatasetPipelineRow]:
     definition = DatasetPipelineDefinition(
         name=name,
-        source=_normalize_source(source),
+        source=source.copy(),
         transform=transform,
-        target=_normalize_target(target),
+        target=target.copy(),
     )
     _DATASET_PIPELINES.append(definition)
     return definition
