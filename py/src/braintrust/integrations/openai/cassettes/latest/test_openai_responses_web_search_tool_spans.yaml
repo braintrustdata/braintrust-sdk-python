@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.37.0
+      - OpenAI/Python 2.38.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,11 +26,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.37.0
+      - 2.38.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.12.12
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,66 +39,78 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_054315567649f110006a0c7ea287e481958bc4be3353b78029\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1779203746,\n  \"status\":
+      string: "{\n  \"id\": \"resp_035832a98465bf16006a1490bba49c819397c991061a1fcde2\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1779732667,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1779203749,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1779732669,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_054315567649f110006a0c7ea2dbd88195abcd063e2ac042fb\",\n
+        \     \"id\": \"ws_035832a98465bf16006a1490bbdb548193a7df2eea1bd3f8d0\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
-        {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
-        the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
-        \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_054315567649f110006a0c7ea46064819583c35d8755a673d3\",\n
+        {\n        \"type\": \"search\",\n        \"query\": \"Search the web for
+        the current weather in Paris and answer in one sentence.\"\n      }\n    },\n
+        \   {\n      \"id\": \"msg_035832a98465bf16006a1490bcd29881939db40c064bbf276f\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 5:15\\u202fPM
-        on May 19, 2026, in Paris, France, the weather is cloudy with a temperature
-        of 60\\u00b0F (16\\u00b0C).\\n\\n## Weather for Paris, Paris, France:\\nCurrent
-        Conditions: Cloudy, 60\\u00b0F (16\\u00b0C)\\n\\nDaily Forecast:\\n* Tuesday,
-        May 19: Low: 55\\u00b0F (13\\u00b0C), High: 61\\u00b0F (16\\u00b0C), Description:
-        Cloudy with a couple of showers\\n* Wednesday, May 20: Low: 54\\u00b0F (12\\u00b0C),
-        High: 71\\u00b0F (22\\u00b0C), Description: Times of clouds and sun with a
-        stray shower; warmer\\n* Thursday, May 21: Low: 56\\u00b0F (14\\u00b0C), High:
-        78\\u00b0F (26\\u00b0C), Description: Nice and warm with episodes of sunshine\\n*
-        Friday, May 22: Low: 59\\u00b0F (15\\u00b0C), High: 83\\u00b0F (28\\u00b0C),
-        Description: Very warm with plenty of sunshine\\n* Saturday, May 23: Low:
-        61\\u00b0F (16\\u00b0C), High: 84\\u00b0F (29\\u00b0C), Description: Very
-        warm with sunshine and a few clouds\\n* Sunday, May 24: Low: 59\\u00b0F (15\\u00b0C),
-        High: 84\\u00b0F (29\\u00b0C), Description: Mostly sunny and very warm\\n*
-        Monday, May 25: Low: 62\\u00b0F (16\\u00b0C), High: 84\\u00b0F (29\\u00b0C),
-        Description: Very warm with sunshine\\n \"\n        }\n      ],\n      \"role\":
-        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
-        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\":
-        [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_context_size\":
-        \"low\",\n      \"user_location\": {\n        \"type\": \"approximate\",\n
-        \       \"city\": null,\n        \"country\": \"US\",\n        \"region\":
-        null,\n        \"timezone\": null\n      }\n    }\n  ],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        323,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 307,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 630\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 8:11\\u202fPM
+        CEST on May 25, 2026, Paris is experiencing sunny weather with a temperature
+        of 31\\u00b0C (88\\u00b0F).\\n\\n## Weather for Paris, Paris, France:\\nCurrent
+        Conditions: Sunny, 87\\u00b0F (31\\u00b0C)\\n\\nDaily Forecast:\\n* Monday,
+        May 25: Low: 64\\u00b0F (18\\u00b0C), High: 90\\u00b0F (32\\u00b0C), Description:
+        Very hot with plenty of sun\\n* Tuesday, May 26: Low: 64\\u00b0F (18\\u00b0C),
+        High: 92\\u00b0F (33\\u00b0C), Description: Very hot and less humid with brilliant
+        sunshine\\n* Wednesday, May 27: Low: 65\\u00b0F (18\\u00b0C), High: 91\\u00b0F
+        (33\\u00b0C), Description: Mostly sunny and very hot\\n* Thursday, May 28:
+        Low: 67\\u00b0F (19\\u00b0C), High: 92\\u00b0F (34\\u00b0C), Description:
+        Mostly cloudy and very hot\\n* Friday, May 29: Low: 64\\u00b0F (18\\u00b0C),
+        High: 90\\u00b0F (32\\u00b0C), Description: Hot with sun through high clouds;
+        caution advised if doing strenuous activities outside\\n* Saturday, May 30:
+        Low: 64\\u00b0F (18\\u00b0C), High: 89\\u00b0F (32\\u00b0C), Description:
+        Increasing cloudiness and very warm; a thunderstorm in spots in the afternoon\\n*
+        Sunday, May 31: Low: 59\\u00b0F (15\\u00b0C), High: 79\\u00b0F (26\\u00b0C),
+        Description: Mostly sunny and pleasantly warm\\n\\nSevere Weather Alerts:\\n*
+        Paris: Yellow Warning for Extreme High Temperature in effect until Tuesday,
+        12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Moderate high-temperature
+        warningModerate damages may occur, especially in vulnerable or in exposed
+        areas and to people who carry out weather-related activities.Be careful, keep
+        informed of the latest weather forecast., start time: Monday, May 25, 16:00:00
+        UTC, end time: Tuesday, May 26, 00:00:00 UTC\\n* Paris: Yellow Warning for
+        Extreme High Temperature in effect from Tuesday, 12:00 AM CEST until Wednesday,
+        12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Moderate high-temperature
+        warningModerate damages may occur, especially in vulnerable or in exposed
+        areas and to people who carry out weather-related activities.Be careful, keep
+        informed of the latest weather forecast., start time: Tuesday, May 26, 00:00:00
+        UTC, end time: Wednesday, May 27, 00:00:00 UTC\\n \"\n        }\n      ],\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\": [\n    {\n      \"type\":
+        \"web_search_preview\",\n      \"search_context_size\": \"low\",\n      \"user_location\":
+        {\n        \"type\": \"approximate\",\n        \"city\": null,\n        \"country\":
+        \"US\",\n        \"region\": null,\n        \"timezone\": null\n      }\n
+        \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 531,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 854\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       Access-Control-Expose-Headers:
       - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fe40f161dcb086a-YYZ
+      - a01680346ecfeff9-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Tue, 19 May 2026 15:15:49 GMT
+      - Mon, 25 May 2026 18:11:09 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -110,21 +122,21 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '3362'
+      - '4258'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '3308'
+      - '2028'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=vQHG5H90zFBVSTiVWPORSMO40mPrXgnN.mtPxpwFEfY-1779203746.2518685-1.0.1.1-9WvRmIqX1cgPDnGarJodVJe4QKkq0s7NX_miQwyivljLL0VXAy7J7_LLjZBTA.AarjkWO_qtj7YuRPKJUplFUT6CnMUXbQXOa5UaXBrNUTTynxfl4.OAUotdXb77a0kj;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
-        19 May 2026 15:45:49 GMT
+      - __cf_bm=JWh_X_Di3w3ZyUAYwrVlClJ54O02v32vjDWdMHFvQXM-1779732667.5837646-1.0.1.1-vlOFdJ56axMR10UGThcYza7dMZK54JI7P7f3I93Dqe1M2_V6jlHHAB6SkWmgeXhyJSGaO5AGouqT0wedtUBNxlIAkrnTG8gKU.ZBc1R.AeHir.9SMnpBXj.iLu.GboU6;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        25 May 2026 18:41:09 GMT
       x-request-id:
-      - req_3fe34726a142491f9ae51a30f7f65793
+      - req_ca3444cdeef540b6970f8ca5bbf36890
     status:
       code: 200
       message: OK

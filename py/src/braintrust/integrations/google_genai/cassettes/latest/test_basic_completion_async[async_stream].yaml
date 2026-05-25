@@ -16,28 +16,24 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:streamGenerateContent?alt=sse
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse
   response:
     body:
       string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
-        capital\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
-        8,\"candidatesTokenCount\": 2,\"totalTokenCount\": 10,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-3.1-flash-lite\",\"responseId\": \"4IQMao7pGP_U_uMPv5OZwA8\"}\r\n\r\ndata:
-        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \" of France is Paris.\"}],\"role\":
-        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
-        7,\"totalTokenCount\": 15,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-3.1-flash-lite\",\"responseId\":
-        \"4IQMao7pGP_U_uMPv5OZwA8\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
-        {\"parts\": [{\"text\": \"\",\"thoughtSignature\": \"EjQKMgEMOdbHlgpYnZHCncynoriHFlYHmEjhawZ7ushJVmExcya+D/Zz/g+EdG9vwyCJHXhD\"}],\"role\":
-        \"model\"},\"finishReason\": \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\":
-        8,\"candidatesTokenCount\": 7,\"totalTokenCount\": 15,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-3.1-flash-lite\",\"responseId\": \"4IQMao7pGP_U_uMPv5OZwA8\"}\r\n\r\n"
+        capital of France is **\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 8,\"candidatesTokenCount\": 6,\"totalTokenCount\":
+        14,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
+        \"VJUUasuMHeff_uMPm-ndwQ8\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"Paris**.\"}],\"role\": \"model\"},\"finishReason\":
+        \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
+        8,\"totalTokenCount\": 16,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
+        \"VJUUasuMHeff_uMPm-ndwQ8\"}\r\n\r\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -46,11 +42,11 @@ interactions:
       Content-Type:
       - text/event-stream
       Date:
-      - Tue, 19 May 2026 15:42:24 GMT
+      - Mon, 25 May 2026 18:30:44 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=600
+      - gfet4t7; dur=414
       Transfer-Encoding:
       - chunked
       Vary:

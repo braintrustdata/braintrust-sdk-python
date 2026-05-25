@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.37.0
+      - OpenAI/Python 2.38.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,11 +26,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.37.0
+      - 2.38.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.12.12
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,47 +39,48 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_06572f2bfe229fb4006a0c7e994e048196988162ef0d843f9a\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1779203737,\n  \"status\":
+      string: "{\n  \"id\": \"resp_089340a3593e4dee006a1490ba952c819697150fc774e102aa\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1779732666,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1779203745,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1779732667,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_06572f2bfe229fb4006a0c7ea1bc6881969c62d1f4440c933c\",\n
+        \     \"id\": \"fc_089340a3593e4dee006a1490bb253481969dcb93b896c1909a\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_LwQomBqqw00q0GNTvMzcI3Up\",\n
+        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_vHPBZDQo44xHQDmDBKL3I7VI\",\n
         \     \"name\": \"get_weather\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"effort\": null,\n    \"summary\": null\n  },\n  \"safety_identifier\":
-        null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\":
-        1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    },\n
-        \   \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": {\n    \"type\": \"function\",\n
-        \   \"name\": \"get_weather\"\n  },\n  \"tools\": [\n    {\n      \"type\":
-        \"function\",\n      \"description\": \"Get the weather for a location.\",\n
-        \     \"name\": \"get_weather\",\n      \"parameters\": {\n        \"type\":
-        \"object\",\n        \"properties\": {\n          \"location\": {\n            \"type\":
-        \"string\"\n          }\n        },\n        \"required\": [\n          \"location\"\n
-        \       ],\n        \"additionalProperties\": false\n      },\n      \"strict\":
-        true\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 61,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 6,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 67\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        {\n    \"type\": \"function\",\n    \"name\": \"get_weather\"\n  },\n  \"tools\":
+        [\n    {\n      \"type\": \"function\",\n      \"description\": \"Get the
+        weather for a location.\",\n      \"name\": \"get_weather\",\n      \"parameters\":
+        {\n        \"type\": \"object\",\n        \"properties\": {\n          \"location\":
+        {\n            \"type\": \"string\"\n          }\n        },\n        \"required\":
+        [\n          \"location\"\n        ],\n        \"additionalProperties\": false\n
+        \     },\n      \"strict\": true\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\":
+        1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        61,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 6,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 67\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       Access-Control-Expose-Headers:
       - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - 9fe40eddcdfaa2d9-YYZ
+      - a016802ddc2f880c-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Tue, 19 May 2026 15:15:46 GMT
+      - Mon, 25 May 2026 18:11:07 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -91,19 +92,19 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '1949'
+      - '1970'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '8822'
+      - '872'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=6ASs0QLtT.tmbnREUG8Dj5pi7YOaYTuxOyD.0v6Rupk-1779203737.2425354-1.0.1.1-OQIY8WnNnqaVII5.2F1A8bxv8mdnEByijMH36tYtTwwY6k9XPVSbstg.4HwZJ4qAn5E.P0v3YnjLKJvEa5oSDF8nI0Xx9ON0c0RDVdrREoXODj_fFkb0_ulOR.dHJYOB;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
-        19 May 2026 15:45:46 GMT
+      - __cf_bm=7Y62Ian9MF4Qr81RnpbBnkTsUuc_FeaOXI4Er7uZSGM-1779732666.5330243-1.0.1.1-oeIJ6Kj7NldRu1A3Py7qILDYWf5tQrcl_JPIZaH6nc57HBs0Up93_ZQos2M4D9R9p1t7X_.DI9gMDCxa1IV7Raasq.xtVRTU8WpJ_b.H8c8cPF4LR5Y9t9HEnIDcOEGY;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        25 May 2026 18:41:07 GMT
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -117,7 +118,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_6573792fcbd94b8f8a63981b861d035c
+      - req_ca225a5bf80f4ea5b6578e89e0cecf6a
     status:
       code: 200
       message: OK

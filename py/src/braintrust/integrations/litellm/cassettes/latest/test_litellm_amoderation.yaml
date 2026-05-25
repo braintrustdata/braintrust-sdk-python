@@ -2,43 +2,41 @@ interactions:
 - request:
     body: '{"input":"This is a test message","model":"omni-moderation-latest"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '67'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.37.0
-      X-Stainless-Arch:
+      user-agent:
+      - AsyncOpenAI/Python 2.38.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.37.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.12.12
-      x-stainless-read-timeout:
-      - '600'
+      x-stainless-package-version:
+      - 2.38.0
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/moderations
   response:
     body:
-      string: "{\n  \"id\": \"modr-5354\",\n  \"model\": \"omni-moderation-latest\",\n
+      string: "{\n  \"id\": \"modr-8070\",\n  \"model\": \"omni-moderation-latest\",\n
         \ \"results\": [\n    {\n      \"flagged\": false,\n      \"categories\":
         {\n        \"harassment\": false,\n        \"harassment/threatening\": false,\n
         \       \"sexual\": false,\n        \"hate\": false,\n        \"hate/threatening\":
@@ -69,15 +67,19 @@ interactions:
       Access-Control-Expose-Headers:
       - CF-Ray
       CF-RAY:
-      - 9fe42f3509c3ab8d-YYZ
+      - a01696fd4967c48a-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Tue, 19 May 2026 15:37:42 GMT
+      - Mon, 25 May 2026 18:26:40 GMT
       Server:
       - cloudflare
+      Set-Cookie:
+      - __cf_bm=GbXFsoeAbUNUsF_4MPg3s5yX2JyGKINnVMDobgpWtDE-1779733600.848513-1.0.1.1-zFE21CdabeViS8i2453oDzPiF792dkzbDd2ASZsUUIj1qJDNmSrA5NuOZRVfzrDWsd6pqhBO1zu8k.8X5gMG0rez06F9R.WqXiHFisR20yIXOdmx0EByUxMUmW2064aF;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        25 May 2026 18:56:40 GMT
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Transfer-Encoding:
@@ -93,19 +95,15 @@ interactions:
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '194'
+      - '58'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      set-cookie:
-      - __cf_bm=pqYA2HZT90k8h4TqB6S59Yjr4mUngnMhMol6ACAtMsY-1779205061.923457-1.0.1.1-hNTI8nbdvEUMYr26oAUuRpiQPLiy5uiYvjnY2lSqDPhHoez7.JjXKi0AJpg0I1nsdRH1OdEy.yrOkjK2KwEWd8LhIJYB9UH9IBvyfyqNH3SnEXIFYrpAsbRYllQegXLX;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Tue,
-        19 May 2026 16:07:42 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-request-id:
-      - req_051677dbbf2043f0918d7fbdbe2174e7
+      - req_31a6a88cc1d147ee92f974cb7ceffdae
     status:
       code: 200
       message: OK

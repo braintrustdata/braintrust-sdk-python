@@ -17,34 +17,33 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The color of this image is red.\",\n
-        \           \"thoughtSignature\": \"EjQKMgEMOdbHNh0+8WHyPkazPq3geft75JP4qBKw4Lz7hQrH/EqmlgOoisOoPivayZS42Kbg\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        [\n          {\n            \"text\": \"The image is **red**.\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        1096,\n    \"candidatesTokenCount\": 8,\n    \"totalTokenCount\": 1104,\n
-        \   \"promptTokensDetails\": [\n      {\n        \"modality\": \"IMAGE\",\n
-        \       \"tokenCount\": 1089\n      },\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 7\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-3.1-flash-lite\",\n  \"responseId\": \"4YQMaubEOMW8_uMP1fOykAo\"\n}\n"
+        265,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 271,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n
+        \     {\n        \"modality\": \"IMAGE\",\n        \"tokenCount\": 258\n      }\n
+        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"VZUUauCoKf3m_uMP5re94Qg\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 19 May 2026 15:42:26 GMT
+      - Mon, 25 May 2026 18:30:46 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=1169
+      - gfet4t7; dur=666
       Transfer-Encoding:
       - chunked
       Vary:
@@ -60,7 +59,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '762'
+      - '641'
     status:
       code: 200
       message: OK

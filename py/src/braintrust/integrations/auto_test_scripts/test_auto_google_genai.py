@@ -22,7 +22,7 @@ with autoinstrument_test_context("test_auto_google_genai", integration="google_g
     client = Client()
     response = client.models.generate_content(
         model=(
-            "gemini-3.1-flash-lite-preview"
+            "gemini-2.5-flash-lite"
             if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
             else "gemini-2.0-flash-001"
         ),

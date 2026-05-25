@@ -16,33 +16,32 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"At\",\n            \"thoughtSignature\":
-        \"EjQKMgEMOdbHvnMfrhlCxcNjQ9MfPnmPqS9+KOKx7t34DLlYmJv/hGVoKWmpIHfuW9L9B5QM\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        [\n          {\n            \"text\": \"\\\"AI\\\" stands for\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
-        \   \"promptTokenCount\": 5,\n    \"candidatesTokenCount\": 1,\n    \"totalTokenCount\":
-        6,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \   \"promptTokenCount\": 5,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\":
+        10,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 5\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-3.1-flash-lite\",\n  \"responseId\": \"9YQMavf7BNS8_uMP-Jq1uAI\"\n}\n"
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"Y5UUauHNGP3m_uMP5re94Qg\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 19 May 2026 15:42:46 GMT
+      - Mon, 25 May 2026 18:30:59 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=1211
+      - gfet4t7; dur=658
       Transfer-Encoding:
       - chunked
       Vary:
@@ -58,7 +57,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '660'
+      - '568'
     status:
       code: 200
       message: OK
