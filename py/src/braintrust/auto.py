@@ -19,6 +19,7 @@ from braintrust.integrations import (
     DSPyIntegration,
     GoogleGenAIIntegration,
     HuggingFaceHubIntegration,
+    InstructorIntegration,
     LangChainIntegration,
     LiteLLMIntegration,
     LiveKitAgentsIntegration,
@@ -57,6 +58,7 @@ def auto_instrument(
     litellm: bool = True,
     pydantic_ai: bool = True,
     google_genai: bool = True,
+    instructor: bool = True,
     openrouter: bool = True,
     mistral: bool = True,
     huggingface_hub: bool = True,
@@ -90,6 +92,7 @@ def auto_instrument(
         litellm: Enable LiteLLM instrumentation (default: True)
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
+        instructor: Enable Instructor (structured-output) instrumentation (default: True)
         openrouter: Enable OpenRouter instrumentation (default: True)
         mistral: Enable Mistral instrumentation (default: True)
         huggingface_hub: Enable HuggingFace Hub instrumentation (default: True)
@@ -164,6 +167,8 @@ def auto_instrument(
         results["pydantic_ai"] = _instrument_integration(PydanticAIIntegration)
     if google_genai:
         results["google_genai"] = _instrument_integration(GoogleGenAIIntegration)
+    if instructor:
+        results["instructor"] = _instrument_integration(InstructorIntegration)
     if openrouter:
         results["openrouter"] = _instrument_integration(OpenRouterIntegration)
     if mistral:

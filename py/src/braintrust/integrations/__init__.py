@@ -9,6 +9,7 @@ from .crewai import CrewAIIntegration
 from .dspy import DSPyIntegration
 from .google_genai import GoogleGenAIIntegration
 from .huggingface_hub import HuggingFaceHubIntegration
+from .instructor import InstructorIntegration
 from .langchain import LangChainIntegration
 from .litellm import LiteLLMIntegration
 from .livekit_agents import LiveKitAgentsIntegration
@@ -34,6 +35,7 @@ __all__ = [
     "DSPyIntegration",
     "GoogleGenAIIntegration",
     "HuggingFaceHubIntegration",
+    "InstructorIntegration",
     "LiteLLMIntegration",
     "LiveKitAgentsIntegration",
     "LangChainIntegration",

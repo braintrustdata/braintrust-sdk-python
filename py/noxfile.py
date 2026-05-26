@@ -230,6 +230,21 @@ def test_cohere(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/cohere/test_cohere.py", version=version)
 
 
+INSTRUCTOR_VERSIONS = _get_matrix_versions("instructor")
+
+
+@nox.session()
+@nox.parametrize("version", INSTRUCTOR_VERSIONS, ids=INSTRUCTOR_VERSIONS)
+def test_instructor(session, version):
+    """Test the native Instructor structured-output integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "instructor", version)
+    # Instructor wraps a provider client; we exercise it against an OpenAI
+    # client via VCR cassettes recorded against ``api.openai.com``.
+    _install_matrix_dep(session, "openai", LATEST)
+    _run_tests(session, f"{INTEGRATION_DIR}/instructor/test_instructor.py", version=version)
+
+
 OPENAI_VERSIONS = _get_matrix_versions("openai")
 
 

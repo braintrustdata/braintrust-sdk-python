@@ -1,0 +1,34 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"Person"}},"tools":[{"type":"function","function":{"name":"Person","description":"Correctly extracted `Person` with all the required parameters with correct types","parameters":{"properties":{"name":{"description":"The person''s name","title":"Name","type":"string"},"age":{"description":"The person''s age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
+    headers: {}
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: '{"id":"chatcmpl-instructor-ada-1","object":"chat.completion","created":1779735568,"model":"gpt-4o-mini-2024-07-18","choices":[{"index":0,"message":{"role":"assistant","content":null,"tool_calls":[{"id":"call_ada_1","type":"function","function":{"name":"Person","arguments":"{\"name\":\"Ada\"}"}}],"refusal":null,"annotations":[]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":80,"completion_tokens":8,"total_tokens":88},"service_tier":"default","system_fingerprint":"fp_test"}'
+    headers:
+      content-type:
+      - application/json
+      x-request-id:
+      - req_instructor_ada_1
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"Extract Ada, age 30."},{"role":"assistant","tool_calls":[{"id":"call_ada_1","type":"function","function":{"name":"Person","arguments":"{\"name\":\"Ada\"}"}}]},{"role":"tool","tool_call_id":"call_ada_1","name":"Person","content":"Validation Error found:\n1 validation error for Person\nage\n  Field required [type=missing, input_value={''name'': ''Ada''}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\nRecall the function correctly, fix the errors"}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"Person"}},"tools":[{"type":"function","function":{"name":"Person","description":"Correctly extracted `Person` with all the required parameters with correct types","parameters":{"properties":{"name":{"description":"The person''s name","title":"Name","type":"string"},"age":{"description":"The person''s age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
+    headers: {}
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: '{"id":"chatcmpl-instructor-ada-2","object":"chat.completion","created":1779735569,"model":"gpt-4o-mini-2024-07-18","choices":[{"index":0,"message":{"role":"assistant","content":null,"tool_calls":[{"id":"call_ada_2","type":"function","function":{"name":"Person","arguments":"{\"name\":\"Ada\",\"age\":30}"}}],"refusal":null,"annotations":[]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":120,"completion_tokens":12,"total_tokens":132},"service_tier":"default","system_fingerprint":"fp_test"}'
+    headers:
+      content-type:
+      - application/json
+      x-request-id:
+      - req_instructor_ada_2
+    status:
+      code: 200
+      message: OK
+version: 1
