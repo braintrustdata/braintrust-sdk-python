@@ -49,6 +49,17 @@ from braintrust.test_helpers import (
 )
 
 
+def test_login_to_state_uses_env_braintrust_api_key(tmp_path, monkeypatch):
+    (tmp_path / ".env.braintrust").write_text(f"BRAINTRUST_API_KEY={logger.TEST_API_KEY}\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
+
+    state = logger.login_to_state(org_name="test-org-name")
+
+    assert state.login_token == logger.TEST_API_KEY
+    assert state.logged_in is True
+
+
 class TestInit(TestCase):
     def test_init_validation(self):
         with self.assertRaises(ValueError) as cm:

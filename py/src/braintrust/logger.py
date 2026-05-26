@@ -88,6 +88,7 @@ from .util import (
     coalesce,
     encode_uri_component,
     eprint,
+    get_braintrust_api_key,
     get_caller_location,
     get_signature,
     mask_api_key,
@@ -2190,8 +2191,7 @@ def login_to_state(
 
     app_public_url = os.environ.get("BRAINTRUST_APP_PUBLIC_URL", app_url)
 
-    if api_key is None:
-        api_key = os.environ.get("BRAINTRUST_API_KEY")
+    api_key = get_braintrust_api_key(api_key)
 
     org_name = _get_org_name(org_name)
 
@@ -2240,7 +2240,10 @@ def login_to_state(
         conn.set_token(api_key)
 
     if not conn:
-        raise ValueError("Could not login to Braintrust. You may need to set BRAINTRUST_API_KEY in your environment.")
+        raise ValueError(
+            "Could not login to Braintrust. You may need to set BRAINTRUST_API_KEY in your environment "
+            "or nearest .env.braintrust file."
+        )
 
     # make_long_lived() allows the connection to retry if it breaks, which we're okay with after
     # this point because we know the connection _can_ successfully ping.
