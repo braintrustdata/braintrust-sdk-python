@@ -4261,6 +4261,25 @@
             "type": "string",
             "description": "Field path to group by, e.g. metadata.session_id"
           },
+          "interval_seconds": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Maximum time range to include when constructing a group"
+          },
+          "max_traces": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64,
+            "description": "Maximum number of traces to include when constructing a group (default/max: 64)"
+          },
+          "placement": {
+            "type": "string",
+            "enum": [
+              "first",
+              "each"
+            ],
+            "description": "Which trace or traces to write grouped scorer results to"
+          },
           "idle_seconds": {
             "type": "number",
             "description": "Optional: trigger after this many seconds of inactivity"
@@ -4268,7 +4287,8 @@
         },
         "required": [
           "type",
-          "group_by"
+          "group_by",
+          "placement"
         ],
         "description": "Process spans/traces grouped by a field (e.g., session_id)"
       },

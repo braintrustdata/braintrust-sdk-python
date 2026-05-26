@@ -1228,6 +1228,18 @@ class GroupScope(TypedDict):
     """
     Field path to group by, e.g. metadata.session_id
     """
+    interval_seconds: NotRequired[float | None]
+    """
+    Maximum time range to include when constructing a group
+    """
+    max_traces: NotRequired[int | None]
+    """
+    Maximum number of traces to include when constructing a group (default/max: 64)
+    """
+    placement: Literal['first', 'each']
+    """
+    Which trace or traces to write grouped scorer results to
+    """
     idle_seconds: NotRequired[float | None]
     """
     Optional: trigger after this many seconds of inactivity

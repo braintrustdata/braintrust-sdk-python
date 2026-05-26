@@ -1,0 +1,147 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - huggingface.co
+      X-Amzn-Trace-Id:
+      - a7f9d1d0-0023-46c2-8493-e166b08d3e70
+      user-agent:
+      - unknown/None; hf_hub/1.15.0; python/3.14.3; agent/pi
+    method: GET
+    uri: https://huggingface.co/api/models/meta-llama/Llama-3.2-3B?expand=inferenceProviderMapping
+  response:
+    body:
+      string: '{"_id":"66eaf084b3b3239188f66fa7","id":"meta-llama/Llama-3.2-3B","inferenceProviderMapping":{"featherless-ai":{"status":"live","providerId":"meta-llama/Llama-3.2-3B","task":"text-generation","isModelAuthor":false}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - https://huggingface.co
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Access-Control-Max-Age:
+      - '86400'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '215'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 20 May 2026 18:01:37 GMT
+      ETag:
+      - W/"d7-F25ANpBgcxCxP88UAH9KfLwlUJ8"
+      RateLimit:
+      - '"api";r=977;t=208'
+      RateLimit-Policy:
+      - '"fixed window";"api";q=1000;w=300'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Vary:
+      - Origin
+      Via:
+      - 1.1 fdbf0bf4022c61868d8dad6b7d72a71a.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - GfZV2ExFO9pB5NYMwXa9GcjOdHgobXKPa_nFiFK1k1SIE5yLG74b6A==
+      X-Amz-Cf-Pop:
+      - YTO50-P2
+      X-Cache:
+      - Miss from cloudfront
+      X-Powered-By:
+      - huggingface-moon
+      X-Request-Id:
+      - Root=1-6a0df701-7a76598172cf6a0611e0cfbf;a7f9d1d0-0023-46c2-8493-e166b08d3e70
+      cross-origin-opener-policy:
+      - same-origin
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"prompt":"The Braintrust SDK is","max_tokens":8,"model":"meta-llama/Llama-3.2-3B"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '83'
+      Host:
+      - router.huggingface.co
+      X-Amzn-Trace-Id:
+      - 8232a005-6f89-483d-92ed-df346e7f2017
+      content-type:
+      - application/json
+      user-agent:
+      - unknown/None; hf_hub/1.15.0; python/3.14.3; agent/pi
+    method: POST
+    uri: https://router.huggingface.co/featherless-ai/v1/completions
+  response:
+    body:
+      string: '{"id":"503d3194-4d77-4285-891d-31b6dd0c46fd","object":"text_completion","created":1779300097,"model":"meta-llama/Llama-3.2-3B","choices":[{"index":0,"text":"
+        a framework for building, testing, and","logprobs":null,"finish_reason":"length"}],"system_fingerprint":"fp1-rss-s3","usage":{"prompt_tokens":5,"completion_tokens":8,"total_tokens":13}}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 20 May 2026 18:01:38 GMT
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 94703ff6f88fa098310f25ad977e6604.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - bQSsJdjbZVBWde2NVNdKftjcrLKtGyOpsF2t6AAzRPrA2mByCrOUbw==
+      X-Amz-Cf-Pop:
+      - YTO50-P1
+      X-Cache:
+      - Miss from cloudfront
+      X-Powered-By:
+      - huggingface-moon
+      X-Request-Id:
+      - Root=1-6a0df701-44ca786d7e96eb5d1dc2d965;8232a005-6f89-483d-92ed-df346e7f2017
+      X-Robots-Tag:
+      - none
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-methods:
+      - authorization,content-type
+      access-control-allow-origin:
+      - '*'
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - 9fed3f6b3c84ff80-IAD
+      cross-origin-opener-policy:
+      - same-origin
+      nel:
+      - '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}'
+      report-to:
+      - '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=mWL0%2FFm5vbM6rMF4cpleTH3BtYTwgL%2FTep9B8xBM7k0jgMadYdE2B9MTbyiPtzZEaQzYdTqrU9jnfN1N38tGKbppf%2FJUmSRnbm3QslsAzFL%2Fld69GfFB0nW5T68y32s9662fXQ%3D%3D"}]}'
+      request-id:
+      - 503d3194-4d77-4285-891d-31b6dd0c46fd
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains
+      vary:
+      - Origin
+      x-inference-provider:
+      - featherless-ai
+    status:
+      code: 200
+      message: OK
+version: 1

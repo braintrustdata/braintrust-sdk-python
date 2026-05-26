@@ -16,33 +16,32 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The capital of France is Paris.\",\n
-        \           \"thoughtSignature\": \"EjQKMgEMOdbHhpYRoE/nfaNCJG6uNeGkuyNKF2YtX3Ge+BJP/hW1AVCu5l49kDdRuHLJPzyb\"\n
+        [\n          {\n            \"text\": \"The capital of France is **Paris**.\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        8,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 15,\n    \"promptTokensDetails\":
+        8,\n    \"candidatesTokenCount\": 8,\n    \"totalTokenCount\": 16,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 8\n      }\n
-        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-3.1-flash-lite\",\n
-        \ \"responseId\": \"34QMar28KOC0_uMP2bqr0AI\"\n}\n"
+        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"U5UUav24Ove__uMPqJur-Ac\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 19 May 2026 15:42:24 GMT
+      - Mon, 25 May 2026 18:30:44 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=609
+      - gfet4t7; dur=358
       Transfer-Encoding:
       - chunked
       Vary:
@@ -58,7 +57,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '684'
+      - '580'
     status:
       code: 200
       message: OK

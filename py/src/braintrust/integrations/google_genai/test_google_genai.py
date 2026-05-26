@@ -25,7 +25,7 @@ from google.genai.client import Client
 
 PROJECT_NAME = "test-genai-app"
 MODEL = (
-    "gemini-3.1-flash-lite-preview"
+    "gemini-2.5-flash-lite"
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
     else "gemini-2.0-flash-001"
 )

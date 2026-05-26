@@ -1,0 +1,66 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      X-Amzn-Trace-Id:
+      - 3ef4e764-c529-40ae-b0cd-a4998289022e
+      user-agent:
+      - unknown/None; hf_hub/0.32.0; python/3.14.3
+    method: GET
+    uri: https://huggingface.co/api/models/this-model-id-does-not-exist-xyz
+  response:
+    body:
+      string: '{"error":"Repository not found"}'
+    headers:
+      Access-Control-Allow-Origin:
+      - https://huggingface.co
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Access-Control-Max-Age:
+      - '86400'
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '32'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 20 May 2026 18:01:21 GMT
+      ETag:
+      - W/"20-bITJowpdmeRi6flSV9yCp5Fkq5k"
+      RateLimit:
+      - '"api";r=983;t=224'
+      RateLimit-Policy:
+      - '"fixed window";"api";q=1000;w=300'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Vary:
+      - Origin
+      Via:
+      - 1.1 53d47b61433f6e1682b806fc166731be.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - N8jWvicxybc5_P-HDGfBmeFLIipeSxRp_MLf8kWjuJctBgUyH1o1xg==
+      X-Amz-Cf-Pop:
+      - YTO50-P2
+      X-Cache:
+      - Error from cloudfront
+      X-Error-Code:
+      - RepoNotFound
+      X-Error-Message:
+      - Repository not found
+      X-Powered-By:
+      - huggingface-moon
+      X-Request-Id:
+      - Root=1-6a0df6f1-4e1b551a122ae5cf42c9180b;3ef4e764-c529-40ae-b0cd-a4998289022e
+      cross-origin-opener-policy:
+      - same-origin
+    status:
+      code: 404
+      message: Not Found
+version: 1

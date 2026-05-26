@@ -18,40 +18,35 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.4.0 gl-python/3.12.12
+      - google-genai-sdk/2.6.0 gl-python/3.14.3
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Gather 'round, ye scurvy dog, and
-        hearken to the winds!\\n\\nThe sky be a fickle mistress today. Out on the
-        open brine, the clouds be scudding fast like a ship fleein' the Royal Navy,
-        and the gale be howlin' through the riggin' enough to rattle yer very teeth.
-        'Tis a blustery day, fit for raisin' the Jolly Roger and catchin' a fair wind
-        toward the horizon.\\n\\nIf ye be lookin' for calm waters, ye best be lookin'
-        elsewhere, for the sea be churnin' like a kraken\u2019s cauldron and the spray
-        be stingin' the eyes of any landlubber who dares look to the heavens\",\n
-        \           \"thoughtSignature\": \"EjQKMgEMOdbHWXWGToZ+3iCRhzqEhBCTSrtmc2WE3WsSMsI/yz+YmLYtVzZJWaUM9djtBZA4\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
-        \   \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 146,\n    \"totalTokenCount\":
-        165,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        [\n          {\n            \"text\": \"Ahoy there, matey!  The skies be lookin'
+        a bit fickle today.  The winds be blowin' fair, but there be a hint o' squalls
+        on the horizon.  Keep a weather eye on the horizon, for ye never know when
+        a tempest might blow in!  But for now, the sun be shinin' bright, like a chest
+        o' gold!\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
+        \     \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 81,\n    \"totalTokenCount\":
+        100,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 19\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-3.1-flash-lite\",\n  \"responseId\": \"7YQMarHIDciN_PUP856f6AI\"\n}\n"
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"X5UUavmsKKyd_uMPr6i0uQQ\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 19 May 2026 15:42:38 GMT
+      - Mon, 25 May 2026 18:30:56 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=1140
+      - gfet4t7; dur=731
       Transfer-Encoding:
       - chunked
       Vary:
@@ -67,7 +62,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1221'
+      - '831'
     status:
       code: 200
       message: OK

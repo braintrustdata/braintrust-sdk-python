@@ -1,0 +1,96 @@
+interactions:
+- request:
+    body:
+      max_tokens: 10
+      messages:
+      - content: Say hi in one word.
+        role: user
+      model: llama3.1-8b
+      stream: false
+    headers:
+      user-agent:
+      - unknown/None; hf_hub/0.32.0; python/3.14.3
+    method: POST
+    uri: https://router.huggingface.co/cerebras/v1/chat/completions
+  response:
+    body:
+      string: '{"id":"chatcmpl-91bd6532-9826-4e85-8383-c0a437848190","choices":[{"finish_reason":"stop","index":0,"message":{"content":"Hello","role":"assistant"}}],"created":1779300081,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion","usage":{"total_tokens":43,"completion_tokens":2,"completion_tokens_details":{"accepted_prediction_tokens":0,"rejected_prediction_tokens":0,"reasoning_tokens":0},"prompt_tokens":41,"prompt_tokens_details":{"cached_tokens":0}},"time_info":{"created":1779300081.6006713,"queue_time":0.000756679,"prompt_time":0.003359545,"completion_time":0.000794778,"total_time":0.006176471710205078}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 20 May 2026 18:01:21 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=gBchj1dsPC1A3AuBzg_d7vF_caN4b0BuehHFH7JzQQs-1779300081.5537503-1.0.1.1-Hi7RiUrIzQBeutL7anEGgj1ZFHRnRBuLvw66YcVNGMMHEVdBgtcn_u2Iyj_TvtORHh7Vj9DNZDPb4yN1K028J48AygR2yQJnC5tXD5Dvy8alvCBYzwFsGnH1JxVaSrmQ;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.cerebras.ai; Expires=Wed,
+        20 May 2026 18:31:21 GMT
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      Via:
+      - 1.1 20f9576431d2962bf870247ded502538.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - R9tmcAvNj4PsaZaAoZ8oHbnCTnz_ck8nnDTX8xMKQMncehokXdKahw==
+      X-Amz-Cf-Pop:
+      - YTO50-P1
+      X-Cache:
+      - Miss from cloudfront
+      X-Powered-By:
+      - huggingface-moon
+      X-Robots-Tag:
+      - none
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - 9fed3f05bf2d07fc-IAD
+      cross-origin-opener-policy:
+      - same-origin
+      inference-id:
+      - chatcmpl-91bd6532-9826-4e85-8383-c0a437848190
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-inference-provider:
+      - cerebras
+      x-ratelimit-limit-requests-day:
+      - '2880000'
+      x-ratelimit-limit-requests-hour:
+      - '120000'
+      x-ratelimit-limit-requests-minute:
+      - '2000'
+      x-ratelimit-limit-tokens-day:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-hour:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-minute:
+      - '9223372036854775807'
+      x-ratelimit-remaining-requests-day:
+      - '2879995'
+      x-ratelimit-remaining-requests-hour:
+      - '119995'
+      x-ratelimit-remaining-requests-minute:
+      - '1995'
+      x-ratelimit-remaining-tokens-day:
+      - '9223372036854767616'
+      x-ratelimit-remaining-tokens-hour:
+      - '9223372036854767616'
+      x-ratelimit-remaining-tokens-minute:
+      - '9223372036854767616'
+      x-request-id:
+      - 9fed3f05bf2d07fc-IAD
+    status:
+      code: 200
+      message: OK
+version: 1

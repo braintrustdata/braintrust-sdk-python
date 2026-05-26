@@ -17,7 +17,7 @@ interactions:
       Host:
       - api.anthropic.com
       User-Agent:
-      - AsyncAnthropic/Python 0.100.0
+      - AsyncAnthropic/Python 0.104.1
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -27,11 +27,11 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 0.100.0
+      - 0.104.1
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
-      - 3.12.12
+      - 3.14.3
       anthropic-version:
       - '2023-06-01'
       x-stainless-read-timeout:
@@ -44,10 +44,10 @@ interactions:
     uri: https://api.anthropic.com/v1/messages/batches
   response:
     body:
-      string: '{"id":"msgbatch_01UGbPMy5RU8WHCa7j2Dwm27","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-05-11T15:16:58.428003+00:00","expires_at":"2026-05-12T15:16:58.428003+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+      string: '{"id":"msgbatch_01Fuw8wqpPX9xNYVB2L5nNRD","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-05-25T18:26:17.324615+00:00","expires_at":"2026-05-26T18:26:17.324615+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
     headers:
       CF-RAY:
-      - 9fa225d87d4debb4-YYZ
+      - a01696695845abe8-YYZ
       Connection:
       - keep-alive
       Content-Security-Policy:
@@ -55,7 +55,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:16:58 GMT
+      - Mon, 25 May 2026 18:26:17 GMT
       Server:
       - cloudflare
       Transfer-Encoding:
@@ -69,18 +69,18 @@ interactions:
       content-length:
       - '361'
       request-id:
-      - req_011Caw18perARTjiCuaqhAgb
+      - req_011CbPktxBNRVo4i5hyHF7zR
       server-timing:
-      - x-originResponse;dur=174
+      - x-originResponse;dur=203
       set-cookie:
-      - _cfuvid=TOlufSc8lUpqiSk3D0REIEdniTNMQc2FLrRweTvvOUQ-1778512618.3156328-1.0.1.1-1L7xBcOr7zftD2LJL0VHzJDb1Y.aqktjx2X6mHDDsQs;
+      - _cfuvid=lwz3kUZ2H4K74kngs74fWWBU.sAvE4BYsTuLFuw86ks-1779733577.1761413-1.0.1.1-kYO4T412QCAArrmQFv8WYOx7KaI.vmxUY.guDc16mlY;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       vary:
       - Accept-Encoding
       x-envoy-upstream-service-time:
-      - '170'
+      - '200'
     status:
       code: 200
       message: OK

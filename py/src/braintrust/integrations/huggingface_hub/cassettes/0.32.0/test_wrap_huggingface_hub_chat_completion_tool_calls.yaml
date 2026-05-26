@@ -1,0 +1,107 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": "What''s the weather in Paris?"}],
+      "model": "llama3.1-8b", "max_tokens": 64, "tool_choice": "required", "tools":
+      [{"type": "function", "function": {"name": "get_weather", "description": "Get
+      the weather for a city.", "parameters": {"type": "object", "properties": {"city":
+      {"type": "string"}}, "required": ["city"]}}}], "stream": false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '377'
+      Content-Type:
+      - application/json
+      X-Amzn-Trace-Id:
+      - e7343b9f-6233-44fe-adf8-11308e4dedc2
+      user-agent:
+      - unknown/None; hf_hub/0.32.0; python/3.14.3
+    method: POST
+    uri: https://router.huggingface.co/cerebras/v1/chat/completions
+  response:
+    body:
+      string: '{"id":"chatcmpl-14d61afa-ea08-4e1e-87a6-6d087c5e1305","choices":[{"finish_reason":"tool_calls","index":0,"message":{"tool_calls":[{"function":{"name":"get_weather","arguments":"{\"city\":
+        \"Paris\"}"},"type":"function","id":"905506f42"}],"role":"assistant"}}],"created":1779300080,"model":"llama3.1-8b","system_fingerprint":"fp_f613d2b18eccee549c5f","object":"chat.completion","usage":{"total_tokens":389,"completion_tokens":18,"completion_tokens_details":{"accepted_prediction_tokens":0,"rejected_prediction_tokens":0,"reasoning_tokens":0},"prompt_tokens":371,"prompt_tokens_details":{"cached_tokens":256}},"time_info":{"created":1779300080.9988275,"queue_time":0.006150891,"prompt_time":0.018812916,"completion_time":0.007234677,"total_time":0.034619808197021484}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range,X-Linked-Size,X-Linked-ETag,X-Xet-Hash
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 20 May 2026 18:01:21 GMT
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      Via:
+      - 1.1 f54d987d89964f5484454d3374620b06.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - ONOVXq4YhvJjYiAE2m6M2Lwu2sTKQAWldZTQJTNk-j-0PUH-X9QBig==
+      X-Amz-Cf-Pop:
+      - YTO50-P1
+      X-Cache:
+      - Miss from cloudfront
+      X-Powered-By:
+      - huggingface-moon
+      X-Robots-Tag:
+      - none
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - 9fed3f01f9666887-IAD
+      cross-origin-opener-policy:
+      - same-origin
+      inference-id:
+      - chatcmpl-14d61afa-ea08-4e1e-87a6-6d087c5e1305
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - cloudflare
+      set-cookie:
+      - __cf_bm=de7eTK4y.ePnObmi4FMgNk_aHu.Jpwe_oQ2lob.K1YM-1779300080.9555688-1.0.1.1-SsQM0p7KBmcqwtYacgylxG9ZGzFpMdODB82PYfjatD38bYiV3qjs3Rb6CmPcILstUVMypmZnlcopFmGch3dbkVnD69qwO1bE89bQD1IwRpEADWxxFReefNNb6wSrGRJ0;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.cerebras.ai; Expires=Wed,
+        20 May 2026 18:31:21 GMT
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-inference-provider:
+      - cerebras
+      x-ratelimit-limit-requests-day:
+      - '2880000'
+      x-ratelimit-limit-requests-hour:
+      - '120000'
+      x-ratelimit-limit-requests-minute:
+      - '2000'
+      x-ratelimit-limit-tokens-day:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-hour:
+      - '9223372036854775807'
+      x-ratelimit-limit-tokens-minute:
+      - '9223372036854775807'
+      x-ratelimit-remaining-requests-day:
+      - '2879997'
+      x-ratelimit-remaining-requests-hour:
+      - '119997'
+      x-ratelimit-remaining-requests-minute:
+      - '1997'
+      x-ratelimit-remaining-tokens-day:
+      - '9223372036854775807'
+      x-ratelimit-remaining-tokens-hour:
+      - '9223372036854775807'
+      x-ratelimit-remaining-tokens-minute:
+      - '9223372036854775807'
+      x-request-id:
+      - 9fed3f01f9666887-IAD
+    status:
+      code: 200
+      message: OK
+version: 1
