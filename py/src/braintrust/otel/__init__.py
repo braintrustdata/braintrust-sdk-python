@@ -231,7 +231,9 @@ class OtelExporter(OTLPSpanExporter):
             return
         api_key = get_braintrust_api_key(self._braintrust_api_key_arg)
         if not api_key or not api_key.strip():
-            raise ValueError("API key is required. Provide it via api_key parameter, BRAINTRUST_API_KEY environment variable, or the nearest .env.braintrust file.")
+            raise ValueError(
+                "API key is required. Provide it via api_key parameter, BRAINTRUST_API_KEY environment variable, or the nearest .env.braintrust file."
+            )
         self._set_api_key_header(api_key)
 
     def initialize(self) -> None:

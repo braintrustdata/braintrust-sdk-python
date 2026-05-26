@@ -12,7 +12,6 @@ import time
 from typing import Any
 
 import requests
-
 from braintrust.util import get_braintrust_api_key
 
 

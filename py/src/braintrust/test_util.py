@@ -130,9 +130,7 @@ class TestBraintrustApiKeyLookup:
         assert get_braintrust_api_key() == "boundary-key"
 
     def test_supports_dotenv_syntax_and_does_not_mutate_environment(self, tmp_path, monkeypatch):
-        (tmp_path / ".env.braintrust").write_text(
-            'export BRAINTRUST_API_KEY="quoted-key" # comment\nOTHER=value\n'
-        )
+        (tmp_path / ".env.braintrust").write_text('export BRAINTRUST_API_KEY="quoted-key" # comment\nOTHER=value\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
         monkeypatch.delenv("OTHER", raising=False)
