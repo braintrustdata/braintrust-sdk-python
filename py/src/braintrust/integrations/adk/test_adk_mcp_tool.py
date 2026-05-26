@@ -157,13 +157,11 @@ async def test_setup_adk_patches_mcp_tool():
     result = setup_adk(project_name="test")
     assert result is True
 
-    # Verify McpTool got patched (if available)
-    try:
-        from braintrust.integrations.adk.patchers import McpToolPatcher
+    # Verify McpTool got patched. The google-adk nox matrix installs the
+    # optional MCP extra so this integration surface stays covered.
+    from braintrust.integrations.adk.patchers import McpToolPatcher
 
-        assert McpToolPatcher.is_patched(None, None), "McpTool should be patched"
-    except ImportError:
-        pass  # MCP is optional
+    assert McpToolPatcher.is_patched(None, None), "McpTool should be patched"
 
 
 @pytest.mark.asyncio

@@ -5,15 +5,26 @@ interactions:
       weather assistant. Use the get_weather tool to answer questions about weather.\n\nYou
       are an agent. Your internal name is \"weather_agent\"."}], "role": "user"},
       "tools": [{"functionDeclarations": [{"description": "Get the weather for a location.",
-      "name": "get_weather", "parameters": {"properties": {"location": {"type": "STRING"}},
-      "required": ["location"], "type": "OBJECT"}}]}], "generationConfig": {}}'
+      "name": "get_weather", "parameters_json_schema": {"properties": {"location":
+      {"title": "Location", "type": "string"}}, "required": ["location"], "title":
+      "get_weatherParams", "type": "object"}}]}], "generationConfig": {}}'
     headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '624'
       Content-Type:
       - application/json
+      Host:
+      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
@@ -23,26 +34,24 @@ interactions:
         \             \"args\": {\n                \"location\": \"San Francisco\"\n
         \             }\n            }\n          }\n        ],\n        \"role\":
         \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"avgLogprobs\":
-        1.1747082074483235e-06\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        57,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 63,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 57\n
+        1.6122163894275825e-06\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        53,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 59,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 53\n
         \     }\n    ],\n    \"candidatesTokensDetails\": [\n      {\n        \"modality\":
         \"TEXT\",\n        \"tokenCount\": 6\n      }\n    ],\n    \"serviceTier\":
         \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
-        \"ovMBaurfAYXP_uMP14WP0QQ\"\n}\n"
+        \"ieYVapnhKtSj1MkPjI2ZiA4\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 11 May 2026 15:20:02 GMT
+      - Tue, 26 May 2026 18:29:30 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=529
+      - gfet4t7; dur=599
       Transfer-Encoding:
       - chunked
       Vary:
@@ -57,6 +66,8 @@ interactions:
       - standard
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '819'
     status:
       code: 200
       message: OK
@@ -70,15 +81,26 @@ interactions:
       weather assistant. Use the get_weather tool to answer questions about weather.\n\nYou
       are an agent. Your internal name is \"weather_agent\"."}], "role": "user"},
       "tools": [{"functionDeclarations": [{"description": "Get the weather for a location.",
-      "name": "get_weather", "parameters": {"properties": {"location": {"type": "STRING"}},
-      "required": ["location"], "type": "OBJECT"}}]}], "generationConfig": {}}'
+      "name": "get_weather", "parameters_json_schema": {"properties": {"location":
+      {"title": "Location", "type": "string"}}, "required": ["location"], "title":
+      "get_weatherParams", "type": "object"}}]}], "generationConfig": {}}'
     headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '944'
       Content-Type:
       - application/json
+      Host:
+      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
@@ -88,25 +110,23 @@ interactions:
         with a temperature of 72\xB0F. The humidity is 45% and the wind is 5 mph NW.\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"avgLogprobs\": -0.012199996095715147\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 84,\n    \"candidatesTokenCount\": 33,\n    \"totalTokenCount\":
-        117,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 84\n      }\n    ],\n    \"candidatesTokensDetails\":
+        {\n    \"promptTokenCount\": 80,\n    \"candidatesTokenCount\": 33,\n    \"totalTokenCount\":
+        113,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 80\n      }\n    ],\n    \"candidatesTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 33\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.0-flash\",\n  \"responseId\": \"ovMBauz3K7jL_uMP6fmsqAE\"\n}\n"
+        \"gemini-2.0-flash\",\n  \"responseId\": \"iuYVaqv8GJWX1MkPgajbqQc\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 11 May 2026 15:20:03 GMT
+      - Tue, 26 May 2026 18:29:30 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=646
+      - gfet4t7; dur=642
       Transfer-Encoding:
       - chunked
       Vary:
@@ -121,6 +141,8 @@ interactions:
       - standard
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '791'
     status:
       code: 200
       message: OK

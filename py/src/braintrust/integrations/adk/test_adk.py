@@ -44,6 +44,7 @@ def vcr_config():
             "x-goog-api-key",
         ],
         "before_record_request": before_record_request,
+        "decode_compressed_response": True,
     }
 
 
@@ -1275,7 +1276,7 @@ async def test_adk_input_schema_serialization(memory_logger):
 
     runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
 
-    user_msg = types.Content(role="user", parts=[types.Part(text="Hello")])
+    user_msg = types.Content(role="user", parts=[types.Part(text='{"name":"Alice","age":30}')])
 
     responses = []
     async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
@@ -1299,7 +1300,7 @@ async def test_adk_input_schema_serialization(memory_logger):
         "contents": [
             {
                 "role": "user",
-                "parts": [{"text": "Hello"}],
+                "parts": [{"text": '{"name":"Alice","age":30}'}],
             }
         ],
         "config": {

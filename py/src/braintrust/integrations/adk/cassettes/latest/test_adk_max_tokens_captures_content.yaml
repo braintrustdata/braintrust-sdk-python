@@ -6,41 +6,50 @@ interactions:
       "role": "user"}, "generationConfig": {"temperature": 0.7, "maxOutputTokens":
       50}}'
     headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '320'
       Content-Type:
       - application/json
+      Host:
+      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Okay, settle in. This is the story
-        of the Azure Beacon, a lighthouse that stood sentinel on the jagged, windswept
-        point of Cormorant's Kiss for over two centuries. It's a story of storms and
-        shipwrecks\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
-        \     \"finishReason\": \"MAX_TOKENS\",\n      \"avgLogprobs\": -0.40688674926757812\n
-        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 30,\n    \"candidatesTokenCount\":
-        50,\n    \"totalTokenCount\": 80,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 30\n      }\n    ],\n
-        \   \"candidatesTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 50\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\": \"pvMBapzIIuiu_PUP9Z6_2As\"\n}\n"
+        [\n          {\n            \"text\": \"Alright, settle in, because this is
+        the tale of the Widow\u2019s Watch Lighthouse, and it\u2019s a story that
+        stretches across generations, whispered on the salt-laced winds of the North
+        Atlantic.\\n\\nIt begins, as many such stories\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
+        \     \"avgLogprobs\": -0.47878131866455076\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 30,\n    \"candidatesTokenCount\": 50,\n    \"totalTokenCount\":
+        80,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 30\n      }\n    ],\n    \"candidatesTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 50\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.0-flash\",\n  \"responseId\": \"juYVaurSFcCs1MkP2-PswA0\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 11 May 2026 15:20:07 GMT
+      - Tue, 26 May 2026 18:29:35 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=820
+      - gfet4t7; dur=1229
       Transfer-Encoding:
       - chunked
       Vary:
@@ -55,6 +64,8 @@ interactions:
       - standard
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '908'
     status:
       code: 200
       message: OK

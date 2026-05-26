@@ -9,12 +9,22 @@ interactions:
       "The capital of the country.", "title": "Capital", "type": "STRING"}}, "required":
       ["capital"], "title": "CapitalOutput", "type": "OBJECT"}}}'
     headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '626'
       Content-Type:
       - application/json
+      Host:
+      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.12.12 google-adk/1.33.0 gl-python/3.12.12
+      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
   response:
@@ -22,26 +32,24 @@ interactions:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"{\\n  \\\"capital\\\": \\\"Paris\\\"\\n}\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.094380367885936386\n    }\n  ],\n  \"usageMetadata\":
+        \"STOP\",\n      \"avgLogprobs\": -0.27874890240755951\n    }\n  ],\n  \"usageMetadata\":
         {\n    \"promptTokenCount\": 66,\n    \"candidatesTokenCount\": 11,\n    \"totalTokenCount\":
         77,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
         \       \"tokenCount\": 66\n      }\n    ],\n    \"candidatesTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.0-flash\",\n  \"responseId\": \"qfMBapivFoS2_uMPypu9kQI\"\n}\n"
+        \"gemini-2.0-flash\",\n  \"responseId\": \"keYVapruLLO11MkPktGXkAQ\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Encoding:
-      - gzip
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 11 May 2026 15:20:09 GMT
+      - Tue, 26 May 2026 18:29:38 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=597
+      - gfet4t7; dur=788
       Transfer-Encoding:
       - chunked
       Vary:
@@ -56,6 +64,8 @@ interactions:
       - standard
       X-XSS-Protection:
       - '0'
+      content-length:
+      - '707'
     status:
       code: 200
       message: OK
