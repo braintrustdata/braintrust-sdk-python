@@ -48,6 +48,9 @@ F = TypeVar("F", bound=Callable)
 # ThreadPoolExecutor.submit globally.  Without this flag the background
 # logger's atexit handler tries to flush via the patched executor during
 # Python shutdown, which crashes the subprocess (SIGABRT / 0xC0000409).
+# The memory logger override is thread-local, so worker threads also need a
+# process-local fallback to avoid the real HTTP background logger in this
+# isolated test process.
 _SCENARIO_TEMPLATE = """\
 import os, inspect, asyncio
 os.environ["BRAINTRUST_APP_URL"] = "https://www.braintrust.dev"
@@ -58,9 +61,11 @@ os.environ.setdefault("MISTRAL_API_KEY", "mistral-test-dummy-api-key-for-vcr-tes
 os.environ.setdefault("GOOGLE_API_KEY", os.environ.get("GEMINI_API_KEY", "your_google_api_key_here"))
 from braintrust import logger as _logger
 from braintrust.test_helpers import init_test_logger
+from braintrust.util import LazyValue
 from braintrust.test_context import {fn_name} as _fn
 _logger._state.reset_parent_state()
 with _logger._internal_with_memory_background_logger() as _bgl:
+    _logger._state._global_bg_logger = LazyValue(lambda: _bgl, use_mutex=False)
     _tl = init_test_logger("test-context-project")
     if {instrument}:
         from braintrust.wrappers.threads import setup_threads
