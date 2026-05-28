@@ -30,6 +30,14 @@ def parse_int(value: str) -> int | None:
         return None
 
 
+def parse_positive_int(value: str) -> int | None:
+    """Parse a non-negative integer from a string."""
+    result = parse_int(value)
+    if result is None or result < 0:
+        return None
+    return result
+
+
 def parse_bool(value: str) -> bool | None:
     """Parse common boolean environment variable values.
 
@@ -56,6 +64,7 @@ def parse_string(value: str) -> str | None:
 class EnvParser(Enum):
     FLOAT = (parse_float,)
     INT = (parse_int,)
+    POSITIVE_INT = (parse_positive_int,)
     BOOL = (parse_bool,)
     STRING = (parse_string,)
 
@@ -84,7 +93,7 @@ class BraintrustEnv:
     SYNC_FLUSH = EnvVar("BRAINTRUST_SYNC_FLUSH", EnvParser.BOOL)
     MAX_REQUEST_SIZE = EnvVar("BRAINTRUST_MAX_REQUEST_SIZE", EnvParser.INT)
     DEFAULT_BATCH_SIZE = EnvVar("BRAINTRUST_DEFAULT_BATCH_SIZE", EnvParser.INT)
-    NUM_RETRIES = EnvVar("BRAINTRUST_NUM_RETRIES", EnvParser.INT)
+    NUM_RETRIES = EnvVar("BRAINTRUST_NUM_RETRIES", EnvParser.POSITIVE_INT)
     QUEUE_SIZE = EnvVar("BRAINTRUST_QUEUE_SIZE", EnvParser.INT)
     QUEUE_DROP_LOGGING_PERIOD = EnvVar("BRAINTRUST_QUEUE_DROP_LOGGING_PERIOD", EnvParser.FLOAT)
     FAILED_PUBLISH_PAYLOADS_DIR = EnvVar("BRAINTRUST_FAILED_PUBLISH_PAYLOADS_DIR", EnvParser.STRING)

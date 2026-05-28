@@ -69,6 +69,38 @@ class CloseConnectionHandler(http.server.BaseHTTPRequestHandler):
         self.do_POST()
 
 
+class RateLimitHandler(http.server.BaseHTTPRequestHandler):
+    """HTTP handler that returns 429 once before succeeding."""
+
+    request_count = 0
+    retry_after = "2"
+
+    def log_message(self, format, *args):
+        pass
+
+    def do_POST(self):
+        RateLimitHandler.request_count += 1
+
+        if RateLimitHandler.request_count == 1:
+            body = b'{"error": "rate limited"}'
+            self.send_response(429)
+            self.send_header("Retry-After", RateLimitHandler.retry_after)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        body = b'{"status": "ok"}'
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        self.do_POST()
+
+
 @pytest.fixture
 def hanging_server():
     """Fixture that creates a server that HANGS on first request (simulates stale NAT)."""
@@ -96,6 +128,26 @@ def closing_server():
     CloseConnectionHandler.fail_count = 1
 
     server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), CloseConnectionHandler)
+    server.daemon_threads = True
+    port = server.server_address[1]
+
+    thread = threading.Thread(target=server.serve_forever)
+    thread.daemon = True
+    thread.start()
+
+    yield f"http://127.0.0.1:{port}"
+
+    server.shutdown()
+    server.server_close()
+
+
+@pytest.fixture
+def rate_limit_server():
+    """Fixture that creates a server that returns 429 then 200."""
+    RateLimitHandler.request_count = 0
+    RateLimitHandler.retry_after = "2"
+
+    server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), RateLimitHandler)
     server.daemon_threads = True
     port = server.server_address[1]
 
@@ -173,6 +225,58 @@ class TestRetryRequestExceptionsAdapter:
         assert elapsed < 10.0, f"Request took too long: {elapsed:.2f}s"
         assert HangingConnectionHandler.request_count >= 2
 
+    def test_adapter_retries_429_using_retry_after_header(self, rate_limit_server, monkeypatch):
+        """429 retries should honor the server-provided Retry-After delay."""
+        sleeps = []
+        monkeypatch.setattr(time, "sleep", sleeps.append)
+
+        adapter = RetryRequestExceptionsAdapter(base_num_retries=3, backoff_factor=0.05)
+        session = requests.Session()
+        session.mount("http://", adapter)
+
+        resp = session.post(f"{rate_limit_server}/test", json={"hello": "world"})
+
+        assert resp.status_code == 200
+        assert RateLimitHandler.request_count == 2
+        assert sleeps == [2]
+
+    def test_adapter_retries_429_using_backoff_when_retry_after_invalid(self, rate_limit_server, monkeypatch):
+        """429 retries should fall back to exponential backoff without a valid Retry-After header."""
+        sleeps = []
+        monkeypatch.setattr(time, "sleep", sleeps.append)
+        RateLimitHandler.retry_after = "not-a-delay"
+
+        adapter = RetryRequestExceptionsAdapter(base_num_retries=3, backoff_factor=0.05)
+        session = requests.Session()
+        session.mount("http://", adapter)
+
+        resp = session.post(f"{rate_limit_server}/test", json={"hello": "world"})
+
+        assert resp.status_code == 200
+        assert RateLimitHandler.request_count == 2
+        assert sleeps == [0.05]
+
+    def test_adapter_returns_final_429_without_closing_response(self, rate_limit_server, monkeypatch):
+        """When no 429 retries remain, return the response without closing it."""
+        closed_responses = []
+        original_close = requests.models.Response.close
+
+        def record_close(response):
+            closed_responses.append(response)
+            original_close(response)
+
+        monkeypatch.setattr(requests.models.Response, "close", record_close)
+
+        adapter = RetryRequestExceptionsAdapter(base_num_retries=0, backoff_factor=0.05)
+        session = requests.Session()
+        session.mount("http://", adapter)
+
+        resp = session.post(f"{rate_limit_server}/test", json={"hello": "world"})
+
+        assert resp.status_code == 429
+        assert RateLimitHandler.request_count == 1
+        assert closed_responses == []
+
 
 class TestHTTPConnection:
     """Tests for HTTPConnection timeout configuration."""
@@ -217,6 +321,34 @@ class TestHTTPConnection:
             assert conn.adapter.default_timeout_secs == 30
         finally:
             del os.environ["BRAINTRUST_HTTP_TIMEOUT"]
+
+    def test_make_long_lived_uses_default_num_retries(self):
+        """HTTPConnection.make_long_lived() should retry requests 3 times by default."""
+        conn = HTTPConnection("http://localhost:8080")
+        conn.make_long_lived()
+
+        assert hasattr(conn.adapter, "base_num_retries")
+        assert conn.adapter.base_num_retries == 3
+
+    def test_env_var_configures_num_retries(self, monkeypatch):
+        """BRAINTRUST_NUM_RETRIES env var configures HTTP adapter retries via make_long_lived()."""
+        monkeypatch.setenv("BRAINTRUST_NUM_RETRIES", "4")
+
+        conn = HTTPConnection("http://localhost:8080")
+        conn.make_long_lived()
+
+        assert hasattr(conn.adapter, "base_num_retries")
+        assert conn.adapter.base_num_retries == 4
+
+    def test_env_var_uses_default_for_negative_num_retries(self, monkeypatch):
+        """Negative BRAINTRUST_NUM_RETRIES values are invalid and fall back to the default."""
+        monkeypatch.setenv("BRAINTRUST_NUM_RETRIES", "-1")
+
+        conn = HTTPConnection("http://localhost:8080")
+        conn.make_long_lived()
+
+        assert hasattr(conn.adapter, "base_num_retries")
+        assert conn.adapter.base_num_retries == 3
 
 
 class TestAdapterCloseAndReuse:

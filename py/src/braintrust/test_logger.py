@@ -192,8 +192,8 @@ class TestInit(TestCase):
 
 
 class TestHTTPBackgroundLoggerLogs3(TestCase):
-    def test_submit_logs_request_413_skips_retries(self) -> None:
-        """Any 413 while publishing ``/logs3`` cannot succeed on retry with the same payload.
+    def test_submit_logs_request_does_not_retry(self) -> None:
+        """HTTP transport handles retries; background log submission attempts each batch once.
 
         ``sync_flush`` controls whether the terminal failure raises instead of printing.
         """
@@ -226,7 +226,6 @@ class TestHTTPBackgroundLoggerLogs3(TestCase):
                     mock_conn.post.return_value = mock_resp
 
                     bg = _HTTPBackgroundLogger(LazyValue(lambda: mock_conn, use_mutex=False))
-                    bg.num_tries = 5
                     bg.sync_flush = sync_flush
                     bg.failed_publish_payloads_dir = "/tmp/failed-payloads"
 

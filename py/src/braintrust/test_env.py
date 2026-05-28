@@ -1,4 +1,4 @@
-from .env import BraintrustEnv, EnvParser, EnvVar, parse_bool, parse_float, parse_int, parse_string
+from .env import BraintrustEnv, EnvParser, EnvVar, parse_bool, parse_float, parse_int, parse_positive_int, parse_string
 
 
 class TestEnvParsers:
@@ -15,6 +15,14 @@ class TestEnvParsers:
         assert parse_int("") is None
         assert parse_int("1.2") is None
         assert parse_int("not_an_int") is None
+
+    def test_parse_positive_int(self):
+        assert parse_positive_int("123") == 123
+        assert parse_positive_int("0") == 0
+        assert parse_positive_int("-5") is None
+        assert parse_positive_int("") is None
+        assert parse_positive_int("1.2") is None
+        assert parse_positive_int("not_an_int") is None
 
     def test_parse_bool(self):
         for value in ("true", "True", "1", "yes", "y", "on"):
@@ -58,6 +66,10 @@ class TestBraintrustEnv:
         assert BraintrustEnv.HTTP_TIMEOUT.get(60.0) == 60.0
         monkeypatch.setenv("BRAINTRUST_HTTP_TIMEOUT", "0.2")
         assert BraintrustEnv.HTTP_TIMEOUT.get(60.0) == 0.2
+
+    def test_num_retries_uses_default_for_negative_values(self, monkeypatch):
+        monkeypatch.setenv("BRAINTRUST_NUM_RETRIES", "-1")
+        assert BraintrustEnv.NUM_RETRIES.get(3) == 3
 
     def test_otel_compat_uses_shared_bool_parser(self, monkeypatch):
         for value in ("true", "1", "yes"):
