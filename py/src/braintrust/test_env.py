@@ -1,3 +1,5 @@
+import pytest
+
 from .env import BraintrustEnv, EnvParser, EnvVar, parse_bool, parse_float, parse_int, parse_string
 
 
@@ -27,6 +29,7 @@ class TestEnvParsers:
     def test_parse_string(self):
         assert parse_string("value") == "value"
         assert parse_string("") is None
+        assert parse_string("   ") is None
 
 
 class TestEnvVar:
@@ -53,6 +56,75 @@ class TestEnvVar:
 
 
 class TestBraintrustEnv:
+    def test_api_key_nonblank_environment_wins(self, tmp_path, monkeypatch):
+        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=file-key\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("BRAINTRUST_API_KEY", "env-key")
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) == "env-key"
+
+    def test_api_key_blank_environment_falls_back_to_file(self, tmp_path, monkeypatch):
+        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=file-key\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("BRAINTRUST_API_KEY", "   ")
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) == "file-key"
+
+    def test_api_key_uses_nearest_parent_file(self, tmp_path, monkeypatch):
+        nested = tmp_path / "packages" / "app"
+        nested.mkdir(parents=True)
+        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=root-key\n")
+        (tmp_path / "packages" / ".env.braintrust").write_text("BRAINTRUST_API_KEY=package-key\n")
+        monkeypatch.chdir(nested)
+        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) == "package-key"
+
+    @pytest.mark.parametrize("contents", ["OTHER=value\n", 'BRAINTRUST_API_KEY="   "\n'])
+    def test_api_key_nearest_file_is_boundary_without_nonblank_key(self, tmp_path, monkeypatch, contents):
+        nested = tmp_path / "packages" / "app"
+        nested.mkdir(parents=True)
+        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=root-key\n")
+        (tmp_path / "packages" / ".env.braintrust").write_text(contents)
+        monkeypatch.chdir(nested)
+        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) is None
+
+    def test_api_key_unreadable_nearest_file_is_boundary(self, tmp_path, monkeypatch):
+        nested = tmp_path / "packages" / "app"
+        nested.mkdir(parents=True)
+        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=root-key\n")
+        (tmp_path / "packages" / ".env.braintrust").mkdir()
+        monkeypatch.chdir(nested)
+        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) is None
+
+    def test_api_key_searches_cwd_plus_64_parents(self, tmp_path, monkeypatch):
+        segments = [f"d{i}" for i in range(65)]
+        nested = tmp_path.joinpath(*segments)
+        nested.mkdir(parents=True)
+        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=too-high\n")
+        monkeypatch.chdir(nested)
+        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) is None
+
+        (tmp_path / segments[0] / ".env.braintrust").write_text("BRAINTRUST_API_KEY=boundary-key\n")
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) == "boundary-key"
+
+    def test_api_key_supports_dotenv_syntax_and_does_not_mutate_environment(self, tmp_path, monkeypatch):
+        (tmp_path / ".env.braintrust").write_text('export BRAINTRUST_API_KEY="quoted-key" # comment\nOTHER=value\n')
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
+        monkeypatch.delenv("OTHER", raising=False)
+
+        assert BraintrustEnv.API_KEY.get(None, use_dotenv=True) == "quoted-key"
+        assert EnvVar("BRAINTRUST_API_KEY", EnvParser.STRING).get(None) is None
+        assert EnvVar("OTHER", EnvParser.STRING).get(None) is None
+
     def test_centralized_env_definitions_are_lazy(self, monkeypatch):
         monkeypatch.delenv("BRAINTRUST_HTTP_TIMEOUT", raising=False)
         assert BraintrustEnv.HTTP_TIMEOUT.get(60.0) == 60.0

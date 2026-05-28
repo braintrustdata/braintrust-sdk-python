@@ -88,7 +88,6 @@ from .util import (
     coalesce,
     encode_uri_component,
     eprint,
-    get_braintrust_api_key,
     get_caller_location,
     get_signature,
     mask_api_key,
@@ -2191,7 +2190,7 @@ def login_to_state(
 
     app_public_url = os.environ.get("BRAINTRUST_APP_PUBLIC_URL", app_url)
 
-    api_key = get_braintrust_api_key(api_key)
+    api_key = api_key or BraintrustEnv.API_KEY.get(None, use_dotenv=True)
 
     org_name = _get_org_name(org_name)
 

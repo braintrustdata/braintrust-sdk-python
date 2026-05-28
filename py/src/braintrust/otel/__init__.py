@@ -3,7 +3,7 @@ import os
 import warnings
 from urllib.parse import urljoin
 
-from braintrust.util import get_braintrust_api_key
+from braintrust.env import BraintrustEnv
 
 
 INSTALL_ERR_MSG = (
@@ -229,7 +229,7 @@ class OtelExporter(OTLPSpanExporter):
     def _ensure_api_key(self) -> None:
         if self._braintrust_has_api_key:
             return
-        api_key = get_braintrust_api_key(self._braintrust_api_key_arg)
+        api_key = self._braintrust_api_key_arg or BraintrustEnv.API_KEY.get(None, use_dotenv=True)
         if not api_key or not api_key.strip():
             raise ValueError(
                 "API key is required. Provide it via api_key parameter, BRAINTRUST_API_KEY environment variable, or the nearest .env.braintrust file."

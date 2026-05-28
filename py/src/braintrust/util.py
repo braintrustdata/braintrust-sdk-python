@@ -1,8 +1,5 @@
 import inspect
-import io
 import json
-import os
-import shlex
 import sys
 import threading
 import urllib.parse
@@ -15,79 +12,6 @@ from requests import HTTPError, Response
 
 GLOBAL_PROJECT = "Global"
 BT_IS_ASYNC_ATTRIBUTE = "_BT_IS_ASYNC"
-BRAINTRUST_ENV_FILE = ".env.braintrust"
-BRAINTRUST_ENV_SEARCH_PARENT_LIMIT = 64
-
-
-def _parse_braintrust_api_key_dotenv(contents: str) -> str | None:
-    try:
-        from dotenv import dotenv_values
-
-        parsed = dotenv_values(stream=io.StringIO(contents), interpolate=False)
-        value = parsed.get("BRAINTRUST_API_KEY")
-        return value if value and value.strip() else None
-    except ImportError:
-        pass
-    except Exception:
-        return None
-
-    for line in contents.splitlines():
-        stripped = line.lstrip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        if stripped.startswith("export "):
-            stripped = stripped[len("export ") :].lstrip()
-        if "=" not in stripped:
-            continue
-
-        key, value = stripped.split("=", 1)
-        if key.strip() != "BRAINTRUST_API_KEY":
-            continue
-
-        lexer = shlex.shlex(value.lstrip(), posix=True)
-        lexer.whitespace_split = True
-        lexer.commenters = "#"
-        try:
-            parts = list(lexer)
-        except ValueError:
-            return None
-        if not parts:
-            return None
-        api_key = parts[0]
-        return api_key if api_key.strip() else None
-
-    return None
-
-
-def get_braintrust_api_key(api_key: str | None = None) -> str | None:
-    if api_key is not None:
-        return api_key
-
-    env_api_key = os.environ.get("BRAINTRUST_API_KEY")
-    if env_api_key and env_api_key.strip():
-        return env_api_key
-
-    try:
-        directory = os.getcwd()
-    except OSError:
-        return None
-
-    for _ in range(BRAINTRUST_ENV_SEARCH_PARENT_LIMIT + 1):
-        env_path = os.path.join(directory, BRAINTRUST_ENV_FILE)
-        try:
-            with open(env_path, encoding="utf-8") as f:
-                return _parse_braintrust_api_key_dotenv(f.read())
-        except FileNotFoundError:
-            pass
-        except OSError:
-            return None
-
-        parent = os.path.dirname(directory)
-        if parent == directory:
-            break
-        directory = parent
-
-    return None
 
 
 def get_signature(fn: Callable) -> inspect.Signature:

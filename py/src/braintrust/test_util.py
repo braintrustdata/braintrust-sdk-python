@@ -1,87 +1,8 @@
-import os
 import unittest
 
 import pytest
 
-from .util import LazyValue, get_braintrust_api_key, mask_api_key, merge_dicts_with_paths
-
-
-class TestBraintrustApiKeyLookup:
-    def test_explicit_api_key_wins(self, tmp_path, monkeypatch):
-        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=file-key\n")
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setenv("BRAINTRUST_API_KEY", "env-key")
-
-        assert get_braintrust_api_key("explicit-key") == "explicit-key"
-
-    def test_nonblank_environment_wins(self, tmp_path, monkeypatch):
-        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=file-key\n")
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setenv("BRAINTRUST_API_KEY", "env-key")
-
-        assert get_braintrust_api_key() == "env-key"
-
-    def test_blank_environment_falls_back_to_file(self, tmp_path, monkeypatch):
-        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=file-key\n")
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setenv("BRAINTRUST_API_KEY", "   ")
-
-        assert get_braintrust_api_key() == "file-key"
-
-    def test_uses_nearest_parent_file(self, tmp_path, monkeypatch):
-        nested = tmp_path / "packages" / "app"
-        nested.mkdir(parents=True)
-        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=root-key\n")
-        (tmp_path / "packages" / ".env.braintrust").write_text("BRAINTRUST_API_KEY=package-key\n")
-        monkeypatch.chdir(nested)
-        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
-
-        assert get_braintrust_api_key() == "package-key"
-
-    @pytest.mark.parametrize("contents", ["OTHER=value\n", 'BRAINTRUST_API_KEY="   "\n'])
-    def test_nearest_file_is_boundary_without_nonblank_key(self, tmp_path, monkeypatch, contents):
-        nested = tmp_path / "packages" / "app"
-        nested.mkdir(parents=True)
-        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=root-key\n")
-        (tmp_path / "packages" / ".env.braintrust").write_text(contents)
-        monkeypatch.chdir(nested)
-        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
-
-        assert get_braintrust_api_key() is None
-
-    def test_unreadable_nearest_file_is_boundary(self, tmp_path, monkeypatch):
-        nested = tmp_path / "packages" / "app"
-        nested.mkdir(parents=True)
-        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=root-key\n")
-        (tmp_path / "packages" / ".env.braintrust").mkdir()
-        monkeypatch.chdir(nested)
-        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
-
-        assert get_braintrust_api_key() is None
-
-    def test_searches_cwd_plus_64_parents(self, tmp_path, monkeypatch):
-        segments = [f"d{i}" for i in range(65)]
-        nested = tmp_path.joinpath(*segments)
-        nested.mkdir(parents=True)
-        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=too-high\n")
-        monkeypatch.chdir(nested)
-        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
-
-        assert get_braintrust_api_key() is None
-
-        (tmp_path / segments[0] / ".env.braintrust").write_text("BRAINTRUST_API_KEY=boundary-key\n")
-
-        assert get_braintrust_api_key() == "boundary-key"
-
-    def test_supports_dotenv_syntax_and_does_not_mutate_environment(self, tmp_path, monkeypatch):
-        (tmp_path / ".env.braintrust").write_text('export BRAINTRUST_API_KEY="quoted-key" # comment\nOTHER=value\n')
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.delenv("BRAINTRUST_API_KEY", raising=False)
-        monkeypatch.delenv("OTHER", raising=False)
-
-        assert get_braintrust_api_key() == "quoted-key"
-        assert os.environ.get("BRAINTRUST_API_KEY") is None
-        assert os.environ.get("OTHER") is None
+from .util import LazyValue, mask_api_key, merge_dicts_with_paths
 
 
 class TestLazyValue(unittest.TestCase):
