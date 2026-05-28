@@ -1,7 +1,8 @@
-import os
 import secrets
 import uuid
 from abc import ABC, abstractmethod
+
+from .env import BraintrustEnv
 
 
 def get_id_generator():
@@ -10,7 +11,7 @@ def get_id_generator():
     This eliminates global state and makes tests parallelizable.
     Each caller gets their own generator instance.
     """
-    use_otel = os.getenv("BRAINTRUST_OTEL_COMPAT", "false").lower() == "true"
+    use_otel = BraintrustEnv.OTEL_COMPAT.get(False)
     return OTELIDGenerator() if use_otel else UUIDGenerator()
 
 

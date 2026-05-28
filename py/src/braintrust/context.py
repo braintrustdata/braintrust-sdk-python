@@ -1,11 +1,12 @@
 """Abstract context management interface for Braintrust."""
 
 import logging
-import os
 from abc import ABC, abstractmethod
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
+
+from .env import BraintrustEnv
 
 
 @dataclass
@@ -120,7 +121,7 @@ def get_context_manager() -> ContextManager:
     """
 
     # Check if OTEL should be explicitly enabled via environment variable
-    if os.environ.get("BRAINTRUST_OTEL_COMPAT", "").lower() in ("1", "true", "yes"):
+    if BraintrustEnv.OTEL_COMPAT.get(False):
         try:
             from braintrust.otel.context import ContextManager as OtelContextManager
 

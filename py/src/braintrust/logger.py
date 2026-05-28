@@ -52,6 +52,7 @@ from .db_fields import (
     TRANSACTION_ID_FIELD,
     VALID_SOURCES,
 )
+from .env import BraintrustEnv
 from .generated_types import (
     AttachmentReference,
     AttachmentStatus,
@@ -91,7 +92,6 @@ from .util import (
     get_signature,
     mask_api_key,
     merge_dicts,
-    parse_env_var_float,
     response_raise_for_status,
 )
 from .xact_ids import prettify_xact
@@ -147,7 +147,7 @@ DEFAULT_APP_URL = "https://www.braintrust.dev"
 
 def _get_exporter():
     """Return the active exporter (e.g. the version of SpanComponentsv*)"""
-    use_v4 = os.getenv("BRAINTRUST_OTEL_COMPAT", "false").lower() == "true"
+    use_v4 = BraintrustEnv.OTEL_COMPAT.get(False)
     return SpanComponentsV4 if use_v4 else SpanComponentsV3
 
 
@@ -746,7 +746,7 @@ class HTTPConnection:
 
     def make_long_lived(self) -> None:
         if not self.adapter:
-            timeout_secs = parse_env_var_float("BRAINTRUST_HTTP_TIMEOUT", 60.0)
+            timeout_secs = BraintrustEnv.HTTP_TIMEOUT.get(60.0)
             self.adapter = RetryRequestExceptionsAdapter(
                 base_num_retries=10, backoff_factor=0.5, default_timeout_secs=timeout_secs
             )
@@ -1013,52 +1013,19 @@ class _HTTPBackgroundLogger:
         self._max_request_size_result: dict[str, Any] | None = None
         self._max_request_size_lock = threading.Lock()
 
-        try:
-            self.sync_flush = bool(int(os.environ["BRAINTRUST_SYNC_FLUSH"]))
-        except:
-            self.sync_flush = False
-
-        try:
-            self._max_request_size_override = int(os.environ["BRAINTRUST_MAX_REQUEST_SIZE"])
-        except:
-            pass
-
-        try:
-            self.default_batch_size = int(os.environ["BRAINTRUST_DEFAULT_BATCH_SIZE"])
-        except:
-            self.default_batch_size = 100
-
-        try:
-            self.num_tries = int(os.environ["BRAINTRUST_NUM_RETRIES"]) + 1
-        except:
-            self.num_tries = 3
-
-        try:
-            self.queue_maxsize = int(os.environ["BRAINTRUST_QUEUE_SIZE"])
-        except:
-            self.queue_maxsize = DEFAULT_QUEUE_SIZE
-
-        try:
-            self.queue_drop_logging_period = float(os.environ["BRAINTRUST_QUEUE_DROP_LOGGING_PERIOD"])
-        except:
-            self.queue_drop_logging_period = 60
+        self.sync_flush = BraintrustEnv.SYNC_FLUSH.get(False)
+        self._max_request_size_override = BraintrustEnv.MAX_REQUEST_SIZE.get(None)
+        self.default_batch_size = BraintrustEnv.DEFAULT_BATCH_SIZE.get(100)
+        self.num_tries = BraintrustEnv.NUM_RETRIES.get(2) + 1
+        queue_maxsize = BraintrustEnv.QUEUE_SIZE.get(None)
+        self.queue_maxsize = DEFAULT_QUEUE_SIZE if queue_maxsize is None else queue_maxsize
+        self.queue_drop_logging_period = BraintrustEnv.QUEUE_DROP_LOGGING_PERIOD.get(60.0)
 
         self._queue_drop_logging_state = dict(lock=threading.Lock(), num_dropped=0, last_logged_timestamp=0)
 
-        try:
-            self.failed_publish_payloads_dir = os.environ["BRAINTRUST_FAILED_PUBLISH_PAYLOADS_DIR"]
-        except:
-            self.failed_publish_payloads_dir = None
-
-        try:
-            self.all_publish_payloads_dir = os.environ["BRAINTRUST_ALL_PUBLISH_PAYLOADS_DIR"]
-        except:
-            self.all_publish_payloads_dir = None
-
-        try:
-            disable_atexit_flush = os.environ["BRAINTRUST_DISABLE_ATEXIT_FLUSH"].lower() in ("true", "1", "yes")
-        except:
-            disable_atexit_flush = False
+        self.failed_publish_payloads_dir = BraintrustEnv.FAILED_PUBLISH_PAYLOADS_DIR.get(None)
+        self.all_publish_payloads_dir = BraintrustEnv.ALL_PUBLISH_PAYLOADS_DIR.get(None)
+        disable_atexit_flush = BraintrustEnv.DISABLE_ATEXIT_FLUSH.get(False)
 
         self.start_thread_lock = threading.RLock()
         self.thread = threading.Thread(target=self._publisher, daemon=True)
@@ -4406,7 +4373,7 @@ class SpanImpl(Span):
             compute_object_metadata_args = None
 
         # Choose SpanComponents version based on BRAINTRUST_OTEL_COMPAT env var
-        use_v4 = os.getenv("BRAINTRUST_OTEL_COMPAT", "false").lower() == "true"
+        use_v4 = BraintrustEnv.OTEL_COMPAT.get(False)
         span_components_class = SpanComponentsV4 if use_v4 else SpanComponentsV3
 
         # Disable span cache since remote function spans won't be in the local cache
