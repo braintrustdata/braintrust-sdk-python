@@ -26,6 +26,6 @@ def test_parameters_create_accepts_discriminated_schema_entries() -> None:
         },
     }
 
-    created = project.parameters.create(name="test-parameters", schema=schema)
+    created = project.parameters.create(name="test-parameters", schema=schema, tags=["production", "v1"])
 
     assert created is schema

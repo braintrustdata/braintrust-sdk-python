@@ -128,6 +128,7 @@ class CodeParameters:
     schema: EvalParameters
     if_exists: IfExists | None
     metadata: Mapping[str, Any] | None = None
+    tags: Sequence[str] | None = None
 
     def to_function_definition(self, if_exists: IfExists | None, project_ids: ProjectIdCache) -> dict[str, Any]:
         schema = parameters_to_json_schema(self.schema)
@@ -146,6 +147,8 @@ class CodeParameters:
         }
         if self.metadata is not None:
             j["metadata"] = self.metadata
+        if self.tags is not None:
+            j["tags"] = list(self.tags)
         return j
 
 
@@ -353,6 +356,7 @@ class ParametersBuilder:
         description: str | None = None,
         if_exists: IfExists | None = None,
         metadata: Mapping[str, Any] | None = None,
+        tags: Sequence[str] | None = None,
     ) -> EvalParameters:
         if slug is None or len(slug) == 0:
             slug = slugify.slugify(name)
@@ -365,6 +369,7 @@ class ParametersBuilder:
             schema=schema,
             if_exists=if_exists,
             metadata=metadata,
+            tags=tags,
         )
         self.project.add_parameters(parameters)
         return schema

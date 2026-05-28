@@ -331,3 +331,34 @@ def test_project_parameters_create_serializes_defaults():
     }
     assert func_def["function_data"]["__schema"]["properties"]["model"]["x-bt-type"] == "model"
     assert "required_text" not in func_def["function_data"]["data"]
+
+
+def test_project_parameters_create_includes_tags(mock_project_ids):
+    project = projects.create("test-project")
+    project.parameters.create(
+        name="test-parameters",
+        schema={"model": {"type": "model", "default": "gpt-5-mini"}},
+        tags=["production", "v1"],
+    )
+
+    parameters = project._publishable_parameters
+    assert len(parameters) == 1
+
+    func_def = parameters[0].to_function_definition(None, mock_project_ids)
+
+    assert func_def["tags"] == ["production", "v1"]
+
+
+def test_project_parameters_create_excludes_tags_when_none(mock_project_ids):
+    project = projects.create("test-project")
+    project.parameters.create(
+        name="test-parameters",
+        schema={"model": {"type": "model", "default": "gpt-5-mini"}},
+    )
+
+    parameters = project._publishable_parameters
+    assert len(parameters) == 1
+
+    func_def = parameters[0].to_function_definition(None, mock_project_ids)
+
+    assert "tags" not in func_def

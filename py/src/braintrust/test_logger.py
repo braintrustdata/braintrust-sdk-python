@@ -331,6 +331,7 @@ class TestLogger(TestCase):
                     "name": "Saved parameters",
                     "slug": "saved-parameters",
                     "_xact_id": "v1",
+                    "tags": ["production", "v1"],
                     "function_data": {
                         "type": "parameters",
                         "data": {"prefix": "hello"},
@@ -353,6 +354,7 @@ class TestLogger(TestCase):
         assert isinstance(parameters, RemoteEvalParameters)
         assert parameters.id == "params-123"
         assert parameters.version == "v1"
+        assert parameters.tags == ["production", "v1"]
         assert parameters.data == {"prefix": "hello"}
         assert (
             logger._state._parameters_cache.get(

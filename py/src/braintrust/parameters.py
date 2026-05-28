@@ -68,10 +68,12 @@ class RemoteEvalParameters(SerializableDataClass):
     version: str | None
     schema: ParametersSchema
     data: dict[str, Any]
+    tags: list[str] | None = None
 
     @classmethod
     def from_function_row(cls, row: dict[str, Any]) -> "RemoteEvalParameters":
         function_data = row.get("function_data") or {}
+        tags = row.get("tags")
         return cls(
             id=row.get("id"),
             project_id=row.get("project_id"),
@@ -80,6 +82,7 @@ class RemoteEvalParameters(SerializableDataClass):
             version=row.get("_xact_id"),
             schema=function_data.get("__schema") or {},
             data=function_data.get("data") or {},
+            tags=list(tags) if tags is not None else None,
         )
 
     def validate(self, data: Any) -> bool:
