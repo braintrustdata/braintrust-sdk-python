@@ -694,6 +694,14 @@
           "upload_status"
         ]
       },
+      "AutomationStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "paused"
+        ],
+        "description": "Whether the automation is active or paused."
+      },
       "BatchedFacetData": {
         "type": "object",
         "properties": {
@@ -5290,6 +5298,9 @@
                     ],
                     "description": "The type of automation."
                   },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
                   "export_definition": {
                     "oneOf": [
                       {
@@ -7761,6 +7772,9 @@
               "topic"
             ],
             "description": "The type of automation."
+          },
+          "status": {
+            "$ref": "#/components/schemas/AutomationStatus"
           },
           "sampling_rate": {
             "type": "number",

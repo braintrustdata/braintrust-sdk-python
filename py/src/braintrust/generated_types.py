@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 70ebf7ccf0df48b3) -- do not modify"""
+"""Auto-generated file (content hash 811e3cfdd0deebaf) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -10,6 +10,7 @@ from ._generated_types import (
     AsyncScoringState,
     AttachmentReference,
     AttachmentStatus,
+    AutomationStatus,
     BatchedFacetData,
     BraintrustAttachmentReference,
     BraintrustModelParams,
@@ -126,6 +127,7 @@ __all__ = [
     "AsyncScoringState",
     "AttachmentReference",
     "AttachmentStatus",
+    "AutomationStatus",
     "BatchedFacetData",
     "BraintrustAttachmentReference",
     "BraintrustModelParams",

@@ -178,6 +178,12 @@ AsyncScoringState: TypeAlias = (
 )
 
 
+AutomationStatus: TypeAlias = Literal['active', 'paused']
+"""
+Whether the automation is active or paused.
+"""
+
+
 class PreprocessorPreprocessor(TypedDict):
     type: Literal['function']
     id: str
@@ -3224,6 +3230,7 @@ class ProjectAutomationConfig1(TypedDict):
     """
     The type of automation.
     """
+    status: NotRequired[AutomationStatus | None]
     export_definition: (
         ProjectAutomationConfig1ExportDefinition
         | ProjectAutomationConfig1ExportDefinition1
@@ -3345,6 +3352,7 @@ class TopicAutomationConfig(TypedDict):
     """
     The type of automation.
     """
+    status: NotRequired[AutomationStatus | None]
     sampling_rate: float
     """
     The sampling rate for topic automation
