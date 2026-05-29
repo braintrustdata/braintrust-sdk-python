@@ -409,6 +409,7 @@ def _assert_openai_voice_turn_spans(logs, *, speech_text, outer_parent_name):
     _assert_eou_spans(logs)
     _assert_stt_spans(logs, speech_text)
     _assert_session_spans(logs)
+    _assert_no_function_tool_spans_without_tools(logs)
     _assert_custom_metrics_stay_in_metadata(logs)
 
     if outer_parent_name:
@@ -478,13 +479,17 @@ def _assert_session_spans(logs):
     _assert_no_metrics(session_logs, "prompt_tokens", "completion_tokens", "tokens")
 
 
+def _assert_no_function_tool_spans_without_tools(logs):
+    assert not _spans_named(logs, "function_tool")
+
+
 def _assert_voice_turn_parenting(logs, outer_parent_name):
     outer_parent_log = _single_span(logs, outer_parent_name)
     session_log = _single_span(logs, "livekit_agent_session")
     assert session_log.get("span_parents") == [outer_parent_log.get("span_id")]
     assert "end" in session_log.get("metrics", {})
 
-    for child_name in ("function_tool", "llm_request_run", "user_speaking", "vad_endpointing"):
+    for child_name in ("llm_request_run", "user_speaking", "vad_endpointing"):
         child_log = _single_span(logs, child_name)
         assert child_log.get("span_parents") == [session_log.get("span_id")], child_name
     assert _single_span(logs, "llm_request_run")["span_attributes"]["type"].value == "task"
