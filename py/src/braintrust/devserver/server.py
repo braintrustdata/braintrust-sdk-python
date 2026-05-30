@@ -2,6 +2,7 @@ import asyncio
 import json
 import sys
 import textwrap
+import warnings
 from typing import Any
 
 
@@ -313,7 +314,20 @@ def create_app(evaluators: list[Evaluator[Any, Any, Any]], org_name: str | None 
         Configured Starlette app
     """
     global _all_evaluators
-    _all_evaluators = {evaluator.eval_name: evaluator for evaluator in evaluators}
+    # Build the registry explicitly so a duplicate eval_name is surfaced (issue #366)
+    # rather than silently dropped by a dict comprehension. Keep the FIRST registration,
+    # mirroring how duplicate reporters are handled in cli/eval.py.
+    _all_evaluators = {}
+    for evaluator in evaluators:
+        if evaluator.eval_name in _all_evaluators:
+            warnings.warn(
+                f"Multiple evaluators registered with eval_name {evaluator.eval_name!r}; "
+                f"keeping the first and skipping the duplicate. "
+                f"Give each Eval(...) a unique name to register both.",
+                stacklevel=2,
+            )
+            continue
+        _all_evaluators[evaluator.eval_name] = evaluator
 
     routes = [
         Route("/", endpoint=index),
@@ -345,9 +359,10 @@ def run_dev_server(
         org_name: Optional organization name to restrict access to
     """
     print(f"Starting dev server on http://{host}:{port}")
-    print(f"Loaded {len(evaluators)} evaluator(s): {[e.eval_name for e in evaluators]}")
 
     app = create_app(evaluators, org_name=org_name)
+    # Report the count AFTER de-duplication so the log matches what /list actually serves (issue #366).
+    print(f"Loaded {len(_all_evaluators)} evaluator(s): {list(_all_evaluators.keys())}")
     uvicorn.run(app, host=host, port=port)
 
 

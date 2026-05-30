@@ -428,3 +428,45 @@ def test_eval_request_project_id_overrides_evaluator(api_key, org_name, monkeypa
 
     assert response.status_code == 200
     assert captured["project_id"] == "request-explicit-project-id"
+
+
+def test_create_app_warns_and_keeps_first_on_duplicate_eval_name():
+    """create_app must warn (not silently drop) when two evaluators share an eval_name,
+    keep the FIRST registration, and end up with exactly one entry.
+
+    Regression test for:
+    https://github.com/braintrustdata/braintrust-sdk-python/issues/366
+    """
+    if not has_devserver_installed():
+        pytest.skip("Devserver dependencies not installed (requires .[cli])")
+
+    from braintrust import Evaluator
+    from braintrust.devserver import server as devserver_module
+    from braintrust.devserver.server import create_app
+
+    first = Evaluator(
+        project_name="SharedProject",
+        eval_name="shared-name",
+        data=lambda: [{"input": "a", "expected": "a"}],
+        task=lambda input, hooks: input,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+    second = Evaluator(
+        project_name="SharedProject",
+        eval_name="shared-name",  # intentionally the same eval_name
+        data=lambda: [{"input": "b", "expected": "b"}],
+        task=lambda input, hooks: "wrong",
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    with pytest.warns(UserWarning, match="shared-name"):
+        create_app([first, second])
+
+    # First registration kept, duplicate skipped — exactly one entry, matching what
+    # GET /list (and now the startup log) report.
+    assert devserver_module._all_evaluators["shared-name"] is first
+    assert len(devserver_module._all_evaluators) == 1
