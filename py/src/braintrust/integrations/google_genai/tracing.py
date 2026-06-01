@@ -1,5 +1,6 @@
 """Google GenAI-specific span creation, metadata extraction, stream handling, and output normalization."""
 
+import contextlib
 import contextvars
 import dataclasses
 import logging
@@ -9,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import start_span
+from braintrust.logger import NOOP_SPAN, _state, current_logger, current_span, parent_context, start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones
 
@@ -1132,6 +1133,45 @@ async def _run_async_traced_call(
     return result
 
 
+def _current_parent_export() -> str | None:
+    span = current_span()
+    if span != NOOP_SPAN:
+        return span.export()
+    return _state.current_parent.get()
+
+
+@contextlib.contextmanager
+def _stream_span_context(
+    *,
+    parent: str | None,
+    name: str,
+    span_type: SpanTypeAttribute,
+    input: dict[str, Any],  # pylint: disable=redefined-builtin
+    metadata: dict[str, Any] | None,
+):
+    if parent is None:
+        logger = current_logger()
+        if logger is not None:
+            with logger._start_span_impl(  # pylint: disable=protected-access
+                name=name,
+                type=span_type,
+                input=input,
+                metadata=metadata,
+                lookup_span_parent=False,
+            ) as span:
+                yield span
+            return
+
+    token = _state.context_manager.set_current_span(None)
+    legacy_token = _state.current_span.set(NOOP_SPAN)
+    try:
+        with parent_context(parent), start_span(name=name, type=span_type, input=input, metadata=metadata) as span:
+            yield span
+    finally:
+        _state.current_span.reset(legacy_token)
+        _state.context_manager.unset_current_span(token)
+
+
 def _run_stream_traced_call(
     api_client: Any,
     args: list[Any],
@@ -1151,34 +1191,44 @@ def _run_stream_traced_call(
     finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
+    captured_parent = _current_parent_export()
 
-    if before_invoke is not None:
-        before_invoke()
+    def stream_generator():
+        if before_invoke is not None:
+            before_invoke()
 
-    start = time.time()
-    first_token_time = None
-    output = None
-    metrics = None
-    metadata = None
-    parent_export = None
-    with start_span(name=name, type=span_type, input=input, metadata=clean_kwargs or None) as span:
-        chunks = []
-        for chunk in invoke():
-            if first_token_time is None and (
-                first_token_predicate(chunk) if first_token_predicate is not None else True
-            ):
-                first_token_time = time.time()
-            chunks.append(chunk)
-            yield chunk
+        start = time.time()
+        first_token_time = None
+        output = None
+        metrics = None
+        metadata = None
+        parent_export = None
+        with _stream_span_context(
+            parent=captured_parent,
+            name=name,
+            span_type=span_type,
+            input=input,
+            metadata=clean_kwargs or None,
+        ) as span:
+            chunks = []
+            for chunk in invoke():
+                if first_token_time is None and (
+                    first_token_predicate(chunk) if first_token_predicate is not None else True
+                ):
+                    first_token_time = time.time()
+                chunks.append(chunk)
+                yield chunk
 
-        output, metrics, metadata = _normalize_logged_result(aggregate(chunks, start, first_token_time))
-        span.log(output=output, metrics=metrics, metadata=metadata)
-        parent_export = span.export()
+            output, metrics, metadata = _normalize_logged_result(aggregate(chunks, start, first_token_time))
+            span.log(output=output, metrics=metrics, metadata=metadata)
+            parent_export = span.export()
 
-    if finalize_logged_output is not None and parent_export is not None and metrics is not None:
-        finalize_logged_output(output, metrics, metadata, parent_export)
+        if finalize_logged_output is not None and parent_export is not None and metrics is not None:
+            finalize_logged_output(output, metrics, metadata, parent_export)
 
-    return output
+        return output
+
+    return stream_generator()
 
 
 def _run_async_stream_traced_call(
@@ -1200,6 +1250,7 @@ def _run_async_stream_traced_call(
     finalize_logged_output: Callable[[Any, dict[str, Any], dict[str, Any] | None, str], None] | None = None,
 ) -> Any:
     input, clean_kwargs = prepare_call(api_client, args, kwargs)
+    captured_parent = _current_parent_export()
 
     async def stream_generator():
         if before_invoke is not None:
@@ -1211,7 +1262,13 @@ def _run_async_stream_traced_call(
         metrics = None
         metadata = None
         parent_export = None
-        with start_span(name=name, type=span_type, input=input, metadata=clean_kwargs or None) as span:
+        with _stream_span_context(
+            parent=captured_parent,
+            name=name,
+            span_type=span_type,
+            input=input,
+            metadata=clean_kwargs or None,
+        ) as span:
             chunks = []
             async for chunk in await invoke():
                 if first_token_time is None and (

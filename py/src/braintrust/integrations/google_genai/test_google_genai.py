@@ -222,6 +222,102 @@ def test_basic_completion(memory_logger, mode):
     _assert_metrics_are_valid(span["metrics"], start, end)
 
 
+@pytest.mark.vcr
+def test_stream_completion_preserves_creation_parent_when_consumed_later(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    with logger.start_span(name="stream_parent"):
+        stream = client.models.generate_content_stream(
+            model=MODEL,
+            contents="What is the capital of France?",
+            config=types.GenerateContentConfig(max_output_tokens=100),
+        )
+
+    text = ""
+    for chunk in stream:
+        if chunk.text:
+            text += chunk.text
+
+    assert "Paris" in text
+    spans = memory_logger.pop()
+    parent_span = find_span_by_name(spans, "stream_parent")
+    stream_span = find_span_by_name(spans, "generate_content_stream")
+    assert stream_span["span_parents"] == [parent_span["span_id"]]
+
+
+@pytest.mark.vcr
+def test_stream_completion_preserves_no_parent_when_consumed_under_parent(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    stream = client.models.generate_content_stream(
+        model=MODEL,
+        contents="What is the capital of France?",
+        config=types.GenerateContentConfig(max_output_tokens=100),
+    )
+
+    text = ""
+    with logger.start_span(name="consumer_parent"):
+        for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+
+    assert "Paris" in text
+    spans = memory_logger.pop()
+    stream_span = find_span_by_name(spans, "generate_content_stream")
+    assert stream_span.get("span_parents") is None
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_async_stream_completion_preserves_creation_parent_when_consumed_later(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    with logger.start_span(name="stream_parent"):
+        stream = await client.aio.models.generate_content_stream(
+            model=MODEL,
+            contents="What is the capital of France?",
+            config=types.GenerateContentConfig(max_output_tokens=100),
+        )
+
+    text = ""
+    async for chunk in stream:
+        if chunk.text:
+            text += chunk.text
+
+    assert "Paris" in text
+    spans = memory_logger.pop()
+    parent_span = find_span_by_name(spans, "stream_parent")
+    stream_span = find_span_by_name(spans, "generate_content_stream")
+    assert stream_span["span_parents"] == [parent_span["span_id"]]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_async_stream_completion_preserves_no_parent_when_consumed_under_parent(memory_logger):
+    assert not memory_logger.pop()
+
+    client = Client()
+    stream = await client.aio.models.generate_content_stream(
+        model=MODEL,
+        contents="What is the capital of France?",
+        config=types.GenerateContentConfig(max_output_tokens=100),
+    )
+
+    text = ""
+    with logger.start_span(name="consumer_parent"):
+        async for chunk in stream:
+            if chunk.text:
+                text += chunk.text
+
+    assert "Paris" in text
+    spans = memory_logger.pop()
+    stream_span = find_span_by_name(spans, "generate_content_stream")
+    assert stream_span.get("span_parents") is None
+
+
 # Test 1b: Basic Completion (Async)
 @pytest.mark.vcr
 @pytest.mark.asyncio
