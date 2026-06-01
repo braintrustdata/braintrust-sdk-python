@@ -211,7 +211,7 @@ lint = [
     # Packages below are needed so pylint can resolve every SDK import.
     # Versions are unpinned (unless already constrained) so the resolver
     # can find mutually compatible transitive deps.
-    "agentscope",
+    "agentscope<2",
     "agno",
     "anthropic",
     "autogen-agentchat",
@@ -351,7 +351,7 @@ latest = "agno==2.6.9"
 "2.1.0" = "agno==2.1.0"
 
 [tool.braintrust.matrix.agentscope]
-latest = "agentscope==2.0.0"
+latest = "agentscope==1.0.21"
 "1.0.0" = "agentscope==1.0.0"
 
 [tool.braintrust.matrix.autogen-agentchat]
