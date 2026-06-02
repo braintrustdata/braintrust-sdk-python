@@ -1659,10 +1659,13 @@ def init(
         if repo_info:
             repo_info_arg = repo_info
         else:
-            merged_git_metadata_settings = GitMetadataSettings.merge(
-                state.git_metadata_settings or GitMetadataSettings(collect="all"),
-                git_metadata_settings or GitMetadataSettings(collect="none"),
-            )
+            if git_metadata_settings is None:
+                merged_git_metadata_settings = state.git_metadata_settings or GitMetadataSettings(collect="none")
+            else:
+                merged_git_metadata_settings = GitMetadataSettings.merge(
+                    state.git_metadata_settings or GitMetadataSettings(collect="all"),
+                    git_metadata_settings,
+                )
             repo_info_arg = get_repo_info(merged_git_metadata_settings)
 
         if repo_info_arg:

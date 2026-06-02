@@ -23,6 +23,7 @@ from braintrust import (
     logger,
 )
 from braintrust.db_fields import AUDIT_METADATA_FIELD
+from braintrust.git_fields import GitMetadataSettings, RepoInfo
 from braintrust.gitutil import get_repo_info
 from braintrust.id_gen import OTELIDGenerator, get_id_generator
 from braintrust.logger import (
@@ -174,6 +175,67 @@ class TestInit(TestCase):
             with patch("atexit.register") as mock_register:
                 _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
                 mock_register.assert_not_called()
+
+    def test_init_without_git_metadata_override_uses_org_policy(self):
+        for org_settings in (
+            GitMetadataSettings(collect="all"),
+            GitMetadataSettings(collect="some", fields=["commit", "branch"]),
+        ):
+            with self.subTest(org_settings=org_settings):
+                mock_conn = MagicMock()
+                mock_conn.post_json.return_value = {
+                    "project": {"id": "test-project-id", "name": "test-project"},
+                    "experiment": {"id": "test-exp-id", "name": "test-exp"},
+                }
+
+                simulate_login()
+                logger._state.git_metadata_settings = org_settings
+                with patch.object(logger._state, "app_conn", return_value=mock_conn):
+                    with patch(
+                        "braintrust.logger.get_repo_info", return_value=RepoInfo(commit="abc123")
+                    ) as mock_get_repo_info:
+                        exp = braintrust.init(project="test-project")
+                        exp._lazy_metadata.get()
+
+                actual_settings = mock_get_repo_info.call_args.args[0]
+                assert actual_settings == org_settings
+
+    def test_init_git_metadata_override_merges_with_org_policy(self):
+        mock_conn = MagicMock()
+        mock_conn.post_json.return_value = {
+            "project": {"id": "test-project-id", "name": "test-project"},
+            "experiment": {"id": "test-exp-id", "name": "test-exp"},
+        }
+
+        simulate_login()
+        logger._state.git_metadata_settings = GitMetadataSettings(collect="some", fields=["commit", "branch"])
+        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+            with patch("braintrust.logger.get_repo_info", return_value=None) as mock_get_repo_info:
+                exp = braintrust.init(
+                    project="test-project",
+                    git_metadata_settings=GitMetadataSettings(collect="some", fields=["commit"]),
+                )
+                exp._lazy_metadata.get()
+
+        actual_settings = mock_get_repo_info.call_args.args[0]
+        assert actual_settings == GitMetadataSettings(collect="some", fields=["commit"])
+
+    def test_init_without_git_metadata_policy_collects_none(self):
+        mock_conn = MagicMock()
+        mock_conn.post_json.return_value = {
+            "project": {"id": "test-project-id", "name": "test-project"},
+            "experiment": {"id": "test-exp-id", "name": "test-exp"},
+        }
+
+        simulate_login()
+        assert logger._state.git_metadata_settings is None
+        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+            with patch("braintrust.logger.get_repo_info", return_value=None) as mock_get_repo_info:
+                exp = braintrust.init(project="test-project")
+                exp._lazy_metadata.get()
+
+        actual_settings = mock_get_repo_info.call_args.args[0]
+        assert actual_settings == GitMetadataSettings(collect="none")
 
     def test_init_with_saved_parameters_attaches_reference(self):
         mock_conn = MagicMock()
