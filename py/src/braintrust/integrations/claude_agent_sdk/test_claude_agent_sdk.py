@@ -210,13 +210,16 @@ async def test_calculator_with_multiple_operations(memory_logger):
         assert tool_span["output"] is not None
         assert any(parent_id in llm_span_ids for parent_id in tool_span["span_parents"])
 
-    root_span_id = task_span["span_id"]
+    # Descendants share the task's trace (``root_span_id``); direct children
+    # reference the task's ``span_id`` in ``span_parents``.
+    task_root_span_id = task_span["root_span_id"]
+    task_span_id = task_span["span_id"]
     for llm_span in llm_spans:
-        assert llm_span["root_span_id"] == root_span_id
-        assert root_span_id in llm_span["span_parents"]
+        assert llm_span["root_span_id"] == task_root_span_id
+        assert task_span_id in llm_span["span_parents"]
 
     for tool_span in tool_spans:
-        assert tool_span["root_span_id"] == root_span_id
+        assert tool_span["root_span_id"] == task_root_span_id
         assert any(parent_id in llm_span_ids for parent_id in tool_span["span_parents"])
 
 
@@ -454,7 +457,8 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
 
     hook_span = function_spans[0]
     assert task_span["input"] == prompt
-    assert hook_span["root_span_id"] == task_span["span_id"]
+    # The hook span is a descendant of the task span, so they share a trace.
+    assert hook_span["root_span_id"] == task_span["root_span_id"]
     assert hook_span["input"]["hook_event_name"] == "UserPromptSubmit"
     assert hook_span["input"]["prompt"] == prompt
     assert hook_span["output"]["hookSpecificOutput"]["hookEventName"] == "UserPromptSubmit"
@@ -546,7 +550,8 @@ async def test_tool_hooks_create_function_spans(memory_logger):
     post_span = hook_span_by_event["PostToolUse"]
 
     for hook_span in (pre_span, post_span):
-        assert hook_span["root_span_id"] == task_span["span_id"]
+        # Hook spans are descendants of the task span, so they share a trace.
+        assert hook_span["root_span_id"] == task_span["root_span_id"]
         assert hook_span["input"]["tool_name"] == "Bash"
 
     assert pre_span["output"]["hookSpecificOutput"]["hookEventName"] == "PreToolUse"
@@ -681,7 +686,9 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
     assert subagent_spans, "Expected at least one subagent task span"
     assert any(s.get("metadata", {}).get("task_id") for s in subagent_spans)
     for subagent_span in subagent_spans:
-        assert subagent_span["root_span_id"] == root_task_span["span_id"]
+        # Subagent spans are descendants of the root task span, so they share a
+        # trace; the root task ``span_id`` appears in ``span_parents`` below.
+        assert subagent_span["root_span_id"] == root_task_span["root_span_id"]
         parents = set(subagent_span["span_parents"])
         tool_use_id = subagent_span.get("metadata", {}).get("tool_use_id")
         matching_tool_span = next(

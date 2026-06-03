@@ -249,7 +249,6 @@ def test_wrap_huggingface_hub_chat_completion_sync(memory_logger):
     # With no parent span on the stack, the LLM span is its own root and has
     # no ``span_parents``.
     assert not span.get("span_parents")
-    assert span["span_id"] == span["root_span_id"]
     # The user's ``provider=`` kwarg overrides the default "huggingface"
     # identity so the span reflects the actual routing target.
     assert span["metadata"]["provider"] == CHAT_PROVIDER
@@ -317,7 +316,6 @@ def test_wrap_huggingface_hub_chat_completion_streaming(memory_logger):
     # when the iterator is exhausted, with no parent on the stack the span is
     # still its own root.
     assert not span.get("span_parents")
-    assert span["span_id"] == span["root_span_id"]
     assert span["metadata"]["provider"] == CHAT_PROVIDER
 
     # Aggregated output is ``{"choices": [{"index", "message": {...}, "finish_reason"?}]}``.
@@ -476,7 +474,6 @@ def test_wrap_huggingface_hub_chat_completion_async(memory_logger):
     span = spans[0]
     assert span["span_attributes"]["name"] == "huggingface.chat_completion"
     assert not span.get("span_parents")
-    assert span["span_id"] == span["root_span_id"]
     assert span["metadata"]["provider"] == CHAT_PROVIDER
 
 

@@ -63,7 +63,10 @@ def test_global_handler(logger_memory_logger):
     spans = memory_logger.pop()
     assert len(spans) > 0
 
+    # ``root_span_id`` is the root span's own span_id (the parent reference for
+    # its children); ``trace_root_id`` is the trace shared by every span.
     root_span_id = spans[0]["span_id"]
+    trace_root_id = spans[0]["root_span_id"]
 
     # Spans would be empty if the handler was not registered, let's make sure it logged what we expect
     assert_matches_object(
@@ -83,7 +86,7 @@ def test_global_handler(logger_memory_logger):
                 },
                 "metadata": {"tags": []},
                 "span_id": root_span_id,
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
             },
             {
                 "span_attributes": {"name": "ChatPromptTemplate"},
@@ -99,7 +102,7 @@ def test_global_handler(logger_memory_logger):
                     ]
                 },
                 "metadata": {"tags": ["seq:step:1"]},
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
             },
             {
@@ -146,7 +149,7 @@ def test_global_handler(logger_memory_logger):
                     "tags": ["seq:step:2"],
                     "model": "gpt-4o-mini-2024-07-18",
                 },
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
             },
         ],

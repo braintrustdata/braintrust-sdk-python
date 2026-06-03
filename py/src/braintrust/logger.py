@@ -71,6 +71,18 @@ from .prompt_cache.disk_cache import DiskCache
 from .prompt_cache.lru_cache import LRUCache
 from .prompt_cache.parameters_cache import ParametersCache
 from .prompt_cache.prompt_cache import PromptCache
+from .propagation import (
+    BAGGAGE_HEADER,
+    BRAINTRUST_PARENT_KEY,
+    TRACEPARENT_HEADER,
+    TRACESTATE_HEADER,
+    PropagatedState,
+    format_traceparent,
+    get_header,
+    merge_baggage,
+    parse_baggage,
+    parse_traceparent,
+)
 from .queue import DEFAULT_QUEUE_SIZE, LogQueue
 from .serializable_data_class import SerializableDataClass
 from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
@@ -146,9 +158,14 @@ DEFAULT_APP_URL = "https://www.braintrust.dev"
 
 
 def _get_exporter():
-    """Return the active exporter (e.g. the version of SpanComponentsv*)"""
-    use_v4 = BraintrustEnv.OTEL_COMPAT.get(False)
-    return SpanComponentsV4 if use_v4 else SpanComponentsV3
+    """Return the active exporter (e.g. the version of SpanComponentsv*).
+
+    The export version is coupled to the active ID format: hex IDs (the default)
+    serialize as V4, legacy UUID IDs serialize as V3. These must move together --
+    serializing hex IDs via V3 would lose the compact encoding and risk
+    corrupting hex values that happen to parse as UUIDs.
+    """
+    return SpanComponentsV3 if BraintrustEnv.LEGACY_IDS else SpanComponentsV4
 
 
 class Exportable(ABC):
@@ -196,7 +213,7 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | None = None,
+        parent: str | dict | None = None,
         **event: Any,
     ) -> "Span":
         """Create a new span. This is useful if you want to log more detailed trace information beyond the scope of a single log event. Data logged over several calls to `Span.log` will be merged into one logical row.
@@ -222,6 +239,15 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         Callers should treat the return value as opaque. The serialization format may change from time to time. If parsing is needed, use `SpanComponentsV4.from_str`.
 
         :returns: Serialized representation of this span's identifiers.
+        """
+
+    @abstractmethod
+    def inject(self, carrier: dict | None = None) -> dict:
+        """
+        Inject W3C trace-context headers (`traceparent` and `baggage`) for this span into a carrier dict, for distributed tracing across service boundaries.
+
+        :param carrier: Optional existing carrier (e.g. outbound HTTP headers) to mutate. A new dict is created if omitted.
+        :returns: The carrier dict with propagation headers injected.
         """
 
     @abstractmethod
@@ -330,7 +356,7 @@ class _NoopSpan(Span):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | None = None,
+        parent: str | dict | None = None,
         **event: Any,
     ):
         return self
@@ -340,6 +366,9 @@ class _NoopSpan(Span):
 
     def export(self):
         return ""
+
+    def inject(self, carrier: dict | None = None) -> dict:
+        return carrier if carrier is not None else {}
 
     def link(self) -> str:
         return NOOP_SPAN_PERMALINK
@@ -397,7 +426,7 @@ class BraintrustState:
             "braintrust_current_logger", default=None
         )
         self._local_logger: Logger | None = None
-        self.current_parent: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+        self.current_parent: contextvars.ContextVar[str | dict | None] = contextvars.ContextVar(
             "braintrust_current_parent", default=None
         )
         self.current_span: contextvars.ContextVar[Span] = contextvars.ContextVar(
@@ -2342,12 +2371,14 @@ def current_span() -> Span:
 
 
 @contextlib.contextmanager
-def parent_context(parent: str | None, state: BraintrustState | None = None):
+def parent_context(parent: "str | dict | None", state: BraintrustState | None = None):
     """
     Context manager to temporarily set the parent context for spans.
 
     Args:
-        parent: The parent string to set during the context
+        parent: The parent to set during the context. May be an exported slug
+            string or an opaque W3C trace-context dict (from
+            `extract_trace_context`).
         state: Optional BraintrustState to use. If not provided, uses the global state.
 
     Example:
@@ -2363,32 +2394,287 @@ def parent_context(parent: str | None, state: BraintrustState | None = None):
         state.current_parent.reset(token)
 
 
-def get_span_parent_object(
-    parent: str | None = None, state: BraintrustState | None = None
-) -> "SpanComponentsV4 | Logger | Experiment | Span":
-    """Mainly for internal use. Return the parent object for starting a span in a global context.
-    Applies precedence: current span > propagated parent string > experiment > logger."""
+def _get_span_parent_object_and_propagated_state(
+    parent: "str | dict | None" = None, state: BraintrustState | None = None
+) -> "tuple[SpanComponentsV4 | Logger | Experiment | Span, PropagatedState | None]":
+    """Resolve the parent object and any forwarded W3C state in a single pass.
+
+    Same precedence as `get_span_parent_object`, but also returns the W3C state
+    (tracestate + raw traceparent flags) recovered while normalizing the
+    `parent` argument, so callers don't have to re-run `_normalize_parent` (which
+    would re-parse baggage and re-resolve the active logger/experiment,
+    potentially disagreeing if state changed between calls). The state is only
+    meaningful when a parent slug was resolved; otherwise it is None."""
 
     if state is None:
         state = _state
 
     span = current_span()
     if span != NOOP_SPAN:
-        return span
+        return span, None
 
-    parent = parent or state.current_parent.get()
-    if parent:
-        return SpanComponentsV4.from_str(parent)
+    parent = parent if parent is not None else state.current_parent.get()
+    parent_slug, propagated_state = _normalize_parent(parent)
+    if parent_slug:
+        return SpanComponentsV4.from_str(parent_slug), propagated_state
 
     experiment = current_experiment()
     if experiment:
-        return experiment
+        return experiment, None
 
     logger = current_logger()
     if logger:
-        return logger
+        return logger, None
 
-    return NOOP_SPAN
+    return NOOP_SPAN, None
+
+
+def get_span_parent_object(
+    parent: "str | dict | None" = None, state: BraintrustState | None = None
+) -> "SpanComponentsV4 | Logger | Experiment | Span":
+    """Mainly for internal use. Return the parent object for starting a span in a global context.
+    Applies precedence: current span > propagated parent > experiment > logger.
+
+    `parent` may be an exported slug string or an opaque W3C trace-context dict
+    (from `extract_trace_context`)."""
+
+    parent_obj, _propagated_state = _get_span_parent_object_and_propagated_state(parent, state)
+    return parent_obj
+
+
+def _current_braintrust_parent(state: BraintrustState | None = None) -> str | None:
+    """Return the Braintrust parent string for the current logger/experiment, if any.
+
+    Used as the fallback Braintrust parent on receive, when an inbound request
+    carries trace identity (`traceparent`) but no `braintrust.parent` baggage.
+    """
+    if state is None:
+        state = _state
+
+    experiment = current_experiment()
+    if experiment:
+        try:
+            components = SpanComponentsV4.from_str(experiment.export())
+            return f"experiment_id:{components.object_id}"
+        except Exception:
+            return None
+
+    logger = current_logger()
+    if logger:
+        try:
+            components = SpanComponentsV4.from_str(logger.export())
+            if components.object_id:
+                return f"project_id:{components.object_id}"
+            meta = components.compute_object_metadata_args or {}
+            name = meta.get("project_name")
+            if name:
+                return f"project_name:{name}"
+        except Exception:
+            return None
+
+    return None
+
+
+def _braintrust_parent_to_components(braintrust_parent: str):
+    """Parse a `braintrust.parent` string into (object_type, object_id, compute_args).
+
+    Accepts `project_id:<id>`, `project_name:<name>`, or `experiment_id:<id>`.
+    Returns None if the value is empty or malformed.
+    """
+    if not braintrust_parent:
+        return None
+    if braintrust_parent.startswith("project_id:"):
+        object_id = braintrust_parent[len("project_id:") :]
+        return (SpanObjectTypeV3.PROJECT_LOGS, object_id, None) if object_id else None
+    if braintrust_parent.startswith("project_name:"):
+        name = braintrust_parent[len("project_name:") :]
+        return (SpanObjectTypeV3.PROJECT_LOGS, None, {"project_name": name}) if name else None
+    if braintrust_parent.startswith("experiment_id:"):
+        object_id = braintrust_parent[len("experiment_id:") :]
+        return (SpanObjectTypeV3.EXPERIMENT, object_id, None) if object_id else None
+    return None
+
+
+def _set_header(carrier: dict, name: str, value: str) -> None:
+    """Set a W3C trace-context header on a carrier, sending the lowercase name.
+
+    Per the W3C Trace Context spec (§3.2.1 / §3.3.1), vendors SHOULD send these
+    header names in lowercase. ``name`` is always the canonical lowercase key.
+    A plain ``dict`` carrier is case-sensitive, so any pre-existing case-variant
+    (e.g. ``Baggage`` from a framework that title-cases headers) must be removed
+    first, otherwise the carrier would end up with two conflicting headers.
+    """
+    lowered = name.lower()
+    for key in list(carrier.keys()):
+        if isinstance(key, str) and key != name and key.lower() == lowered:
+            del carrier[key]
+    carrier[name] = value
+
+
+def _inject_into_carrier(
+    carrier: dict,
+    trace_id: str,
+    span_id: str,
+    braintrust_parent: str | None,
+    propagated_state: "PropagatedState | None" = None,
+) -> None:
+    """Inject W3C trace-context headers into a carrier dict (in place).
+
+    Emits `traceparent` from the hex trace/span ids, merges `braintrust.parent`
+    into existing `baggage` when known, and forwards any inbound W3C state
+    (`tracestate` plus the original `traceparent` trace-flags) carried in
+    `propagated_state`. Pre-existing, non-Braintrust baggage entries are
+    preserved.
+    """
+    # Re-emit the inbound trace-flags verbatim so the upstream sampling decision
+    # (and any future flag bits) is preserved; defaults to sampled when we
+    # originated the trace (no inbound flags).
+    trace_flags = propagated_state.trace_flags if propagated_state else None
+    traceparent = (
+        format_traceparent(trace_id, span_id, trace_flags) if trace_flags else format_traceparent(trace_id, span_id)
+    )
+    if traceparent is None:
+        # Ids aren't W3C-shaped (e.g. legacy UUID mode); nothing to propagate.
+        return
+    _set_header(carrier, TRACEPARENT_HEADER, traceparent)
+
+    # Forward upstream tracestate (per W3C, only alongside a valid traceparent).
+    tracestate = propagated_state.tracestate if propagated_state else None
+    if tracestate:
+        _set_header(carrier, TRACESTATE_HEADER, tracestate)
+
+    # Merge braintrust.parent into any existing baggage. Other vendors' members
+    # are forwarded byte-for-byte (see merge_baggage) so we never rewrite their
+    # percent-encoding.
+    existing = get_header(carrier, BAGGAGE_HEADER)
+    baggage_value = merge_baggage(existing, braintrust_parent)
+    if baggage_value is not None:
+        _set_header(carrier, BAGGAGE_HEADER, baggage_value)
+
+
+def inject_trace_context(carrier: dict | None = None, span: "Span | None" = None) -> dict:
+    """Inject W3C trace-context headers for the current (or given) span into a carrier.
+
+    This is the free-function form of `Span.inject`, and the send-side
+    counterpart of `extract_trace_context`. If no span is provided, the
+    currently-active span is used. Propagation is best-effort and never raises.
+
+    :param carrier: Optional carrier dict (e.g. outbound HTTP headers) to mutate.
+    :param span: Optional span to inject. Defaults to the current span.
+    :returns: The carrier with propagation headers injected.
+    """
+    if carrier is None:
+        carrier = {}
+    span = span if span is not None else current_span()
+    try:
+        return span.inject(carrier)
+    except Exception as e:
+        logging.warning(f"Error injecting trace context: {e}")
+        return carrier
+
+
+def extract_trace_context(headers: dict) -> dict | None:
+    """Extract an opaque W3C trace-context from inbound request headers.
+
+    This is the receive-side counterpart of `Span.inject` /
+    `inject_trace_context`. The return value is an opaque propagation context
+    that can be passed as `parent=` to `start_span`:
+
+        ctx = extract_trace_context(request.headers)
+        with start_span(name="handler", parent=ctx) as span:
+            ...
+
+    Only the W3C Trace Context headers are interpreted (`traceparent`, `baggage`,
+    `tracestate`); header lookups are case-insensitive. If no valid `traceparent`
+    is present, returns None (the caller starts a fresh root span). The Braintrust
+    container the trace is routed under is resolved when the span is created: from
+    the `braintrust.parent` baggage entry, or else the currently-active
+    logger/experiment.
+
+    Callers should treat the return value as opaque.
+
+    :param headers: Inbound request headers (e.g. an HTTP framework's headers).
+    :returns: An opaque context for `start_span(parent=...)`, or None.
+    """
+    if not headers:
+        return None
+
+    traceparent = get_header(headers, TRACEPARENT_HEADER)
+    if not traceparent or parse_traceparent(traceparent) is None:
+        return None
+
+    context = {TRACEPARENT_HEADER: traceparent}
+    baggage_value = get_header(headers, BAGGAGE_HEADER)
+    if baggage_value:
+        context[BAGGAGE_HEADER] = baggage_value
+    tracestate = get_header(headers, TRACESTATE_HEADER)
+    if tracestate:
+        context[TRACESTATE_HEADER] = tracestate
+    return context
+
+
+def _resolve_w3c_parent(context: dict) -> "tuple[str | None, PropagatedState | None]":
+    """Resolve a W3C trace-context dict into (parent_slug, propagated_state).
+
+    Reads `traceparent` for trace identity and `braintrust.parent` from
+    `baggage` (falling back to the currently-active logger/experiment) for
+    routing, and builds an internal Braintrust parent slug. Captures the
+    `tracestate` and raw `traceparent` flags to forward onward. Returns
+    (None, None) if the context cannot be resolved into a usable parent (so the
+    caller falls back to local precedence / a fresh root).
+    """
+    traceparent = get_header(context, TRACEPARENT_HEADER)
+    parsed = parse_traceparent(traceparent) if traceparent else None
+    if parsed is None:
+        return None, None
+    trace_id, span_id, trace_flags = parsed
+
+    # Determine the Braintrust container: baggage -> current logger/experiment.
+    braintrust_parent = None
+    baggage_value = get_header(context, BAGGAGE_HEADER)
+    if baggage_value:
+        braintrust_parent = parse_baggage(baggage_value).get(BRAINTRUST_PARENT_KEY)
+    if not braintrust_parent:
+        braintrust_parent = _current_braintrust_parent()
+    if not braintrust_parent:
+        logging.warning(
+            "Received traceparent without a braintrust.parent and no active logger/experiment; "
+            "cannot route the trace. Starting a fresh local span instead."
+        )
+        return None, None
+
+    parsed_parent = _braintrust_parent_to_components(braintrust_parent)
+    if parsed_parent is None:
+        logging.warning(f"Invalid braintrust.parent: {braintrust_parent!r}")
+        return None, None
+    object_type, object_id, compute_args = parsed_parent
+
+    tracestate = get_header(context, TRACESTATE_HEADER) or None
+
+    slug = SpanComponentsV4(
+        object_type=object_type,
+        object_id=object_id,
+        compute_object_metadata_args=compute_args,
+        row_id="bt-propagation",  # non-empty to enable span_id/root_span_id
+        span_id=span_id,
+        root_span_id=trace_id,
+    ).to_str()
+    return slug, PropagatedState(tracestate=tracestate, trace_flags=trace_flags)
+
+
+def _normalize_parent(parent: "str | dict | None") -> "tuple[str | None, PropagatedState | None]":
+    """Normalize a `parent` argument into (parent_slug, propagated_state).
+
+    - dict  -> interpreted as a W3C trace-context (from `extract_trace_context`)
+    - str   -> an exported span slug (passed through unchanged)
+    - None  -> no parent
+
+    `propagated_state` carries any inbound W3C state (tracestate + raw flags) to
+    forward on the next `inject`; it is None when there is no inbound W3C context.
+    """
+    if isinstance(parent, dict):
+        return _resolve_w3c_parent(parent)
+    return parent, None
 
 
 def _try_log_input(span, f_sig, f_args, f_kwargs):
@@ -2574,7 +2860,7 @@ def start_span(
     span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
     start_time: float | None = None,
     set_current: bool | None = None,
-    parent: str | None = None,
+    parent: str | dict | None = None,
     propagated_event: dict[str, Any] | None = None,
     state: BraintrustState | None = None,
     **event: Any,
@@ -2589,12 +2875,17 @@ def start_span(
     if not state:
         state = _state
 
-    parent_obj = get_span_parent_object(parent, state)
+    # Resolve the parent object and any forwarded W3C state in one pass, so we
+    # don't re-normalize `parent` (which could disagree if the active
+    # logger/experiment changed between calls).
+    parent_obj, propagated_state = _get_span_parent_object_and_propagated_state(parent, state)
 
     if isinstance(parent_obj, SpanComponentsV4):
-        if parent_obj.row_id and parent_obj.span_id and parent_obj.root_span_id:
+        if parent_obj.row_id and _parent_span_ids_usable(parent_obj.span_id, parent_obj.root_span_id):
             parent_span_ids = ParentSpanIds(span_id=parent_obj.span_id, root_span_id=parent_obj.root_span_id)
         else:
+            # No row id (object-only slug): there is no span to link to, so start
+            # a fresh root, keeping the object routing from the slug.
             parent_span_ids = None
         return SpanImpl(
             parent_object_type=parent_obj.object_type,
@@ -2607,6 +2898,7 @@ def start_span(
             start_time=start_time,
             set_current=set_current,
             propagated_event=coalesce(propagated_event, parent_obj.propagated_event),
+            propagated_state=propagated_state,
             event=event,
             state=state,
             lookup_span_parent=False,
@@ -3649,17 +3941,35 @@ def permalink(slug: str, org_name: str | None = None, app_url: str | None = None
             return _get_error_link()
 
 
+def _parent_span_ids_usable(span_id: str | None, root_span_id: str | None) -> bool:
+    """Return True if a parent slug carries span ids the child can link to.
+
+    A child links to any parent slug that carries both a span id and a root span
+    id, regardless of whether those ids are hex (the default) or legacy UUID.
+    This keeps the deprecated `start_span(parent=<slug>)` path backwards
+    compatible: a slug exported by an older (UUID) sender still links into a
+    trace on a newer (hex) receiver, and vice versa. The child's own freshly
+    generated span id stays in the active format; the backend supports traces
+    whose nodes mix id formats across a propagation boundary. Empty ids (no row)
+    are handled by the caller.
+    """
+    return bool(span_id) and bool(root_span_id)
+
+
 def _start_span_parent_args(
-    parent: str | None,
+    parent: "str | dict | None",
     parent_object_type: SpanObjectTypeV3,
     parent_object_id: LazyValue[str],
     parent_compute_object_metadata_args: dict[str, Any] | None,
     parent_span_ids: ParentSpanIds | None,
     propagated_event: dict[str, Any] | None,
+    propagated_state: "PropagatedState | None" = None,
 ) -> dict[str, Any]:
-    if parent:
+    # `parent` may be an exported slug string or an opaque W3C trace-context dict.
+    parent_slug, parent_propagated_state = _normalize_parent(parent)
+    if parent_slug:
         assert parent_span_ids is None, "Cannot specify both parent and parent_span_ids"
-        parent_components = SpanComponentsV4.from_str(parent)
+        parent_components = SpanComponentsV4.from_str(parent_slug)
         assert parent_object_type == parent_components.object_type, (
             f"Mismatch between expected span parent object type {parent_object_type} and provided type {parent_components.object_type}"
         )
@@ -3674,17 +3984,23 @@ def _start_span_parent_args(
             return parent_object_id.get()
 
         arg_parent_object_id = LazyValue(compute_parent_object_id, use_mutex=False)
-        if parent_components.row_id:
+        if parent_components.row_id and _parent_span_ids_usable(
+            parent_components.span_id, parent_components.root_span_id
+        ):
             arg_parent_span_ids = ParentSpanIds(
                 span_id=parent_components.span_id, root_span_id=parent_components.root_span_id
             )
         else:
+            # No row id (object-only slug): there is no span to link to, so start
+            # a fresh root, keeping the object routing from the slug.
             arg_parent_span_ids = None
         arg_propagated_event = coalesce(propagated_event, parent_components.propagated_event)
+        arg_propagated_state = coalesce(propagated_state, parent_propagated_state)
     else:
         arg_parent_object_id = parent_object_id
         arg_parent_span_ids = parent_span_ids
         arg_propagated_event = propagated_event
+        arg_propagated_state = propagated_state
 
     return dict(
         parent_object_type=parent_object_type,
@@ -3692,6 +4008,7 @@ def _start_span_parent_args(
         parent_compute_object_metadata_args=parent_compute_object_metadata_args,
         parent_span_ids=arg_parent_span_ids,
         propagated_event=arg_propagated_event,
+        propagated_state=arg_propagated_state,
     )
 
 
@@ -3886,7 +4203,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | None = None,
+        parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
         **event: Any,
     ) -> Span:
@@ -4039,7 +4356,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | None = None,
+        parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
         lookup_span_parent: bool = True,
         **event: Any,
@@ -4146,6 +4463,7 @@ class SpanImpl(Span):
         set_current: bool | None = None,
         event: dict[str, Any] | None = None,
         propagated_event: dict[str, Any] | None = None,
+        propagated_state: "PropagatedState | None" = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
         state: BraintrustState | None = None,
@@ -4176,6 +4494,13 @@ class SpanImpl(Span):
         self.propagated_event = propagated_event
         if self.propagated_event:
             merge_dicts(event, self.propagated_event)
+
+        # Inbound W3C trace-context state (tracestate + raw traceparent flags) to
+        # forward on outbound propagation. Captured at the span that received it
+        # (via extract_trace_context) and inherited by all subspans, so that any
+        # inject() within the trace re-emits the upstream state unchanged, per the
+        # W3C Trace Context spec. Not interpreted.
+        self.propagated_state = propagated_state
 
         caller_location = get_caller_location()
         if name is None:
@@ -4332,7 +4657,7 @@ class SpanImpl(Span):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | None = None,
+        parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
         **event: Any,
     ) -> Span:
@@ -4354,6 +4679,7 @@ class SpanImpl(Span):
                 parent_compute_object_metadata_args=self.parent_compute_object_metadata_args,
                 parent_span_ids=parent_span_ids,
                 propagated_event=coalesce(propagated_event, self.propagated_event),
+                propagated_state=self.propagated_state,
             ),
             name=name,
             type=type,
@@ -4383,9 +4709,9 @@ class SpanImpl(Span):
             object_id = self.parent_object_id.get()
             compute_object_metadata_args = None
 
-        # Choose SpanComponents version based on BRAINTRUST_OTEL_COMPAT env var
-        use_v4 = BraintrustEnv.OTEL_COMPAT.get(False)
-        span_components_class = SpanComponentsV4 if use_v4 else SpanComponentsV3
+        # Choose SpanComponents version based on the active ID format (hex -> V4,
+        # legacy UUID -> V3). Coupled via _get_exporter() so the two never desync.
+        span_components_class = _get_exporter()
 
         # Disable span cache since remote function spans won't be in the local cache
         self.state.span_cache.disable()
@@ -4399,6 +4725,33 @@ class SpanImpl(Span):
             root_span_id=self.root_span_id,
             propagated_event=self.propagated_event,
         ).to_str()
+
+    def inject(self, carrier: dict | None = None) -> dict:
+        """Inject W3C trace-context headers for this span into a carrier dict.
+
+        Adds ``traceparent`` (trace identity) and, when this span's Braintrust
+        parent is known, a ``baggage`` entry ``braintrust.parent=<parent>``
+        (merged with any pre-existing baggage). Propagation is best-effort and
+        never raises; if the span's ids are not W3C-shaped hex (e.g. legacy UUID
+        mode), ``traceparent`` is omitted.
+
+        :param carrier: Optional existing carrier (e.g. outbound HTTP headers) to
+            mutate and return. A new dict is created if not provided.
+        :returns: The carrier dict with propagation headers injected.
+        """
+        if carrier is None:
+            carrier = {}
+        try:
+            _inject_into_carrier(
+                carrier,
+                trace_id=self.root_span_id,
+                span_id=self.span_id,
+                braintrust_parent=self._get_otel_parent(),
+                propagated_state=self.propagated_state,
+            )
+        except Exception as e:  # best-effort: never break the caller
+            logging.warning(f"Error injecting trace context: {e}")
+        return carrier
 
     def link(self) -> str:
         parent_type, info = self._get_parent_info()
@@ -5321,7 +5674,7 @@ class Logger(Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | None = None,
+        parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
@@ -5371,7 +5724,7 @@ class Logger(Exportable):
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
-        parent: str | None = None,
+        parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,

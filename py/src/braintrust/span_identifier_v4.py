@@ -226,10 +226,12 @@ class SpanComponentsV4:
 
     @staticmethod
     def _from_json_obj(json_obj: dict) -> "SpanComponentsV4":
-        kwargs = {
-            **json_obj,
-            "object_type": SpanObjectTypeV3(json_obj["object_type"]),
-        }
+        # Only consume known fields. Unknown keys (e.g. fields added by a newer
+        # SDK) are ignored rather than passed to the constructor, so that adding
+        # new optional fields is forward-compatible across SDK versions.
+        known_fields = {f.name for f in dataclasses.fields(SpanComponentsV4)}
+        kwargs = {k: v for k, v in json_obj.items() if k in known_fields}
+        kwargs["object_type"] = SpanObjectTypeV3(json_obj["object_type"])
         return SpanComponentsV4(**kwargs)
 
 

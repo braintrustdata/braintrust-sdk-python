@@ -2845,16 +2845,19 @@ def reset_id_generator_state():
     """Reset ID generator state and environment variables before each test"""
     logger._state._reset_id_generator()
     logger._state._reset_context_manager()
-    original_env = os.getenv("BRAINTRUST_OTEL_COMPAT")
+    original_otel = os.getenv("BRAINTRUST_OTEL_COMPAT")
+    original_legacy = os.getenv("BRAINTRUST_LEGACY_IDS")
     try:
         yield
     finally:
         logger._state._reset_id_generator()
         logger._state._reset_context_manager()
-        if "BRAINTRUST_OTEL_COMPAT" in os.environ:
-            del os.environ["BRAINTRUST_OTEL_COMPAT"]
-        if original_env:
-            os.environ["BRAINTRUST_OTEL_COMPAT"] = original_env
+        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+        if original_otel:
+            os.environ["BRAINTRUST_OTEL_COMPAT"] = original_otel
+        if original_legacy:
+            os.environ["BRAINTRUST_LEGACY_IDS"] = original_legacy
 
 
 def test_otel_compatible_span_export_import():
@@ -2930,21 +2933,22 @@ def test_span_with_otel_ids_export_import(reset_id_generator_state):
 
 
 def test_span_with_uuid_ids_share_root_span_id(reset_id_generator_state):
-    """Test that UUID generators share span_id as root_span_id for backwards compatibility."""
+    """Test that legacy UUID generators share span_id as root_span_id for backwards compatibility."""
     import os
 
-    # Ensure UUID generator is used (default behavior)
-    if "BRAINTRUST_OTEL_COMPAT" in os.environ:
-        del os.environ["BRAINTRUST_OTEL_COMPAT"]
+    # Opt into legacy UUID IDs (hex IDs are the default).
+    os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+    os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
+    logger._state._reset_id_generator()
 
     init_test_logger(__name__)
 
-    # Test that UUID generator should share root_span_id
+    # Test that the legacy UUID generator shares root_span_id
     generator = get_id_generator()
     assert generator.share_root_span_id() == True
 
     with logger.start_span(name="test") as span:
-        # Test that UUID spans should share span_id and root_span_id for backwards compatibility
+        # Test that UUID spans share span_id and root_span_id for backwards compatibility
         assert span.span_id == span.root_span_id
 
 
@@ -3135,15 +3139,28 @@ def test_update_span_includes_span_id_and_root_span_id_from_export(with_memory_l
     assert updated_log["metadata"] == {"foo": "bar"}
 
 
-def test_get_exporter_returns_v3_by_default():
-    """Test that _get_exporter() returns SpanComponentsV3 when OTEL_COMPAT is not set."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
+def test_get_exporter_returns_v4_by_default():
+    """Test that _get_exporter() returns SpanComponentsV4 by default (no env vars)."""
+    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
         os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+        from braintrust.logger import _get_exporter
+        from braintrust.span_identifier_v4 import SpanComponentsV4
+
+        exporter = _get_exporter()
+        assert exporter == SpanComponentsV4, "Should return V4 by default"
+
+
+def test_get_exporter_returns_v3_when_legacy_uuid():
+    """Test that _get_exporter() returns SpanComponentsV3 in legacy UUID mode."""
+    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
+        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
         from braintrust.logger import _get_exporter
         from braintrust.span_identifier_v3 import SpanComponentsV3
 
         exporter = _get_exporter()
-        assert exporter == SpanComponentsV3, "Should return V3 by default"
+        assert exporter == SpanComponentsV3, "Should return V3 in legacy UUID mode"
 
 
 def test_get_exporter_returns_v4_when_otel_enabled():
@@ -3157,10 +3174,25 @@ def test_get_exporter_returns_v4_when_otel_enabled():
         assert exporter == SpanComponentsV4, "Should return V4 when OTEL_COMPAT=true"
 
 
-def test_experiment_export_respects_otel_compat_default():
-    """Test that Experiment.export() uses V3 by default."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
+def test_experiment_export_uses_v4_by_default():
+    """Test that Experiment.export() uses V4 by default."""
+    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
         os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+        experiment = init_test_exp("test-exp")
+        exported = experiment.export()
+
+        from braintrust.span_identifier_v4 import SpanComponentsV4
+
+        version = SpanComponentsV4.get_version(exported)
+        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
+
+
+def test_experiment_export_uses_v3_in_legacy_mode():
+    """Test that Experiment.export() uses V3 in legacy UUID mode."""
+    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
+        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
         experiment = init_test_exp("test-exp")
         exported = experiment.export()
 
@@ -3183,10 +3215,25 @@ def test_experiment_export_respects_otel_compat_enabled():
         assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
 
 
-def test_logger_export_respects_otel_compat_default():
-    """Test that Logger.export() uses V3 by default."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
+def test_logger_export_uses_v4_by_default():
+    """Test that Logger.export() uses V4 by default."""
+    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
         os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+        test_logger = init_test_logger(__name__)
+        exported = test_logger.export()
+
+        from braintrust.span_identifier_v4 import SpanComponentsV4
+
+        version = SpanComponentsV4.get_version(exported)
+        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
+
+
+def test_logger_export_uses_v3_in_legacy_mode():
+    """Test that Logger.export() uses V3 in legacy UUID mode."""
+    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
+        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
         test_logger = init_test_logger(__name__)
         exported = test_logger.export()
 

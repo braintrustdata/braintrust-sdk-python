@@ -1,4 +1,5 @@
 import io
+import logging
 import math
 import os
 import shlex
@@ -6,6 +7,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from typing import TypeVar, cast
+
+
+_logger = logging.getLogger(__name__)
 
 
 T = TypeVar("T")
@@ -150,6 +154,47 @@ class EnvVar:
         return None
 
 
+_warned_legacy_uuid_conflict = False
+
+
+def _resolve_use_legacy_uuid_ids() -> bool:
+    """Resolve whether the SDK should generate legacy UUID-based span/trace IDs.
+
+    The default is OpenTelemetry-compatible hex IDs (16-byte trace id / 8-byte
+    span id) with V4 span-component export. Setting BRAINTRUST_LEGACY_IDS
+    opts back into UUID IDs with V3 export.
+
+    BRAINTRUST_OTEL_COMPAT (which selects the OpenTelemetry context manager)
+    requires hex IDs, so it always wins: if both it and BRAINTRUST_LEGACY_IDS
+    are set, legacy IDs are disabled and a warning is logged (at most once per
+    process, even though this is re-resolved lazily on each access).
+    """
+    global _warned_legacy_uuid_conflict
+
+    legacy = EnvVar("BRAINTRUST_LEGACY_IDS", EnvParser.BOOL).get(False)
+    if EnvVar("BRAINTRUST_OTEL_COMPAT", EnvParser.BOOL).get(False):
+        if legacy and not _warned_legacy_uuid_conflict:
+            _warned_legacy_uuid_conflict = True
+            _logger.warning(
+                "BRAINTRUST_LEGACY_IDS is ignored because BRAINTRUST_OTEL_COMPAT "
+                "requires OpenTelemetry-compatible hex span IDs. Using hex IDs."
+            )
+        return False
+    return legacy
+
+
+class _LegacyUuidIdsField:
+    """Lazy, read-only descriptor for the legacy-UUID-IDs setting.
+
+    Like the other entries on BraintrustEnv, this re-reads the environment on
+    each access rather than caching at import time, so changing the relevant env
+    vars (e.g. in tests) is reflected immediately.
+    """
+
+    def __get__(self, instance: object, owner: type | None = None) -> bool:
+        return _resolve_use_legacy_uuid_ids()
+
+
 class BraintrustEnv:
     API_KEY = EnvVar("BRAINTRUST_API_KEY", EnvParser.STRING)
     HTTP_TIMEOUT = EnvVar("BRAINTRUST_HTTP_TIMEOUT", EnvParser.FLOAT)
@@ -163,3 +208,6 @@ class BraintrustEnv:
     ALL_PUBLISH_PAYLOADS_DIR = EnvVar("BRAINTRUST_ALL_PUBLISH_PAYLOADS_DIR", EnvParser.STRING)
     DISABLE_ATEXIT_FLUSH = EnvVar("BRAINTRUST_DISABLE_ATEXIT_FLUSH", EnvParser.BOOL)
     OTEL_COMPAT = EnvVar("BRAINTRUST_OTEL_COMPAT", EnvParser.BOOL)
+    # Opt out of the default OpenTelemetry-compatible hex span/trace IDs and use
+    # legacy UUID-based IDs (and V3 span-component export) instead.
+    LEGACY_IDS = _LegacyUuidIdsField()

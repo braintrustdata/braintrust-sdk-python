@@ -8,14 +8,18 @@ from braintrust import id_gen
 @pytest.fixture(autouse=True)
 def reset_id_generator_state():
     """Reset ID generator state and environment variables before each test"""
-    original_env = os.getenv("BRAINTRUST_OTEL_COMPAT")
+    original_otel = os.getenv("BRAINTRUST_OTEL_COMPAT")
+    original_legacy = os.getenv("BRAINTRUST_LEGACY_IDS")
 
     try:
         yield
     finally:
         os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        if original_env:
-            os.environ["BRAINTRUST_OTEL_COMPAT"] = original_env
+        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+        if original_otel:
+            os.environ["BRAINTRUST_OTEL_COMPAT"] = original_otel
+        if original_legacy:
+            os.environ["BRAINTRUST_LEGACY_IDS"] = original_legacy
 
 
 def test_uuid_generator():
@@ -55,22 +59,52 @@ def test_otel_id_generator():
 
 
 def test_id_get_env_var(reset_id_generator_state):
+    # By default (no env vars) the generator produces OTEL-compatible hex IDs.
+    # BRAINTRUST_OTEL_COMPAT always implies hex; BRAINTRUST_LEGACY_IDS opts
+    # back into UUIDs (only when OTEL_COMPAT is off).
     cases = [
-        (None, lambda _id: uuid.UUID(_id)),
+        (None, lambda _id: _assert_is_hex(_id)),
         ("true", lambda _id: _assert_is_hex(_id)),
         ("True", lambda _id: _assert_is_hex(_id)),
         ("TRUE", lambda _id: _assert_is_hex(_id)),
-        ("false", lambda _id: uuid.UUID(_id)),
-        ("False", lambda _id: uuid.UUID(_id)),
+        ("false", lambda _id: _assert_is_hex(_id)),
+        ("False", lambda _id: _assert_is_hex(_id)),
     ]
 
     for env_var_value, assert_func in cases:
         os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
         if env_var_value is not None:
             os.environ["BRAINTRUST_OTEL_COMPAT"] = env_var_value
         generator = id_gen.get_id_generator()
         assert_func(generator.get_span_id())
         assert_func(generator.get_trace_id())
+
+
+def test_id_get_env_var_legacy_uuid(reset_id_generator_state):
+    # BRAINTRUST_LEGACY_IDS opts back into UUID IDs.
+    cases = [
+        ("true", lambda _id: uuid.UUID(_id)),
+        ("True", lambda _id: uuid.UUID(_id)),
+        ("false", lambda _id: _assert_is_hex(_id)),
+    ]
+
+    for env_var_value, assert_func in cases:
+        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+        os.environ["BRAINTRUST_LEGACY_IDS"] = env_var_value
+        generator = id_gen.get_id_generator()
+        assert_func(generator.get_span_id())
+        assert_func(generator.get_trace_id())
+
+
+def test_otel_compat_wins_over_legacy_uuid(reset_id_generator_state):
+    # When both are set, OTEL_COMPAT wins: hex IDs are used (no raise).
+    os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
+    os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
+    generator = id_gen.get_id_generator()
+    assert generator.share_root_span_id() is False
+    _assert_is_hex(generator.get_span_id())
 
 
 def _is_hex(s):

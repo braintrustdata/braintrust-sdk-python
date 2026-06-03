@@ -859,3 +859,71 @@ def test_parent_from_headers_with_custom_propagator():
     assert result is not None
     assert isinstance(result, str)
     assert len(result) > 0
+
+
+# --------------------------------------------------------------------------- #
+# Cross-paradigm: native W3C propagation <-> OpenTelemetry propagation
+# --------------------------------------------------------------------------- #
+
+
+def test_native_inject_extracted_by_otel():
+    """Native Span.inject() headers are parseable by OTel's W3C propagator."""
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.logger import _internal_with_memory_background_logger
+    from braintrust.test_helpers import init_test_logger
+    from opentelemetry import trace
+    from opentelemetry.propagate import extract
+
+    with _internal_with_memory_background_logger():
+        logger = init_test_logger("cross-paradigm-native-to-otel")
+        with logger.start_span(name="native_a") as span:
+            carrier = span.inject({})
+            native_trace_id = span.root_span_id
+            native_span_id = span.span_id
+
+    # OTel extracts trace identity from the native-produced W3C headers.
+    ctx = extract(carrier)
+    otel_span = trace.get_current_span(ctx)
+    sc = otel_span.get_span_context()
+    assert format(sc.trace_id, "032x") == native_trace_id
+    assert format(sc.span_id, "016x") == native_span_id
+
+
+def test_otel_inject_extracted_by_native():
+    """OTel-injected W3C headers (+ braintrust.parent baggage) are parseable natively."""
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.logger import _internal_with_memory_background_logger, extract_trace_context
+    from braintrust.test_helpers import init_test_logger
+    from opentelemetry import baggage, context, trace
+    from opentelemetry.propagate import inject
+    from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
+
+    trace_id = 0x4BF92F3577B34DA6A3CE929D0E0E4736
+    span_id = 0x00F067AA0BA902B7
+    span_context = SpanContext(
+        trace_id=trace_id,
+        span_id=span_id,
+        is_remote=False,
+        trace_flags=TraceFlags(TraceFlags.SAMPLED),
+    )
+    ctx = trace.set_span_in_context(NonRecordingSpan(span_context))
+    ctx = baggage.set_baggage("braintrust.parent", "project_id:abc123", context=ctx)
+
+    token = context.attach(ctx)
+    try:
+        carrier = {}
+        inject(carrier)
+    finally:
+        context.detach(token)
+
+    parent = extract_trace_context(carrier)
+    assert parent is not None
+    with _internal_with_memory_background_logger():
+        logger = init_test_logger("otel-to-native")
+        with logger.start_span(name="native", parent=parent) as span:
+            assert span.root_span_id == format(trace_id, "032x")
+            assert span.span_parents == [format(span_id, "016x")]

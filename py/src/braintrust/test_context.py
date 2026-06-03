@@ -1228,8 +1228,10 @@ def test_nested_spans_same_thread(test_logger, with_memory_logger):
     child_log = next(l for l in logs if l["span_attributes"]["name"] == "child")
     grandchild_log = next(l for l in logs if l["span_attributes"]["name"] == "grandchild")
 
-    # Verify parent chain
-    assert root_log["span_id"] == root_log["root_span_id"], "Root is root"
+    # Verify parent chain. The root span has no parents and defines the trace's
+    # root_span_id (format-agnostic; under legacy UUID mode span_id also equals
+    # root_span_id, but that does not hold for hex IDs).
+    assert not root_log.get("span_parents"), "Root has no parents"
     assert child_log["root_span_id"] == root_log["root_span_id"], "Child same root"
     assert grandchild_log["root_span_id"] == root_log["root_span_id"], "Grandchild same root"
     assert root_log["span_id"] in child_log.get("span_parents", []), "Child parent is root"

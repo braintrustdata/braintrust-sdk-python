@@ -10,9 +10,11 @@ def get_id_generator():
 
     This eliminates global state and makes tests parallelizable.
     Each caller gets their own generator instance.
+
+    Defaults to OpenTelemetry-compatible hex IDs. Set BRAINTRUST_LEGACY_IDS
+    to opt back into legacy UUID-based IDs.
     """
-    use_otel = BraintrustEnv.OTEL_COMPAT.get(False)
-    return OTELIDGenerator() if use_otel else UUIDGenerator()
+    return UUIDGenerator() if BraintrustEnv.LEGACY_IDS else OTELIDGenerator()
 
 
 class IDGenerator(ABC):

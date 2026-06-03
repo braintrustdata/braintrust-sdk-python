@@ -62,7 +62,10 @@ def test_llm_calls(logger_memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 3
 
+    # ``root_span_id`` is the root span's own span_id (the parent reference for
+    # its children); ``trace_root_id`` is the trace shared by every span.
     root_span_id = spans[0]["span_id"]
+    trace_root_id = spans[0]["root_span_id"]
 
     assert_matches_object(
         spans,
@@ -81,7 +84,7 @@ def test_llm_calls(logger_memory_logger):
                 },
                 "metadata": {"tags": []},
                 "span_id": root_span_id,
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
             },
             {
                 "span_attributes": {"name": "ChatPromptTemplate"},
@@ -97,7 +100,7 @@ def test_llm_calls(logger_memory_logger):
                     ]
                 },
                 "metadata": {"tags": ["seq:step:1"]},
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
             },
             {
@@ -144,7 +147,7 @@ def test_llm_calls(logger_memory_logger):
                     "tags": ["seq:step:2"],
                     "model": "gpt-4o-mini-2024-07-18",
                 },
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
             },
         ],
@@ -171,6 +174,7 @@ def test_chain_with_memory(logger_memory_logger):
     assert len(spans) == 3
 
     root_span_id = spans[0]["span_id"]
+    trace_root_id = spans[0]["root_span_id"]
 
     assert_matches_object(
         spans,
@@ -189,7 +193,7 @@ def test_chain_with_memory(logger_memory_logger):
                 },
                 "metadata": {"tags": ["test"]},
                 "span_id": root_span_id,
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
             },
             {
                 "span_attributes": {"name": "ChatPromptTemplate"},
@@ -205,7 +209,7 @@ def test_chain_with_memory(logger_memory_logger):
                     ]
                 },
                 "metadata": {"tags": ["seq:step:1", "test"]},
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
             },
             {
@@ -252,7 +256,7 @@ def test_chain_with_memory(logger_memory_logger):
                     "tags": ["seq:step:2", "test"],
                     "model": "gpt-4o-mini-2024-07-18",
                 },
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
             },
         ],
@@ -301,13 +305,14 @@ def test_tool_usage(logger_memory_logger):
 
     spans = memory_logger.pop()
     root_span_id = spans[0]["span_id"]
+    trace_root_id = spans[0]["root_span_id"]
 
     assert_matches_object(
         spans,
         [
             {
                 "span_id": root_span_id,
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_attributes": {
                     "name": "ChatOpenAI",
                     "type": "llm",
@@ -640,13 +645,13 @@ def test_chain_null_values(logger_memory_logger):
     flush()
 
     spans = memory_logger.pop()
-    root_span_id = spans[0]["span_id"]
+    trace_root_id = spans[0]["root_span_id"]
 
     assert_matches_object(
         spans,
         [
             {
-                "root_span_id": root_span_id,
+                "root_span_id": trace_root_id,
                 "span_attributes": {
                     "name": "TestChain",
                     "type": "task",
@@ -721,7 +726,10 @@ def test_consecutive_eval_calls(logger_memory_logger):
 
     # Find the root eval span
     root_eval_span = [s for s in spans if s.get("span_attributes", {}).get("name") == "test-consecutive-eval"][0]
+    # ``root_eval_span_id`` is the eval root's own span_id (the parent reference
+    # for its children); ``trace_root_id`` is the trace shared by every span.
     root_eval_span_id = root_eval_span["span_id"]
+    trace_root_id = root_eval_span["root_span_id"]
 
     # Find the eval dataset record spans (direct children of root eval span)
     eval_record_spans = [
@@ -751,7 +759,7 @@ def test_consecutive_eval_calls(logger_memory_logger):
         [
             {
                 "span_id": root_eval_span_id,
-                "root_span_id": root_eval_span_id,
+                "root_span_id": trace_root_id,
                 "span_attributes": {
                     "name": "test-consecutive-eval",
                     "type": "eval",
@@ -765,7 +773,7 @@ def test_consecutive_eval_calls(logger_memory_logger):
         [eval_record_1],
         [
             {
-                "root_span_id": root_eval_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_eval_span_id],
                 "span_attributes": {
                     "name": "eval",
@@ -781,7 +789,7 @@ def test_consecutive_eval_calls(logger_memory_logger):
         [eval_record_2],
         [
             {
-                "root_span_id": root_eval_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [root_eval_span_id],
                 "span_attributes": {
                     "name": "eval",
@@ -797,7 +805,7 @@ def test_consecutive_eval_calls(logger_memory_logger):
         [task_1_span],
         [
             {
-                "root_span_id": root_eval_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [eval_record_1["span_id"]],
                 "span_attributes": {
                     "name": "task",
@@ -813,7 +821,7 @@ def test_consecutive_eval_calls(logger_memory_logger):
         [task_2_span],
         [
             {
-                "root_span_id": root_eval_span_id,
+                "root_span_id": trace_root_id,
                 "span_parents": [eval_record_2["span_id"]],
                 "span_attributes": {
                     "name": "task",

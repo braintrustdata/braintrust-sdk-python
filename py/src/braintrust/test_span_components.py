@@ -3,6 +3,7 @@ Comprehensive tests for SpanComponents versions V3 and V4.
 Tests serialization, deserialization, OTEL compatibility, and backward compatibility.
 """
 
+import os
 from uuid import uuid4
 
 import pytest
@@ -248,6 +249,16 @@ class TestErrorHandling:
                 object_id="test-id",
             )
 
+    def test_unknown_json_fields_ignored(self):
+        """Forward-compat: unknown JSON fields (e.g. added by a newer SDK) are ignored, not errored."""
+        obj = {
+            "object_type": SpanObjectTypeV3.PROJECT_LOGS.value,
+            "object_id": "p",
+            "future_field": "x",
+        }
+        comp = SpanComponentsV4._from_json_obj(obj)
+        assert comp.object_id == "p"
+
     def test_missing_required_fields(self):
         """Test that missing required fields raise errors."""
         with pytest.raises(AssertionError):
@@ -329,76 +340,53 @@ class TestObjectIdFields:
 
 
 class TestExportFormatSelection:
-    """Test that span export format is selected based on BRAINTRUST_OTEL_COMPAT environment variable."""
+    """Test that span export format is coupled to the active ID format.
+
+    Hex IDs (the default) serialize as V4; legacy UUID IDs (opted into via
+    BRAINTRUST_LEGACY_IDS) serialize as V3.
+    """
 
     def test_export_format_based_on_env_variable(self):
-        """Test that export format changes based on BRAINTRUST_OTEL_COMPAT environment variable."""
-        import os
+        """Test that export format follows the legacy-UUID opt-out flag."""
+        from braintrust.test_helpers import init_test_logger, preserve_env_vars
 
-        from braintrust.test_helpers import init_test_logger
+        with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
+            # Legacy UUID mode should use V3.
+            os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+            os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
 
-        # Test with OTEL_COMPAT=false (should use V3)
-        original_env = os.environ.get("BRAINTRUST_OTEL_COMPAT")
-        try:
-            os.environ["BRAINTRUST_OTEL_COMPAT"] = "false"
-
-            # Initialize test logger and create a span
             l = init_test_logger("test_export_v3")
             with l.start_span(name="test_span") as span:
                 export_v3_mode = span.export()
 
-            # Verify it can be parsed by V3
-            parsed_as_v3 = SpanComponentsV3.from_str(export_v3_mode)
-            assert parsed_as_v3 is not None
+            assert SpanComponentsV4.get_version(export_v3_mode) == 3
 
-            # Test with OTEL_COMPAT=true (should use V4)
-            os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
+            # Default (hex) mode should use V4.
+            os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
 
-            # Initialize test logger and create a span
             l = init_test_logger("test_export_v4")
             with l.start_span(name="test_span") as span:
                 export_v4_mode = span.export()
 
-            # Verify it can be parsed by V4
-            parsed_as_v4 = SpanComponentsV4.from_str(export_v4_mode)
-            assert parsed_as_v4 is not None
+            assert SpanComponentsV4.get_version(export_v4_mode) == 4
 
-            # Both should be parseable by V4 (backward compatibility)
-            v4_from_v3 = SpanComponentsV4.from_str(export_v3_mode)
-            v4_from_v4 = SpanComponentsV4.from_str(export_v4_mode)
-            assert v4_from_v3 is not None
-            assert v4_from_v4 is not None
+            # Both should be parseable by V4 (backward compatibility).
+            assert SpanComponentsV4.from_str(export_v3_mode) is not None
+            assert SpanComponentsV4.from_str(export_v4_mode) is not None
 
-        finally:
-            # Clean up environment
-            if original_env is not None:
-                os.environ["BRAINTRUST_OTEL_COMPAT"] = original_env
-            elif "BRAINTRUST_OTEL_COMPAT" in os.environ:
-                del os.environ["BRAINTRUST_OTEL_COMPAT"]
+    def test_export_uses_v4_by_default(self):
+        """Test that export uses V4 format by default (no env vars set)."""
+        from braintrust.test_helpers import init_test_logger, preserve_env_vars
 
-    def test_export_uses_v3_by_default(self):
-        """Test that export uses V3 format by default when BRAINTRUST_OTEL_COMPAT is not set."""
-        import os
+        with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
+            os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
+            os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
 
-        from braintrust.test_helpers import init_test_logger
-
-        # Ensure environment variable is not set
-        original_env = os.environ.get("BRAINTRUST_OTEL_COMPAT")
-        try:
-            if "BRAINTRUST_OTEL_COMPAT" in os.environ:
-                del os.environ["BRAINTRUST_OTEL_COMPAT"]
-
-            # Initialize test logger and create a span
-            l = init_test_logger("test_default_v3")
+            l = init_test_logger("test_default_v4")
             with l.start_span(name="test_span") as span:
                 export_default = span.export()
 
-            # Should be parseable by V3 since V3 is the default
-            parsed_as_v3 = SpanComponentsV3.from_str(export_default)
-            assert parsed_as_v3 is not None
-            assert parsed_as_v3.object_type is not None
-
-        finally:
-            # Restore environment
-            if original_env is not None:
-                os.environ["BRAINTRUST_OTEL_COMPAT"] = original_env
+            assert SpanComponentsV4.get_version(export_default) == 4
+            parsed = SpanComponentsV4.from_str(export_default)
+            assert parsed is not None
+            assert parsed.object_type is not None

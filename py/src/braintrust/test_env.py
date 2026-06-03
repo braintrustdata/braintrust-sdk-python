@@ -1,6 +1,14 @@
 import pytest
 
-from .env import BraintrustEnv, EnvParser, EnvVar, parse_bool, parse_float, parse_int, parse_string
+from .env import (
+    BraintrustEnv,
+    EnvParser,
+    EnvVar,
+    parse_bool,
+    parse_float,
+    parse_int,
+    parse_string,
+)
 
 
 class TestEnvParsers:
@@ -138,3 +146,31 @@ class TestBraintrustEnv:
 
         monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "false")
         assert BraintrustEnv.OTEL_COMPAT.get(True) is False
+
+
+class TestIdConfig:
+    # LEGACY_IDS is lazily resolved from the current environment on each
+    # access, like the other settings, so tests just set env vars and read it.
+
+    def test_hex_ids_default(self, monkeypatch):
+        monkeypatch.delenv("BRAINTRUST_OTEL_COMPAT", raising=False)
+        monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
+        assert BraintrustEnv.LEGACY_IDS is False
+
+    def test_legacy_uuid_opt_out(self, monkeypatch):
+        monkeypatch.delenv("BRAINTRUST_OTEL_COMPAT", raising=False)
+        monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", "true")
+        assert BraintrustEnv.LEGACY_IDS is True
+
+    def test_otel_compat_forces_hex(self, monkeypatch):
+        # OTEL_COMPAT implies hex IDs regardless of LEGACY_IDS being unset.
+        monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
+        monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
+        assert BraintrustEnv.LEGACY_IDS is False
+
+    def test_conflicting_flags_otel_wins(self, monkeypatch):
+        # OTEL_COMPAT wins over LEGACY_IDS: legacy is disabled (hex IDs)
+        # rather than raising.
+        monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
+        monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", "true")
+        assert BraintrustEnv.LEGACY_IDS is False
