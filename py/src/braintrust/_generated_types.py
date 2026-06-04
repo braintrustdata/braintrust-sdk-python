@@ -1775,6 +1775,11 @@ class ProjectScoreCategory(TypedDict):
     """
 
 
+class ProjectScoreConfigVisibility(TypedDict):
+    users: NotRequired[Sequence[str] | None]
+    groups: NotRequired[Sequence[str] | None]
+
+
 ProjectScoreType: TypeAlias = Literal[
     'slider', 'categorical', 'weighted', 'minimum', 'maximum', 'online', 'free-form'
 ]
@@ -3284,6 +3289,7 @@ ProjectScoreCategories: TypeAlias = (
 class ProjectScoreConfig(TypedDict):
     multi_select: NotRequired[bool | None]
     destination: NotRequired[str | None]
+    visibility: NotRequired[ProjectScoreConfigVisibility | None]
     online: NotRequired[OnlineScoreConfig | None]
 
 
