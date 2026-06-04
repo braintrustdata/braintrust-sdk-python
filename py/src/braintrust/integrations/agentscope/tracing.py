@@ -1,6 +1,7 @@
 """AgentScope-specific span creation and stream aggregation."""
 
 import contextlib
+import inspect
 from contextlib import aclosing
 from typing import Any
 
@@ -68,7 +69,7 @@ def _model_provider_name(instance: Any) -> str:
 def _model_metadata(instance: Any) -> dict[str, Any]:
     return clean_nones(
         {
-            "model": getattr(instance, "model_name", None),
+            "model": getattr(instance, "model_name", None) or getattr(instance, "model", None),
             "provider": _model_provider_name(instance),
             "model_class": instance.__class__.__name__,
         }
@@ -142,6 +143,8 @@ def _field_value(data: Any, key: str) -> Any:
 
 
 def _tool_name(tool_call: Any) -> str:
+    if isinstance(tool_call, str):
+        return tool_call
     if isinstance(tool_call, dict):
         return str(tool_call.get("name") or "unknown_tool")
     return str(getattr(tool_call, "name", "unknown_tool"))
@@ -231,7 +234,9 @@ async def _toolkit_call_tool_function_wrapper(wrapped: Any, instance: Any, args:
             )
         )
         try:
-            result = await wrapped(*args, **kwargs)
+            result = wrapped(*args, **kwargs)
+            if inspect.isawaitable(result):
+                result = await result
             if _is_async_iterator(result):
                 return _deferred_stream_trace(result, span, stack, lambda s, chunk: s.log(output=chunk))
 

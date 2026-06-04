@@ -378,6 +378,8 @@ AGENTSCOPE_VERSIONS = _get_matrix_versions("agentscope")
 @nox.session()
 @nox.parametrize("version", AGENTSCOPE_VERSIONS, ids=AGENTSCOPE_VERSIONS)
 def test_agentscope(session, version):
+    if version == LATEST and sys.version_info < (3, 11):
+        session.skip("AgentScope 2.x requires Python 3.11+")
     _install_test_deps(session)
     _install_matrix_dep(session, "agentscope", version)
     _install_group_locked(session, "test-agentscope")

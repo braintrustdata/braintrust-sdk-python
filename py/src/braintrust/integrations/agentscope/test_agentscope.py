@@ -1,14 +1,27 @@
+# pylint: disable=import-error,no-name-in-module,no-value-for-parameter,unexpected-keyword-arg,no-member
+import importlib
+import importlib.metadata
+
 import pytest
 from braintrust import logger
 from braintrust.integrations.agentscope import setup_agentscope
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
+from packaging.version import Version
 
 
 PROJECT_NAME = "test_agentscope"
 
 setup_agentscope(project_name=PROJECT_NAME)
+
+
+AGENTSCOPE_VERSION = Version(importlib.metadata.version("agentscope"))
+IS_AGENTSCOPE_V2 = AGENTSCOPE_VERSION >= Version("2")
+agent_module = importlib.import_module("agentscope.agent")
+message_module = importlib.import_module("agentscope.message")
+HAS_AGENT_REPLY_API = hasattr(agent_module, "Agent")
+HAS_USER_MSG = hasattr(message_module, "UserMsg")
 
 
 @pytest.fixture
@@ -26,6 +39,17 @@ def _span_type(span):
 def _make_model(*, stream: bool = False):
     from agentscope.model import OpenAIChatModel
 
+    if hasattr(OpenAIChatModel, "Parameters"):
+        from agentscope.credential import OpenAICredential
+
+        return OpenAIChatModel(
+            credential=OpenAICredential(api_key="test-api-key"),
+            model="gpt-4o-mini",
+            parameters=OpenAIChatModel.Parameters(temperature=0),
+            stream=stream,
+            max_retries=0,
+        )
+
     return OpenAIChatModel(
         model_name="gpt-4o-mini",
         stream=stream,
@@ -34,19 +58,30 @@ def _make_model(*, stream: bool = False):
 
 
 def _make_agent(name: str, sys_prompt: str, *, toolkit=None, multi_agent: bool = False):
-    from agentscope.agent import ReActAgent
-    from agentscope.formatter import OpenAIChatFormatter, OpenAIMultiAgentFormatter
-    from agentscope.memory import InMemoryMemory
     from agentscope.tool import Toolkit
 
-    agent = ReActAgent(
-        name=name,
-        sys_prompt=sys_prompt,
-        model=_make_model(),
-        formatter=OpenAIMultiAgentFormatter() if multi_agent else OpenAIChatFormatter(),
-        toolkit=toolkit or Toolkit(),
-        memory=InMemoryMemory(),
-    )
+    if HAS_AGENT_REPLY_API:
+        from agentscope.agent import Agent
+
+        agent = Agent(
+            name=name,
+            system_prompt=sys_prompt,
+            model=_make_model(),
+            toolkit=toolkit or Toolkit(),
+        )
+    else:
+        from agentscope.agent import ReActAgent
+        from agentscope.formatter import OpenAIChatFormatter, OpenAIMultiAgentFormatter
+        from agentscope.memory import InMemoryMemory
+
+        agent = ReActAgent(
+            name=name,
+            sys_prompt=sys_prompt,
+            model=_make_model(),
+            formatter=OpenAIMultiAgentFormatter() if multi_agent else OpenAIChatFormatter(),
+            toolkit=toolkit or Toolkit(),
+            memory=InMemoryMemory(),
+        )
     if hasattr(agent, "set_console_output_enabled"):
         agent.set_console_output_enabled(False)
     elif hasattr(agent, "disable_console_output"):
@@ -66,13 +101,17 @@ async def test_agentscope_simple_agent_run(memory_logger):
         "You are a concise assistant. Answer in one sentence.",
     )
 
-    response = await agent(
-        Msg(
+    if HAS_USER_MSG:
+        from agentscope.message import UserMsg
+
+        message = UserMsg("user", "Say hello in exactly two words.")
+    else:
+        message = Msg(
             name="user",
             content="Say hello in exactly two words.",
             role="user",
         )
-    )
+    response = await (agent.reply(message) if HAS_AGENT_REPLY_API else agent(message))
 
     assert response is not None
 
@@ -93,6 +132,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
     assert agent_span["span_id"] in llm_spans[0]["span_parents"]
 
 
+@pytest.mark.skipif(IS_AGENTSCOPE_V2, reason="AgentScope 2.x removed the pipeline module")
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agentscope_sequential_pipeline_creates_parent_span(memory_logger):
@@ -127,6 +167,7 @@ async def test_agentscope_sequential_pipeline_creates_parent_span(memory_logger)
     assert pipeline_span["span_id"] in bob_span["span_parents"]
 
 
+@pytest.mark.skipif(IS_AGENTSCOPE_V2, reason="AgentScope 2.x removed execute_python_code")
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agentscope_tool_use_creates_tool_span(memory_logger):
@@ -287,6 +328,35 @@ async def test_toolkit_call_tool_function_wrapper_stream_span_covers_full_stream
     duration_ms = (m["end"] - m["start"]) * 1000
     # Stream takes ~300ms (3 chunks × 100ms). The span duration must reflect that.
     assert duration_ms >= 200, f"Span duration {duration_ms:.0f}ms is too short; span ended before stream was consumed"
+
+
+@pytest.mark.skipif(not IS_AGENTSCOPE_V2, reason="AgentScope 2.x Toolkit.call_tool API")
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agentscope_v2_toolkit_call_tool_creates_tool_span(memory_logger):
+    from agentscope.message import TextBlock, ToolCallBlock
+    from agentscope.state import AgentState
+    from agentscope.tool import FunctionTool, ToolChunk, Toolkit
+
+    assert not memory_logger.pop()
+
+    def answer():
+        return ToolChunk(content=[TextBlock(text="42")])
+
+    toolkit = Toolkit(tools=[FunctionTool(answer, name="answer")])
+
+    stream = await toolkit.call_tool(
+        ToolCallBlock(id="test-call", name="answer", input="{}"),
+        AgentState(),
+    )
+    chunks = [chunk async for chunk in stream]
+
+    assert chunks
+
+    spans = memory_logger.pop()
+    tool_span = next(span for span in spans if _span_type(span) == "tool")
+    assert tool_span["span_attributes"]["name"] == "answer.execute"
+    assert tool_span["input"]["tool_name"] == "answer"
 
 
 class TestAutoInstrumentAgentScope:
