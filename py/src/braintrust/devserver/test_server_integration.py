@@ -1,5 +1,6 @@
 import json
 import os
+import inspect
 from pathlib import Path
 from typing import Any
 
@@ -120,6 +121,109 @@ def test_devserver_list_evaluators(client, api_key, org_name):
     assert "simple-math-eval" in evaluators
     assert evaluators["simple-math-eval"]["scores"] == [{"name": "scorer"}]
     assert evaluators["simple-math-eval"]["classifiers"] == [{"name": "classifier"}]
+
+
+def test_devserver_keeps_duplicate_eval_names_addressable(api_key, org_name, monkeypatch):
+    if not has_devserver_installed():
+        pytest.skip("Devserver dependencies not installed (requires .[cli])")
+
+    from braintrust import Evaluator
+    from braintrust.devserver import server as devserver_module
+    from braintrust.devserver.server import create_app
+    from braintrust.logger import BraintrustState
+    from starlette.testclient import TestClient
+
+    def task_a(input: str, _hooks) -> str:
+        return f"a:{input}"
+
+    def task_b(input: str, _hooks) -> str:
+        return f"b:{input}"
+
+    evaluator_a = Evaluator(
+        project_name="shared-project",
+        eval_name="shared-project",
+        data=lambda: [{"input": "ping", "expected": "a:ping"}],
+        task=task_a,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+    evaluator_b = Evaluator(
+        project_name="shared-project",
+        eval_name="shared-project",
+        data=lambda: [{"input": "ping", "expected": "b:ping"}],
+        task=task_b,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    async def fake_cached_login(**_kwargs):
+        return BraintrustState()
+
+    class FakeSummary:
+        def as_dict(self):
+            return {"experiment_name": "shared-project", "project_name": "shared-project", "scores": {}}
+
+    class FakeResult:
+        summary = FakeSummary()
+
+    captured: dict[str, Any] = {}
+
+    async def fake_eval_async(*, task, **_kwargs):
+        hooks = type("Hooks", (), {"parameters": None, "report_progress": lambda self, _progress: None})()
+        output = task("ping", hooks)
+        if inspect.isawaitable(output):
+            output = await output
+        captured["output"] = output
+        return FakeResult()
+
+    monkeypatch.setattr(devserver_module, "cached_login", fake_cached_login)
+    monkeypatch.setattr(devserver_module, "EvalAsync", fake_eval_async)
+
+    test_client = TestClient(create_app([evaluator_a, evaluator_b]))
+    headers = {"x-bt-auth-token": api_key, "x-bt-org-name": org_name, "Content-Type": "application/json"}
+
+    list_response = test_client.get("/list", headers=headers)
+    assert list_response.status_code == 200
+    evaluators = list_response.json()
+    assert list(evaluators) == ["shared-project#1", "shared-project#2"]
+    assert evaluators["shared-project#1"]["id"] == "shared-project#1"
+    assert evaluators["shared-project#1"]["name"] == "shared-project"
+    assert evaluators["shared-project#2"]["id"] == "shared-project#2"
+
+    ambiguous_response = test_client.post(
+        "/eval",
+        headers=headers,
+        json={"name": "shared-project", "stream": False, "data": [{"input": "ping", "expected": "b:ping"}]},
+    )
+    assert ambiguous_response.status_code == 409
+    assert ambiguous_response.json()["candidates"] == [
+        {"id": "shared-project#1", "name": "shared-project"},
+        {"id": "shared-project#2", "name": "shared-project"},
+    ]
+
+    selected_response = test_client.post(
+        "/eval",
+        headers=headers,
+        json={
+            "name": "shared-project",
+            "id": "shared-project#2",
+            "stream": False,
+            "data": [{"input": "ping", "expected": "b:ping"}],
+        },
+    )
+    assert selected_response.status_code == 200
+    assert captured["output"] == "b:ping"
+
+    captured.clear()
+    list_key_response = test_client.post(
+        "/eval",
+        headers=headers,
+        json={"name": "shared-project#1", "stream": False, "data": [{"input": "ping", "expected": "a:ping"}]},
+    )
+    assert list_key_response.status_code == 200
+    assert captured["output"] == "a:ping"
 
 
 def parse_sse_events(response_text: str) -> list[dict[str, Any]]:

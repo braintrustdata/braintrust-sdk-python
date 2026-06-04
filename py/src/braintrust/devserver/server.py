@@ -2,6 +2,7 @@ import asyncio
 import json
 import sys
 import textwrap
+from collections import Counter, defaultdict
 from typing import Any
 
 
@@ -53,6 +54,7 @@ from .schemas import ValidationError, parse_eval_body
 
 
 _all_evaluators: dict[str, Evaluator[Any, Any, Any]] = {}
+_evaluator_ids_by_name: dict[str, list[str]] = {}
 
 
 class _ParameterOverrideHooks:
@@ -120,8 +122,10 @@ async def list_evaluators(request: Request) -> JSONResponse:
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
     evaluator_list = {}
-    for name, evaluator in _all_evaluators.items():
-        evaluator_list[name] = {
+    for evaluator_id, evaluator in _all_evaluators.items():
+        ids_for_name = _evaluator_ids_by_name[evaluator.eval_name]
+        list_key = evaluator.eval_name if len(ids_for_name) == 1 else evaluator_id
+        evaluator_list[list_key] = {
             "parameters": (
                 serialize_remote_eval_parameters_container(evaluator.parameters) if evaluator.parameters else None
             ),
@@ -130,6 +134,9 @@ async def list_evaluators(request: Request) -> JSONResponse:
                 {"name": _classifier_name(classifier, i)} for i, classifier in enumerate(evaluator.classifiers or [])
             ],
         }
+        if len(ids_for_name) > 1:
+            evaluator_list[list_key]["id"] = evaluator_id
+            evaluator_list[list_key]["name"] = evaluator.eval_name
 
     return JSONResponse(evaluator_list)
 
@@ -159,10 +166,9 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
 
     state = ctx.state
 
-    # Check if the evaluator exists
-    evaluator = _all_evaluators.get(eval_data["name"])
-    if not evaluator:
-        return JSONResponse({"error": f"Evaluator '{eval_data['name']}' not found"}, status_code=404)
+    evaluator, error = _resolve_evaluator(eval_data)
+    if error is not None:
+        return error
 
     # Get the dataset if data is provided
     try:
@@ -302,6 +308,65 @@ async def run_eval(request: Request) -> JSONResponse | StreamingResponse:
         return JSONResponse({"error": f"Failed to run evaluation: {str(e)}"}, status_code=500)
 
 
+def _make_evaluator_id(eval_name: str, index: int, duplicate_names: set[str]) -> str:
+    if eval_name not in duplicate_names:
+        return eval_name
+    return f"{eval_name}#{index}"
+
+
+def _set_evaluator_registry(evaluators: list[Evaluator[Any, Any, Any]]) -> None:
+    global _all_evaluators, _evaluator_ids_by_name
+    name_counts = Counter(evaluator.eval_name for evaluator in evaluators)
+    duplicate_names = {name for name, count in name_counts.items() if count > 1}
+    name_indexes: dict[str, int] = defaultdict(int)
+    all_evaluators: dict[str, Evaluator[Any, Any, Any]] = {}
+    evaluator_ids_by_name: dict[str, list[str]] = defaultdict(list)
+
+    for evaluator in evaluators:
+        name_indexes[evaluator.eval_name] += 1
+        evaluator_id = _make_evaluator_id(evaluator.eval_name, name_indexes[evaluator.eval_name], duplicate_names)
+        base_evaluator_id = evaluator_id
+        suffix = 1
+        while evaluator_id in all_evaluators:
+            suffix += 1
+            evaluator_id = f"{base_evaluator_id}#{suffix}"
+        all_evaluators[evaluator_id] = evaluator
+        evaluator_ids_by_name[evaluator.eval_name].append(evaluator_id)
+
+    _all_evaluators = all_evaluators
+    _evaluator_ids_by_name = dict(evaluator_ids_by_name)
+
+
+def _resolve_evaluator(
+    eval_data: dict[str, Any],
+) -> tuple[Evaluator[Any, Any, Any] | None, JSONResponse | None]:
+    evaluator_id = eval_data.get("id")
+    if evaluator_id:
+        evaluator = _all_evaluators.get(evaluator_id)
+        if evaluator is None:
+            return None, JSONResponse({"error": f"Evaluator id '{evaluator_id}' not found"}, status_code=404)
+        return evaluator, None
+
+    eval_name = eval_data["name"]
+    evaluator = _all_evaluators.get(eval_name)
+    if evaluator is not None:
+        return evaluator, None
+
+    evaluator_ids = _evaluator_ids_by_name.get(eval_name, [])
+    if len(evaluator_ids) == 1:
+        return _all_evaluators[evaluator_ids[0]], None
+    if len(evaluator_ids) > 1:
+        candidates = [{"id": candidate_id, "name": eval_name} for candidate_id in evaluator_ids]
+        return None, JSONResponse(
+            {
+                "error": f"Evaluator name '{eval_name}' is ambiguous. Retry with one of the listed ids.",
+                "candidates": candidates,
+            },
+            status_code=409,
+        )
+    return None, JSONResponse({"error": f"Evaluator '{eval_name}' not found"}, status_code=404)
+
+
 def create_app(evaluators: list[Evaluator[Any, Any, Any]], org_name: str | None = None):
     """Create and configure the Starlette app for the dev server.
 
@@ -312,8 +377,7 @@ def create_app(evaluators: list[Evaluator[Any, Any, Any]], org_name: str | None 
     Returns:
         Configured Starlette app
     """
-    global _all_evaluators
-    _all_evaluators = {evaluator.eval_name: evaluator for evaluator in evaluators}
+    _set_evaluator_registry(evaluators)
 
     routes = [
         Route("/", endpoint=index),

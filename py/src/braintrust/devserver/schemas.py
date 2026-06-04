@@ -35,6 +35,7 @@ class ParsedEvalBody(TypedDict, total=False):
     """Type for parsed eval request body."""
 
     name: str  # Required
+    id: str
     parameters: dict[str, Any]
     data: Any
     scores: list[ParsedFunctionId]
@@ -201,6 +202,11 @@ def parse_eval_body(request_data: str | bytes | dict) -> ParsedEvalBody:
 
     # Build the parsed body
     parsed: ParsedEvalBody = {"name": name}
+
+    if "id" in data:
+        if not isinstance(data["id"], str):
+            raise ValidationError(f"id must be a string, got {type(data['id']).__name__}")
+        parsed["id"] = data["id"]
 
     # Optional fields with validation
     if "parameters" in data:
