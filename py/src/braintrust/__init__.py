@@ -84,5 +84,6 @@ from .sandbox import RegisteredSandboxFunction as RegisteredSandboxFunction
 from .sandbox import RegisterSandboxResult as RegisterSandboxResult
 from .sandbox import SandboxConfig as SandboxConfig
 from .sandbox import register_sandbox as register_sandbox
+from .trace_replay import *
 from .util import BT_IS_ASYNC_ATTRIBUTE as BT_IS_ASYNC_ATTRIBUTE
 from .util import MarkAsyncWrapper as MarkAsyncWrapper
