@@ -676,10 +676,9 @@ def pylint(session):
     # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
     if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
         files = [f for f in files if not f.startswith("scripts/")]
-    # The lint group skips crewai on Python 3.14 (its transitive pydantic-core
-    # has no 3.14 wheel yet), so skip the matching example too.
-    if sys.version_info[:2] >= (3, 14):
-        files = [f for f in files if not f.startswith("../examples/crewai/")]
+    # The lint group skips crewai to avoid vulnerable transitive chromadb
+    # versions, so skip the matching example too.
+    files = [f for f in files if not f.startswith("../examples/crewai/")]
     session.run("pylint", "--errors-only", *files)
 
 
