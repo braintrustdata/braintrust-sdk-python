@@ -3428,6 +3428,14 @@ class TopicMapData(TypedDict):
     """
     Maximum distance to nearest centroid. If exceeded, returns no_match.
     """
+    btql_filter: NotRequired[str | None]
+    """
+    Per-topic-map BTQL filter that was applied when this version was generated. Absent on versions generated before this was recorded.
+    """
+    automation_btql_filter: NotRequired[str | None]
+    """
+    Automation-level BTQL filter that was applied when this version was generated. Absent on versions generated before this was recorded.
+    """
 
 
 class ViewData(TypedDict):
