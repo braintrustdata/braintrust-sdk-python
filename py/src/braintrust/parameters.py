@@ -221,7 +221,7 @@ def _prompt_data_to_dict(
     if prompt_data is None:
         return None
     if isinstance(prompt_data, PromptData):
-        return prompt_data.as_dict()
+        return prompt_data.as_dict(exclude_unset=True)
     return dict(prompt_data)
 
 
