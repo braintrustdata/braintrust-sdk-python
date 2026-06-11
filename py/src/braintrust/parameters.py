@@ -215,14 +215,32 @@ def is_eval_parameter_schema(schema: Any) -> bool:
     return True
 
 
+def _strip_none_values(value: Any) -> Any:
+    """Recursively drop dict entries whose value is ``None``.
+
+    Prompt parameter defaults are serialized from Python prompt dataclasses,
+    which preserve explicit ``None`` values for optional fields (e.g. a message's
+    ``name``/``function_call``/``tool_calls`` or a chat block's ``tools``). The
+    JS/UI evaluator manifest schema treats those fields as optional-when-absent
+    rather than nullable, so an explicit ``null`` fails validation and the remote
+    eval never appears in the playground. Stripping ``None`` keeps the emitted
+    default aligned with what the UI schema expects.
+    """
+    if isinstance(value, dict):
+        return {key: _strip_none_values(item) for key, item in value.items() if item is not None}
+    if isinstance(value, list):
+        return [_strip_none_values(item) for item in value]
+    return value
+
+
 def _prompt_data_to_dict(
     prompt_data: PromptDataDict | PromptData | None,
 ) -> dict[str, Any] | None:
     if prompt_data is None:
         return None
     if isinstance(prompt_data, PromptData):
-        return prompt_data.as_dict()
-    return dict(prompt_data)
+        return _strip_none_values(prompt_data.as_dict())
+    return _strip_none_values(dict(prompt_data))
 
 
 def _create_prompt(name: str, prompt_data: dict[str, Any]) -> "Prompt":
