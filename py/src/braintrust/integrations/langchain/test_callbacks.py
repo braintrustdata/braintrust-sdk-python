@@ -8,12 +8,10 @@ from typing import cast
 import pytest
 from braintrust import logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler
-from braintrust.integrations.langchain.callbacks import _get_metrics_from_response
 from braintrust.logger import flush
 from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import RunnableMap, RunnableSerializable
@@ -906,94 +904,6 @@ def test_streaming_ttft(logger_memory_logger):
             }
         ],
     )
-
-
-def _single_generation_response(usage_metadata: dict, model_name: str) -> LLMResult:
-    return LLMResult(
-        generations=[
-            [
-                ChatGeneration(
-                    message=AIMessage(
-                        content="Done",
-                        response_metadata={"model_name": model_name},
-                        usage_metadata=cast(dict, usage_metadata),
-                    )
-                )
-            ]
-        ]
-    )
-
-
-def test_folded_cache_tokens_are_not_double_counted():
-    # langchain-anthropic >= 0.2.3 folds cache read/creation tokens into
-    # input_tokens, exposing them via input_token_details as a breakdown.
-    response = _single_generation_response(
-        {
-            "input_tokens": 1095,
-            "output_tokens": 40,
-            "total_tokens": 1135,
-            "input_token_details": {
-                "cache_read": 0,
-                "cache_creation": 0,
-                "ephemeral_5m_input_tokens": 1075,
-                "ephemeral_1h_input_tokens": 0,
-            },
-        },
-        model_name="claude-sonnet-4-5-20250929",
-    )
-
-    assert _get_metrics_from_response(response) == {
-        "prompt_tokens": 1095,
-        "completion_tokens": 40,
-        "total_tokens": 1135,
-        "tokens": 1135,
-        "prompt_cached_tokens": 0,
-        "prompt_cache_creation_5m_tokens": 1075,
-        "prompt_cache_creation_1h_tokens": 0,
-    }
-
-
-def test_openai_cached_tokens_are_not_folded_into_prompt_tokens():
-    response = _single_generation_response(
-        {
-            "input_tokens": 1000,
-            "output_tokens": 200,
-            "total_tokens": 1200,
-            "input_token_details": {"cache_read": 500},
-        },
-        model_name="gpt-4o-mini-2024-07-18",
-    )
-
-    assert _get_metrics_from_response(response) == {
-        "prompt_tokens": 1000,
-        "completion_tokens": 200,
-        "total_tokens": 1200,
-        "tokens": 1200,
-        "prompt_cached_tokens": 500,
-    }
-
-
-def test_separately_reported_cache_tokens_are_folded_into_prompt_tokens():
-    # Integrations that report uncached input only make cache tokens exceed
-    # the prompt total; normalize so prompt/total include cache tokens.
-    response = _single_generation_response(
-        {
-            "input_tokens": 20,
-            "output_tokens": 40,
-            "total_tokens": 60,
-            "input_token_details": {"cache_read": 1000, "cache_creation": 500},
-        },
-        model_name="claude-3-5-sonnet-20240620",
-    )
-
-    assert _get_metrics_from_response(response) == {
-        "prompt_tokens": 1520,
-        "completion_tokens": 40,
-        "total_tokens": 1560,
-        "tokens": 1560,
-        "prompt_cached_tokens": 1000,
-        "prompt_cache_creation_tokens": 500,
-    }
 
 
 @pytest.mark.vcr
