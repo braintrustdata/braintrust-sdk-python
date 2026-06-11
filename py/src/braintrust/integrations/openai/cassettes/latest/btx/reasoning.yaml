@@ -19,57 +19,47 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_04cf0c946973b39d006a01f3c9aaa481a2a856f8ff920ca0e2\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1778512841,\n  \"status\":
+      string: "{\n  \"id\": \"resp_08e3bb2bd319ba03006a2ac42424f881a2bf3d8245940a82c5\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1781187620,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1778512851,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1781187628,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"rs_04cf0c946973b39d006a01f3ca7ee881a2b8f69fcf3f8e3122\",\n
-        \     \"type\": \"reasoning\",\n      \"summary\": [\n        {\n          \"type\":
-        \"summary_text\",\n          \"text\": \"**Analyzing pronic numbers**\\n\\nThe
-        user is exploring a sequence: 2, 6, 12, 20, 30. These terms represent pronic
-        numbers, which can be expressed as n(n+1), where n are consecutive integers.
-        For instance, when n=1, it gives 2; for n=2, it yields 6, and so on. The nth
-        term formula is a_n = n(n+1), starting with n=1. If starting from n=0, the
-        formula remains the same, but you'd track from a_1=2. So, pronic numbers create
-        this interesting pattern!\"\n        },\n        {\n          \"type\": \"summary_text\",\n
-        \         \"text\": \"**Exploring pronic numbers**\\n\\nThe sequence 2, 6,
-        12, 20, 30 consists of pronic numbers, defined as the product of consecutive
-        integers (n(n+1)). We can see that they also relate to triangular numbers,
-        where differences between terms increase by 2 each time: 4, 6, 8, and 10,
-        indicating a quadratic sequence. The formula is a_n = n(n+1), which could
-        also be expressed as n^2 + n. So, the key takeaway is that these are pronic
-        numbers, and I\\u2019ll make sure to clarify that!\"\n        }\n      ]\n
-        \   },\n    {\n      \"id\": \"msg_04cf0c946973b39d006a01f3d3054c81a2aa864b6bcbd2e4d9\",\n
+        \     \"id\": \"rs_08e3bb2bd319ba03006a2ac4252a0481a2a83a41efd6f12d16\",\n
+        \     \"type\": \"reasoning\",\n      \"content\": [],\n      \"summary\":
+        []\n    },\n    {\n      \"id\": \"msg_08e3bb2bd319ba03006a2ac42bf99881a280bba7b986eb705d\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The terms are the
-        \\u201cpronic\\u201d (or oblong) numbers, i.e. the products of two consecutive
-        integers:\\n\\n\\u2002a\\u2081 = 1\\u00b72 = 2  \\n\\u2002a\\u2082 = 2\\u00b73
-        = 6  \\n\\u2002a\\u2083 = 3\\u00b74 = 12  \\n\\u2002a\\u2084 = 4\\u00b75 =
-        20  \\n\\u2002a\\u2085 = 5\\u00b76 = 30  \\n\\nIf we start counting at n =
-        1, the nth term is\\n\\n\\u2002a\\u2099 = n\\u00b7(n + 1)  \\n\\nor equivalently\\n\\n\\u2002a\\u2099
-        = n\\u00b2 + n.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
+        [],\n          \"logprobs\": [],\n          \"text\": \"The differences between
+        successive terms are  \\n 6\\u22122=4,  12\\u22126=6,  20\\u221212=8,  30\\u221220=10,
+        \\u2026  \\nso you\\u2019re adding 4,6,8,10,\\u2026 (i.e. the even numbers
+        from 4 on).  Hence the sequence is quadratic.  In fact one shows by induction
+        that\\n\\n  a\\u2081=2,  and  a\\u2099\\u2013a\\u2099\\u208b\\u2081=2n   \\u21d2
+        \  a\\u2099=n(n+1).\\n\\nEquivalently  \\n  a\\u2099 = n\\u00b2 + n  \\n\\nwhich
+        for n=1,2,3,4,5 gives 2,6,12,20,30. These are the \\u201cpronic\\u201d (or
+        oblong) numbers.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
         \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
-        \ \"reasoning\": {\n    \"effort\": \"high\",\n    \"summary\": \"detailed\"\n
-        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 41,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 962,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 768\n    },\n    \"total_tokens\": 1003\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \ \"reasoning\": {\n    \"context\": \"current_turn\",\n    \"effort\": \"high\",\n
+        \   \"summary\": \"detailed\"\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
+        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        41,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 869,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        640\n    },\n    \"total_tokens\": 910\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:20:51 GMT
+      - Thu, 11 Jun 2026 14:20:28 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -78,12 +68,10 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       content-length:
-      - '3182'
+      - '2234'
       openai-processing-ms:
-      - '9924'
+      - '8314'
       openai-version:
       - '2020-10-01'
       x-ratelimit-limit-requests:
@@ -104,24 +92,14 @@ interactions:
 - request:
     body: "{\"input\":[{\"role\":\"user\",\"content\":\"Look at this sequence: 2,
       6, 12, 20, 30. What is the pattern and what would be the formula for the nth
-      term?\\n\"},{\"id\":\"rs_04cf0c946973b39d006a01f3ca7ee881a2b8f69fcf3f8e3122\",\"summary\":[{\"text\":\"**Analyzing
-      pronic numbers**\\n\\nThe user is exploring a sequence: 2, 6, 12, 20, 30. These
-      terms represent pronic numbers, which can be expressed as n(n+1), where n are
-      consecutive integers. For instance, when n=1, it gives 2; for n=2, it yields
-      6, and so on. The nth term formula is a_n = n(n+1), starting with n=1. If starting
-      from n=0, the formula remains the same, but you'd track from a_1=2. So, pronic
-      numbers create this interesting pattern!\",\"type\":\"summary_text\"},{\"text\":\"**Exploring
-      pronic numbers**\\n\\nThe sequence 2, 6, 12, 20, 30 consists of pronic numbers,
-      defined as the product of consecutive integers (n(n+1)). We can see that they
-      also relate to triangular numbers, where differences between terms increase
-      by 2 each time: 4, 6, 8, and 10, indicating a quadratic sequence. The formula
-      is a_n = n(n+1), which could also be expressed as n^2 + n. So, the key takeaway
-      is that these are pronic numbers, and I\u2019ll make sure to clarify that!\",\"type\":\"summary_text\"}],\"type\":\"reasoning\"},{\"id\":\"msg_04cf0c946973b39d006a01f3d3054c81a2aa864b6bcbd2e4d9\",\"content\":[{\"annotations\":[],\"text\":\"The
-      terms are the \u201Cpronic\u201D (or oblong) numbers, i.e. the products of two
-      consecutive integers:\\n\\n\u2002a\u2081 = 1\xB72 = 2  \\n\u2002a\u2082 = 2\xB73
-      = 6  \\n\u2002a\u2083 = 3\xB74 = 12  \\n\u2002a\u2084 = 4\xB75 = 20  \\n\u2002a\u2085
-      = 5\xB76 = 30  \\n\\nIf we start counting at n = 1, the nth term is\\n\\n\u2002a\u2099
-      = n\xB7(n + 1)  \\n\\nor equivalently\\n\\n\u2002a\u2099 = n\xB2 + n.\",\"type\":\"output_text\",\"logprobs\":[]}],\"role\":\"assistant\",\"status\":\"completed\",\"type\":\"message\"},{\"role\":\"user\",\"content\":\"Using
+      term?\\n\"},{\"id\":\"rs_08e3bb2bd319ba03006a2ac4252a0481a2a83a41efd6f12d16\",\"summary\":[],\"type\":\"reasoning\",\"content\":[]},{\"id\":\"msg_08e3bb2bd319ba03006a2ac42bf99881a280bba7b986eb705d\",\"content\":[{\"annotations\":[],\"text\":\"The
+      differences between successive terms are  \\n 6\u22122=4,  12\u22126=6,  20\u221212=8,
+      \ 30\u221220=10, \u2026  \\nso you\u2019re adding 4,6,8,10,\u2026 (i.e. the
+      even numbers from 4 on).  Hence the sequence is quadratic.  In fact one shows
+      by induction that\\n\\n  a\u2081=2,  and  a\u2099\u2013a\u2099\u208B\u2081=2n
+      \  \u21D2   a\u2099=n(n+1).\\n\\nEquivalently  \\n  a\u2099 = n\xB2 + n  \\n\\nwhich
+      for n=1,2,3,4,5 gives 2,6,12,20,30. These are the \u201Cpronic\u201D (or oblong)
+      numbers.\",\"type\":\"output_text\",\"logprobs\":[]}],\"role\":\"assistant\",\"status\":\"completed\",\"type\":\"message\"},{\"role\":\"user\",\"content\":\"Using
       the pattern you discovered, what would be the 10th term? And can you find the
       sum of the first 10 terms?\"}],\"model\":\"o4-mini\",\"reasoning\":{\"effort\":\"high\",\"summary\":\"detailed\"}}"
     headers:
@@ -132,7 +110,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '1967'
+      - '1093'
       Content-Type:
       - application/json
       Host:
@@ -141,56 +119,56 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_04cf0c946973b39d006a01f3d3d45c81a2b5b20a9da152ae7c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1778512851,\n  \"status\":
+      string: "{\n  \"id\": \"resp_08e3bb2bd319ba03006a2ac42caabc81a29d2cfddc6e656a9b\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1781187628,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1778512859,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1781187637,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"o4-mini-2025-04-16\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"rs_04cf0c946973b39d006a01f3d4c94081a2a361ca871a527340\",\n
-        \     \"type\": \"reasoning\",\n      \"summary\": [\n        {\n          \"type\":
-        \"summary_text\",\n          \"text\": \"**Calculating pronic numbers**\\n\\nThe
-        user is asking about pronic numbers, specifically the 10th term and the sum
-        of the first 10 terms. So, for the 10th term, I calculate \\\\( a_{10} = 10
-        \\\\times 11 = 110 \\\\). \\n\\nNow, for the sum \\\\( S \\\\) of the first
-        10 terms, I can break it down into the sum of squares and the sum of numbers.
-        The sum of squares gives me 385, and the sum of integers provides 55. When
-        I add these together, I find that \\\\( S = 440 \\\\). Thus, the answers are
-        110 for the term and 440 for the sum.\"\n        },\n        {\n          \"type\":
-        \"summary_text\",\n          \"text\": \"**Explaining the summation**\\n\\nI'm
-        working on the summation of pronic numbers, which breaks down into two parts:
-        the sum of squares and the sum of integers. For \\\\( n = 10 \\\\), using
-        the formulas, I find the sum of squares is 385 and the sum of integers is
-        55. When I add these together, I reach a total of 440. So, the answers are
-        110 for the 10th term and 440 for the sum. I'll include an explanation with
-        the steps outlined.\"\n        }\n      ]\n    },\n    {\n      \"id\": \"msg_04cf0c946973b39d006a01f3db6a3481a2977ed12c94ce40d1\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The 10th pronic term
-        is  \\na\\u2081\\u2080 = 10\\u00b7(10 + 1) = 10\\u00b711 = 110.\\n\\nFor the
-        sum of the first 10 terms,  \\nS\\u2081\\u2080 = \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070
-        n(n+1)  \\n    = \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070 n\\u00b2  +  \\u2211\\u2099\\u208c\\u2081\\u00b9\\u2070
-        n  \\n    = [10\\u00b711\\u00b721/6] + [10\\u00b711/2]  \\n    = 385 + 55
-        \ \\n    = 440.\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
-        \ \"reasoning\": {\n    \"effort\": \"high\",\n    \"summary\": \"detailed\"\n
-        \ },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 211,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 480,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 320\n    },\n    \"total_tokens\": 691\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \     \"id\": \"rs_08e3bb2bd319ba03006a2ac42d59cc81a2a1c5765c4c6ee2ae\",\n
+        \     \"type\": \"reasoning\",\n      \"content\": [],\n      \"summary\":
+        [\n        {\n          \"type\": \"summary_text\",\n          \"text\": \"**Calculating
+        terms and sums**\\n\\nI'm checking the partial sums, and I see that the 10th
+        term is 110, and the sum of the first 10 terms is 440. The user asked about
+        the pattern I discovered, and I can confirm: \\\\( a_{10} = 110 \\\\), and
+        the sum is 440. \\n\\nFor a formula, I remember the sum of the first \\\\(
+        n \\\\) terms can be expressed as \\\\( S_n = \\\\frac{n(n+1)(n+2)}{3} \\\\).
+        So for \\\\( n=10 \\\\), it checks out that the sum equals 440. I believe
+        that covers everything!\"\n        }\n      ]\n    },\n    {\n      \"id\":
+        \"msg_08e3bb2bd319ba03006a2ac43503ac81a294ae52b7ababd64d\",\n      \"type\":
+        \"message\",\n      \"status\": \"completed\",\n      \"content\": [\n        {\n
+        \         \"type\": \"output_text\",\n          \"annotations\": [],\n          \"logprobs\":
+        [],\n          \"text\": \"The nth term is a\\u2099 = n(n + 1).\\n\\n\\u2013
+        So the 10th term is  \\n   a\\u2081\\u2080 = 10\\u00b711 = 110.\\n\\n\\u2013
+        The sum of the first 10 terms is  \\n   S\\u2081\\u2080 = \\u2211\\u2096\\u208c\\u2081\\u00b9\\u2070
+        k(k+1)  \\n       = \\u2211\\u2096\\u208c\\u2081\\u00b9\\u2070 (k\\u00b2 +
+        k)  \\n       = (10\\u00b711\\u00b721)/6 + (10\\u00b711)/2  \\n       = 385
+        + 55  \\n       = 440.\\n\\nEquivalently one can use the closed\\u2010form
+        \ \\n   S\\u2099 = \\u2211\\u2096\\u208c\\u2081\\u207f k(k+1) = n(n+1)(n+2)/3,
+        \ \\nso S\\u2081\\u2080 = 10\\u00b711\\u00b712/3 = 440.\"\n        }\n      ],\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": \"current_turn\",\n    \"effort\": \"high\",\n    \"summary\":
+        \"detailed\"\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
+        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\":
+        1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        248,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 813,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        576\n    },\n    \"total_tokens\": 1061\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 11 May 2026 15:21:00 GMT
+      - Thu, 11 Jun 2026 14:20:37 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -199,12 +177,10 @@ interactions:
       - chunked
       X-Content-Type-Options:
       - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
       content-length:
-      - '3156'
+      - '2837'
       openai-processing-ms:
-      - '8248'
+      - '9008'
       openai-version:
       - '2020-10-01'
       x-ratelimit-limit-requests:
@@ -214,7 +190,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999582'
+      - '149999547'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:

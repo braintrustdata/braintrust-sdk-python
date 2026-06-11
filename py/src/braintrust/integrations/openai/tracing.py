@@ -92,6 +92,12 @@ def log_headers(response: Any, span: Span):
         )
 
 
+def _extract_moderation_metadata(response: dict[str, Any]) -> dict[str, Any]:
+    if "moderation" in response and response.get("moderation") is not None:
+        return {"moderation": response.get("moderation")}
+    return {}
+
+
 def _raw_response_requested(kwargs: dict[str, Any]) -> bool:
     extra_headers = kwargs.get("extra_headers")
     if not isinstance(extra_headers, dict):
@@ -458,6 +464,7 @@ class ChatCompletionWrapper:
                 span.log(
                     metrics=metrics,
                     output=_process_attachments_in_chat_output(log_response["choices"], audio_format=audio_format),
+                    metadata=_extract_moderation_metadata(log_response),
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -518,6 +525,7 @@ class ChatCompletionWrapper:
                 span.log(
                     metrics=metrics,
                     output=_process_attachments_in_chat_output(log_response["choices"], audio_format=audio_format),
+                    metadata=_extract_moderation_metadata(log_response),
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -561,7 +569,9 @@ class ChatCompletionWrapper:
         logprobs_refusal: list[Any] | None = None
         saw_logprobs = False
         metrics: dict[str, float] = {}
+        metadata: dict[str, Any] = {}
         for result in all_results:
+            metadata.update(_extract_moderation_metadata(result))
             usage = result.get("usage")
             if usage:
                 metrics.update(_parse_metrics_from_usage(usage))
@@ -656,6 +666,7 @@ class ChatCompletionWrapper:
         )
         return {
             "metrics": metrics,
+            "metadata": metadata,
             "output": [
                 {
                     "index": 0,
@@ -1132,9 +1143,11 @@ class ResponseWrapper:
     def _postprocess_streaming_results(cls, all_results: list[Any]) -> dict[str, Any]:
         """Process streaming results - minimal version focused on metrics extraction."""
         metrics = {}
+        metadata = {}
         output = []
 
         for result in all_results:
+            response_dict = None
             usage = getattr(result, "usage", None)
             if (
                 not usage
@@ -1142,6 +1155,8 @@ class ResponseWrapper:
                 and result.type == "response.completed"
                 and hasattr(result, "response")
             ):
+                response_dict = _try_to_dict(result.response)
+                metadata.update(_extract_moderation_metadata(response_dict))
                 # Handle summaries from completed response if present
                 if hasattr(result.response, "output") and result.response.output:
                     output_by_id = {item.get("id"): item for item in output if item.get("id")}
@@ -1169,8 +1184,12 @@ class ResponseWrapper:
 
             if result.type == "response.completed":
                 if hasattr(result, "response") and hasattr(result.response, "output"):
+                    if response_dict is None:
+                        response_dict = _try_to_dict(result.response)
+                    metadata.update(_extract_moderation_metadata(response_dict))
                     return {
                         "metrics": metrics,
+                        "metadata": metadata,
                         "output": result.response.output,
                     }
                 continue
@@ -1213,6 +1232,7 @@ class ResponseWrapper:
 
         return {
             "metrics": metrics,
+            "metadata": metadata,
             "output": output,
         }
 
