@@ -1522,6 +1522,10 @@ class ProjectDatasetMetadata:
 class OrgProjectMetadata:
     org_id: str
     project: ObjectMetadata
+    agent: ObjectMetadata | None = None
+
+
+DefaultSpanAttributes = dict[str, Any] | LazyValue[dict[str, Any] | None]
 
 
 # Pyright produces an error for overlapping overloads
@@ -1834,7 +1838,40 @@ def init_dataset(
     )
 
 
-def _compute_logger_metadata(project_name: str | None = None, project_id: str | None = None):
+def _agent_register_endpoint_not_found(error: AugmentedHTTPError) -> bool:
+    cause = error.__cause__
+    response = getattr(cause, "response", None)
+    return getattr(response, "status_code", None) == 404
+
+
+def _register_agent_metadata(project_id: str, agent_name: str) -> ObjectMetadata:
+    try:
+        response = _state.app_conn().post_json(
+            "api/agent/register",
+            {
+                "project_id": project_id,
+                "agent_name": agent_name,
+            },
+        )
+    except AugmentedHTTPError as e:
+        if _agent_register_endpoint_not_found(e):
+            _logger.debug("Agent registration endpoint not found; using agent name as span attribute")
+            return ObjectMetadata(id=agent_name, name=agent_name, full_info={})
+        raise
+
+    resp_agent = response["agent"]
+    return ObjectMetadata(
+        id=resp_agent["id"],
+        name=resp_agent["name"],
+        full_info=resp_agent,
+    )
+
+
+def _compute_logger_metadata(
+    project_name: str | None = None,
+    project_id: str | None = None,
+    agent_name: str | None = None,
+):
     login()
     org_id = _state.org_id
     if project_id is None:
@@ -1846,24 +1883,42 @@ def _compute_logger_metadata(project_name: str | None = None, project_id: str | 
             },
         )
         resp_project = response["project"]
-        return OrgProjectMetadata(
+        metadata = OrgProjectMetadata(
             org_id=org_id,
-            project=ObjectMetadata(id=resp_project["id"], name=resp_project["name"], full_info=resp_project),
+            project=ObjectMetadata(
+                id=resp_project["id"],
+                name=resp_project["name"],
+                full_info=resp_project,
+            ),
         )
     elif project_name is None:
         response = _state.app_conn().get_json("api/project", {"id": project_id})
-        return OrgProjectMetadata(
-            org_id=org_id, project=ObjectMetadata(id=project_id, name=response["name"], full_info=response)
+        metadata = OrgProjectMetadata(
+            org_id=org_id,
+            project=ObjectMetadata(
+                id=project_id,
+                name=response["name"],
+                full_info=response,
+            ),
         )
     else:
-        return OrgProjectMetadata(
-            org_id=org_id, project=ObjectMetadata(id=project_id, name=project_name, full_info=dict())
+        metadata = OrgProjectMetadata(
+            org_id=org_id,
+            project=ObjectMetadata(
+                id=project_id,
+                name=project_name,
+                full_info=dict(),
+            ),
         )
+    if agent_name is not None:
+        metadata.agent = _register_agent_metadata(metadata.project.id, agent_name)
+    return metadata
 
 
 def init_logger(
     project: str | None = None,
     project_id: str | None = None,
+    agent: str | None = None,
     async_flush: bool = True,
     app_url: str | None = None,
     api_key: str | None = None,
@@ -1877,6 +1932,7 @@ def init_logger(
 
     :param project: The name of the project to log into. If unspecified, will default to the Global project.
     :param project_id: The id of the project to log into. This takes precedence over project if specified.
+    :param agent: The name of the agent to register and associate with logged spans. The registered agent id is stored as `span_attributes.agent_id`.
     :param async_flush: If true (the default), log events will be batched and sent asynchronously in a background thread. If false, log events will be sent synchronously. Set to false in serverless environments.
     :param app_url: The URL of the Braintrust API. Defaults to https://www.braintrust.dev.
     :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable. If no API
@@ -1888,7 +1944,11 @@ def init_logger(
     """
 
     state = state or _state
-    compute_metadata_args = dict(project_name=project, project_id=project_id)
+    compute_metadata_args = dict(
+        project_name=project,
+        project_id=project_id,
+        agent_name=agent,
+    )
 
     link_args = {
         "app_url": app_url,
@@ -1898,17 +1958,38 @@ def init_logger(
     }
 
     def compute_metadata():
-        state.login(org_name=org_name, api_key=api_key, app_url=app_url, force_login=force_login)
+        state.login(
+            org_name=org_name,
+            api_key=api_key,
+            app_url=app_url,
+            force_login=force_login,
+        )
         return _compute_logger_metadata(**compute_metadata_args)
 
     # For loggers, enable queue size limit enforcement (bounded queue)
     state.enforce_queue_size_limit(True)
 
+    lazy_metadata = LazyValue(compute_metadata, use_mutex=True)
+
+    def compute_default_span_attributes() -> dict[str, Any]:
+        metadata = lazy_metadata.get()
+        if metadata.agent:
+            return {"agent_id": metadata.agent.id}
+        return {"agent_id": agent}
+
     ret = Logger(
-        lazy_metadata=LazyValue(compute_metadata, use_mutex=True),
+        lazy_metadata=lazy_metadata,
         async_flush=async_flush,
         compute_metadata_args=compute_metadata_args,
         link_args=link_args,
+        default_span_attributes=(
+            None
+            if agent is None
+            else LazyValue(
+                compute_default_span_attributes,
+                use_mutex=False,
+            )
+        ),
         state=state,
     )
     if set_current:
@@ -4163,6 +4244,7 @@ class SpanImpl(Span):
         name: str | None = None,
         type: SpanTypeAttribute | None = None,
         default_root_type: SpanTypeAttribute | None = None,
+        default_span_attributes: DefaultSpanAttributes | None = None,
         span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
         start_time: float | None = None,
         set_current: bool | None = None,
@@ -4175,6 +4257,11 @@ class SpanImpl(Span):
     ):
         if span_attributes is None:
             span_attributes = SpanAttributes()
+        lazy_default_span_attributes = (
+            default_span_attributes if isinstance(default_span_attributes, LazyValue) else None
+        )
+        static_default_span_attributes = None if lazy_default_span_attributes else default_span_attributes
+        span_attributes = {**(static_default_span_attributes or {}), **span_attributes}
         if event is None:
             event = {}
         if type is None and not parent_span_ids:
@@ -4192,6 +4279,7 @@ class SpanImpl(Span):
         self.parent_object_type = parent_object_type
         self.parent_object_id = parent_object_id
         self.parent_compute_object_metadata_args = parent_compute_object_metadata_args
+        self.default_span_attributes = default_span_attributes
 
         # Merge propagated_event into event. The propagated_event data will get
         # propagated-and-merged into every subspan.
@@ -4222,16 +4310,35 @@ class SpanImpl(Span):
             _EXEC_COUNTER += 1
             exec_counter = _EXEC_COUNTER
 
+        base_span_attributes = dict(
+            **{"type": type, "name": name, **span_attributes},
+            exec_counter=exec_counter,
+        )
         internal_data: dict[str, Any] = dict(
             metrics=dict(
                 start=start_time or time.time(),
             ),
             # Set type first, in case they override it in `span_attributes`.
-            span_attributes=dict(**{"type": type, "name": name, **span_attributes}, exec_counter=exec_counter),
+            span_attributes=base_span_attributes,
             created=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         )
         if caller_location:
             internal_data["context"] = caller_location
+        lazy_internal_data: dict[str, LazyValue[Any]] | None = None
+        if lazy_default_span_attributes:
+
+            def compute_span_attributes() -> dict[str, Any]:
+                return {
+                    **(lazy_default_span_attributes.get() or {}),
+                    **base_span_attributes,
+                }
+
+            lazy_internal_data = {
+                "span_attributes": LazyValue(
+                    compute_span_attributes,
+                    use_mutex=False,
+                )
+            }
 
         # TODO: can be simplified after `event` is typed.
         id = event.pop("id", None)
@@ -4255,7 +4362,7 @@ class SpanImpl(Span):
         # The first log is a replacement, but subsequent logs to the same span
         # object will be merges.
         self._is_merge = False
-        self.log_internal(event=event, internal_data=internal_data)
+        self.log_internal(event=event, internal_data=internal_data, lazy_internal_data=lazy_internal_data)
         self._is_merge = True
 
     @property
@@ -4290,8 +4397,15 @@ class SpanImpl(Span):
     def log(self, **event: Any) -> None:
         return self.log_internal(event=event, internal_data=None)
 
-    def log_internal(self, event: dict[str, Any] | None = None, internal_data: dict[str, Any] | None = None) -> None:
+    def log_internal(
+        self,
+        event: dict[str, Any] | None = None,
+        internal_data: dict[str, Any] | None = None,
+        lazy_internal_data: dict[str, LazyValue[Any]] | None = None,
+    ) -> None:
         serializable_partial_record, lazy_partial_record = split_logging_data(event, internal_data)
+        if lazy_internal_data:
+            lazy_partial_record = {**lazy_partial_record, **lazy_internal_data}
 
         # We both check for serializability and round-trip `partial_record`
         # through JSON in order to create a "deep copy". This has the benefit of
@@ -4328,14 +4442,15 @@ class SpanImpl(Span):
 
         def compute_record() -> dict[str, Any]:
             exporter = _get_exporter()
-            return dict(
-                **serializable_partial_record,
-                **{k: v.get() for k, v in lazy_partial_record.items()},
-                **exporter(
+            record = dict(serializable_partial_record)
+            record.update({k: v.get() for k, v in lazy_partial_record.items()})
+            record.update(
+                exporter(
                     object_type=self.parent_object_type,
                     object_id=self.parent_object_id.get(),
-                ).object_id_fields(),
+                ).object_id_fields()
             )
+            return record
 
         self.state.global_bg_logger().log(LazyValue(compute_record, use_mutex=False))
 
@@ -4379,6 +4494,7 @@ class SpanImpl(Span):
             ),
             name=name,
             type=type,
+            default_span_attributes=self.default_span_attributes,
             span_attributes=span_attributes,
             start_time=start_time,
             set_current=set_current,
@@ -5213,11 +5329,13 @@ class Logger(Exportable):
         async_flush: bool = True,
         compute_metadata_args: dict | None = None,
         link_args: dict | None = None,
+        default_span_attributes: DefaultSpanAttributes | None = None,
         state: BraintrustState | None = None,
     ):
         self._lazy_metadata = lazy_metadata
         self.async_flush = async_flush
         self._compute_metadata_args = compute_metadata_args
+        self._default_span_attributes = default_span_attributes
         self.last_start_time = time.time()
         self._lazy_id = LazyValue(lambda: self.id, use_mutex=False)
         self._called_start_span = False
@@ -5413,6 +5531,7 @@ class Logger(Exportable):
             name=name,
             type=type,
             default_root_type=SpanTypeAttribute.TASK,
+            default_span_attributes=self._default_span_attributes,
             span_attributes=span_attributes,
             start_time=start_time,
             set_current=set_current,

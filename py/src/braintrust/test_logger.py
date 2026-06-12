@@ -862,6 +862,42 @@ def test_span_log_accepts_pydantic_model_metadata(with_memory_logger):
     assert logs[0]["metadata"] == {"foo": "bar"}
 
 
+def test_init_logger_agent_sets_span_attribute(with_memory_logger, with_simulate_login, monkeypatch):
+    def post_json(object_type, args=None):
+        assert object_type == "api/agent/register"
+        assert args == {
+            "project_id": "test-project-id",
+            "agent_name": "support-agent",
+        }
+        return {
+            "agent": {
+                "id": "agent-id",
+                "name": "support-agent",
+            },
+            "found_existing": False,
+        }
+
+    monkeypatch.setattr(logger._state.app_conn(), "post_json", post_json)
+
+    bt_logger = init_logger(
+        project="test-project",
+        project_id="test-project-id",
+        agent="support-agent",
+    )
+
+    parent = bt_logger.start_span(name="parent")
+    parent.start_span(name="child").end()
+    parent.start_span(name="override", span_attributes={"agent_id": "override-agent"}).end()
+    parent.end()
+
+    logs = with_memory_logger.pop()
+    by_name = {log["span_attributes"]["name"]: log for log in logs}
+
+    assert by_name["parent"]["span_attributes"]["agent_id"] == "agent-id"
+    assert by_name["child"]["span_attributes"]["agent_id"] == "agent-id"
+    assert by_name["override"]["span_attributes"]["agent_id"] == "override-agent"
+
+
 class _ModelDumpMetadata:
     def __init__(self, **values):
         self.values = values
