@@ -1838,10 +1838,27 @@ def init_dataset(
     )
 
 
-def _agent_register_endpoint_not_found(error: AugmentedHTTPError) -> bool:
+def _http_error_status(error: AugmentedHTTPError) -> int | None:
     cause = error.__cause__
     response = getattr(cause, "response", None)
-    return getattr(response, "status_code", None) == 404
+    return getattr(response, "status_code", None)
+
+
+def _agent_register_endpoint_not_found(error: AugmentedHTTPError) -> bool:
+    return _http_error_status(error) == 404
+
+
+def _agent_metadata_from_register_response(response: Mapping[str, Any]) -> ObjectMetadata | None:
+    resp_agent = response.get("agent")
+    if not isinstance(resp_agent, Mapping):
+        return None
+
+    agent_id = resp_agent.get("id")
+    agent_name = resp_agent.get("name")
+    if not isinstance(agent_id, str) or not isinstance(agent_name, str):
+        return None
+
+    return ObjectMetadata(id=agent_id, name=agent_name, full_info=dict(resp_agent))
 
 
 def _register_agent_metadata(project_id: str, agent_name: str) -> ObjectMetadata:
@@ -1875,13 +1892,25 @@ def _compute_logger_metadata(
     login()
     org_id = _state.org_id
     if project_id is None:
-        response = _state.app_conn().post_json(
-            "api/project/register",
-            {
-                "project_name": project_name or GLOBAL_PROJECT,
-                "org_id": org_id,
-            },
-        )
+        register_args: dict[str, Any] = {
+            "project_name": project_name or GLOBAL_PROJECT,
+            "org_id": org_id,
+        }
+        if agent_name is not None:
+            register_args["agent_name"] = agent_name
+        try:
+            response = _state.app_conn().post_json("api/project/register", register_args)
+        except AugmentedHTTPError as e:
+            if agent_name is None or _http_error_status(e) != 400:
+                raise
+            _logger.debug("Project registration did not accept agent_name; retrying without it")
+            response = _state.app_conn().post_json(
+                "api/project/register",
+                {
+                    "project_name": project_name or GLOBAL_PROJECT,
+                    "org_id": org_id,
+                },
+            )
         resp_project = response["project"]
         metadata = OrgProjectMetadata(
             org_id=org_id,
@@ -1890,6 +1919,7 @@ def _compute_logger_metadata(
                 name=resp_project["name"],
                 full_info=resp_project,
             ),
+            agent=_agent_metadata_from_register_response(response),
         )
     elif project_name is None:
         response = _state.app_conn().get_json("api/project", {"id": project_id})
@@ -1910,7 +1940,7 @@ def _compute_logger_metadata(
                 full_info=dict(),
             ),
         )
-    if agent_name is not None:
+    if agent_name is not None and metadata.agent is None:
         metadata.agent = _register_agent_metadata(metadata.project.id, agent_name)
     return metadata
 

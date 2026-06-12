@@ -863,13 +863,21 @@ def test_span_log_accepts_pydantic_model_metadata(with_memory_logger):
 
 
 def test_init_logger_agent_sets_span_attribute(with_memory_logger, with_simulate_login, monkeypatch):
+    post_json_calls = []
+
     def post_json(object_type, args=None):
-        assert object_type == "api/agent/register"
+        post_json_calls.append((object_type, args))
+        assert object_type == "api/project/register"
         assert args == {
-            "project_id": "test-project-id",
+            "project_name": "test-project",
+            "org_id": "test-org-id",
             "agent_name": "support-agent",
         }
         return {
+            "project": {
+                "id": "test-project-id",
+                "name": "test-project",
+            },
             "agent": {
                 "id": "agent-id",
                 "name": "support-agent",
@@ -881,7 +889,6 @@ def test_init_logger_agent_sets_span_attribute(with_memory_logger, with_simulate
 
     bt_logger = init_logger(
         project="test-project",
-        project_id="test-project-id",
         agent="support-agent",
     )
 
@@ -896,6 +903,7 @@ def test_init_logger_agent_sets_span_attribute(with_memory_logger, with_simulate
     assert by_name["parent"]["span_attributes"]["agent_id"] == "agent-id"
     assert by_name["child"]["span_attributes"]["agent_id"] == "agent-id"
     assert by_name["override"]["span_attributes"]["agent_id"] == "override-agent"
+    assert len(post_json_calls) == 1
 
 
 class _ModelDumpMetadata:
