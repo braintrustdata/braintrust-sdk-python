@@ -1,7 +1,7 @@
 import importlib.util
 import re
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from braintrust.logger import BraintrustState
@@ -76,6 +76,62 @@ async def test_run_evaluator_basic():
     assert result.summary.project_name == "test-project"
     assert "exact_match" in result.summary.scores
     assert result.summary.scores["exact_match"].score == 1.0
+
+
+@pytest.mark.asyncio
+async def test_run_evaluator_forwards_base_experiment_id_to_summary(with_memory_logger, with_simulate_login):
+    def exact_match(input_value, output, expected):
+        return 1.0 if output == expected else 0.0
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[EvalCase(input=1, expected=1)],
+        task=lambda input_value: input_value,
+        scores=[exact_match],
+        experiment_name=None,
+        metadata=None,
+        base_experiment_id="base-exp-id",
+    )
+
+    exp = init_test_exp("test-evaluator", "test-project")
+    expected_summary = MagicMock()
+    exp.summarize = MagicMock(return_value=expected_summary)
+
+    result = await run_evaluator(experiment=exp, evaluator=evaluator, position=None, filters=[])
+
+    assert result.summary is expected_summary
+    exp.summarize.assert_called_once_with(
+        summarize_scores=True,
+        comparison_experiment_id="base-exp-id",
+    )
+
+
+def test_experiment_summarize_resolves_explicit_comparison_name(with_memory_logger, with_simulate_login):
+    exp = init_test_exp("test-evaluator", "test-project")
+    mock_conn = MagicMock()
+
+    def get_json(path, args=None):
+        if path == "v1/experiment/base-exp-id":
+            return {"name": "base-exp"}
+        if path == "experiment-comparison2":
+            return {"scores": {}, "metrics": {}}
+        raise AssertionError(f"Unexpected get_json call: {path}, {args}")
+
+    mock_conn.get_json.side_effect = get_json
+
+    with patch.object(exp.state, "api_conn", return_value=mock_conn):
+        summary = exp.summarize(comparison_experiment_id="base-exp-id")
+
+    assert summary.comparison_experiment_name == "base-exp"
+    mock_conn.get_json.assert_any_call("v1/experiment/base-exp-id")
+    mock_conn.get_json.assert_any_call(
+        "experiment-comparison2",
+        args={
+            "experiment_id": "test-evaluator",
+            "base_experiment_id": "base-exp-id",
+        },
+    )
 
 
 @pytest.mark.asyncio

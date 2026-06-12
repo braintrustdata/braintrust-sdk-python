@@ -1367,7 +1367,10 @@ async def run_evaluator(
     )
 
     if experiment:
-        summary = experiment.summarize(summarize_scores=evaluator.summarize_scores)
+        summary = experiment.summarize(
+            summarize_scores=evaluator.summarize_scores,
+            comparison_experiment_id=evaluator.base_experiment_id,
+        )
     else:
         summary = build_local_summary(evaluator, results)
 

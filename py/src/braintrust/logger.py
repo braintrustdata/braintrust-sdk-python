@@ -3969,6 +3969,12 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
                 if base_experiment:
                     comparison_experiment_id = base_experiment.id
                     comparison_experiment_name = base_experiment.name
+            else:
+                try:
+                    comparison_experiment = state.api_conn().get_json(f"v1/experiment/{comparison_experiment_id}")
+                    comparison_experiment_name = comparison_experiment.get("name")
+                except Exception:
+                    pass
 
             try:
                 summary_items = state.api_conn().get_json(
