@@ -979,6 +979,18 @@ def test_init_logger_agent_sets_span_attribute(with_memory_logger, with_simulate
     assert len(post_json_calls) == 1
 
 
+def test_init_logger_without_agent_omits_agent_from_exported_metadata(with_memory_logger, with_simulate_login):
+    from braintrust.span_identifier_v3 import SpanComponentsV3
+
+    bt_logger = init_logger(project="test-project")
+
+    with bt_logger.start_span(name="parent") as span:
+        components = SpanComponentsV3.from_str(span.export())
+
+    assert components.compute_object_metadata_args is not None
+    assert "agent_name" not in components.compute_object_metadata_args
+
+
 class _ModelDumpMetadata:
     def __init__(self, **values):
         self.values = values

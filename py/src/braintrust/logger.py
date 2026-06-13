@@ -1947,8 +1947,9 @@ def init_logger(
     compute_metadata_args = dict(
         project_name=project,
         project_id=project_id,
-        agent_name=agent,
     )
+    if agent is not None:
+        compute_metadata_args["agent_name"] = agent
 
     link_args = {
         "app_url": app_url,
