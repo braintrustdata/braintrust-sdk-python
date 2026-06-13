@@ -5,8 +5,10 @@ from braintrust.parameters import (
     RemoteEvalParameters,
     parameters_to_json_schema,
     serialize_eval_parameters,
+    serialize_remote_eval_parameters_container,
     validate_parameters,
 )
+from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage
 
 
 HAS_PYDANTIC = importlib.util.find_spec("pydantic") is not None
@@ -563,3 +565,73 @@ def test_parameters_to_json_schema_does_not_mark_passthrough_values_required():
     )
 
     assert "required" not in schema
+
+
+def _assert_no_none_values(node):
+    if isinstance(node, dict):
+        for key, value in node.items():
+            assert value is not None, f"unexpected None at key {key!r}"
+            _assert_no_none_values(value)
+    elif isinstance(node, list):
+        for item in node:
+            _assert_no_none_values(item)
+
+
+def test_prompt_parameter_defaults_omit_none_values():
+    prompt_data = PromptData(
+        prompt=PromptChatBlock(messages=[PromptMessage(role="user", content="{{input}}")]),
+        options={"model": "gpt-5-mini"},
+    )
+
+    serialized = serialize_remote_eval_parameters_container(
+        {
+            "grouping_prompt": {
+                "type": "prompt",
+                "description": "Grouping prompt",
+                "default": prompt_data,
+            }
+        }
+    )
+
+    default = serialized["schema"]["grouping_prompt"]["default"]
+    assert "tools" not in default["prompt"]
+    assert "name" not in default["prompt"]["messages"][0]
+    assert "function_call" not in default["prompt"]["messages"][0]
+    assert "tool_calls" not in default["prompt"]["messages"][0]
+    _assert_no_none_values(default)
+
+
+def test_prompt_parameter_defaults_omit_none_values_from_dict():
+    prompt_default = {
+        "prompt": {
+            "type": "chat",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "{{input}}",
+                    "name": None,
+                    "function_call": None,
+                    "tool_calls": None,
+                }
+            ],
+            "tools": None,
+        },
+        "options": {"model": "gpt-5-mini"},
+    }
+
+    serialized = serialize_eval_parameters(
+        {
+            "grouping_prompt": {
+                "type": "prompt",
+                "description": "Grouping prompt",
+                "default": prompt_default,
+            }
+        }
+    )
+
+    default = serialized["grouping_prompt"]["default"]
+    assert "tools" not in default["prompt"]
+    assert "name" not in default["prompt"]["messages"][0]
+    assert "function_call" not in default["prompt"]["messages"][0]
+    assert "tool_calls" not in default["prompt"]["messages"][0]
+    _assert_no_none_values(default)

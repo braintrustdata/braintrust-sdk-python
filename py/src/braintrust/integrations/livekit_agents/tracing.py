@@ -218,16 +218,41 @@ async def traced_llm_stream_run(wrapped: Any, instance: Any, args: tuple[Any, ..
 async def traced_execute_tools_task(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     session = kwargs.get("session")
     parent = getattr(session, _SESSION_PARENT_ATTR, None)
-    result = await _traced_async_span(
-        "function_tool",
-        SpanTypeAttribute.TOOL,
-        wrapped,
-        args,
-        kwargs,
-        parent=parent if isinstance(parent, str) else None,
-        event_builder=lambda: _tool_execution_event(kwargs.get("tool_output")),
-    )
+    parent_arg = parent if isinstance(parent, str) else None
+    start_time = time.time()
+    try:
+        with _without_current_span(parent_arg):
+            result = await wrapped(*args, **kwargs)
+    except Exception as exc:
+        end_time = time.time()
+        event = _tool_execution_event(kwargs.get("tool_output"))
+        if event:
+            _log_function_tool_span(event, parent=parent_arg, start_time=start_time, end_time=end_time, error=exc)
+        raise
+    end_time = time.time()
+    event = _tool_execution_event(kwargs.get("tool_output"))
+    if event:
+        _log_function_tool_span(event, parent=parent_arg, start_time=start_time, end_time=end_time)
     return result
+
+
+def _log_function_tool_span(
+    event: dict[str, Any],
+    *,
+    parent: str | None,
+    start_time: float,
+    end_time: float,
+    error: Exception | None = None,
+) -> None:
+    span = start_span(
+        name="function_tool",
+        type=SpanTypeAttribute.TOOL,
+        parent=parent,
+        start_time=start_time,
+        set_current=False,
+    )
+    span.log(error=error, **event)
+    span.end(end_time=end_time)
 
 
 async def _traced_async_span(

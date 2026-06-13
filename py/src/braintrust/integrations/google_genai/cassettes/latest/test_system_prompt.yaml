@@ -18,35 +18,39 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.6.0 gl-python/3.14.3
+      - google-genai-sdk/2.7.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.6.0 gl-python/3.14.3
+      - google-genai-sdk/2.7.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Ahoy there, matey!  The skies be lookin'
-        a bit fickle today.  The winds be blowin' fair, but there be a hint o' squalls
-        on the horizon.  Keep a weather eye on the horizon, for ye never know when
-        a tempest might blow in!  But for now, the sun be shinin' bright, like a chest
-        o' gold!\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
-        \     \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 81,\n    \"totalTokenCount\":
-        100,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 19\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"X5UUavmsKKyd_uMPr6i0uQQ\"\n}\n"
+        [\n          {\n            \"text\": \"Ahoy there, matey! The weather be
+        a fickle mistress, she be.  Right now, the sky be lookin' a bit like a scurvy
+        dog's breath \u2013 a bit grey and damp, with a fair chance o' rain.  The
+        wind be blowin' from the nor'-nor'west, strong enough to fill a mainsail,
+        but not so fierce as to send us to Davy Jones' Locker just yet.  Keep a weather
+        eye on the horizon, though!  The sea be lookin' a touch choppy, so if ye be
+        plannin' a voyage, ye best be prepared for a bit o' a roll.  No signs o' a
+        hurricane on the cards, thank the Kraken\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
+        0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\":
+        150,\n    \"totalTokenCount\": 169,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"QJodaubeMa2k1MkPtIqr8Aw\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 25 May 2026 18:30:56 GMT
+      - Mon, 01 Jun 2026 14:42:09 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=731
+      - gfet4t7; dur=1146
       Transfer-Encoding:
       - chunked
       Vary:
@@ -62,7 +66,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '831'
+      - '1084'
     status:
       code: 200
       message: OK

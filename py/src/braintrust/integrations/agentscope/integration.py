@@ -4,10 +4,12 @@ from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
     AgentCallPatcher,
+    AgentReplyPatcher,
     ChatModelPatcher,
     FanoutPipelinePatcher,
     SequentialPipelinePatcher,
     ToolkitCallToolFunctionPatcher,
+    ToolkitCallToolPatcher,
 )
 
 
@@ -19,8 +21,10 @@ class AgentScopeIntegration(BaseIntegration):
     min_version = "1.0.0"
     patchers = (
         AgentCallPatcher,
+        AgentReplyPatcher,
         SequentialPipelinePatcher,
         FanoutPipelinePatcher,
         ToolkitCallToolFunctionPatcher,
+        ToolkitCallToolPatcher,
         ChatModelPatcher,
     )

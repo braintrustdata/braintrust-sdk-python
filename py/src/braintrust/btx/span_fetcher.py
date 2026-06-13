@@ -12,6 +12,7 @@ import time
 from typing import Any
 
 import requests
+from braintrust.env import BraintrustEnv
 
 
 _BACKOFF_SECONDS = 30
@@ -157,9 +158,9 @@ def _fetch_once(root_span_id: str, project_id: str, num_expected: int) -> list[d
 
 
 def _require_api_key() -> str:
-    key = os.environ.get("BRAINTRUST_API_KEY")
+    key = BraintrustEnv.API_KEY.get(None, use_dotenv=True)
     if not key:
-        raise ValueError("BRAINTRUST_API_KEY environment variable is not set")
+        raise ValueError("BRAINTRUST_API_KEY is not set in the environment or nearest .env.braintrust file")
     return key
 
 

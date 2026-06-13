@@ -1,5 +1,6 @@
 import asyncio
 import binascii
+import inspect
 import os
 import struct
 import tempfile
@@ -17,6 +18,7 @@ from braintrust.integrations.openai.tracing import (
     _process_attachments_in_chat_output,
 )
 from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.utils import _try_to_dict
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 from openai import AsyncOpenAI
@@ -56,6 +58,19 @@ def _supports_response_function_tools() -> bool:
     except ImportError:
         return False
     return True
+
+
+def _supports_inline_moderation() -> bool:
+    try:
+        from openai.resources.chat.completions.completions import Completions
+        from openai.resources.responses.responses import Responses
+
+        return (
+            "moderation" in inspect.signature(Completions.create).parameters
+            and "moderation" in inspect.signature(Responses.create).parameters
+        )
+    except (ImportError, AttributeError, ValueError):
+        return False
 
 
 def _supports_response_web_search_tools() -> bool:
@@ -289,6 +304,66 @@ def test_openai_responses_metadata_preservation(memory_logger):
     # Check metrics
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
+
+
+@pytest.mark.vcr
+def test_openai_chat_completion_inline_moderation_metadata(memory_logger):
+    if not _supports_inline_moderation():
+        pytest.skip("Inline moderation is not available in this SDK version")
+
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    # The lint env may resolve an OpenAI version whose stubs do not include this newer API.
+    # pylint: disable-next=unexpected-keyword-arg
+    response = client.chat.completions.create(
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": "Say hello in one word."}],
+        moderation={"model": "omni-moderation-latest"},
+    )
+
+    assert response.choices[0].message.content
+    assert response.moderation
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    logged_moderation = span["metadata"]["moderation"]
+    response_moderation = _try_to_dict(response.moderation)
+    assert logged_moderation["model"] == "omni-moderation-latest"
+    assert logged_moderation["input"] == response_moderation["input"]
+    assert logged_moderation["output"] == response_moderation["output"]
+
+
+@pytest.mark.vcr
+def test_openai_responses_stream_inline_moderation_metadata(memory_logger):
+    if not _supports_inline_moderation():
+        pytest.skip("Inline moderation is not available in this SDK version")
+
+    assert not memory_logger.pop()
+
+    client = wrap_openai(openai.OpenAI())
+    # The lint env may resolve an OpenAI version whose stubs do not include this newer API.
+    # pylint: disable-next=unexpected-keyword-arg
+    stream = client.responses.create(
+        model=TEST_MODEL,
+        input="Say hello in one word.",
+        moderation={"model": "omni-moderation-latest"},
+        stream=True,
+    )
+
+    events = list(stream)
+    completed = next(event for event in events if event.type == "response.completed")
+    assert completed.response.moderation
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    logged_moderation = span["metadata"]["moderation"]
+    response_moderation = _try_to_dict(completed.response.moderation)
+    assert logged_moderation["model"] == "omni-moderation-latest"
+    assert logged_moderation["input"] == response_moderation["input"]
+    assert logged_moderation["output"] == response_moderation["output"]
 
 
 @pytest.mark.vcr

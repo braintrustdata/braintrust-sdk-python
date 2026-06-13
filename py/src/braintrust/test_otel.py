@@ -38,7 +38,7 @@ def test_otel_import_behavior():
         assert hasattr(OtelExporter, "__init__")
 
 
-def test_otel_exporter_creation():
+def test_otel_exporter_creation(tmp_path):
     """Test OtelExporter creation with and without full OpenTelemetry SDK."""
     from braintrust.otel import OtelExporter
 
@@ -58,9 +58,12 @@ def test_otel_exporter_creation():
         with pytest.MonkeyPatch.context() as m:
             m.delenv("BRAINTRUST_API_KEY", raising=False)
             m.delenv("BRAINTRUST_PARENT", raising=False)
+            m.chdir(tmp_path)
+            (tmp_path / ".env.braintrust").write_text("")
 
+            exporter = OtelExporter()
             with pytest.raises(ValueError, match="API key is required"):
-                OtelExporter()
+                exporter.force_flush()
     else:
         # When SDK is not fully installed, instantiation should raise ImportError
         with pytest.raises(ImportError, match="OpenTelemetry packages are not installed"):
@@ -90,6 +93,48 @@ def test_otel_exporter_with_explicit_params():
         "custom-header": "custom-value",
     }
     assert exporter._headers == expected_headers
+
+
+def test_otel_exporter_uses_env_braintrust_api_key(tmp_path):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import OtelExporter
+
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        m.chdir(tmp_path)
+        (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=file-api-key\n")
+
+        exporter = OtelExporter(parent="project_name:test")
+        exporter.force_flush()
+
+        assert exporter._headers["Authorization"] == "Bearer file-api-key"
+
+
+def test_braintrust_span_processor_missing_key_raises_on_span_end(tmp_path):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import BraintrustSpanProcessor
+    from opentelemetry.sdk.trace import TracerProvider
+
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        m.chdir(tmp_path)
+        (tmp_path / ".env.braintrust").write_text("")
+
+        provider = TracerProvider()
+        processor = BraintrustSpanProcessor()
+        provider.add_span_processor(processor)
+        tracer = provider.get_tracer("test_tracer")
+
+        try:
+            with pytest.raises(ValueError, match="API key is required"):
+                with tracer.start_as_current_span("test_span"):
+                    pass
+        finally:
+            provider.shutdown()
 
 
 def test_otel_exporter_no_parent(caplog):

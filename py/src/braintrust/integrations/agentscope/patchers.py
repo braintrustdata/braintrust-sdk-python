@@ -12,11 +12,20 @@ from .tracing import (
 
 
 class AgentCallPatcher(FunctionWrapperPatcher):
-    """Patch AgentScope agent execution."""
+    """Patch AgentScope 1.x agent execution."""
 
     name = "agentscope.agent.call"
     target_module = "agentscope.agent"
     target_path = "AgentBase.__call__"
+    wrapper = _agent_call_wrapper
+
+
+class AgentReplyPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope 2.x agent execution."""
+
+    name = "agentscope.agent.reply"
+    target_module = "agentscope.agent"
+    target_path = "Agent.reply"
     wrapper = _agent_call_wrapper
 
 
@@ -39,11 +48,20 @@ class FanoutPipelinePatcher(FunctionWrapperPatcher):
 
 
 class ToolkitCallToolFunctionPatcher(FunctionWrapperPatcher):
-    """Patch AgentScope toolkit execution."""
+    """Patch AgentScope 1.x toolkit execution."""
 
     name = "agentscope.tool.call_tool_function"
     target_module = "agentscope.tool"
     target_path = "Toolkit.call_tool_function"
+    wrapper = _toolkit_call_tool_function_wrapper
+
+
+class ToolkitCallToolPatcher(FunctionWrapperPatcher):
+    """Patch AgentScope 2.x toolkit execution."""
+
+    name = "agentscope.tool.call_tool"
+    target_module = "agentscope.tool"
+    target_path = "Toolkit.call_tool"
     wrapper = _toolkit_call_tool_function_wrapper
 
 

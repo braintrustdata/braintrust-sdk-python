@@ -24,6 +24,7 @@ AclObjectType: TypeAlias = Literal[
     'org_member',
     'project_log',
     'org_project',
+    'org_audit_logs',
 ]
 """
 The object type that the ACL applies to
@@ -176,6 +177,12 @@ class AsyncScoringStateAsyncScoringState1(TypedDict):
 AsyncScoringState: TypeAlias = (
     AsyncScoringStateAsyncScoringState | AsyncScoringStateAsyncScoringState1 | None
 )
+
+
+AutomationStatus: TypeAlias = Literal['active', 'paused']
+"""
+Whether the automation is active or paused.
+"""
 
 
 class PreprocessorPreprocessor(TypedDict):
@@ -1769,6 +1776,11 @@ class ProjectScoreCategory(TypedDict):
     """
 
 
+class ProjectScoreConfigVisibility(TypedDict):
+    users: NotRequired[Sequence[str] | None]
+    groups: NotRequired[Sequence[str] | None]
+
+
 ProjectScoreType: TypeAlias = Literal[
     'slider', 'categorical', 'weighted', 'minimum', 'maximum', 'online', 'free-form'
 ]
@@ -3224,6 +3236,7 @@ class ProjectAutomationConfig1(TypedDict):
     """
     The type of automation.
     """
+    status: NotRequired[AutomationStatus | None]
     export_definition: (
         ProjectAutomationConfig1ExportDefinition
         | ProjectAutomationConfig1ExportDefinition1
@@ -3277,6 +3290,7 @@ ProjectScoreCategories: TypeAlias = (
 class ProjectScoreConfig(TypedDict):
     multi_select: NotRequired[bool | None]
     destination: NotRequired[str | None]
+    visibility: NotRequired[ProjectScoreConfigVisibility | None]
     online: NotRequired[OnlineScoreConfig | None]
 
 
@@ -3345,6 +3359,7 @@ class TopicAutomationConfig(TypedDict):
     """
     The type of automation.
     """
+    status: NotRequired[AutomationStatus | None]
     sampling_rate: float
     """
     The sampling rate for topic automation
@@ -3413,6 +3428,14 @@ class TopicMapData(TypedDict):
     distance_threshold: NotRequired[float | None]
     """
     Maximum distance to nearest centroid. If exceeded, returns no_match.
+    """
+    btql_filter: NotRequired[str | None]
+    """
+    Per-topic-map BTQL filter that was applied when this version was generated. Absent on versions generated before this was recorded.
+    """
+    automation_btql_filter: NotRequired[str | None]
+    """
+    Automation-level BTQL filter that was applied when this version was generated. Absent on versions generated before this was recorded.
     """
 
 

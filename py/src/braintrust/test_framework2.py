@@ -5,7 +5,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from .framework2 import ProjectIdCache, projects
+from .framework import _set_lazy_load
+from .framework2 import ProjectIdCache, global_, projects
 
 
 # Check if pydantic is available
@@ -143,6 +144,50 @@ class TestScorerMetadata:
 
         assert scorer.metadata == metadata
         assert scorer.name == "llm-scorer"
+
+
+class TestClassifierFunctionPush:
+    """Tests for classifier function push registration."""
+
+    def test_code_classifier_registers_as_code_function(self):
+        project = projects.create("test-project")
+
+        def classify(output: str):
+            return {"name": "category", "id": output}
+
+        classifier = project.classifiers.create(
+            handler=classify,
+            name="test-classifier",
+        )
+
+        assert classifier.type_ == "classifier"
+        assert classifier.name == "test-classifier"
+        assert classifier.slug == "test-classifier"
+        assert project._publishable_code_functions == [classifier]
+
+    def test_lazy_code_classifier_registration_uses_functions_registry(self):
+        global_.functions.clear()
+        global_.prompts.clear()
+        global_.parameters.clear()
+
+        try:
+            with _set_lazy_load(True):
+                project = projects.create("test-project")
+
+                def classify(output: str):
+                    return {"name": "category", "id": output}
+
+                classifier = project.classifiers.create(
+                    handler=classify,
+                    name="test-classifier",
+                )
+
+                assert global_.functions == [classifier]
+                assert global_.functions[0].type_ == "classifier"
+        finally:
+            global_.functions.clear()
+            global_.prompts.clear()
+            global_.parameters.clear()
 
 
 class TestCodeFunctionTags:

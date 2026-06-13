@@ -378,6 +378,8 @@ AGENTSCOPE_VERSIONS = _get_matrix_versions("agentscope")
 @nox.session()
 @nox.parametrize("version", AGENTSCOPE_VERSIONS, ids=AGENTSCOPE_VERSIONS)
 def test_agentscope(session, version):
+    if version == LATEST and sys.version_info < (3, 11):
+        session.skip("AgentScope 2.x requires Python 3.11+")
     _install_test_deps(session)
     _install_matrix_dep(session, "agentscope", version)
     _install_group_locked(session, "test-agentscope")
@@ -674,10 +676,9 @@ def pylint(session):
     # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
     if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
         files = [f for f in files if not f.startswith("scripts/")]
-    # The lint group skips crewai on Python 3.14 (its transitive pydantic-core
-    # has no 3.14 wheel yet), so skip the matching example too.
-    if sys.version_info[:2] >= (3, 14):
-        files = [f for f in files if not f.startswith("../examples/crewai/")]
+    # The lint group skips crewai to avoid vulnerable transitive chromadb
+    # versions, so skip the matching example too.
+    files = [f for f in files if not f.startswith("../examples/crewai/")]
     session.run("pylint", "--errors-only", *files)
 
 

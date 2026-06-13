@@ -53,6 +53,7 @@ def invoke(
     stream: Literal[False] | None = None,
     mode: ModeType | None = None,
     strict: bool | None = None,
+    overrides: dict[str, Any] | None = None,
     org_name: str | None = None,
     api_key: str | None = None,
     app_url: str | None = None,
@@ -81,6 +82,7 @@ def invoke(
     stream: Literal[True] = True,
     mode: ModeType | None = None,
     strict: bool | None = None,
+    overrides: dict[str, Any] | None = None,
     org_name: str | None = None,
     api_key: str | None = None,
     app_url: str | None = None,
@@ -108,6 +110,7 @@ def invoke(
     stream: bool = False,
     mode: ModeType | None = None,
     strict: bool | None = None,
+    overrides: dict[str, Any] | None = None,
     org_name: str | None = None,
     api_key: str | None = None,
     app_url: str | None = None,
@@ -136,6 +139,10 @@ def invoke(
             will return an array of JSON objects with one object per tool call.
         strict: Whether to use strict mode for the function. If true, the function will throw an
             error if the variable names in the prompt do not match the input keys.
+        overrides: Per-call deep-merge into the resolved function data server-side. Useful for
+            facet, code, global, and remote_eval functions (for example, overriding a facet's
+            ``model`` or a global function's ``config``). Has no effect on prompt functions,
+            whose parameters live on a separate field that the override path does not touch.
         org_name: The name of the Braintrust organization to use.
         api_key: The API key to use for authentication.
         app_url: The URL of the Braintrust application.
@@ -198,6 +205,8 @@ def invoke(
         request["mode"] = mode
     if strict is not None:
         request["strict"] = strict
+    if overrides is not None:
+        request["overrides"] = overrides
 
     headers = {
         "Accept": "text/event-stream" if stream else "application/json",

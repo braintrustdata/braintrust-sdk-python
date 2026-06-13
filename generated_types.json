@@ -110,7 +110,8 @@
           "role",
           "org_member",
           "project_log",
-          "org_project"
+          "org_project",
+          "org_audit_logs"
         ],
         "description": "The object type that the ACL applies to"
       },
@@ -693,6 +694,14 @@
         "required": [
           "upload_status"
         ]
+      },
+      "AutomationStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "paused"
+        ],
+        "description": "Whether the automation is active or paused."
       },
       "BatchedFacetData": {
         "type": "object",
@@ -5290,6 +5299,9 @@
                     ],
                     "description": "The type of automation."
                   },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
                   "export_definition": {
                     "oneOf": [
                       {
@@ -6042,6 +6054,32 @@
               "string",
               "null"
             ]
+          },
+          "visibility": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "users": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "groups": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "online": {
             "$ref": "#/components/schemas/OnlineScoreConfig"
@@ -7325,7 +7363,7 @@
                   "object",
                   "null"
                 ],
-                "description": "Optional settings for collecting git metadata. By default, will collect all git metadata fields allowed in org-level settings."
+                "description": "Optional settings for collecting git metadata. By default, will collect git metadata fields allowed in org-level settings, excluding diff content unless the org opts in."
               }
             ]
           },
@@ -7762,6 +7800,9 @@
             ],
             "description": "The type of automation."
           },
+          "status": {
+            "$ref": "#/components/schemas/AutomationStatus"
+          },
           "sampling_rate": {
             "type": "number",
             "minimum": 0,
@@ -7970,6 +8011,14 @@
           "distance_threshold": {
             "type": "number",
             "description": "Maximum distance to nearest centroid. If exceeded, returns no_match."
+          },
+          "btql_filter": {
+            "type": "string",
+            "description": "Per-topic-map BTQL filter that was applied when this version was generated. Absent on versions generated before this was recorded."
+          },
+          "automation_btql_filter": {
+            "type": "string",
+            "description": "Automation-level BTQL filter that was applied when this version was generated. Absent on versions generated before this was recorded."
           }
         },
         "required": [

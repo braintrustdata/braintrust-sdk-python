@@ -544,6 +544,65 @@ class ScorerBuilder:
             return p
 
 
+class ClassifierBuilder:
+    """Builder to create a classifier in Braintrust."""
+
+    def __init__(self, project: "Project"):
+        self.project = project
+        self._task_counter = 0
+
+    def create(
+        self,
+        *,
+        handler: Callable[..., Any],
+        name: str | None = None,
+        slug: str | None = None,
+        description: str | None = None,
+        parameters: Any = None,
+        returns: Any = None,
+        if_exists: IfExists | None = None,
+        metadata: Metadata | None = None,
+        tags: Sequence[str] | None = None,
+    ) -> CodeFunction:
+        """Creates a classifier.
+
+        Args:
+            handler: The function that is called when the classifier is used.
+            name: The name of the classifier.
+            slug: A unique identifier for the classifier.
+            description: The description of the classifier.
+            parameters: The classifier's input schema, as a Pydantic model.
+            returns: The classifier's output schema, as a Pydantic model.
+            if_exists: What to do if the classifier already exists.
+            metadata: Custom metadata to attach to the classifier.
+            tags: A list of tags for the classifier.
+        """
+        self._task_counter += 1
+        if name is None or len(name) == 0:
+            if handler.__name__ and handler.__name__ != "<lambda>":
+                name = handler.__name__
+            else:
+                name = f"Classifier {self._task_counter}"
+        if slug is None or len(slug) == 0:
+            slug = slugify.slugify(name)
+
+        f = CodeFunction(
+            project=self.project,
+            handler=handler,
+            name=name,
+            slug=slug,
+            type_="classifier",
+            description=description,
+            parameters=parameters,
+            returns=returns,
+            if_exists=if_exists,
+            metadata=metadata,
+            tags=tags,
+        )
+        self.project.add_code_function(f)
+        return f
+
+
 class Project:
     """A handle to a Braintrust project."""
 
@@ -553,6 +612,7 @@ class Project:
         self.prompts = PromptBuilder(self)
         self.parameters = ParametersBuilder(self)
         self.scorers = ScorerBuilder(self)
+        self.classifiers = ClassifierBuilder(self)
 
         self._publishable_code_functions: list[CodeFunction] = []
         self._publishable_prompts: list[CodePrompt] = []

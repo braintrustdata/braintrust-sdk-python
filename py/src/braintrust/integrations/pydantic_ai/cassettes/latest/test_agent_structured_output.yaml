@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - pydantic-ai/1.102.0
+      - pydantic-ai/1.104.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -39,35 +39,35 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DjUJwXpICsdZb2LFJziPK7IN5Tl4L\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1779733684,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Dly5QmIZvm5IpGoIdY3y7ytclUcFh\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1780324760,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_Rtd0YW6c2FtwpPXg0BOlsEYg\",\n            \"type\":
+        \           \"id\": \"call_T2BEtQJogvbAINlsOZVJnp7X\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"final_result\",\n
-        \             \"arguments\": \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"The
-        sum of 10 and 15 is calculated by adding the two numbers together: 10 + 15
-        = 25.\\\"}\"\n            }\n          }\n        ],\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        57,\n    \"completion_tokens\": 44,\n    \"total_tokens\": 101,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_53ab0cb954\"\n}\n"
+        \             \"arguments\": \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"Adding
+        10 and 15 gives a total of 25.\\\"}\"\n            }\n          }\n        ],\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 57,\n    \"completion_tokens\": 31,\n    \"total_tokens\":
+        88,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_ad343dd83e\"\n}\n"
     headers:
       Access-Control-Expose-Headers:
       - CF-Ray
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a01699099f0539f8-YYZ
+      - a04ef799085f8ea1-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 25 May 2026 18:28:06 GMT
+      - Mon, 01 Jun 2026 14:39:21 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -79,19 +79,19 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '1186'
+      - '1138'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1597'
+      - '941'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=eOaJNUlwe6lQAwS4FXpTAaanuG2l79N7z8FgYdm6o6g-1779733684.7410026-1.0.1.1-.Gqafa5lrdJ3bS9mvyA6EymPfzb86mlJ6U7aILvcSoKjtnB3miXEL9hE8YuyGn5DaL1RZPiIRNpjO.l2AdbVX9lnp16POVpCDutefvoZMCKkKI4LvBy8IVLE.c_qskg9;
+      - __cf_bm=3UKBfgLn7Pzm5rFadRJzf73KSL77t239bjl1AHYO4pw-1780324760.4880176-1.0.1.1-xqfJ.HbXP7V3eSv6bNJENlP83YrEQQso1GnmxCDciqa5gQhW7.iqpO2tuUfIZ1BaZzwV3a4iUSXBCOyifcjFjGmeazAbkNjhinJFyvLM1BkQ9d0sNpmmE9YQ_fxOPGYW;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        25 May 2026 18:58:06 GMT
+        01 Jun 2026 15:09:21 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -107,7 +107,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_2b3393e4e4164223a1a3041ac3cb693d
+      - req_ba00c5ef634d434da1740f107906e402
     status:
       code: 200
       message: OK

@@ -1,0 +1,171 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Say hello in one word."}],"model":"gpt-4o-mini","moderation":{"model":"omni-moderation-latest"}}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '135'
+      Content-Type:
+      - application/json
+      Host:
+      - api.openai.com
+      User-Agent:
+      - OpenAI/Python 2.41.0
+      X-Stainless-Arch:
+      - arm64
+      X-Stainless-Async:
+      - 'false'
+      X-Stainless-Lang:
+      - python
+      X-Stainless-OS:
+      - MacOS
+      X-Stainless-Package-Version:
+      - 2.41.0
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-DpaUHGKp5Vqamse7g5tyxIyiQ9B0A\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1781187357,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Hello!\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 13,\n    \"completion_tokens\":
+        2,\n    \"total_tokens\": 15,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"moderation\": {\n    \"input\": {\n      \"type\": \"moderation_results\",\n
+        \     \"model\": \"omni-moderation-latest\",\n      \"results\": [\n        {\n
+        \         \"type\": \"moderation_result\",\n          \"model\": \"omni-moderation-latest\",\n
+        \         \"flagged\": false,\n          \"categories\": {\n            \"harassment\":
+        false,\n            \"harassment/threatening\": false,\n            \"sexual\":
+        false,\n            \"hate\": false,\n            \"hate/threatening\": false,\n
+        \           \"illicit\": false,\n            \"illicit/violent\": false,\n
+        \           \"self-harm/intent\": false,\n            \"self-harm/instructions\":
+        false,\n            \"self-harm\": false,\n            \"sexual/minors\":
+        false,\n            \"violence\": false,\n            \"violence/graphic\":
+        false\n          },\n          \"category_scores\": {\n            \"harassment\":
+        0.00010005044009099887,\n            \"harassment/threatening\": 7.0311842669149565e-6,\n
+        \           \"sexual\": 0.000034062932773341,\n            \"hate\": 0.00001488384825728813,\n
+        \           \"hate/threatening\": 3.726639284186561e-7,\n            \"illicit\":
+        0.000010889691002655445,\n            \"illicit/violent\": 4.006369222920725e-6,\n
+        \           \"self-harm/intent\": 4.98595821272702e-6,\n            \"self-harm/instructions\":
+        1.8631746484712008e-6,\n            \"self-harm\": 8.682210299865954e-6,\n
+        \           \"sexual/minors\": 4.683888424952456e-6,\n            \"violence\":
+        0.0004992412660775476,\n            \"violence/graphic\": 1.8342893327886845e-6\n
+        \         },\n          \"category_applied_input_types\": {\n            \"harassment\":
+        [\n              \"text\"\n            ],\n            \"harassment/threatening\":
+        [\n              \"text\"\n            ],\n            \"sexual\": [\n              \"text\"\n
+        \           ],\n            \"hate\": [\n              \"text\"\n            ],\n
+        \           \"hate/threatening\": [\n              \"text\"\n            ],\n
+        \           \"illicit\": [\n              \"text\"\n            ],\n            \"illicit/violent\":
+        [\n              \"text\"\n            ],\n            \"self-harm/intent\":
+        [\n              \"text\"\n            ],\n            \"self-harm/instructions\":
+        [\n              \"text\"\n            ],\n            \"self-harm\": [\n
+        \             \"text\"\n            ],\n            \"sexual/minors\": [\n
+        \             \"text\"\n            ],\n            \"violence\": [\n              \"text\"\n
+        \           ],\n            \"violence/graphic\": [\n              \"text\"\n
+        \           ]\n          }\n        }\n      ]\n    },\n    \"output\": {\n
+        \     \"type\": \"moderation_results\",\n      \"model\": \"omni-moderation-latest\",\n
+        \     \"results\": [\n        {\n          \"type\": \"moderation_result\",\n
+        \         \"model\": \"omni-moderation-latest\",\n          \"flagged\": false,\n
+        \         \"categories\": {\n            \"harassment\": false,\n            \"harassment/threatening\":
+        false,\n            \"sexual\": false,\n            \"hate\": false,\n            \"hate/threatening\":
+        false,\n            \"illicit\": false,\n            \"illicit/violent\":
+        false,\n            \"self-harm/intent\": false,\n            \"self-harm/instructions\":
+        false,\n            \"self-harm\": false,\n            \"sexual/minors\":
+        false,\n            \"violence\": false,\n            \"violence/graphic\":
+        false\n          },\n          \"category_scores\": {\n            \"harassment\":
+        0.00001535623976496012,\n            \"harassment/threatening\": 2.1444948420913954e-6,\n
+        \           \"sexual\": 0.00005193048644949271,\n            \"hate\": 4.264746818557914e-6,\n
+        \           \"hate/threatening\": 2.0580491096133835e-7,\n            \"illicit\":
+        0.000013342001090985438,\n            \"illicit/violent\": 7.722191834067996e-6,\n
+        \           \"self-harm/intent\": 1.8342893327886845e-6,\n            \"self-harm/instructions\":
+        7.889262586245034e-7,\n            \"self-harm\": 3.8831109868779005e-6,\n
+        \           \"sexual/minors\": 4.069457790466838e-6,\n            \"violence\":
+        0.0004942623523511968,\n            \"violence/graphic\": 2.355261854303796e-6\n
+        \         },\n          \"category_applied_input_types\": {\n            \"harassment\":
+        [\n              \"text\"\n            ],\n            \"harassment/threatening\":
+        [\n              \"text\"\n            ],\n            \"sexual\": [\n              \"text\"\n
+        \           ],\n            \"hate\": [\n              \"text\"\n            ],\n
+        \           \"hate/threatening\": [\n              \"text\"\n            ],\n
+        \           \"illicit\": [\n              \"text\"\n            ],\n            \"illicit/violent\":
+        [\n              \"text\"\n            ],\n            \"self-harm/intent\":
+        [\n              \"text\"\n            ],\n            \"self-harm/instructions\":
+        [\n              \"text\"\n            ],\n            \"self-harm\": [\n
+        \             \"text\"\n            ],\n            \"sexual/minors\": [\n
+        \             \"text\"\n            ],\n            \"violence\": [\n              \"text\"\n
+        \           ],\n            \"violence/graphic\": [\n              \"text\"\n
+        \           ]\n          }\n        }\n      ]\n    }\n  },\n  \"system_fingerprint\":
+        \"fp_4dafa39984\"\n}\n"
+    headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a0a13b16bc7d3786-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 11 Jun 2026 14:15:57 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      content-length:
+      - '5619'
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '290'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      set-cookie:
+      - __cf_bm=gxKuKcvXJsfb1mH5BRwdY_F7X46Ijmu5YB65WTYPKv8-1781187357.2343912-1.0.1.1-rbmf6bPUbbUdNf3vt3enc6NIXCrimAfHy4RHYg4Y9ivClZ9cUNgQPyfZFXNmNhimpiuDoTDm_R_vK_mNiniG3UExXgCBKQ3OEnEpvDrbIBA5HcLh.wiJ.OedVAF4eC8Z;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
+        11 Jun 2026 14:45:57 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_1cf5bff96ac543968a45510ce335ffc2
+    status:
+      code: 200
+      message: OK
+version: 1

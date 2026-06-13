@@ -16,7 +16,7 @@ interactions:
       Host:
       - api.openai.com
       User-Agent:
-      - OpenAI/Python 2.38.0
+      - OpenAI/Python 2.41.0
       X-Stainless-Arch:
       - arm64
       X-Stainless-Async:
@@ -26,7 +26,7 @@ interactions:
       X-Stainless-OS:
       - MacOS
       X-Stainless-Package-Version:
-      - 2.38.0
+      - 2.41.0
       X-Stainless-Runtime:
       - CPython
       X-Stainless-Runtime-Version:
@@ -39,64 +39,52 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_035832a98465bf16006a1490bba49c819397c991061a1fcde2\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1779732667,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0568cbb58e8cc7e1006a2ac3205194819eb8d28d768b8a52a1\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1781187360,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1779732669,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1781187362,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_035832a98465bf16006a1490bbdb548193a7df2eea1bd3f8d0\",\n
+        \     \"id\": \"ws_0568cbb58e8cc7e1006a2ac3206e94819e907c744f49da2f26\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
-        {\n        \"type\": \"search\",\n        \"query\": \"Search the web for
-        the current weather in Paris and answer in one sentence.\"\n      }\n    },\n
-        \   {\n      \"id\": \"msg_035832a98465bf16006a1490bcd29881939db40c064bbf276f\",\n
+        {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
+        the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
+        \       \"query\": \"Search the web for the current weather in Paris and answer
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_0568cbb58e8cc7e1006a2ac321477c819e98e05f4f02da6f4b\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 8:11\\u202fPM
-        CEST on May 25, 2026, Paris is experiencing sunny weather with a temperature
-        of 31\\u00b0C (88\\u00b0F).\\n\\n## Weather for Paris, Paris, France:\\nCurrent
-        Conditions: Sunny, 87\\u00b0F (31\\u00b0C)\\n\\nDaily Forecast:\\n* Monday,
-        May 25: Low: 64\\u00b0F (18\\u00b0C), High: 90\\u00b0F (32\\u00b0C), Description:
-        Very hot with plenty of sun\\n* Tuesday, May 26: Low: 64\\u00b0F (18\\u00b0C),
-        High: 92\\u00b0F (33\\u00b0C), Description: Very hot and less humid with brilliant
-        sunshine\\n* Wednesday, May 27: Low: 65\\u00b0F (18\\u00b0C), High: 91\\u00b0F
-        (33\\u00b0C), Description: Mostly sunny and very hot\\n* Thursday, May 28:
-        Low: 67\\u00b0F (19\\u00b0C), High: 92\\u00b0F (34\\u00b0C), Description:
-        Mostly cloudy and very hot\\n* Friday, May 29: Low: 64\\u00b0F (18\\u00b0C),
-        High: 90\\u00b0F (32\\u00b0C), Description: Hot with sun through high clouds;
-        caution advised if doing strenuous activities outside\\n* Saturday, May 30:
-        Low: 64\\u00b0F (18\\u00b0C), High: 89\\u00b0F (32\\u00b0C), Description:
-        Increasing cloudiness and very warm; a thunderstorm in spots in the afternoon\\n*
-        Sunday, May 31: Low: 59\\u00b0F (15\\u00b0C), High: 79\\u00b0F (26\\u00b0C),
-        Description: Mostly sunny and pleasantly warm\\n\\nSevere Weather Alerts:\\n*
-        Paris: Yellow Warning for Extreme High Temperature in effect until Tuesday,
-        12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Moderate high-temperature
-        warningModerate damages may occur, especially in vulnerable or in exposed
-        areas and to people who carry out weather-related activities.Be careful, keep
-        informed of the latest weather forecast., start time: Monday, May 25, 16:00:00
-        UTC, end time: Tuesday, May 26, 00:00:00 UTC\\n* Paris: Yellow Warning for
-        Extreme High Temperature in effect from Tuesday, 12:00 AM CEST until Wednesday,
-        12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Moderate high-temperature
-        warningModerate damages may occur, especially in vulnerable or in exposed
-        areas and to people who carry out weather-related activities.Be careful, keep
-        informed of the latest weather forecast., start time: Tuesday, May 26, 00:00:00
-        UTC, end time: Wednesday, May 27, 00:00:00 UTC\\n \"\n        }\n      ],\n
-        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
-        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
-        \ \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\": [\n    {\n      \"type\":
-        \"web_search_preview\",\n      \"search_context_size\": \"low\",\n      \"user_location\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 4:16\\u202fPM
+        on Thursday, June 11, 2026, in Paris, France, the weather is overcast with
+        a temperature of 66\\u00b0F (19\\u00b0C).\\n\\n## Weather for Paris, Paris,
+        France:\\nCurrent Conditions: Cloudy, 66\\u00b0F (19\\u00b0C)\\n\\nDaily Forecast:\\n*
+        Thursday, June 11: Low: 59\\u00b0F (15\\u00b0C), High: 66\\u00b0F (19\\u00b0C),
+        Description: Overcast\\n* Friday, June 12: Low: 58\\u00b0F (15\\u00b0C), High:
+        80\\u00b0F (27\\u00b0C), Description: Cloudy and warmer\\n* Saturday, June
+        13: Low: 54\\u00b0F (12\\u00b0C), High: 81\\u00b0F (27\\u00b0C), Description:
+        Very warm with decreasing clouds\\n* Sunday, June 14: Low: 56\\u00b0F (13\\u00b0C),
+        High: 82\\u00b0F (28\\u00b0C), Description: Very warm with sunshine and a
+        few clouds\\n* Monday, June 15: Low: 62\\u00b0F (16\\u00b0C), High: 81\\u00b0F
+        (27\\u00b0C), Description: Remaining warm with some clouds, then sunshine\\n*
+        Tuesday, June 16: Low: 67\\u00b0F (19\\u00b0C), High: 88\\u00b0F (31\\u00b0C),
+        Description: Very warm with sun and some clouds\\n* Wednesday, June 17: Low:
+        66\\u00b0F (19\\u00b0C), High: 94\\u00b0F (34\\u00b0C), Description: Very
+        hot with plenty of sun\\n \"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"auto\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\":
+        [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_content_types\":
+        [\n        \"text\"\n      ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
         {\n        \"type\": \"approximate\",\n        \"city\": null,\n        \"country\":
         \"US\",\n        \"region\": null,\n        \"timezone\": null\n      }\n
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 531,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 854\n  },\n
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 302,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 625\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       Access-Control-Expose-Headers:
@@ -104,13 +92,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a01680346ecfeff9-YYZ
+      - a0a13b299d7ee5b3-YYZ
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 25 May 2026 18:11:09 GMT
+      - Thu, 11 Jun 2026 14:16:02 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -122,21 +110,21 @@ interactions:
       alt-svc:
       - h3=":443"; ma=86400
       content-length:
-      - '4258'
+      - '3420'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '2028'
+      - '2152'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
       set-cookie:
-      - __cf_bm=JWh_X_Di3w3ZyUAYwrVlClJ54O02v32vjDWdMHFvQXM-1779732667.5837646-1.0.1.1-vlOFdJ56axMR10UGThcYza7dMZK54JI7P7f3I93Dqe1M2_V6jlHHAB6SkWmgeXhyJSGaO5AGouqT0wedtUBNxlIAkrnTG8gKU.ZBc1R.AeHir.9SMnpBXj.iLu.GboU6;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        25 May 2026 18:41:09 GMT
+      - __cf_bm=MBVTJUh8JewiKr3113z5KFdpBy0LMtNfAgcqpSgiLew-1781187360.253257-1.0.1.1-Gih0ClJL63axRV2nId4vVVtDQuETW.euxAxdBGF.j8Hpwqc9ZGB_D5GdR8UfllU1hcFL4jbM4VsbkSfC89Isz1T7ti7HZ9lBGFkazSGgCd7feeuYQZZ8I4_b7aU4dshz;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
+        11 Jun 2026 14:46:02 GMT
       x-request-id:
-      - req_ca3444cdeef540b6970f8ca5bbf36890
+      - req_685437501d394f07a20f8abb0abc7793
     status:
       code: 200
       message: OK

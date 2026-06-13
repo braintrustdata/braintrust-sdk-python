@@ -1098,6 +1098,12 @@ Remember: Testing is not just about finding bugs, it's about building confidence
     assert first_metrics["prompt_tokens"] >= first_cache_creation_tokens
     assert first_metrics["tokens"] == first_metrics["prompt_tokens"] + first_metrics["completion_tokens"]
 
+    # langchain-anthropic already folds cache read/creation tokens into
+    # usage_metadata input_tokens; the callback must not add them again.
+    assert res.usage_metadata is not None
+    assert first_metrics["prompt_tokens"] == res.usage_metadata["input_tokens"]
+    assert first_metrics["total_tokens"] == res.usage_metadata["total_tokens"]
+
     second_metrics = None
     for attempt in range(3):
         res = model.invoke(
@@ -1133,6 +1139,10 @@ Remember: Testing is not just about finding bugs, it's about building confidence
     assert second_metrics["prompt_cached_tokens"] > 0
     assert second_metrics["prompt_tokens"] >= second_metrics["prompt_cached_tokens"]
     assert second_metrics["tokens"] == second_metrics["prompt_tokens"] + second_metrics["completion_tokens"]
+
+    assert res.usage_metadata is not None
+    assert second_metrics["prompt_tokens"] == res.usage_metadata["input_tokens"]
+    assert second_metrics["total_tokens"] == res.usage_metadata["total_tokens"]
 
 
 @pytest.mark.vcr

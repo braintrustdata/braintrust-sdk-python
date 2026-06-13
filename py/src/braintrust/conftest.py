@@ -32,6 +32,14 @@ def _patch_vcr_aiohttp_stubs():
     See: https://github.com/kevin1024/vcrpy/issues/927
     """
     try:
+        from aiohttp import streams
+
+        # VCR.py imports this aiohttp internals symbol at module import time, but
+        # newer aiohttp releases removed it. Provide a no-op compatibility shim
+        # before importing vcr.stubs.aiohttp_stubs so test collection does not fail.
+        if not hasattr(streams, "AsyncStreamReaderMixin"):
+            setattr(streams, "AsyncStreamReaderMixin", object)
+
         from vcr.stubs import aiohttp_stubs
     except ImportError:
         return
@@ -41,8 +49,10 @@ def _patch_vcr_aiohttp_stubs():
 
     import asyncio
     import gzip
+    import inspect
 
-    from aiohttp import ClientConnectionError, streams
+    from aiohttp import ClientConnectionError, ClientResponse, streams
+    from aiohttp.helpers import TimerNoop
 
     def _decompress_body(body):
         """Decompress gzip body if needed."""
@@ -50,7 +60,43 @@ def _patch_vcr_aiohttp_stubs():
             return gzip.decompress(body)
         return body
 
+    if "stream_writer" in inspect.signature(ClientResponse.__init__).parameters:
+        # aiohttp 3.13 added a required stream_writer keyword argument to
+        # ClientResponse.__init__. VCR.py's MockClientResponse still calls the
+        # older constructor, so patch it before any cassette playback builds one.
+        class _MockStreamWriter:
+            output_size = 0
+
+        def patched_response_init(self, method, url, request_info=None):
+            super(aiohttp_stubs.MockClientResponse, self).__init__(
+                method=method,
+                url=url,
+                writer=None,
+                continue100=None,
+                timer=TimerNoop(),
+                request_info=request_info,
+                traces=[],
+                loop=asyncio.get_event_loop(),
+                session=None,
+                stream_writer=_MockStreamWriter(),
+            )
+
+        aiohttp_stubs.MockClientResponse.__init__ = patched_response_init
+
     aiohttp_stubs.MockStream.set_exception = lambda self, exc: None
+
+    if not hasattr(aiohttp_stubs.MockStream, "iter_chunked"):
+        # Older aiohttp exposed iter_chunked via AsyncStreamReaderMixin. Since
+        # that mixin is gone, VCR.py's MockStream needs the method directly for
+        # clients that consume aiohttp responses through chunked iteration.
+        async def iter_chunked(self, n):
+            while True:
+                chunk = await self.read(n)
+                if not chunk:
+                    break
+                yield chunk
+
+        aiohttp_stubs.MockStream.iter_chunked = iter_chunked
 
     async def patched_text(self, encoding="utf-8", errors="strict"):
         return _decompress_body(self._body).decode(encoding, errors=errors)

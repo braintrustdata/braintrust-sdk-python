@@ -3,6 +3,8 @@ import os
 import warnings
 from urllib.parse import urljoin
 
+from braintrust.env import BraintrustEnv
+
 
 INSTALL_ERR_MSG = (
     "OpenTelemetry packages are not installed. "
@@ -27,6 +29,12 @@ except ImportError:
     # Create stub classes if OpenTelemetry is not available
     class OTLPSpanExporter:
         def __init__(self, *args, **kwargs):
+            raise ImportError(INSTALL_ERR_MSG)
+
+        def export(self, *args, **kwargs):
+            raise ImportError(INSTALL_ERR_MSG)
+
+        def force_flush(self, *args, **kwargs):
             raise ImportError(INSTALL_ERR_MSG)
 
     class BatchSpanProcessor:
@@ -145,7 +153,7 @@ class OtelExporter(OTLPSpanExporter):
     a more convenient all-in-one interface.
 
     Environment Variables:
-    - BRAINTRUST_API_KEY: Your Braintrust API key.
+    - BRAINTRUST_API_KEY: Your Braintrust API key. If unset, the nearest .env.braintrust file is used.
     - BRAINTRUST_PARENT: Parent identifier (e.g., "project_name:test").
     - BRAINTRUST_API_URL: Base URL for Braintrust API (defaults to https://api.braintrust.dev).
     """
@@ -163,7 +171,7 @@ class OtelExporter(OTLPSpanExporter):
 
         Args:
             url: OTLP endpoint URL. Defaults to {BRAINTRUST_API_URL}/otel/v1/traces.
-            api_key: Braintrust API key. Defaults to BRAINTRUST_API_KEY env var.
+            api_key: Braintrust API key. Defaults to BRAINTRUST_API_KEY env var, then .env.braintrust.
             parent: Parent identifier (e.g., "project_name:test"). Defaults to BRAINTRUST_PARENT env var.
             headers: Additional headers to include in requests.
             **kwargs: Additional arguments passed to OTLPSpanExporter.
@@ -173,14 +181,12 @@ class OtelExporter(OTLPSpanExporter):
         if not base_url.endswith("/"):
             base_url += "/"
         endpoint = url or urljoin(base_url, "otel/v1/traces")
-        api_key = api_key or os.environ.get("BRAINTRUST_API_KEY")
+        api_key_arg = api_key
+        env_api_key = os.environ.get("BRAINTRUST_API_KEY")
+        if api_key is None:
+            api_key = env_api_key if env_api_key and env_api_key.strip() else None
         parent = parent or os.environ.get("BRAINTRUST_PARENT")
         headers = headers or {}
-
-        if not api_key:
-            raise ValueError(
-                "API key is required. Provide it via api_key parameter or BRAINTRUST_API_KEY environment variable."
-            )
 
         # Default parent if not provided
         if not parent:
@@ -190,10 +196,14 @@ class OtelExporter(OTLPSpanExporter):
                 "Configure with BRAINTRUST_PARENT environment variable or parent parameter."
             )
 
-        exporter_headers = {
-            "Authorization": f"Bearer {api_key}",
-            **headers,
-        }
+        self._braintrust_api_key_arg = api_key_arg
+        self._braintrust_headers_override_authorization = "Authorization" in headers
+        self._braintrust_has_api_key = bool(api_key and api_key.strip())
+
+        exporter_headers = {}
+        if self._braintrust_has_api_key:
+            exporter_headers["Authorization"] = f"Bearer {api_key}"
+        exporter_headers.update(headers)
 
         if parent:
             exporter_headers["x-bt-parent"] = parent
@@ -201,6 +211,41 @@ class OtelExporter(OTLPSpanExporter):
         self.parent = parent
 
         super().__init__(endpoint=endpoint, headers=exporter_headers, **kwargs)
+
+    def _set_api_key_header(self, api_key: str) -> None:
+        if not self._braintrust_headers_override_authorization:
+            authorization = {"Authorization": f"Bearer {api_key}"}
+            exporter_headers = getattr(self, "_headers", None)
+            if isinstance(exporter_headers, dict):
+                exporter_headers.update(authorization)
+            else:
+                self._headers = {**dict(exporter_headers or {}), **authorization}
+
+            session = getattr(self, "_session", None)
+            if session is not None:
+                session.headers.update(authorization)
+        self._braintrust_has_api_key = True
+
+    def _ensure_api_key(self) -> None:
+        if self._braintrust_has_api_key:
+            return
+        api_key = self._braintrust_api_key_arg or BraintrustEnv.API_KEY.get(None, use_dotenv=True)
+        if not api_key or not api_key.strip():
+            raise ValueError(
+                "API key is required. Provide it via api_key parameter, BRAINTRUST_API_KEY environment variable, or the nearest .env.braintrust file."
+            )
+        self._set_api_key_header(api_key)
+
+    def initialize(self) -> None:
+        self._ensure_api_key()
+
+    def export(self, spans):
+        self._ensure_api_key()
+        return super().export(spans)
+
+    def force_flush(self, timeout_millis=30000):
+        self._ensure_api_key()
+        return super().force_flush(timeout_millis)
 
 
 def add_braintrust_span_processor(
@@ -252,7 +297,7 @@ class BraintrustSpanProcessor:
         Initialize the BraintrustSpanProcessor.
 
         Args:
-            api_key: Braintrust API key. Defaults to BRAINTRUST_API_KEY env var.
+            api_key: Braintrust API key. Defaults to BRAINTRUST_API_KEY env var, then .env.braintrust.
             parent: Parent identifier (e.g., "project_name:test"). Defaults to BRAINTRUST_PARENT env var.
             api_url: Base URL for Braintrust API. Defaults to BRAINTRUST_API_URL env var or https://api.braintrust.dev.
             filter_ai_spans: Whether to enable AI span filtering. Defaults to False.
@@ -340,6 +385,7 @@ class BraintrustSpanProcessor:
 
     def on_end(self, span):
         """Forward span end events to the inner processor."""
+        self._exporter.initialize()
         self._processor.on_end(span)
 
     def _on_ending(self, span):
@@ -352,6 +398,7 @@ class BraintrustSpanProcessor:
 
     def force_flush(self, timeout_millis=30000):
         """Force flush the inner processor."""
+        self._exporter.initialize()
         return self._processor.force_flush(timeout_millis)
 
     @property
