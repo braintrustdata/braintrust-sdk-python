@@ -1351,6 +1351,14 @@ def _validate_classification_result(value: Any, classifier_name: str) -> Classif
     return classification
 
 
+def _get_persisted_base_experiment_id(experiment: Experiment) -> str | None:
+    try:
+        base_experiment_id = experiment.data.get("base_exp_id")
+    except Exception:
+        return None
+    return base_experiment_id if isinstance(base_experiment_id, str) and base_experiment_id else None
+
+
 async def run_evaluator(
     experiment: Experiment | None,
     evaluator: Evaluator[Input, Output, Expected],
@@ -1367,9 +1375,12 @@ async def run_evaluator(
     )
 
     if experiment:
+        comparison_experiment_id = evaluator.base_experiment_id
+        if comparison_experiment_id is None:
+            comparison_experiment_id = _get_persisted_base_experiment_id(experiment)
         summary = experiment.summarize(
             summarize_scores=evaluator.summarize_scores,
-            comparison_experiment_id=evaluator.base_experiment_id,
+            comparison_experiment_id=comparison_experiment_id,
         )
     else:
         summary = build_local_summary(evaluator, results)
