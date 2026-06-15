@@ -21,6 +21,9 @@ from pydantic import BaseModel, Field
 
 
 PROJECT_NAME = "test_adk"
+ADK_MODEL = (
+    "gemini-2.5-flash-lite" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash"
+)
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 
 setup_adk(project_name=PROJECT_NAME)
@@ -169,7 +172,7 @@ async def test_adk_multi_turn_history_is_logged(memory_logger):
     session_id = "test-session-conversation"
     agent = Agent(
         name="conversation_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction=(
             "You are a concise assistant. "
             "When the user says their name, acknowledge it briefly. "
@@ -356,7 +359,7 @@ def test_adk_sync_runner_run_does_not_duplicate_invocation_spans(memory_logger):
 
     agent = Agent(
         name="weather_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a helpful weather assistant. Use the get_weather tool to answer questions about weather.",
         tools=[get_weather],
     )
@@ -408,7 +411,7 @@ async def test_adk_braintrust_integration(memory_logger):
 
     agent = Agent(
         name="weather_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a helpful weather assistant. Use the get_weather tool to answer questions about weather.",
         tools=[get_weather],
     )
@@ -503,7 +506,7 @@ async def test_adk_nested_subagent_tool_calls_are_traced(memory_logger):
 
     leaf_agent = Agent(
         name="weather_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a helpful weather assistant. Use the get_weather tool to answer questions about weather.",
         tools=[get_weather],
     )
@@ -559,7 +562,7 @@ async def test_adk_max_tokens_captures_content(memory_logger):
 
     agent = Agent(
         name="creative_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a creative storyteller.",
         generate_content_config=types.GenerateContentConfig(
             max_output_tokens=50,  # Set low to trigger MAX_TOKENS
@@ -735,7 +738,7 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
 
     agent = Agent(
         name="vision_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a helpful assistant that can analyze images.",
         generate_content_config=types.GenerateContentConfig(
             max_output_tokens=150,
@@ -830,7 +833,7 @@ async def test_adk_captures_metrics(memory_logger):
 
     agent = Agent(
         name="metrics_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a helpful assistant.",
     )
 
@@ -890,7 +893,7 @@ async def test_adk_captures_metrics(memory_logger):
     # Verify model name is captured in metadata
     metadata = llm_span_with_metrics.get("metadata", {})
     assert "model" in metadata, "Metadata should include model name"
-    assert metadata["model"] == "gemini-2.0-flash", "Model name should match the agent's model"
+    assert metadata["model"] == ADK_MODEL, "Model name should match the agent's model"
 
 
 def test_determine_llm_call_type_direct_response():
@@ -1188,7 +1191,7 @@ async def test_adk_structured_output_pydantic(memory_logger):
 
     structured_capital_agent = LlmAgent(
         name="capital_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="""You are a Capital Information Agent. Given a country, respond ONLY with a JSON object containing the capital. Format: {"capital": "capital_name"}""",
         output_schema=CapitalOutput,
         output_key="found_capital",
@@ -1262,7 +1265,7 @@ async def test_adk_input_schema_serialization(memory_logger):
 
     agent = LlmAgent(
         name="input_schema_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a test agent with input schema.",
         input_schema=UserInput,
     )
@@ -1296,7 +1299,7 @@ async def test_adk_input_schema_serialization(memory_logger):
 
     # Assert complete input structure
     assert llm_span["input"] == {
-        "model": "gemini-2.0-flash",
+        "model": ADK_MODEL,
         "contents": [
             {
                 "role": "user",
@@ -1315,8 +1318,8 @@ async def test_adk_input_schema_serialization(memory_logger):
     assert "parts" in output["content"]
     assert "finish_reason" in output
     assert "usage_metadata" in output
-    if ADK_VERSION >= (1, 15, 0):
-        assert "avg_logprobs" in output
+    if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
+        assert output["avg_logprobs"] is not None
 
 
 @pytest.mark.vcr
@@ -1339,7 +1342,7 @@ async def test_adk_complex_nested_schema(memory_logger):
 
     nested_agent = LlmAgent(
         name="nested_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="Return a person with their address.",
         output_schema=Person,
         output_key="person_data",
@@ -1383,7 +1386,7 @@ async def test_adk_complex_nested_schema(memory_logger):
 
     # Assert complete input structure with nested schema
     assert llm_span["input"] == {
-        "model": "gemini-2.0-flash",
+        "model": ADK_MODEL,
         "contents": [
             {
                 "role": "user",
@@ -1450,8 +1453,8 @@ async def test_adk_complex_nested_schema(memory_logger):
     assert "parts" in output["content"]
     assert "finish_reason" in output
     assert "usage_metadata" in output
-    if ADK_VERSION >= (1, 15, 0):
-        assert "avg_logprobs" in output
+    if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
+        assert output["avg_logprobs"] is not None
 
 
 @pytest.mark.asyncio
@@ -1612,7 +1615,7 @@ async def test_adk_response_json_schema_dict(memory_logger):
 
     json_schema_agent = LlmAgent(
         name="city_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a City Information Agent. Provide city information.",
         generate_content_config=config,
     )
@@ -1653,7 +1656,7 @@ async def test_adk_response_json_schema_dict(memory_logger):
 
     # Assert complete input structure - plain JSON schema dict should be preserved
     assert llm_span["input"] == {
-        "model": "gemini-2.0-flash",
+        "model": ADK_MODEL,
         "contents": [
             {
                 "role": "user",
@@ -1692,8 +1695,8 @@ async def test_adk_response_json_schema_dict(memory_logger):
     assert "parts" in output["content"]
     assert "finish_reason" in output
     assert "usage_metadata" in output
-    if ADK_VERSION >= (1, 15, 0):
-        assert "avg_logprobs" in output
+    if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
+        assert output["avg_logprobs"] is not None
 
 
 @pytest.mark.asyncio
@@ -1755,7 +1758,7 @@ async def test_adk_agent_metadata_with_attachment(memory_logger):
 
     agent = Agent(
         name="tool_agent",
-        model="gemini-2.0-flash",
+        model=ADK_MODEL,
         instruction="You are a helpful assistant with tools.",
         tools=[simple_tool],
     )

@@ -17,38 +17,29 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Here are a few different population
-        estimates for Tokyo, Japan, as of 2026:\\n\\n*   **City Population:** Approximately
-        10,316,210.\\n*   **Tokyo (Metropolis):** 14,270,748. In 2025, the population
-        was 14,195,730.\\n*   **Greater Tokyo Area (Metropolitan Area):** Around 36,954,000.\\n*
-        \  **Urban Agglomeration (UN definition):** 33.4 million.\\n\\nIt's important
-        to note that these figures represent different geographical areas within and
-        around Tokyo. The \\\"city\\\" refers to the 23 special wards that make up
-        the core of Tokyo. The \\\"metropolis\\\" includes these wards plus additional
-        surrounding areas. The \\\"Greater Tokyo Area\\\" encompasses an even wider
-        region, including multiple prefectures. The UN's \\\"urban agglomeration\\\"
-        definition considers the city and its sprawling suburbs.\\n\"\n          }\n
-        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"groundingMetadata\": {\n        \"searchEntryPoint\": {\n
-        \         \"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n  align-items:
-        center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family: Google
-        Sans, Roboto, sans-serif;\\n  font-size: 14px;\\n  line-height: 20px;\\n  padding:
-        8px 12px;\\n}\\n.chip {\\n  display: inline-block;\\n  border: solid 1px;\\n
-        \ border-radius: 16px;\\n  min-width: 14px;\\n  padding: 5px 16px;\\n  text-align:
-        center;\\n  user-select: none;\\n  margin: 0 8px;\\n  -webkit-tap-highlight-color:
-        transparent;\\n}\\n.carousel {\\n  overflow: auto;\\n  scrollbar-width: none;\\n
-        \ white-space: nowrap;\\n  margin-right: -12px;\\n}\\n.headline {\\n  display:
-        flex;\\n  margin-right: 4px;\\n}\\n.gradient-container {\\n  position: relative;\\n}\\n.gradient
-        {\\n  position: absolute;\\n  transform: translate(3px, -9px);\\n  height:
-        36px;\\n  width: 9px;\\n}\\n@media (prefers-color-scheme: light) {\\n  .container
+        [\n          {\n            \"text\": \"The current population of Tokyo varies
+        depending on whether one refers to\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
+        0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\": {\n          \"renderedContent\":
+        \"\\u003cstyle\\u003e\\n.container {\\n  align-items: center;\\n  border-radius:
+        8px;\\n  display: flex;\\n  font-family: Google Sans, Roboto, sans-serif;\\n
+        \ font-size: 14px;\\n  line-height: 20px;\\n  padding: 8px 12px;\\n}\\n.chip
+        {\\n  display: inline-block;\\n  border: solid 1px;\\n  border-radius: 16px;\\n
+        \ min-width: 14px;\\n  padding: 5px 16px;\\n  text-align: center;\\n  user-select:
+        none;\\n  margin: 0 8px;\\n  -webkit-tap-highlight-color: transparent;\\n}\\n.carousel
+        {\\n  overflow: auto;\\n  scrollbar-width: none;\\n  white-space: nowrap;\\n
+        \ margin-right: -12px;\\n}\\n.headline {\\n  display: flex;\\n  margin-right:
+        4px;\\n}\\n.gradient-container {\\n  position: relative;\\n}\\n.gradient {\\n
+        \ position: absolute;\\n  transform: translate(3px, -9px);\\n  height: 36px;\\n
+        \ width: 9px;\\n}\\n@media (prefers-color-scheme: light) {\\n  .container
         {\\n    background-color: #fafafa;\\n    box-shadow: 0 0 0 1px #0000000f;\\n
         \ }\\n  .headline-label {\\n    color: #1f1f1f;\\n  }\\n  .chip {\\n    background-color:
         #ffffff;\\n    border-color: #d2d2d2;\\n    color: #5e5e5e;\\n    text-decoration:
@@ -100,78 +91,28 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGFgoEL9tLvG6rZCE0o6GKWGTUREpHCtqfyI8QB1b9nYpGyDewu75nVv3cLGJOw49Abpa4rAb8twUReRLDMzgGLiJbx7gYGtm6VnO94NwVcAIXasxC9sllZ2NyLjlxLMrb53iAYwU6jBaUWpRTWggdOXNR1kYBNaUlZL6ozz73OXAbic675xAkPn0l_0QQnqJi0M2deYVbLF8xP19V2\\\"\\u003eTokyo
-        Japan population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGstmmDWhUUbLJzQFEerK3qIlycfISfzeSQdhil2VkgmOf6DYw7wqiBYcusMtZFVhEDsT5WSd0elBT5B-19Eq9VkK-ERe7qbEZG5GCS9OsnQfa8P4dZjnJKQeTdBWtPh5Syu76-jVxKi8b5nfdcSKcJWd13v50hRNr6s8KkW3jtPow_1kUD6l99CHZPsdCtedrSTNWR2_3FaaltMuuYo3HIIzYC\\\"\\u003ecurrent
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFprcnRebpZNwITtfB8-iMSAX_5IpSFMCiPW5fXK6HAwLkgBjgp5gyDTjd1H5nIFv5kNl0RzkPsg_0Ivzo-Aet_CWPB3X63lcQO9GP2pBV7dO6b5ZIALWaLt4H5DsDM7Lai24upvRvD_rZGpHBwlYqjoSE1hbFIVjRqGZsSta0aEzjfaTA1nE7rlGcV9F61GzWKs99lWDyJUodgdkCmAFrrDg9t4A==\\\"\\u003ecurrent
         population of Tokyo Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
-        \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
-        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG6thbbZkEOHycZOwyz0axvLdfN89SllJfy2AmgZSQVBsnHfbsJCK7g0kZIYkedtBIPpJ4Ks9HG3EgAzkpy_cqKp0sZ5ElfI-5WrdozeRIVeZoSYDSEqCoystEDZLAk0pbOfdRgPg25lg==\",\n
-        \             \"title\": \"worldpopulationreview.com\"\n            }\n          },\n
-        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGtwWCVQlcdWilSlL7BTyUcG6yn5tjhKWNazag0l13ppT8rqjV_NkphBN1vJUeARRhKwclI_jzN-3veLwMOmA1i3jfhMOtUf5NMF65_1nYnELFktFXeBpavcBSEvUFh53DyqMhHCZFAVwFkdKG75A==\",\n
-        \             \"title\": \"worldpopulationreview.com\"\n            }\n          },\n
-        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEIG08B5gtYNZyaxbZceBSBmXxOlvqd1o1HudGTcW2KYarH57sYO8gTO82nHKBn_Eg0c-EL7im0T_eA66GzpHr-d85QbHvL69ghvxcxxFwrQPRDzmqfrfyQuLCYR_stauvJN_Cpf0ttPklfbVZi\",\n
-        \             \"title\": \"wikipedia.org\"\n            }\n          },\n
-        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGK1_ke_jlHd8-ziHzqQ7WH4ZPfn0q-riupfIs89pYTjrTVWWZDZYLJsMwEZbhYtlClkIAowGG071Qp9c-sFBLVWEeX4jaA_6csecKfykt6d6Zg1ryBY3xleKrpn3tlRKpe1DInc5EZVnTqrZS8KgdnyMrOFbpuN_f1tBKQIwV6I6eI\",\n
-        \             \"title\": \"macrotrends.net\"\n            }\n          },\n
-        \         {\n            \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5LFcP_DTzB6zmi-wyemDe2inpDgU6YZdLijlwtG5ox6nRQJeskm0qriQfc7KDCqUwx7JjDeLxijFJRwDaTovIna1efwRfhVYJET0uYgUUrR--8WPlrvsk9efsE_V9oBAwTOeliJI=\",\n
-        \             \"title\": \"nippon.com\"\n            }\n          }\n        ],\n
-        \       \"groundingSupports\": [\n          {\n            \"segment\": {\n
-        \             \"startIndex\": 77,\n              \"endIndex\": 126,\n              \"text\":
-        \"*   **City Population:** Approximately 10,316,210\"\n            },\n            \"groundingChunkIndices\":
-        [\n              0,\n              1\n            ],\n            \"confidenceScores\":
-        [\n              0.59787977,\n              0.81777555\n            ]\n          },\n
-        \         {\n            \"segment\": {\n              \"startIndex\": 128,\n
-        \             \"endIndex\": 166,\n              \"text\": \"*   **Tokyo (Metropolis):**
-        14,270,748\"\n            },\n            \"groundingChunkIndices\": [\n              2\n
-        \           ],\n            \"confidenceScores\": [\n              0.5381499\n
-        \           ]\n          },\n          {\n            \"segment\": {\n              \"startIndex\":
-        168,\n              \"endIndex\": 206,\n              \"text\": \"In 2025,
-        the population was 14,195,730\"\n            },\n            \"groundingChunkIndices\":
-        [\n              2\n            ],\n            \"confidenceScores\": [\n
-        \             0.91299814\n            ]\n          },\n          {\n            \"segment\":
-        {\n              \"startIndex\": 208,\n              \"endIndex\": 273,\n
-        \             \"text\": \"*   **Greater Tokyo Area (Metropolitan Area):**
-        Around 36,954,000\"\n            },\n            \"groundingChunkIndices\":
-        [\n              3\n            ],\n            \"confidenceScores\": [\n
-        \             0.5571145\n            ]\n          },\n          {\n            \"segment\":
-        {\n              \"startIndex\": 275,\n              \"endIndex\": 332,\n
-        \             \"text\": \"*   **Urban Agglomeration (UN definition):** 33.4
-        million\"\n            },\n            \"groundingChunkIndices\": [\n              4\n
-        \           ],\n            \"confidenceScores\": [\n              0.8963919\n
-        \           ]\n          },\n          {\n            \"segment\": {\n              \"startIndex\":
-        335,\n              \"endIndex\": 439,\n              \"text\": \"It's important
-        to note that these figures represent different geographical areas within and
-        around Tokyo\"\n            },\n            \"groundingChunkIndices\": [\n
-        \             1\n            ],\n            \"confidenceScores\": [\n              0.20137282\n
-        \           ]\n          },\n          {\n            \"segment\": {\n              \"startIndex\":
-        588,\n              \"endIndex\": 677,\n              \"text\": \"The \\\"Greater
-        Tokyo Area\\\" encompasses an even wider region, including multiple prefectures\"\n
-        \           },\n            \"groundingChunkIndices\": [\n              1\n
-        \           ],\n            \"confidenceScores\": [\n              0.016802449\n
-        \           ]\n          },\n          {\n            \"segment\": {\n              \"startIndex\":
-        679,\n              \"endIndex\": 765,\n              \"text\": \"The UN's
-        \\\"urban agglomeration\\\" definition considers the city and its sprawling
-        suburbs\"\n            },\n            \"groundingChunkIndices\": [\n              4\n
-        \           ],\n            \"confidenceScores\": [\n              0.9577858\n
-        \           ]\n          }\n        ],\n        \"retrievalMetadata\": {},\n
-        \       \"webSearchQueries\": [\n          \"current population of Tokyo Japan\",\n
-        \         \"Tokyo Japan population 2026\"\n        ]\n      }\n    }\n  ],\n
-        \ \"usageMetadata\": {\n    \"promptTokenCount\": 10,\n    \"candidatesTokenCount\":
-        218,\n    \"totalTokenCount\": 228,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 10\n      }\n    ],\n
-        \   \"candidatesTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 218\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.0-flash-001\",\n  \"responseId\": \"Vpodat-dBZqrsOIPqITz2QI\"\n}\n"
+        \       },\n        \"webSearchQueries\": [\n          \"current population
+        of Tokyo Japan\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\": {\n
+        \   \"promptTokenCount\": 11,\n    \"candidatesTokenCount\": 28,\n    \"totalTokenCount\":
+        408,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 11\n      }\n    ],\n    \"toolUsePromptTokenCount\":
+        56,\n    \"toolUsePromptTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 56\n      }\n    ],\n    \"thoughtsTokenCount\":
+        313,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"o1UwaobnJMGh1MkPrcPRkAo\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 01 Jun 2026 14:42:33 GMT
+      - Mon, 15 Jun 2026 19:42:30 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=3373
+      - gfet4t7; dur=3146
       Transfer-Encoding:
       - chunked
       Vary:
@@ -187,7 +128,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '11975'
+      - '6155'
     status:
       code: 200
       message: OK

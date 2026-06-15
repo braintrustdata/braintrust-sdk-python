@@ -22,34 +22,32 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"{\\n  \\\"capital\\\": \\\"Paris\\\"\\n}\"\n
+        [\n          {\n            \"text\": \"{\\\"capital\\\": \\\"Paris\\\"}\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.27874890240755951\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 66,\n    \"candidatesTokenCount\": 11,\n    \"totalTokenCount\":
-        77,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 66\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        55,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 61,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 55\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.0-flash\",\n  \"responseId\": \"keYVapruLLO11MkPktGXkAQ\"\n}\n"
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"-VUwaoedJImq-8YPk8y4yQE\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 26 May 2026 18:29:38 GMT
+      - Mon, 15 Jun 2026 19:43:53 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=788
+      - gfet4t7; dur=345
       Transfer-Encoding:
       - chunked
       Vary:
@@ -65,7 +63,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '707'
+      - '571'
     status:
       code: 200
       message: OK

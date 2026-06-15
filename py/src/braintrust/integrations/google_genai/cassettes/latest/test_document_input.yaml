@@ -17,34 +17,35 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The document is a test PDF. It contains
-        only a few sentences.\"\n          }\n        ],\n        \"role\": \"model\"\n
+        [\n          {\n            \"text\": \"This document is a test PDF that contains
+        a few sentences. The text explicitly states: \\\"This is a test PDF. It contains
+        only a few sentences.\\\"\"\n          }\n        ],\n        \"role\": \"model\"\n
         \     },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n
         \ \"usageMetadata\": {\n    \"promptTokenCount\": 265,\n    \"candidatesTokenCount\":
-        14,\n    \"totalTokenCount\": 279,\n    \"promptTokensDetails\": [\n      {\n
+        31,\n    \"totalTokenCount\": 296,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n      {\n
         \       \"modality\": \"DOCUMENT\",\n        \"tokenCount\": 258\n      }\n
         \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"NJodatLIG_ec_uMPw-O6iQU\"\n}\n"
+        \ \"responseId\": \"h1UwarGhMIHpugfRyaywAg\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 01 Jun 2026 14:41:57 GMT
+      - Mon, 15 Jun 2026 19:42:00 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=790
+      - gfet4t7; dur=863
       Transfer-Encoding:
       - chunked
       Vary:
@@ -60,7 +61,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '685'
+      - '767'
     status:
       code: 200
       message: OK

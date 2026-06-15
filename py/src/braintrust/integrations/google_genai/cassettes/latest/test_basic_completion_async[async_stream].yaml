@@ -16,23 +16,24 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The\"}],\"role\":
-        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
-        1,\"totalTokenCount\": 9,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
-        \"M5odas2iAq28_uMP0MLCwQ0\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
-        {\"parts\": [{\"text\": \" capital of France is **Paris**.\"}],\"role\": \"model\"},\"finishReason\":
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
+        capital of France is **\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 8,\"candidatesTokenCount\": 6,\"totalTokenCount\":
+        14,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
+        \"hlUwasi3EM2C-8YPyc_HuAo\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
+        {\"parts\": [{\"text\": \"Paris**.\"}],\"role\": \"model\"},\"finishReason\":
         \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
         8,\"totalTokenCount\": 16,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
         8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
-        \"M5odas2iAq28_uMP0MLCwQ0\"}\r\n\r\n"
+        \"hlUwasi3EM2C-8YPyc_HuAo\"}\r\n\r\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -41,11 +42,11 @@ interactions:
       Content-Type:
       - text/event-stream
       Date:
-      - Mon, 01 Jun 2026 14:41:55 GMT
+      - Mon, 15 Jun 2026 19:41:58 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=234
+      - gfet4t7; dur=303
       Transfer-Encoding:
       - chunked
       Vary:

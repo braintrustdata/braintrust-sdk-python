@@ -17,31 +17,31 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       User-Agent:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/2.7.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChdjSm9kYXNqeUphMjhfdU1QME1MQ3dRMBIXY0pvZGFzanlKYTI4X3VNUDBNTEN3UTA","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created","metadata":{"usage":{"total_tokens":24,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":17}}}
+        data: {"interaction":{"id":"v1_Chd1MVV3YXNiNE9OcTdqckVQc3FuSC1RSRIXdTFVd2FzYjRPTnE3anJFUHNxbkgtUUk","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdjSm9kYXNqeUphMjhfdU1QME1MQ3dRMBIXY0pvZGFzanlKYTI4X3VNUDBNTEN3UTA","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_Chd1MVV3YXNiNE9OcTdqckVQc3FuSC1RSRIXdTFVd2FzYjRPTnE3anJFUHNxbkgtUUk","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
 
-        data: {"index":0,"step":{"type":"thought"},"event_type":"step.start"}
+        data: {"index":0,"step":{"type":"thought"},"event_type":"step.start","metadata":{"total_usage":{"total_tokens":25,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":18}}}
 
 
         event: step.delta
 
-        data: {"index":0,"delta":{"signature":"ClUBDDnWx9lU7wMQKevn4YJ1maGO1QppJG+7ChFiZJ7WRjg2VGwWZW6a8YgUX3YTTzm0u+ALd+Gl4+Mxz8lijlboI4j3Lck98eJCiQTCvex4tN8ohBjFCisBDDnWx/dGT1TWFCTD0Qi3H7E+rZhhhIeGBe3BafSZYidMgY5zE+NqxRi6","type":"thought_signature"},"event_type":"step.delta"}
+        data: {"index":0,"delta":{"signature":"CmMBDDnWx1vipI8V8ycwCZaCGZNVslZyb0fNlNkR3S8MNtK5g2bYBRpsWecpvHpEXv8oKalutdL/AqRcV0evf8oI1VxxcmPcR3/D8UQ3vYn5c69AnbFQZv58nVS5AQyl2oFIVIcKKQEMOdbH19x78uhe0Q4URZjeN8kvy0gPOfRpQfsFfz8kvFuZtEQEh6rY","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -66,7 +66,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChdjSm9kYXNqeUphMjhfdU1QME1MQ3dRMBIXY0pvZGFzanlKYTI4X3VNUDBNTEN3UTA","status":"completed","usage":{"total_tokens":24,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":17},"created":"2026-06-01T14:42:57Z","updated":"2026-06-01T14:42:57Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_Chd1MVV3YXNiNE9OcTdqckVQc3FuSC1RSRIXdTFVd2FzYjRPTnE3anJFUHNxbkgtUUk","status":"completed","usage":{"total_tokens":25,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":18},"created":"2026-06-15T19:42:52Z","updated":"2026-06-15T19:42:52Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -81,11 +81,11 @@ interactions:
       Content-Type:
       - text/event-stream
       Date:
-      - Mon, 01 Jun 2026 14:42:57 GMT
+      - Mon, 15 Jun 2026 19:42:51 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=593
+      - gfet4t7; dur=64
       Transfer-Encoding:
       - chunked
       Vary:
@@ -99,7 +99,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1923'
+      - '1945'
     status:
       code: 200
       message: OK

@@ -19,37 +19,35 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Alright, settle in, because this is
-        the tale of the Widow\u2019s Watch Lighthouse, and it\u2019s a story that
-        stretches across generations, whispered on the salt-laced winds of the North
-        Atlantic.\\n\\nIt begins, as many such stories\"\n          }\n        ],\n
-        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
-        \     \"avgLogprobs\": -0.47878131866455076\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 30,\n    \"candidatesTokenCount\": 50,\n    \"totalTokenCount\":
-        80,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 30\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 50\n
-        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.0-flash\",\n  \"responseId\": \"juYVaurSFcCs1MkP2-PswA0\"\n}\n"
+        [\n          {\n            \"text\": \"The salt spray was a constant companion
+        to Elara, a fine mist that clung to her woolens and kissed her cheeks with
+        the chill of the North Atlantic. For twenty years, she had lived in the lighthouse,
+        a solitary sentinel perched on the jagged\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
+        0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 32,\n    \"candidatesTokenCount\":
+        50,\n    \"totalTokenCount\": 82,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 32\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"91UwarnsOsuV-8YP2-Ci4AE\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 26 May 2026 18:29:35 GMT
+      - Mon, 15 Jun 2026 19:43:52 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=1229
+      - gfet4t7; dur=562
       Transfer-Encoding:
       - chunked
       Vary:
@@ -65,7 +63,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '908'
+      - '794'
     status:
       code: 200
       message: OK

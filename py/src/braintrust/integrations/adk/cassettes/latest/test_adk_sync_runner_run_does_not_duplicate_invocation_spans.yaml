@@ -22,36 +22,35 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"get_weather\",\n
         \             \"args\": {\n                \"location\": \"San Francisco\"\n
         \             }\n            }\n          }\n        ],\n        \"role\":
-        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"avgLogprobs\":
-        1.6122163894275825e-06\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        53,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 59,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 53\n
-        \     }\n    ],\n    \"candidatesTokensDetails\": [\n      {\n        \"modality\":
-        \"TEXT\",\n        \"tokenCount\": 6\n      }\n    ],\n    \"serviceTier\":
-        \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
-        \"ieYVapnhKtSj1MkPjI2ZiA4\"\n}\n"
+        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0,\n
+        \     \"finishMessage\": \"Model generated function call(s).\"\n    }\n  ],\n
+        \ \"usageMetadata\": {\n    \"promptTokenCount\": 84,\n    \"candidatesTokenCount\":
+        16,\n    \"totalTokenCount\": 100,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"9FUwaoK9OP-B1MkP5K6AyAk\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 26 May 2026 18:29:30 GMT
+      - Mon, 15 Jun 2026 19:43:49 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=599
+      - gfet4t7; dur=425
       Transfer-Encoding:
       - chunked
       Vary:
@@ -67,7 +66,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '819'
+      - '751'
     status:
       code: 200
       message: OK
@@ -98,35 +97,33 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"The weather in San Francisco is sunny
-        with a temperature of 72\xB0F. The humidity is 45% and the wind is 5 mph NW.\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"avgLogprobs\": -0.012199996095715147\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 80,\n    \"candidatesTokenCount\": 33,\n    \"totalTokenCount\":
-        113,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 80\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 33\n
+        with a temperature of 72\xB0F, 45% humidity, and wind at 5 mph NW.\"\n          }\n
+        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        146,\n    \"candidatesTokenCount\": 31,\n    \"totalTokenCount\": 177,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 146\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.0-flash\",\n  \"responseId\": \"iuYVaqv8GJWX1MkPgajbqQc\"\n}\n"
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"9VUwasDKHMyq1MkPx8y_oQo\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 26 May 2026 18:29:30 GMT
+      - Mon, 15 Jun 2026 19:43:49 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=642
+      - gfet4t7; dur=408
       Transfer-Encoding:
       - chunked
       Vary:
@@ -142,7 +139,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '791'
+      - '653'
     status:
       code: 200
       message: OK

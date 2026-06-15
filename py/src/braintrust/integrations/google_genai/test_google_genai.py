@@ -1272,7 +1272,9 @@ def test_serialize_content_item_with_content_and_binary_part():
     assert getattr(text_part, "text", None) == "What color is this image?"
 
 
-GROUNDING_MODEL = "gemini-2.0-flash-001"
+GROUNDING_MODEL = (
+    "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash-001"
+)
 
 
 def _assert_grounding_metadata(span_output):
@@ -1293,15 +1295,20 @@ def _assert_grounding_metadata(span_output):
     assert isinstance(web_search_queries, list)
     assert all(isinstance(q, str) for q in web_search_queries)
 
-    # grounding_chunks should contain search result snippets
+    # Newer Gemini grounding responses may include only rendered search entry
+    # points and web search queries, without chunks/supports. If chunks/supports
+    # are present, verify their shape, but do not require them for all models.
     grounding_chunks = grounding.get("grounding_chunks")
-    assert grounding_chunks, "Expected grounding_chunks in grounding_metadata"
-    assert isinstance(grounding_chunks, list)
+    if grounding_chunks is not None:
+        assert isinstance(grounding_chunks, list)
 
-    # grounding_supports should link response segments to chunks
     grounding_supports = grounding.get("grounding_supports")
-    assert grounding_supports, "Expected grounding_supports in grounding_metadata"
-    assert isinstance(grounding_supports, list)
+    if grounding_supports is not None:
+        assert isinstance(grounding_supports, list)
+
+    assert grounding_chunks or grounding.get("search_entry_point") or grounding_supports, (
+        "Expected grounding metadata to include chunks, search_entry_point, or supports"
+    )
 
 
 # Test: Google Search Grounding (Sync)

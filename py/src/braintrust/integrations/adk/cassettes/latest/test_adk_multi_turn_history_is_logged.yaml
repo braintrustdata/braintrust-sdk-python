@@ -19,34 +19,32 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Okay, Alice.\\n\"\n          }\n        ],\n
+        [\n          {\n            \"text\": \"Hi Alice.\"\n          }\n        ],\n
         \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
-        \     \"avgLogprobs\": -0.025065460801124574\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 52,\n    \"candidatesTokenCount\": 5,\n    \"totalTokenCount\":
-        57,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 52\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 5\n      }\n
-        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n
-        \ \"responseId\": \"iOYVaqmMBLav1MkPs9CY-QM\"\n}\n"
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        54,\n    \"candidatesTokenCount\": 3,\n    \"totalTokenCount\": 57,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 54\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"81Uwau3NPN7J-8YP1JLaqQI\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 26 May 2026 18:29:28 GMT
+      - Mon, 15 Jun 2026 19:43:48 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=478
+      - gfet4t7; dur=303
       Transfer-Encoding:
       - chunked
       Vary:
@@ -62,17 +60,17 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '690'
+      - '556'
     status:
       code: 200
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "Hi, my name is Alice."}], "role": "user"},
-      {"parts": [{"text": "Okay, Alice.\n"}], "role": "model"}, {"parts": [{"text":
-      "What name did I tell you?"}], "role": "user"}], "systemInstruction": {"parts":
-      [{"text": "You are a concise assistant. When the user says their name, acknowledge
-      it briefly. When later asked to recall it, answer with just the name.\n\nYou
-      are an agent. Your internal name is \"conversation_agent\"."}], "role": "user"},
+      {"parts": [{"text": "Hi Alice."}], "role": "model"}, {"parts": [{"text": "What
+      name did I tell you?"}], "role": "user"}], "systemInstruction": {"parts": [{"text":
+      "You are a concise assistant. When the user says their name, acknowledge it
+      briefly. When later asked to recall it, answer with just the name.\n\nYou are
+      an agent. Your internal name is \"conversation_agent\"."}], "role": "user"},
       "generationConfig": {}}'
     headers:
       Accept:
@@ -82,40 +80,38 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '500'
+      - '495'
       Content-Type:
       - application/json
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Alice.\\n\"\n          }\n        ],\n
+        [\n          {\n            \"text\": \"Alice\"\n          }\n        ],\n
         \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
-        \     \"avgLogprobs\": -0.0751932164033254\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 64,\n    \"candidatesTokenCount\": 3,\n    \"totalTokenCount\":
-        67,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 64\n      }\n    ],\n    \"candidatesTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 3\n      }\n
-        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n
-        \ \"responseId\": \"iOYVasbDKYTB1MkP4L_-iAM\"\n}\n"
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        66,\n    \"candidatesTokenCount\": 1,\n    \"totalTokenCount\": 67,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 66\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"9FUwaujfGsaZ1MkPitSg4Ak\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 26 May 2026 18:29:29 GMT
+      - Mon, 15 Jun 2026 19:43:48 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=843
+      - gfet4t7; dur=328
       Transfer-Encoding:
       - chunked
       Vary:
@@ -131,7 +127,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '682'
+      - '552'
     status:
       code: 200
       message: OK

@@ -18,39 +18,32 @@ interactions:
       Host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
       x-goog-api-client:
-      - google-genai-sdk/1.75.0 gl-python/3.14.3 google-adk/2.1.0 gl-python/3.14.3
+      - google-genai-sdk/2.8.0 gl-python/3.13.5 google-adk/2.2.0 gl-python/3.13.5
     method: POST
-    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Okay, I have received the following
-        input:\\n\\n*   **Name:** Alice\\n*   **Age:** 30\\n\\nIs there anything I
-        should do with this information? For example, should I:\\n\\n*   Store this
-        information?\\n*   Use it to answer a question?\\n*   Generate a new piece
-        of information based on it?\\n*   Forward it to another agent or system?\\n\\nPlease
-        provide further instructions.\\n\"\n          }\n        ],\n        \"role\":
-        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"avgLogprobs\":
-        -0.19191286298963758\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        36,\n    \"candidatesTokenCount\": 90,\n    \"totalTokenCount\": 126,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 36\n
-        \     }\n    ],\n    \"candidatesTokensDetails\": [\n      {\n        \"modality\":
-        \"TEXT\",\n        \"tokenCount\": 90\n      }\n    ],\n    \"serviceTier\":
-        \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.0-flash\",\n  \"responseId\":
-        \"kuYVasTFJ6Gn1MkPrPqFwA0\"\n}\n"
+        [\n          {\n            \"text\": \"Please provide the input schema.\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        38,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 44,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 38\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"-lUwatDPBNaD-8YPk7q96As\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 26 May 2026 18:29:39 GMT
+      - Mon, 15 Jun 2026 19:43:54 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=1360
+      - gfet4t7; dur=298
       Transfer-Encoding:
       - chunked
       Vary:
@@ -66,7 +59,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '1044'
+      - '579'
     status:
       code: 200
       message: OK
