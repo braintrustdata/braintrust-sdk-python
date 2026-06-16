@@ -5089,7 +5089,7 @@
                 "type": "null"
               }
             ],
-            "description": "The scope at which to run the functions. Defaults to span-level execution. Trace/group scope requires all functions to be facets."
+            "description": "The scope at which to run the functions. Defaults to span-level execution."
           }
         },
         "required": [
@@ -5514,6 +5514,68 @@
                   "format",
                   "interval_seconds",
                   "credentials"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "event_type": {
+                    "type": "string",
+                    "enum": [
+                      "async_query"
+                    ],
+                    "description": "The type of automation."
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
+                  "created_by_user_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The user who submitted the async query"
+                  },
+                  "object_type": {
+                    "type": "string",
+                    "enum": [
+                      "project_logs",
+                      "experiment",
+                      "dataset",
+                      "playground_logs"
+                    ],
+                    "description": "The source object type for the async query"
+                  },
+                  "object_id": {
+                    "type": "string",
+                    "description": "The source object ID for the async query"
+                  },
+                  "query": {
+                    "type": "string",
+                    "description": "The SQL query to execute asynchronously"
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "jsonl"
+                    ],
+                    "description": "The materialized result format"
+                  },
+                  "batch_size": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000,
+                    "description": "The maximum number of result rows to write per async query batch"
+                  }
+                },
+                "required": [
+                  "event_type",
+                  "created_by_user_id",
+                  "object_type",
+                  "object_id",
+                  "query",
+                  "format"
                 ]
               },
               {

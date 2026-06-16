@@ -1699,7 +1699,39 @@ class ProjectAutomationConfig1Credentials1(TypedDict):
     """
 
 
-class ProjectAutomationConfig3Action(TypedDict):
+class ProjectAutomationConfig2(TypedDict):
+    event_type: Literal['async_query']
+    """
+    The type of automation.
+    """
+    status: NotRequired[AutomationStatus | None]
+    created_by_user_id: str
+    """
+    The user who submitted the async query
+    """
+    object_type: Literal['project_logs', 'experiment', 'dataset', 'playground_logs']
+    """
+    The source object type for the async query
+    """
+    object_id: str
+    """
+    The source object ID for the async query
+    """
+    query: str
+    """
+    The SQL query to execute asynchronously
+    """
+    format: Literal['jsonl']
+    """
+    The materialized result format
+    """
+    batch_size: NotRequired[int | None]
+    """
+    The maximum number of result rows to write per async query batch
+    """
+
+
+class ProjectAutomationConfig4Action(TypedDict):
     type: Literal['webhook']
     """
     The type of action to take
@@ -1710,7 +1742,7 @@ class ProjectAutomationConfig3Action(TypedDict):
     """
 
 
-class ProjectAutomationConfig3Action1(TypedDict):
+class ProjectAutomationConfig4Action1(TypedDict):
     type: Literal['slack']
     """
     The type of action to take
@@ -1729,7 +1761,7 @@ class ProjectAutomationConfig3Action1(TypedDict):
     """
 
 
-class ProjectAutomationConfig3(TypedDict):
+class ProjectAutomationConfig4(TypedDict):
     event_type: Literal['environment_update']
     """
     The type of automation.
@@ -1738,7 +1770,7 @@ class ProjectAutomationConfig3(TypedDict):
     """
     Optional list of environment slugs to filter by
     """
-    action: ProjectAutomationConfig3Action | ProjectAutomationConfig3Action1
+    action: ProjectAutomationConfig4Action | ProjectAutomationConfig4Action1
     """
     The action to take when the automation rule is triggered
     """
@@ -3231,7 +3263,7 @@ class OnlineScoreConfig(TypedDict):
     """
     scope: NotRequired[SpanScope | TraceScope | GroupScope | None]
     """
-    The scope at which to run the functions. Defaults to span-level execution. Trace/group scope requires all functions to be facets.
+    The scope at which to run the functions. Defaults to span-level execution.
     """
 
 
@@ -3306,7 +3338,7 @@ class ProjectAutomationConfig1(TypedDict):
     """
 
 
-class ProjectAutomationConfig2(TypedDict):
+class ProjectAutomationConfig3(TypedDict):
     event_type: Literal['retention']
     """
     The type of automation.
@@ -3654,6 +3686,7 @@ class ProjectAutomation(TypedDict):
         | ProjectAutomationConfig1
         | ProjectAutomationConfig2
         | ProjectAutomationConfig3
+        | ProjectAutomationConfig4
         | TopicAutomationConfig
     )
     """
