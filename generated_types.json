@@ -115,6 +115,69 @@
         ],
         "description": "The object type that the ACL applies to"
       },
+      "Agent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the agent"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the project that the agent belongs under"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of agent creation"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the agent. Within a project, agent names are unique"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Stable, URL-safe identifier for the agent, unique within its project."
+          },
+          "kind": {
+            "type": "string",
+            "description": "Agent classification: 'custom' for customer-defined agents, 'loop' for built-in Loop agents."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Textual description of the agent"
+          },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {},
+            "description": "User-controlled metadata about the agent"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "user_id",
+          "name",
+          "slug",
+          "kind"
+        ],
+        "description": "An agent is a project-scoped durable object that identifies an AI agent or service emitting spans"
+      },
       "AISecret": {
         "type": "object",
         "properties": {

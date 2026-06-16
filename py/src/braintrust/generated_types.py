@@ -1,8 +1,9 @@
-"""Auto-generated file (content hash 98e7ecf4ce147303) -- do not modify"""
+"""Auto-generated file (content hash 544695dbf71e867b) -- do not modify"""
 
 from ._generated_types import (
     Acl,
     AclObjectType,
+    Agent,
     AISecret,
     AnyModelParams,
     ApiKey,
@@ -121,6 +122,7 @@ __all__ = [
     "AISecret",
     "Acl",
     "AclObjectType",
+    "Agent",
     "AnyModelParams",
     "ApiKey",
     "AsyncScoringControl",

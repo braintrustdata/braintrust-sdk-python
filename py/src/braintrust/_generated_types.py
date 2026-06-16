@@ -31,6 +31,42 @@ The object type that the ACL applies to
 """
 
 
+class Agent(TypedDict):
+    id: str
+    """
+    Unique identifier for the agent
+    """
+    project_id: str
+    """
+    Unique identifier for the project that the agent belongs under
+    """
+    user_id: str
+    created: NotRequired[str | None]
+    """
+    Date of agent creation
+    """
+    name: str
+    """
+    Name of the agent. Within a project, agent names are unique
+    """
+    slug: str
+    """
+    Stable, URL-safe identifier for the agent, unique within its project.
+    """
+    kind: str
+    """
+    Agent classification: 'custom' for customer-defined agents, 'loop' for built-in Loop agents.
+    """
+    description: NotRequired[str | None]
+    """
+    Textual description of the agent
+    """
+    metadata: NotRequired[Mapping[str, Any] | None]
+    """
+    User-controlled metadata about the agent
+    """
+
+
 class AISecret(TypedDict):
     id: str
     """
