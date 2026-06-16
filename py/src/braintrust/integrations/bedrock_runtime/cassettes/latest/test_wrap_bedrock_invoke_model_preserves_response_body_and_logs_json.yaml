@@ -1,0 +1,48 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": [{"text": "Say hello in one word."}]}],
+      "inferenceConfig": {"max_new_tokens": 20, "temperature": 0}}'
+    headers:
+      Accept:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      Content-Length:
+      - '142'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My4yOSBtZC9Cb3RvY29yZSMxLjQzLjI5IHVhLzIuMSBvcy9tYWNvcyMyNS41LjAg
+        bWQvYXJjaCNhcm02NCBsYW5nL3B5dGhvbiMzLjE0LjMgbWQvcHlpbXBsI0NQeXRob24gbS9iLDMs
+        WixEIGNmZy9yZXRyeS1tb2RlI2xlZ2FjeSBCb3RvY29yZS8xLjQzLjI5
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-lite-v1%3A0/invoke
+  response:
+    body:
+      string: '{"output":{"message":{"content":[{"text":"Hi."}],"role":"assistant"}},"stopReason":"end_turn","usage":{"inputTokens":6,"outputTokens":3,"totalTokens":9,"cacheReadInputTokenCount":0,"cacheWriteInputTokenCount":0}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '212'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 Jun 2026 20:24:02 GMT
+      X-Amzn-Bedrock-Cache-Read-Input-Token-Count:
+      - '0'
+      X-Amzn-Bedrock-Cache-Write-Input-Token-Count:
+      - '0'
+      X-Amzn-Bedrock-Input-Token-Count:
+      - '6'
+      X-Amzn-Bedrock-Invocation-Latency:
+      - '545'
+      X-Amzn-Bedrock-Output-Token-Count:
+      - '3'
+      x-amzn-RequestId:
+      - 36f35389-456b-4a25-b07c-5a9c83164dc1
+    status:
+      code: 200
+      message: OK
+version: 1

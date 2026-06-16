@@ -13,6 +13,7 @@ from braintrust.integrations import (
     AgnoIntegration,
     AnthropicIntegration,
     AutoGenIntegration,
+    BedrockRuntimeIntegration,
     ClaudeAgentSDKIntegration,
     CohereIntegration,
     CrewAIIntegration,
@@ -72,6 +73,7 @@ def auto_instrument(
     openai_agents: bool = True,
     cohere: bool = True,
     autogen: bool = True,
+    bedrock: bool = True,
     crewai: bool = True,
     strands: bool = True,
     temporal: bool = True,
@@ -106,6 +108,7 @@ def auto_instrument(
         openai_agents: Enable OpenAI Agents SDK instrumentation (default: True)
         cohere: Enable Cohere instrumentation (default: True)
         autogen: Enable AutoGen instrumentation (default: True)
+        bedrock: Enable boto3 Bedrock Runtime instrumentation (default: True)
         crewai: Enable CrewAI instrumentation (default: True)
         strands: Enable Strands Agents instrumentation (default: True)
         temporal: Enable Temporal instrumentation (default: True)
@@ -195,6 +198,8 @@ def auto_instrument(
         results["cohere"] = _instrument_integration(CohereIntegration)
     if autogen:
         results["autogen"] = _instrument_integration(AutoGenIntegration)
+    if bedrock:
+        results["bedrock_runtime"] = _instrument_integration(BedrockRuntimeIntegration)
     if crewai:
         results["crewai"] = _instrument_integration(CrewAIIntegration)
     if strands:

@@ -1,0 +1,12 @@
+[project]
+name = "braintrust-bedrock-example"
+version = "0.1.0"
+description = "boto3 Bedrock Runtime client traced with Braintrust"
+requires-python = ">=3.10"
+dependencies = [
+    "braintrust",
+    "boto3",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }

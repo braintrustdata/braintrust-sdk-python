@@ -247,6 +247,12 @@ def get_vcr_config():
             "openai-api-key",
             "x-goog-api-key",
             "x-bt-auth-token",
+            "x-amz-security-token",
+            "x-amz-date",
+            "x-amz-content-sha256",
+            "amz-sdk-invocation-id",
+            "amz-sdk-request",
+            "x-amzn-bedrock-api-key",
         ],
     }
 

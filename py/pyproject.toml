@@ -438,6 +438,14 @@ latest = "pytest==9.0.3"
 [tool.braintrust.matrix.braintrust-core]
 latest = "braintrust-core==0.0.59"
 
+[tool.braintrust.matrix.boto3]
+latest = "boto3==1.43.29"
+"1.34.116" = "boto3==1.34.116"
+
+[tool.braintrust.matrix.botocore]
+latest = "botocore==1.43.29"
+"1.34.116" = "botocore==1.34.116"
+
 # ---------------------------------------------------------------------------
 # Vendor packages — optional third-party packages the SDK can work without.
 # Keys are matrix keys; values are Python import names.  The noxfile uses this
@@ -461,6 +469,7 @@ agentscope = ["agentscope"]
 agno = ["agno"]
 autogen = ["autogen-agentchat"]
 anthropic = ["anthropic"]
+bedrock_runtime = ["boto3", "botocore"]
 cohere = ["cohere"]
 claude_agent_sdk = ["claude-agent-sdk"]
 crewai = ["crewai"]
@@ -488,6 +497,8 @@ anthropic = "anthropic"
 cohere = "cohere"
 autoevals = "autoevals"
 braintrust-core = "braintrust_core"
+boto3 = "boto3"
+botocore = "botocore"
 crewai = "crewai"
 dspy = "dspy"
 google-adk = "google.adk"

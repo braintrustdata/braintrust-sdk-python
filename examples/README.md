@@ -62,6 +62,7 @@ Unless noted otherwise, every example below uses `braintrust.auto_instrument()`.
 | `agno/` | Agno agents and teams, sync + async, streaming + non-streaming |
 | `anthropic/` | Sync and async Anthropic clients |
 | `autogen/` | AutoGen `AssistantAgent` backed by `OpenAIChatCompletionClient` |
+| `bedrock_runtime/` | boto3 Bedrock Runtime `converse()` call against Amazon Nova Lite |
 | `claude_agent_sdk/` | Claude Agent SDK subprocess query |
 | `cohere/` | Cohere `ClientV2` chat call |
 | `crewai/` | CrewAI `Agent` + `Task` + `Crew` end-to-end |
