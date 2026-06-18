@@ -6162,6 +6162,38 @@
         ],
         "description": "For categorical-type project scores, defines a single category"
       },
+      "ProjectScoreCondition": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "when": {
+            "type": "object",
+            "properties": {
+              "clauses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "clauses"
+            ]
+          },
+          "behavior": {
+            "type": "string",
+            "enum": [
+              "hidden"
+            ],
+            "default": "hidden"
+          }
+        },
+        "required": [
+          "when"
+        ]
+      },
       "ProjectScoreConfig": {
         "type": [
           "object",
@@ -6208,6 +6240,9 @@
           },
           "online": {
             "$ref": "#/components/schemas/OnlineScoreConfig"
+          },
+          "condition": {
+            "$ref": "#/components/schemas/ProjectScoreCondition"
           }
         }
       },

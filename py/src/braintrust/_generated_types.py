@@ -1844,6 +1844,15 @@ class ProjectScoreCategory(TypedDict):
     """
 
 
+class ProjectScoreConditionWhen(TypedDict):
+    clauses: Sequence[str]
+
+
+class ProjectScoreCondition(TypedDict):
+    when: ProjectScoreConditionWhen
+    behavior: NotRequired[Literal['hidden'] | None]
+
+
 class ProjectScoreConfigVisibility(TypedDict):
     users: NotRequired[Sequence[str] | None]
     groups: NotRequired[Sequence[str] | None]
@@ -3360,6 +3369,7 @@ class ProjectScoreConfig(TypedDict):
     destination: NotRequired[str | None]
     visibility: NotRequired[ProjectScoreConfigVisibility | None]
     online: NotRequired[OnlineScoreConfig | None]
+    condition: NotRequired[ProjectScoreCondition | None]
 
 
 class PromptBlockDataPromptBlockData(TypedDict):
