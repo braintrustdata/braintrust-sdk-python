@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash e03e600b282a3442) -- do not modify"""
+"""Auto-generated file (content hash 532ae559f06cabd6) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -71,6 +71,7 @@ from ._generated_types import (
     ProjectScore,
     ProjectScoreCategories,
     ProjectScoreCategory,
+    ProjectScoreCondition,
     ProjectScoreConfig,
     ProjectScoreType,
     ProjectSettings,
@@ -189,6 +190,7 @@ __all__ = [
     "ProjectScore",
     "ProjectScoreCategories",
     "ProjectScoreCategory",
+    "ProjectScoreCondition",
     "ProjectScoreConfig",
     "ProjectScoreType",
     "ProjectSettings",
