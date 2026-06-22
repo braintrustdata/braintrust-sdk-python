@@ -1,107 +1,109 @@
 interactions:
 - request:
-    body: '{"input":"What is the capital of France?","model":"gemini-2.5-flash"}'
+    body: '{"model":"gemini-2.5-flash","input":"What is the capital of France?"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Api-Revision:
+      api-revision:
       - '2026-05-20'
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '69'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
-      User-Agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      user-agent:
+      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdzRlV3YW9yVkM2LWQtOFlQODkyUXdRbxIXc0ZVd2FvclZDNi1kLThZUDg5MlF3UW8","status":"completed","usage":{"total_tokens":37,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":21},"created":"2026-06-15T19:42:40Z","updated":"2026-06-15T19:42:40Z","service_tier":"standard","steps":[{"signature":"CoABAQw51scpa7cRd3sZYl0jq8SogBFK4wJ3/93ftpvJJcMG4lqog0vPb0t8EJSKtW2T02eSWVz1FkcwT/B+D40OgOCjDjJVzjBvqmS0wMNbSHqUSOM86IhtU3oJN4DRs7V3wOFoScVhe3qdwELNj0qRnoJP5/C9Nf/64EnXIkMDc4M=","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_ChdlM001YW9PcU5mS24xTWtQbFlDci1RYxIXZTNNNWFvT3FOZktuMU1rUGxZQ3ItUWM","status":"completed","usage":{"total_tokens":36,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":20},"created":"2026-06-22T17:40:11Z","updated":"2026-06-22T17:40:11Z","service_tier":"standard","steps":[{"signature":"Cn4BDDnWx6N4OzJvK9lFmaIeRCj8W26+zGdxk/sefqImBUQ+3FjvX3zdFuxtFL8sMP1IK1FsbyOkeZKKUruHLChT+4pgI037XWWYnwKPF9vLapihLRN0eMd3RbAvFXj/dkijUl2h/T2XF8jXRBjc8SNd/xtbIJ6AmW8eEawQg5o=","type":"thought"},{"content":[{"text":"The
         capital of France is **Paris**.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '766'
+      content-type:
       - application/json
-      Date:
-      - Mon, 15 Jun 2026 19:42:40 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:40:12 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=1028
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=1159
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '770'
     status:
       code: 200
       message: OK
 - request:
     body: ''
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Api-Revision:
+      api-revision:
       - '2026-05-20'
-      Connection:
+      connection:
       - keep-alive
-      Host:
+      content-type:
+      - application/json
+      host:
       - generativelanguage.googleapis.com
-      User-Agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      user-agent:
+      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
     method: GET
-    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdzRlV3YW9yVkM2LWQtOFlQODkyUXdRbxIXc0ZVd2FvclZDNi1kLThZUDg5MlF3UW8?include_input=true
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdlM001YW9PcU5mS24xTWtQbFlDci1RYxIXZTNNNWFvT3FOZktuMU1rUGxZQ3ItUWM?stream=false&include_input=true
   response:
     body:
-      string: '{"id":"v1_ChdzRlV3YW9yVkM2LWQtOFlQODkyUXdRbxIXc0ZVd2FvclZDNi1kLThZUDg5MlF3UW8","status":"completed","usage":{"total_tokens":37,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":21},"created":"2026-06-15T19:42:40Z","updated":"2026-06-15T19:42:40Z","service_tier":"standard","steps":[{"signature":"CoABAQw51scpa7cRd3sZYl0jq8SogBFK4wJ3/93ftpvJJcMG4lqog0vPb0t8EJSKtW2T02eSWVz1FkcwT/B+D40OgOCjDjJVzjBvqmS0wMNbSHqUSOM86IhtU3oJN4DRs7V3wOFoScVhe3qdwELNj0qRnoJP5/C9Nf/64EnXIkMDc4M=","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_ChdlM001YW9PcU5mS24xTWtQbFlDci1RYxIXZTNNNWFvT3FOZktuMU1rUGxZQ3ItUWM","status":"completed","usage":{"total_tokens":36,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":20},"created":"2026-06-22T17:40:11Z","updated":"2026-06-22T17:40:11Z","service_tier":"standard","steps":[{"signature":"Cn4BDDnWx6N4OzJvK9lFmaIeRCj8W26+zGdxk/sefqImBUQ+3FjvX3zdFuxtFL8sMP1IK1FsbyOkeZKKUruHLChT+4pgI037XWWYnwKPF9vLapihLRN0eMd3RbAvFXj/dkijUl2h/T2XF8jXRBjc8SNd/xtbIJ6AmW8eEawQg5o=","type":"thought"},{"content":[{"text":"The
         capital of France is **Paris**.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '766'
+      content-type:
       - application/json
-      Date:
-      - Mon, 15 Jun 2026 19:42:40 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:40:12 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=196
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=153
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '770'
     status:
       code: 200
       message: OK

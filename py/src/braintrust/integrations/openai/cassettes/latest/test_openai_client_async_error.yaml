@@ -2,38 +2,38 @@ interactions:
 - request:
     body: '{"messages":[{"role":"user","content":"What''s 12 + 12?"}],"model":"non-existent-model"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '87'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - AsyncOpenAI/Python 2.41.0
-      X-Stainless-Arch:
+      user-agent:
+      - AsyncOpenAI/Python 2.43.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.43.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
@@ -42,41 +42,41 @@ interactions:
         does not exist or you do not have access to it.\",\n        \"type\": \"invalid_request_error\",\n
         \       \"param\": null,\n        \"code\": \"model_not_found\"\n    }\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
       - CF-Ray
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0a13bc95996ebb4-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Thu, 11 Jun 2026 14:16:25 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      Vary:
-      - Origin
-      X-Content-Type-Options:
-      - nosniff
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a0fcec18cfdcac7e-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '224'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Mon, 22 Jun 2026 17:20:11 GMT
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=rsOihWl6xMELtjSyttTi0QmBF_QsNOnW4thB6v7svjs-1781187385.8125343-1.0.1.1-zHqCXH.A44U2nvPzd5fsi6ccV_0UvFMoHc7PHeqXKA1JjsAE9lxvuNyk2WoBjqJugsSFuppdcXLYjL8XKKN1YD0NMZr86DZwA.BzC.yJIiix4hz4D1ot1WxleU1HI0BZ;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
-        11 Jun 2026 14:46:25 GMT
+      - __cf_bm=9G9jzVfJmDlVU_8ZcfgrWn4RDRGIlD3goY2ifhgWuho-1782148811.6494224-1.0.1.1-o1.w05mg.0ZiKmmhzPYaJJRpMN7s_gnVFqTf5CoeIQjpPkRCJ7mNUhzfsTJjzuhLSI3hk_2q4KKYTCC7O.gA_gefg4gjFoqh2TXgJA86z0U.tuveIzE5.VgfYFa6oGkw;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        22 Jun 2026 17:50:11 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-request-id:
-      - req_3ffa4ce912c847dcbe298507f154a340
+      - req_c3996cea85ac465ab00216c9af871161
     status:
       code: 404
       message: Not Found

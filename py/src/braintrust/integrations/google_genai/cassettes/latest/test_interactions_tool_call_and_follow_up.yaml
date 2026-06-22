@@ -1,112 +1,113 @@
 interactions:
 - request:
-    body: '{"input":"What is the weather like in Paris? Use the tool.","model":"gemini-2.5-flash","tools":[{"type":"function","description":"Get
-      the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
+    body: '{"model":"gemini-2.5-flash","input":"What is the weather like in Paris?
+      Use the tool.","tools":[{"type":"function","name":"get_weather","description":"Get
+      the current weather for a location.","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Api-Revision:
+      api-revision:
       - '2026-05-20'
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '293'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
-      User-Agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      user-agent:
+      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdzMVV3YXM2aUpfLUIxTWtQNUs2QXlBaxIXczFVd2FzNmlKXy1CMU1rUDVLNkF5QWs","status":"requires_action","usage":{"total_tokens":119,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":51},"created":"2026-06-15T19:42:43Z","updated":"2026-06-15T19:42:43Z","service_tier":"standard","steps":[{"signature":"Cv4BAQw51sdEhhxbPrd9QJ9UPojBgzJhDfYM1xz02S57PWFsikQg6x6LfuCWOnnHAK6cDpn4ZZNJHTkRmSPUg02QDY0XtHlQ9HemxvPGjvB/b5Iux2gPS6pu6kEznppYt/655g4k0NVMUshcocTCz5ZPZXbJI0YIiBxAbFms0k/HVh0/hRjeeJxJeEvb907KdlUkQAbmtKh14vrgTxPh94i+SU5ld7ejRhj0cQgFzpew1BCgorB4YyT7AETUcBewIZYgH1o2U/Pfkt953fB3olirA8cchKTi2ko2kFCfnagyb7E4BfhX1kYbC8dWCxAl5XgKAVYTxl4LlrMG388wdqg=","type":"thought"},{"id":"x5p5xshw","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
+      string: '{"id":"v1_Chdmbk01YW9qaE10aV9fdU1QeU56dmlBWRIXZm5NNWFvamhNdGlfX3VNUHlOenZpQVk","status":"requires_action","usage":{"total_tokens":119,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":51},"created":"2026-06-22T17:40:14Z","updated":"2026-06-22T17:40:14Z","service_tier":"standard","steps":[{"signature":"Cv4BAQw51seqE9YinR/97lpovh5pjxEz76/UkzwRBwOxpjQzC+EdVjeu4vHi4MrFfMp7fKeSgF2Art8ldAz5TnwxH7aBMiCuTySEq1xTDQ2yzTID7tir6qz8/BUh1kUY/iRfDudwkclVQ9PccyoE597gNnYZV7hpaGoVXDLb90J4qThoKXwwhJYxu2pHUUD8acSc4Lgfr7O0I8ofkvHEdefiDyFdNJzwVGnPmBWUyN/8xmmVl9g4Xn2CHgCF+iQuj2+VbElNE5FQ07eid+t70KSjlMotfg80WJYLEPMV0EN66j4yyZIsb1d+Hdeku5gpicpyzYx/idwaS+uJjdMdAs4=","type":"thought"},{"id":"n0e9b122","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '946'
+      content-type:
       - application/json
-      Date:
-      - Mon, 15 Jun 2026 19:42:44 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:40:15 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=1578
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=1122
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '946'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"input":[{"call_id":"x5p5xshw","result":{"forecast":"sunny"},"type":"function_result","name":"get_weather"}],"model":"gemini-2.5-flash","previous_interaction_id":"v1_ChdzMVV3YXM2aUpfLUIxTWtQNUs2QXlBaxIXczFVd2FzNmlKXy1CMU1rUDVLNkF5QWs","tools":[{"type":"function","description":"Get
-      the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
+    body: '{"model":"gemini-2.5-flash","input":[{"call_id":"n0e9b122","result":{"forecast":"sunny"},"type":"function_result","name":"get_weather"}],"tools":[{"type":"function","name":"get_weather","description":"Get
+      the current weather for a location.","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}],"previous_interaction_id":"v1_Chdmbk01YW9qaE10aV9fdU1QeU56dmlBWRIXZm5NNWFvamhNdGlfX3VNUHlOenZpQVk"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Api-Revision:
+      api-revision:
       - '2026-05-20'
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '442'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
-      User-Agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      user-agent:
+      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdzMVV3YXM2aUpfLUIxTWtQNUs2QXlBaxIXdFZVd2FyaS1BLXVhanJFUF9kSGpnUWs","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-06-15T19:42:45Z","updated":"2026-06-15T19:42:45Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_Chdmbk01YW9qaE10aV9fdU1QeU56dmlBWRIXZ0hNNWF0S2RFNDNsak1jUG9OWHBxUVk","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-06-22T17:40:16Z","updated":"2026-06-22T17:40:16Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
         weather in Paris is sunny.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '642'
+      content-type:
       - application/json
-      Date:
-      - Mon, 15 Jun 2026 19:42:45 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:40:16 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=1213
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=1460
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '642'
     status:
       code: 200
       message: OK

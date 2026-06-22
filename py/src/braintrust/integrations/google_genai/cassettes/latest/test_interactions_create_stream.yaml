@@ -1,52 +1,52 @@
 interactions:
 - request:
-    body: '{"input":"Say hi in five words or less.","model":"gemini-2.5-flash","stream":true}'
+    body: '{"model":"gemini-2.5-flash","input":"Say hi in five words or less.","stream":true}'
     headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
+      accept:
+      - text/event-stream
+      accept-encoding:
       - gzip, deflate
-      Api-Revision:
+      api-revision:
       - '2026-05-20'
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '82'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
-      User-Agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      user-agent:
+      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChdzVlV3YXBHQUNycVExTWtQNF83UnlRdxIXc1ZVd2FwR0FDcnFRMU1rUDRfN1J5UXc","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
+        data: {"interaction":{"id":"v1_ChdmSE01YXZPdU1PTEotOFlQMjluU3dRURIXZkhNNWF2T3VNT0xKLThZUDI5blN3UVE","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdzVlV3YXBHQUNycVExTWtQNF83UnlRdxIXc1ZVd2FwR0FDcnFRMU1rUDRfN1J5UXc","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_ChdmSE01YXZPdU1PTEotOFlQMjluU3dRURIXZkhNNWF2T3VNT0xKLThZUDI5blN3UVE","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
 
-        data: {"index":0,"step":{"type":"thought"},"event_type":"step.start","metadata":{"total_usage":{"total_tokens":89,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":78}}}
+        data: {"index":0,"step":{"type":"thought"},"event_type":"step.start"}
 
 
         event: step.delta
 
-        data: {"index":0,"delta":{"signature":"ClsBDDnWx0H1gAHuH/eYPhp9oUwOkT1XtKTli+/TSZnLs86gutS2sejjnopJ0QcWaQIs3vA/Xf0/In9jtSVKAKBizgKqlwobAG7Mkph5zfPZXSamxXUt4KP6GHZOCsIBAQw51sdaiHMExNrV/ZWCzbAGJJyNv+SEEogx4+kpzzyJkeZm+ylKIof7xIp1S36orrpox2nL7s4gBPAZa327bY3WiFaVURYci7UJgZVSiAZyX3eDH2+wRDDGA4MofBiLvb3gZbo6ICMwQvtT9NCDkNG/Y+xt/EeicuUORcPoKPIjOAanqwtRU6X4ALznCvByyJuP+8q3VLl8sPMKYMzAzSxH1aSDzJCstJAvn9oGUEtm+n+3UZAhOXH3WrQoWOOEoToKVgEMOdbHXdVIxzbyTsVc2D9d7KnR3mGNA4NvLljxDIy7SM8Y0/cIBYyQjVhvTS49yoZw7VSaOxNgoUYKSu9EiRxaTIXfRWWDWZNzS5SrFw8UtMHx8YUn","type":"thought_signature"},"event_type":"step.delta"}
+        data: {"index":0,"delta":{"signature":"CiQBDDnWxxeEueqNnhKIHwUCVTu2fZypb1SFbcgmusu9L+WUfGoKYAEMOdbHDgDwYJ2lKLZ00pWwQKJTwlt/UEO6c73GPzBetFHsYReJFuV6t+MXyaMt8eeXCYPRUPZdEvefdhqxbYHcOG1ujffTV3EF/2bsF9dqsqyr6vGs91Z+jPhSx2p5Tgq7AQEMOdbHZYGhTnbsQslMTiCOcbmRqUK0dPYe+qoJS43uIHyjaoxZu/XNOsOv2Bj80aW4DLmMCPCPVWLGSOuTAjtkkWveFFetfBTjDFjN0G0u0o59Ra9/Imel11wZSKW/iNawsQJcjjWc6ENMWFCRNBL5hmycRJ+oqK2/FVcPff9MWR9rcwV1t/eI09Tf/BKzC09kFW5ClPanJA1SXldHlKFfe15fQPh3xpcis6XDjFzLF+yX79Qb3CERhuIKMgEMOdbH33CITfCjcvX6/uWGnTHG7I2B4gbIh3US+CwzkojB1WLBlJRxjB/oD/n57K9+","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
 
-        data: {"index":0,"event_type":"step.stop"}
+        data: {"index":0,"usage":{"total_tokens":83,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":72},"event_type":"step.stop"}
 
 
         event: step.start
@@ -66,7 +66,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChdzVlV3YXBHQUNycVExTWtQNF83UnlRdxIXc1ZVd2FwR0FDcnFRMU1rUDRfN1J5UXc","status":"completed","usage":{"total_tokens":89,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":78},"created":"2026-06-15T19:42:41Z","updated":"2026-06-15T19:42:41Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_ChdmSE01YXZPdU1PTEotOFlQMjluU3dRURIXZkhNNWF2T3VNT0xKLThZUDI5blN3UVE","status":"completed","usage":{"total_tokens":83,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":72},"created":"2026-06-22T17:40:13Z","updated":"2026-06-22T17:40:13Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -76,30 +76,30 @@ interactions:
 
         '
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '2238'
+      content-type:
       - text/event-stream
-      Date:
-      - Mon, 15 Jun 2026 19:42:41 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:40:12 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=79
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=81
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '2257'
     status:
       code: 200
       message: OK

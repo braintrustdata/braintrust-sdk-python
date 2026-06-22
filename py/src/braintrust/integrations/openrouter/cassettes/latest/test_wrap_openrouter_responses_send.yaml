@@ -1,52 +1,56 @@
 interactions:
 - request:
-    body: '{"input":"Say one short sentence about observability.","model":"openai/gpt-4o-mini","max_output_tokens":16.0,"temperature":0.0,"store":false,"service_tier":"auto","stream":false}'
+    body: '{"input":"Say one short sentence about observability.","max_output_tokens":64,"model":"openai/gpt-4o-mini","service_tier":"auto","store":false,"stream":false,"temperature":0.0}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '178'
-      Host:
-      - openrouter.ai
+      content-length:
+      - '176'
       content-type:
       - application/json
+      host:
+      - openrouter.ai
       user-agent:
-      - speakeasy-sdk/python 0.7.11 2.768.0 1.0.0 openrouter
+      - speakeasy-sdk/python 0.10.0 2.788.4 1.0.0 openrouter
     method: POST
     uri: https://openrouter.ai/api/v1/responses
   response:
     body:
-      string: "\n         \n{\"id\":\"gen-1774558314-oKq2CwgV9UxzPe1GiLSd\",\"object\":\"response\",\"created_at\":1774558314,\"model\":\"openai/gpt-4o-mini\",\"status\":\"completed\",\"completed_at\":1774558314,\"output\":[{\"id\":\"msg_tmp_xayda62t7g\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Observability
+      string: "\n         \n{\"id\":\"gen-1782150584-YcotJPGH5ITet76aTXpo\",\"object\":\"response\",\"created_at\":1782150584,\"model\":\"openai/gpt-4o-mini\",\"status\":\"completed\",\"completed_at\":1782150585,\"output\":[{\"id\":\"msg_tmp_uh5u9b5hai\",\"type\":\"message\",\"role\":\"assistant\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"text\":\"Observability
         enables organizations to understand and monitor the internal state of complex
-        systems through external\",\"annotations\":[],\"logprobs\":[]}]}],\"error\":null,\"incomplete_details\":null,\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":16,\"temperature\":0,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"auto\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":null,\"safety_identifier\":null,\"prompt_cache_key\":null,\"usage\":{\"input_tokens\":15,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":16,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":31,\"cost\":0.00001185,\"is_byok\":false,\"cost_details\":{\"upstream_inference_cost\":0.00001185,\"upstream_inference_input_cost\":0.00000225,\"upstream_inference_output_cost\":0.0000096}}}"
+        systems through external outputs.\",\"annotations\":[],\"logprobs\":[]}]}],\"error\":null,\"incomplete_details\":null,\"tools\":[],\"tool_choice\":\"auto\",\"parallel_tool_calls\":true,\"max_output_tokens\":64,\"temperature\":0,\"top_p\":1,\"presence_penalty\":0,\"frequency_penalty\":0,\"top_logprobs\":0,\"max_tool_calls\":null,\"metadata\":{},\"background\":false,\"previous_response_id\":null,\"service_tier\":\"auto\",\"truncation\":\"disabled\",\"store\":false,\"instructions\":null,\"text\":{\"format\":{\"type\":\"text\"}},\"reasoning\":null,\"safety_identifier\":null,\"prompt_cache_key\":null,\"usage\":{\"input_tokens\":15,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":19,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":34,\"cost\":0.00001365,\"is_byok\":false,\"cost_details\":{\"upstream_inference_cost\":0.00001365,\"upstream_inference_input_cost\":0.00000225,\"upstream_inference_output_cost\":0.0000114}}}"
     headers:
-      Access-Control-Allow-Origin:
+      access-control-allow-origin:
       - '*'
-      CF-RAY:
-      - 9e290937cbd9888e-SJC
-      Connection:
+      access-control-expose-headers:
+      - X-Generation-Id,cf-ray
+      cf-ray:
+      - a0fd17631ef51117-YYZ
+      connection:
       - keep-alive
-      Content-Type:
+      content-length:
+      - '1271'
+      content-type:
       - application/json
-      Date:
-      - Thu, 26 Mar 2026 20:51:54 GMT
-      Permissions-Policy:
+      date:
+      - Mon, 22 Jun 2026 17:49:45 GMT
+      permissions-policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
-      Referrer-Policy:
+      referrer-policy:
       - no-referrer, strict-origin-when-cross-origin
-      Server:
+      server:
       - cloudflare
-      Transfer-Encoding:
+      transfer-encoding:
       - chunked
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      content-length:
-      - '1262'
+      x-generation-id:
+      - gen-1782150584-YcotJPGH5ITet76aTXpo
     status:
       code: 200
       message: OK

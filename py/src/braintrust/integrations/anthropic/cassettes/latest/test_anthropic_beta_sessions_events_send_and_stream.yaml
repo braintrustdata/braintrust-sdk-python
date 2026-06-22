@@ -2,38 +2,38 @@ interactions:
 - request:
     body: ''
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - managed-agents-2026-04-01
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: GET
@@ -42,41 +42,39 @@ interactions:
     body:
       string: '{"data":[{"id":"env_012W55H8BqqsSgp2XJ3uQmBK","type":"environment","name":"braintrust-sdk-test-env","description":"","created_at":"2026-04-13T16:41:51.307182Z","updated_at":"2026-04-13T16:41:51.307182Z","archived_at":null,"state":"active","config":{"type":"cloud","packages":{"type":"packages","pip":[],"npm":[],"apt":[],"cargo":[],"gem":[],"go":[]},"networking":{"type":"unrestricted"},"init_script":"","environment":{}},"metadata":{},"scope":"organization"}],"next_page":"page_ZW52XzAxMlc1NUg4QnFxc1NncDJYSjN1UW1CS3wx"}'
     headers:
-      CF-RAY:
-      - a016876ef84492c6-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:16:03 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fcf2031fe8eff9-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '521'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:24:14 GMT
       request-id:
-      - req_011CbPk7jBX9Ki4M6LoDAYv5
+      - req_011CcJgp92aFX1k2SV13BS5i
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=172
+      - x-originResponse;dur=170
       set-cookie:
-      - _cfuvid=wonIOrACo.Ac9LnG1A4ZXXFvuDE9LMmcGDcMw5brYg8-1779732963.6784754-1.0.1.1-GzR1XsGDUvU4vLVTXZHAl.wAcg3ohk1jV791Xy7WpZI;
+      - _cfuvid=oPpmvJYIHYXHPrI4H_OQKDdUGQH_e0hSZ7KRFausS80-1782149053.9404354-1.0.1.1-DWPy0e2A1AcmCkOiNYQ2TK1dkMyGJvBS7MRv5veiiI8;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '169'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK
@@ -85,71 +83,55 @@ interactions:
       bash for a single arithmetic command","system":"For arithmetic requests, use
       exactly one bash command and then answer with only the numeric result.","tools":[{"type":"agent_toolset_20260401","default_config":{"enabled":false},"configs":[{"name":"bash","enabled":true,"permission_policy":{"type":"always_allow"}}]}]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '406'
-      Content-Type:
-      - application/json
-      Cookie:
-      - _cfuvid=wonIOrACo.Ac9LnG1A4ZXXFvuDE9LMmcGDcMw5brYg8-1779732963.6784754-1.0.1.1-GzR1XsGDUvU4vLVTXZHAl.wAcg3ohk1jV791Xy7WpZI
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - managed-agents-2026-04-01
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '406'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=oPpmvJYIHYXHPrI4H_OQKDdUGQH_e0hSZ7KRFausS80-1782149053.9404354-1.0.1.1-DWPy0e2A1AcmCkOiNYQ2TK1dkMyGJvBS7MRv5veiiI8
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
     uri: https://api.anthropic.com/v1/agents?beta=true
   response:
     body:
-      string: '{"archived_at":null,"created_at":"2026-05-25T18:16:03.996748Z","description":"Uses
-        bash for a single arithmetic command","id":"agent_012wUt1dg3SU1wwgmcHxXoxP","mcp_servers":[],"metadata":{},"model":{"id":"claude-haiku-4-5","speed":"standard"},"multiagent":null,"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For
+      string: '{"archived_at":null,"created_at":"2026-06-22T17:24:14.280873Z","description":"Uses
+        bash for a single arithmetic command","id":"agent_01HZsh6dQb1YGk1BYvyBNrWj","mcp_servers":[],"metadata":{},"model":{"id":"claude-haiku-4-5","speed":"standard"},"multiagent":null,"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For
         arithmetic requests, use exactly one bash command and then answer with only
-        the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","updated_at":"2026-05-25T18:16:03.996748Z","version":1}'
+        the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","updated_at":"2026-06-22T17:24:14.280873Z","version":1}'
     headers:
-      CF-RAY:
-      - a0168770ae4babbb-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:16:04 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       accept-encoding:
       - gzip
       anthropic-organization-id:
@@ -159,91 +141,89 @@ interactions:
       anthropic-ratelimit-requests-remaining:
       - '296'
       anthropic-ratelimit-requests-reset:
-      - '2026-05-25T18:17:00Z'
+      - '2026-06-22T17:25:11Z'
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fcf204cdf6eff9-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '707'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:24:14 GMT
       request-id:
-      - req_011CbPk7kNxP2i3oRQ7mKqU5
+      - req_011CcJgp9xdaTUbRX3YxTwJP
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=110
+      - x-originResponse;dur=148
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '108'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK
 - request:
-    body: '{"agent":"agent_012wUt1dg3SU1wwgmcHxXoxP","environment_id":"env_012W55H8BqqsSgp2XJ3uQmBK","metadata":{"purpose":"test"},"title":"Issue
+    body: '{"agent":"agent_01HZsh6dQb1YGk1BYvyBNrWj","environment_id":"env_012W55H8BqqsSgp2XJ3uQmBK","metadata":{"purpose":"test"},"title":"Issue
       259 event stream"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '153'
-      Content-Type:
-      - application/json
-      Cookie:
-      - _cfuvid=wonIOrACo.Ac9LnG1A4ZXXFvuDE9LMmcGDcMw5brYg8-1779732963.6784754-1.0.1.1-GzR1XsGDUvU4vLVTXZHAl.wAcg3ohk1jV791Xy7WpZI
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - managed-agents-2026-04-01
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '153'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=oPpmvJYIHYXHPrI4H_OQKDdUGQH_e0hSZ7KRFausS80-1782149053.9404354-1.0.1.1-DWPy0e2A1AcmCkOiNYQ2TK1dkMyGJvBS7MRv5veiiI8
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
     uri: https://api.anthropic.com/v1/sessions?beta=true
   response:
     body:
-      string: '{"agent":{"description":"Uses bash for a single arithmetic command","id":"agent_012wUt1dg3SU1wwgmcHxXoxP","mcp_servers":[],"model":{"id":"claude-haiku-4-5","speed":"standard"},"multiagent":null,"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For
+      string: '{"agent":{"description":"Uses bash for a single arithmetic command","id":"agent_01HZsh6dQb1YGk1BYvyBNrWj","mcp_servers":[],"model":{"id":"claude-haiku-4-5","speed":"standard"},"multiagent":null,"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For
         arithmetic requests, use exactly one bash command and then answer with only
-        the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","version":1},"archived_at":null,"created_at":"2026-05-25T18:16:04.249970Z","environment_id":"env_012W55H8BqqsSgp2XJ3uQmBK","id":"sesn_01JChC9g2sQqTgatrvLGw41J","metadata":{"purpose":"test"},"outcome_evaluations":[],"resources":[],"stats":{"active_seconds":0,"duration_seconds":0},"status":"idle","title":"Issue
-        259 event stream","type":"session","updated_at":"2026-05-25T18:16:04.249970Z","usage":{"cache_creation":null,"cache_read_input_tokens":0,"input_tokens":0,"output_tokens":0},"vault_ids":[]}'
+        the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","version":1},"archived_at":null,"created_at":"2026-06-22T17:24:14.576622Z","environment_id":"env_012W55H8BqqsSgp2XJ3uQmBK","id":"sesn_01Kd468FPRJ5gqcQtAifLFQ1","metadata":{"purpose":"test"},"outcome_evaluations":[],"resources":[],"stats":{"active_seconds":0,"duration_seconds":0},"status":"idle","title":"Issue
+        259 event stream","type":"session","updated_at":"2026-06-22T17:24:14.576622Z","usage":{"cache_creation":null,"cache_read_input_tokens":0,"input_tokens":0,"output_tokens":0},"vault_ids":[]}'
     headers:
-      CF-RAY:
-      - a01687721dc1e930-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:16:04 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       accept-encoding:
       - gzip
       anthropic-organization-id:
@@ -253,19 +233,33 @@ interactions:
       anthropic-ratelimit-requests-remaining:
       - '295'
       anthropic-ratelimit-requests-reset:
-      - '2026-05-25T18:17:01Z'
+      - '2026-06-22T17:25:11Z'
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fcf2064c48eff9-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '1084'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:24:14 GMT
       request-id:
-      - req_011CbPk7mHXZMgLnt9s3f41a
+      - req_011CcJgpAyQb5bZLWpq4iTKQ
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=265
+      - x-originResponse;dur=317
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '263'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK
@@ -273,130 +267,128 @@ interactions:
     body: '{"events":[{"type":"user.message","content":[{"type":"text","text":"Use
       bash once to print 2+2, then reply with only the number."}]}]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '134'
-      Content-Type:
-      - application/json
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - managed-agents-2026-04-01
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
-    uri: https://api.anthropic.com/v1/sessions/sesn_01JChC9g2sQqTgatrvLGw41J/events?beta=true
+    uri: https://api.anthropic.com/v1/sessions/sesn_01Kd468FPRJ5gqcQtAifLFQ1/events?beta=true
   response:
     body:
       string: '{"data":[{"content":[{"text":"Use bash once to print 2+2, then reply
-        with only the number.","type":"text"}],"id":"sevt_014i93aZiwnnsQWjJF7FJoXr","type":"user.message"}]}'
+        with only the number.","type":"text"}],"id":"sevt_01Matcq6hJWZT8EsZVo8NfzZ","type":"user.message"}]}'
     headers:
-      CF-RAY:
-      - a01687750a73abf4-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:16:04 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       accept-encoding:
       - gzip
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fcf2090d9babe2-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '169'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:24:15 GMT
       request-id:
-      - req_011CbPk7oLojNPGKnPff5hft
+      - req_011CcJgpD7dpmYEtES8tpp47
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=136
+      - x-originResponse;dur=209
       set-cookie:
-      - _cfuvid=c64QT0ZlYdz0pPDHCcr8uYA2Acap.hgm.R9UanC5vh8-1779732964.6448338-1.0.1.1-uMSmUhuhINEYDcWeb7Nvi8VUaYpB3oepfg2DRYmmuQM;
+      - _cfuvid=LIu7h4Ru46deax0WY5hBkiTIEf_5w6Xxp6c0QZ1NAog-1782149054.884321-1.0.1.1-mO778fRZtcl_UDqsv3I3VlqrrCH.UEBWBaAhWeG0MEQ;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '134'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK
 - request:
     body: ''
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Cookie:
-      - _cfuvid=c64QT0ZlYdz0pPDHCcr8uYA2Acap.hgm.R9UanC5vh8-1779732964.6448338-1.0.1.1-uMSmUhuhINEYDcWeb7Nvi8VUaYpB3oepfg2DRYmmuQM
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - managed-agents-2026-04-01
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      cookie:
+      - _cfuvid=LIu7h4Ru46deax0WY5hBkiTIEf_5w6Xxp6c0QZ1NAog-1782149054.884321-1.0.1.1-mO778fRZtcl_UDqsv3I3VlqrrCH.UEBWBaAhWeG0MEQ
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: GET
-    uri: https://api.anthropic.com/v1/sessions/sesn_01JChC9g2sQqTgatrvLGw41J/events/stream?beta=true
+    uri: https://api.anthropic.com/v1/sessions/sesn_01Kd468FPRJ5gqcQtAifLFQ1/events/stream?beta=true
   response:
     body:
       string: ': connected
@@ -404,69 +396,69 @@ interactions:
 
         event: message
 
-        data: {"id":"sevt_01Cwtfy24k56EZwQExADd3jA","processed_at":"2026-05-25T18:16:05.270976Z","type":"session.status_running"}
+        data: {"id":"sevt_01YGvZwiJ3oTD61n1msVVbEx","processed_at":"2026-06-22T17:24:15.612718Z","type":"session.status_running"}
 
 
         event: message
 
-        data: {"agent_name":"braintrust-sdk-managed-agent-bash","id":"sevt_01URRc8Vf217NMh3m3X7fDSc","processed_at":"2026-05-25T18:16:05.270977Z","session_thread_id":"sthr_011bKs6e7QjzmWeoWfubY8ZT","type":"session.thread_status_running"}
+        data: {"agent_name":"braintrust-sdk-managed-agent-bash","id":"sevt_01TzmXdiAwaj5JkvPKiHDTh6","processed_at":"2026-06-22T17:24:15.612719Z","session_thread_id":"sthr_015Fcw9LZPpyk9kkpiSv6XF2","type":"session.thread_status_running"}
 
 
         event: message
 
         data: {"content":[{"text":"Use bash once to print 2+2, then reply with only
-        the number.","type":"text"}],"id":"sevt_014i93aZiwnnsQWjJF7FJoXr","processed_at":"2026-05-25T18:16:06.502948Z","type":"user.message"}
+        the number.","type":"text"}],"id":"sevt_01Matcq6hJWZT8EsZVo8NfzZ","processed_at":"2026-06-22T17:24:17.979420Z","type":"user.message"}
 
 
         event: message
 
-        data: {"id":"sevt_01KqmSPVRxEUjVwewb1GjgF7","processed_at":"2026-05-25T18:16:06.502949Z","type":"span.model_request_start"}
+        data: {"id":"sevt_01R1tzAisVbZuVU4sdJzpvBX","processed_at":"2026-06-22T17:24:17.979421Z","type":"span.model_request_start"}
 
 
         event: message
 
-        data: {"id":"sevt_01B5AwSyNaSo4Qy8GP78Lzy7","processed_at":"2026-05-25T18:16:06.502950Z","type":"agent.thinking"}
+        data: {"id":"sevt_01AQtq1y7EkkbCx67qddRKdJ","processed_at":"2026-06-22T17:24:17.979422Z","type":"agent.thinking"}
 
 
         event: message
 
-        data: {"evaluated_permission":"allow","id":"sevt_01GcuyvbSqC3ni7bG8wKpG8z","input":{"command":"echo
-        $((2+2))"},"name":"bash","processed_at":"2026-05-25T18:16:06.502952Z","type":"agent.tool_use"}
+        data: {"evaluated_permission":"allow","id":"sevt_01263rDNCTp5VX2VVgvTjipB","input":{"command":"echo
+        $((2+2))"},"name":"bash","processed_at":"2026-06-22T17:24:17.979424Z","type":"agent.tool_use"}
 
 
         event: message
 
-        data: {"id":"sevt_014yymTUrTSdfeTerFGs4yXQ","is_error":false,"model_request_start_id":"sevt_01KqmSPVRxEUjVwewb1GjgF7","model_usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":2192,"output_tokens":102},"processed_at":"2026-05-25T18:16:06.502953Z","type":"span.model_request_end"}
+        data: {"id":"sevt_01UFLG9RWELZSCm3Qbfn98qN","is_error":false,"model_request_start_id":"sevt_01R1tzAisVbZuVU4sdJzpvBX","model_usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":2192,"output_tokens":139},"processed_at":"2026-06-22T17:24:17.979425Z","type":"span.model_request_end"}
 
 
         event: message
 
-        data: {"content":[{"text":"4\n","type":"text"}],"id":"sevt_014nkZewioK2FY5p979u1boY","is_error":false,"processed_at":"2026-05-25T18:16:09.723251Z","tool_use_id":"sevt_01GcuyvbSqC3ni7bG8wKpG8z","type":"agent.tool_result"}
+        data: {"content":[{"text":"4\n","type":"text"}],"id":"sevt_018bEUw68MXZBWoE14uqus3n","is_error":false,"processed_at":"2026-06-22T17:24:21.358914Z","tool_use_id":"sevt_01263rDNCTp5VX2VVgvTjipB","type":"agent.tool_result"}
 
 
         event: message
 
-        data: {"id":"sevt_01AZqsC4nA5iyuofQecV7ZHV","processed_at":"2026-05-25T18:16:10.766417Z","type":"span.model_request_start"}
+        data: {"id":"sevt_01HGYS6div83EnMCoNKadBc1","processed_at":"2026-06-22T17:24:22.135148Z","type":"span.model_request_start"}
 
 
         event: message
 
-        data: {"content":[{"text":"4","type":"text"}],"id":"sevt_01CMYZfaLaz6VFJmr7zC5F63","processed_at":"2026-05-25T18:16:10.766418Z","type":"agent.message"}
+        data: {"content":[{"text":"4","type":"text"}],"id":"sevt_011iXupSfiiig4XaHKUsXp9E","processed_at":"2026-06-22T17:24:22.135149Z","type":"agent.message"}
 
 
         event: message
 
-        data: {"id":"sevt_01Ez8VnU3TDPbEBZCFeSPZTu","is_error":false,"model_request_start_id":"sevt_01AZqsC4nA5iyuofQecV7ZHV","model_usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":2308,"output_tokens":4},"processed_at":"2026-05-25T18:16:10.766419Z","type":"span.model_request_end"}
+        data: {"id":"sevt_01WXWjLXkxM8gTbBPcNRnnza","is_error":false,"model_request_start_id":"sevt_01HGYS6div83EnMCoNKadBc1","model_usage":{"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":2345,"output_tokens":4},"processed_at":"2026-06-22T17:24:22.135150Z","type":"span.model_request_end"}
 
 
         event: message
 
-        data: {"agent_name":"braintrust-sdk-managed-agent-bash","id":"sevt_01SkEZq1vUDibVcPKQdAQb3C","processed_at":"2026-05-25T18:16:10.966197Z","session_thread_id":"sthr_011bKs6e7QjzmWeoWfubY8ZT","stop_reason":{"type":"end_turn"},"type":"session.thread_status_idle"}
+        data: {"agent_name":"braintrust-sdk-managed-agent-bash","id":"sevt_018czNKmk3wKJP8kM6yXJVxm","processed_at":"2026-06-22T17:24:22.341332Z","session_thread_id":"sthr_015Fcw9LZPpyk9kkpiSv6XF2","stop_reason":{"type":"end_turn"},"type":"session.thread_status_idle"}
 
 
         event: message
 
-        data: {"id":"sevt_01EnXKHyaAhs52FkKUPMfmu9","processed_at":"2026-05-25T18:16:10.966198Z","stop_reason":{"type":"end_turn"},"type":"session.status_idle"}
+        data: {"id":"sevt_01PZhVCvpRE8BEGJtNQzKrG8","processed_at":"2026-06-22T17:24:22.341333Z","stop_reason":{"type":"end_turn"},"type":"session.status_idle"}
 
 
         :keepalive
@@ -531,98 +523,80 @@ interactions:
 
         '
     headers:
-      CF-RAY:
-      - a0168776accdaca2-YYZ
-      Cache-Control:
+      cache-control:
       - no-cache, no-transform
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - text/event-stream
-      Date:
-      - Mon, 25 May 2026 18:16:05 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fcf20b3ff0abe2-YYZ
+      connection:
+      - keep-alive
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - text/event-stream
+      date:
+      - Mon, 22 Jun 2026 17:24:15 GMT
       request-id:
-      - req_011CbPk7pTXfkp8DsgBB818J
+      - req_011CcJgpEN47P84jP6W4kvvx
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=504
-      x-envoy-upstream-service-time:
-      - '502'
+      - x-originResponse;dur=112
+      transfer-encoding:
+      - chunked
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK
 - request:
     body: ''
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Cookie:
-      - _cfuvid=wonIOrACo.Ac9LnG1A4ZXXFvuDE9LMmcGDcMw5brYg8-1779732963.6784754-1.0.1.1-GzR1XsGDUvU4vLVTXZHAl.wAcg3ohk1jV791Xy7WpZI
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - managed-agents-2026-04-01
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=oPpmvJYIHYXHPrI4H_OQKDdUGQH_e0hSZ7KRFausS80-1782149053.9404354-1.0.1.1-DWPy0e2A1AcmCkOiNYQ2TK1dkMyGJvBS7MRv5veiiI8
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: DELETE
-    uri: https://api.anthropic.com/v1/sessions/sesn_01JChC9g2sQqTgatrvLGw41J?beta=true
+    uri: https://api.anthropic.com/v1/sessions/sesn_01Kd468FPRJ5gqcQtAifLFQ1?beta=true
   response:
     body:
-      string: '{"id":"sesn_01JChC9g2sQqTgatrvLGw41J","type":"session_deleted"}'
+      string: '{"id":"sesn_01Kd468FPRJ5gqcQtAifLFQ1","type":"session_deleted"}'
     headers:
-      CF-RAY:
-      - a01696469d25ac8a-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:26:13 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       accept-encoding:
       - gzip
       anthropic-organization-id:
@@ -632,90 +606,88 @@ interactions:
       anthropic-ratelimit-requests-remaining:
       - '599'
       anthropic-ratelimit-requests-reset:
-      - '2026-05-25T18:27:11Z'
+      - '2026-06-22T17:35:24Z'
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fd00e85b7baab6-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '63'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:34:24 GMT
       request-id:
-      - req_011CbPktYQNrZgNSSphpPFMs
+      - req_011CcJhb7JtbLkFr7VRvoNme
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=1561
+      - x-originResponse;dur=494
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '1559'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK
 - request:
     body: ''
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      Content-Type:
-      - application/json
-      Cookie:
-      - _cfuvid=wonIOrACo.Ac9LnG1A4ZXXFvuDE9LMmcGDcMw5brYg8-1779732963.6784754-1.0.1.1-GzR1XsGDUvU4vLVTXZHAl.wAcg3ohk1jV791Xy7WpZI
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - managed-agents-2026-04-01
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '0'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=oPpmvJYIHYXHPrI4H_OQKDdUGQH_e0hSZ7KRFausS80-1782149053.9404354-1.0.1.1-DWPy0e2A1AcmCkOiNYQ2TK1dkMyGJvBS7MRv5veiiI8
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
-    uri: https://api.anthropic.com/v1/agents/agent_012wUt1dg3SU1wwgmcHxXoxP/archive?beta=true
+    uri: https://api.anthropic.com/v1/agents/agent_01HZsh6dQb1YGk1BYvyBNrWj/archive?beta=true
   response:
     body:
-      string: '{"archived_at":"2026-05-25T18:26:13.433732Z","created_at":"2026-05-25T18:16:03.996748Z","description":"Uses
-        bash for a single arithmetic command","id":"agent_012wUt1dg3SU1wwgmcHxXoxP","mcp_servers":[],"metadata":{},"model":{"id":"claude-haiku-4-5","speed":"standard"},"multiagent":null,"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For
+      string: '{"archived_at":"2026-06-22T17:34:24.855909Z","created_at":"2026-06-22T17:24:14.280873Z","description":"Uses
+        bash for a single arithmetic command","id":"agent_01HZsh6dQb1YGk1BYvyBNrWj","mcp_servers":[],"metadata":{},"model":{"id":"claude-haiku-4-5","speed":"standard"},"multiagent":null,"name":"braintrust-sdk-managed-agent-bash","skills":[],"system":"For
         arithmetic requests, use exactly one bash command and then answer with only
-        the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","updated_at":"2026-05-25T18:26:13.433732Z","version":1}'
+        the numeric result.","tools":[{"configs":[{"enabled":true,"name":"bash","permission_policy":{"type":"always_allow"}}],"default_config":{"enabled":false,"permission_policy":{"type":"always_allow"}},"type":"agent_toolset_20260401"}],"type":"agent","updated_at":"2026-06-22T17:34:24.855909Z","version":1}'
     headers:
-      CF-RAY:
-      - a0169651ace9df5a-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:26:13 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       accept-encoding:
       - gzip
       anthropic-organization-id:
@@ -725,19 +697,33 @@ interactions:
       anthropic-ratelimit-requests-remaining:
       - '598'
       anthropic-ratelimit-requests-reset:
-      - '2026-05-25T18:27:11Z'
+      - '2026-06-22T17:35:24Z'
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fd00ec6fc8aab6-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '732'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:34:25 GMT
       request-id:
-      - req_011CbPktfx4JGQgtP2k6msuM
+      - req_011CcJhbA6Kvk3dwzQLsGZDg
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=180
+      - x-originResponse;dur=291
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '177'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK

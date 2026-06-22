@@ -3,24 +3,24 @@ interactions:
     body: '{"messages":[{"role":"system","content":"you are a helpful assistant"},{"role":"user","content":[{"type":"text","text":"What
       color is this image?"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}}]}],"model":"gpt-4o-mini","temperature":0.0}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '353'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DpaYTa91sVqBKwrk9OIUGV5ohUaRl\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781187617,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DtceOJYIbTTDEO4xaDiGAIS1cTd93\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1782148984,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"The image is red.\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
@@ -29,30 +29,32 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_03ddaa0cca\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_eee5e0b136\"\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      Connection:
+      - CF-Ray
+      connection:
       - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:20:17 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       content-length:
       - '827'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:23:05 GMT
       openai-processing-ms:
-      - '597'
+      - '618'
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
@@ -66,7 +68,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999220'
+      - '149999217'
       x-ratelimit-reset-input-images:
       - 1ms
       x-ratelimit-reset-requests:

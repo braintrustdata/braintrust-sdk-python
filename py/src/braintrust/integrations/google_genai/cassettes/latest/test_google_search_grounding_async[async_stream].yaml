@@ -4,28 +4,28 @@ interactions:
       Japan?"}], "role": "user"}], "tools": [{"googleSearch": {}}], "generationConfig":
       {"maxOutputTokens": 300}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '183'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
       string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
-        current population of Tokyo varies depending on whether \\\"Tokyo\"}],\"role\":
+        current population of Tokyo varies depending on the specific\"}],\"role\":
         \"model\"},\"finishReason\": \"MAX_TOKENS\",\"index\": 0,\"groundingMetadata\":
         {\"searchEntryPoint\": {\"renderedContent\": \"\\u003cstyle\\u003e\\n.container
         {\\n  align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
@@ -90,39 +90,38 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH1RBmO7vgr2S5Z11texT0N5OLkyP-4qCpdIE4HJhjE9PtUqaKCSz9kaRUe0e6UTu6LS_ThjKhf6lFkEq-irMsUR7sdX-24rZHSqKCpyy9BiJUsRTP889rTA5jpo1iHPzyDhJklKzi_yI7QMtyiise9F0NM3Kft5eYh3KNceSraQvCsx_kagAj7aOmmzPBQmupFliLWYua3H71yO32t7Fcz2wDO3w==\\\"\\u003ecurrent
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEpqr3v1bC06Nwrk15-xEc9pYr5DT26TVMY9Q9Y-oP8b2PNEWxYvGqCSegY6lGDTWKJ42qfXrxB4UNO6HqvMLV8vd9KIt_kTCmqppcW9hFXHPxTUVGbFS-Q5dN3xjKUDD3U5I6Na1vFATpCSRvDJ_sm_I5r8386NAT8lUGqhQxI5WyF4zJNenXNGViKmUZA9ulSToI9xXRFY26pYdq33xbXuUNekw==\\\"\\u003ecurrent
         population of Tokyo Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"},\"webSearchQueries\":
         [\"current population of Tokyo Japan\"]}}],\"usageMetadata\": {\"promptTokenCount\":
-        11,\"candidatesTokenCount\": 27,\"totalTokenCount\": 408,\"cachedContentTokenCount\":
-        2,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 11}],\"cacheTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 2}],\"toolUsePromptTokenCount\":
-        56,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        56}],\"thoughtsTokenCount\": 314,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"rFUwaoqkPPav1MkPiqrigAo\"}\r\n\r\n"
+        11,\"candidatesTokenCount\": 26,\"totalTokenCount\": 412,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 11}],\"toolUsePromptTokenCount\":
+        58,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        58}],\"thoughtsTokenCount\": 317,\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-2.5-flash\",\"responseId\": \"d3M5ao-dGrit-8YP5ubKyQk\"}\r\n\r\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Disposition:
+      content-disposition:
       - attachment
-      Content-Type:
+      content-type:
       - text/event-stream
-      Date:
-      - Mon, 15 Jun 2026 19:42:39 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:40:11 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=2566
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=3822
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
     status:
       code: 200

@@ -3,128 +3,191 @@ interactions:
     body: '{"input":"Search the web for the current weather in Paris and answer in
       one sentence.","model":"gpt-4.1-mini","tool_choice":{"type":"web_search_preview"},"tools":[{"type":"web_search_preview","search_context_size":"low"}]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '222'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.41.0
-      X-Stainless-Arch:
+      user-agent:
+      - OpenAI/Python 2.43.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.43.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0568cbb58e8cc7e1006a2ac3205194819eb8d28d768b8a52a1\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1781187360,\n  \"status\":
+      string: "{\n  \"id\": \"resp_090ffe9e6c546431006a396eb39230819e8f5f12ae67dde5c0\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782148787,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1781187362,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782148789,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_0568cbb58e8cc7e1006a2ac3206e94819e907c744f49da2f26\",\n
+        \     \"id\": \"ws_090ffe9e6c546431006a396eb3b030819ea328209eb29e3381\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_0568cbb58e8cc7e1006a2ac321477c819e98e05f4f02da6f4b\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_090ffe9e6c546431006a396eb49ba4819eba0980990029ab02\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 4:16\\u202fPM
-        on Thursday, June 11, 2026, in Paris, France, the weather is overcast with
-        a temperature of 66\\u00b0F (19\\u00b0C).\\n\\n## Weather for Paris, Paris,
-        France:\\nCurrent Conditions: Cloudy, 66\\u00b0F (19\\u00b0C)\\n\\nDaily Forecast:\\n*
-        Thursday, June 11: Low: 59\\u00b0F (15\\u00b0C), High: 66\\u00b0F (19\\u00b0C),
-        Description: Overcast\\n* Friday, June 12: Low: 58\\u00b0F (15\\u00b0C), High:
-        80\\u00b0F (27\\u00b0C), Description: Cloudy and warmer\\n* Saturday, June
-        13: Low: 54\\u00b0F (12\\u00b0C), High: 81\\u00b0F (27\\u00b0C), Description:
-        Very warm with decreasing clouds\\n* Sunday, June 14: Low: 56\\u00b0F (13\\u00b0C),
-        High: 82\\u00b0F (28\\u00b0C), Description: Very warm with sunshine and a
-        few clouds\\n* Monday, June 15: Low: 62\\u00b0F (16\\u00b0C), High: 81\\u00b0F
-        (27\\u00b0C), Description: Remaining warm with some clouds, then sunshine\\n*
-        Tuesday, June 16: Low: 67\\u00b0F (19\\u00b0C), High: 88\\u00b0F (31\\u00b0C),
-        Description: Very warm with sun and some clouds\\n* Wednesday, June 17: Low:
-        66\\u00b0F (19\\u00b0C), High: 94\\u00b0F (34\\u00b0C), Description: Very
-        hot with plenty of sun\\n \"\n        }\n      ],\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"auto\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\":
-        [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_content_types\":
-        [\n        \"text\"\n      ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 7:19\\u202fPM
+        on June 22, 2026, Paris is experiencing sunny weather with a temperature of
+        95\\u00b0F (35\\u00b0C).\\n\\n## Weather for Paris, Paris, France:\\nCurrent
+        Conditions: Sunny, 95\\u00b0F (35\\u00b0C)\\n\\nDaily Forecast:\\n* Monday,
+        June 22: Low: 74\\u00b0F (23\\u00b0C), High: 100\\u00b0F (38\\u00b0C), Description:
+        Very hot with sunshine; caution advised if outside for extended periods of
+        time\\n* Tuesday, June 23: Low: 76\\u00b0F (24\\u00b0C), High: 105\\u00b0F
+        (41\\u00b0C), Description: Very hot with uninterrupted sunshine; heat will
+        be dangerous, minimize outdoor activity\\n* Wednesday, June 24: Low: 78\\u00b0F
+        (25\\u00b0C), High: 107\\u00b0F (42\\u00b0C), Description: Sunny to partly
+        cloudy and very hot; heat will be dangerous, minimize outdoor activity\\n*
+        Thursday, June 25: Low: 76\\u00b0F (24\\u00b0C), High: 107\\u00b0F (42\\u00b0C),
+        Description: Partly sunny and very hot; danger of dehydration and heatstroke
+        if outside for extended periods of time\\n* Friday, June 26: Low: 74\\u00b0F
+        (24\\u00b0C), High: 99\\u00b0F (37\\u00b0C), Description: Sweltering heat
+        with sunshine mixing with some clouds; watch for a strong afternoon thunderstorm;
+        extreme heat can be dangerous for outdoor activities\\n* Saturday, June 27:
+        Low: 71\\u00b0F (21\\u00b0C), High: 97\\u00b0F (36\\u00b0C), Description:
+        Very hot with sunshine interrupted by clouds at times; a thunderstorm in spots
+        in the afternoon\\n* Sunday, June 28: Low: 68\\u00b0F (20\\u00b0C), High:
+        96\\u00b0F (36\\u00b0C), Description: Mostly cloudy and hot; widely separated
+        thunderstorms in the afternoon\\n\\nSevere Weather Alerts:\\n* Paris: Red
+        Warning for Extreme High Temperature in effect until Tuesday, 12:00 AM CEST.
+        \ Source: M\\u00e9t\\u00e9o-France, Extreme high-temperature warningEveryone
+        is in danger, even those in good health. Danger is greater for elderly people,
+        people suffering from chronicle diseases or from mental health troubles, people
+        who regularly take medicine and people who are isolated. Watch for dehydration
+        and heatstroke, especially in sportsmen and people working outside. Pay attention
+        to children. Heatstroke symptoms are : a fever above 40\\u00b0C, hot, red
+        and dry skin, headaches, nausea, drowsiness, intense thirst, confusion, convulsions
+        and loss of consciousness.Drink water several times a day. Continue to eat
+        normally. Wet your body several times a day using a spray, a washcloth or
+        by taking warm showers or baths. Do not go out during the hottest hours (11am-9pm).
+        If you must go out, wear a hat and light clothing. Try to go to a cool or
+        air-conditioned place for two to three hours a day, whilst continuing to respect
+        physical distance and barrier gestures. Limit your physical ansd sports activities.
+        During the day, close shutters, curtains and windows. Ventilate at night.
+        If you have elderly, chronically ill or isolated people around you, check
+        up on them or visit them. Take them to a cool place. In case of discomfort
+        or behavioral problems, call a doctor. If you need help call the town hall.
+        Be vigilant: everyone, even those in good health, is concerned. To prevent
+        vegetation fires, do not use any equipment likely to produce sparks and be
+        careful not to behave in a way that could lead to the start of a fire (smoking,
+        barbecue, etc.). In case of a fire, call 112 or 18 immediately and take shelter.
+        To find out more, visit the website: www.sante.gouv.fr., start time: Monday,
+        June 22, 16:04:00 UTC, end time: Tuesday, June 23, 00:00:00 UTC\\n* Paris:
+        Red Warning for Extreme High Temperature in effect from Tuesday, 12:00 AM
+        CEST until Wednesday, 12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Extreme
+        high-temperature warningEveryone is in danger, even those in good health.
+        Danger is greater for elderly people, people suffering from chronicle diseases
+        or from mental health troubles, people who regularly take medicine and people
+        who are isolated. Watch for dehydration and heatstroke, especially in sportsmen
+        and people working outside. Pay attention to children. Heatstroke symptoms
+        are : a fever above 40\\u00b0C, hot, red and dry skin, headaches, nausea,
+        drowsiness, intense thirst, confusion, convulsions and loss of consciousness.Drink
+        water several times a day. Continue to eat normally. Wet your body several
+        times a day using a spray, a washcloth or by taking warm showers or baths.
+        Do not go out during the hottest hours (11am-9pm). If you must go out, wear
+        a hat and light clothing. Try to go to a cool or air-conditioned place for
+        two to three hours a day, whilst continuing to respect physical distance and
+        barrier gestures. Limit your physical ansd sports activities. During the day,
+        close shutters, curtains and windows. Ventilate at night. If you have elderly,
+        chronically ill or isolated people around you, check up on them or visit them.
+        Take them to a cool place. In case of discomfort or behavioral problems, call
+        a doctor. If you need help call the town hall. Be vigilant: everyone, even
+        those in good health, is concerned. To prevent vegetation fires, do not use
+        any equipment likely to produce sparks and be careful not to behave in a way
+        that could lead to the start of a fire (smoking, barbecue, etc.). In case
+        of a fire, call 112 or 18 immediately and take shelter. To find out more,
+        visit the website: www.sante.gouv.fr., start time: Tuesday, June 23, 00:00:00
+        UTC, end time: Wednesday, June 24, 00:00:00 UTC\\n* Paris: Yellow Warning
+        for Thunderstorms in effect until Tuesday, 12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France,
+        Moderate thunderstorm warningModerate damages may occur, especially in vulnerable
+        or in exposed areas and to people who carry out weather-related activities.Be
+        careful, keep informed of the latest weather forecast., start time: Monday,
+        June 22, 16:04:00 UTC, end time: Tuesday, June 23, 00:00:00 UTC\\n \"\n        }\n
+        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\": [\n    {\n      \"type\":
+        \"web_search_preview\",\n      \"search_content_types\": [\n        \"text\"\n
+        \     ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
         {\n        \"type\": \"approximate\",\n        \"city\": null,\n        \"country\":
         \"US\",\n        \"region\": null,\n        \"timezone\": null\n      }\n
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 302,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 625\n  },\n
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 1331,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 1654\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0a13b299d7ee5b3-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:16:02 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a0fceb81ee7d39ef-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '3420'
+      - '8080'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:19:49 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '2152'
+      - '1790'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=MBVTJUh8JewiKr3113z5KFdpBy0LMtNfAgcqpSgiLew-1781187360.253257-1.0.1.1-Gih0ClJL63axRV2nId4vVVtDQuETW.euxAxdBGF.j8Hpwqc9ZGB_D5GdR8UfllU1hcFL4jbM4VsbkSfC89Isz1T7ti7HZ9lBGFkazSGgCd7feeuYQZZ8I4_b7aU4dshz;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
-        11 Jun 2026 14:46:02 GMT
+      - __cf_bm=vhphtW2SrNJvkuDtb_nKnf7IG5oi92.SEW6fJ.nSBKk-1782148787.503824-1.0.1.1-Oq8RVkOQN_j.c.09iTHPboL94sIhDuR3DLdWlq9P2YL7X3MxGM7qZn8mfVlXfNBTbMz3L1qo6syAQ6MWIUNmHdhUnv6P2cBv_irWjSJC3PS_PKIpF5Sp8k08KzILa8OE;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        22 Jun 2026 17:49:49 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-request-id:
-      - req_685437501d394f07a20f8abb0abc7793
+      - req_161d1302a6b048ab8baccc985af0f14f
     status:
       code: 200
       message: OK

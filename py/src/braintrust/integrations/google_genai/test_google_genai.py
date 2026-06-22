@@ -1641,13 +1641,13 @@ def test_interactions_delete(memory_logger):
     assert create_spans
 
     delete_response = client.interactions.delete(response.id)
-    assert delete_response == {}
+    assert delete_response in ({}, None)
 
     spans = memory_logger.pop()
     delete_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.delete")
 
     assert delete_span["input"]["id"] == response.id
-    assert delete_span["output"] == {}
+    assert delete_span.get("output") in ({}, None)
     assert delete_span["metrics"]["duration"] >= 0
 
 
@@ -1667,7 +1667,7 @@ async def test_interactions_async_round_trip(memory_logger):
 
     assert response.status == "completed"
     assert fetched.id == response.id
-    assert deleted == {}
+    assert deleted in ({}, None)
 
     spans = memory_logger.pop()
     create_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.LLM), "interactions.create")
@@ -1682,7 +1682,7 @@ async def test_interactions_async_round_trip(memory_logger):
     assert "Italy" in str(get_span["output"]["outputs"])
 
     assert delete_span["input"]["id"] == response.id
-    assert delete_span["output"] == {}
+    assert delete_span.get("output") in ({}, None)
 
 
 @_needs_interactions

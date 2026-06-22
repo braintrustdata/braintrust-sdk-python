@@ -3,90 +3,92 @@ interactions:
     body: '{"messages":[{"role":"user","content":[{"type":"text","text":"What color
       is this image?"},{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}}]}],"model":"gpt-4o-mini"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '277'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.41.0
-      X-Stainless-Arch:
+      user-agent:
+      - OpenAI/Python 2.43.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.43.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DpaXWT8xL9v0bj0PR6jsLWkFy7iA3\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781187558,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Dtce4TSpGGtN4anbvVkM1kqeZiJOY\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1782148964,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The image is red.\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        8513,\n    \"completion_tokens\": 5,\n    \"total_tokens\": 8518,\n    \"prompt_tokens_details\":
+        \"assistant\",\n        \"content\": \"The image is a solid red color.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        8513,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 8521,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_03ddaa0cca\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_eee5e0b136\"\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0a13ffc2b0bac30-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:19:18 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a0fcefd19f9b8af6-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '827'
+      - '841'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:22:44 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '558'
+      - '580'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=plSV45VuQ0ssOreNKC8kXVrbSH82TvXvql76I02RLok-1781187557.7875028-1.0.1.1-vpG7yLUHFNim0j4HiBz8QJfP1CP1mFZ8P4SFAZjIJ9b4.nb39gLhFRSvj3e_VWxHJfvMcwlHHr1h4pBtCUxM1icYhfiqXMVBVrAdICDj2aAfzYz4Upz3XPaJ5K7JfKMN;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
-        11 Jun 2026 14:49:18 GMT
+      - __cf_bm=Gm7e6xmWxMTFjZmhVMneFp6KroHC3UAA2rS6suDJr68-1782148964.1008723-1.0.1.1-CYgrF98lhkQQ3W9.qmOY6x0sotXeHepHLcvGGDODLuDCUIziPEyeAU3pkoKf16yo5tTchQZ.JD9YxAxqefiR46benOjvUcs3qmRqmUGuFYYqJLxA6j.uBf5N5ABcDEN2;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        22 Jun 2026 17:52:44 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-input-images:
@@ -108,7 +110,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_8ca136ae83d44f488942ef3c06ee9f62
+      - req_83b5d73b8200428ca123b3536cd898f4
     status:
       code: 200
       message: OK

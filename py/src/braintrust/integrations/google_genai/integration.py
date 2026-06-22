@@ -5,6 +5,10 @@ import logging
 from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
+    AsyncGAOSInteractionsCancelPatcher,
+    AsyncGAOSInteractionsCreatePatcher,
+    AsyncGAOSInteractionsDeletePatcher,
+    AsyncGAOSInteractionsGetPatcher,
     AsyncInteractionsCancelPatcher,
     AsyncInteractionsCreatePatcher,
     AsyncInteractionsDeletePatcher,
@@ -13,6 +17,10 @@ from .patchers import (
     AsyncModelsGenerateContentPatcher,
     AsyncModelsGenerateContentStreamPatcher,
     AsyncModelsGenerateImagesPatcher,
+    GAOSInteractionsCancelPatcher,
+    GAOSInteractionsCreatePatcher,
+    GAOSInteractionsDeletePatcher,
+    GAOSInteractionsGetPatcher,
     InteractionsCancelPatcher,
     InteractionsCreatePatcher,
     InteractionsDeletePatcher,
@@ -42,6 +50,10 @@ class GoogleGenAIIntegration(BaseIntegration):
         InteractionsGetPatcher,
         InteractionsCancelPatcher,
         InteractionsDeletePatcher,
+        GAOSInteractionsCreatePatcher,
+        GAOSInteractionsGetPatcher,
+        GAOSInteractionsCancelPatcher,
+        GAOSInteractionsDeletePatcher,
         AsyncModelsGenerateContentPatcher,
         AsyncModelsGenerateContentStreamPatcher,
         AsyncModelsEmbedContentPatcher,
@@ -50,4 +62,8 @@ class GoogleGenAIIntegration(BaseIntegration):
         AsyncInteractionsGetPatcher,
         AsyncInteractionsCancelPatcher,
         AsyncInteractionsDeletePatcher,
+        AsyncGAOSInteractionsCreatePatcher,
+        AsyncGAOSInteractionsGetPatcher,
+        AsyncGAOSInteractionsCancelPatcher,
+        AsyncGAOSInteractionsDeletePatcher,
     )

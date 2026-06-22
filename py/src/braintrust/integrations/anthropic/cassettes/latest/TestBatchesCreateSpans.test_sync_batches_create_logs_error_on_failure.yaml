@@ -2,40 +2,40 @@ interactions:
 - request:
     body: '{"requests":[]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '15'
-      Content-Type:
-      - application/json
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '15'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
@@ -43,43 +43,41 @@ interactions:
   response:
     body:
       string: '{"type":"error","error":{"type":"invalid_request_error","message":"requests:
-        List should have at least 1 item after validation, not 0"},"request_id":"req_011CbPktysKVe2XXspet8hsj"}'
+        List should have at least 1 item after validation, not 0"},"request_id":"req_011CcJhba3jDL1pawDLtVrkt"}'
     headers:
-      CF-RAY:
-      - a016966bdf7bf41f-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:26:17 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fd010f5a0c076d-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '180'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:34:30 GMT
       request-id:
-      - req_011CbPktysKVe2XXspet8hsj
+      - req_011CcJhba3jDL1pawDLtVrkt
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=48
+      - x-originResponse;dur=62
       set-cookie:
-      - _cfuvid=1gHfyhBea36UT.9.DJ9zECZVqactEJmTFkrtePw7GoA-1779733577.577525-1.0.1.1-q_SBkHcfd7Ve3Z8i_K4Oh9j8mr74MMslNwPMtRz5n88;
+      - _cfuvid=TNDruVqmgNFbJTGpAl2P0qo6AFdS7edKUFwwwuRqr9g-1782149670.301-1.0.1.1-z8u0OS6_.wbJerm_aBOP2jJiwOYN26b18rglyhwSTuA;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '47'
+      x-robots-tag:
+      - none
       x-should-retry:
       - 'false'
     status:

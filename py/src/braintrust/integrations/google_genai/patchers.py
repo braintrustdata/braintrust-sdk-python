@@ -104,6 +104,42 @@ class InteractionsDeletePatcher(FunctionWrapperPatcher):
     wrapper = _interactions_delete_wrapper
 
 
+class GAOSInteractionsCreatePatcher(FunctionWrapperPatcher):
+    """Patch ``GeminiNextGenInteractions.create`` for tracing."""
+
+    name = "google_genai.gaos_interactions.create"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "GeminiNextGenInteractions.create"
+    wrapper = _interactions_create_wrapper
+
+
+class GAOSInteractionsGetPatcher(FunctionWrapperPatcher):
+    """Patch ``GeminiNextGenInteractions.get`` for tracing."""
+
+    name = "google_genai.gaos_interactions.get"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "GeminiNextGenInteractions.get"
+    wrapper = _interactions_get_wrapper
+
+
+class GAOSInteractionsCancelPatcher(FunctionWrapperPatcher):
+    """Patch ``GeminiNextGenInteractions.cancel`` for tracing."""
+
+    name = "google_genai.gaos_interactions.cancel"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "GeminiNextGenInteractions.cancel"
+    wrapper = _interactions_cancel_wrapper
+
+
+class GAOSInteractionsDeletePatcher(FunctionWrapperPatcher):
+    """Patch ``GeminiNextGenInteractions.delete`` for tracing."""
+
+    name = "google_genai.gaos_interactions.delete"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "GeminiNextGenInteractions.delete"
+    wrapper = _interactions_delete_wrapper
+
+
 # ---------------------------------------------------------------------------
 # Async Models patchers
 # ---------------------------------------------------------------------------
@@ -183,4 +219,40 @@ class AsyncInteractionsDeletePatcher(FunctionWrapperPatcher):
     name = "google_genai.async_interactions.delete"
     target_module = "google.genai._interactions.resources.interactions"
     target_path = "AsyncInteractionsResource.delete"
+    wrapper = _async_interactions_delete_wrapper
+
+
+class AsyncGAOSInteractionsCreatePatcher(FunctionWrapperPatcher):
+    """Patch ``AsyncGeminiNextGenInteractions.create`` for tracing."""
+
+    name = "google_genai.async_gaos_interactions.create"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "AsyncGeminiNextGenInteractions.create"
+    wrapper = _async_interactions_create_wrapper
+
+
+class AsyncGAOSInteractionsGetPatcher(FunctionWrapperPatcher):
+    """Patch ``AsyncGeminiNextGenInteractions.get`` for tracing."""
+
+    name = "google_genai.async_gaos_interactions.get"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "AsyncGeminiNextGenInteractions.get"
+    wrapper = _async_interactions_get_wrapper
+
+
+class AsyncGAOSInteractionsCancelPatcher(FunctionWrapperPatcher):
+    """Patch ``AsyncGeminiNextGenInteractions.cancel`` for tracing."""
+
+    name = "google_genai.async_gaos_interactions.cancel"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "AsyncGeminiNextGenInteractions.cancel"
+    wrapper = _async_interactions_cancel_wrapper
+
+
+class AsyncGAOSInteractionsDeletePatcher(FunctionWrapperPatcher):
+    """Patch ``AsyncGeminiNextGenInteractions.delete`` for tracing."""
+
+    name = "google_genai.async_gaos_interactions.delete"
+    target_module = "google.genai._gaos.google_genai"
+    target_path = "AsyncGeminiNextGenInteractions.delete"
     wrapper = _async_interactions_delete_wrapper
