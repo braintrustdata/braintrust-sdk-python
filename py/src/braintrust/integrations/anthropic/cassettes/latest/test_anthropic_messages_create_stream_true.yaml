@@ -2,109 +2,55 @@ interactions:
 - request:
     body: '{"max_tokens":300,"messages":[{"role":"user","content":"What is 3*4?"}],"model":"claude-haiku-4-5-20251001","stream":true}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '122'
-      Content-Type:
-      - application/json
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '122'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: 'event: message_start
-
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_01CAFHuTQjAB4cGxmMFzf6ir","type":"message","role":"assistant","content":[],"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":14,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":8,"service_tier":"standard","inference_geo":"not_available"}}   }
-
-
-        event: content_block_start
-
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}       }
-
-
-        event: ping
-
-        data: {"type": "ping"}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"3
-        * 4 ="}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        12"}               }
-
-
-        event: content_block_stop
-
-        data: {"type":"content_block_stop","index":0      }
-
-
-        event: message_delta
-
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null},"usage":{"input_tokens":14,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":13}
-        }
-
-
-        event: message_stop
-
-        data: {"type":"message_stop"    }
-
-
-        '
+      string: "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_01NaCbyNNHFvdguQjZJzwdse\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":14,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":8,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"}}
+        }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \   }\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"3
+        \xD7 4 =\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        12\"}         }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0
+        \              }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null},\"usage\":{\"input_tokens\":14,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":13}}\n\nevent:
+        message_stop\ndata: {\"type\":\"message_stop\"      }\n\n"
     headers:
-      CF-RAY:
-      - a01686efcaa9f2bc-YYZ
-      Cache-Control:
-      - no-cache
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - text/event-stream; charset=utf-8
-      Date:
-      - Mon, 25 May 2026 18:15:43 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
       anthropic-ratelimit-input-tokens-limit:
@@ -112,42 +58,58 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '4000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-05-25T18:15:43Z'
+      - '2026-06-22T17:23:49Z'
       anthropic-ratelimit-output-tokens-limit:
       - '800000'
       anthropic-ratelimit-output-tokens-remaining:
       - '800000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-05-25T18:15:43Z'
+      - '2026-06-22T17:23:49Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-05-25T18:15:43Z'
+      - '2026-06-22T17:23:49Z'
       anthropic-ratelimit-tokens-limit:
       - '4800000'
       anthropic-ratelimit-tokens-remaining:
       - '4800000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-05-25T18:15:43Z'
+      - '2026-06-22T17:23:49Z'
+      cache-control:
+      - no-cache
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fcf169d92a0702-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '1278'
+      - '1292'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 22 Jun 2026 17:23:50 GMT
       request-id:
-      - req_011CbPk6EHvVCeS5ekTVRBmU
+      - req_011CcJgnL8knCyQzaGz95qPc
+      server:
+      - cloudflare
       set-cookie:
-      - _cfuvid=YVn_JgHr4E..45CGRKMVEUF8MUZn1pFZafXSHTEwqpc-1779732943.3277566-1.0.1.1-a0mysd1F0nxuJqOQTZhZyPEiRKMliuE4D7QnqGMncq8;
+      - _cfuvid=rHDBWoG65nvXQS4cq7mh2n2UPII37y08XuCukIIszB4-1782149029.4167473-1.0.1.1-o4sHu5GaOgl0SeUI5SHZOLq2yE6UFm5TzZscBHahnQA;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-f0e677801b157a5997473cbf20135879-63be08deeec8ecf2-01
+      - 00-6934fd242632943d699ae4c2d3fc3843-9ff9c8708808de20-01
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '523'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK

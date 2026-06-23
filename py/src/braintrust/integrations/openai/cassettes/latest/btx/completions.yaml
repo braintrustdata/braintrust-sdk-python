@@ -3,24 +3,24 @@ interactions:
     body: '{"messages":[{"role":"system","content":"you are a helpful assistant"},{"role":"user","content":"What
       is the capital of France?"}],"model":"gpt-4o-mini","temperature":0.0}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '171'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DpaYULuG51ne0goWPFLIZDIN4N19v\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781187618,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DtcePb9MxJwOuNQjE1O6vHViR6L5g\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1782148985,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"The capital of France is Paris.\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
@@ -29,30 +29,32 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_fc8bf6718c\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_d3cbb830a7\"\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      Connection:
+      - CF-Ray
+      connection:
       - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:20:19 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       content-length:
       - '837'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:23:05 GMT
       openai-processing-ms:
-      - '1893'
+      - '460'
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:

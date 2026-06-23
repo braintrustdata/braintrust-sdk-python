@@ -5,64 +5,68 @@ interactions:
       respond in pirate speak."}], "role": "user"}, "generationConfig": {"maxOutputTokens":
       150}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '242'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Ahoy there, matey! The wind be fair
-        and the seas calm for now. A bit o' sunshine to warm yer timbers, and nary
-        a storm cloud in sight. Best set sail and enjoy this fine day, afore the weather
-        turns and the Kraken decides to pay a visit!\"\n          }\n        ],\n
-        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
-        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        19,\n    \"candidatesTokenCount\": 59,\n    \"totalTokenCount\": 78,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n
-        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"j1UwasKEOeWY9MoP0vmEsQQ\"\n}\n"
+        [\n          {\n            \"text\": \"Ahoy there, matey!  Ye be askin' about
+        the sky and the sea, eh? Well, let me tell ye, the weather be a fickle mistress,
+        she be!\\n\\nRight now, the winds be blowin' a fair breeze from the nor'east,
+        fillin' our sails like a proud captain's chest. The sun be peeking out from
+        behind a few fluffy clouds, like a cautious treasure hunter spyin' the glint
+        o' gold. The sea be a bit choppy, but nothin' a seasoned sailor can't handle.
+        No sign o' a squall on the horizon, thank Neptune's beard!\\n\\nBut mind ye,
+        the sea can change faster than a scurvy dog\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
+        0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\":
+        150,\n    \"totalTokenCount\": 169,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"DXU5arnCMuSOjrEP5uCp4QI\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '1101'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Mon, 15 Jun 2026 19:42:08 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:46:55 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=627
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=1918
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '784'
     status:
       code: 200
       message: OK

@@ -160,7 +160,7 @@ def test_wrap_openrouter_responses_send(memory_logger):
     response = client.beta.responses.send(
         model=CHAT_MODEL,
         input="Say one short sentence about observability.",
-        max_output_tokens=16,
+        max_output_tokens=64,
         temperature=0,
     )
     end = time.time()

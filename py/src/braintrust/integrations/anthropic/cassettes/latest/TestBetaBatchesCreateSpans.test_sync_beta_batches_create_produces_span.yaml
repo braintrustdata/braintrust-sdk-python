@@ -4,85 +4,83 @@ interactions:
       is 2+2?"}]}},{"custom_id":"req-2","params":{"model":"claude-haiku-4-5-20251001","max_tokens":100,"messages":[{"role":"user","content":"What
       is 3+3?"}]}}]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '294'
-      Content-Type:
-      - application/json
-      Host:
-      - api.anthropic.com
-      User-Agent:
-      - Anthropic/Python 0.104.1
-      X-Stainless-Arch:
-      - arm64
-      X-Stainless-Async:
-      - 'false'
-      X-Stainless-Lang:
-      - python
-      X-Stainless-OS:
-      - MacOS
-      X-Stainless-Package-Version:
-      - 0.104.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       anthropic-beta:
       - message-batches-2024-09-24
       anthropic-version:
       - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '294'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.111.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 0.111.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
     uri: https://api.anthropic.com/v1/messages/batches?beta=true
   response:
     body:
-      string: '{"id":"msgbatch_01H1zAdZWwFcmX5UF3CHAuSJ","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-05-25T18:26:18.750812+00:00","expires_at":"2026-05-26T18:26:18.750812+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+      string: '{"id":"msgbatch_01PNWgXwUk1qKcULFHmo387o","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-06-22T17:34:31.019898+00:00","expires_at":"2026-06-23T17:34:31.019898+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
     headers:
-      CF-RAY:
-      - a01696726c971486-YYZ
-      Connection:
-      - keep-alive
-      Content-Security-Policy:
-      - default-src 'none'; frame-ancestors 'none'
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:26:18 GMT
-      Server:
-      - cloudflare
-      Transfer-Encoding:
-      - chunked
-      X-Robots-Tag:
-      - none
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a0fd0112cf653a53-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '361'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:34:31 GMT
       request-id:
-      - req_011CbPku4NvyRUnHBvgx2wNL
+      - req_011CcJhbcPNZEJtLgEZPikmb
+      server:
+      - cloudflare
       server-timing:
-      - x-originResponse;dur=175
+      - x-originResponse;dur=227
       set-cookie:
-      - _cfuvid=GoEirJNuqU8MSYURnr7zpOBMDkLtRTjYi4TxZ0SwnGE-1779733578.628045-1.0.1.1-hY9HbfM0r_wB8OtOoDP9UjcTvANblqwXqrC0AETLKRo;
+      - _cfuvid=qx5_COSB14KNWZjwNpP_f_g_XzaA0vN0rPwBK._eAGw-1782149670.8510642-1.0.1.1-9Cw7vMUK8ZbHWE3Rq8DdSJUY_LbS6kZ1H74Huichioc;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
       vary:
       - Accept-Encoding
-      x-envoy-upstream-service-time:
-      - '172'
+      x-robots-tag:
+      - none
     status:
       code: 200
       message: OK

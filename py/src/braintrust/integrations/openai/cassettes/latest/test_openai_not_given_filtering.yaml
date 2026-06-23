@@ -2,44 +2,44 @@ interactions:
 - request:
     body: '{"messages":[{"role":"user","content":"What''s 12 + 12?"}],"model":"gpt-4o-mini","temperature":0.5}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '98'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.41.0
-      X-Stainless-Arch:
+      user-agent:
+      - OpenAI/Python 2.43.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.43.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DpaUx3GCTKpG0wOL0Z1H64tA8Id1C\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781187399,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DtcbmeEIhJBCBAMERUd83yLnbw0bb\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1782148822,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"12 + 12 equals 24.\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
@@ -48,44 +48,46 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_8a6a29ba59\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_d0b314e02e\"\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0a13c1f2d7cac42-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:16:40 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a0fcec5d494fac82-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '824'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:20:23 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '406'
+      - '794'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=ps9qUaHVZIzwvyOyhk7k1vGy4OnFKa1A6D4bvrh3lL4-1781187399.5487978-1.0.1.1-BZcr2iPHONjYMeBxKfno2zaHr8QWnYtCmNhY8ZLi.WPsHjbLX9fqM16jmmGB9Bvwr4surGIMxhaocCz5cD0KUnSuW37w3Gjg2YzGtuMWa_ygtyd5VP3DztSK_PlYr9ST;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
-        11 Jun 2026 14:46:40 GMT
+      - __cf_bm=r0ogkXNfBu5KZOYNQcFJ34ni3QmqRg_p3LuPCPtRJWo-1782148822.608694-1.0.1.1-tMNLRpOHlH0alam8Vvy1CFmTn60Ite5vGImhftIDZC2iRrVZ.EjjHH78B9NUXC9oaBPSe3NmltUNKh4o1myT927PMpI2cpyl66ycOk_qyacTyB.H9yj9yUZOp2_zzPIH;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        22 Jun 2026 17:50:23 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -101,7 +103,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_c19f78386f404306bddea98791e91bf4
+      - req_e6c19ce08b3c42d996e2c30e5e12261c
     status:
       code: 200
       message: OK

@@ -6,27 +6,27 @@ interactions:
       city and state, e.g. San Francisco, CA"},"unit":{"type":"string","enum":["celsius","fahrenheit"],"description":"The
       unit of temperature"}},"required":["location"]}}}]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '511'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DpaYoNS7bzqWkIGm2wlMkfkwvINd4\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781187638,\n  \"model\": \"gpt-4o-2024-08-06\",\n
+      string: "{\n  \"id\": \"chatcmpl-Dtcerv5moXWUzLkv0fm1bcPNdo2wI\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1782149013,\n  \"model\": \"gpt-4o-2024-08-06\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_1vqcEopTflR4vA9tHYwgD77P\",\n            \"type\":
+        \           \"id\": \"call_ngKRzdIOUIxI0JEY1I7TxL9R\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"location\\\":\\\"Paris, France\\\"}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -36,30 +36,32 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_5f78e76dfa\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_0811fbd893\"\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      Connection:
+      - CF-Ray
+      connection:
       - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:20:39 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       content-length:
       - '1092'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:23:34 GMT
       openai-processing-ms:
-      - '546'
+      - '459'
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:

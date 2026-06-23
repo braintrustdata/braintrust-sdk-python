@@ -8,22 +8,22 @@ interactions:
       "unit": {"default": "celsius", "type": "STRING"}}, "required": ["location"],
       "type": "OBJECT"}}]}], "generationConfig": {"maxOutputTokens": 500}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '551'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3 google-genai-sdk/afc
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3 google-genai-sdk/afc
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -31,48 +31,48 @@ interactions:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"get_weather\",\n
         \             \"args\": {\n                \"location\": \"Paris, France\"\n
-        \             }\n            },\n            \"thoughtSignature\": \"CogDAQw51sdVGhj680Wb2oBFmExpJY9z1CDG+iWR4aTlNnksptFe0GkZIl3C61hSMmk5IvvalnZtyx397xAeGyo20VlbhqjcjuW3JDj/lNSwJzGj1xKANNt1Kn+kn3Gf9aF7qN5FYD9INELVWw/TeJ40Iv38/6aDkB7y3NvSi7lMa1soI09L6cRmJNIEpxtgepYYAElr3SHQaumDRbGteXlTWc+rgFC74tTRudrxsOTDctOVGabR+k7w4av5xDvF1oiSNaQOSC4ah0zW+/KcPm4XMdwIarag7bGTLX1pPP1kR1CDXlkYaciVla1nvA4REkJMPsrb6iaQQH7h105BMiilnAeQbTo7gv9eo9c+1YgrBgvXlHRp+E2Olskq22Y97PMSE2tnTNOa0ZobWACMEawquMHrMmvT9QnrL9UOPW7oXYqPOCEutKKaVI7USGlEIOBU6tVt2RFHyOVYDnaBgL5npy69ArXM9dXrViz8ywC5SmTxQmd+rKwtHde2SZKtXNQasr3HWxSJ0VM=\"\n
+        \             }\n            },\n            \"thoughtSignature\": \"CuwCAQw51sclElYYlEhly7qUWBiSH2XjsXJJ4nsaz94XQHOkAcqfg+WJQ9j0B+Gy7J8bSgnLZ1FfLHn0mj+Rn0ZiODUQdtSCP/WkmNxu4S9Bbo0cNxGMxbgfBjb0vYYULKQU31hhAdLgFgXbACTE1sY1Jhya46Yrf1wEO0VPuVg3efPXSiVnWgoBaaCAybrxh5nLSd66kv2RlQ57L/YrbCF5ssCtrusom+Nw06f4DpkWoHNPXEhwAD3J5v3eaRYsxAW+bJp0SsHAuzFqvu7AcQ1MZFFF2TV4SdkNo6HiMCxCcGFE1Lc1GAetzq+PFYJnTh26plvZvQaxmh+xIEnlM4XDfPzBBngd/277FEP1a45bu2Mr4o8NalXOIfC/VA4KMreCNOtazNjuavhGOTsMWyzpUNH0r27nFvw40ZtIfWh0ihLmT+0l0r9fn7F1Q51ScypY/JMgkEOgo3nuynljhEZQWFYWiUaZ/+c/O8XSHA==\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        104,\n    \"candidatesTokenCount\": 17,\n    \"totalTokenCount\": 206,\n    \"promptTokensDetails\":
+        104,\n    \"candidatesTokenCount\": 17,\n    \"totalTokenCount\": 199,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 104\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 85,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"iVUwatSuE4ya9MoPgbfU-A4\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 78,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"PXM5arLKBJid-8YPtLOAqAk\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '1306'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Mon, 15 Jun 2026 19:42:02 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:39:09 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=988
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=860
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '1342'
     status:
       code: 200
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is the weather like in Paris, France?"}],
       "role": "user"}, {"parts": [{"functionCall": {"args": {"location": "Paris, France"},
-      "name": "get_weather"}, "thoughtSignature": "CogDAQw51sdVGhj680Wb2oBFmExpJY9z1CDG-iWR4aTlNnksptFe0GkZIl3C61hSMmk5IvvalnZtyx397xAeGyo20VlbhqjcjuW3JDj_lNSwJzGj1xKANNt1Kn-kn3Gf9aF7qN5FYD9INELVWw_TeJ40Iv38_6aDkB7y3NvSi7lMa1soI09L6cRmJNIEpxtgepYYAElr3SHQaumDRbGteXlTWc-rgFC74tTRudrxsOTDctOVGabR-k7w4av5xDvF1oiSNaQOSC4ah0zW-_KcPm4XMdwIarag7bGTLX1pPP1kR1CDXlkYaciVla1nvA4REkJMPsrb6iaQQH7h105BMiilnAeQbTo7gv9eo9c-1YgrBgvXlHRp-E2Olskq22Y97PMSE2tnTNOa0ZobWACMEawquMHrMmvT9QnrL9UOPW7oXYqPOCEutKKaVI7USGlEIOBU6tVt2RFHyOVYDnaBgL5npy69ArXM9dXrViz8ywC5SmTxQmd-rKwtHde2SZKtXNQasr3HWxSJ0VM="}],
+      "name": "get_weather"}, "thoughtSignature": "CuwCAQw51sclElYYlEhly7qUWBiSH2XjsXJJ4nsaz94XQHOkAcqfg-WJQ9j0B-Gy7J8bSgnLZ1FfLHn0mj-Rn0ZiODUQdtSCP_WkmNxu4S9Bbo0cNxGMxbgfBjb0vYYULKQU31hhAdLgFgXbACTE1sY1Jhya46Yrf1wEO0VPuVg3efPXSiVnWgoBaaCAybrxh5nLSd66kv2RlQ57L_YrbCF5ssCtrusom-Nw06f4DpkWoHNPXEhwAD3J5v3eaRYsxAW-bJp0SsHAuzFqvu7AcQ1MZFFF2TV4SdkNo6HiMCxCcGFE1Lc1GAetzq-PFYJnTh26plvZvQaxmh-xIEnlM4XDfPzBBngd_277FEP1a45bu2Mr4o8NalXOIfC_VA4KMreCNOtazNjuavhGOTsMWyzpUNH0r27nFvw40ZtIfWh0ihLmT-0l0r9fn7F1Q51ScypY_JMgkEOgo3nuynljhEZQWFYWiUaZ_-c_O8XSHA=="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "get_weather", "response":
       {"result": "22 degrees celsius and sunny in Paris, France"}}}], "role": "user"}],
       "tools": [{"functionDeclarations": [{"description": "Get the current weather
@@ -82,22 +82,22 @@ interactions:
       "celsius", "type": "STRING"}}, "required": ["location"], "type": "OBJECT"}}]}],
       "generationConfig": {"maxOutputTokens": 500}}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '1364'
-      Content-Type:
+      content-length:
+      - '1328'
+      content-type:
       - application/json
-      Host:
+      host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3 google-genai-sdk/afc
       x-goog-api-client:
-      - google-genai-sdk/2.8.0 gl-python/3.13.5
+      - google-genai-sdk/2.9.0 gl-python/3.14.3 google-genai-sdk/afc
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -110,34 +110,34 @@ interactions:
         15,\n    \"totalTokenCount\": 160,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 145\n      }\n    ],\n
         \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"ilUwaqzUFuaR-8YP2ZqhwQg\"\n}\n"
+        \ \"responseId\": \"PXM5aujyPLqZ-8YP4ubV8Qk\"\n}\n"
     headers:
-      Alt-Svc:
+      alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Content-Type:
+      content-length:
+      - '607'
+      content-type:
       - application/json; charset=UTF-8
-      Date:
-      - Mon, 15 Jun 2026 19:42:02 GMT
-      Server:
+      date:
+      - Mon, 22 Jun 2026 17:39:10 GMT
+      server:
       - scaffolding on HTTPServer2
-      Server-Timing:
-      - gfet4t7; dur=472
-      Transfer-Encoding:
+      server-timing:
+      - gfet4t7; dur=522
+      transfer-encoding:
       - chunked
-      Vary:
+      vary:
       - Origin
       - X-Origin
       - Referer
-      X-Content-Type-Options:
+      x-content-type-options:
       - nosniff
-      X-Frame-Options:
+      x-frame-options:
       - SAMEORIGIN
-      X-Gemini-Service-Tier:
+      x-gemini-service-tier:
       - standard
-      X-XSS-Protection:
+      x-xss-protection:
       - '0'
-      content-length:
-      - '607'
     status:
       code: 200
       message: OK

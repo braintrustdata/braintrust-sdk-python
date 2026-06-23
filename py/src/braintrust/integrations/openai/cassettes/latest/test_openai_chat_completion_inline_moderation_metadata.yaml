@@ -2,44 +2,44 @@ interactions:
 - request:
     body: '{"messages":[{"role":"user","content":"Say hello in one word."}],"model":"gpt-4o-mini","moderation":{"model":"omni-moderation-latest"}}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '135'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.41.0
-      X-Stainless-Arch:
+      user-agent:
+      - OpenAI/Python 2.43.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.43.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DpaUHGKp5Vqamse7g5tyxIyiQ9B0A\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781187357,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-DtcbAgBpaqBd5swp9y8867DMhJ1VT\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1782148784,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Hello!\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
@@ -59,14 +59,14 @@ interactions:
         false,\n            \"self-harm\": false,\n            \"sexual/minors\":
         false,\n            \"violence\": false,\n            \"violence/graphic\":
         false\n          },\n          \"category_scores\": {\n            \"harassment\":
-        0.00010005044009099887,\n            \"harassment/threatening\": 7.0311842669149565e-6,\n
-        \           \"sexual\": 0.000034062932773341,\n            \"hate\": 0.00001488384825728813,\n
-        \           \"hate/threatening\": 3.726639284186561e-7,\n            \"illicit\":
-        0.000010889691002655445,\n            \"illicit/violent\": 4.006369222920725e-6,\n
-        \           \"self-harm/intent\": 4.98595821272702e-6,\n            \"self-harm/instructions\":
-        1.8631746484712008e-6,\n            \"self-harm\": 8.682210299865954e-6,\n
-        \           \"sexual/minors\": 4.683888424952456e-6,\n            \"violence\":
-        0.0004992412660775476,\n            \"violence/graphic\": 1.8342893327886845e-6\n
+        0.000546674185053768,\n            \"harassment/threatening\": 8.220189478350845e-6,\n
+        \           \"sexual\": 0.00003625900662832244,\n            \"hate\": 0.000017952796934677738,\n
+        \           \"hate/threatening\": 4.356879983467376e-7,\n            \"illicit\":
+        0.00001141223854434603,\n            \"illicit/violent\": 4.331903899346328e-6,\n
+        \           \"self-harm/intent\": 5.475976980449466e-6,\n            \"self-harm/instructions\":
+        2.1782649863110498e-6,\n            \"self-harm\": 8.957788551478938e-6,\n
+        \           \"sexual/minors\": 5.391084403253366e-6,\n            \"violence\":
+        0.0005005862322300009,\n            \"violence/graphic\": 1.7778551863194697e-6\n
         \         },\n          \"category_applied_input_types\": {\n            \"harassment\":
         [\n              \"text\"\n            ],\n            \"harassment/threatening\":
         [\n              \"text\"\n            ],\n            \"sexual\": [\n              \"text\"\n
@@ -91,11 +91,11 @@ interactions:
         false,\n            \"violence\": false,\n            \"violence/graphic\":
         false\n          },\n          \"category_scores\": {\n            \"harassment\":
         0.00001535623976496012,\n            \"harassment/threatening\": 2.1444948420913954e-6,\n
-        \           \"sexual\": 0.00005193048644949271,\n            \"hate\": 4.264746818557914e-6,\n
+        \           \"sexual\": 0.0000527478412523148,\n            \"hate\": 4.264746818557914e-6,\n
         \           \"hate/threatening\": 2.0580491096133835e-7,\n            \"illicit\":
-        0.000013342001090985438,\n            \"illicit/violent\": 7.722191834067996e-6,\n
+        0.000013765463368900109,\n            \"illicit/violent\": 7.722191834067996e-6,\n
         \           \"self-harm/intent\": 1.8342893327886845e-6,\n            \"self-harm/instructions\":
-        7.889262586245034e-7,\n            \"self-harm\": 3.8831109868779005e-6,\n
+        7.889262586245034e-7,\n            \"self-harm\": 3.7636447180974406e-6,\n
         \           \"sexual/minors\": 4.069457790466838e-6,\n            \"violence\":
         0.0004942623523511968,\n            \"violence/graphic\": 2.355261854303796e-6\n
         \         },\n          \"category_applied_input_types\": {\n            \"harassment\":
@@ -111,44 +111,46 @@ interactions:
         \             \"text\"\n            ],\n            \"violence\": [\n              \"text\"\n
         \           ],\n            \"violence/graphic\": [\n              \"text\"\n
         \           ]\n          }\n        }\n      ]\n    }\n  },\n  \"system_fingerprint\":
-        \"fp_4dafa39984\"\n}\n"
+        \"fp_7ef2449383\"\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0a13b16bc7d3786-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:15:57 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a0fceb6b9bc7d8d9-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '5619'
+      - '5618'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:19:44 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '290'
+      - '337'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=gxKuKcvXJsfb1mH5BRwdY_F7X46Ijmu5YB65WTYPKv8-1781187357.2343912-1.0.1.1-rbmf6bPUbbUdNf3vt3enc6NIXCrimAfHy4RHYg4Y9ivClZ9cUNgQPyfZFXNmNhimpiuDoTDm_R_vK_mNiniG3UExXgCBKQ3OEnEpvDrbIBA5HcLh.wiJ.OedVAF4eC8Z;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
-        11 Jun 2026 14:45:57 GMT
+      - __cf_bm=m7VfdTq7QxlukCMJDkMd.iugqXiaFHQxN6ffUKJ.PUM-1782148783.937335-1.0.1.1-wWXADpV.i_W63a9LvSSCphwbnsK.DEB80wCgZrkSuuaQe1B0.41KakHVcHZO.kOGjSp7MnzY4rItS4ECkGebnTohQkkS4siZ_7OLV23V7LilxI0tPmyTprS0TMTmTm95;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        22 Jun 2026 17:49:44 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -158,13 +160,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999992'
+      - '149999990'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1cf5bff96ac543968a45510ce335ffc2
+      - req_4e72d9f069e743259bdea35db154f2dc
     status:
       code: 200
       message: OK

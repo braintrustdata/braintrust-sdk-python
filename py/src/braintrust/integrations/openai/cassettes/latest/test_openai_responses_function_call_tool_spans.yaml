@@ -3,52 +3,52 @@ interactions:
     body: '{"input":"Use the get_weather tool with location Paris. Do not answer directly.","model":"gpt-4.1-mini","tool_choice":{"type":"function","name":"get_weather"},"tools":[{"type":"function","name":"get_weather","description":"Get
       the weather for a location.","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '357'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.41.0
-      X-Stainless-Arch:
+      user-agent:
+      - OpenAI/Python 2.43.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.43.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0b3e334929604837006a2ac31ec4cc81929bcc49d53a48298d\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1781187358,\n  \"status\":
+      string: "{\n  \"id\": \"resp_076c2e63e17ababc006a396eb2249481a18846bdbe51b66bc4\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782148786,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1781187359,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782148787,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_0b3e334929604837006a2ac31fa6e8819282b77aafbd1ac375\",\n
+        \     \"id\": \"fc_076c2e63e17ababc006a396eb30bac81a1b52a4c8b841afe5d\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_oUXq02Xdjpg7GBxFw8zCpakI\",\n
+        \"{\\\"location\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_4kGTA4dR4SHLsY1UG4eqJUvY\",\n
         \     \"name\": \"get_weather\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -69,42 +69,44 @@ interactions:
         0\n    },\n    \"total_tokens\": 67\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0a13b1ffc5fb8f3-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 11 Jun 2026 14:16:00 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a0fceb78fecf180e-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '1970'
+      content-type:
+      - application/json
+      date:
+      - Mon, 22 Jun 2026 17:19:47 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1368'
+      - '1093'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=UyCs_.jXGF_0Sr9DG45WGEdHHFzT9ELl4XCr.uWzAOo-1781187358.7130141-1.0.1.1-sRD3Ue7Sd7UooiuWahLTqKhcBnXHaDmvh5QVKcxrZokb6zQgCh2g_xC3AcIlExDgz.6Bnyp_YMAinGU4idZSnM2RjFo.q5bMzjsQFR5UKUKTZfZFkKulmpM_1UavzK_r;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
-        11 Jun 2026 14:46:00 GMT
+      - __cf_bm=2SfKGS0JWRHrGCpxdJcny3FvJAN0PKGYJnw1YhHuSTk-1782148786.0768406-1.0.1.1-zcORG5rRTqQ4tnz4wYa1gO7Tjr2BlOWud1dl5GVHXw2SuY_2YQY9y8XSRe79uMEwnfZsGi_aIIKqYjxnT2AX8OATCoRzyp4EJOW7gYpZyE3yj1MUiMBaLgppRzytYhX7;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        22 Jun 2026 17:49:47 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -118,7 +120,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5dbfa494d89e431a803507e7e28b4a8b
+      - req_62ac62fcbff043ac8cd58ca36747338e
     status:
       code: 200
       message: OK
