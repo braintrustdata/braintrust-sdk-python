@@ -1,6 +1,7 @@
 # pyright: reportUnknownVariableType=false
 # pyright: reportPrivateUsage=false
 import asyncio
+import builtins
 import json
 import logging
 import os
@@ -3454,6 +3455,106 @@ class TestJSONAttachment(TestCase):
 
 class TestDatasetInternalBtql(TestCase):
     """Test that _internal_btql parameters (especially limit) are properly passed through to BTQL queries."""
+
+    def test_init_dataset_applies_bt_eval_sample_runtime_value(self):
+        """Test that bt eval --sample is injected into dataset BTQL."""
+        from braintrust.logger import init_dataset
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        try:
+            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
+
+            self.assertEqual(dataset._internal_btql, {"sample": 5})
+        finally:
+            monkeypatch.undo()
+
+    def test_init_dataset_merges_bt_eval_sample_with_internal_btql(self):
+        """Test that bt eval --sample is added to existing BTQL filters."""
+        from braintrust.logger import init_dataset
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        try:
+            internal_btql = {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}}
+            dataset = init_dataset(
+                project="test-project",
+                name="test-dataset",
+                use_output=False,
+                _internal_btql=internal_btql,
+                state=MagicMock(),
+            )
+
+            self.assertEqual(
+                dataset._internal_btql,
+                {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}, "sample": 5},
+            )
+            self.assertEqual(internal_btql, {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}})
+        finally:
+            monkeypatch.undo()
+
+    def test_init_dataset_preserves_explicit_internal_btql_sample(self):
+        """Test that an explicit BTQL sample overrides bt eval --sample."""
+        from braintrust.logger import init_dataset
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        try:
+            dataset = init_dataset(
+                project="test-project",
+                name="test-dataset",
+                use_output=False,
+                _internal_btql={"filter": "metadata.kind = 'synthetic'", "sample": 2},
+                state=MagicMock(),
+            )
+
+            self.assertEqual(dataset._internal_btql, {"filter": "metadata.kind = 'synthetic'", "sample": 2})
+        finally:
+            monkeypatch.undo()
+
+    def test_init_dataset_keeps_btql_unchanged_without_eval_sample_runtime_value(self):
+        """Test that ordinary init_dataset calls are unchanged outside bt eval --sample."""
+        from braintrust.logger import init_dataset
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.delattr(builtins, "__bt_eval_sample_rate", raising=False)
+        try:
+            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
+
+            self.assertIsNone(dataset._internal_btql)
+        finally:
+            monkeypatch.undo()
+
+    def test_init_dataset_forwards_bt_eval_sample_runtime_value_to_fetch(self):
+        """Test that bt eval --sample is included in fetched dataset BTQL."""
+        from braintrust.logger import init_dataset
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        try:
+            mock_state = MagicMock()
+            mock_state.org_id = "test-org"
+
+            mock_app_conn = MagicMock()
+            mock_app_conn.post_json.return_value = {
+                "project": {"id": "test-project-id", "name": "test-project"},
+                "dataset": {"id": "test-dataset-id", "name": "test-dataset"},
+            }
+            mock_state.app_conn.return_value = mock_app_conn
+
+            mock_api_conn = MagicMock()
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"data": [], "cursor": None}
+            mock_api_conn.post.return_value = mock_response
+            mock_state.api_conn.return_value = mock_api_conn
+
+            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=mock_state)
+            list(dataset.fetch())
+
+            query_json = mock_api_conn.post.call_args[1]["json"]["query"]
+            self.assertEqual(query_json["sample"], 5)
+        finally:
+            monkeypatch.undo()
 
     @patch("braintrust.logger.BraintrustState")
     def test_dataset_internal_btql_limit_not_overwritten(self, mock_state_class):

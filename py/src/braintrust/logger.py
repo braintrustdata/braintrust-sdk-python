@@ -1,5 +1,6 @@
 import atexit
 import base64
+import builtins
 import concurrent.futures
 import contextlib
 import contextvars
@@ -1807,6 +1808,12 @@ def init_dataset(
     """
 
     state = state or _state
+    sample_rate = getattr(builtins, "__bt_eval_sample_rate", None)
+    if isinstance(sample_rate, (int, float)) and not isinstance(sample_rate, bool):
+        if _internal_btql is None:
+            _internal_btql = {"sample": sample_rate}
+        elif "sample" not in _internal_btql:
+            _internal_btql = {**_internal_btql, "sample": sample_rate}
 
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
