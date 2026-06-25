@@ -5682,6 +5682,9 @@
               },
               {
                 "$ref": "#/components/schemas/TopicAutomationConfig"
+              },
+              {
+                "$ref": "#/components/schemas/TopicDigestAutomationConfig"
               }
             ],
             "description": "The configuration for the automation rule"
@@ -6172,15 +6175,33 @@
             "type": "object",
             "properties": {
               "clauses": {
-                "type": "array",
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "subspan_clauses": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "trace_clauses": {
+                "type": [
+                  "array",
+                  "null"
+                ],
                 "items": {
                   "type": "string"
                 }
               }
-            },
-            "required": [
-              "clauses"
-            ]
+            }
           },
           "behavior": {
             "type": "string",
@@ -6243,6 +6264,20 @@
           },
           "condition": {
             "$ref": "#/components/schemas/ProjectScoreCondition"
+          },
+          "object_types": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "project_logs",
+                "dataset",
+                "experiment"
+              ]
+            }
           }
         }
       },
@@ -8128,6 +8163,77 @@
           "brain-facet-2"
         ],
         "description": "Optional facet model override for topic automation"
+      },
+      "TopicDigestAutomationConfig": {
+        "type": "object",
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "topic_digest"
+            ],
+            "description": "The type of automation."
+          },
+          "status": {
+            "$ref": "#/components/schemas/AutomationStatus"
+          },
+          "window_seconds": {
+            "type": "integer",
+            "minimum": 3600,
+            "maximum": 2592000,
+            "default": 86400,
+            "description": "How much recent history to include in each digest"
+          },
+          "scheduled_time_minutes_utc": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1439,
+            "description": "Minutes after midnight UTC when the digest should be sent"
+          },
+          "action": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "slack"
+                ],
+                "description": "The type of action to take"
+              },
+              "workspace_id": {
+                "type": "string",
+                "description": "The Slack workspace ID to post to"
+              },
+              "channel": {
+                "type": "string",
+                "description": "The Slack channel ID to post to"
+              },
+              "message_template": {
+                "type": "string",
+                "description": "Custom message template for the alert"
+              }
+            },
+            "required": [
+              "type",
+              "workspace_id",
+              "channel"
+            ],
+            "description": "The Slack action to take when the digest is sent"
+          },
+          "topic_map_function_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "description": "Optional topic map function IDs to include in the digest"
+          }
+        },
+        "required": [
+          "event_type",
+          "scheduled_time_minutes_utc",
+          "action"
+        ]
       },
       "TopicMapData": {
         "type": "object",
