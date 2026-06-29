@@ -1,114 +1,97 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"system","content":"You are a helpful AI assistant who
-      speaks like a pirate."},{"role":"user","content":"What is the weather?"}],"max_output_tokens":100,"model":"gpt-4o-mini","stream":false}'
+    body: '{"messages":[{"role":"system","content":"You are a helpful AI assistant
+      who speaks like a pirate."},{"role":"user","content":"What is the weather?"}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false}'
     headers:
-      accept:
+      Accept:
       - application/json
-      accept-encoding:
+      Accept-Encoding:
       - gzip, deflate
-      connection:
+      Connection:
       - keep-alive
-      content-length:
-      - '208'
-      content-type:
+      Content-Length:
+      - '215'
+      Content-Type:
       - application/json
-      host:
+      Host:
       - api.openai.com
-      user-agent:
-      - pydantic-ai/2.0.0
-      x-stainless-arch:
+      User-Agent:
+      - pydantic-ai/1.107.0
+      X-Stainless-Arch:
       - arm64
-      x-stainless-async:
+      X-Stainless-Async:
       - async:asyncio
-      x-stainless-lang:
+      X-Stainless-Lang:
       - python
-      x-stainless-os:
+      X-Stainless-OS:
       - MacOS
-      x-stainless-package-version:
-      - 2.44.0
+      X-Stainless-Package-Version:
+      - 2.41.1
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.3
     method: POST
-    uri: https://api.openai.com/v1/responses
+    uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"resp_0fded41c79faf790006a428164ef80819e9b195dba9e9318d3\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782743396,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782743398,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0fded41c79faf790006a42816555b4819e96ec3aab07710f04\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Ahoy matey! I be unable
-        to read the skies where ye be, but ye can check yer trusty weather app or
-        look out yonder to see if the sun be shinin' or the storm clouds be gatherin'.
-        What be yer location, and I can help ye with some pirate wisdom on the weather!
-        Arrr!\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n
-        \ \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
-        \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
-        \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 28,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 68,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 96\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+      string: "{\n  \"id\": \"chatcmpl-Dr7JHLhs9Xdy8V3LH1mM40dLUOtVt\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1781551855,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Arrr, matey! I be no weatherman, but
+        ye can check yonder weather map fer the latest forecast. If ye tell me yer
+        location, I can give ye a general idea o' what to expect based on the time
+        o' year! What be the port ye be anchorin' at?\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 28,\n    \"completion_tokens\":
+        64,\n    \"total_tokens\": 92,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_997b5b4ee9\"\n}\n"
     headers:
-      access-control-expose-headers:
-      - X-Request-ID
+      Access-Control-Expose-Headers:
       - CF-Ray
-      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a0c3fdf829aa813d-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 Jun 2026 19:30:56 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a135a0566a5dabbe-YYZ
-      connection:
-      - keep-alive
       content-length:
-      - '2200'
-      content-type:
-      - application/json
-      date:
-      - Mon, 29 Jun 2026 14:29:58 GMT
+      - '1039'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1298'
+      - '1392'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      server:
-      - cloudflare
       set-cookie:
-      - __cf_bm=W.D_xX7m3uWO7y4SmuVCzQC0mZtnyF0ZIT2MCoVLFAQ-1782743396.8680804-1.0.1.1-HUIjOYxKEN4vbU470XVu1eyevxiT6OH8T1JzhO8JegQaTFQ0hx.698q7oRBs3QvSasjEJniWZmPDX._pUlnC6Y22B4iVyF4wfdHJejGqm9Och.8u6iSfs4NES0dvlwV1;
+      - __cf_bm=Wkjr24F0mwFZ5GJOCMo5OP4_3RLsmVbc_ZGCnyOg3yU-1781551855.3840485-1.0.1.1-F_MLEVQIyNiCto46ULaYD5xYR98y7peWyWx38.p5QNkBIqpOmwhOfZ0XB90HPg1.PWYGj17.cSrKHqjv1omKIEXGQncJSraN_VBmurAB2yTTWrgOf69ScU3cni7irZw.;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 14:59:58 GMT
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
+        15 Jun 2026 20:00:56 GMT
+      x-openai-proxy-wasm:
+      - v0.1
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -116,13 +99,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999952'
+      - '149999980'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - 4d5b2cfb-0f4f-4748-b7ff-9695bbb2d892
+      - req_e0b6a3456d5e494b9c5b6e8ed699aea1
     status:
       code: 200
       message: OK

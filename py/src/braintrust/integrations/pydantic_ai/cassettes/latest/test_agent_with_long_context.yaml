@@ -1,122 +1,106 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"user","content":"Here is a long text:\n\nThe quick brown
-      fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The
-      quick brown fox jumps over the lazy dog. The quick brown fox jumps over the
-      lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps
-      over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown
-      fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The
-      quick brown fox jumps over the lazy dog. The quick brown fox jumps over the
-      lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps
-      over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown
-      fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The
-      quick brown fox jumps over the lazy dog. The quick brown fox jumps over the
-      lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps
-      over the lazy dog. \n\nHow many times does the word ''fox'' appear?"}],"max_output_tokens":100,"model":"gpt-4o-mini","stream":false}'
+    body: '{"messages":[{"role":"user","content":"Here is a long text:\n\nThe quick
+      brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.
+      The quick brown fox jumps over the lazy dog. The quick brown fox jumps over
+      the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox
+      jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick
+      brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.
+      The quick brown fox jumps over the lazy dog. The quick brown fox jumps over
+      the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox
+      jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick
+      brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.
+      The quick brown fox jumps over the lazy dog. The quick brown fox jumps over
+      the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox
+      jumps over the lazy dog. \n\nHow many times does the word ''fox'' appear?"}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false}'
     headers:
-      accept:
+      Accept:
       - application/json
-      accept-encoding:
+      Accept-Encoding:
       - gzip, deflate
-      connection:
+      Connection:
       - keep-alive
-      content-length:
-      - '1071'
-      content-type:
+      Content-Length:
+      - '1078'
+      Content-Type:
       - application/json
-      host:
+      Host:
       - api.openai.com
-      user-agent:
-      - pydantic-ai/2.0.0
-      x-stainless-arch:
+      User-Agent:
+      - pydantic-ai/1.107.0
+      X-Stainless-Arch:
       - arm64
-      x-stainless-async:
+      X-Stainless-Async:
       - async:asyncio
-      x-stainless-lang:
+      X-Stainless-Lang:
       - python
-      x-stainless-os:
+      X-Stainless-OS:
       - MacOS
-      x-stainless-package-version:
-      - 2.44.0
+      X-Stainless-Package-Version:
+      - 2.41.1
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.3
     method: POST
-    uri: https://api.openai.com/v1/responses
+    uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"resp_099cc52a9a114b70006a42819f8e5c81a387d81fa429a848fc\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782743455,\n  \"status\":
-        \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782743456,\n  \"error\": null,\n
-        \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
-        null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\":
-        \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_099cc52a9a114b70006a4281a00c6881a3a672b85485650e84\",\n
-        \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
-        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The word 'fox' appears
-        **20 times** in the text.\"\n        }\n      ],\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
-        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 225,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 15,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 240\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+      string: "{\n  \"id\": \"chatcmpl-Dr7JkIYDRFzgc02PKIpNTR5aEVPlt\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1781551884,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The word 'fox' appears 20 times in
+        the text.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 225,\n    \"completion_tokens\": 13,\n
+        \   \"total_tokens\": 238,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_6ba3ec5f0d\"\n}\n"
     headers:
-      access-control-expose-headers:
-      - X-Request-ID
+      Access-Control-Expose-Headers:
       - CF-Ray
-      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a0c3feafcaa2cceb-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 Jun 2026 19:31:25 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a135a1c4cd9e90a8-YYZ
-      connection:
-      - keep-alive
       content-length:
-      - '1988'
-      content-type:
-      - application/json
-      date:
-      - Mon, 29 Jun 2026 14:30:56 GMT
+      - '853'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '858'
+      - '386'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      server:
-      - cloudflare
       set-cookie:
-      - __cf_bm=OFOulqrfQYvbcEOwq7yZePehUHCbJW5CGp4dWe5Xetg-1782743455.4858003-1.0.1.1-6umk_1ptzG5se9PjQcFFqF8.COwCvWQygI5Tq2vY1__FYOqeGhgm3qNjSO7qTEoG9.GTk61JJYjOy92WIsR2y0N6Q3A2Dt7aHOFTsaWCJVQMlhlHLzLb.f6dwajVkexv;
+      - __cf_bm=f2EKkPk20N0M8wOfpmuwz8p3CQbhM4oCvH_0ZGpCcDg-1781551884.7708645-1.0.1.1-r0byqK.FKgnSU5SIxsWodKsFPPMm0V.Z26dCH3zne5dA7luxh0FowOSQnqxZT2rJHcdD5JdNSTl3grgaxE06KyahxpAlQkc9d.qlLsysdVpkfWAjWP2X0KJRpaX4bXv9;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 15:00:56 GMT
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
+        15 Jun 2026 20:01:25 GMT
+      x-openai-proxy-wasm:
+      - v0.1
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -124,13 +108,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999757'
+      - '149999755'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - 81d59493-e224-4e3e-a292-65522fbeb667
+      - req_c046685575a84eedbef30288222b08dd
     status:
       code: 200
       message: OK

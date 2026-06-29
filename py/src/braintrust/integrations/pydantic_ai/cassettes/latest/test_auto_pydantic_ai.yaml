@@ -2,92 +2,90 @@ interactions:
 - request:
     body: '{"messages":[{"role":"user","content":"Say hi"}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false}'
     headers:
-      accept:
+      Accept:
       - application/json
-      accept-encoding:
+      Accept-Encoding:
       - gzip, deflate
-      connection:
+      Connection:
       - keep-alive
-      content-length:
+      Content-Length:
       - '114'
-      content-type:
+      Content-Type:
       - application/json
-      host:
+      Host:
       - api.openai.com
-      user-agent:
-      - pydantic-ai/2.0.0
-      x-stainless-arch:
+      User-Agent:
+      - pydantic-ai/1.107.0
+      X-Stainless-Arch:
       - arm64
-      x-stainless-async:
+      X-Stainless-Async:
       - async:asyncio
-      x-stainless-lang:
+      X-Stainless-Lang:
       - python
-      x-stainless-os:
+      X-Stainless-OS:
       - MacOS
-      x-stainless-package-version:
-      - 2.44.0
+      X-Stainless-Package-Version:
+      - 2.41.1
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dw7IRarYs6godTb5GmSUrPV3yLHz5\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1782743443,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Dr7JgRiq76sXuWlzB1OQiNrrTQUgd\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1781551880,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hi! How can I assist you today?\",\n
+        \"assistant\",\n        \"content\": \"Hi there! How can I assist you today?\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
         null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        9,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 18,\n    \"prompt_tokens_details\":
+        9,\n    \"completion_tokens\": 10,\n    \"total_tokens\": 19,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_93ce1a0f2a\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_b705fc1449\"\n}\n"
     headers:
-      access-control-expose-headers:
-      - X-Request-ID
+      Access-Control-Expose-Headers:
       - CF-Ray
-      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a0c3fe90fc9bab82-YYZ
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 Jun 2026 19:31:20 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a135a175cd73ebb9-YYZ
-      connection:
-      - keep-alive
       content-length:
-      - '836'
-      content-type:
-      - application/json
-      date:
-      - Mon, 29 Jun 2026 14:30:43 GMT
+      - '843'
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '500'
+      - '542'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      server:
-      - cloudflare
       set-cookie:
-      - __cf_bm=keyKO3TrEGNjetgNiWWyly6NcwwwobnFsik5xesNw8E-1782743442.8447092-1.0.1.1-2SFdlhRnXEyrp7kGf.k0lcLQzw7s_aZkWjiGz9Zmez_60xdhU1.BnB6NuSfivhmrUyn7uINvAdQJMEGa36.W0R_hWOGMUGwWZkApwCIEkhkq5Vke2ag1Qrp9vkwR65B3;
+      - __cf_bm=cI0Jc8st5sQgC2xRRi.YCnXjR2_cEPsvSsovvV0i40M-1781551879.841971-1.0.1.1-wz8l0WY41sKGprL01Hrxwsna.sQjsgDzzQhKEHit4PlHfALVf8IDIinho3csj6vNhzJoVYIltkFnz2z_3AqXbN.FQCPIeodH8gx6yvg0C_bsXJy33yHkBQHbW_iuSspn;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 15:00:43 GMT
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
+        15 Jun 2026 20:01:20 GMT
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -103,7 +101,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_2a6b03d3734b4cc9ab7f8f0a746298c6
+      - req_db5e60cc7f8c495eb23f27d50534462f
     status:
       code: 200
       message: OK

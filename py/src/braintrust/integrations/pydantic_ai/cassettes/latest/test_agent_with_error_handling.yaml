@@ -1,88 +1,108 @@
 interactions:
 - request:
-    body: '{"input":[{"role":"user","content":[{"image_url":"data:image/png;base64,SU5WQUxJRF9QTkdfREFUQV9OT1RfQV9SRUFMX0lNQUdF","type":"input_image","detail":"auto"},{"text":"What''s
-      in this image?","type":"input_text"}]}],"max_output_tokens":100,"model":"gpt-4o-mini","stream":false}'
+    body: '{"messages":[{"role":"user","content":[{"image_url":{"url":"data:image/png;base64,SU5WQUxJRF9QTkdfREFUQV9OT1RfQV9SRUFMX0lNQUdF"},"type":"image_url"},{"text":"What''s
+      in this image?","type":"text"}]}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false}'
     headers:
-      accept:
+      Accept:
       - application/json
-      accept-encoding:
+      Accept-Encoding:
       - gzip, deflate
-      connection:
+      Connection:
       - keep-alive
-      content-length:
-      - '273'
-      content-type:
+      Content-Length:
+      - '264'
+      Content-Type:
       - application/json
-      host:
+      Host:
       - api.openai.com
-      user-agent:
-      - pydantic-ai/2.0.0
-      x-stainless-arch:
+      User-Agent:
+      - pydantic-ai/1.107.0
+      X-Stainless-Arch:
       - arm64
-      x-stainless-async:
+      X-Stainless-Async:
       - async:asyncio
-      x-stainless-lang:
+      X-Stainless-Lang:
       - python
-      x-stainless-os:
+      X-Stainless-OS:
       - MacOS
-      x-stainless-package-version:
-      - 2.44.0
+      X-Stainless-Package-Version:
+      - 2.41.1
+      X-Stainless-Runtime:
+      - CPython
+      X-Stainless-Runtime-Version:
+      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.3
     method: POST
-    uri: https://api.openai.com/v1/responses
+    uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"error\": {\n    \"message\": \"The image data you provided does
-        not represent a valid image. Please check your input and try again with one
-        of the supported image formats: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].\",\n
-        \   \"type\": \"invalid_request_error\",\n    \"param\": \"input\",\n    \"code\":
-        \"invalid_value\"\n  }\n}"
+      string: "{\n  \"error\": {\n    \"message\": \"You uploaded an unsupported image.
+        Please make sure your image has of one the following formats: ['png', 'jpeg',
+        'gif', 'webp'].\",\n    \"type\": \"invalid_request_error\",\n    \"param\":
+        null,\n    \"code\": \"invalid_image_format\"\n  }\n}"
     headers:
+      Access-Control-Expose-Headers:
+      - CF-Ray
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-Ray:
+      - a0c3feb36e54a3f1-YYZ
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '258'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 15 Jun 2026 19:31:25 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
       access-control-expose-headers:
       - X-Request-ID
       - CF-Ray
-      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a135a1cb0918c4c7-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '322'
-      content-type:
-      - application/json
-      date:
-      - Mon, 29 Jun 2026 14:30:56 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '48'
+      - '23'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
-      server:
-      - cloudflare
       set-cookie:
-      - __cf_bm=04kw8M351fMxX9kpgYjl67t90VN6bGD2URnIoU0PMI0-1782743456.4833481-1.0.1.1-HZSxDZ6o0qcQZmJ5QfxofumsAYIklxE_d2aHfMP5GNeANV4b_7OcncNoWO.s4bu5ErRVyIj2rzmiqyBuDyEYSdwFfggCSoD8IUlm1xMrJEk.bpL_Ti03Fwl4dY36dQ4o;
+      - __cf_bm=T4_TqjT_L6EaurQiOX1gfgMGEWBrp5En_qmRkcAo6QI-1781551885.348701-1.0.1.1-ISD.gsdHQfEne10v98ksTz1XUMYt901raLbMQzP9bbdI5iXA5h.p..KtGGl.AGButd2GwpyqbNcm0QyW0kMEqDZbaBAZzF62Q9bW6loRVbxBMeJ05ykt8mOo816DwcU0;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 15:00:56 GMT
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-content-type-options:
-      - nosniff
+        15 Jun 2026 20:01:25 GMT
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999225'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
       x-request-id:
-      - d2aed084-8fd4-421f-b341-8d201f43a6f9
+      - req_99febf19ad3a49d594fc9cd7649a2abd
     status:
       code: 400
       message: Bad Request
