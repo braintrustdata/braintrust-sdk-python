@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.43.0
+      - OpenAI/Python 2.44.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.43.0
+      - 2.44.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -40,38 +40,42 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_09faf7ad2ec4f579006a396edfdb2c819e8c508bcf3d45e91c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782148831,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0e336e28929f93a2006a4279f90c94819ea91baf409fea5219\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782741497,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782148832,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782741498,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_09faf7ad2ec4f579006a396ee04c70819ebeda3d62a820e6cb\",\n
+        \     \"id\": \"msg_0e336e28929f93a2006a4279f998c0819e990199096cdd8f48\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"The
-        sum of 12 and 12 is calculated by adding the two numbers together: 12 + 12
-        = 24.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
-        \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"json_schema\",\n      \"description\": null,\n      \"name\":
-        \"NumberAnswer\",\n      \"schema\": {\n        \"properties\": {\n          \"value\":
-        {\n            \"title\": \"Value\",\n            \"type\": \"integer\"\n
-        \         },\n          \"reasoning\": {\n            \"title\": \"Reasoning\",\n
-        \           \"type\": \"string\"\n          }\n        },\n        \"required\":
-        [\n          \"value\",\n          \"reasoning\"\n        ],\n        \"title\":
-        \"NumberAnswer\",\n        \"type\": \"object\",\n        \"additionalProperties\":
-        false\n      },\n      \"strict\": true\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        59,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 36,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 95\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
+        + 12 equals 24 because when you add two numbers together, you combine their
+        quantities. Here, adding 12 to 12 results in 24.\\\"}\"\n        }\n      ],\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"json_schema\",\n      \"description\": null,\n      \"name\": \"NumberAnswer\",\n
+        \     \"schema\": {\n        \"properties\": {\n          \"value\": {\n            \"title\":
+        \"Value\",\n            \"type\": \"integer\"\n          },\n          \"reasoning\":
+        {\n            \"title\": \"Reasoning\",\n            \"type\": \"string\"\n
+        \         }\n        },\n        \"required\": [\n          \"value\",\n          \"reasoning\"\n
+        \       ],\n        \"title\": \"NumberAnswer\",\n        \"type\": \"object\",\n
+        \       \"additionalProperties\": false\n      },\n      \"strict\": true\n
+        \   },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\": \"auto\",\n
+        \ \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        0\n    }\n  },\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n
+        \ \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n
+        \   \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\":
+        43,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\": 0\n    },\n
+        \   \"total_tokens\": 102\n  },\n  \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -82,19 +86,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a0fcec963cb174a5-YYZ
+      - a13571f438bef337-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2208'
+      - '2613'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:20:32 GMT
+      - Mon, 29 Jun 2026 13:58:18 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1015'
+      - '1190'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -102,9 +106,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=S8xv9k68rjQAl4ejv_yMYPQMo7PGoyejiJBrELJ2PXY-1782148831.7143114-1.0.1.1-E84H.u7JUarISNckp4L.Q0H5URTNMnlgV4IFc7S3LhsfqCMbD0.tgKfwpC6UWQun.1AkVxaZ7D78QsNc8FP.urSSbPScEUIqWpDF_wy0jEoxDoJIPqaU84RWt53e9th9;
+      - __cf_bm=zor40BguvQf1NEc5AaBrubdtA7eHXYCZH4q2gF1yrFg-1782741496.9999957-1.0.1.1-Xl0gbsXjmlPlGH2IYU07VFdGJFA6EFWF4gj6hx8K6WUhZp1ar77QnXD7h8HUzMFfJFh2ZnN9LWgKACMDopemC3FsKjDBH.s0zKm18JwS5NYMGx8UfdboMssnGd_Zvouq;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        22 Jun 2026 17:50:32 GMT
+        29 Jun 2026 14:28:18 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -118,13 +122,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999920'
+      - '149999922'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e886407127a24b5a8b2edf8feff97bdc
+      - 8b980237-64da-488e-bb6b-f56f494560b1
     status:
       code: 200
       message: OK
@@ -144,7 +148,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.43.0
+      - OpenAI/Python 2.44.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -154,7 +158,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.43.0
+      - 2.44.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -169,21 +173,21 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_08dd16e52888024d006a396ee10894819d8d3cb4d830203b1e\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782148833,\n  \"status\":
+      string: "{\n  \"id\": \"resp_01ceaea49d5c2be8006a4279fa605881a097d10f85f69a4a45\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782741498,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782148833,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782741499,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_08dd16e52888024d006a396ee17cb4819d9646a34e8ea2ef60\",\n
+        \     \"id\": \"msg_01ceaea49d5c2be8006a4279fb036881a0aeffa4b2437342d5\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
-        + 12 is a basic arithmetic addition problem. When you add 12 to 12, you combine
-        the two values, resulting in 24.\\\"}\"\n        }\n      ],\n      \"role\":
-        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
-        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        + 12 equals 24 because when you add the two numbers together, you combine
+        their values.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -195,12 +199,16 @@ interactions:
         \       \"required\": [\n          \"value\",\n          \"reasoning\"\n        ],\n
         \       \"title\": \"NumberAnswer\",\n        \"type\": \"object\",\n        \"additionalProperties\":
         false\n      },\n      \"strict\": true\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        59,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 41,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 100\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
+        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 31,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 90\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -211,19 +219,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a0fcec9e1e1ba228-YYZ
+      - a13571fc6ebcac54-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2240'
+      - '2575'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:20:34 GMT
+      - Mon, 29 Jun 2026 13:58:19 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '966'
+      - '1062'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -231,9 +239,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=FlhPV7IrJz4u8OOG1H.qgaM3XWEB92sNtJvkmrpSnGc-1782148832.978222-1.0.1.1-8mc_T.FspFkevlg4tfFoKcJCf1Qlv.dPQwmlxxup4CvTkQZ9hynJt8Ti7jAJYgvLNobbQvr5TI7CHBcPJeKAcLGyFLp9DnwHiQAQ1T5b7bioUWpBs9926Gc0ZlWoP..W;
+      - __cf_bm=.SJKSW4D1eDdsoPm7ZhVBq_hqzg35zVlZJtg7wHEIFM-1782741498.3076124-1.0.1.1-zpkUtaZ0S04yyl4VTEWNycfZmhG35U2WjOiOQIDcdPg3JnY6VE5rzpwTob.XawBuGI7aOkWYHsxd6IoN_aEUEdje8ntwUiZvtUn6n_plzGbizWTONHgGFpy7Eq41JlcM;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        22 Jun 2026 17:50:34 GMT
+        29 Jun 2026 14:28:19 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -247,13 +255,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999920'
+      - '149999922'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ca54799a5af0474f82f23db36809045e
+      - 20ede1d1-d0ac-416e-bbe0-52a648b7e690
     status:
       code: 200
       message: OK

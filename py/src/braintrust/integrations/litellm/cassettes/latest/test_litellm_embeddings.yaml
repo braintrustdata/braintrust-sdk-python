@@ -2,40 +2,40 @@ interactions:
 - request:
     body: '{"input":"This is a test","model":"text-embedding-ada-002","encoding_format":"float"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '85'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.38.0
-      X-Stainless-Arch:
+      user-agent:
+      - OpenAI/Python 2.44.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.38.0
-      X-Stainless-Raw-Response:
+      x-stainless-package-version:
+      - 2.44.0
+      x-stainless-raw-response:
       - 'true'
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/embeddings
   response:
@@ -429,48 +429,50 @@ interactions:
         \   }\n  ],\n  \"model\": \"text-embedding-ada-002-v2\",\n  \"usage\": {\n
         \   \"prompt_tokens\": 4,\n    \"total_tokens\": 4\n  }\n}\n"
     headers:
-      Access-Control-Allow-Origin:
+      access-control-allow-origin:
       - '*'
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a01696f29fd6aaca-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:26:39 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - envoy-router-8594c49f7b-pgd8z
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a1357ab9aa16cca0-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '33512'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:04:16 GMT
       openai-model:
       - text-embedding-ada-002-v2
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '182'
+      - '55'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=j2WvHLkcRsolXkySYiWGo6EV7v9as_jbLWDJnVBjIlg-1779733599.1357164-1.0.1.1-hvObUU9nMz52YuulAABqwgqH6UD4GD5k2f7z5AtKPDf6OIlIpziIsPn1crp4AH7_y_eR8egenlSl_zCz94mIP.1i18zJ6TGXU61klkx8KMH0U.vWo6UzEeySoX7Ab_Jr;
+      - __cf_bm=n_FHkIc1zWCQQVLyDraaV_bwhhEHdq48D03ZhY3R5O0-1782741856.2701492-1.0.1.1-Oiwh3pv9ktQ0aisMOvU.8CnQd8aCkT89fVcn2uNFlNCgWF57nwwkR4_1_kHGZTKY2E_0IdocQ9KD6mMgkHS6_MyCfPu2jBQk5DtJUEdZVXPlj0gcQKp0Kh6rPrgMGCm2;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        25 May 2026 18:56:39 GMT
+        29 Jun 2026 14:34:16 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      via:
+      - envoy-router-84b6754c58-lmvg6
+      x-content-type-options:
+      - nosniff
       x-engine-geography:
       - US
       x-openai-proxy-wasm:
@@ -488,7 +490,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_ffe9a7725a9c45bbbf767536ae903a32
+      - req_92d09729c9d1456d979c94892a7d534f
     status:
       code: 200
       message: OK

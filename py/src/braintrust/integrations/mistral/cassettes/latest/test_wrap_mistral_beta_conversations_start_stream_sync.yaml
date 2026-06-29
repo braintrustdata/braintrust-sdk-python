@@ -2,79 +2,79 @@ interactions:
 - request:
     body: '{"inputs":"What is 3+4? Reply with just the number.","stream":true,"model":"mistral-small-latest"}'
     headers:
-      Accept:
+      accept:
       - text/event-stream
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '98'
-      Host:
-      - api.mistral.ai
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.4.0
+      - mistral-client-python/2.5.0
     method: POST
-    uri: https://api.mistral.ai/v1/conversations
+    uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-04-17T21:12:25.791348Z","conversation_id":"conv_019d9d49b0e2700f9a363ecd4565bbbf"}
+        data: {"type":"conversation.response.started","created_at":"2026-06-29T14:13:28.545632Z","conversation_id":"conv_019f13ba5c87747b931182ff92813bc4"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-04-17T21:12:25.794369Z","output_index":0,"id":"msg_019d9d49b1c277e89ece47f4375fa054","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
+        data: {"type":"message.output.delta","created_at":"2026-06-29T14:13:28.549188Z","output_index":0,"id":"msg_019f13ba5d6576a8aa1084b86816b354","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-04-17T21:12:25.823510Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
+        data: {"type":"conversation.response.done","created_at":"2026-06-29T14:13:28.581416Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
 
 
         '
     headers:
-      CF-RAY:
-      - 9ede6d875fec180e-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - text/event-stream; charset=utf-8
-      Date:
-      - Fri, 17 Apr 2026 21:12:25 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a13588338a8861e8-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 29 Jun 2026 14:13:28 GMT
       mistral-correlation-id:
-      - 019d9d49-b0d0-7bec-a2c7-6728e9a36d05
+      - 019f13ba-5c75-7914-b799-d77ac38282ff
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=p1CWlY5m4cxrD7Zaav8OCxXcEnCEfcaNVRHEI_eluwU-1776460345.49227-1.0.1.1-KUwjhVB_n0EDvD0VrnRufaUNTqUmsi8J3HuxCHxuurdJNzx81X.0bf3z0bxPJxsEn4eTaVN_dxCZpXk74t1tzqhkb1Pn2p0sk6zqaT7STXZuhZA.j3n0u9IUPRkh_HSY;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Fri, 17 Apr 2026 21:42:25
-        GMT
-      - _cfuvid=0SsnmlKKyEDqFQXO43CbPRSXtrw.EgVonv7816.W1ow-1776460345.49227-1.0.1.1-jA6.IvzRh7obdKLgyLR1B8QzcGXY3JeiqnMRrUXi_kA;
+      - __cf_bm=G1X1zsLSoO5DeA6gSLGlUIU8kdgv_JDQmO5XZpDkE.8-1782742408.2498817-1.0.1.1-v56QTKBFqyibvLaHbb0yUfO5IW75Sg7G3gbjEK6WaqaqYeAOTCxJaJl5siOshlRvF8ng4U0ciP89AkIEF9XqCaMZ4G7WDwUa7Ucqz4W4sj.fHPXSVEe5WTm1xY9.29y7;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
+        Jun 2026 14:43:28 GMT
+      - _cfuvid=m94XN_Wu2bzo_V4oz1dlKMmT2LSe8fwaANnt_RdQU.s-1782742408.2498817-1.0.1.1-03dQ99QWrf0O8C0_Rg22yn.yQhCnhZV2vLtal_1lRfw;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '232'
+      - '227'
       x-kong-proxy-latency:
       - '12'
       x-kong-request-id:
-      - 019d9d49-b0d0-7bec-a2c7-6728e9a36d05
+      - 019f13ba-5c75-7914-b799-d77ac38282ff
       x-kong-upstream-latency:
-      - '233'
+      - '229'
     status:
       code: 200
       message: OK

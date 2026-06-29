@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.43.0
+      - OpenAI/Python 2.44.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.43.0
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,14 +38,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_07f1de962b29683e006a396ed8438881a3a0b598cedb23069e\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782148824,\n  \"status\":
+      string: "{\n  \"id\": \"resp_08bb038b27115656006a4279f37dd0819dbbaee9380f31eb94\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782741491,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782148824,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782741491,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_07f1de962b29683e006a396ed8960481a3b409c3cb554684a8\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_08bb038b27115656006a4279f3dd4c819db54fe44b2d3bd866\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -56,7 +56,12 @@ interactions:
         \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
         true,\n  \"temperature\": 0.5,\n  \"text\": {\n    \"format\": {\n      \"type\":
         \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\":
         {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
         {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n
@@ -71,19 +76,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a0fcec674a86de74-YYZ
+      - a13571d16a56d5f4-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1599'
+      - '1960'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:20:24 GMT
+      - Mon, 29 Jun 2026 13:58:12 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '484'
+      - '546'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -91,9 +96,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=nLyP9jOsIb8TveAbuD34fKKTYSIZT9eFGUt6OLiTX1g-1782148824.2033715-1.0.1.1-kEdhO3M_ugCvsIjt.w2VeZZHVy7BX4yEvczYe27pxPEbkS5n4azASf0zH_sTJ3lPKxzFDHqi4pW5vrSYPeMKPta3NIWo.zhYeJtlc0GL_0Iw3d.Eo237iOlLvTTPHKaC;
+      - __cf_bm=oQX5ErbW98ZF8Y_7kbgL5p0weZI1qV9IRrJTVdzAYLI-1782741491.4289541-1.0.1.1-V58syRiAN9cUMS.q8d7rYIbtTRlgyq4DvBzACBky1A1RMTCjouKCWNjSmUzXHNurScHqxpjsp0IUpat_KMUdpnG0Udd6h8_c0l_6qIgoe6XGMujosmesz0a0vNwoqfc6;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        22 Jun 2026 17:50:24 GMT
+        29 Jun 2026 14:28:12 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -107,13 +112,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999957'
+      - '149999960'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b89f25b5a63a4ff8aaaf3d4d346a7a68
+      - 435c744f-b4a0-4258-b349-c4066a91c46f
     status:
       code: 200
       message: OK
@@ -131,11 +136,11 @@ interactions:
       content-type:
       - application/json
       cookie:
-      - __cf_bm=nLyP9jOsIb8TveAbuD34fKKTYSIZT9eFGUt6OLiTX1g-1782148824.2033715-1.0.1.1-kEdhO3M_ugCvsIjt.w2VeZZHVy7BX4yEvczYe27pxPEbkS5n4azASf0zH_sTJ3lPKxzFDHqi4pW5vrSYPeMKPta3NIWo.zhYeJtlc0GL_0Iw3d.Eo237iOlLvTTPHKaC
+      - __cf_bm=oQX5ErbW98ZF8Y_7kbgL5p0weZI1qV9IRrJTVdzAYLI-1782741491.4289541-1.0.1.1-V58syRiAN9cUMS.q8d7rYIbtTRlgyq4DvBzACBky1A1RMTCjouKCWNjSmUzXHNurScHqxpjsp0IUpat_KMUdpnG0Udd6h8_c0l_6qIgoe6XGMujosmesz0a0vNwoqfc6
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.43.0
+      - OpenAI/Python 2.44.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -145,7 +150,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.43.0
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -158,19 +163,19 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0fbc0b551cc2115e006a396ed8d9e48192ad6ff54afd31d356\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782148824,\n  \"status\":
+      string: "{\n  \"id\": \"resp_07ce12d6bdb2aada006a4279f42b4481a397bbbc1de36f5849\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782741492,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782148826,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782741492,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0fbc0b551cc2115e006a396ed9b238819286cb47785645301c\",\n
+        \     \"id\": \"msg_07ce12d6bdb2aada006a4279f4947481a3a312c197b129fae6\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
-        plus 12 equals 24 because when you add the two numbers together, you are combining
-        their total values.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        plus 12 equals 24 because when you add the two numbers together, you combine
+        their values.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
         \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
         \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
@@ -184,12 +189,16 @@ interactions:
         \       \"required\": [\n          \"value\",\n          \"reasoning\"\n        ],\n
         \       \"title\": \"NumberAnswer\",\n        \"type\": \"object\",\n        \"additionalProperties\":
         false\n      },\n      \"strict\": true\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\":
-        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        59,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 33,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 92\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
+        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 31,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 90\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -200,19 +209,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a0fcec6aea13de74-YYZ
+      - a13571d5b841d5f4-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2229'
+      - '2578'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:20:26 GMT
+      - Mon, 29 Jun 2026 13:58:13 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1672'
+      - '930'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -238,7 +247,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_dd516167dcc2473389e2792aa92af76b
+      - c84bdad1-fe98-4850-99bc-a7fd654ba1dc
     status:
       code: 200
       message: OK

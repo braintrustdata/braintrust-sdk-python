@@ -2,43 +2,43 @@ interactions:
 - request:
     body: '{"input":"This is a test message","model":"omni-moderation-latest"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '67'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - OpenAI/Python 2.38.0
-      X-Stainless-Arch:
+      user-agent:
+      - OpenAI/Python 2.44.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.38.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/moderations
   response:
     body:
-      string: "{\n  \"id\": \"modr-8070\",\n  \"model\": \"omni-moderation-latest\",\n
+      string: "{\n  \"id\": \"modr-6954\",\n  \"model\": \"omni-moderation-latest\",\n
         \ \"results\": [\n    {\n      \"flagged\": false,\n      \"categories\":
         {\n        \"harassment\": false,\n        \"harassment/threatening\": false,\n
         \       \"sexual\": false,\n        \"hate\": false,\n        \"hate/threatening\":
@@ -46,15 +46,15 @@ interactions:
         \       \"self-harm/intent\": false,\n        \"self-harm/instructions\":
         false,\n        \"self-harm\": false,\n        \"sexual/minors\": false,\n
         \       \"violence\": false,\n        \"violence/graphic\": false\n      },\n
-        \     \"category_scores\": {\n        \"harassment\": 0.000047285443452031076,\n
+        \     \"category_scores\": {\n        \"harassment\": 0.00004655269187520153,\n
         \       \"harassment/threatening\": 4.264746818557914e-6,\n        \"sexual\":
         0.000027803096387751555,\n        \"hate\": 0.000010554685795431098,\n        \"hate/threatening\":
-        2.561282210758673e-7,\n        \"illicit\": 0.00004108485376346404,\n        \"illicit/violent\":
+        2.4824800371656586e-7,\n        \"illicit\": 0.00004108485376346404,\n        \"illicit/violent\":
         8.750299760661308e-6,\n        \"self-harm/intent\": 0.00021166499492301485,\n
         \       \"self-harm/instructions\": 1.3846004563753396e-6,\n        \"self-harm\":
         8.61465062380632e-6,\n        \"sexual/minors\": 2.5466403947055455e-6,\n
         \       \"violence\": 0.00048297182378774457,\n        \"violence/graphic\":
-        4.832563818725537e-6\n      },\n      \"category_applied_input_types\": {\n
+        4.683888424952456e-6\n      },\n      \"category_applied_input_types\": {\n
         \       \"harassment\": [\n          \"text\"\n        ],\n        \"harassment/threatening\":
         [\n          \"text\"\n        ],\n        \"sexual\": [\n          \"text\"\n
         \       ],\n        \"hate\": [\n          \"text\"\n        ],\n        \"hate/threatening\":
@@ -66,46 +66,46 @@ interactions:
         \       \"violence\": [\n          \"text\"\n        ],\n        \"violence/graphic\":
         [\n          \"text\"\n        ]\n      }\n    }\n  ]\n}"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
       - CF-Ray
-      CF-RAY:
-      - a01696fbcaab4c9b-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:26:40 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a1357abdc825ebb8-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '1971'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:04:17 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '25'
+      - '354'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=.oA4N0slh3k.QzwT9JBvaZXp8BGU.8OsRXb91Rz9gMo-1779733600.608537-1.0.1.1-uTqSI6yHqaeWZSejOIV9qm2N0PTTGvtcfSW6VdzmClx00T_PfnPKr3DdbPirsBYgyjB1hWTT1cBrN5HuF6MA4JnvqzL3S0YK_G_XwEl0DFaHU_x7n3aus9XN_dpgaMit;
+      - __cf_bm=WiFd0Hrmqs4p5BChVykMa3qqzBK4eRwv7rYRPs3pSPA-1782741856.9301844-1.0.1.1-RWwUSOUAr0btUzH_Cc12FDcuFLqh6i.Pxgo9Qixtt3nbcKhgfCMjR.9WWjbPMqPFZ01k1q26v8riFIJDSCUOe_VrrfGuJAX0W2peLWbK95qdV9pf5RfxwiM8mFRtDYao;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        25 May 2026 18:56:40 GMT
+        29 Jun 2026 14:34:17 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-request-id:
-      - req_55917cc2312a4419bdea159b546cd8a3
+      - req_bc5d054596a0401e850837de89970108
     status:
       code: 200
       message: OK

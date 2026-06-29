@@ -144,7 +144,12 @@ def _patch_vcr_aiohttp_stubs():
         # aiohttp's ClientResponse stores the payload in response.content which
         # is a StreamReader. After read() exhausts it, we replace it with a new
         # stream containing the same data.
-        new_stream = streams.StreamReader(response._protocol, 2**16, loop=asyncio.get_event_loop())
+        # Use a limit larger than the captured body so StreamReader.feed_data()
+        # does not try to pause the original aiohttp parser. Large responses
+        # (for example image-generation payloads) can otherwise trip an
+        # assertion inside aiohttp's parser when VCR records the response.
+        stream_limit = max(2**16, len(body_bytes) + 1)
+        new_stream = streams.StreamReader(response._protocol, stream_limit, loop=asyncio.get_event_loop())
         new_stream.feed_data(body_bytes)
         new_stream.feed_eof()
         response.content = new_stream
