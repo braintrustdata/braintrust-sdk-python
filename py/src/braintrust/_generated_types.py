@@ -1845,7 +1845,9 @@ class ProjectScoreCategory(TypedDict):
 
 
 class ProjectScoreConditionWhen(TypedDict):
-    clauses: Sequence[str]
+    clauses: NotRequired[Sequence[str] | None]
+    subspan_clauses: NotRequired[Sequence[str] | None]
+    trace_clauses: NotRequired[Sequence[str] | None]
 
 
 class ProjectScoreCondition(TypedDict):
@@ -2526,6 +2528,49 @@ TopicAutomationFacetModel: TypeAlias = Literal[
 """
 Optional facet model override for topic automation
 """
+
+
+class TopicDigestAutomationConfigAction(TypedDict):
+    type: Literal['slack']
+    """
+    The type of action to take
+    """
+    workspace_id: str
+    """
+    The Slack workspace ID to post to
+    """
+    channel: str
+    """
+    The Slack channel ID to post to
+    """
+    message_template: NotRequired[str | None]
+    """
+    Custom message template for the alert
+    """
+
+
+class TopicDigestAutomationConfig(TypedDict):
+    event_type: Literal['topic_digest']
+    """
+    The type of automation.
+    """
+    status: NotRequired[AutomationStatus | None]
+    window_seconds: NotRequired[int | None]
+    """
+    How much recent history to include in each digest
+    """
+    scheduled_time_minutes_utc: int
+    """
+    Minutes after midnight UTC when the digest should be sent
+    """
+    action: TopicDigestAutomationConfigAction
+    """
+    The Slack action to take when the digest is sent
+    """
+    topic_map_function_ids: NotRequired[Sequence[str] | None]
+    """
+    Optional topic map function IDs to include in the digest
+    """
 
 
 class Function1Function1(TypedDict):
@@ -3370,6 +3415,9 @@ class ProjectScoreConfig(TypedDict):
     visibility: NotRequired[ProjectScoreConfigVisibility | None]
     online: NotRequired[OnlineScoreConfig | None]
     condition: NotRequired[ProjectScoreCondition | None]
+    object_types: NotRequired[
+        Sequence[Literal['project_logs', 'dataset', 'experiment']]
+    ]
 
 
 class PromptBlockDataPromptBlockData(TypedDict):
@@ -3698,6 +3746,7 @@ class ProjectAutomation(TypedDict):
         | ProjectAutomationConfig3
         | ProjectAutomationConfig4
         | TopicAutomationConfig
+        | TopicDigestAutomationConfig
     )
     """
     The configuration for the automation rule
