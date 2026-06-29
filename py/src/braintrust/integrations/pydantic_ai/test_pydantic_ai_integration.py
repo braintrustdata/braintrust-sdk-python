@@ -2939,7 +2939,7 @@ async def test_agent_with_short_max_tokens(memory_logger):
     agent = Agent(MODEL)
 
     start = time.time()
-    result = await agent.run("What is AI?", model_settings=ModelSettings(max_tokens=5))
+    result = await agent.run("What is AI?", model_settings=ModelSettings(max_tokens=16))
     end = time.time()
 
     # Truncated responses are still valid output; no exception should be raised.
@@ -2961,7 +2961,7 @@ async def test_agent_with_short_max_tokens(memory_logger):
 
     # max_tokens passed to run() → in input.model_settings
     assert "model_settings" in agent_span["input"]
-    assert agent_span["input"]["model_settings"].get("max_tokens") == 5
+    assert agent_span["input"]["model_settings"].get("max_tokens") == 16
 
     assert agent_span["output"]
     _assert_metrics_are_valid(agent_span["metrics"], start, end)

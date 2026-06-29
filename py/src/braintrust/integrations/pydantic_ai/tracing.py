@@ -195,11 +195,20 @@ async def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: An
             event_count = 0
             final_result = None
 
-            async for event in wrapped(*args, **kwargs):
-                event_count += 1
-                if hasattr(event, "output"):
-                    final_result = event
-                yield event
+            stream_or_cm = wrapped(*args, **kwargs)
+            if hasattr(stream_or_cm, "__aenter__"):
+                async with stream_or_cm as stream:
+                    async for event in stream:
+                        event_count += 1
+                        if hasattr(event, "output"):
+                            final_result = event
+                        yield event
+            else:
+                async for event in stream_or_cm:
+                    event_count += 1
+                    if hasattr(event, "output"):
+                        final_result = event
+                    yield event
 
             end_time = time.time()
 
@@ -745,15 +754,16 @@ class _DirectStreamWrapperSync:
             if self.span_cm and self.start_time and self.stream:
                 end_time = time.time()
 
+                output = None
                 try:
                     final_response = self.stream.get()
                     output = _shape_model_response(final_response)
-                    self.span_cm.log(
-                        output=output,
-                        metrics=_wrapper_span_metrics(self.start_time, end_time, self._first_token_time),
-                    )
                 except Exception as e:
-                    logger.debug(f"Failed to extract stream output/metrics: {e}")
+                    logger.debug(f"Failed to extract stream output: {e}")
+                self.span_cm.log(
+                    output=output,
+                    metrics=_wrapper_span_metrics(self.start_time, end_time, self._first_token_time),
+                )
 
             # Always clean up span context
             if self.span_cm:

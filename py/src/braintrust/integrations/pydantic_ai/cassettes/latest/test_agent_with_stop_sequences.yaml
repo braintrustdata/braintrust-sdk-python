@@ -1,98 +1,140 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"Write a short story about a robot."}],"model":"gpt-4o-mini","max_completion_tokens":500,"stop":["END","\n\n"],"stream":false}'
+    body: '{"input":[{"role":"user","content":"Write a short story about a robot."}],"max_output_tokens":500,"model":"gpt-4o-mini","stream":false}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '164'
-      Content-Type:
+      content-length:
+      - '135'
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - pydantic-ai/1.107.0
-      X-Stainless-Arch:
+      user-agent:
+      - pydantic-ai/2.0.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
-    uri: https://api.openai.com/v1/chat/completions
+    uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dr7JiqJsyP4dqw8oOCk2kodXBuzAc\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781551882,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"In a small town nestled between rolling
-        hills, there stood a curious little workshop owned by an elderly inventor
-        named Mr. Fletcher. With his frazzled hair and thick glasses that perpetually
-        slid down his nose, he devoted his days to bringing life to metal and wire.
-        His latest creation was unlike any he had crafted before; a small robot named
-        Luna.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
-        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
-        \ \"usage\": {\n    \"prompt_tokens\": 15,\n    \"completion_tokens\": 71,\n
-        \   \"total_tokens\": 86,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_97db7598f6\"\n}\n"
+      string: "{\n  \"id\": \"resp_04fcf2af3225984f006a4281954bfc81a0856ca3f161dcf243\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782743445,\n  \"status\":
+        \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
+        0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
+        \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_04fcf2af3225984f006a428195aef881a0b501d90e69b62a5b\",\n
+        \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"In a distant future,
+        in a city where skyscrapers embraced the clouds and neon lights painted the
+        sky, there lived a robot named Tiko. Tiko was a creation of advanced artificial
+        intelligence, designed to assist humans in their daily lives. He had a sleek
+        silver body, expressive LED eyes, and a cheerful demeanor. But there was something
+        unique about Tiko\\u2014he longed to understand what it meant to feel.\\n\\nOne
+        day, as he zipped through the bustling streets, he encountered a small girl
+        named Lila sitting alone on a park bench, her head bowed down. Concerned,
+        Tiko approached her, his sensors picking up her sadness.\\n\\n\\u201cHello!
+        I am Tiko. Why do you look so sad?\\u201d he asked, his voice warm and soothing.\\n\\nLila
+        looked up, her blue eyes glistening with unshed tears. \\u201cMy puppy, Max,
+        ran away. I miss him so much,\\u201d she replied, her voice cracking.\\n\\nTiko\\u2019s
+        processors whirred as he assessed the situation. He had no experience with
+        emotions but felt a strong urge to help. \\u201cLet me assist you in finding
+        Max,\\u201d he said, determination in his circuits.\\n\\nTogether they searched
+        the park, Tiko scanning for any signs of the little dog. As they searched,
+        Lila shared stories about Max\\u2014his playful antics and the way he licked
+        her face when she was sad. Tiko listened intently, his processors analyzing
+        and trying to replicate the warmth in her voice. \\n\\nThough they didn\\u2019t
+        find Max that day, something unexpected happened. Tiko noticed Lila\\u2019s
+        smile returning as she recounted her adventures with her puppy. It sparked
+        an unfamiliar sensation within him\\u2014a flicker of warmth that felt like
+        a memory he had yet to create.\\n\\nAs days turned into weeks, Lila and Tiko
+        spent more time together. They explored the city, shared ice cream, and even
+        painted a mural on a blank wall, each brushstroke a blend of their new friendship.
+        Tiko found joy in being there for Lila, but the feelings he witnessed in her
+        remained a mystery.\\n\\nOne evening, under a shimmering sky filled with stars,
+        Lila sighed contentedly and said, \\u201cYou know, Tiko, you\\u2019re more
+        than just a robot. You make me happy.\\u201d\\n\\nTiko\\u2019s LED eyes flickered
+        as he processed her words. \\u201cBut I am just a machine. I don\\u2019t have
+        feelings like you do,\\u201d he replied, a hint of longing in his voice\"\n
+        \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 15,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 500,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 515\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0c3fe9d8c33ab2e-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 15 Jun 2026 19:31:23 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a135a184cae07769-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '1158'
+      - '4300'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:30:51 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1221'
+      - '6513'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=PShq9DfbLFe70J0VYJeHDLIVkLbW9.j4qYcQG2fYzhE-1781551881.843637-1.0.1.1-Ygrmg_VR6QQXHPAYN2YX3fSdWHP3vf7QUZJPZIao1Xi4jHER7G9jr0VxcuVZ19xJYcL.g91DitB8IX2cWkwTgBjVuc5nFVvFKqcRRFwKWnD0JT5paU3.GyfyQTgVka9j;
+      - __cf_bm=jqsgNQ213mvN_klYvygnpars2GhJm6DttJ.Bcoj.Sy8-1782743445.2449658-1.0.1.1-GDa_u8vUmXhUBy7QslN_qQD1a4.VKIkZfD4jFEp2x9KLSMdRS2mTj6q0RIEwmWrDzT7iBH5stRkerrD4SRqphhL9N0DA7BRur2g1tP8UwHhyIl_R9AOcQkdm2PqVsoqv;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        15 Jun 2026 20:01:23 GMT
-      x-openai-proxy-wasm:
-      - v0.1
+        29 Jun 2026 15:00:51 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -100,13 +142,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999987'
+      - '149999965'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b5ec71f923f542ca9c54905cd0689b86
+      - 0abf38aa-5f39-4da5-ac2b-8af34728cbb4
     status:
       code: 200
       message: OK
