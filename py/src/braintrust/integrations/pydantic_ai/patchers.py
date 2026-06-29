@@ -187,6 +187,14 @@ class ModelClassesPatcher(ClassScanPatcher):
     patch_class = staticmethod(_wrap_concrete_model_class)
 
 
+def _wrap_model_class_no_warning(model_class: Any) -> Any:
+    if ModelClassesPatcher.has_patch_marker(model_class):
+        return model_class
+    _wrap_concrete_model_class(model_class)
+    ModelClassesPatcher.mark_patched(model_class)
+    return model_class
+
+
 def wrap_model_class(model_class: Any) -> Any:
     warnings.warn(
         "wrap_model_class() is deprecated and no longer needed for normal setup. "
@@ -194,11 +202,7 @@ def wrap_model_class(model_class: Any) -> Any:
         DeprecationWarning,
         stacklevel=2,
     )
-    if ModelClassesPatcher.has_patch_marker(model_class):
-        return model_class
-    _wrap_concrete_model_class(model_class)
-    ModelClassesPatcher.mark_patched(model_class)
-    return model_class
+    return _wrap_model_class_no_warning(model_class)
 
 
 def wrap_model_classes() -> bool:
