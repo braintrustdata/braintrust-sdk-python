@@ -1,12 +1,12 @@
 interactions:
 - request:
     body: !!binary |
-      LS1jMTczNjdjMWEzZmNhZWU5ZjFkOGVmZjQ3NzBiODQwYQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tYzE3MzY3YzFh
-      M2ZjYWVlOWYxZDhlZmY0NzcwYjg0MGENCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQpmYWxzZQ0KLS1jMTczNjdjMWEzZmNhZWU5ZjFkOGVmZjQ3NzBiODQw
-      YQ0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJkaWFyaXplIg0KDQpmYWxz
-      ZQ0KLS1jMTczNjdjMWEzZmNhZWU5ZjFkOGVmZjQ3NzBiODQwYQ0KQ29udGVudC1EaXNwb3NpdGlv
+      LS02NjI4MzNiN2YyNGI3ODRkN2Q4MGY5NDVhZjI2Y2RkOQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tNjYyODMzYjdm
+      MjRiNzg0ZDdkODBmOTQ1YWYyNmNkZDkNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQpmYWxzZQ0KLS02NjI4MzNiN2YyNGI3ODRkN2Q4MGY5NDVhZjI2Y2Rk
+      OQ0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJkaWFyaXplIg0KDQpmYWxz
+      ZQ0KLS02NjI4MzNiN2YyNGI3ODRkN2Q4MGY5NDVhZjI2Y2RkOQ0KQ29udGVudC1EaXNwb3NpdGlv
       bjogZm9ybS1kYXRhOyBuYW1lPSJmaWxlIjsgZmlsZW5hbWU9InRlc3RfYXVkaW8ud2F2Ig0KQ29u
       dGVudC1UeXBlOiBhdWRpby93YXYNCg0KUklGRiR9AABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAAC
       ABAAZGF0YQB9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -570,72 +570,71 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0KLS1jMTczNjdjMWEzZmNhZWU5ZjFk
-      OGVmZjQ3NzBiODQwYS0tDQo=
+      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0KLS02NjI4MzNiN2YyNGI3ODRkN2Q4
+      MGY5NDVhZjI2Y2RkOS0tDQo=
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '32507'
-      Content-Type:
-      - multipart/form-data; boundary=c17367c1a3fcaee9f1d8eff4770b840a
-      Host:
+      content-type:
+      - multipart/form-data; boundary=662833b7f24b784d7d80f945af26cdd9
+      host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.4.0
+      - mistral-client-python/2.5.0
     method: POST
     uri: https://api.mistral.ai/v1/audio/transcriptions
   response:
     body:
-      string: "{\"model\":\"voxtral-mini-2507\",\"text\":\"El 14 de diciembre de 1945,
-        el presidente de la Rep\xFAblica, Juan Manuel A. de la R\xFAa, firm\xF3 un
-        acuerdo con el gobierno de Chile, en el que se prometi\xF3 que se realizar\xEDa
-        una reforma de la Constituci\xF3n.\",\"language\":null,\"segments\":[],\"usage\":{\"prompt_audio_seconds\":1,\"prompt_tokens\":3,\"total_tokens\":432,\"completion_tokens\":54,\"prompt_tokens_details\":{\"cached_tokens\":1,\"audio_tokens\":375}},\"finish_reason\":null}"
+      string: '{"model":"voxtral-mini-latest","text":"","language":null,"segments":[],"usage":{"prompt_audio_seconds":1,"prompt_tokens":3,"total_tokens":379,"completion_tokens":1,"prompt_tokens_details":{"cached_tokens":1,"audio_tokens":375}},"finish_reason":null}'
     headers:
-      CF-RAY:
-      - 9ed467162e39a228-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 16 Apr 2026 16:00:24 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a135887a6d19ac72-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '453'
+      - '249'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:13:39 GMT
       mistral-correlation-id:
-      - 019d9705-aa40-7c9e-80aa-96510463e9c6
+      - 019f13ba-88de-7492-9ffa-fe976fc0a7f3
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=BL88RuNtUmWWl3A97WXk6NA_.mPtOkS.uz.HEoeOR_Q-1776355224.0269353-1.0.1.1-JqawIscuzq1BfD1_q4zdZCRKk37QtPq5Os3vZCyQRHFV9dkH.BCpFldNuJC.YQskbsf.tvhsJFErMVD5jnSN.LoWUDV0rXwu7Xp4HjkEyQhr6n7koj0G_NHwOYvMZTLR;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 16 Apr 2026 16:30:24
-        GMT
-      - _cfuvid=WeM2Z8FFSCQAd38XkDCrAnlMdmgVOea4LoheBzhM.Bo-1776355224.0269353-1.0.1.1-P_QgQjQ30SnlXmMx8mJdN7E_cqTdNe_0BH9OB31lJW0;
+      - __cf_bm=BtiKbKREPT35a7Zy43HfIjFJ2Sg7GBF7K.pb_S1tbfc-1782742419.5909941-1.0.1.1-roNW2pS.CoDT5AKUU_2qhnKeBqgwJ0nT3W5tbmHGuCT4YlFB8WQSZfg1iyPSwL4BWxKIPFbF.cRFWWPQqGD8EnLbE64kb0eCiZOfF7yHY05tGhqHSbtn3gt.4yWkp4IZ;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
+        Jun 2026 14:43:39 GMT
+      - _cfuvid=5Oy2QGFjBIMm0Z1ZUmnlGnQuDb788wEfElJahb6eMcE-1782742419.5909941-1.0.1.1-dKAqVhd9HJhYdgNRXkgIMrORroRfVeVtJdQPlOwx8Tg;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '328'
+      - '171'
       x-kong-proxy-latency:
-      - '13'
+      - '45'
       x-kong-request-id:
-      - 019d9705-aa40-7c9e-80aa-96510463e9c6
+      - 019f13ba-88de-7492-9ffa-fe976fc0a7f3
       x-kong-upstream-latency:
-      - '329'
+      - '172'
+      x-max-retry-attempts-reached:
+      - 'false'
       x-ratelimit-audio-seconds-query-cost:
       - '1'
       x-ratelimit-limit-audio-seconds-minute:
@@ -643,9 +642,9 @@ interactions:
       x-ratelimit-limit-req-minute:
       - '60'
       x-ratelimit-remaining-audio-seconds-minute:
-      - '3598'
+      - '3595'
       x-ratelimit-remaining-req-minute:
-      - '51'
+      - '54'
     status:
       code: 200
       message: OK

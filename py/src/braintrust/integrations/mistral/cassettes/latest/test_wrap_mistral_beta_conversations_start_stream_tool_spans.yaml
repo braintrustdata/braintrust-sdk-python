@@ -3,112 +3,122 @@ interactions:
     body: '{"inputs":"Use the code interpreter to calculate 21 * 2. Return only the
       result.","stream":true,"tools":[{"type":"code_interpreter"}],"model":"mistral-small-latest"}'
     headers:
-      Accept:
+      accept:
       - text/event-stream
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '165'
-      Host:
-      - api.mistral.ai
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.4.4
+      - mistral-client-python/2.5.0
     method: POST
-    uri: https://api.mistral.ai/v1/conversations
+    uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-05-04T18:17:31.868571Z","conversation_id":"conv_019df435acbe72fe8159393921079b2b"}
+        data: {"type":"conversation.response.started","created_at":"2026-06-29T14:13:26.122455Z","conversation_id":"conv_019f13ba50c873428832a195bd3f3867"}
 
 
         event: tool.execution.started
 
-        data: {"type":"tool.execution.started","created_at":"2026-05-04T18:17:31.872991Z","output_index":0,"id":"tool_exec_019df435ade0730c8aea545a915fb65e","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
+        data: {"type":"tool.execution.started","created_at":"2026-06-29T14:13:26.125936Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-05-04T18:17:31.877128Z","output_index":0,"id":"tool_exec_019df435ade0730c8aea545a915fb65e","name":"code_interpreter","arguments":"{\"code\":
+        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.136291Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.155279Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"\":
         \"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-05-04T18:17:31.892107Z","output_index":0,"id":"tool_exec_019df435ade0730c8aea545a915fb65e","name":"code_interpreter","arguments":"21
-        * ","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.175299Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"2","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-05-04T18:17:31.910950Z","output_index":0,"id":"tool_exec_019df435ade0730c8aea545a915fb65e","name":"code_interpreter","arguments":"2\"}","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.186618Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"1
+        * 2","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.208684Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"\"}","function":"code_interpreter"}
 
 
         event: tool.execution.done
 
-        data: {"type":"tool.execution.done","created_at":"2026-05-04T18:17:32.570027Z","output_index":0,"id":"tool_exec_019df435ade0730c8aea545a915fb65e","name":"code_interpreter","function":"code_interpreter","info":{"code":"21
+        data: {"type":"tool.execution.done","created_at":"2026-06-29T14:13:26.983471Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
         * 2","code_output":"42\n"}}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-05-04T18:17:32.707363Z","output_index":1,"id":"msg_019df435b12372eabb016e1e2f5d3d97","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
+        data: {"type":"message.output.delta","created_at":"2026-06-29T14:13:27.163480Z","output_index":1,"id":"msg_019f13ba57fb727585dff3828445a153","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-05-04T18:17:32.721768Z","output_index":1,"id":"msg_019df435b12372eabb016e1e2f5d3d97","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
+        data: {"type":"message.output.delta","created_at":"2026-06-29T14:13:27.179828Z","output_index":1,"id":"msg_019f13ba57fb727585dff3828445a153","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-05-04T18:17:32.748780Z","usage":{"prompt_tokens":86,"completion_tokens":19,"total_tokens":110,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
+        data: {"type":"conversation.response.done","created_at":"2026-06-29T14:13:27.199349Z","usage":{"prompt_tokens":215,"completion_tokens":19,"total_tokens":239,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
 
 
         '
     headers:
-      CF-RAY:
-      - 9f6980b3a8d3d59a-SJC
-      Connection:
-      - keep-alive
-      Content-Type:
-      - text/event-stream; charset=utf-8
-      Date:
-      - Mon, 04 May 2026 18:17:31 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a13588208ee9ae18-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 29 Jun 2026 14:13:26 GMT
       mistral-correlation-id:
-      - 019df435-aca5-76ef-af89-b68d546fb35c
+      - 019f13ba-508f-7733-ad26-75c7ff447f4b
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=MiLFLA_gRlztjcWsGqmI3aQqgrwWwIBCZOWsIkRfSEs-1777918651.470252-1.0.1.1-Xhd7DGqnK0C5DI9xz_5WdP6KBerfk.TGvtYM.FCrA098iP3Sq5xf.gZqeP1ZLGo3ovGnxMrfUkuUZqjoD5a2PSSeLmJXETg4G65ng9Mz5lRZg1QvRjK.2Z.Uh8ubZp0Q;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 04 May 2026 18:47:31
-        GMT
-      - _cfuvid=UmqrIl_V_PrtzRN4zlVFwwLc7ynKa1oHPQqEjo1ytj0-1777918651.470252-1.0.1.1-Qc_29.Z00umjFznSjum_jqFURSIenwOKOGFMm.g7KnY;
+      - __cf_bm=6V2uI_kj9n78QG3s4B14Bv2vSCTQqtcwEra1bgjW.VU-1782742405.2087507-1.0.1.1-IMWfn38et2ke4.dBhCSuwDYliGsoGqTqxCicucsBHs_yuT5w4y9I9njxOLwzMogSVLCr_0OAq9raydb_rvOYxGV4QEUAKumtSSJnO0TAKiOvVPJ3iAX065u_6F5Ydf6B;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
+        Jun 2026 14:43:26 GMT
+      - _cfuvid=HdN2T3rEv81VSn5PFZ2LjBF94DgB7ha7EkghKZ15nBU-1782742405.2087507-1.0.1.1-UggKmBlAQV83CZ_QipmabOZkCwjJ0eungg2EVutrRTM;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '300'
+      - '845'
       x-kong-proxy-latency:
-      - '16'
+      - '17'
       x-kong-request-id:
-      - 019df435-aca5-76ef-af89-b68d546fb35c
+      - 019f13ba-508f-7733-ad26-75c7ff447f4b
       x-kong-upstream-latency:
-      - '301'
+      - '846'
     status:
       code: 200
       message: OK

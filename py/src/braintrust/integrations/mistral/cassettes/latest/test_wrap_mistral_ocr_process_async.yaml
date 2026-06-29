@@ -1,94 +1,119 @@
 interactions:
 - request:
-    body: '{"model":"mistral-ocr-latest","document":{"image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","type":"image_url"}}'
+    body: '{"model":"mistral-ocr-latest","document":{"image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","type":"image_url"},"include_blocks":false}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '195'
-      Host:
-      - api.mistral.ai
+      content-length:
+      - '218'
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.4.0
+      - mistral-client-python/2.5.0
     method: POST
     uri: https://api.mistral.ai/v1/ocr
   response:
     body:
-      string: '{"pages":[{"index":0,"markdown":"|  Net cash used in financing activities
-        | Net cash used in financing activities | Net interest income | Net interest
-        income | Net interest income | Net interest income | Net interest income |
-        Net cash used in financing activities  |\n| --- | --- | --- | --- | --- |
-        --- | --- | --- |\n|  Net cash used in financing activities | Net cash used
-        in financing activities | Other income | Other income, net | Other income,
-        net | Other | Other | Net cash used in financing activities  |\n|  Net cash
-        used in financing activities | Net cash used in financing activities | Net
-        cash used in financing activities | Other income, net | Other | Other | Other
-        | Other  |\n|  Net cash provided by used in financing activities | Net cash
-        used in financing activities | Net interest income | Other | Other | Other
-        | Other | Other  |\n|  Other | Net cash provided by used in financing activities
-        | Other | Other | Other | Other | Other | Other  |\n|  Other | Other | Other
-        | Other | Other | Other | Other | Other  |\n|  Other | Other | Other | Other
-        | Other | Other | Other | Other  |\n|  Other | Other | Other | Other | Other
-        | Other | Other | Other  |\n|  Other | Other | Other | Other | Other | Other
-        | Other | Other  |\n|  Other | Other | Other | Other | Other | Other | Other
-        | Other  |\n|  Other | Other | Other | Other | Other | Other | Other | Other  |\n|  Other
-        | Other | Other | Other | Other | Other | Other | Other  |\n|  Other | Other
-        | Other | Other | Other | Other | Other assets | Other  |\n|  Other assets
-        | Other assets | Other assets | Other assets | Other assets | Other assets
-        | Other assets | Other assets  |\n|  Other assets | Other assets | Other assets
-        | Other assets | Other assets | Other assets | Other assets | Other assets  |\n|  Other
-        assets | Other assets | Other assets | Other assets | Other assets | Other
-        assets | Other assets | Other assets  |\n|  Other assets | Other assets |
-        Other assets | Other assets | Other assets | Other assets | Other assets |
-        Other assets  |\n|  Other assets | Other assets | Other assets | Other assets
-        | Other assets | Other assets | Other assets | Other assets  |","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
+      string: '{"pages":[{"index":0,"markdown":"|  In millions | Net cash provided
+        by operating activities | Net cash provided by operating activities | Net
+        sales | Net sales | Net sales | Net sales | Net sales | Net sales | Net sales
+        | Total | Total revenues  |\n| --- | --- | --- | --- | --- | --- | --- | ---
+        | --- | --- | --- | --- |\n|  Total revenues | Total revenues | Net sales
+        | Net sales | Net sales | Total revenues | Net sales | Net sales | Net sales
+        | Net sales | Net sales | Total revenues  |\n|  Total revenues | Total revenues
+        | Net sales | Net sales | Net sales | Net sales | Net sales | Net sales |
+        Net sales | Net sales | Net sales | Net sales  |\n|  Total revenues | Total
+        revenues | Net sales | Net sales | Net sales | Net sales | Net sales | Net
+        sales | Net sales | Net sales | Net sales | Total revenues  |\n|  Total revenues
+        | Total revenues | Total revenues | Net sales | Net sales | Total revenues
+        | Total revenues | Net sales | Net sales | Net sales | Total revenues | Net
+        sales  |\n|  Total revenues | Total revenues | Total revenues | Net sales
+        | Net sales | Total revenues | Net sales | Net sales | Net sales | Net sales
+        | Net sales | Total revenues  |\n|  Net sales | Total revenues | Total revenues
+        | Net sales | Total revenues | Total revenues | Net sales | Net sales | Total
+        revenues | Net sales | Net sales | Total revenues  |\n|  Total revenues |
+        Total revenues | Net sales | Net sales | Net sales | Total revenues | Net
+        sales | Net sales | Net sales | Net sales | Total revenues | Total revenues  |\n|  Net
+        sales | Total revenues | Total revenues | Net sales | Net sales | Total revenues
+        | Total revenues | Net sales | Net sales | Net sales | Total revenues | Total
+        revenues  |\n|  Net sales | Total revenues | Total revenues | Net sales |
+        Net sales | Total revenues | Total revenues | Net sales | Net sales | Net
+        sales | Total revenues | Total revenues  |\n|  Total revenues | Total revenues
+        | Total revenues | Net sales | Total revenues | Net sales | Net sales | Total
+        revenues | Net sales | Net sales | Total revenues | Total revenues  |\n|  Net
+        sales | Total revenues | Total revenues | Net sales | Net sales | Total revenues
+        | Total revenues | Net sales | Net sales | Net sales | Total revenues | Total
+        revenues  |\n|  Net sales | Total revenues | Total revenues | Net sales |
+        Net sales | Total revenues | Total revenues | Total revenues | Net sales |
+        Net sales | Total revenues | Total revenues  |\n|  Net sales | Total revenues
+        | Total revenues | Net sales | Net sales | Total revenues | Total revenues
+        | Net sales | Total revenues | Net sales | Total revenues | Total revenues  |\n|  Net
+        sales | Total revenues | Total revenues | Total revenues | Total revenues
+        | Total revenues | Net sales | Net sales | Net sales | Total revenues | Total
+        revenues | Total revenues  |\n|  Net sales | Total revenues | Total revenues
+        | Total revenues | Net sales | Total revenues | Total revenues | Net sales
+        | Net sales | Total revenues | Total revenues | Total revenues  |\n|  Total
+        revenues | Total revenues | Total revenues | Total revenues | Total revenues
+        | Total revenues | Total revenues | Total revenues | Net sales | Net sales
+        | Total revenues | Total revenues  |\n|  Total revenues | Total revenues |
+        Total revenues | Net sales | Total revenues | Total revenues | Total revenues
+        | Net sales | Net sales | Total revenues | Total revenues | Total revenues  |\n|  Total
+        revenues | Total revenues | Total revenues | Total revenues | Total revenues
+        | Total revenues | Total revenues | Total revenues | Total revenues | Total
+        revenues | Total revenues | Total revenues  |","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null,"blocks":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
     headers:
-      CF-RAY:
-      - 9ed466febc67c4c7-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 16 Apr 2026 16:00:20 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a135886768d4abac-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '2400'
+      - '3857'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:13:36 GMT
       mistral-correlation-id:
-      - 019d9705-9b69-7a59-b38b-410571fab585
+      - 019f13ba-7ce2-7ec3-8dc5-ac6cc5e74505
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=TXTXUMyPJJL3o799hMu6pdZ7v6dGWWNCOEuxyKKexZw-1776355220.275474-1.0.1.1-MYJRt6WXmIvcdC4TM2g60AzTzyYYR6P8aglxm2f1v0MloSZ8JyhIT5kHUiR8hvRIbsbidbw1f16hW0l22GbYCEc26zNBsH2QNFN49pb4rnymx6x_potLIYUMcfCtZ.Iz;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 16 Apr 2026 16:30:20
-        GMT
-      - _cfuvid=iL7QROhEXRO00Im1ua3bCyEMlB_f8y8o0Rxewcb8V.0-1776355220.275474-1.0.1.1-3X_NYngc3cBZtnLtYL2vgkDVJQnbFVFX15qZYKAQXBU;
+      - __cf_bm=Ri7iIITTv484.IUilDZ6BSCGuByXjV2AU2ZCxMaIuMM-1782742416.5493402-1.0.1.1-PZovYSgcHaiNZFCztBwzyILkOnkESjnwr0CTkpmnXxcEGyMjxWnwFUK966AINfdIPgAxRdnV45IpCdMuqezqZuABlNnIEw9KK41t01EAlmEl5_mpiKYS2j9XIN8_46.6;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
+        Jun 2026 14:43:36 GMT
+      - _cfuvid=wMsIdU9Dm8p6XnowPSoAXo_RRM8zorPLEe31s5I1Cmc-1782742416.5493402-1.0.1.1-iQr3nRmFL4X38OsRMCswD6jhac4BZLGCl6YH3votZqk;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '28'
+      - '80'
       x-kong-proxy-latency:
-      - '8'
+      - '14'
       x-kong-request-id:
-      - 019d9705-9b69-7a59-b38b-410571fab585
+      - 019f13ba-7ce2-7ec3-8dc5-ac6cc5e74505
       x-kong-upstream-latency:
-      - '29'
+      - '80'
+      x-ratelimit-limit-ocr-pages-minute:
+      - '625'
+      x-ratelimit-ocr-pages-query-cost:
+      - '1'
+      x-ratelimit-remaining-ocr-pages-minute:
+      - '622'
     status:
       code: 200
       message: OK

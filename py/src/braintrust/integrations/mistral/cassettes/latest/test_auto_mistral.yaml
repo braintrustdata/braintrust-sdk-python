@@ -3,74 +3,76 @@ interactions:
     body: '{"model":"mistral-small-latest","messages":[{"content":"What is 2+2? Reply
       with just the number.","role":"user"}],"max_tokens":10,"stream":false}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '145'
-      Host:
-      - api.mistral.ai
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.4.0
+      - mistral-client-python/2.5.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"cf134f93e06b4f27a3941a466995dbfa","created":1776355230,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"4"}}]}'
+      string: '{"id":"44797edd0c7a4a40918b5c2d61760b9c","created":1782742424,"model":"mistral-small-latest","usage":{"prompt_tokens":28,"total_tokens":30,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"4"}}]}'
     headers:
-      CF-RAY:
-      - 9ed4673ba964c8b1-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Thu, 16 Apr 2026 16:00:30 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a13588983b03abcd-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '343'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:13:44 GMT
       mistral-correlation-id:
-      - 019d9705-c18e-79f1-bb15-00ec7a26e4e0
+      - 019f13ba-9b62-70a9-a371-7978c70c961b
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=wljEnV9fZKokDzfoRLCnMsqXRcsekBkA8OrB1GW6mwM-1776355230.0221324-1.0.1.1-5zvsAuJ8UrF_RLrQJaWyconcVvyeKjUO6FeQOFS9OaygOo_gCePqgRToFq690RWZvjbjOSla_ZBLG0ReT8cdiKNZfwQvS5dCRniNbjzGIrCdCQoHTxy6UNqH5HZ_pN7u;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 16 Apr 2026 16:30:30
-        GMT
-      - _cfuvid=lxO1QY3.u_whxjF.Piur0sqMuZ4VaZ9OzSzpQqqrg8Y-1776355230.0221324-1.0.1.1-UL5r.Mk7ux5qWAu_9lflBXo9_Bg4Lu8BNWpT.tHWtok;
+      - __cf_bm=pSci.Tfae2yO8AdrjYkNBVa5.TsPUrIOrQKzHZlAKNk-1782742424.3547544-1.0.1.1-Nz_Avt_iXQVkv4mHEmV70CTV1D0aqk.lG32soqcyVaw8g.1h_LbdZnaoVJU8lVWXBTHhpbOQDoPy85geH8zUzl1oD.8E2QlwbPaEe7eKLyMy2VdJ6gyX3c2dniqVWWMP;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
+        Jun 2026 14:43:44 GMT
+      - _cfuvid=XPhRxkBBoStHSW.c7dlLZTZZKLM6XzTGUp31oSW1XpI-1782742424.3547544-1.0.1.1-HwAtd9YpenDGJRpE3icJPpP79SI8YxGgG24O2Rpg6dg;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '184'
+      - '410'
       x-kong-proxy-latency:
-      - '9'
+      - '12'
       x-kong-request-id:
-      - 019d9705-c18e-79f1-bb15-00ec7a26e4e0
+      - 019f13ba-9b62-70a9-a371-7978c70c961b
       x-kong-upstream-latency:
-      - '185'
+      - '411'
+      x-max-retry-attempts-reached:
+      - 'false'
       x-ratelimit-limit-req-minute:
-      - '400'
+      - '50'
       x-ratelimit-limit-tokens-minute:
-      - '1500000'
+      - '50000'
       x-ratelimit-remaining-req-minute:
-      - '391'
+      - '35'
       x-ratelimit-remaining-tokens-minute:
-      - '1499679'
+      - '49195'
       x-ratelimit-tokens-query-cost:
       - '30'
     status:

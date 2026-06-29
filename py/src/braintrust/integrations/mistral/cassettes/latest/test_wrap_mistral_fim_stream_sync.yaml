@@ -1,34 +1,41 @@
 interactions:
 - request:
-    body: '{"model":"codestral-latest","prompt":"def multiply(a, b):\n    return ","top_p":1.0,"max_tokens":16,"stream":true,"suffix":"\n\nprint(multiply(3,
+    body: '{"model":"codestral-latest","prompt":"def multiply(a, b):\n    return ","max_tokens":16,"stream":true,"suffix":"\n\nprint(multiply(3,
       4))"}'
     headers:
-      Accept:
+      accept:
       - text/event-stream
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
-      - '151'
-      Host:
-      - api.mistral.ai
+      content-length:
+      - '139'
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.4.0
+      - mistral-client-python/2.5.0
     method: POST
-    uri: https://api.mistral.ai/v1/fim/completions
+    uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"0070b0af72824af7bb9f51c0ee312a23","object":"chat.completion.chunk","created":1776355221,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"5152f83faff4412aa88ab68caacf0026","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"0070b0af72824af7bb9f51c0ee312a23","object":"chat.completion.chunk","created":1776355221,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234"}
+        data: {"id":"5152f83faff4412aa88ab68caacf0026","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcd"}
 
 
-        data: {"id":"0070b0af72824af7bb9f51c0ee312a23","object":"chat.completion.chunk","created":1776355221,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        * b"},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghij"}
+        data: {"id":"5152f83faff4412aa88ab68caacf0026","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        *"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvw"}
+
+
+        data: {"id":"5152f83faff4412aa88ab68caacf0026","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz"}
+
+
+        data: {"id":"5152f83faff4412aa88ab68caacf0026","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrstuv"}
 
 
         data: [DONE]
@@ -36,44 +43,46 @@ interactions:
 
         '
     headers:
-      CF-RAY:
-      - 9ed467052b8bab5d-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - text/event-stream; charset=utf-8
-      Date:
-      - Thu, 16 Apr 2026 16:00:21 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a135886fccb6aeb6-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 29 Jun 2026 14:13:38 GMT
       mistral-correlation-id:
-      - 019d9705-9f82-7575-856c-40b8b2aaebff
+      - 019f13ba-821d-7b7c-8e99-32a50c6a0719
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=YJftQhbIDDMyDlo6PwBrEmWKygTqQMsWAtLaaUxc3AQ-1776355221.305157-1.0.1.1-8xsklgt5_cdUtVGRX4IJJRrKq9EDJvlh1GK8Off3tkXdpN2aIExlk7LMfZXzijDYKJDwhXFNAlceCJJXUcCc0myBdmBLLdKwOGpoZanPQT6HuAimXpBwTvIRMdRueWiI;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Thu, 16 Apr 2026 16:30:21
-        GMT
-      - _cfuvid=2v.mpEzIYFWQ2MsniWHSi6YclIo.jYulKqqD4zUOqtA-1776355221.305157-1.0.1.1-3VInkdfVhdJNgXNS9skbePpUvVEneRP6d8qmkRzJA_Q;
+      - __cf_bm=vpXkli4xEr4AWha7QDAhe2KjfD3mO2Zh75D31OWytXo-1782742417.8873916-1.0.1.1-KEy9whKOrykW75zh0MtKYSz0WNdQSckB58xgaKkFeX6rhub4sRZIOhSCevoGXz3TVeswijVvwl28FCoUo5GRcSQ6KamKRooWWHewZmeYFk__u62ep2X7Z9ngEDjH.CvF;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
+        Jun 2026 14:43:38 GMT
+      - _cfuvid=G0a2z4CzY5zli15HISIAraQM.HXh741cRYsQvqP.3NQ-1782742417.8873916-1.0.1.1-NmifzfWMhqhD3AfiibejDlm75gkbz_ephVM_sCpl6zk;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '78'
+      - '131'
       x-kong-proxy-latency:
       - '12'
       x-kong-request-id:
-      - 019d9705-9f82-7575-856c-40b8b2aaebff
+      - 019f13ba-821d-7b7c-8e99-32a50c6a0719
       x-kong-upstream-latency:
-      - '78'
+      - '132'
+      x-max-retry-attempts-reached:
+      - 'false'
     status:
       code: 200
       message: OK

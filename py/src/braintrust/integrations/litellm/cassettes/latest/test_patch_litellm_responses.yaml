@@ -3,32 +3,32 @@ interactions:
     body: '{"model":"gpt-4o-mini","input":"What''s 12 + 12?","instructions":"Just
       the number please"}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '89'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
-      - litellm/1.86.0
+      user-agent:
+      - litellm/1.90.0
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_005b1dff28751a54006a14948815e4819094782bf6cc703710\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1779733640,\n  \"status\":
+      string: "{\n  \"id\": \"resp_016a868e55972995006a427b926a7c81a381c15dfa3d9811e6\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782741906,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1779733640,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782741907,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_005b1dff28751a54006a149488e12481909f405bfef70755d7\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_016a868e55972995006a427b92efd881a383c7150e6765189a\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -39,48 +39,55 @@ interactions:
         \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
         true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
         \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 22,\n    \"input_tokens_details\":
         {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 2,\n    \"output_tokens_details\":
         {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 24\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a01697f20e2ba246-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 25 May 2026 18:27:21 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a1357bf2ab96de04-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '1599'
+      - '1960'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:05:07 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1000'
+      - '723'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=kxsI7QBA51FaRSDPAbEBuR1vDCjbHfB7i7R_ZSuJfFU-1779733640.0089264-1.0.1.1-iqYYm95f7jUUmjUY.7hlbA3hAaV_zEwZQBytAiFnQnYkFlkxbkpM5Ec5zO1xmaErttw_uX6KJ9NYA5Zmgf3XOorPV79d6_bliSTUDpf672nqiAZkoNK5RMtoReKJHwGH;
+      - __cf_bm=KAJMmKDrF5pyHxyvANVevbJPqp4CqAthwyuaHzOuPHg-1782741906.3509285-1.0.1.1-_rGR.7ZgCc2exgQnPCPQUQP2vWpasksWi8.3PBrFHXEG_XUbpg4KnhOHuQu7G1WtgqLw4yA3Zxpp8J2aPPtJQAktdcaEpBdmj7aNtxo.se0dnOi6mA6JnoFE.owhXmNj;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        25 May 2026 18:57:21 GMT
+        29 Jun 2026 14:35:07 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -88,13 +95,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999960'
+      - '149999957'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3c2c948f34c24c32bbaaa8ab4d84a7fd
+      - f3cbfc5b-f516-4bae-b0b6-b39902e9c416
     status:
       code: 200
       message: OK

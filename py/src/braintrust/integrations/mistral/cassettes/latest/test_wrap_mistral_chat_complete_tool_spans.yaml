@@ -4,75 +4,77 @@ interactions:
       for Paris. Do not answer directly.","role":"user"}],"max_tokens":100,"stream":false,"tools":[{"function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]},"description":"Get
       the weather for a city."},"type":"function"}],"tool_choice":"any"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '375'
-      Host:
-      - api.mistral.ai
       content-type:
       - application/json
+      host:
+      - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.4.4
+      - mistral-client-python/2.5.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"aab6fae0e8db47b99507b7e630f76156","created":1777662585,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"JJ6iKa60d","function":{"name":"get_weather","arguments":"{\"city\":
+      string: '{"id":"9f088d8b97664fb6a1b32820a7649245","created":1782742400,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"fEKkZCTBV","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
         \"Paris\"}"},"index":0}],"content":""}}]}'
     headers:
-      CF-RAY:
-      - 9f511515febfa204-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Fri, 01 May 2026 19:09:45 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=15552000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-allow-origin:
       - '*'
       alt-svc:
       - h3=":443"; ma=86400
       cf-cache-status:
       - DYNAMIC
+      cf-ray:
+      - a1358802bc5236aa-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '446'
+      - '464'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:13:20 GMT
       mistral-correlation-id:
-      - 019de4f2-69ff-75db-a6c9-804071321149
+      - 019f13ba-3df2-7d89-b11d-7f15aa6ccbb7
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=pDVmOBtlEIvxElp5jKzQMCfMdnSh9HzYKLwj3_6envA-1777662585.2773309-1.0.1.1-AmEPVV00gabNnTuWp_ZUDNJa2KQYIzYfNNYGyWCdnyxwM5e0xNzqIBbz5GDL1Skxk0dSj4QYAPqNEarMDDNiRIKGXz1m8PV8qsX7s9aX_QVQAQ8kqM4KV1dMmASfvgTH;
-        HttpOnly; Secure; Path=/; Domain=mistral.ai; Expires=Fri, 01 May 2026 19:39:45
-        GMT
-      - _cfuvid=Fz8ContgsXYQ4OcuM8y3FTcjrh0eUuH5GuMOYdDNU_Y-1777662585.2773309-1.0.1.1-372hLjX.B3gHLdc6O5zIBb2W0qykUdNuAU9yl5Fx58M;
+      - __cf_bm=2y1S3wpKqsdY.OokvujDrZIsEg_ZImSCcyk06nu.AjE-1782742400.4317381-1.0.1.1-OrnKdUaR0.ispWfo5My_lRkvSnm_V1OLEzIDP0zKbLKm7KSfJU0..QwZXwVjrMK0YnA5M5aOT3X1BI.jcEiCWz8VZawDBSzIlR26DVWBZhOa3cor5pc4H1N0aWSax0Za;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
+        Jun 2026 14:43:20 GMT
+      - _cfuvid=wp4X00.L6d2UuyCqGG_f54rPe4UJQDIwC4rGZ6TLERw-1782742400.4317381-1.0.1.1-BD7fpfI.HRPWWdHGBnXGA3WIKFG0mdp6hdGmW8LcWCw;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      strict-transport-security:
+      - max-age=15552000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-envoy-upstream-service-time:
-      - '213'
+      - '335'
       x-kong-proxy-latency:
-      - '16'
+      - '15'
       x-kong-request-id:
-      - 019de4f2-69ff-75db-a6c9-804071321149
+      - 019f13ba-3df2-7d89-b11d-7f15aa6ccbb7
       x-kong-upstream-latency:
-      - '214'
+      - '335'
+      x-max-retry-attempts-reached:
+      - 'false'
       x-ratelimit-limit-req-minute:
-      - '400'
+      - '50'
       x-ratelimit-limit-tokens-minute:
-      - '1500000'
+      - '50000'
       x-ratelimit-remaining-req-minute:
-      - '399'
+      - '46'
       x-ratelimit-remaining-tokens-minute:
-      - '1499900'
+      - '49810'
       x-ratelimit-tokens-query-cost:
       - '100'
     status:

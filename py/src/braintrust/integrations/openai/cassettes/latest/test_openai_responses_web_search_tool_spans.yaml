@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.43.0
+      - OpenAI/Python 2.44.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.43.0
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,97 +39,63 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_090ffe9e6c546431006a396eb39230819e8f5f12ae67dde5c0\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782148787,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0e14da475686be20006a4279cf0ee0819e820ae1e9d9fde0b2\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782741455,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782148789,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1782741456,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_090ffe9e6c546431006a396eb3b030819ea328209eb29e3381\",\n
+        \     \"id\": \"ws_0e14da475686be20006a4279cf3274819e9cb26e51029e1de7\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_090ffe9e6c546431006a396eb49ba4819eba0980990029ab02\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_0e14da475686be20006a4279d03a88819e81aa3beccf4ed2cb\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 7:19\\u202fPM
-        on June 22, 2026, Paris is experiencing sunny weather with a temperature of
-        95\\u00b0F (35\\u00b0C).\\n\\n## Weather for Paris, Paris, France:\\nCurrent
-        Conditions: Sunny, 95\\u00b0F (35\\u00b0C)\\n\\nDaily Forecast:\\n* Monday,
-        June 22: Low: 74\\u00b0F (23\\u00b0C), High: 100\\u00b0F (38\\u00b0C), Description:
-        Very hot with sunshine; caution advised if outside for extended periods of
-        time\\n* Tuesday, June 23: Low: 76\\u00b0F (24\\u00b0C), High: 105\\u00b0F
-        (41\\u00b0C), Description: Very hot with uninterrupted sunshine; heat will
-        be dangerous, minimize outdoor activity\\n* Wednesday, June 24: Low: 78\\u00b0F
-        (25\\u00b0C), High: 107\\u00b0F (42\\u00b0C), Description: Sunny to partly
-        cloudy and very hot; heat will be dangerous, minimize outdoor activity\\n*
-        Thursday, June 25: Low: 76\\u00b0F (24\\u00b0C), High: 107\\u00b0F (42\\u00b0C),
-        Description: Partly sunny and very hot; danger of dehydration and heatstroke
-        if outside for extended periods of time\\n* Friday, June 26: Low: 74\\u00b0F
-        (24\\u00b0C), High: 99\\u00b0F (37\\u00b0C), Description: Sweltering heat
-        with sunshine mixing with some clouds; watch for a strong afternoon thunderstorm;
-        extreme heat can be dangerous for outdoor activities\\n* Saturday, June 27:
-        Low: 71\\u00b0F (21\\u00b0C), High: 97\\u00b0F (36\\u00b0C), Description:
-        Very hot with sunshine interrupted by clouds at times; a thunderstorm in spots
-        in the afternoon\\n* Sunday, June 28: Low: 68\\u00b0F (20\\u00b0C), High:
-        96\\u00b0F (36\\u00b0C), Description: Mostly cloudy and hot; widely separated
-        thunderstorms in the afternoon\\n\\nSevere Weather Alerts:\\n* Paris: Red
-        Warning for Extreme High Temperature in effect until Tuesday, 12:00 AM CEST.
-        \ Source: M\\u00e9t\\u00e9o-France, Extreme high-temperature warningEveryone
-        is in danger, even those in good health. Danger is greater for elderly people,
-        people suffering from chronicle diseases or from mental health troubles, people
-        who regularly take medicine and people who are isolated. Watch for dehydration
-        and heatstroke, especially in sportsmen and people working outside. Pay attention
-        to children. Heatstroke symptoms are : a fever above 40\\u00b0C, hot, red
-        and dry skin, headaches, nausea, drowsiness, intense thirst, confusion, convulsions
-        and loss of consciousness.Drink water several times a day. Continue to eat
-        normally. Wet your body several times a day using a spray, a washcloth or
-        by taking warm showers or baths. Do not go out during the hottest hours (11am-9pm).
-        If you must go out, wear a hat and light clothing. Try to go to a cool or
-        air-conditioned place for two to three hours a day, whilst continuing to respect
-        physical distance and barrier gestures. Limit your physical ansd sports activities.
-        During the day, close shutters, curtains and windows. Ventilate at night.
-        If you have elderly, chronically ill or isolated people around you, check
-        up on them or visit them. Take them to a cool place. In case of discomfort
-        or behavioral problems, call a doctor. If you need help call the town hall.
-        Be vigilant: everyone, even those in good health, is concerned. To prevent
-        vegetation fires, do not use any equipment likely to produce sparks and be
-        careful not to behave in a way that could lead to the start of a fire (smoking,
-        barbecue, etc.). In case of a fire, call 112 or 18 immediately and take shelter.
-        To find out more, visit the website: www.sante.gouv.fr., start time: Monday,
-        June 22, 16:04:00 UTC, end time: Tuesday, June 23, 00:00:00 UTC\\n* Paris:
-        Red Warning for Extreme High Temperature in effect from Tuesday, 12:00 AM
-        CEST until Wednesday, 12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Extreme
-        high-temperature warningEveryone is in danger, even those in good health.
-        Danger is greater for elderly people, people suffering from chronicle diseases
-        or from mental health troubles, people who regularly take medicine and people
-        who are isolated. Watch for dehydration and heatstroke, especially in sportsmen
-        and people working outside. Pay attention to children. Heatstroke symptoms
-        are : a fever above 40\\u00b0C, hot, red and dry skin, headaches, nausea,
-        drowsiness, intense thirst, confusion, convulsions and loss of consciousness.Drink
-        water several times a day. Continue to eat normally. Wet your body several
-        times a day using a spray, a washcloth or by taking warm showers or baths.
-        Do not go out during the hottest hours (11am-9pm). If you must go out, wear
-        a hat and light clothing. Try to go to a cool or air-conditioned place for
-        two to three hours a day, whilst continuing to respect physical distance and
-        barrier gestures. Limit your physical ansd sports activities. During the day,
-        close shutters, curtains and windows. Ventilate at night. If you have elderly,
-        chronically ill or isolated people around you, check up on them or visit them.
-        Take them to a cool place. In case of discomfort or behavioral problems, call
-        a doctor. If you need help call the town hall. Be vigilant: everyone, even
-        those in good health, is concerned. To prevent vegetation fires, do not use
-        any equipment likely to produce sparks and be careful not to behave in a way
-        that could lead to the start of a fire (smoking, barbecue, etc.). In case
-        of a fire, call 112 or 18 immediately and take shelter. To find out more,
-        visit the website: www.sante.gouv.fr., start time: Tuesday, June 23, 00:00:00
-        UTC, end time: Wednesday, June 24, 00:00:00 UTC\\n* Paris: Yellow Warning
-        for Thunderstorms in effect until Tuesday, 12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France,
-        Moderate thunderstorm warningModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.Be
-        careful, keep informed of the latest weather forecast., start time: Monday,
-        June 22, 16:04:00 UTC, end time: Tuesday, June 23, 00:00:00 UTC\\n \"\n        }\n
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 3:57\\u202fPM
+        CEST on June 29, 2026, Paris is experiencing partly sunny conditions with
+        a temperature of 80\\u00b0F (26\\u00b0C).\\n\\n## Weather for Paris, Paris,
+        France:\\nCurrent Conditions: Partly sunny, 80\\u00b0F (26\\u00b0C)\\n\\nDaily
+        Forecast:\\n* Monday, June 29: Low: 59\\u00b0F (15\\u00b0C), High: 83\\u00b0F
+        (28\\u00b0C), Description: Times of clouds and sun, very warm and less humid\\n*
+        Tuesday, June 30: Low: 60\\u00b0F (16\\u00b0C), High: 82\\u00b0F (28\\u00b0C),
+        Description: Very warm with sunny spells\\n* Wednesday, July 1: Low: 59\\u00b0F
+        (15\\u00b0C), High: 80\\u00b0F (27\\u00b0C), Description: Mostly cloudy and
+        warm\\n* Thursday, July 2: Low: 60\\u00b0F (15\\u00b0C), High: 81\\u00b0F
+        (27\\u00b0C), Description: Turning cloudy and remaining warm\\n* Friday, July
+        3: Low: 59\\u00b0F (15\\u00b0C), High: 85\\u00b0F (29\\u00b0C), Description:
+        Sunny and very warm\\n* Saturday, July 4: Low: 61\\u00b0F (16\\u00b0C), High:
+        85\\u00b0F (30\\u00b0C), Description: Very warm with plenty of sunshine\\n*
+        Sunday, July 5: Low: 64\\u00b0F (18\\u00b0C), High: 87\\u00b0F (31\\u00b0C),
+        Description: Very warm with plenty of sun\\n\\nSevere Weather Alerts:\\n*
+        Paris: Orange Warning for Extreme High Temperature in effect until Tuesday,
+        12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Severe high-temperature
+        warning\\n\\nEveryone is in danger, even those in good health. Danger is greater
+        for elderly people, people suffering from chronicle diseases or from mental
+        health troubles, people who regularly take medicine or people who are isolated.
+        Watch for dehydration and heatstroke, especially in sportsmen and people working
+        outside. Pay attention to children. Heatstroke symptoms are : a fever above
+        40\\u00b0, hot, red and dry skin, headaches, nausea, drowsiness, intense thirst,
+        confusion, convulsions and loss of consciousness.\\n\\nDrink water several
+        times a day. Continue to eat normally. Wet your body several times a day using
+        a spray, a washcloth or by taking warm showers or baths. Do not go out during
+        the hottest hours (11am-9pm). If you must go out, wear a hat and light clothing.
+        Try to go to a cool or air-conditioned place for two to three hours a day,
+        whilst continuing to respect physical distance and barrier gestures. Limit
+        your physical and sports activities. During the day, close shutters, curtains
+        and windows. Ventilate at night. If you have elderly, chronically ill or isolated
+        people around you, check up on them or visit them. Take them to a cool place.
+        In case of discomfort or behavioral problems, call a doctor. If you need help
+        call the town hall. To find out more, visit the website: www.sante.gouv.fr.,
+        start time: Monday, June 29, 03:02:00 UTC, end time: Tuesday, June 30, 00:00:00
+        UTC\\n* Paris: Yellow Warning for Extreme High Temperature in effect until
+        Tuesday, 12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France, Moderate high-temperature
+        warning\\n\\nModerate damages may occur, especially in vulnerable or in exposed
+        areas and to people who carry out weather-related activities.\\n\\nBe careful,
+        keep informed of the latest weather forecast., start time: Monday, June 29,
+        11:51:00 UTC, end time: Tuesday, June 30, 00:00:00 UTC\\n \"\n        }\n
         \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -137,15 +103,19 @@ interactions:
         \ \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\":
         true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
         \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        {\n    \"type\": \"web_search_preview\"\n  },\n  \"tools\": [\n    {\n      \"type\":
-        \"web_search_preview\",\n      \"search_content_types\": [\n        \"text\"\n
-        \     ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
+        {\n    \"type\": \"web_search_preview\"\n  },\n  \"tool_usage\": {\n    \"image_gen\":
+        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 1\n    }\n  },\n
+        \ \"tools\": [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_content_types\":
+        [\n        \"text\"\n      ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
         {\n        \"type\": \"approximate\",\n        \"city\": null,\n        \"country\":
         \"US\",\n        \"region\": null,\n        \"timezone\": null\n      }\n
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 1331,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 1654\n  },\n
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 757,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 1080\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
@@ -157,19 +127,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a0fceb81ee7d39ef-YYZ
+      - a13570ed8cb9ac76-YYZ
       connection:
       - keep-alive
       content-length:
-      - '8080'
+      - '5815'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:19:49 GMT
+      - Mon, 29 Jun 2026 13:57:37 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1790'
+      - '1986'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -177,9 +147,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=vhphtW2SrNJvkuDtb_nKnf7IG5oi92.SEW6fJ.nSBKk-1782148787.503824-1.0.1.1-Oq8RVkOQN_j.c.09iTHPboL94sIhDuR3DLdWlq9P2YL7X3MxGM7qZn8mfVlXfNBTbMz3L1qo6syAQ6MWIUNmHdhUnv6P2cBv_irWjSJC3PS_PKIpF5Sp8k08KzILa8OE;
+      - __cf_bm=b2Ci.YXBgcXx3u_d6yc4QeEXZw3J8pSU92hWtIrieHg-1782741454.969371-1.0.1.1-GhUKlBk8jLlOKRlvNxUqK4xhivhM2WhBJUYQeZR_OhfeN6vV.F6iJtv2AxvN1yOYwdV.3Bx8v.h2nHVsvThDAgbk749XkqWR2zVAo7He1EQWM.ENasgq5QdtvjPWICqW;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        22 Jun 2026 17:49:49 GMT
+        29 Jun 2026 14:27:37 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -187,7 +157,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_161d1302a6b048ab8baccc985af0f14f
+      - 07436d95-4e77-4905-8c22-622cde59d31d
     status:
       code: 200
       message: OK

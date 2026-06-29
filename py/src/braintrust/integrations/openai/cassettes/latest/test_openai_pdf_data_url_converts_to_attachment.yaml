@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.43.0
+      - OpenAI/Python 2.44.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.43.0
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,20 +39,19 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dtce37YkuReZk2LxLjRAbyJv2SP3M\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1782148963,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-Dw6pQBcgBeYy64oFk5TU03McDr4zw\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1782741644,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"It seems there is no accessible content
-        in the document \\\"test.pdf\\\" for me to analyze. If you have any specific
-        details or areas of the document you'd like to inquire about, feel free to
-        share!\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
-        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
-        \ \"usage\": {\n    \"prompt_tokens\": 233,\n    \"completion_tokens\": 41,\n
-        \   \"total_tokens\": 274,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        \"assistant\",\n        \"content\": \"It seems that I can't access the content
+        of the document 'test.pdf'. If you have specific questions or can share details
+        about the document, I'd be happy to help with that!\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        233,\n    \"completion_tokens\": 36,\n    \"total_tokens\": 269,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_eee5e0b136\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_520fb14a9c\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -63,19 +62,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a0fcefcacf2a0c26-YYZ
+      - a135758f9cb1ac26-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1003'
+      - '981'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:22:44 GMT
+      - Mon, 29 Jun 2026 14:00:45 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '932'
+      - '1024'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -83,9 +82,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=qFWfVOeIvbo0atMA88dYBmIOdAymkBHuEXf2lfYeero-1782148963.0077002-1.0.1.1-Ua8XBNW15X6pTkvHtUkz_J9xtCLxPiJ2yd_Hf3lYNVNCmsOBrEJhMD6EXMJDVWwZtsyJcN7fKF.61IXMyYs6_OEEaOOxmiB3tByMVPMo5S.75kcoSbUf0EQFjHtSYpQw;
+      - __cf_bm=N3i7.o8vaw2RV5vZHph0Z4JD3gy.sPWIiYKDaPV3jcM-1782741644.7357054-1.0.1.1-vrTYRvLB0QrZojlmit3cEPz6E9MwHP1LxCkmiJeu3gwgB4JqaP65GC6CbYXjQW5_qz0ys8CBdWN_wDWJvZAdORO24KSH2W9Ar7yVa_DmYKqq.jyUFBZsVSTmJHyAUS5N;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        22 Jun 2026 17:52:44 GMT
+        29 Jun 2026 14:30:45 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -107,7 +106,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3e7a96c0c9a446e5aef31dfbedc0cf2f
+      - req_16412368d21c47b69cddeed06a1696e3
     status:
       code: 200
       message: OK

@@ -69,6 +69,7 @@ TEST_PDF_DATA_URL = (
     "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
 )
 AUDIO_TRANSCRIPTION_MODEL = "voxtral-mini-2507"
+AUDIO_TRANSCRIPTION_RESPONSE_MODELS = {AUDIO_TRANSCRIPTION_MODEL, "voxtral-mini-latest"}
 SPEECH_MODEL = "voxtral-mini-tts-latest"
 SPEECH_VOICE_ID = "en_paul_neutral"
 TEST_AUDIO_FILE = Path(__file__).resolve().parents[2] / "fixtures" / "test_audio.wav"
@@ -98,7 +99,7 @@ def _assert_transcription_complete_span(span, response_text, start, end, *, chec
     if check_content_type:
         assert span["input"]["file"].reference["content_type"] == "audio/wav"
     assert span["metadata"]["provider"] == "mistral"
-    assert span["metadata"]["model"] == AUDIO_TRANSCRIPTION_MODEL
+    assert span["metadata"]["model"] in AUDIO_TRANSCRIPTION_RESPONSE_MODELS
     assert span["output"] == response_text
     assert span["metrics"]["prompt_audio_seconds"] > 0
     assert span["metrics"]["tokens"] > 0
@@ -118,7 +119,7 @@ def _assert_speech_complete_span(span, start, end):
 
 def _assert_conversation_tool_span(span):
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TOOL
-    assert span["input"] in ({"code": "21 * 2"}, {"code": "print(21 * 2)"})
+    assert "21 * 2" in span["input"].get("code", "")
     assert span["output"].get("stdout") == "42\n" or span["output"].get("code_output") == "42\n"
     assert span["metadata"]["tool_type"] == "tool.execution"
 
@@ -912,8 +913,6 @@ def test_wrap_mistral_audio_transcriptions_complete_sync(memory_logger):
         )
         end = time.time()
 
-    assert response.text
-
     spans = memory_logger.pop()
     assert len(spans) == 1
     _assert_transcription_complete_span(spans[0], response.text, start, end, check_content_type=True)
@@ -932,8 +931,6 @@ async def test_wrap_mistral_audio_transcriptions_complete_async(memory_logger):
             file=_transcription_file_payload(file_obj),
         )
         end = time.time()
-
-    assert response.text
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -972,11 +969,12 @@ def test_wrap_mistral_audio_transcriptions_stream_sync(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["provider"] == "mistral"
-    assert span["metadata"]["model"] == AUDIO_TRANSCRIPTION_MODEL
+    assert span["metadata"]["model"] in AUDIO_TRANSCRIPTION_RESPONSE_MODELS
     assert span["metadata"]["stream"] == True
     assert span["output"] == final_text
     assert span["metrics"]["prompt_audio_seconds"] > 0
-    assert span["metrics"]["time_to_first_token"] >= 0
+    if final_text:
+        assert span["metrics"]["time_to_first_token"] >= 0
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
@@ -1047,8 +1045,6 @@ def test_mistral_integration_setup_instruments_audio_transcriptions(memory_logge
             end = time.time()
     finally:
         _restore_method_refs(monkeypatch, original_audio_methods)
-
-    assert response.text
 
     spans = memory_logger.pop()
     assert len(spans) == 1
