@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import base64
 import builtins
@@ -2045,6 +2046,37 @@ def load_prompt(
     return Prompt(
         lazy_metadata=LazyValue(compute_metadata, use_mutex=True), defaults=defaults or {}, no_trace=no_trace
     )
+
+
+async def load_prompt_async(
+    project: str | None = None,
+    slug: str | None = None,
+    version: str | int | None = None,
+    project_id: str | None = None,
+    id: str | None = None,
+    defaults: Mapping[str, Any] | None = None,
+    no_trace: bool = False,
+    environment: str | None = None,
+    app_url: str | None = None,
+    api_key: str | None = None,
+    org_name: str | None = None,
+) -> "Prompt":
+    """Asynchronously loads a prompt from the specified project."""
+    prompt = load_prompt(
+        project=project,
+        slug=slug,
+        version=version,
+        project_id=project_id,
+        id=id,
+        defaults=defaults,
+        no_trace=no_trace,
+        environment=environment,
+        app_url=app_url,
+        api_key=api_key,
+        org_name=org_name,
+    )
+    await asyncio.to_thread(lambda: prompt.name)
+    return prompt
 
 
 def _is_parameters_ref(value: Any) -> bool:
