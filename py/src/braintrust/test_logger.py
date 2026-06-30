@@ -3497,8 +3497,8 @@ class TestDatasetInternalBtql(TestCase):
         finally:
             monkeypatch.undo()
 
-    def test_init_dataset_preserves_explicit_internal_btql_sample(self):
-        """Test that an explicit BTQL sample overrides bt eval runtime BTQL."""
+    def test_init_dataset_merges_bt_eval_internal_btql_without_overriding_explicit_keys(self):
+        """Test that explicit BTQL keys override bt eval runtime BTQL."""
         from braintrust.logger import init_dataset
 
         monkeypatch = pytest.MonkeyPatch()
@@ -3512,7 +3512,10 @@ class TestDatasetInternalBtql(TestCase):
                 state=MagicMock(),
             )
 
-            self.assertEqual(dataset._internal_btql, {"filter": "metadata.kind = 'synthetic'", "sample": 2})
+            self.assertEqual(
+                dataset._internal_btql,
+                {"filter": "metadata.kind = 'synthetic'", "sample": 2, "limit": 10},
+            )
         finally:
             monkeypatch.undo()
 

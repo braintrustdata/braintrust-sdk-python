@@ -1812,8 +1812,8 @@ def init_dataset(
     if isinstance(cli_internal_btql, Mapping):
         if _internal_btql is None:
             _internal_btql = dict(cli_internal_btql)
-        elif "sample" not in _internal_btql:
-            _internal_btql = {**_internal_btql, **cli_internal_btql}
+        else:
+            _internal_btql = {**cli_internal_btql, **_internal_btql}
 
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
