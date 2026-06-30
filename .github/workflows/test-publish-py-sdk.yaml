@@ -37,12 +37,12 @@ jobs:
       target_branch: ${{ steps.validate.outputs.target_branch }}
       version: ${{ steps.validate.outputs.version }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.inputs.ref }}
           fetch-depth: 0
       - name: Set up mise
-        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
         with:
           cache: true
           experimental: true
@@ -86,12 +86,12 @@ jobs:
       VERSION: ${{ needs.validate.outputs.version }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ env.COMMIT_SHA }}
           fetch-depth: 0
       - name: Set up mise
-        uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
         with:
           cache: true
           experimental: true
@@ -155,7 +155,7 @@ jobs:
           retention-days: 5
       - name: Publish to TestPyPI
         if: env.DRY_RUN != 'true' && (env.RELEASE_TYPE != 'canary' || (steps.should_publish.outputs.should_publish == 'true' && steps.ci_status.outputs.should_publish == 'true'))
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: py/dist/
@@ -226,7 +226,7 @@ jobs:
     steps:
       - name: Post to Slack on dry run success
         if: needs.validate.outputs.dry_run == 'true'
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -244,7 +244,7 @@ jobs:
                   text: "${{ format('*Mode:* dry run\n*Release type:* {0}\n*Version:* {1}\n*Ref:* {2}\n*Commit:* {3}\n\n<{4}/{5}/actions/runs/{6}|View Run>', needs.validate.outputs.release_type, needs.validate.outputs.version, github.event.inputs.ref, needs.validate.outputs.commit_sha, github.server_url, github.repository, github.run_id) }}"
       - name: Post to Slack on prerelease success
         if: needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.release_type == 'prerelease'
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -262,7 +262,7 @@ jobs:
                   text: "${{ format('*Version:* {0}\n*Ref:* {1}\n*Install:* `pip install -i https://test.pypi.org/simple/ braintrust=={0}`\n*Package:* <https://test.pypi.org/project/braintrust/|braintrust (TestPyPI)>\n\n<{2}/{3}/actions/runs/{4}|View Run>', needs.build-and-publish.outputs.version, github.event.inputs.ref, github.server_url, github.repository, github.run_id) }}"
       - name: Post to Slack on canary success
         if: needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.release_type == 'canary'
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -286,7 +286,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Post to Slack on intentional skip
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -310,7 +310,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Post to Slack on failure
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
