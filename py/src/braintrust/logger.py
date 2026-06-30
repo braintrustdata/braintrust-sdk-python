@@ -1,5 +1,6 @@
 import atexit
 import base64
+import builtins
 import concurrent.futures
 import contextlib
 import contextvars
@@ -1807,6 +1808,12 @@ def init_dataset(
     """
 
     state = state or _state
+    cli_internal_btql = getattr(builtins, "__bt_eval_internal_btql", None)
+    if isinstance(cli_internal_btql, Mapping):
+        if _internal_btql is None:
+            _internal_btql = dict(cli_internal_btql)
+        else:
+            _internal_btql = {**cli_internal_btql, **_internal_btql}
 
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
