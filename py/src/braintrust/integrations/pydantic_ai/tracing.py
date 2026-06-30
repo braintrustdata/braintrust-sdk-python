@@ -30,9 +30,9 @@ def _wrap_model_instance(model: Any) -> Any:
     if model is None:
         return model
 
-    from .patchers import wrap_model_class  # pylint: disable=import-outside-toplevel
+    from .patchers import _wrap_model_class_no_warning  # pylint: disable=import-outside-toplevel
 
-    wrap_model_class(type(model))
+    _wrap_model_class_no_warning(type(model))
     return model
 
 
@@ -177,47 +177,18 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
         raise
 
 
-async def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
     agent_name = instance.name if hasattr(instance, "name") else None
     span_name = f"agent_run_stream_events [{agent_name}]" if agent_name else "agent_run_stream_events"
 
-    with start_span(
-        name=span_name,
-        type=SpanTypeAttribute.TASK,
-        input=input_data if input_data else None,
-        metadata=metadata,
-    ) as agent_span:
-        tool_trace_token = _start_tool_trace_capture()
-        try:
-            start_time = time.time()
-            event_count = 0
-            final_result = None
-
-            async for event in wrapped(*args, **kwargs):
-                event_count += 1
-                if hasattr(event, "output"):
-                    final_result = event
-                yield event
-
-            end_time = time.time()
-
-            if final_result:
-                _maybe_create_tool_spans_from_messages(final_result)
-
-            output = None
-            metrics: dict[str, float] = {
-                **_wrapper_span_metrics(start_time, end_time),
-                "event_count": event_count,
-            }
-
-            if final_result:
-                output = _shape_result_output(final_result)
-
-            agent_span.log(output=output, metrics=metrics)
-        finally:
-            _reset_tool_trace_capture(tool_trace_token)
+    return _AgentStreamEventsWrapper(
+        wrapped(*args, **kwargs),
+        span_name,
+        input_data,
+        metadata,
+    )
 
 
 def _create_direct_model_request_wrapper():
@@ -430,6 +401,148 @@ def _wrap_concrete_model_class(model_class: Any):
     return model_class
 
 
+class _AgentStreamEventsWrapper(AbstractAsyncContextManager):
+    """Wrapper for agent.run_stream_events() supporting pre-v2 and v2 stream shapes."""
+
+    def __init__(self, event_source: Any, span_name: str, input_data: Any, metadata: Any):
+        self.event_source = event_source
+        self.span_name = span_name
+        self.input_data = input_data
+        self.metadata = metadata
+        self.span_cm = None
+        self.agent_span = None
+        self.start_time = None
+        self._enter_task = None
+        self._tool_trace_token = None
+        self._entered_event_source = None
+        self._event_count = 0
+        self._final_result = None
+
+    def __aiter__(self):
+        async def _iterate():
+            async with self as event_stream:
+                async for event in event_stream:
+                    yield event
+
+        return _iterate()
+
+    async def __aenter__(self):
+        self._enter_task = asyncio.current_task()
+        self.span_cm = start_span(
+            name=self.span_name,
+            type=SpanTypeAttribute.TASK,
+            input=self.input_data if self.input_data else None,
+            metadata=self.metadata,
+        )
+        self.agent_span = self.span_cm.__enter__()
+        self._tool_trace_token = _start_tool_trace_capture()
+        self.start_time = time.time()
+
+        try:
+            if hasattr(self.event_source, "__aenter__"):
+                self._entered_event_source = await self.event_source.__aenter__()
+            else:
+                self._entered_event_source = self.event_source
+        except BaseException:
+            if self._tool_trace_token is not None:
+                _reset_tool_trace_capture(self._tool_trace_token)
+                self._tool_trace_token = None
+            if self.span_cm:
+                self.span_cm.__exit__(*sys.exc_info())
+            raise
+
+        return _AgentStreamEventsIteratorProxy(self._entered_event_source, self)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        suppress = False
+        span_exit_args = (exc_type, exc_val, exc_tb)
+        try:
+            if hasattr(self.event_source, "__aexit__"):
+                suppress = bool(await self.event_source.__aexit__(exc_type, exc_val, exc_tb))
+                if suppress:
+                    span_exit_args = (None, None, None)
+        except BaseException:
+            span_exit_args = sys.exc_info()
+            raise
+        finally:
+            if self.agent_span and self.start_time is not None:
+                end_time = time.time()
+
+                if self._final_result is not None:
+                    _maybe_create_tool_spans_from_messages(self._final_result)
+
+                metrics: dict[str, float] = {
+                    **_wrapper_span_metrics(self.start_time, end_time),
+                    "event_count": self._event_count,
+                }
+                output = _shape_result_output(self._final_result) if self._final_result is not None else None
+                self.agent_span.log(output=output, metrics=metrics)
+
+            if self.span_cm:
+                if asyncio.current_task() is self._enter_task:
+                    self.span_cm.__exit__(*span_exit_args)
+                else:
+                    self.span_cm.end()
+            if self._tool_trace_token is not None:
+                _reset_tool_trace_capture(self._tool_trace_token)
+                self._tool_trace_token = None
+
+        return suppress
+
+
+class _AgentStreamEventsIteratorProxy:
+    """Proxy for stream events that counts events and captures final output."""
+
+    def __init__(self, event_stream: Any, wrapper: _AgentStreamEventsWrapper):
+        self._event_stream = event_stream
+        self._wrapper = wrapper
+        self._iterator = None
+
+    def __getattr__(self, name: str):
+        return getattr(self._event_stream, name)
+
+    def __aiter__(self):
+        self._iterator = _async_iterator(self._event_stream)
+        return self
+
+    async def __anext__(self):
+        if self._iterator is None:
+            self._iterator = _async_iterator(self._event_stream)
+
+        event = await self._iterator.__anext__()
+        self._wrapper._event_count += 1
+
+        event_kind = getattr(event, "event_kind", None)
+        is_agent_run_result_event = event_kind == "agent_run_result" or type(event).__name__ == "AgentRunResultEvent"
+        result = getattr(event, "result", _MISSING)
+        if is_agent_run_result_event and result is not _MISSING and result is not None:
+            self._wrapper._final_result = result
+        elif hasattr(event, "output"):
+            # Older event shapes exposed the final output directly on the event.
+            self._wrapper._final_result = event
+
+        return event
+
+
+def _async_iterator(value: Any) -> Any:
+    return value.__aiter__() if hasattr(value, "__aiter__") else value
+
+
+def _extract_stream_response(stream: Any) -> Any:
+    response = getattr(stream, "response", _MISSING)
+    if response is not _MISSING and response is not None:
+        return response
+
+    get_response = getattr(stream, "get", None)
+    if callable(get_response):
+        return get_response()
+
+    if response is not _MISSING:
+        return response
+
+    raise AttributeError("stream does not expose response or get()")
+
+
 class _AgentStreamWrapper(AbstractAsyncContextManager):
     """Wrapper for agent.run_stream() that adds tracing while passing through the stream result."""
 
@@ -575,7 +688,7 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
                 end_time = time.time()
 
                 try:
-                    final_response = self.stream.get()
+                    final_response = _extract_stream_response(self.stream)
                     output = _shape_model_response(final_response)
                     if self.span_type == SpanTypeAttribute.LLM:
                         metrics = _extract_response_metrics(
@@ -746,7 +859,7 @@ class _DirectStreamWrapperSync:
                 end_time = time.time()
 
                 try:
-                    final_response = self.stream.get()
+                    final_response = _extract_stream_response(self.stream)
                     output = _shape_model_response(final_response)
                     self.span_cm.log(
                         output=output,
@@ -916,9 +1029,22 @@ def _msg_timestamp(msg: Any) -> float | None:
 
 
 _MISSING = object()
-_MESSAGE_FIELDS = ("kind", "role", "timestamp")
+_MESSAGE_FIELDS = ("kind", "role", "timestamp", "state")
 _PART_FIELDS = ("kind", "part_kind", "tool_name", "tool_call_id")
-_RESPONSE_FIELDS = ("kind", "model_name", "timestamp", "usage", "provider_response_id", "provider_details")
+_RESPONSE_FIELDS = (
+    "kind",
+    "model_name",
+    "timestamp",
+    "usage",
+    "provider_response_id",
+    "provider_details",
+    "state",
+    "provider_name",
+    "provider_url",
+    "finish_reason",
+    "run_id",
+    "conversation_id",
+)
 
 
 def _shape_user_prompt(user_prompt: Any) -> Any:
@@ -1080,6 +1206,10 @@ def _extract_model_info_from_model_instance(model: Any) -> tuple[str | None, str
             provider = "openai"
         elif "Anthropic" in class_name:
             provider = "anthropic"
+        elif "GoogleCloud" in class_name:
+            provider = "google-cloud"
+        elif "Google" in class_name:
+            provider = "google"
         elif "Gemini" in class_name:
             provider = "gemini"
         elif "Groq" in class_name:
@@ -1088,6 +1218,8 @@ def _extract_model_info_from_model_instance(model: Any) -> tuple[str | None, str
             provider = "mistral"
         elif "VertexAI" in class_name:
             provider = "vertexai"
+        elif "Xai" in class_name or "XAI" in class_name:
+            provider = "xai"
 
         return model_name, provider
 

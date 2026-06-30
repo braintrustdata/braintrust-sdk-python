@@ -1,93 +1,204 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"What is AI?"}],"model":"gpt-4o-mini","max_completion_tokens":5,"stream":false}'
+    body: '{"rows": [{"_is_merge": true, "id": "c007d15f-e065-486a-84f1-b7c760e33652",
+      "log_id": "g", "metrics": {"completion_audio_tokens": 0.0, "completion_reasoning_tokens":
+      0.0, "completion_tokens": 10.0, "duration": 3.7746760845184326, "end": 1782743400.817319,
+      "prompt_audio_tokens": 0.0, "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens":
+      0.0, "prompt_tokens": 8.0, "start": 1782743397.0426428, "time_to_first_token":
+      3.773794174194336, "tokens": 18.0}, "output": {"conversation_id": null, "finish_reason":
+      "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18", "parts":
+      [{"content": "Hello! How can I assist you today?", "part_kind": "text"}], "provider_details":
+      {"finish_reason": "completed", "timestamp": "2026-06-29 14:29:57+00:00"}, "provider_name":
+      "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
+      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
+      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
+      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
+      "span_id": "bdf1cfeca07c7a1b", "span_parents": ["782c5cf2b0defa72"]},{"_is_merge":
+      true, "id": "6a19ff1e-0fd3-42c1-82ff-e67ffac3a43e", "log_id": "g", "metrics":
+      {"duration": 3.774857759475708, "end": 1782743400.817442, "start": 1782743397.0425842,
+      "time_to_first_token": 3.773852825164795}, "output": {"conversation_id": null,
+      "finish_reason": "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18",
+      "parts": [{"content": "Hello! How can I assist you today?", "part_kind": "text"}],
+      "provider_details": {"finish_reason": "completed", "timestamp": "2026-06-29
+      14:29:57+00:00"}, "provider_name": "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
+      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
+      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
+      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
+      "span_id": "782c5cf2b0defa72", "span_parents": ["74f8ec95c9bb3eec"]}], "api_version":
+      2}'
     headers:
       Accept:
-      - application/json
+      - '*/*'
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       Connection:
       - keep-alive
       Content-Length:
-      - '117'
-      Content-Type:
-      - application/json
-      Host:
-      - api.openai.com
+      - '2551'
       User-Agent:
-      - pydantic-ai/1.107.0
-      X-Stainless-Arch:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=abhi-test-org] [timestamp=1782743408.135]","InternalTraceId":"6a428170000000005167d5db551a4fee","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 29 Jun 2026 14:30:08 GMT
+      Via:
+      - 1.1 f91f0310a52084f5e83e3c1142ad882c.cloudfront.net (CloudFront), 1.1 1c1162ba67ca825df895c1f15c4097e8.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - _YRqI1WiRAcmlTgXB3dfYEYQ9PKx-PthoZzxsGuQSE979wnG3B6mQQ==
+      X-Amz-Cf-Pop:
+      - IAD61-P9
+      - IAD89-P4
+      X-Amzn-Trace-Id:
+      - Root=1-6a428170-31cbb50455324e275878297a;Parent=2aabd591438b2ffe;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '317'
+      etag:
+      - W/"13d-jRYnP6EWO2yTj9s9VAvpOF351oU"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - fukpkE3tIAMEX2w=
+      x-amzn-RequestId:
+      - 0b8cfb4a-bbda-4660-836d-a278847442d7
+      x-bt-internal-trace-id:
+      - 6a428170000000005167d5db551a4fee
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"input":[{"role":"user","content":"What is AI?"}],"max_output_tokens":16,"model":"gpt-4o-mini","stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '111'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/2.0.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
-    uri: https://api.openai.com/v1/chat/completions
+    uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dr7Jk8boX9oOwpEaiigQCawP9eFJm\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781551884,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Artificial Intelligence (AI)\",\n        \"refusal\":
-        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
-        \     \"finish_reason\": \"length\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        11,\n    \"completion_tokens\": 5,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_1c420c5839\"\n}\n"
+      string: "{\n  \"id\": \"resp_0c51acfdf21a0fa6006a4281700a0c81a38f588c3f65d7421c\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782743408,\n  \"status\":
+        \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
+        0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
+        \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 16,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_0c51acfdf21a0fa6006a42817080c881a3ad36055c61c880fc\",\n
+        \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Artificial Intelligence
+        (AI) is a branch of computer science focused on creating systems that\"\n
+        \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 11,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 16,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 27\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0c3feac3f06cbfd-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 15 Jun 2026 19:31:24 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a135a09bcf06a229-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '836'
+      - '2061'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:30:08 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '377'
+      - '796'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=er3nzFCq5_yYyrOx0AoJMbaM9xc04jFWhsc2WG7vnpo-1781551884.196938-1.0.1.1-zqqBWlzMQR53t7W3eLIiXLIqWdhkxXm8CiGVExziywamT5_dqbthRLCBCLs8TOb3a8mEZ9Jm5KV0SbtA9uNCp_EH6JLmjwDVJ6S.UkYWyhYrIP3Lx5Upk_GqZoHi0BAX;
+      - __cf_bm=YnGQPpkSDzOeNNPg8is1hHt0ERcpZKJJOv_P3mTcl8o-1782743407.9636583-1.0.1.1-zJLy9fzKEGKHRxv_E6P0MgzbN_TxuNmIYct87ahE6TwJqqWxXotUGfbx_wTHnBPCtOobCpndUb84mXmkhbDUzD0VU27dATA7kH0NMSOxnbzjiviZcDWly1vJu8mUAtiG;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        15 Jun 2026 20:01:24 GMT
-      x-openai-proxy-wasm:
-      - v0.1
+        29 Jun 2026 15:00:08 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -95,13 +206,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '149999970'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_da3a14ed171246769abb5748606a0d84
+      - 5edd242e-4221-49aa-b76d-de7d11fce1b1
     status:
       code: 200
       message: OK

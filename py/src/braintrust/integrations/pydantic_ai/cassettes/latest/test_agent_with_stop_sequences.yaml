@@ -1,98 +1,412 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"Write a short story about a robot."}],"model":"gpt-4o-mini","max_completion_tokens":500,"stop":["END","\n\n"],"stream":false}'
+    body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "/Users/abhijeetprasad/.superset/worktrees/698022ff-26ce-4bd5-ac6d-5978cac9c633/pydantic-2.0-support/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
+      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
+      "2026-06-29T14:29:57.042504+00:00", "id": "6a19ff1e-0fd3-42c1-82ff-e67ffac3a43e",
+      "input": {"instrument": null, "messages": [{"kind": "request", "parts": [{"content":
+      "Hello", "part_kind": "user-prompt"}], "state": "complete", "timestamp": null}],
+      "model": "openai:gpt-4o-mini", "model_request_parameters": null, "model_settings":
+      null}, "log_id": "g", "metadata": {"model": "gpt-4o-mini", "provider": "openai"},
+      "metrics": {"start": 1782743397.0425029}, "project_id": "test-pydantic-ai-integration",
+      "root_span_id": "3f401912518e77e4d5a879b88ef7aab8", "span_attributes": {"exec_counter":
+      99, "name": "model_request_stream", "type": "task"}, "span_id": "782c5cf2b0defa72",
+      "span_parents": ["74f8ec95c9bb3eec"]},{"_is_merge": false, "context": {"caller_filename":
+      "/Users/abhijeetprasad/.superset/worktrees/698022ff-26ce-4bd5-ac6d-5978cac9c633/pydantic-2.0-support/py/.nox/test_pydantic_ai_integration-latest/lib/python3.14/site-packages/pydantic_ai/direct.py",
+      "caller_functionname": "_consume_async_stream", "caller_lineno": 384}, "created":
+      "2026-06-29T14:29:57.042597+00:00", "id": "c007d15f-e065-486a-84f1-b7c760e33652",
+      "input": {"messages": [{"kind": "request", "parts": [{"content": "Hello", "part_kind":
+      "user-prompt"}], "state": "complete", "timestamp": null}]}, "log_id": "g", "metadata":
+      {"model": "gpt-4o-mini", "provider": "openai"}, "metrics": {"start": 1782743397.042596},
+      "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
+      "span_attributes": {"exec_counter": 100, "name": "chat gpt-4o-mini", "type":
+      "llm"}, "span_id": "bdf1cfeca07c7a1b", "span_parents": ["782c5cf2b0defa72"]}],
+      "api_version": 2}'
     headers:
       Accept:
-      - application/json
+      - '*/*'
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       Connection:
       - keep-alive
       Content-Length:
-      - '164'
-      Content-Type:
-      - application/json
-      Host:
-      - api.openai.com
+      - '2001'
       User-Agent:
-      - pydantic-ai/1.107.0
-      X-Stainless-Arch:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=abhi-test-org] [timestamp=1782743401.247]","InternalTraceId":"6a4281690000000037f98aa03f26ab4e","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 29 Jun 2026 14:30:01 GMT
+      Via:
+      - 1.1 8c35d9f8e012281d9fc1c918b8394b84.cloudfront.net (CloudFront), 1.1 99f09d677f148868d90673c22dfa156c.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - 9z57hCJt4pjiSORPrxzjizzIHhAatyBDJQwSE3l8MgZygQlkXLeGkA==
+      X-Amz-Cf-Pop:
+      - IAD61-P9
+      - IAD89-P4
+      X-Amzn-Trace-Id:
+      - Root=1-6a428169-5cee33654bac942509ea1287;Parent=434761eee7a8138b;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '317'
+      etag:
+      - W/"13d-Y6nUVFypePGUT0wciUeKl5zwbj0"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - fukofGqGIAMEH3A=
+      x-amzn-RequestId:
+      - 55bf9bbd-6d56-4901-9853-436c5aa1a0b8
+      x-bt-internal-trace-id:
+      - 6a4281690000000037f98aa03f26ab4e
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"rows": [{"_is_merge": true, "id": "c007d15f-e065-486a-84f1-b7c760e33652",
+      "log_id": "g", "metrics": {"completion_audio_tokens": 0.0, "completion_reasoning_tokens":
+      0.0, "completion_tokens": 10.0, "duration": 3.7746760845184326, "end": 1782743400.817319,
+      "prompt_audio_tokens": 0.0, "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens":
+      0.0, "prompt_tokens": 8.0, "start": 1782743397.0426428, "time_to_first_token":
+      3.773794174194336, "tokens": 18.0}, "output": {"conversation_id": null, "finish_reason":
+      "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18", "parts":
+      [{"content": "Hello! How can I assist you today?", "part_kind": "text"}], "provider_details":
+      {"finish_reason": "completed", "timestamp": "2026-06-29 14:29:57+00:00"}, "provider_name":
+      "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
+      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
+      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
+      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
+      "span_id": "bdf1cfeca07c7a1b", "span_parents": ["782c5cf2b0defa72"]},{"_is_merge":
+      true, "id": "6a19ff1e-0fd3-42c1-82ff-e67ffac3a43e", "log_id": "g", "metrics":
+      {"duration": 3.774857759475708, "end": 1782743400.817442, "start": 1782743397.0425842,
+      "time_to_first_token": 3.773852825164795}, "output": {"conversation_id": null,
+      "finish_reason": "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18",
+      "parts": [{"content": "Hello! How can I assist you today?", "part_kind": "text"}],
+      "provider_details": {"finish_reason": "completed", "timestamp": "2026-06-29
+      14:29:57+00:00"}, "provider_name": "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
+      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
+      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
+      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
+      "span_id": "782c5cf2b0defa72", "span_parents": ["74f8ec95c9bb3eec"]}], "api_version":
+      2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2551'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=abhi-test-org] [timestamp=1782743401.493]","InternalTraceId":"6a428169000000002c5d6ff070497775","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 29 Jun 2026 14:30:01 GMT
+      Via:
+      - 1.1 f3cfb86b863e74f6ee672065becc9e8e.cloudfront.net (CloudFront), 1.1 d725c4faa041aff90d290d13b8e0701a.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - oG9Seiz6xTqbiLV7O6fPPVnkzlfRxniwKK-r5StduaOKDNbouaEFGw==
+      X-Amz-Cf-Pop:
+      - IAD61-P9
+      - IAD89-P4
+      X-Amzn-Trace-Id:
+      - Root=1-6a428169-044062a64ebac7ed080fcf08;Parent=0f1b0a8d55c6ace8;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '317'
+      etag:
+      - W/"13d-QLrtfTNXosHo1krLWigoMqw9TqE"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - fukohGkRIAMEL7g=
+      x-amzn-RequestId:
+      - 460fb49e-217f-45ac-a0ef-135e3ad3f5a2
+      x-bt-internal-trace-id:
+      - 6a428169000000002c5d6ff070497775
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"rows": [{"_is_merge": true, "id": "c007d15f-e065-486a-84f1-b7c760e33652",
+      "log_id": "g", "metrics": {"completion_audio_tokens": 0.0, "completion_reasoning_tokens":
+      0.0, "completion_tokens": 10.0, "duration": 3.7746760845184326, "end": 1782743400.817319,
+      "prompt_audio_tokens": 0.0, "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens":
+      0.0, "prompt_tokens": 8.0, "start": 1782743397.0426428, "time_to_first_token":
+      3.773794174194336, "tokens": 18.0}, "output": {"conversation_id": null, "finish_reason":
+      "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18", "parts":
+      [{"content": "Hello! How can I assist you today?", "part_kind": "text"}], "provider_details":
+      {"finish_reason": "completed", "timestamp": "2026-06-29 14:29:57+00:00"}, "provider_name":
+      "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
+      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
+      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
+      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
+      "span_id": "bdf1cfeca07c7a1b", "span_parents": ["782c5cf2b0defa72"]},{"_is_merge":
+      true, "id": "6a19ff1e-0fd3-42c1-82ff-e67ffac3a43e", "log_id": "g", "metrics":
+      {"duration": 3.774857759475708, "end": 1782743400.817442, "start": 1782743397.0425842,
+      "time_to_first_token": 3.773852825164795}, "output": {"conversation_id": null,
+      "finish_reason": "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18",
+      "parts": [{"content": "Hello! How can I assist you today?", "part_kind": "text"}],
+      "provider_details": {"finish_reason": "completed", "timestamp": "2026-06-29
+      14:29:57+00:00"}, "provider_name": "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
+      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
+      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
+      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
+      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
+      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
+      "span_id": "782c5cf2b0defa72", "span_parents": ["74f8ec95c9bb3eec"]}], "api_version":
+      2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '2551'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
+        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
+        [user_org=abhi-test-org] [timestamp=1782743405.866]","InternalTraceId":"6a42816d000000002c2c9fbe68530ac4","Path":"/logs3","Service":"api"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 29 Jun 2026 14:30:05 GMT
+      Via:
+      - 1.1 9b9d51d09843a8fb67e0230c8b540698.cloudfront.net (CloudFront), 1.1 55b66a36d5da2f3d3d3c37cd04ab0080.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - v0MkZlMQGRTDEQKIbGkrLXHd0075S3FYcQtmjHmctGPWO9Lu9weptA==
+      X-Amz-Cf-Pop:
+      - IAD61-P9
+      - IAD89-P4
+      X-Amzn-Trace-Id:
+      - Root=1-6a42816a-07e022013a9561d04ae9ff93;Parent=5c0c20f63ea6de77;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Error from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '317'
+      etag:
+      - W/"13d-Qe88jQERHY17apxOFbPh67hrOGs"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - fukovHXoIAMEfdQ=
+      x-amzn-RequestId:
+      - 1b14ce89-9041-408f-8a44-6039a77428f9
+      x-bt-internal-trace-id:
+      - 6a42816d000000002c2c9fbe68530ac4
+    status:
+      code: 403
+      message: Forbidden
+- request:
+    body: '{"input":[{"role":"user","content":"Write a short story about a robot."}],"max_output_tokens":500,"model":"gpt-4o-mini","stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '135'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/2.0.0
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.41.1
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.14.3
+      x-stainless-package-version:
+      - 2.44.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
-    uri: https://api.openai.com/v1/chat/completions
+    uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dr7JiqJsyP4dqw8oOCk2kodXBuzAc\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1781551882,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"In a small town nestled between rolling
-        hills, there stood a curious little workshop owned by an elderly inventor
-        named Mr. Fletcher. With his frazzled hair and thick glasses that perpetually
-        slid down his nose, he devoted his days to bringing life to metal and wire.
-        His latest creation was unlike any he had crafted before; a small robot named
-        Luna.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
-        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
-        \ \"usage\": {\n    \"prompt_tokens\": 15,\n    \"completion_tokens\": 71,\n
-        \   \"total_tokens\": 86,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_97db7598f6\"\n}\n"
+      string: "{\n  \"id\": \"resp_003a6ed225e70fbc006a4281692dd4819ea71da2e7b6e954af\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1782743401,\n  \"status\":
+        \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
+        \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
+        0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
+        \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\":
+        null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_003a6ed225e70fbc006a428169d210819ea7d5aca9f6a18b77\",\n
+        \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
+        [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"In a world where nature
+        and technology intertwined, there existed a small robot named Tinker. Tinker
+        was not equipped with the latest artificial intelligence or cutting-edge machinery;
+        instead, he was a patchwork of spare parts, created by an old tinkerer named
+        Elara. Unlike the sleek, sophisticated robots that roamed the city, Tinker
+        had a charm all his own, with mismatched limbs and a heart made from a shiny
+        copper core.\\n\\nElara had built Tinker to assist her in her garden, a flourishing
+        sanctuary tucked away from the bustling streets of the city. Surrounded by
+        vibrant flowers and towering vegetables, Tinker learned the rhythms of nurturing
+        life. His days were spent watering the plants, pulling weeds, and collecting
+        the last blossoms of twilight. The garden thrived under their care, a colorful
+        testament to their teamwork.\\n\\nDespite his seemingly simple programming,
+        Tinker had an insatiable curiosity. He longed to explore the world beyond
+        the garden, where gleaming skyscrapers stretched toward the sky and streets
+        buzzed with energy. One sunny morning, as the golden rays filtered through
+        the leaves, Tinker could no longer contain his yearning.\\n\\n\\u201cToday,
+        I shall venture into the city!\\u201d he declared, his voice a cheerful whir.
+        With a mischievous spark in his eyes, Tinker rolled out of the garden and
+        into the unknown.\\n\\nThe city dazzled him. Neon lights flickered and cars
+        zipped by like fireflies. He watched as people hurried along, faces buried
+        in screens, visibly detached from the world around them. Tinker\\u2019s heart\\u2014if
+        such a thing could be said of a robot\\u2014swelled with hope. Perhaps he
+        could remind them of the beauty they missed in their rush.\\n\\nTinker gathered
+        fallen leaves and colorful petals, weaving them into small, whimsical bouquets.
+        He approached a girl sitting alone on a bench, her gaze lost in the glow of
+        her device. She barely looked up as he presented the bouquet, a mixture of
+        wildflowers and vibrant leaves.\\n\\n\\u201cWould you like these?\\u201d Tinker
+        asked, his voice bright and sincere.\\n\\nHer eyes widened in surprise. \\u201cYou\\u2014you
+        made these?\\u201d\\n\\n\\u201cYes! They\\u2019re to remind you that beauty
+        is all around us,\\u201d he replied.\\n\\nAs she accepted the flowers, a smile
+        slowly spread across her face. \\u201cThank you. I\\u2026 I almost forgot.\\u201d
+        She looked around, taking in the trees swaying gently in the breeze, the laughter
+        of children, the fragrance of the flowers rushing back to her\"\n        }\n
+        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 15,\n    \"input_tokens_details\":
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 500,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 515\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - a0c3fe9d8c33ab2e-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 15 Jun 2026 19:31:23 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a135a06fe9d9a2d9-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '1158'
+      - '4452'
+      content-type:
+      - application/json
+      date:
+      - Mon, 29 Jun 2026 14:30:06 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1221'
+      - '5893'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=PShq9DfbLFe70J0VYJeHDLIVkLbW9.j4qYcQG2fYzhE-1781551881.843637-1.0.1.1-Ygrmg_VR6QQXHPAYN2YX3fSdWHP3vf7QUZJPZIao1Xi4jHER7G9jr0VxcuVZ19xJYcL.g91DitB8IX2cWkwTgBjVuc5nFVvFKqcRRFwKWnD0JT5paU3.GyfyQTgVka9j;
+      - __cf_bm=SELoK9kN3dF6aXYMfpHM8wsKQV0wlewEULcvQ6bRRNw-1782743400.945269-1.0.1.1-RlJNJh2FJyzGik9tQ1XAm3gSbIN0rVnPhteQ1k508BFApHn3wzR.l6ILgQ1TwJCs65RAMFfAurIuSWS6AdAr0DUi463TMVnb26GhYXi2VlTHjDQ.ChJKisRm.elbCAI4;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        15 Jun 2026 20:01:23 GMT
-      x-openai-proxy-wasm:
-      - v0.1
+        29 Jun 2026 15:00:06 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -100,13 +414,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999987'
+      - '149999965'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b5ec71f923f542ca9c54905cd0689b86
+      - a31346bc-ef36-4ebf-9761-533bb01fb36a
     status:
       code: 200
       message: OK

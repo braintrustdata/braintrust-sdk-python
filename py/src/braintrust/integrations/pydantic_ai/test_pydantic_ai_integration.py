@@ -1214,10 +1214,19 @@ async def test_agent_run_stream_events(memory_logger):
     start = time.time()
     event_count = 0
     events = []
-    # Consume all events
-    async for event in agent.run_stream_events("What is 5+5?"):
-        event_count += 1
-        events.append(event)
+    # Consume all events. Pydantic AI <2 returned a directly async-iterable
+    # object; v2 returns an async context manager whose entered value is
+    # async-iterable. Exercise the real provider-backed path for both shapes.
+    event_stream = agent.run_stream_events("What is 5+5?")
+    if hasattr(event_stream, "__aenter__"):
+        async with event_stream as entered_event_stream:
+            async for event in entered_event_stream:
+                event_count += 1
+                events.append(event)
+    else:
+        async for event in event_stream:
+            event_count += 1
+            events.append(event)
     end = time.time()
 
     # Verify we got events
@@ -1236,6 +1245,8 @@ async def test_agent_run_stream_events(memory_logger):
     assert agent_span["metadata"]["model"] == "gpt-4o-mini"
     assert "5+5" in str(agent_span["input"]) or "What" in str(agent_span["input"])
     assert agent_span["metrics"]["event_count"] == event_count
+    assert agent_span["output"]
+    assert "10" in str(agent_span["output"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # Regression: wrapper agent_run_stream_events span must NOT log token metrics.
@@ -1245,6 +1256,27 @@ async def test_agent_run_stream_events(memory_logger):
         assert token_key not in agent_span["metrics"], (
             f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
         )
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_run_stream_events_direct_async_for_compatibility(memory_logger):
+    """The Braintrust wrapper keeps the pre-v2 direct async-for usage working."""
+    assert not memory_logger.pop()
+
+    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
+
+    event_count = 0
+    async for event in agent.run_stream_events("What is 3+7?"):
+        event_count += 1
+        assert event is not None
+
+    assert event_count > 0
+
+    spans = memory_logger.pop()
+    agent_span = next((s for s in spans if "agent_run_stream_events" in s["span_attributes"]["name"]), None)
+    assert agent_span is not None, "agent_run_stream_events span not found"
+    assert agent_span["metrics"]["event_count"] == event_count
 
 
 @pytest.mark.vcr
@@ -1272,6 +1304,8 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
     assert span["span_attributes"]["name"] == "model_request_stream_sync"
     assert span["metadata"]["model"] == "gpt-4o-mini"
+    assert "output" in span
+    assert "parts" in span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
 
     # CRITICAL: Verify time_to_first_token is captured in sync direct streaming
@@ -2262,6 +2296,116 @@ async def test_model_class_span_names(memory_logger):
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
 
+@pytest.mark.asyncio
+async def test_agent_stream_events_enter_error_cleans_up(memory_logger):
+    from braintrust.integrations.pydantic_ai.tracing import _AgentStreamEventsWrapper, _tool_trace_state
+
+    class FailingEventSource:
+        async def __aenter__(self):
+            raise RuntimeError("enter boom")
+
+    assert not memory_logger.pop()
+
+    with pytest.raises(RuntimeError, match="enter boom"):
+        async with _AgentStreamEventsWrapper(FailingEventSource(), "agent_run_stream_events", {}, {}):
+            pass
+
+    assert _tool_trace_state.get() is None
+
+
+@pytest.mark.asyncio
+async def test_agent_stream_events_iteration_error_is_logged(memory_logger):
+    from braintrust.integrations.pydantic_ai.tracing import _AgentStreamEventsWrapper
+
+    class FailingEventStream:
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            raise RuntimeError("iterate boom")
+
+    assert not memory_logger.pop()
+
+    async def consume_events():
+        async for _event in _AgentStreamEventsWrapper(FailingEventStream(), "agent_run_stream_events", {}, {}):
+            pass
+
+    with pytest.raises(RuntimeError, match="iterate boom"):
+        await consume_events()
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert "iterate boom" in str(spans[0].get("error"))
+
+
+def test_wrap_model_instance_does_not_emit_public_deprecation_warning():
+    import warnings
+
+    from braintrust.integrations.pydantic_ai.tracing import _wrap_model_instance
+
+    class DummyModel:
+        async def request(self, *args, **kwargs):
+            return None
+
+        def request_stream(self, *args, **kwargs):
+            return iter(())
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        assert _wrap_model_instance(DummyModel()) is not None
+
+    assert not [warning for warning in caught if issubclass(warning.category, DeprecationWarning)]
+
+
+def test_v2_message_and_response_fields_are_shaped():
+    from types import SimpleNamespace
+
+    from braintrust.integrations.pydantic_ai.tracing import _shape_message, _shape_model_response
+
+    message = SimpleNamespace(kind="request", state="complete", parts=["hello"])
+    assert _shape_message(message)["state"] == "complete"
+
+    response = SimpleNamespace(
+        kind="response",
+        state="complete",
+        model_name="gpt-4o-mini",
+        provider_name="openai",
+        provider_url="https://api.openai.com/v1/responses",
+        finish_reason="stop",
+        run_id="run-123",
+        conversation_id="conv-123",
+        parts=["done"],
+    )
+
+    shaped = _shape_model_response(response)
+    assert shaped["state"] == "complete"
+    assert shaped["provider_name"] == "openai"
+    assert shaped["provider_url"] == "https://api.openai.com/v1/responses"
+    assert shaped["finish_reason"] == "stop"
+    assert shaped["run_id"] == "run-123"
+    assert shaped["conversation_id"] == "conv-123"
+
+
+def test_v2_model_provider_inference():
+    from braintrust.integrations.pydantic_ai.tracing import _extract_model_info_from_model_instance
+
+    GoogleModel = type("GoogleModel", (), {})
+    google_model = GoogleModel()
+    google_model.model_name = "gemini-2.0-flash"
+
+    GoogleCloud = type("GoogleCloud", (), {})
+    google_cloud_model = GoogleCloud()
+    google_cloud_model.model_name = "gemini-2.0-flash"
+
+    XaiModel = type("XaiModel", (), {})
+    xai_model = XaiModel()
+    xai_model.model_name = "grok-2"
+
+    assert _extract_model_info_from_model_instance(google_model) == ("gemini-2.0-flash", "google")
+    assert _extract_model_info_from_model_instance(google_cloud_model) == ("gemini-2.0-flash", "google-cloud")
+    assert _extract_model_info_from_model_instance(xai_model) == ("grok-2", "xai")
+
+
 def test_model_classes_patcher_marker_check_is_mro_safe():
     from braintrust.integrations.pydantic_ai.patchers import ModelClassesPatcher
 
@@ -2939,7 +3083,7 @@ async def test_agent_with_short_max_tokens(memory_logger):
     agent = Agent(MODEL)
 
     start = time.time()
-    result = await agent.run("What is AI?", model_settings=ModelSettings(max_tokens=5))
+    result = await agent.run("What is AI?", model_settings=ModelSettings(max_tokens=16))
     end = time.time()
 
     # Truncated responses are still valid output; no exception should be raised.
@@ -2961,7 +3105,7 @@ async def test_agent_with_short_max_tokens(memory_logger):
 
     # max_tokens passed to run() → in input.model_settings
     assert "model_settings" in agent_span["input"]
-    assert agent_span["input"]["model_settings"].get("max_tokens") == 5
+    assert agent_span["input"]["model_settings"].get("max_tokens") == 16
 
     assert agent_span["output"]
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
