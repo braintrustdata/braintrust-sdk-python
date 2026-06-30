@@ -3456,12 +3456,12 @@ class TestJSONAttachment(TestCase):
 class TestDatasetInternalBtql(TestCase):
     """Test that _internal_btql parameters (especially limit) are properly passed through to BTQL queries."""
 
-    def test_init_dataset_applies_bt_eval_sample_runtime_value(self):
-        """Test that bt eval --sample is injected into dataset BTQL."""
+    def test_init_dataset_applies_bt_eval_internal_btql_runtime_value(self):
+        """Test that bt eval runtime BTQL is injected into dataset BTQL."""
         from braintrust.logger import init_dataset
 
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
         try:
             dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
 
@@ -3469,12 +3469,12 @@ class TestDatasetInternalBtql(TestCase):
         finally:
             monkeypatch.undo()
 
-    def test_init_dataset_merges_bt_eval_sample_with_internal_btql(self):
-        """Test that bt eval --sample is added to existing BTQL filters."""
+    def test_init_dataset_merges_bt_eval_internal_btql_with_internal_btql(self):
+        """Test that bt eval runtime BTQL is added to existing BTQL filters."""
         from braintrust.logger import init_dataset
 
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5, "limit": 10}, raising=False)
         try:
             internal_btql = {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}}
             dataset = init_dataset(
@@ -3487,18 +3487,22 @@ class TestDatasetInternalBtql(TestCase):
 
             self.assertEqual(
                 dataset._internal_btql,
-                {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}, "sample": 5},
+                {
+                    "where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"},
+                    "sample": 5,
+                    "limit": 10,
+                },
             )
             self.assertEqual(internal_btql, {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}})
         finally:
             monkeypatch.undo()
 
     def test_init_dataset_preserves_explicit_internal_btql_sample(self):
-        """Test that an explicit BTQL sample overrides bt eval --sample."""
+        """Test that an explicit BTQL sample overrides bt eval runtime BTQL."""
         from braintrust.logger import init_dataset
 
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5, "limit": 10}, raising=False)
         try:
             dataset = init_dataset(
                 project="test-project",
@@ -3512,12 +3516,12 @@ class TestDatasetInternalBtql(TestCase):
         finally:
             monkeypatch.undo()
 
-    def test_init_dataset_keeps_btql_unchanged_without_eval_sample_runtime_value(self):
-        """Test that ordinary init_dataset calls are unchanged outside bt eval --sample."""
+    def test_init_dataset_keeps_btql_unchanged_without_eval_internal_btql_runtime_value(self):
+        """Test that ordinary init_dataset calls are unchanged without runtime BTQL."""
         from braintrust.logger import init_dataset
 
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.delattr(builtins, "__bt_eval_sample_rate", raising=False)
+        monkeypatch.delattr(builtins, "__bt_eval_internal_btql", raising=False)
         try:
             dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
 
@@ -3525,12 +3529,12 @@ class TestDatasetInternalBtql(TestCase):
         finally:
             monkeypatch.undo()
 
-    def test_init_dataset_forwards_bt_eval_sample_runtime_value_to_fetch(self):
-        """Test that bt eval --sample is included in fetched dataset BTQL."""
+    def test_init_dataset_forwards_bt_eval_internal_btql_runtime_value_to_fetch(self):
+        """Test that bt eval runtime BTQL is included in fetched dataset BTQL."""
         from braintrust.logger import init_dataset
 
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_sample_rate", 5, raising=False)
+        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
         try:
             mock_state = MagicMock()
             mock_state.org_id = "test-org"
