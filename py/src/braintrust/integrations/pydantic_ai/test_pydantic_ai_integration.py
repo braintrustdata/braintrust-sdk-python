@@ -1245,6 +1245,8 @@ async def test_agent_run_stream_events(memory_logger):
     assert agent_span["metadata"]["model"] == "gpt-4o-mini"
     assert "5+5" in str(agent_span["input"]) or "What" in str(agent_span["input"])
     assert agent_span["metrics"]["event_count"] == event_count
+    assert agent_span["output"]
+    assert "10" in str(agent_span["output"])
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # Regression: wrapper agent_run_stream_events span must NOT log token metrics.

@@ -468,14 +468,14 @@ class _AgentStreamEventsWrapper(AbstractAsyncContextManager):
             if self.agent_span and self.start_time is not None:
                 end_time = time.time()
 
-                if self._final_result:
+                if self._final_result is not None:
                     _maybe_create_tool_spans_from_messages(self._final_result)
 
                 metrics: dict[str, float] = {
                     **_wrapper_span_metrics(self.start_time, end_time),
                     "event_count": self._event_count,
                 }
-                output = _shape_result_output(self._final_result) if self._final_result else None
+                output = _shape_result_output(self._final_result) if self._final_result is not None else None
                 self.agent_span.log(output=output, metrics=metrics)
 
             if self.span_cm:
@@ -511,8 +511,16 @@ class _AgentStreamEventsIteratorProxy:
 
         event = await self._iterator.__anext__()
         self._wrapper._event_count += 1
-        if hasattr(event, "output"):
+
+        event_kind = getattr(event, "event_kind", None)
+        is_agent_run_result_event = event_kind == "agent_run_result" or type(event).__name__ == "AgentRunResultEvent"
+        result = getattr(event, "result", _MISSING)
+        if is_agent_run_result_event and result is not _MISSING and result is not None:
+            self._wrapper._final_result = result
+        elif hasattr(event, "output"):
+            # Older event shapes exposed the final output directly on the event.
             self._wrapper._final_result = event
+
         return event
 
 
