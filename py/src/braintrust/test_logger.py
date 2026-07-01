@@ -3868,6 +3868,20 @@ def test_check_org_info_with_git_metadata_uses_server_settings():
     assert set(state.git_metadata_settings.fields) == {"commit", "branch"}
 
 
+def test_proxy_conn_strips_v1_proxy_suffix():
+    """EU/self-hosted proxy_url ends in /v1/proxy; proxy_conn must target the API host root."""
+    state = BraintrustState()
+    state.proxy_url = "https://api-eu.braintrust.dev/v1/proxy"
+    assert state.proxy_conn().base_url == "https://api-eu.braintrust.dev"
+
+
+def test_proxy_conn_leaves_bare_host_unchanged():
+    """A bare proxy host (US default) is used as-is."""
+    state = BraintrustState()
+    state.proxy_url = "https://api.braintrust.dev"
+    assert state.proxy_conn().base_url == "https://api.braintrust.dev"
+
+
 def test_get_repo_info_without_settings_returns_none():
     """Direct call to get_repo_info with settings=None should return None."""
     assert get_repo_info(None) is None
