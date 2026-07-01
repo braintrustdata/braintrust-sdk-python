@@ -1,7 +1,7 @@
 """Tests for Trace functionality."""
 
 import pytest
-from braintrust.trace import CachedSpanFetcher, LocalTrace, SpanData
+from braintrust.trace import CachedSpanFetcher, LocalTrace, SpanData, SpanFetcher
 
 
 # Helper to create mock spans
@@ -328,6 +328,48 @@ class TestCachedSpanFetcher:
         assert call_args[0] is None or call_args[0] == []
         assert len(result) == 1
 
+    @pytest.mark.parametrize(
+        ("brainstore_realtime", "expected"),
+        [
+            (None, True),
+            (False, False),
+        ],
+    )
+    def test_span_fetcher_threads_realtime_setting(self, brainstore_realtime, expected):
+        calls = []
+        state = _DummyState(calls)
+        kwargs = dict(
+            object_type="project_logs",
+            object_id="project-1",
+            root_span_id="root-1",
+            state=state,
+        )
+        if brainstore_realtime is not None:
+            kwargs["brainstore_realtime"] = brainstore_realtime
+        fetcher = SpanFetcher(**kwargs)
+
+        assert list(fetcher.fetch()) == []
+        assert calls[0]["json"]["brainstore_realtime"] is expected
+
+    @pytest.mark.asyncio
+    async def test_cached_span_fetcher_threads_realtime_setting(self):
+        calls = []
+        state = _DummyState(calls)
+
+        async def get_state():
+            return state
+
+        fetcher = CachedSpanFetcher(
+            object_type="project_logs",
+            object_id="project-1",
+            root_span_id="root-1",
+            get_state=get_state,
+            brainstore_realtime=False,
+        )
+
+        assert await fetcher.get_spans() == []
+        assert calls[0]["json"]["brainstore_realtime"] is False
+
 
 class _DummySpanCache:
     def get_by_root_span_id(self, root_span_id: str):
@@ -335,11 +377,35 @@ class _DummySpanCache:
 
 
 class _DummyState:
-    def __init__(self):
+    def __init__(self, api_calls=None):
         self.span_cache = _DummySpanCache()
+        self.api_calls = api_calls
 
     def login(self):
         return None
+
+    def api_conn(self):
+        return _DummyApiConn(self.api_calls)
+
+
+class _DummyResponse:
+    text = ""
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return {"data": []}
+
+
+class _DummyApiConn:
+    def __init__(self, calls):
+        self.calls = calls
+
+    def post(self, path, *args, **kwargs):
+        if self.calls is not None:
+            self.calls.append({"path": path, "args": args, **kwargs})
+        return _DummyResponse()
 
 
 class TestLocalTraceGetThread:
