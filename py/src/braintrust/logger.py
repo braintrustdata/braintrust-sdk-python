@@ -3200,6 +3200,7 @@ class ObjectFetcher(ABC, Generic[TMapping]):
         pinned_version: None | int | str = None,
         mutate_record: Callable[[TMapping], TMapping] | None = None,
         _internal_btql: dict[str, Any] | None = None,
+        _internal_brainstore_realtime: bool = True,
     ):
         self.object_type = object_type
 
@@ -3215,6 +3216,7 @@ class ObjectFetcher(ABC, Generic[TMapping]):
 
         self._fetched_data: list[TMapping] | None = None
         self._internal_btql = _internal_btql
+        self._internal_brainstore_realtime = _internal_brainstore_realtime
 
     def fetch(self, batch_size: int | None = None) -> Iterator[TMapping]:
         """
@@ -3282,7 +3284,7 @@ class ObjectFetcher(ABC, Generic[TMapping]):
                             **(self._internal_btql or {}),
                         },
                         "use_columnstore": False,
-                        "brainstore_realtime": True,
+                        "brainstore_realtime": self._internal_brainstore_realtime,
                         "query_source": f"py_sdk_object_fetcher_{self.object_type}",
                         **({"version": self._pinned_version} if self._pinned_version is not None else {}),
                     },

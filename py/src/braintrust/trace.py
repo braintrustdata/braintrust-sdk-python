@@ -75,6 +75,7 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
         state: BraintrustState,
         span_type_filter: list[str] | None = None,
         include_scorers: bool = False,
+        brainstore_realtime: bool = True,
     ):
         # Build the filter expression for root_span_id and optionally span_attributes.type
         filter_expr = self._build_filter(root_span_id, span_type_filter, include_scorers)
@@ -82,6 +83,7 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
         super().__init__(
             object_type=object_type,
             _internal_btql={"filter": filter_expr},
+            _internal_brainstore_realtime=brainstore_realtime,
         )
         self._object_id = object_id
         self._state = state
@@ -171,6 +173,7 @@ class CachedSpanFetcher:
         root_span_id: str | None = None,
         get_state: Callable[[], Awaitable[BraintrustState]] | None = None,
         fetch_fn: SpanFetchFn | None = None,
+        brainstore_realtime: bool = True,
     ):
         self._span_cache: dict[str, list[SpanData]] = {}
         self._all_fetched = False
@@ -204,6 +207,7 @@ class CachedSpanFetcher:
                     state=state,
                     span_type_filter=span_type,
                     include_scorers=include_scorers,
+                    brainstore_realtime=brainstore_realtime,
                 )
                 rows = list(fetcher.fetch())
                 return [
