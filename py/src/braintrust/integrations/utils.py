@@ -11,16 +11,19 @@ _try_to_dict``).
 
 import base64
 import binascii
+import io
 import mimetypes
 import os
 import re
 import time
 import warnings
+import wave
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from numbers import Real
 from typing import Any
 
+from braintrust.env import BraintrustEnv
 from braintrust.logger import Attachment, Span
 from braintrust.util import is_numeric
 
@@ -444,6 +447,52 @@ def _infer_audio_mime_type(response: Any, response_format: Any = None) -> str:
         )
 
     return "application/octet-stream"
+
+
+def _resolve_audio_attachment_options(
+    *,
+    capture_audio_attachments: bool | None = None,
+    capture_user_audio_attachments: bool | None = None,
+    capture_agent_audio_attachments: bool | None = None,
+) -> tuple[bool, bool]:
+    """Resolve generic user and agent audio attachment settings.
+
+    Per-speaker arguments take precedence over the aggregate argument, which
+    takes precedence over ``BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS`` or
+    ``BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS``. Audio attachments are
+    disabled when no argument or environment variable enables them. The returned tuple is
+    ``(capture_user_audio_attachments, capture_agent_audio_attachments)``.
+    """
+
+    def resolve(specific: bool | None, environment: bool) -> bool:
+        if specific is not None:
+            return specific
+        if capture_audio_attachments is not None:
+            return capture_audio_attachments
+        return environment
+
+    return (
+        resolve(
+            capture_user_audio_attachments,
+            BraintrustEnv.CAPTURE_USER_AUDIO_ATTACHMENTS.get(False),
+        ),
+        resolve(
+            capture_agent_audio_attachments,
+            BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False),
+        ),
+    )
+
+
+def _pcm_to_wav(audio: bytes, *, sample_rate: int, num_channels: int) -> bytes:
+    """Wrap signed 16-bit PCM audio bytes in a WAV container."""
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav_file:
+        writer: Any = wav_file
+        writer.setnchannels(num_channels)  # pylint: disable=no-member
+        writer.setsampwidth(2)  # pylint: disable=no-member
+        writer.setframerate(sample_rate)  # pylint: disable=no-member
+        writer.writeframes(audio)  # pylint: disable=no-member
+    return buffer.getvalue()
 
 
 def _extract_audio_output(
