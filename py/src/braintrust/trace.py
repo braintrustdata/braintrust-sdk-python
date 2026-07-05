@@ -260,6 +260,10 @@ class CachedSpanFetcher:
 
         # If no filter requested, fetch everything
         if not span_type or len(span_type) == 0:
+            # A full fetch is authoritative; reset the per-type cache first so a
+            # prior typed fetch's spans are not duplicated by re-fetching them
+            # (_fetch_spans appends).
+            self._span_cache = {}
             await self._fetch_spans(None)
             if self._span_cache:  # Only cache if we got results
                 self._all_fetched = True
