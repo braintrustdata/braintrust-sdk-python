@@ -1974,6 +1974,10 @@ class PromptParserNullish(TypedDict):
     """
     If true, adds a 'No match' option. When selected, no tag is deposited.
     """
+    allow_skip: NotRequired[bool | None]
+    """
+    If true, adds a 'Skip' option. When selected, the scorer returns null.
+    """
 
 
 class PromptSessionEvent(TypedDict):
