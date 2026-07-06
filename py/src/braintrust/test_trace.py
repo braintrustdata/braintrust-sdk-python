@@ -42,6 +42,28 @@ class TestCachedSpanFetcher:
         assert {s.span_id for s in result} == {"span-1", "span-2", "span-3"}
 
     @pytest.mark.asyncio
+    async def test_fetch_all_after_typed_fetch_has_no_duplicates(self):
+        """A typed fetch followed by a full fetch must not duplicate spans."""
+        all_spans = [
+            make_span("fn-1", "function"),
+            make_span("llm-1", "llm"),
+            make_span("llm-2", "llm"),
+        ]
+
+        async def fetch_fn(span_type):
+            if span_type:
+                return [s for s in all_spans if s.span_attributes["type"] in span_type]
+            return all_spans
+
+        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        await fetcher.get_spans(["llm"])
+        result = await fetcher.get_spans()
+
+        span_ids = [s.span_id for s in result]
+        assert sorted(span_ids) == ["fn-1", "llm-1", "llm-2"]
+        assert len(span_ids) == len(set(span_ids)), f"duplicate spans: {span_ids}"
+
+    @pytest.mark.asyncio
     async def test_fetch_preserves_span_result_fields(self):
         """Test that fetched spans preserve fields needed for full trace attachments."""
         mock_spans = [
