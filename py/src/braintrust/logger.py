@@ -413,6 +413,18 @@ class _NoopSpan(Span):
 NOOP_SPAN: Span = _NoopSpan()
 NOOP_SPAN_PERMALINK = "https://www.braintrust.dev/noop-span"
 
+_V1_PROXY_SUFFIX = "/v1/proxy"
+
+
+def _normalize_proxy_conn_url(proxy_url: str) -> str:
+    # proxy_url may point at the universal proxy (`{api_url}/v1/proxy`) for
+    # EU/self-hosted orgs, but proxy_conn only targets Braintrust API endpoints
+    # (e.g. function/invoke, function/sandbox-list) served at the API host root.
+    # Drop the suffix so these requests resolve on all data planes.
+    if proxy_url.endswith(_V1_PROXY_SUFFIX):
+        return proxy_url[: -len(_V1_PROXY_SUFFIX)]
+    return proxy_url
+
 
 class BraintrustState:
     def __init__(self):
@@ -640,7 +652,7 @@ class BraintrustState:
         if not self._proxy_conn:
             if not self.proxy_url:
                 raise RuntimeError("Must initialize proxy_url before requesting proxy_conn")
-            self._proxy_conn = HTTPConnection(self.proxy_url, adapter=_http_adapter)
+            self._proxy_conn = HTTPConnection(_normalize_proxy_conn_url(self.proxy_url), adapter=_http_adapter)
         return self._proxy_conn
 
     def user_info(self) -> Mapping[str, Any]:
