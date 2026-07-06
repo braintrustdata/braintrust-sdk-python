@@ -8,7 +8,7 @@ from contextlib import AbstractAsyncContextManager
 from typing import Any
 
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import start_span
+from braintrust.logger import _internal_get_global_state, start_span
 from braintrust.span_types import SpanTypeAttribute
 from wrapt import wrap_function_wrapper
 
@@ -853,8 +853,6 @@ class _DirectStreamWrapperSync:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            self.stream_cm.__exit__(exc_type, exc_val, exc_tb)
-        finally:
             if self.span_cm and self.start_time and self.stream:
                 end_time = time.time()
 
@@ -868,6 +866,8 @@ class _DirectStreamWrapperSync:
                 except Exception as e:
                     logger.debug(f"Failed to extract stream output/metrics: {e}")
 
+            self.stream_cm.__exit__(exc_type, exc_val, exc_tb)
+        finally:
             # Always clean up span context
             if self.span_cm:
                 self.span_cm.__exit__(None, None, None)
@@ -1351,6 +1351,60 @@ def _extract_response_metrics(
                 metrics["prompt_cached_tokens"] = float(cached)
 
     return metrics if metrics else None
+
+
+class _ContextPropagatingAsyncContextManager(AbstractAsyncContextManager):
+    """Async context manager wrapper that applies a copied context in the current task."""
+
+    def __init__(self, cm: Any, ctx: contextvars.Context):
+        self._cm = cm
+        self._ctx = ctx
+        self._tokens: list[tuple[contextvars.ContextVar[Any], contextvars.Token[Any]]] = []
+        state = _internal_get_global_state()
+        self._background_logger = getattr(state._override_bg_logger, "logger", None)
+        self._previous_background_logger: Any = None
+        self._background_logger_applied = False
+
+    def _apply_context(self) -> None:
+        self._tokens = [(var, var.set(value)) for var, value in self._ctx.items()]
+        if self._background_logger is not None:
+            state = _internal_get_global_state()
+            self._previous_background_logger = getattr(state._override_bg_logger, "logger", None)
+            state._override_bg_logger.logger = self._background_logger
+            self._background_logger_applied = True
+
+    def _reset_context(self) -> None:
+        if self._background_logger_applied:
+            state = _internal_get_global_state()
+            state._override_bg_logger.logger = self._previous_background_logger
+            self._background_logger_applied = False
+        while self._tokens:
+            var, token = self._tokens.pop()
+            var.reset(token)
+
+    async def __aenter__(self) -> Any:
+        self._apply_context()
+        try:
+            return await self._cm.__aenter__()
+        except BaseException:
+            self._reset_context()
+            raise
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
+        try:
+            return await self._cm.__aexit__(exc_type, exc_val, exc_tb)
+        finally:
+            self._reset_context()
+
+
+def _sync_stream_bridge_init_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> None:
+    """Propagate Braintrust context into Pydantic AI's SyncStreamBridge portal thread."""
+    ctx = contextvars.copy_context()
+    if args:
+        args = (_ContextPropagatingAsyncContextManager(args[0], ctx), *args[1:])
+    elif "cm" in kwargs:
+        kwargs = {**kwargs, "cm": _ContextPropagatingAsyncContextManager(kwargs["cm"], ctx)}
+    return wrapped(*args, **kwargs)
 
 
 def _create_start_producer_wrapper():

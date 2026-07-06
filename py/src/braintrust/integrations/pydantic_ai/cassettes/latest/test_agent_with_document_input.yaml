@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.0.0
+      - pydantic-ai/2.5.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -39,35 +39,36 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_070048abad26aae8006a428154c318819c929bcfd8aa33dd97\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782743382,\n  \"status\":
+      string: "{\n  \"id\": \"resp_04a6b544bd344653006a4bd271e3d481a0bc4a0078bedbd743\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783353971,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782743383,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1783353973,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 150,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_070048abad26aae8006a428156e2d4819ca83ea5f52179cb25\",\n
+        \     \"id\": \"msg_04a6b544bd344653006a4bd2747c1881a0b0ae90969b92398c\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"The document appears
-        to be a simple test document, likely containing no specific content other
-        than its title. If there are particular sections or details you need assistance
-        with, please let me know!\"\n        }\n      ],\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        to be labeled as a \\\"Test Document\\\" but does not provide any additional
+        content or context. It may be intended for testing purposes or as a placeholder.
+        If you have specific questions or need further details, feel free to ask!\"\n
+        \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 32,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 38,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 70\n  },\n
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 50,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 82\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
@@ -79,19 +80,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1359ff17b30c48a-YYZ
+      - a16fdae76c4ef54f-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2138'
+      - '2186'
       content-type:
       - application/json
       date:
-      - Mon, 29 Jun 2026 14:29:43 GMT
+      - Mon, 06 Jul 2026 16:06:13 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '2607'
+      - '3283'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -99,9 +100,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=rggM51m0mFn5uovRueu443YJaLCRLn2h4nJrJ8Qv1P0-1782743380.7149756-1.0.1.1-OBWP5UFYI.txjGQLyqVWaEZR3pbNyc_vpqORBc6ybdFq.E6f9ws8z_MN0e9DiSEk7p3DnvvyPQGtEjGCyb9svw1H9AQLEgMpoo.N3xmFeCRyrqBK8km5eZ6bCHQlakLZ;
+      - __cf_bm=W0k66UGyJR_QbNzlgSZRPZyjd8zP56_tDyMJ_XAfSio-1783353969.8253884-1.0.1.1-TD7gN8ofUz4QtSCHgL.OEkte0ifrRaDM8PE8DmblAxBe8imYxaS6_wGDZFKthPQ.6CDgfGaUkuKQry4zOcCUKKoYgZ3DJhEFmTQrnvsd9Jw4LSiEXtYCU7yXVFnycDiX;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 14:59:43 GMT
+        06 Jul 2026 16:36:13 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -121,7 +122,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - 16c9984d-24e8-4018-897b-6136796ffdb3
+      - 99eca40b-f52d-4670-bb5b-3d4fa2821a54
     status:
       code: 200
       message: OK

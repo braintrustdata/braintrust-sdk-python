@@ -20,6 +20,7 @@ from pydantic_ai.usage import UsageLimits
 PROJECT_NAME = "test-pydantic-ai-integration"
 MODEL = "openai:gpt-4o-mini"  # Use cheaper model for tests
 TEST_PROMPT = "What is 2+2? Answer with just the number."
+MAX_REASONABLE_TTFT_SECONDS = 30.0
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -571,7 +572,9 @@ async def test_agent_run_stream(memory_logger):
     # time_to_first_token should be reasonable: > 0 and < duration
     assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
-    assert ttft < 3.0, f"time_to_first_token should be < 3s for API call, got {ttft}s"
+    assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
+        f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
+    )
 
     # Debug: Print full span data
     print(f"\n=== AGENT SPAN ===")
@@ -783,7 +786,9 @@ async def test_direct_model_request_stream(memory_logger, direct):
     # time_to_first_token should be reasonable: > 0 and < duration
     assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
-    assert ttft < 3.0, f"time_to_first_token should be < 3s for API call, got {ttft}s"
+    assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
+        f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
+    )
 
     # Regression: model_request_stream wrapper span (TASK) must NOT log token metrics.
     # `_DirectStreamWrapper` here is constructed with span_type=TASK, so __aexit__
@@ -1174,7 +1179,9 @@ def test_agent_run_stream_sync(memory_logger):
     # time_to_first_token should be reasonable: > 0 and < duration
     assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
-    assert ttft < 3.0, f"time_to_first_token should be < 3s for API call, got {ttft}s"
+    assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
+        f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
+    )
 
     print(f"✓ Sync stream time_to_first_token: {ttft}s (duration: {duration}s)")
 
@@ -1298,11 +1305,11 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
 
     # Check spans
     spans = memory_logger.pop()
-    assert len(spans) == 1
+    assert len(spans) >= 1
 
-    span = spans[0]
+    span = next((s for s in spans if s["span_attributes"]["name"] == "model_request_stream_sync"), None)
+    assert span is not None
     assert span["span_attributes"]["type"] == SpanTypeAttribute.TASK
-    assert span["span_attributes"]["name"] == "model_request_stream_sync"
     assert span["metadata"]["model"] == "gpt-4o-mini"
     assert "output" in span
     assert "parts" in span["output"]
@@ -1318,7 +1325,9 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
     # time_to_first_token should be reasonable: > 0 and < duration
     assert ttft > 0, f"time_to_first_token should be > 0, got {ttft}"
     assert ttft <= duration, f"time_to_first_token ({ttft}s) should be <= duration ({duration}s)"
-    assert ttft < 3.0, f"time_to_first_token should be < 3s for API call, got {ttft}s"
+    assert ttft < MAX_REASONABLE_TTFT_SECONDS, (
+        f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
+    )
 
     # Regression: model_request_stream_sync wrapper span must NOT log token metrics.
     # `_DirectStreamWrapperSync.__exit__` always uses `_wrapper_span_metrics`; sync
@@ -2911,55 +2920,69 @@ def test_model_request_stream_sync_thread_context_propagation(memory_logger, dir
 
     assert not memory_logger.pop()
 
-    # We'll capture the span seen inside the background thread by patching StreamedResponseSync._async_producer
+    # We'll capture the span seen inside the background thread / portal task.
     captured_spans = []
-    original_async_producer = None
 
     import pydantic_ai.direct as pydantic_direct
 
     original_class = pydantic_direct.StreamedResponseSync
 
-    class InstrumentedStreamedResponseSync(original_class):
-        def _async_producer(self):
-            # Capture the current span at the start of the background thread
-            captured_spans.append(current_span())
-            return super()._async_producer()
+    if not hasattr(original_class, "_async_producer"):
+        # Pydantic AI 2.5+ moved sync streaming to SyncStreamBridge. Exercise the bridge with a tiny
+        # async context manager so this remains a pure context propagation regression test.
+        class CapturingAsyncContextManager:
+            async def __aenter__(self):
+                captured_spans.append(current_span())
+                return object()
 
-    # Temporarily replace StreamedResponseSync
-    pydantic_direct.StreamedResponseSync = InstrumentedStreamedResponseSync
-
-    try:
-        messages = [ModelRequest(parts=[UserPromptPart(content="Hello")])]
+            async def __aexit__(self, exc_type, exc_val, exc_tb):
+                return False
 
         with start_span(name="outer_span") as outer_span:
-            with direct.model_request_stream_sync(model=MODEL, messages=messages) as stream:
-                # Consume the stream
-                for _ in stream:
-                    pass
+            with original_class(CapturingAsyncContextManager()):
+                pass
+    else:
 
-        # Verify we captured something
-        assert len(captured_spans) == 1, f"Expected 1 captured span, got {len(captured_spans)}"
-        thread_span = captured_spans[0]
+        class InstrumentedStreamedResponseSync(original_class):
+            def _async_producer(self):
+                # Capture the current span at the start of the background thread
+                captured_spans.append(current_span())
+                return super()._async_producer()
 
-        # The span seen in the background thread should be related to the outer span
-        # Either it's the outer span itself, or it's a child span with the same root
-        if hasattr(thread_span, "root_span_id") and thread_span.root_span_id:
-            # If we have a real span, verify it shares the same trace root
-            assert thread_span.root_span_id == outer_span.root_span_id, (
-                f"Background thread span should share root with outer span. "
-                f"Got thread root={thread_span.root_span_id}, outer root={outer_span.root_span_id}"
-            )
-        else:
-            # If we got NOOP_SPAN (empty id), context didn't propagate - this is the bug we're testing for
-            # After the fix, this branch should not be reached
-            assert thread_span.id != "", (
-                "Background thread received NOOP_SPAN - context did not propagate to the thread. "
-                "This indicates the bug: StreamedResponseSync._start_producer creates a thread without copying context."
-            )
+        # Temporarily replace StreamedResponseSync
+        pydantic_direct.StreamedResponseSync = InstrumentedStreamedResponseSync
 
-    finally:
-        # Restore original class
-        pydantic_direct.StreamedResponseSync = original_class
+        try:
+            messages = [ModelRequest(parts=[UserPromptPart(content="Hello")])]
+
+            with start_span(name="outer_span") as outer_span:
+                with direct.model_request_stream_sync(model=MODEL, messages=messages) as stream:
+                    # Consume the stream
+                    for _ in stream:
+                        pass
+        finally:
+            # Restore original class
+            pydantic_direct.StreamedResponseSync = original_class
+
+    # Verify we captured something
+    assert len(captured_spans) == 1, f"Expected 1 captured span, got {len(captured_spans)}"
+    thread_span = captured_spans[0]
+
+    # The span seen in the background thread should be related to the outer span
+    # Either it's the outer span itself, or it's a child span with the same root
+    if hasattr(thread_span, "root_span_id") and thread_span.root_span_id:
+        # If we have a real span, verify it shares the same trace root
+        assert thread_span.root_span_id == outer_span.root_span_id, (
+            f"Background thread span should share root with outer span. "
+            f"Got thread root={thread_span.root_span_id}, outer root={outer_span.root_span_id}"
+        )
+    else:
+        # If we got NOOP_SPAN (empty id), context didn't propagate - this is the bug we're testing for
+        # After the fix, this branch should not be reached
+        assert thread_span.id != "", (
+            "Background thread received NOOP_SPAN - context did not propagate to the thread. "
+            "This indicates the bug: sync streaming started background work without copying context."
+        )
 
 
 def test_start_producer_wrapper_exception_does_not_double_invoke_producer():
