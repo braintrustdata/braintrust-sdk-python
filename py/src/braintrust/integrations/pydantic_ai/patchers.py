@@ -19,6 +19,7 @@ from .tracing import (
     _create_direct_model_request_wrapper,
     _create_start_producer_wrapper,
     _direct_prepare_model_wrapper,
+    _sync_stream_bridge_init_wrapper,
     _tool_manager_call_function_tool_wrapper,
     _tool_manager_execute_function_tool_wrapper,
     _wrap_concrete_model_class,
@@ -122,6 +123,14 @@ class DirectModelRequestStreamSyncPatcher(FunctionWrapperPatcher):
     target_module = "pydantic_ai.direct"
     target_path = "model_request_stream_sync"
     wrapper = _create_direct_model_request_stream_sync_wrapper()
+
+
+class SyncStreamBridgeInitPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.sync_stream_bridge.init"
+    target_module = "pydantic_ai._sync_stream"
+    target_path = "SyncStreamBridge.__init__"
+    wrapper = _sync_stream_bridge_init_wrapper
+    priority: ClassVar[int] = 50
 
 
 class StreamedResponseSyncStartProducerPatcher(FunctionWrapperPatcher):

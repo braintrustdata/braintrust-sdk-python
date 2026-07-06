@@ -10,6 +10,7 @@ from .patchers import (
     DirectModelRequestSyncPatcher,
     DirectPrepareModelPatcher,
     StreamedResponseSyncStartProducerPatcher,
+    SyncStreamBridgeInitPatcher,
     ToolManagerFunctionToolPatcher,
 )
 
@@ -21,6 +22,7 @@ class PydanticAIIntegration(BaseIntegration):
     import_names = ("pydantic_ai",)
     min_version = "1.10.0"
     patchers = (
+        SyncStreamBridgeInitPatcher,
         StreamedResponseSyncStartProducerPatcher,
         AgentPatcher,
         DirectPrepareModelPatcher,

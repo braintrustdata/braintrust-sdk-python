@@ -1,98 +1,5 @@
 interactions:
 - request:
-    body: '{"rows": [{"_is_merge": true, "id": "c007d15f-e065-486a-84f1-b7c760e33652",
-      "log_id": "g", "metrics": {"completion_audio_tokens": 0.0, "completion_reasoning_tokens":
-      0.0, "completion_tokens": 10.0, "duration": 3.7746760845184326, "end": 1782743400.817319,
-      "prompt_audio_tokens": 0.0, "prompt_cache_creation_tokens": 0.0, "prompt_cached_tokens":
-      0.0, "prompt_tokens": 8.0, "start": 1782743397.0426428, "time_to_first_token":
-      3.773794174194336, "tokens": 18.0}, "output": {"conversation_id": null, "finish_reason":
-      "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18", "parts":
-      [{"content": "Hello! How can I assist you today?", "part_kind": "text"}], "provider_details":
-      {"finish_reason": "completed", "timestamp": "2026-06-29 14:29:57+00:00"}, "provider_name":
-      "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
-      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
-      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
-      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
-      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
-      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
-      "span_id": "bdf1cfeca07c7a1b", "span_parents": ["782c5cf2b0defa72"]},{"_is_merge":
-      true, "id": "6a19ff1e-0fd3-42c1-82ff-e67ffac3a43e", "log_id": "g", "metrics":
-      {"duration": 3.774857759475708, "end": 1782743400.817442, "start": 1782743397.0425842,
-      "time_to_first_token": 3.773852825164795}, "output": {"conversation_id": null,
-      "finish_reason": "stop", "kind": "response", "model_name": "gpt-4o-mini-2024-07-18",
-      "parts": [{"content": "Hello! How can I assist you today?", "part_kind": "text"}],
-      "provider_details": {"finish_reason": "completed", "timestamp": "2026-06-29
-      14:29:57+00:00"}, "provider_name": "openai", "provider_response_id": "resp_0d30d0ce06596bee006a4281653ab481a3a8eac5ea11ab5b13",
-      "provider_url": "https://api.openai.com/v1/", "run_id": null, "state": "complete",
-      "timestamp": "2026-06-29 14:30:00.816077+00:00", "usage": {"cache_audio_read_tokens":
-      0, "cache_read_tokens": 0, "cache_write_tokens": 0, "details": {"reasoning_tokens":
-      0}, "input_audio_tokens": 0, "input_tokens": 8, "output_audio_tokens": 0, "output_tokens":
-      10}}, "project_id": "test-pydantic-ai-integration", "root_span_id": "3f401912518e77e4d5a879b88ef7aab8",
-      "span_id": "782c5cf2b0defa72", "span_parents": ["74f8ec95c9bb3eec"]}], "api_version":
-      2}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip, deflate, zstd
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '2551'
-      User-Agent:
-      - python-requests/2.34.2
-    method: POST
-    uri: https://api.braintrust.dev/logs3
-  response:
-    body:
-      string: '{"Code":"ForbiddenError","Message":"Missing read access to project_log
-        id test-pydantic-ai-integration, or the project_log does not exist [user_email=abhijeet@braintrustdata.com]
-        [user_org=abhi-test-org] [timestamp=1782743408.135]","InternalTraceId":"6a428170000000005167d5db551a4fee","Path":"/logs3","Service":"api"}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Mon, 29 Jun 2026 14:30:08 GMT
-      Via:
-      - 1.1 f91f0310a52084f5e83e3c1142ad882c.cloudfront.net (CloudFront), 1.1 1c1162ba67ca825df895c1f15c4097e8.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - _YRqI1WiRAcmlTgXB3dfYEYQ9PKx-PthoZzxsGuQSE979wnG3B6mQQ==
-      X-Amz-Cf-Pop:
-      - IAD61-P9
-      - IAD89-P4
-      X-Amzn-Trace-Id:
-      - Root=1-6a428170-31cbb50455324e275878297a;Parent=2aabd591438b2ffe;Sampled=0;Lineage=1:24be3d11:0
-      X-Cache:
-      - Error from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint
-      cache-control:
-      - no-store, no-cache, must-revalidate, proxy-revalidate
-      content-length:
-      - '317'
-      etag:
-      - W/"13d-jRYnP6EWO2yTj9s9VAvpOF351oU"
-      expires:
-      - '0'
-      surrogate-control:
-      - no-store
-      vary:
-      - Origin, Accept-Encoding
-      x-amz-apigw-id:
-      - fukpkE3tIAMEX2w=
-      x-amzn-RequestId:
-      - 0b8cfb4a-bbda-4660-836d-a278847442d7
-      x-bt-internal-trace-id:
-      - 6a428170000000005167d5db551a4fee
-    status:
-      code: 403
-      message: Forbidden
-- request:
     body: '{"input":[{"role":"user","content":"What is AI?"}],"max_output_tokens":16,"model":"gpt-4o-mini","stream":false}'
     headers:
       accept:
@@ -108,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.0.0
+      - pydantic-ai/2.5.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -131,18 +38,18 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0c51acfdf21a0fa6006a4281700a0c81a38f588c3f65d7421c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782743408,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0eeab44c59692875006a4bd28bc2388191ac8abc7b43ef5a27\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783353995,\n  \"status\":
         \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
         \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
         0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
         \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 16,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0c51acfdf21a0fa6006a42817080c881a3ad36055c61c880fc\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_0eeab44c59692875006a4bd28c3c6881919ed464a420601631\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"Artificial Intelligence
-        (AI) is a branch of computer science focused on creating systems that\"\n
+        (AI) refers to the simulation of human intelligence in machines that are\"\n
         \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -170,19 +77,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a135a09bcf06a229-YYZ
+      - a16fdb891a61a244-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2061'
+      - '2064'
       content-type:
       - application/json
       date:
-      - Mon, 29 Jun 2026 14:30:08 GMT
+      - Mon, 06 Jul 2026 16:06:36 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '796'
+      - '744'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -190,9 +97,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=YnGQPpkSDzOeNNPg8is1hHt0ERcpZKJJOv_P3mTcl8o-1782743407.9636583-1.0.1.1-zJLy9fzKEGKHRxv_E6P0MgzbN_TxuNmIYct87ahE6TwJqqWxXotUGfbx_wTHnBPCtOobCpndUb84mXmkhbDUzD0VU27dATA7kH0NMSOxnbzjiviZcDWly1vJu8mUAtiG;
+      - __cf_bm=4H5HCRkt7sybGiipd2EGhuoeq4DokfA59GtC3O5LZFQ-1783353995.6997476-1.0.1.1-pKdV55sWWDEaJeoUiON0dgGkfa1SE6vFI_HPEcb6KkhQX.GkNF1JPpL4R60TcyVOUTymcrUwmOrYe.v9NsU3riuiIdhFCMEb65G_tRC4.WU5fnbUMDpUZ4ARTJiEISMb;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 15:00:08 GMT
+        06 Jul 2026 16:36:36 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -212,7 +119,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - 5edd242e-4221-49aa-b76d-de7d11fce1b1
+      - 6f06e441-e0ea-4916-b519-a96c0fe2577b
     status:
       code: 200
       message: OK

@@ -27,7 +27,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.0.0
+      - pydantic-ai/2.5.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -50,20 +50,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_059c86665ba9ce95006a4281710f2481928d3d4584302114cc\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1782743409,\n  \"status\":
+      string: "{\n  \"id\": \"resp_04d3b6395e79fe30006a4bd28ca34881a28adf1e42046a32ab\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783353996,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1782743409,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1783353997,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_059c86665ba9ce95006a42817183c48192a07d37490db9df02\",\n
+        \     \"id\": \"msg_04d3b6395e79fe30006a4bd28d0e6081a28440eb7fed908ae9\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"The word \\\"fox\\\"
-        appears 20 times in the text.\"\n        }\n      ],\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        appears **20 times** in the text.\"\n        }\n      ],\n      \"role\":
+        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -75,8 +75,8 @@ interactions:
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 225,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 14,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 239\n  },\n
+        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 15,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 240\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
@@ -88,19 +88,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a135a0a23edea3f1-YYZ
+      - a16fdb8ebd994b56-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1986'
+      - '1990'
       content-type:
       - application/json
       date:
-      - Mon, 29 Jun 2026 14:30:09 GMT
+      - Mon, 06 Jul 2026 16:06:37 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '805'
+      - '935'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -108,9 +108,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=XLjVvZb4iDq2r2v8PLjUoW0J0Gi5UiFrcoWkvy1GGV4-1782743408.9932451-1.0.1.1-DDhY6y8aQpiWzFco_0Pv9crRo9E33QsyXA4alzeBakDB5QxKXXlxhQ.XY8zvJExxgwZjy.gmAhcfrVprSkVPWDkhcGUTvRYLFBCj0YwDm3yLeYB6gNZrRY.m4qVc9Gl1;
+      - __cf_bm=zxoXDYBUt4uix_9mPA.UTbFTGTnfT9wpVs7HhtxPiiw-1783353996.5931206-1.0.1.1-pvIx1GE74ycIAic48kerp9K6YqBmYVkqROmjWxpvoF9i.1EumEbyottXT6hAucUdlUOC1f.mI3s3lQd8T72bqyF203OnGEpF8xjLJj1ceTDc4PY8RgSrXfJEFmGOtsuj;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 15:00:09 GMT
+        06 Jul 2026 16:36:37 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -130,7 +130,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - bad8418a-5fe2-4780-b25e-bb194afbac97
+      - 7017190f-7cd7-4188-9e42-a5670543bd05
     status:
       code: 200
       message: OK
