@@ -1,0 +1,14 @@
+[project]
+name = "braintrust-deepagents-example"
+version = "0.1.0"
+description = "Deep Agents traced through Braintrust's LangChain integration"
+requires-python = ">=3.11"
+dependencies = [
+    "braintrust",
+    "deepagents",
+    "langchain-openai",
+    "python-dotenv",
+]
+
+[tool.uv.sources]
+braintrust = { path = "../../py", editable = true }
