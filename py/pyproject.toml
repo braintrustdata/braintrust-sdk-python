@@ -157,6 +157,11 @@ test-langchain = [
     "langgraph==1.1.6",
 ]
 
+test-deepagents = [
+    {include-group = "test"},
+    "langchain-openai==1.1.14",
+]
+
 test-livekit-agents = [
     {include-group = "test"},
     "livekit-plugins-openai",
@@ -286,6 +291,7 @@ conflicts = [
         {group = "test-agentscope"},
         {group = "test-strands"},
         {group = "test-langchain"},
+        {group = "test-deepagents"},
         {group = "test-livekit-agents"},
         {group = "lint"},
     ],
@@ -389,6 +395,10 @@ latest = "google-genai==2.10.0"
 latest = "dspy==3.2.1"
 "2.6.0" = "dspy==2.6.0"
 
+[tool.braintrust.matrix.deepagents]
+latest = "deepagents==0.6.12"
+"0.6.0" = "deepagents==0.6.0"
+
 [tool.braintrust.matrix.crewai]
 # 1.13.0 is the first release with the full causal-id surface (event_id /
 # parent_event_id / started_event_id on BaseEvent) plus the ``usage`` field on
@@ -477,7 +487,7 @@ dspy = ["dspy"]
 google_genai = ["google-genai"]
 huggingface_hub = ["huggingface-hub"]
 instructor = ["instructor"]
-langchain = ["langchain-core"]
+langchain = ["langchain-core", "deepagents"]
 litellm = ["litellm"]
 livekit_agents = ["livekit-agents"]
 llamaindex = ["llama-index-core"]

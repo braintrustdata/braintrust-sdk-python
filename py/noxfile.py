@@ -525,6 +525,20 @@ def test_langchain(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_anthropic.py", version=version)
 
 
+DEEPAGENTS_VERSIONS = _get_matrix_versions("deepagents")
+
+
+@nox.session()
+@nox.parametrize("version", DEEPAGENTS_VERSIONS, ids=DEEPAGENTS_VERSIONS)
+def test_deepagents(session, version):
+    if sys.version_info < (3, 11):
+        session.skip("Deep Agents requires Python 3.11+")
+    _install_test_deps(session)
+    _install_group_locked(session, "test-deepagents")
+    _install_matrix_dep(session, "deepagents", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/langchain/test_deepagents.py", version=version)
+
+
 LLAMAINDEX_VERSIONS = _get_matrix_versions("llama-index-core")
 
 
