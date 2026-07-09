@@ -7,7 +7,7 @@ import time
 from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any
 
-from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
+from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk._constants import (
     ANTHROPIC_MESSAGES_CREATE_SPAN_NAME,
     CLAUDE_AGENT_RUN_FAILED_ERROR,
@@ -25,9 +25,44 @@ from braintrust.integrations.claude_agent_sdk._constants import (
 )
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
+from braintrust.util import is_numeric
 
 
 _thread_local = threading.local()
+
+
+_MODEL_USAGE_TOKEN_FIELDS = (
+    ("inputTokens", "input_tokens"),
+    ("outputTokens", "output_tokens"),
+    ("cacheReadInputTokens", "cache_read_input_tokens"),
+    ("cacheCreationInputTokens", "cache_creation_input_tokens"),
+)
+
+
+def _aggregate_model_usage(model_usage: Any) -> dict[str, int] | None:
+    """Sum ``ResultMessage.model_usage`` into an Anthropic-usage-shaped dict.
+
+    ``model_usage`` is the SDK's per-model token breakdown. Unlike
+    ``ResultMessage.usage`` — which covers only the orchestrator agent — it
+    includes subagent calls, so summing it recovers the whole turn's usage.
+    Returns ``None`` when the breakdown is missing or unusable so callers can
+    fall back to ``usage``.
+    """
+    usage_by_model = _try_to_dict(model_usage)
+    if not usage_by_model:
+        return None
+
+    totals = {target: 0 for _, target in _MODEL_USAGE_TOKEN_FIELDS}
+    for model_usage_entry in usage_by_model.values():
+        entry = _try_to_dict(model_usage_entry)
+        if entry is None:
+            return None
+        for source, target in _MODEL_USAGE_TOKEN_FIELDS:
+            value = entry.get(source)
+            if is_numeric(value):
+                totals[target] += int(value)
+
+    return totals if any(totals.values()) else None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -729,6 +764,15 @@ class ContextTracker:
         self._active_key = None
         if hasattr(message, "usage"):
             usage_metrics, usage_metadata = extract_anthropic_usage(message.usage)
+            # ``usage`` covers only the orchestrator agent; prefer the token
+            # counts from ``model_usage`` (the per-model breakdown, which
+            # includes subagent calls) so the logged metrics reflect the whole
+            # turn. Metadata (service tier, etc.) still comes from ``usage``.
+            aggregated_usage = _aggregate_model_usage(getattr(message, "model_usage", None))
+            if aggregated_usage is not None:
+                model_usage_metrics, _ = extract_anthropic_usage(aggregated_usage)
+                if model_usage_metrics:
+                    usage_metrics = model_usage_metrics
             ctx = self._get_context(None)
             if ctx.llm_span and (usage_metrics or usage_metadata):
                 ctx.llm_span.log(metrics=usage_metrics or None, metadata=usage_metadata or None)

@@ -30,6 +30,7 @@ from braintrust.integrations.claude_agent_sdk._test_transport import make_casset
 from braintrust.integrations.claude_agent_sdk.tracing import (
     ContextTracker,
     ToolSpanTracker,
+    _aggregate_model_usage,
     _build_llm_input,
     _create_client_wrapper_class,
     _create_tool_wrapper_class,
@@ -2899,3 +2900,33 @@ def test_context_tracker_preserves_bash_output_when_next_tool_use_arrives_before
     read_output = read_spans[0].get("output")
     assert read_output is not None
     assert read_output["content"] == "alpha_file_contents"
+
+
+def test_aggregate_model_usage_sums_across_models():
+    model_usage = {
+        "claude-opus-4-8": {
+            "inputTokens": 100,
+            "outputTokens": 20,
+            "cacheReadInputTokens": 5000,
+            "cacheCreationInputTokens": 300,
+        },
+        "claude-haiku-4-5": {
+            "inputTokens": 10,
+            "outputTokens": 40,
+            "cacheReadInputTokens": 2000,
+            "cacheCreationInputTokens": 100,
+        },
+    }
+
+    assert _aggregate_model_usage(model_usage) == {
+        "input_tokens": 110,
+        "output_tokens": 60,
+        "cache_read_input_tokens": 7000,
+        "cache_creation_input_tokens": 400,
+    }
+
+
+def test_aggregate_model_usage_returns_none_when_missing_or_empty():
+    assert _aggregate_model_usage(None) is None
+    assert _aggregate_model_usage({}) is None
+    assert _aggregate_model_usage({"claude-opus-4-8": {"inputTokens": 0, "outputTokens": 0}}) is None
