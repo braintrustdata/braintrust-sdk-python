@@ -352,9 +352,15 @@ class ChatCompletionContentPartFileFile(TypedDict):
     file_id: NotRequired[str | None]
 
 
+class ChatCompletionContentPartFileWithTitleCacheControl(TypedDict):
+    type: Literal['ephemeral']
+    ttl: NotRequired[Literal['5m', '1h'] | None]
+
+
 class ChatCompletionContentPartFileWithTitle(TypedDict):
     file: ChatCompletionContentPartFileFile
     type: Literal['file']
+    cache_control: NotRequired[ChatCompletionContentPartFileWithTitleCacheControl | None]
 
 
 class ChatCompletionContentPartImageWithTitleImageUrl(TypedDict):
@@ -362,13 +368,20 @@ class ChatCompletionContentPartImageWithTitleImageUrl(TypedDict):
     detail: NotRequired[Literal['auto'] | Literal['low'] | Literal['high'] | None]
 
 
+class ChatCompletionContentPartImageWithTitleCacheControl(TypedDict):
+    type: Literal['ephemeral']
+    ttl: NotRequired[Literal['5m', '1h'] | None]
+
+
 class ChatCompletionContentPartImageWithTitle(TypedDict):
     image_url: ChatCompletionContentPartImageWithTitleImageUrl
     type: Literal['image_url']
+    cache_control: NotRequired[ChatCompletionContentPartImageWithTitleCacheControl | None]
 
 
 class ChatCompletionContentPartTextCacheControl(TypedDict):
     type: Literal['ephemeral']
+    ttl: NotRequired[Literal['5m', '1h'] | None]
 
 
 class ChatCompletionContentPartText(TypedDict):
@@ -379,6 +392,7 @@ class ChatCompletionContentPartText(TypedDict):
 
 class ChatCompletionContentPartTextWithTitleCacheControl(TypedDict):
     type: Literal['ephemeral']
+    ttl: NotRequired[Literal['5m', '1h'] | None]
 
 
 class ChatCompletionContentPartTextWithTitle(TypedDict):
