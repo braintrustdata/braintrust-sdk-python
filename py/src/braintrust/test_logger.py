@@ -933,11 +933,13 @@ class TestLogger(TestCase):
         )
 
         rendered = render_message(
-            lambda template: template.replace("{{item}}", "document")
-            .replace("{{image_url}}", "https://example.com/image.png")
-            .replace("{{file_data}}", "base64data")
-            .replace("{{file_id}}", "file-456")
-            .replace("{{filename}}", "report.pdf"),
+            lambda template: (
+                template.replace("{{item}}", "document")
+                .replace("{{image_url}}", "https://example.com/image.png")
+                .replace("{{file_data}}", "base64data")
+                .replace("{{file_id}}", "file-456")
+                .replace("{{filename}}", "report.pdf")
+            ),
             message,
         )
 

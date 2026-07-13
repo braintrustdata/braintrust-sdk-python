@@ -2100,9 +2100,11 @@ def test_openai_parallel_tool_calls(memory_logger):
                         "model": TEST_MODEL,
                         "provider": "openai",
                         "stream": stream,
-                        "tools": lambda tools_list: len(tools_list) == 2
-                        and any(tool.get("function", {}).get("name") == "get_weather" for tool in tools_list)
-                        and any(tool.get("function", {}).get("name") == "get_time" for tool in tools_list),
+                        "tools": lambda tools_list: (
+                            len(tools_list) == 2
+                            and any(tool.get("function", {}).get("name") == "get_weather" for tool in tools_list)
+                            and any(tool.get("function", {}).get("name") == "get_time" for tool in tools_list)
+                        ),
                     },
                     "input": lambda inp: "What's the weather in New York and the time in Tokyo?" in str(inp),
                     "metrics": lambda m: assert_metrics_are_valid(m, start, end) is None,
