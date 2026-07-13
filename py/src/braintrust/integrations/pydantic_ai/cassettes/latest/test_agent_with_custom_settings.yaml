@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.5.0
+      - pydantic-ai/2.9.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.45.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,14 +38,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_003b5c784de0fa64006a4bd2654eac819c9010da3dcfe49fc2\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1783353957,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0cee53e51c57ff33006a55021822bc81918d94158f98163831\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783955992,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1783353957,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1783955992,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 20,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_003b5c784de0fa64006a4bd265cfd4819c89bba40296777417\",\n
+        \     \"id\": \"msg_0cee53e51c57ff33006a550218732c8191b701adaa73cdeb83\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"Hello! How can I assist
@@ -63,9 +63,10 @@ interactions:
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 0.9,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 9,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 10,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 19\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 10,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 19\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -76,19 +77,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fda98dd20e702-YYZ
+      - a1a944b68e7ffcd9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1970'
+      - '2001'
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 16:05:58 GMT
+      - Mon, 13 Jul 2026 15:19:52 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '741'
+      - '535'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -96,9 +97,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=GV2pHe6cXz5vS65d6_9suG50uJJsJ6PBMFbOaGXg7RY-1783353957.2537463-1.0.1.1-FQpjZup.MfpKA0DpELWSOcv1onk7m0b9abokfJuNy8sVdfV3G9It7dfSdx3n19qRUk7BL6z68jT7_xX8uRDu6.QtpcDDG5W8lMPYi9iKNrBS6gL0BEy5NM0PeDOCA8vy;
+      - __cf_bm=fafK5g9a72M8aUZmZl7ImTg4bP6ugFjRKFmeDqDSWf4-1783955992.0849922-1.0.1.1-5dGuL6D_YNt5VKzTUddqvfnUjqVswLKi5hovoCr89OMMNx8FYI34wlAruKHmu1jYKB0cV6bZhglLKtKApbLXeBqhIzz_HAHMvJiD7rPankX_8UlB36UJHewHeUpRXnYp;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:35:58 GMT
+        13 Jul 2026 15:49:52 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -112,13 +113,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999970'
+      - '149999972'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - db03446c-f087-4dc2-9b1d-1bae61e8e0e5
+      - req_a23bff0d5b574120b9d18581eafd2c29
     status:
       code: 200
       message: OK

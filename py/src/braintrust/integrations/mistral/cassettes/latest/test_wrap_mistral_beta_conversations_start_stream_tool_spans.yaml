@@ -16,67 +16,57 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.5.0
+      - mistral-client-python/2.6.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-06-29T14:13:26.122455Z","conversation_id":"conv_019f13ba50c873428832a195bd3f3867"}
+        data: {"type":"conversation.response.started","created_at":"2026-07-13T15:23:55.742025Z","conversation_id":"conv_019f5c13e12574cbbe2aa2421f60f858"}
 
 
         event: tool.execution.started
 
-        data: {"type":"tool.execution.started","created_at":"2026-06-29T14:13:26.125936Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
+        data: {"type":"tool.execution.started","created_at":"2026-07-13T15:23:55.768783Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.136291Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-07-13T15:23:55.770303Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.155279Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"\":
-        \"","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-07-13T15:23:55.771689Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","arguments":"\":
+        \"21","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.175299Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"2","function":"code_interpreter"}
-
-
-        event: tool.execution.delta
-
-        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.186618Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"1
-        * 2","function":"code_interpreter"}
-
-
-        event: tool.execution.delta
-
-        data: {"type":"tool.execution.delta","created_at":"2026-06-29T14:13:26.208684Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","arguments":"\"}","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-07-13T15:23:55.773005Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","arguments":"
+        * 2\"}","function":"code_interpreter"}
 
 
         event: tool.execution.done
 
-        data: {"type":"tool.execution.done","created_at":"2026-06-29T14:13:26.983471Z","output_index":0,"id":"tool_exec_019f13ba53ed7054b9580af314930355","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
+        data: {"type":"tool.execution.done","created_at":"2026-07-13T15:23:58.448239Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
         * 2","code_output":"42\n"}}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-06-29T14:13:27.163480Z","output_index":1,"id":"msg_019f13ba57fb727585dff3828445a153","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
+        data: {"type":"message.output.delta","created_at":"2026-07-13T15:23:58.583906Z","output_index":1,"id":"msg_019f5c13f0f774afb408fff4aa3f8ef7","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-06-29T14:13:27.179828Z","output_index":1,"id":"msg_019f13ba57fb727585dff3828445a153","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
+        data: {"type":"message.output.delta","created_at":"2026-07-13T15:23:58.598834Z","output_index":1,"id":"msg_019f5c13f0f774afb408fff4aa3f8ef7","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-06-29T14:13:27.199349Z","usage":{"prompt_tokens":215,"completion_tokens":19,"total_tokens":239,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
+        data: {"type":"conversation.response.done","created_at":"2026-07-13T15:23:58.615276Z","usage":{"prompt_tokens":240,"completion_tokens":19,"total_tokens":264,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
 
 
         '
@@ -88,23 +78,21 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a13588208ee9ae18-YYZ
+      - a1a94aa14976ab84-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 29 Jun 2026 14:13:26 GMT
+      - Mon, 13 Jul 2026 15:23:55 GMT
       mistral-correlation-id:
-      - 019f13ba-508f-7733-ad26-75c7ff447f4b
+      - 019f5c13-e110-7414-80c5-4cb1887282cc
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=6V2uI_kj9n78QG3s4B14Bv2vSCTQqtcwEra1bgjW.VU-1782742405.2087507-1.0.1.1-IMWfn38et2ke4.dBhCSuwDYliGsoGqTqxCicucsBHs_yuT5w4y9I9njxOLwzMogSVLCr_0OAq9raydb_rvOYxGV4QEUAKumtSSJnO0TAKiOvVPJ3iAX065u_6F5Ydf6B;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
-        Jun 2026 14:43:26 GMT
-      - _cfuvid=HdN2T3rEv81VSn5PFZ2LjBF94DgB7ha7EkghKZ15nBU-1782742405.2087507-1.0.1.1-UggKmBlAQV83CZ_QipmabOZkCwjJ0eungg2EVutrRTM;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      - __cf_bm=M6O3QVATS7zsAZpXv.A88cxlYMvzNa2G_56ga8JxE8w-1783956234.451602-1.0.1.1-0WFaIcSeZRks70NcmEjCJHSMcwOo9dvZIRFpmmmfjUimfEZWUU_FeEGdZmmtR_aBsmMaAC.d9X8dColFURInVX5foHz1Y7K17i3ILokFIn_KKfJb1FG8HR1EBJC4jFMg;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
+        Jul 2026 15:53:55 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -112,13 +100,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '845'
+      - '1215'
       x-kong-proxy-latency:
-      - '17'
+      - '16'
       x-kong-request-id:
-      - 019f13ba-508f-7733-ad26-75c7ff447f4b
+      - 019f5c13-e110-7414-80c5-4cb1887282cc
       x-kong-upstream-latency:
-      - '846'
+      - '1219'
     status:
       code: 200
       message: OK

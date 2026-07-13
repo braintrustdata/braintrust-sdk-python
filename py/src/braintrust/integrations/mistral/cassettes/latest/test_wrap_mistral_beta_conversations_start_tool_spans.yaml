@@ -16,14 +16,14 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.5.0
+      - mistral-client-python/2.6.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations
   response:
     body:
-      string: '{"object":"conversation.response","conversation_id":"conv_019f13ba487375edba1cae837921b86f","outputs":[{"object":"entry","type":"tool.execution","created_at":"2026-06-29T14:13:23.796246Z","completed_at":"2026-06-29T14:13:24.850190Z","model":"mistral-small-latest","id":"tool_exec_019f13ba4ad470afb8d5716587554895","name":"code_interpreter","arguments":"{\"code\":
+      string: '{"object":"conversation.response","conversation_id":"conv_019f5c13d12c7074b9307836888b6841","outputs":[{"object":"entry","type":"tool.execution","created_at":"2026-07-13T15:23:51.077269Z","completed_at":"2026-07-13T15:23:54.094200Z","model":"mistral-small-latest","id":"tool_exec_019f5c13d3a5755795f0125c0f795647","name":"code_interpreter","arguments":"{\"code\":
         \"21 * 2\"}","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
-        * 2","code_output":"42\n"}},{"object":"entry","type":"message.output","created_at":"2026-06-29T14:13:24.994181Z","completed_at":"2026-06-29T14:13:25.007946Z","model":"mistral-small-latest","id":"msg_019f13ba4f8277258e93235be6151e8b","role":"assistant","content":"42"}],"usage":{"prompt_tokens":215,"completion_tokens":19,"total_tokens":239,"connector_tokens":5,"connectors":{"code_interpreter":1}},"guardrails":null}'
+        * 2","code_output":"42\n"}},{"object":"entry","type":"message.output","created_at":"2026-07-13T15:23:54.248766Z","completed_at":"2026-07-13T15:23:54.265106Z","model":"mistral-small-latest","id":"msg_019f5c13e008776d8108ed3b4b14ea11","role":"assistant","content":"42"}],"usage":{"prompt_tokens":240,"completion_tokens":19,"total_tokens":264,"connector_tokens":5,"connectors":{"code_interpreter":1}},"guardrails":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -32,7 +32,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a13588137cbaaa55-YYZ
+      - a1a94a87c847813d-YYZ
       connection:
       - keep-alive
       content-length:
@@ -40,17 +40,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 29 Jun 2026 14:13:25 GMT
+      - Mon, 13 Jul 2026 15:23:54 GMT
       mistral-correlation-id:
-      - 019f13ba-4861-7f02-9f65-21887b96f36b
+      - 019f5c13-d11c-78ce-888e-d39c8ac2a0cb
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=XrcLExYhb2M2smfjL8BYjxlVBl4Luk9ua3m6JacbGMI-1782742403.113072-1.0.1.1-5R1QzxgNexwYjYHcF_EPt_pOCxGl45uJqYqYf1mFIpWSn9zWKIIp0sU_kqU9981sfuI_tvF75MKOsJs7JYvMSUi49KkbcxkZ_aG_hhjMba_83yA7olHHDrmUdrGRhnkO;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
-        Jun 2026 14:43:25 GMT
-      - _cfuvid=FGZ7lNJQp3U_QnXBhbEvYR04bzFCQWP75VzOsngK1kA-1782742403.113072-1.0.1.1-yvKvFF8qBZVU4mVREMe1gckKanyI25kW343pmxeal0w;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      - __cf_bm=G1.yAKkMvSufnh6CQ2uzL_lQP5WIlfhEKftXStGnaR0-1783956230.367651-1.0.1.1-0VB8r4js4y7TvmM_uX0FfuV7fvqQeEd3tnde5FDgHlNFMF.xU9mGbpUlHzm1lgPxeEdInC9tbkYy.1tcMVviI34ujvcmJ7Kny014edNMtn5zXyJNxp3cpK5qbPx77WyW;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
+        Jul 2026 15:53:54 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -58,13 +56,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '1857'
+      - '3851'
       x-kong-proxy-latency:
-      - '13'
+      - '10'
       x-kong-request-id:
-      - 019f13ba-4861-7f02-9f65-21887b96f36b
+      - 019f5c13-d11c-78ce-888e-d39c8ac2a0cb
       x-kong-upstream-latency:
-      - '1859'
+      - '3853'
       x-ratelimit-limit-code-interpreter-day:
       - '10'
       x-ratelimit-limit-code-interpreter-minute:
@@ -72,11 +70,11 @@ interactions:
       x-ratelimit-limit-tokens-minute:
       - '500000'
       x-ratelimit-remaining-code-interpreter-day:
-      - '5'
+      - '9'
       x-ratelimit-remaining-code-interpreter-minute:
       - '2'
       x-ratelimit-remaining-tokens-minute:
-      - '499352'
+      - '499718'
     status:
       code: 200
       message: OK
