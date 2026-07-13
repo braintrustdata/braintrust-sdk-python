@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.5.0
+      - pydantic-ai/2.9.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.45.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,41 +39,41 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0cf632e388eeae42006a4bd25c7fd8819183b5c6ad9097cf0b\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1783353948,\n  \"status\":
+      string: "{\n  \"id\": \"resp_08a40b699012d882006a55020a66bc81a082d6373bb7a0e7f6\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783955978,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1783353949,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1783955979,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_0cf632e388eeae42006a4bd25d1bd0819189150c4f0b8854e6\",\n
+        \     \"id\": \"fc_08a40b699012d882006a55020afa6881a0a52d93cae6e3d68d\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"The sum of 10 and 15 is calculated
-        by adding the two numbers together: 10 + 15 = 25.\\\"}\",\n      \"call_id\":
-        \"call_v0O40JGjnPIwF0zKJsRFcfZX\",\n      \"name\": \"final_result\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
-        \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"required\",\n  \"tool_usage\": {\n    \"image_gen\":
+        \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"10 plus 15 equals 25.\\\"}\",\n
+        \     \"call_id\": \"call_Zg92hc4rmdTv5ZipE9u0Gw1j\",\n      \"name\": \"final_result\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
+        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
+        \ },\n  \"tool_choice\": \"required\",\n  \"tool_usage\": {\n    \"image_gen\":
         {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
         0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [\n    {\n      \"type\": \"function\",\n      \"description\":
         \"The final response which ends this conversation\",\n      \"name\": \"final_result\",\n
-        \     \"parameters\": {\n        \"properties\": {\n          \"answer\":
-        {\n            \"type\": \"integer\"\n          },\n          \"explanation\":
-        {\n            \"type\": \"string\"\n          }\n        },\n        \"required\":
-        [\n          \"answer\",\n          \"explanation\"\n        ],\n        \"type\":
-        \"object\",\n        \"additionalProperties\": false\n      },\n      \"strict\":
-        true\n    }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 60,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 36,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 96\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        \     \"output_schema\": null,\n      \"parameters\": {\n        \"properties\":
+        {\n          \"answer\": {\n            \"type\": \"integer\"\n          },\n
+        \         \"explanation\": {\n            \"type\": \"string\"\n          }\n
+        \       },\n        \"required\": [\n          \"answer\",\n          \"explanation\"\n
+        \       ],\n        \"type\": \"object\",\n        \"additionalProperties\":
+        false\n      },\n      \"strict\": true\n    }\n  ],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        60,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
+        0\n    },\n    \"output_tokens\": 18,\n    \"output_tokens_details\": {\n
+        \     \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 78\n  },\n  \"user\":
+        null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -84,19 +84,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fda61d947e930-YYZ
+      - a1a944609bd30f01-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2490'
+      - '2487'
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 16:05:49 GMT
+      - Mon, 13 Jul 2026 15:19:39 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1209'
+      - '962'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -104,9 +104,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=bJr8vcBjW0Tota6Wi8zmfqnqQJx4O72pc69m2O5ChoM-1783353948.451158-1.0.1.1-bflqsULvQPiT2kX.HuRv4fmr90b_XaV_ljbui59yqaYA6YfTzozCrJB.i_u4tTvBEaK8l_d5LveI.5eDLn1YOtgr4PMxZ17GYVhaWcVl5fkIkY3vvn_1AcXSC5U4xj9c;
+      - __cf_bm=Yl4k1hJlboCCtHJVhv_5PhDYzfEQ0IVmvQmKzbZjBhY-1783955978.3410218-1.0.1.1-bUwXr8g6eAwhDyBXxrdc5SByEk7mXtrPc17RlVt_fyRSwHZuQX8YVbcxBm5FOwAS2i9E2QE3cr6XhJ3AxevHWkuFj6CDNFnTPsQHYbXl1V4YjA8IqBqAEAJn1JLc1XWb;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:35:49 GMT
+        13 Jul 2026 15:49:39 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -126,7 +126,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - a8a8f7a2-acde-47a3-918e-b394f4dd3623
+      - req_941046008a0248ceb489ba0b77011ce2
     status:
       code: 200
       message: OK

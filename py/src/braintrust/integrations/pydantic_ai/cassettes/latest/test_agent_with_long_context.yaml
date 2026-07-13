@@ -27,7 +27,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.5.0
+      - pydantic-ai/2.9.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -37,7 +37,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.45.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -50,20 +50,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_04d3b6395e79fe30006a4bd28ca34881a28adf1e42046a32ab\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1783353996,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0926cec2c4b2c47d006a5502473ba0819eaf63a66bf56d156e\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783956039,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1783353997,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1783956039,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_04d3b6395e79fe30006a4bd28d0e6081a28440eb7fed908ae9\",\n
+        \     \"id\": \"msg_0926cec2c4b2c47d006a550247e028819ea6d8631aa101d198\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"The word \\\"fox\\\"
-        appears **20 times** in the text.\"\n        }\n      ],\n      \"role\":
-        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
-        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        appears 20 times in the text.\"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -75,9 +75,10 @@ interactions:
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 225,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 15,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 240\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 14,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 239\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -88,19 +89,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fdb8ebd994b56-YYZ
+      - a1a945dccc64b404-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1990'
+      - '2017'
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 16:06:37 GMT
+      - Mon, 13 Jul 2026 15:20:40 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '935'
+      - '861'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -108,9 +109,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=zxoXDYBUt4uix_9mPA.UTbFTGTnfT9wpVs7HhtxPiiw-1783353996.5931206-1.0.1.1-pvIx1GE74ycIAic48kerp9K6YqBmYVkqROmjWxpvoF9i.1EumEbyottXT6hAucUdlUOC1f.mI3s3lQd8T72bqyF203OnGEpF8xjLJj1ceTDc4PY8RgSrXfJEFmGOtsuj;
+      - __cf_bm=yggUowNcLoa3BR9iO410AwFZxaY3tdN3WFuvkLQpYTk-1783956039.1645865-1.0.1.1-svPkfWitvC1WEZRngi5h.ZGfGxtRSMsIt_Wduxlg7kwXxX0sJM3KjKkcfluNnIA_6m0cXvq0iO8h7pueV0_NdSL9NEjFOgSpj1awgc5iqk8qZghB0vTXMTp3STBpgupF;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:36:37 GMT
+        13 Jul 2026 15:50:40 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -130,7 +131,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - 7017190f-7cd7-4188-9e42-a5670543bd05
+      - req_8d79aad2e6a846bf943fad1a10b85174
     status:
       code: 200
       message: OK

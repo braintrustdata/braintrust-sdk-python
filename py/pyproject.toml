@@ -337,7 +337,9 @@ latest = "openai-agents==0.18.2"
 "0.0.19" = "openai-agents==0.0.19"
 
 [tool.braintrust.matrix.litellm]
-latest = "litellm==1.92.0"
+# 1.92.0 only publishes Linux wheels through CPython 3.13, but the test
+# matrix also covers Windows and CPython 3.14.
+latest = "litellm==1.91.2"
 "1.74.0" = "litellm==1.74.0"
 
 [tool.braintrust.matrix.livekit-agents]

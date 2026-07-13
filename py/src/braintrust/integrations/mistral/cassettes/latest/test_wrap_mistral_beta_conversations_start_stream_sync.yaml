@@ -15,24 +15,24 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.5.0
+      - mistral-client-python/2.6.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-06-29T14:13:28.545632Z","conversation_id":"conv_019f13ba5c87747b931182ff92813bc4"}
+        data: {"type":"conversation.response.started","created_at":"2026-07-13T15:24:00.198441Z","conversation_id":"conv_019f5c13f6797433ae27f17955cf25c8"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-06-29T14:13:28.549188Z","output_index":0,"id":"msg_019f13ba5d6576a8aa1084b86816b354","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
+        data: {"type":"message.output.delta","created_at":"2026-07-13T15:24:00.201287Z","output_index":0,"id":"msg_019f5c13f74972ee84e72b8048e3934a","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-06-29T14:13:28.581416Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
+        data: {"type":"conversation.response.done","created_at":"2026-07-13T15:24:00.237432Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
 
 
         '
@@ -44,23 +44,21 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a13588338a8861e8-YYZ
+      - a1a94ac379deac75-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 29 Jun 2026 14:13:28 GMT
+      - Mon, 13 Jul 2026 15:24:00 GMT
       mistral-correlation-id:
-      - 019f13ba-5c75-7914-b799-d77ac38282ff
+      - 019f5c13-f66c-76ed-9b3f-2ac1a7c6a13c
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=G1X1zsLSoO5DeA6gSLGlUIU8kdgv_JDQmO5XZpDkE.8-1782742408.2498817-1.0.1.1-v56QTKBFqyibvLaHbb0yUfO5IW75Sg7G3gbjEK6WaqaqYeAOTCxJaJl5siOshlRvF8ng4U0ciP89AkIEF9XqCaMZ4G7WDwUa7Ucqz4W4sj.fHPXSVEe5WTm1xY9.29y7;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
-        Jun 2026 14:43:28 GMT
-      - _cfuvid=m94XN_Wu2bzo_V4oz1dlKMmT2LSe8fwaANnt_RdQU.s-1782742408.2498817-1.0.1.1-03dQ99QWrf0O8C0_Rg22yn.yQhCnhZV2vLtal_1lRfw;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      - __cf_bm=0b7g1na2ywqBY0QBUp8lY8HtcgXrkwdVHS32PugLPXc-1783956239.9180744-1.0.1.1-._Slfbohz.L4GrSDJdIXgI5ZKZBnowsmuLs5ZtuTjjuDKpucLkn9InMHsVnr6uNCA0NMY3ZDLkR9VSHRfmDfQf8gCR2xKZ158gFsls8VqbIa4uYv_srNVgFjH8IeMW5d;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
+        Jul 2026 15:54:00 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -68,13 +66,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '227'
+      - '220'
       x-kong-proxy-latency:
-      - '12'
+      - '9'
       x-kong-request-id:
-      - 019f13ba-5c75-7914-b799-d77ac38282ff
+      - 019f5c13-f66c-76ed-9b3f-2ac1a7c6a13c
       x-kong-upstream-latency:
-      - '229'
+      - '222'
     status:
       code: 200
       message: OK
