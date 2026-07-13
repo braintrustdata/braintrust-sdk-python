@@ -5,7 +5,7 @@ import os
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
@@ -22,9 +22,21 @@ import temporalio.testing
 import temporalio.worker
 import temporalio.workflow
 from braintrust.integrations.temporal import BraintrustInterceptor, BraintrustPlugin
-from braintrust.test_helpers import init_test_logger
+from braintrust.integrations.temporal.plugin import _workflow_span_context, _workflow_span_ids
+from braintrust.span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
+from braintrust.span_identifier_v4 import SpanComponentsV4
+from braintrust.test_helpers import init_test_logger, preserve_env_vars
+from temporalio.client import Client
 from temporalio.common import RetryPolicy
 from temporalio.worker import Worker
+
+
+@dataclass
+class WorkflowInfoForTest:
+    namespace: str
+    workflow_type: str
+    workflow_id: str
+    run_id: str
 
 
 class TestHeaderSerialization:
@@ -101,6 +113,56 @@ class TestHeaderSerialization:
         result_context = interceptor._span_context_from_headers(headers)
 
         assert result_context == original_context
+
+
+class TestWorkflowSpanContext:
+    def test_workflow_span_context_preserves_legacy_parent_encoding(self):
+        parent_components = SpanComponentsV3(
+            object_type=SpanObjectTypeV3.PROJECT_LOGS,
+            object_id=str(uuid.uuid4()),
+            row_id=str(uuid.uuid4()),
+            span_id=str(uuid.uuid4()),
+            root_span_id=str(uuid.uuid4()),
+        )
+        parent = parent_components.to_str()
+        info = WorkflowInfoForTest(
+            namespace="default",
+            workflow_type="ReplayAfterSignalWorkflow",
+            workflow_id="workflow-id",
+            run_id="run-id",
+        )
+
+        with preserve_env_vars("BRAINTRUST_LEGACY_IDS"):
+            os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
+            ids = _workflow_span_ids(cast(temporalio.workflow.Info, info), parent)
+            context = _workflow_span_context(parent, ids)
+
+        assert SpanComponentsV4.get_version(context) == 3
+        parsed = SpanComponentsV3.from_str(context)
+        assert parsed.row_id == ids["row_id"]
+        assert parsed.span_id == ids["span_id"]
+        assert parsed.root_span_id == parent_components.root_span_id
+
+    def test_workflow_span_context_uses_stable_root_for_object_parent(self):
+        parent = SpanComponentsV4(
+            object_type=SpanObjectTypeV3.PROJECT_LOGS,
+            object_id=str(uuid.uuid4()),
+        ).to_str()
+        info = WorkflowInfoForTest(
+            namespace="default",
+            workflow_type="ReplayAfterSignalWorkflow",
+            workflow_id="workflow-id",
+            run_id="run-id",
+        )
+
+        ids = _workflow_span_ids(cast(temporalio.workflow.Info, info), parent)
+        context = _workflow_span_context(parent, ids)
+
+        assert SpanComponentsV4.get_version(context) == 4
+        parsed = SpanComponentsV4.from_str(context)
+        assert parsed.row_id == ids["row_id"]
+        assert parsed.span_id == ids["span_id"]
+        assert parsed.root_span_id == ids["root_span_id"]
 
 
 # Integration Test Infrastructure
@@ -222,6 +284,39 @@ class ParentWorkflow:
         return child_result
 
 
+@temporalio.workflow.defn
+class ReplayAfterSignalWorkflow:
+    """Workflow that schedules an activity after a later workflow task."""
+
+    def __init__(self) -> None:
+        self._continue = False
+        self._state = "starting"
+
+    @temporalio.workflow.run
+    async def run(self, input: TaskInput) -> int:
+        first_result = await temporalio.workflow.execute_activity(
+            simple_activity,
+            input,
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+        self._state = "waiting"
+        await temporalio.workflow.wait_condition(lambda: self._continue)
+        self._state = "continued"
+        return await temporalio.workflow.execute_activity(
+            simple_activity,
+            TaskInput(value=first_result),
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+
+    @temporalio.workflow.signal
+    def continue_workflow(self) -> None:
+        self._continue = True
+
+    @temporalio.workflow.query
+    def state(self) -> str:
+        return self._state
+
+
 class TestAutoInstrumentation:
     """Tests for Temporal auto-instrumentation helpers."""
 
@@ -269,6 +364,18 @@ def memory_logger():
     init_test_logger("temporal-test")
     with braintrust.logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+def _spans_named(spans: list[dict[str, Any]], name: str) -> list[dict[str, Any]]:
+    return [span for span in spans if span.get("span_attributes", {}).get("name") == name]
+
+
+async def _wait_for_workflow_state(handle: Any, expected: str) -> None:
+    for _ in range(50):
+        if await handle.query(ReplayAfterSignalWorkflow.state) == expected:
+            return
+        await asyncio.sleep(0.1)
+    raise AssertionError(f"Workflow did not reach state {expected!r}")
 
 
 class TestBraintrustPluginIntegration:
@@ -368,6 +475,63 @@ class TestBraintrustPluginIntegration:
 
         assert len(workflow_spans) > 0, "Expected workflow spans"
         assert len(activity_spans) > 0, "Expected activity spans"
+
+    @pytest.mark.parametrize("with_client_parent", [False, True])
+    @pytest.mark.asyncio
+    async def test_plugin_activity_after_replay_stays_under_workflow_span(
+        self, temporal_env, memory_logger, with_client_parent
+    ):
+        task_queue = f"test-queue-replay-{with_client_parent}-{uuid.uuid4()}"
+        workflow_id = f"test-workflow-replay-{with_client_parent}-{uuid.uuid4()}"
+        workflow_client = temporal_env.client
+        if with_client_parent:
+            workflow_client = await Client.connect(
+                temporal_env.client.service_client.config.target_host,
+                namespace=temporal_env.client.namespace,
+                plugins=[BraintrustPlugin(logger=memory_logger)],
+            )
+
+        async with Worker(
+            temporal_env.client,
+            task_queue=task_queue,
+            workflows=[ReplayAfterSignalWorkflow],
+            activities=[simple_activity],
+            max_cached_workflows=0,
+            plugins=[BraintrustPlugin(logger=memory_logger)],
+        ):
+            if with_client_parent:
+                with braintrust.start_span(name="test.client_replay_operation", type="task"):
+                    handle = await workflow_client.start_workflow(
+                        ReplayAfterSignalWorkflow.run,
+                        TaskInput(value=10),
+                        id=workflow_id,
+                        task_queue=task_queue,
+                    )
+            else:
+                handle = await workflow_client.start_workflow(
+                    ReplayAfterSignalWorkflow.run,
+                    TaskInput(value=10),
+                    id=workflow_id,
+                    task_queue=task_queue,
+                )
+            await _wait_for_workflow_state(handle, "waiting")
+            await handle.signal(ReplayAfterSignalWorkflow.continue_workflow)
+            assert await handle.result() == 30
+
+        braintrust.flush()
+        spans = memory_logger.pop()
+        workflow_spans = _spans_named(spans, "temporal.workflow.ReplayAfterSignalWorkflow")
+        activity_spans = _spans_named(spans, "temporal.activity.simple_activity")
+
+        assert len(workflow_spans) == 1
+        assert len(activity_spans) == 2
+        workflow_span = workflow_spans[0]
+        assert all(workflow_span["span_id"] in span.get("span_parents", []) for span in activity_spans)
+        assert all(workflow_span["root_span_id"] == span["root_span_id"] for span in activity_spans)
+        if with_client_parent:
+            client_spans = _spans_named(spans, "test.client_replay_operation")
+            assert len(client_spans) == 1
+            assert workflow_span["root_span_id"] == client_spans[0]["root_span_id"]
 
     @pytest.mark.asyncio
     async def test_plugin_activity_retry_tracing(self, temporal_env, memory_logger):

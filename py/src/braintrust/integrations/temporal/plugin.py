@@ -80,6 +80,8 @@ The integration will automatically:
 """
 
 import dataclasses
+import hashlib
+import uuid
 from collections.abc import Mapping
 from typing import Any
 
@@ -90,6 +92,8 @@ import temporalio.client
 import temporalio.converter
 import temporalio.worker
 import temporalio.workflow
+from braintrust.span_identifier_v3 import SpanComponentsV3
+from braintrust.span_identifier_v4 import SpanComponentsV4
 from temporalio.plugin import SimplePlugin
 from temporalio.worker import WorkflowRunner
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
@@ -112,6 +116,8 @@ _current_span = braintrust.current_span
 
 # Header key for passing span context between client, workflows, and activities
 _HEADER_KEY = "_braintrust-span"
+_SPAN_ID_NAMESPACE = "braintrust.temporal.workflow"
+_SPAN_CONTEXT_PATCH_ID = "braintrust-temporal-workflow-span-context-v1"
 
 
 class BraintrustInterceptor(temporalio.client.Interceptor, temporalio.worker.Interceptor):
@@ -173,7 +179,7 @@ class BraintrustInterceptor(temporalio.client.Interceptor, temporalio.worker.Int
 
     def _span_context_to_headers(
         self,
-        span_context: dict[str, Any],
+        span_context: Any,
         headers: Mapping[str, temporalio.api.common.v1.Payload],
     ) -> Mapping[str, temporalio.api.common.v1.Payload]:
         """Add span context to headers."""
@@ -186,9 +192,7 @@ class BraintrustInterceptor(temporalio.client.Interceptor, temporalio.worker.Int
                 }
         return headers
 
-    def _span_context_from_headers(
-        self, headers: Mapping[str, temporalio.api.common.v1.Payload]
-    ) -> dict[str, Any] | None:
+    def _span_context_from_headers(self, headers: Mapping[str, temporalio.api.common.v1.Payload]) -> Any | None:
         """Extract span context from headers."""
         if _HEADER_KEY not in headers:
             return None
@@ -277,7 +281,8 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
     def __init__(self, next: temporalio.worker.WorkflowInboundInterceptor) -> None:
         super().__init__(next)
         self.payload_converter = temporalio.converter.PayloadConverter.default
-        self._parent_span_context: dict[str, Any] | None = None
+        self._parent_span_context: Any | None = None
+        self._workflow_span: Any | None = None
 
     def init(self, outbound: temporalio.worker.WorkflowOutboundInterceptor) -> None:
         super().init(_BraintrustWorkflowOutboundInterceptor(outbound, self))
@@ -298,14 +303,35 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
         # Create a span for the workflow execution using sandbox_unrestricted
         # to bypass the sandbox restrictions on logger state access
         span = None
-        if not temporalio.workflow.unsafe.is_replaying():
-            with temporalio.workflow.unsafe.sandbox_unrestricted():
-                # Get logger via extern function (supports test logger parameter)
-                get_logger = temporalio.workflow.extern_functions()["__braintrust_get_logger"]
-                logger = get_logger()
+        with temporalio.workflow.unsafe.sandbox_unrestricted():
+            # Get logger via extern function (supports test logger parameter)
+            get_logger = temporalio.workflow.extern_functions()["__braintrust_get_logger"]
+            logger = get_logger()
 
-                if logger:
-                    info = temporalio.workflow.info()
+            if logger:
+                info = temporalio.workflow.info()
+                parent = parent_span_context or logger.export()
+                if temporalio.workflow.patched(_SPAN_CONTEXT_PATCH_ID):
+                    ids = _workflow_span_ids(info, parent)
+                    if temporalio.workflow.unsafe.is_replaying():
+                        self._parent_span_context = _workflow_span_context(parent, ids)
+                    else:
+                        span = logger.start_span(
+                            name=f"temporal.workflow.{info.workflow_type}",
+                            type="task",
+                            parent=parent,
+                            id=ids["row_id"],
+                            span_id=ids["span_id"],
+                            root_span_id=ids["root_span_id"],
+                            metadata={
+                                "temporal.workflow_type": info.workflow_type,
+                                "temporal.workflow_id": info.workflow_id,
+                                "temporal.run_id": info.run_id,
+                            },
+                        )
+                        span.set_current()
+                        self._parent_span_context = _workflow_span_context(parent, ids)
+                elif not temporalio.workflow.unsafe.is_replaying():
                     span = logger.start_span(
                         name=f"temporal.workflow.{info.workflow_type}",
                         type="task",
@@ -317,23 +343,23 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                         },
                     )
                     span.set_current()
-
-                    # Update parent span context for activities
                     self._parent_span_context = span.export()
+
+        self._workflow_span = span
 
         try:
             result = await super().execute_workflow(input)
             return result
         except Exception as e:
-            if span:
+            if self._workflow_span:
                 with temporalio.workflow.unsafe.sandbox_unrestricted():
-                    span.log(error=str(e))
+                    self._workflow_span.log(error=str(e))
             raise
         finally:
-            if span:
+            if self._workflow_span:
                 with temporalio.workflow.unsafe.sandbox_unrestricted():
-                    span.unset_current()
-                    span.end()
+                    self._workflow_span.unset_current()
+                    self._workflow_span.end()
 
 
 class _BraintrustWorkflowOutboundInterceptor(temporalio.worker.WorkflowOutboundInterceptor):
@@ -386,6 +412,37 @@ def _modify_workflow_runner(existing: WorkflowRunner | None) -> WorkflowRunner |
         new_restrictions = existing.restrictions.with_passthrough_modules("braintrust")
         return dataclasses.replace(existing, restrictions=new_restrictions)
     return existing
+
+
+def _workflow_span_ids(info: temporalio.workflow.Info, parent: str) -> dict[str, str]:
+    namespace = getattr(info, "namespace", "")
+    base = f"{_SPAN_ID_NAMESPACE}:{namespace}:{info.workflow_type}:{info.workflow_id}:{info.run_id}"
+    if SpanComponentsV4.get_version(parent) >= 4:
+        digest = hashlib.sha256(base.encode()).hexdigest()
+        return {
+            "row_id": str(uuid.uuid5(uuid.NAMESPACE_URL, base)),
+            "span_id": digest[:16],
+            "root_span_id": digest[16:48],
+        }
+    return {
+        "row_id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{base}:row")),
+        "span_id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{base}:span")),
+        "root_span_id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{base}:root")),
+    }
+
+
+def _workflow_span_context(parent: str, ids: dict[str, str]) -> str:
+    component_cls = SpanComponentsV4 if SpanComponentsV4.get_version(parent) >= 4 else SpanComponentsV3
+    parent_components = component_cls.from_str(parent)
+    return component_cls(
+        object_type=parent_components.object_type,
+        object_id=parent_components.object_id,
+        compute_object_metadata_args=parent_components.compute_object_metadata_args,
+        row_id=ids["row_id"],
+        span_id=ids["span_id"],
+        root_span_id=parent_components.root_span_id or ids["root_span_id"],
+        propagated_event=parent_components.propagated_event,
+    ).to_str()
 
 
 class BraintrustPlugin(SimplePlugin):
