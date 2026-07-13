@@ -479,6 +479,11 @@ DSPY_VERSIONS = _get_matrix_versions("dspy")
 @nox.parametrize("version", DSPY_VERSIONS, ids=DSPY_VERSIONS)
 def test_dspy(session, version):
     _install_test_deps(session)
+    if version == LATEST:
+        # DSPy only lower-bounds LiteLLM, whose 1.92.0 release lacks Windows
+        # and Python 3.14 wheels. Preinstall our portable matrix pin so DSPy's
+        # dependency resolution does not select that incompatible release.
+        _install_matrix_dep(session, "litellm", LATEST)
     _install_matrix_dep(session, "dspy", version)
     _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version)
 

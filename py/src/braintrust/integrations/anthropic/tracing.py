@@ -65,6 +65,16 @@ class AsyncMessages(Wrapper):
         super().__init__(messages)
         self.__messages = messages
 
+    def __getattr__(self, name: str) -> Any:
+        if name == "parse":
+            parse = getattr(self.__messages, "parse")
+
+            async def traced_parse(*args, **kwargs):
+                return await _trace_async_parsed_message_call(parse, args, kwargs)
+
+            return traced_parse
+        return super().__getattr__(name)
+
     @property
     def batches(self):
         return AsyncBatches(self.__messages.batches)
@@ -160,6 +170,16 @@ class Messages(Wrapper):
     def __init__(self, messages):
         super().__init__(messages)
         self.__messages = messages
+
+    def __getattr__(self, name: str) -> Any:
+        if name == "parse":
+            parse = getattr(self.__messages, "parse")
+
+            def traced_parse(*args, **kwargs):
+                return _trace_parsed_message_call(parse, args, kwargs)
+
+            return traced_parse
+        return super().__getattr__(name)
 
     @property
     def batches(self):
@@ -1253,7 +1273,14 @@ def _get_input_from_kwargs(kwargs):
     system = bt_safe_deep_copy(kwargs.get("system", None))
     if system:
         msgs.append({"role": "system", "content": _process_input_attachments(system)})
+
     return msgs
+
+
+def _metadata_value_from_kwargs(key: str, value: Any) -> Any:
+    if key == "output_format" and isinstance(value, type):
+        return f"{value.__module__}.{value.__qualname__}"
+    return value
 
 
 def _get_metadata_from_kwargs(kwargs):
@@ -1261,7 +1288,7 @@ def _get_metadata_from_kwargs(kwargs):
     for k in METADATA_PARAMS:
         v = kwargs.get(k, None)
         if v is not None:
-            metadata[k] = v
+            metadata[k] = _metadata_value_from_kwargs(k, v)
     return metadata
 
 
@@ -1444,13 +1471,7 @@ def _log_server_tool_spans(content: Any, parent_span) -> None:
             _log_server_tool_span(parent_span, None, result_item)
 
 
-def _log_message_to_span(message, span, time_to_first_token: float | None = None):
-    usage = getattr(message, "usage", {})
-    metrics, metadata = extract_anthropic_usage(usage)
-
-    if time_to_first_token is not None:
-        metrics["time_to_first_token"] = time_to_first_token
-
+def _message_output(message, *, include_parsed_output: bool = False):
     content = getattr(message, "content", None)
     output = {
         k: v
@@ -1462,10 +1483,58 @@ def _log_message_to_span(message, span, time_to_first_token: float | None = None
             "stop_sequence": getattr(message, "stop_sequence", None),
         }.items()
         if v is not None
-    } or None
+    }
+
+    if include_parsed_output:
+        parsed_output = getattr(message, "parsed_output", None)
+        if parsed_output is not None:
+            output["parsed_output"] = _normalize_anthropic_data(parsed_output)
+
+    return output or None
+
+
+def _log_message_to_span(message, span, time_to_first_token: float | None = None, *, include_parsed_output=False):
+    usage = getattr(message, "usage", {})
+    metrics, metadata = extract_anthropic_usage(usage)
+
+    if time_to_first_token is not None:
+        metrics["time_to_first_token"] = time_to_first_token
+
+    content = getattr(message, "content", None)
+    output = _message_output(message, include_parsed_output=include_parsed_output)
 
     span.log(output=output, metrics=metrics, metadata=metadata)
     _log_server_tool_spans(content, span)
+
+
+def _trace_parsed_message_call(method, args, kwargs):
+    span = _start_span("anthropic.messages.parse", kwargs)
+    request_start_time = time.time()
+    try:
+        msg = method(*args, **kwargs)
+        ttft = time.time() - request_start_time
+        _log_message_to_span(msg, span, time_to_first_token=ttft, include_parsed_output=True)
+        return msg
+    except Exception as e:
+        span.log(error=e)
+        raise
+    finally:
+        span.end()
+
+
+async def _trace_async_parsed_message_call(method, args, kwargs):
+    span = _start_span("anthropic.messages.parse", kwargs)
+    request_start_time = time.time()
+    try:
+        msg = await method(*args, **kwargs)
+        ttft = time.time() - request_start_time
+        _log_message_to_span(msg, span, time_to_first_token=ttft, include_parsed_output=True)
+        return msg
+    except Exception as e:
+        span.log(error=e)
+        raise
+    finally:
+        span.end()
 
 
 _BRAINTRUST_TRACED = "__braintrust_traced__"

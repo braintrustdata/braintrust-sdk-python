@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.5.0
+      - pydantic-ai/2.9.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.45.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,21 +39,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_003e8b36315b0d6f006a4bd261bc20819c87b9de106f3ea5cc\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1783353953,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0e6001ba34951f60006a55021035a481918ab6fc40693e5978\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783955984,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1783353954,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1783955989,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_003e8b36315b0d6f006a4bd26273b4819ca30b92bb3eac0a74\",\n
+        \     \"id\": \"msg_0e6001ba34951f60006a550215a61481919d6a5c939725a891\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Arrr, matey! I can't
-        be fetchin' the weather for ye directly, but I can help ye navigate the seas
-        of knowledge! Check yer trusty weather app or the horizon for signs of stormy
-        seas or fair winds. What be yer destination, if I may ask?\"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Arrr, matey! I be
+        needin' to know where yer sailin' to give ye a proper forecast. Just tell
+        me the port ye be at, and I\\u2019ll bring ye the latest winds and tides!\"\n
+        \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
@@ -67,9 +66,10 @@ interactions:
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 28,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 58,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 86\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 46,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 74\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -80,19 +80,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fda827d9ca450-YYZ
+      - a1a94484bedcc730-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2172'
+      - '2133'
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 16:05:54 GMT
+      - Mon, 13 Jul 2026 15:19:50 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1204'
+      - '5808'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -100,9 +100,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=jVoA3gjMs71rqB3oA_xbX.elHzHxao1JbTW9K4kL14g-1783353953.6761334-1.0.1.1-qwX3GNII0GoNzHh3LMjlGbm4LK28t.GF8QohjgFwVNlmb4FO442ignnIe7Ou4lokvMpBw.w0Rb5KGwTk5whlq6BvMEKTM2o.vhb1Vaq97POIB4kKoddEJjAl55zbcIVt;
+      - __cf_bm=w41iGQpluBesepTLv406SaNZ2E3qi_B7rx7GYpkG6d8-1783955984.1139987-1.0.1.1-16Got7l6VsKT2SQmaVvM2rrmYzul2tGKtMJq3gjFrB3GQ_NEMe0zhqmXyEBzrBFaOJiZiqLhoZf4MSoFDGRufx7xYD44QqPMod_DHCyxZ1OwP0GMmMxuIzRkC0WmcOIX;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:35:54 GMT
+        13 Jul 2026 15:49:50 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -116,13 +116,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999952'
+      - '149999955'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - 7d1291d4-c292-4c2d-810b-6dc067ae6402
+      - req_c3431f6e0a6f496d8a3498b6cb6cc7e8
     status:
       code: 200
       message: OK

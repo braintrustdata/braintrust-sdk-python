@@ -3,44 +3,44 @@ interactions:
     body: '{"messages":[{"role":"developer","content":"You are a helpful assistant.
       Be brief."},{"role":"user","content":"Say hi"}],"model":"gpt-4o-mini"}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '143'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - api.openai.com
-      User-Agent:
+      user-agent:
       - OpenAI/Python 2.31.0
-      X-Stainless-Arch:
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
+      x-stainless-package-version:
       - 2.31.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.12.12
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DYECixPpX3CQJnGXxauqBLz6cIFJY\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1777050124,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-E1CgehM8AKuEzm00rJwGQED8YTLCw\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1783955804,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Hi! How can I assist you today?\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
@@ -49,44 +49,46 @@ interactions:
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_df1291c4ff\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_844ddd95ff\"\n}\n"
     headers:
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - 9f16ac6c28d07aa8-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Fri, 24 Apr 2026 17:02:05 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-expose-headers:
       - X-Request-ID
+      - CF-Ray
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a1a94021ebddac58-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '837'
+      content-type:
+      - application/json
+      date:
+      - Mon, 13 Jul 2026 15:16:45 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '513'
+      - '547'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
       set-cookie:
-      - __cf_bm=UTMXJuTEIdZ3lppvMDZcDEbshJpKQxmQ3wU_O.QGIOU-1777050124.1901731-1.0.1.1-P__L5e7c2gctztcnaqr3Q5xXzp5BroZ15bbByf9z_0uYTPdn_kgH03.V3IXN3RWip6XC3nl8rGTNjZvUGk5kbfyyVPQvyh1EK9DNej7ON5mezHt6xRq.mRPOP6ogECb3;
-        HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Fri, 24 Apr 2026
-        17:32:05 GMT
+      - __cf_bm=BsQp8Q7u6ygWY2WyY6qyWw12vDDggbnYfsI7tBua3.w-1783955804.4697545-1.0.1.1-dOk47VHzYgO0aX.e_0jjcASWAzvel0B6Avsj9XAzrWIuhtCGRGZndI._iFHL1yJygv9oAW5MlS2h.nFYV4eM1ga2Bcj_uarF5CMZKGpujRp_ec5rgonwFr.Fq6BqnvdE;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        13 Jul 2026 15:46:45 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -102,42 +104,56 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_00b7a68119754bf8bebf440830ad62b8
+      - req_a4a1dfed699e47b39ed036bc2ae62649
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"0fcfd86b-65e6-42de-a120-952133b53c25","run_id":"1dc2ad5e-7035-4c9d-a283-b8112d78387e","data":{"agent_id":"test-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.6.0","type":"agent"}'
+    body: '{"session_id":"7323385a-6cac-4640-b38a-20eefc7b74fd","run_id":"7f64dd65-9f37-453f-90db-a2fbb474b0e8","data":{"agent_id":"test-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.7.2","type":"agent"}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '493'
-      Content-Type:
+      content-type:
       - application/json
-      Host:
+      host:
       - os-api.agno.com
       user-agent:
-      - agno/2.6.0
+      - agno/2.7.2
     method: POST
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 1dc2ad5e-7035-4c9d-a283-b8112d78387e","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 7f64dd65-9f37-453f-90db-a2fbb474b0e8","status":"success"}'
     headers:
       content-length:
       - '96'
       content-type:
       - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
       date:
-      - Fri, 24 Apr 2026 17:02:05 GMT
+      - Mon, 13 Jul 2026 15:16:45 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
       server:
       - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
     status:
       code: 201
-      message: null
+      message: Created
 version: 1

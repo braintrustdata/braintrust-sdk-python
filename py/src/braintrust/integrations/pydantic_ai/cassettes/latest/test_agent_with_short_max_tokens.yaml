@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.5.0
+      - pydantic-ai/2.9.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.45.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,18 +38,18 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0eeab44c59692875006a4bd28bc2388191ac8abc7b43ef5a27\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1783353995,\n  \"status\":
+      string: "{\n  \"id\": \"resp_079b5fd5d33ea778006a55024473c081a39bddcae2bf48c5d6\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783956037,\n  \"status\":
         \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
         \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
         0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
         \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 16,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0eeab44c59692875006a4bd28c3c6881919ed464a420601631\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_079b5fd5d33ea778006a550246c95081a3b1b2e7de749ecc45\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Artificial Intelligence
-        (AI) refers to the simulation of human intelligence in machines that are\"\n
+        [],\n          \"logprobs\": [],\n          \"text\": \"AI, or Artificial
+        Intelligence, refers to the simulation of human intelligence in machines that\"\n
         \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -64,9 +64,10 @@ interactions:
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 11,\n    \"input_tokens_details\":
-        {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 16,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 27\n  },\n
-        \ \"user\": null,\n  \"metadata\": {}\n}"
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
+        \   \"output_tokens\": 16,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 27\n  },\n  \"user\": null,\n  \"metadata\":
+        {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -77,19 +78,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fdb891a61a244-YYZ
+      - a1a945c9fb30860b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2064'
+      - '2094'
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 16:06:36 GMT
+      - Mon, 13 Jul 2026 15:20:39 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '744'
+      - '2862'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -97,9 +98,9 @@ interactions:
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=4H5HCRkt7sybGiipd2EGhuoeq4DokfA59GtC3O5LZFQ-1783353995.6997476-1.0.1.1-pKdV55sWWDEaJeoUiON0dgGkfa1SE6vFI_HPEcb6KkhQX.GkNF1JPpL4R60TcyVOUTymcrUwmOrYe.v9NsU3riuiIdhFCMEb65G_tRC4.WU5fnbUMDpUZ4ARTJiEISMb;
+      - __cf_bm=GMpqGQj9fr9jhHfKFN.N8IGnOUo9qLTS7p4EvNtD7_M-1783956036.1575937-1.0.1.1-_FA9KFX9xwzPizEJ8ObIhPC4OQSy3e9rHK.Cst9fUZAAP7YfB_cpwWaAIHd0P7uQUrVhMvYcEWWcpEUnNJFAyWxOga2fDLXdIB.0oauZA36gQ4yY20VTjVXyFNRyA0c1;
         HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:36:36 GMT
+        13 Jul 2026 15:50:39 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -119,7 +120,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - 6f06e441-e0ea-4916-b519-a96c0fe2577b
+      - req_45ef758628234c47b4ee90fc398366f9
     status:
       code: 200
       message: OK

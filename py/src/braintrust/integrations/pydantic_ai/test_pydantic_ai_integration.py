@@ -310,12 +310,14 @@ def test_agent_to_cli_sync(memory_logger, monkeypatch):
         code_theme,
         prog_name,
         message_history,
+        model=None,
         model_settings=None,
         usage_limits=None,
     ):
         assert stream is True
         assert prog_name == "braintrust-cli"
         assert message_history is not None
+        assert model is None
         captured["model_settings"] = model_settings
         captured["usage_limits"] = usage_limits
         return 0
@@ -327,7 +329,8 @@ def test_agent_to_cli_sync(memory_logger, monkeypatch):
         "message_history": message_history,
     }
     # pydantic_ai 1.10.0 exposes a smaller to_cli_sync API; newer versions add
-    # model_settings and usage_limits, so assert those fields only when present.
+    # model, model_settings, and usage_limits, so accept the expanded run_chat
+    # call and assert optional input fields only when present.
     if "model_settings" in cli_signature.parameters:
         cli_kwargs["model_settings"] = ModelSettings(max_tokens=20, temperature=0.2)
     if "usage_limits" in cli_signature.parameters:

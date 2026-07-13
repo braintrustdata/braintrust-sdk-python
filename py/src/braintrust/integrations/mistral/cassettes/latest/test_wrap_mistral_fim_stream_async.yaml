@@ -16,26 +16,26 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.5.0
+      - mistral-client-python/2.6.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"0a3229f45dde492db601e02783301d3e","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"0a3229f45dde492db601e02783301d3e","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz012345678"}
+        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwx"}
 
 
-        data: {"id":"0a3229f45dde492db601e02783301d3e","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        //"},"finish_reason":null}],"p":"abcd"}
+        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        /"},"finish_reason":null}],"p":"abcdef"}
 
 
-        data: {"id":"0a3229f45dde492db601e02783301d3e","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxy"}
+        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghij"}
 
 
-        data: {"id":"0a3229f45dde492db601e02783301d3e","object":"chat.completion.chunk","created":1782742418,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":23,"total_tokens":27,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrst"}
+        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":23,"total_tokens":27,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrstuvwxyz0123"}
 
 
         data: [DONE]
@@ -50,23 +50,21 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1358874cd002659-YYZ
+      - a1a94b272fc5ac5a-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 29 Jun 2026 14:13:39 GMT
+      - Mon, 13 Jul 2026 15:24:16 GMT
       mistral-correlation-id:
-      - 019f13ba-853a-7f4d-8acc-769c8011fb30
+      - 019f5c14-34b9-7621-bc81-822667e33ed3
       server:
       - cloudflare
       set-cookie:
-      - __cf_bm=QAqvrJxCjL.BYhBidMzE6yQwhX4rb7P3VM5V5Q9LG8s-1782742418.6838255-1.0.1.1-NnEcs20rQPEJXr_eMvkcOuDwUOw97VvRCVoTQ.nFa1DJNKJzUW2_Ybs5f6nWsCD2FKjjri3POyAaBWybjWf40loD7Qop2RbrMbs36udV6I454rk3cF7UN_yMwrvA3yeF;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 29
-        Jun 2026 14:43:39 GMT
-      - _cfuvid=9L3DJgTa5Wuhkm.SakHQjUKVdoCSH__fb4uiZpGQ33E-1782742418.6838255-1.0.1.1-vFMzGgxSxuLDKwFVFKGwm1SK.SI1Vm0PmKAUDoHTrzo;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai
+      - __cf_bm=mH7PDIf3l1ijYJRB_wmlbVg0M5SbTsipXi0M9LwoidA-1783956255.8623435-1.0.1.1-CGz8qcDOF2USV7rhv6G.xB9_M8X687_0LnI6bZZM8oNOLZjNM5dbsAImxDTWEqKXM9RogVG0PLJn.XWodakm_i84ASXygHL_EvGFaXAohQeyTzA1BFzkgmrdYotKyXeq;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
+        Jul 2026 15:54:16 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -74,13 +72,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '185'
+      - '128'
       x-kong-proxy-latency:
-      - '17'
+      - '8'
       x-kong-request-id:
-      - 019f13ba-853a-7f4d-8acc-769c8011fb30
+      - 019f5c14-34b9-7621-bc81-822667e33ed3
       x-kong-upstream-latency:
-      - '185'
+      - '129'
       x-max-retry-attempts-reached:
       - 'false'
     status:

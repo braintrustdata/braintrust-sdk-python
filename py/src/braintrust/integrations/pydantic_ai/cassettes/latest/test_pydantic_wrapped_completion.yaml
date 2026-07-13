@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.5.0
+      - pydantic-ai/2.9.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.45.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,118 +38,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-Dyg8TMz0RJGUDci7q3li15UFR7WGf\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1783354021,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
-        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The capital of Italy is Rome.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        14,\n    \"completion_tokens\": 7,\n    \"total_tokens\": 21,\n    \"prompt_tokens_details\":
-        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
-        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": null\n}\n"
-    headers:
-      access-control-expose-headers:
-      - X-Request-ID
-      - CF-Ray
-      - CF-Ray
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a16fdc282b03ec72-YYZ
-      connection:
-      - keep-alive
-      content-length:
-      - '820'
-      content-type:
-      - application/json
-      date:
-      - Mon, 06 Jul 2026 16:07:01 GMT
-      openai-organization:
-      - braintrust-data
-      openai-processing-ms:
-      - '254'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
-      openai-version:
-      - '2020-10-01'
-      server:
-      - cloudflare
-      set-cookie:
-      - __cf_bm=.b1jUyBZpOHJVveDYRx_ubdAt.LKbDnmS9tKTIHwixs-1783354021.1503155-1.0.1.1-GnmhXoULvw6TfgCWJODE8J2ug_Sk0ZdCoLQIrob34mbejPRyOFeTjbtvJEZbBDLkFPmtq_4lbQfMOHQnL81u97vFfC85Vsl.NQcY9JXP5Jx.4e9wZ6G8jzsfb9N4KWNq;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:37:01 GMT
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      x-content-type-options:
-      - nosniff
-      x-openai-proxy-wasm:
-      - v0.1
-      x-ratelimit-limit-requests:
-      - '10000'
-      x-ratelimit-limit-tokens:
-      - '50000000'
-      x-ratelimit-remaining-requests:
-      - '9999'
-      x-ratelimit-remaining-tokens:
-      - '49999990'
-      x-ratelimit-reset-requests:
-      - 6ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_11214c2c1d664bc4a319f26e4c0df2e0
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"messages":[{"role":"user","content":"What is the capital of Italy?"}],"model":"gpt-3.5-turbo","stream":false}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '111'
-      content-type:
-      - application/json
-      cookie:
-      - __cf_bm=.b1jUyBZpOHJVveDYRx_ubdAt.LKbDnmS9tKTIHwixs-1783354021.1503155-1.0.1.1-GnmhXoULvw6TfgCWJODE8J2ug_Sk0ZdCoLQIrob34mbejPRyOFeTjbtvJEZbBDLkFPmtq_4lbQfMOHQnL81u97vFfC85Vsl.NQcY9JXP5Jx.4e9wZ6G8jzsfb9N4KWNq
-      host:
-      - api.openai.com
-      user-agent:
-      - pydantic-ai/2.5.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - async:asyncio
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 2.44.0
-      x-stainless-read-timeout:
-      - '600'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.14.3
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: "{\n  \"id\": \"chatcmpl-Dyg8TsQvwXKE28fGzLo4LESGRkl5V\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1783354021,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
+      string: "{\n  \"id\": \"chatcmpl-E1Ckvhl2qVypfGR7jnweN1RJx6pWx\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1783956069,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Rome\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
@@ -169,7 +59,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fdc2a7b79ec72-YYZ
+      - a1a94697798c19cf-YYZ
       connection:
       - keep-alive
       content-length:
@@ -177,11 +67,121 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 16:07:02 GMT
+      - Mon, 13 Jul 2026 15:21:09 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '1330'
+      - '250'
+      openai-project:
+      - proj_vsCSXafhhByzWOThMrJcZiw9
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      set-cookie:
+      - __cf_bm=AhFDqr4eLVf1S45cVkGG5NLrcWmfEYqW47WELDHZsos-1783956069.0389304-1.0.1.1-TqfmztTBg_LEzPuCXfeE5wQL7Qh3aDFjGCGWn2tfmaIATyc5Hixlaq8MEW8zhoy8DIqKwPBnJYGyhqxoqJcKMKN5DdtFc2Se555WPgpkN7mjZ3n20WjOVGIGpApK.uc_;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
+        13 Jul 2026 15:51:09 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '50000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '49999990'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_4395b0f740ad46ea8f1dc49dee568caa
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What is the capital of Italy?"}],"model":"gpt-3.5-turbo","stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '111'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=AhFDqr4eLVf1S45cVkGG5NLrcWmfEYqW47WELDHZsos-1783956069.0389304-1.0.1.1-TqfmztTBg_LEzPuCXfeE5wQL7Qh3aDFjGCGWn2tfmaIATyc5Hixlaq8MEW8zhoy8DIqKwPBnJYGyhqxoqJcKMKN5DdtFc2Se555WPgpkN7mjZ3n20WjOVGIGpApK.uc_
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/2.9.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.45.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-E1CkvkSGWvoRe7dcTZEdbFS0NsSf9\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1783956069,\n  \"model\": \"gpt-3.5-turbo-0125\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Rome\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 14,\n    \"completion_tokens\":
+        2,\n    \"total_tokens\": 16,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a1a94699db3f19cf-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '795'
+      content-type:
+      - application/json
+      date:
+      - Mon, 13 Jul 2026 15:21:10 GMT
+      openai-organization:
+      - braintrust-data
+      openai-processing-ms:
+      - '1034'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
@@ -209,7 +209,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_c68c6dd04d564f04b61726d4394c581f
+      - req_0e05636b3c4247bda7138f193c94f38b
     status:
       code: 200
       message: OK

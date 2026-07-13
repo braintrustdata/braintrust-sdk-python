@@ -1124,6 +1124,27 @@
             "enum": [
               "file"
             ]
+          },
+          "cache_control": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ephemeral"
+                ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
           }
         },
         "required": [
@@ -1176,6 +1197,27 @@
             "enum": [
               "image_url"
             ]
+          },
+          "cache_control": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ephemeral"
+                ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
           }
         },
         "required": [
@@ -1204,6 +1246,13 @@
                 "type": "string",
                 "enum": [
                   "ephemeral"
+                ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
                 ]
               }
             },
@@ -1237,6 +1286,13 @@
                 "type": "string",
                 "enum": [
                   "ephemeral"
+                ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
                 ]
               }
             },

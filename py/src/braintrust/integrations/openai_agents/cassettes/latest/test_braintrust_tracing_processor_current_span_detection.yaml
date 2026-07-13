@@ -1,103 +1,110 @@
 interactions:
 - request:
     body: '{"include":[],"input":[{"content":"What is 2+2? Just the number.","role":"user"}],"instructions":"You
-      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:07c001fb595745238c5f95312461e01f","tools":[]}'
+      are a helpful assistant. Be very concise.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:1b862e23a3b84f0ab0bbf8f2a99a0dd3","tools":[]}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '247'
-      Content-Type:
+      content-type:
       - application/json
-      Cookie:
-      - __cf_bm=AhF_GqP7hu.ik.7NqTKc.xDLHql3Av1GM58XKmq6efI-1778512629.1183877-1.0.1.1-TXLH9WhVY74otlzrx0Q9bw2MdZTqG_jXqjH5ErsI9zX1JtIGGl_.g74U7fQIxYZ8.PO2.e45EGdOFZYzMQqsTqCL05MKJJSu5rzV3aJJyPiLAG6Y1dwuetlJjKZLZQ9A
-      Host:
+      cookie:
+      - __cf_bm=4TzA4GVJzGSzDW7phEo7Eu193inZ1IkbHi1eT5LxY2w-1783955773.695891-1.0.1.1-cBTmiUrFsDbb9l.XkfyP_0S.MQii9Wy87twhX0Qo.9R4Dr0VHmIeFBOY2J8ibLD97WJck0PzE.8ZRRIr8e8gzPSaGDoAOCxLPYZ2voMAfMCBQXZMHOvCwYNBARMxP4dk
+      host:
       - api.openai.com
-      User-Agent:
-      - Agents/Python 0.17.1
-      X-Stainless-Arch:
+      user-agent:
+      - Agents/Python 0.18.2
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - async:asyncio
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
-      - 2.31.0
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.12.12
+      x-stainless-package-version:
+      - 2.45.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
-      - '0'
+      - '1'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_07c6ec32580e2c2b006a01f2f6efac81a09b2aa27f2b28f17d\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1778512630,\n  \"status\":
+      string: "{\n  \"id\": \"resp_08d4a059f1a3bf2a006a55013fdcac8192ba3fe5d046d116b5\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1783955775,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1778512631,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1783955777,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are a helpful assistant. Be very concise.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_07c6ec32580e2c2b006a01f2f75d1081a0807f9df402635952\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_08d4a059f1a3bf2a006a550141437881928b7bab681f73ff0d\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"4\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:07c001fb595745238c5f95312461e01f\",\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"effort\": null,\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\":
-        1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
-        32,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n
+        \"agents-sdk:run:1b862e23a3b84f0ab0bbf8f2a99a0dd3\",\n  \"prompt_cache_retention\":
+        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
+        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
+        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
+        0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
+        \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
+        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 32,\n    \"input_tokens_details\":
+        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
         \   \"output_tokens\": 2,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
         0\n    },\n    \"total_tokens\": 34\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - 9fa22626ecc74c9b-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Mon, 11 May 2026 15:17:11 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
       access-control-expose-headers:
       - X-Request-ID
+      - CF-Ray
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a1a93f6ebde278a5-YYZ
+      connection:
+      - keep-alive
       content-length:
-      - '1645'
+      - '2058'
+      content-type:
+      - application/json
+      date:
+      - Mon, 13 Jul 2026 15:16:17 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '591'
+      - '1608'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-ratelimit-limit-requests:
       - '30000'
       x-ratelimit-limit-tokens:
@@ -111,7 +118,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_f23f93caef7849bc9e01fdff866ebb9a
+      - req_d0d829d7b43b45f2b5021616d0b71f09
     status:
       code: 200
       message: OK
