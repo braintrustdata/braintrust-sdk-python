@@ -687,8 +687,10 @@ def test_litellm_tool_calls(memory_logger):
             "metadata": {
                 "model": TEST_MODEL,
                 "provider": "litellm",
-                "tools": lambda tools_list: len(tools_list) == 1
-                and any(tool.get("function", {}).get("name") == "get_weather" for tool in tools_list),
+                "tools": lambda tools_list: (
+                    len(tools_list) == 1
+                    and any(tool.get("function", {}).get("name") == "get_weather" for tool in tools_list)
+                ),
             },
             "input": lambda inp: "What's the weather in New York?" in str(inp),
             "metrics": lambda m: assert_metrics_are_valid(m, start, end) is None,
