@@ -89,6 +89,7 @@ from .queue import DEFAULT_QUEUE_SIZE, LogQueue
 from .serializable_data_class import SerializableDataClass
 from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from .span_identifier_v4 import SpanComponentsV4
+from .span_origin import SpanOriginEnvironment, detect_environment, merge_span_origin_context
 from .span_types import SpanTypeAttribute
 from .types import Metadata
 from .types._eval import ExperimentDatasetEvent
@@ -446,6 +447,7 @@ class BraintrustState:
         self.current_span: contextvars.ContextVar[Span] = contextvars.ContextVar(
             "braintrust_current_span", default=NOOP_SPAN
         )
+        self.span_origin_environment: SpanOriginEnvironment | None = detect_environment()
 
         # Context manager is dynamically selected based on current environment
         self._context_manager = None
@@ -1890,6 +1892,7 @@ def init_logger(
     force_login: bool = False,
     set_current: bool = True,
     state: BraintrustState | None = None,
+    environment: SpanOriginEnvironment | None = None,
 ) -> "Logger":
     """
     Create a new logger in a specified project. If the project does not exist, it will be created.
@@ -1907,6 +1910,7 @@ def init_logger(
     """
 
     state = state or _state
+    state.span_origin_environment = detect_environment(environment)
     compute_metadata_args = dict(project_name=project, project_id=project_id)
 
     link_args = {
@@ -4586,8 +4590,11 @@ class SpanImpl(Span):
             span_attributes=dict(**{"type": type, "name": name, **span_attributes}, exec_counter=exec_counter),
             created=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         )
-        if caller_location:
-            internal_data["context"] = caller_location
+        internal_data["context"] = merge_span_origin_context(
+            caller_location or {},
+            "braintrust-python-logger",
+            self.state.span_origin_environment,
+        )
 
         # TODO: can be simplified after `event` is typed.
         id = event.pop("id", None)

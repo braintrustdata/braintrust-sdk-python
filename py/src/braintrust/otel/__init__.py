@@ -1,9 +1,11 @@
 import logging
+import json
 import os
 import warnings
 from urllib.parse import urljoin
 
 from braintrust.env import BraintrustEnv
+from braintrust.span_origin import SpanOriginEnvironment, detect_environment, merge_span_origin_context
 
 
 INSTALL_ERR_MSG = (
@@ -256,6 +258,7 @@ def add_braintrust_span_processor(
     filter_ai_spans: bool = False,
     custom_filter=None,
     headers: dict[str, str] | None = None,
+    environment: SpanOriginEnvironment | None = None,
 ):
     processor = BraintrustSpanProcessor(
         api_key=api_key,
@@ -264,6 +267,7 @@ def add_braintrust_span_processor(
         filter_ai_spans=filter_ai_spans,
         custom_filter=custom_filter,
         headers=headers,
+        environment=environment,
     )
     tracer_provider.add_span_processor(processor)
 
@@ -291,6 +295,7 @@ class BraintrustSpanProcessor:
         filter_ai_spans: bool = False,
         custom_filter=None,
         headers: dict[str, str] | None = None,
+        environment: SpanOriginEnvironment | None = None,
         SpanProcessor: type | None = None,
     ):
         """
@@ -305,6 +310,7 @@ class BraintrustSpanProcessor:
             headers: Additional headers to include in requests.
             SpanProcessor: Optional span processor class (BatchSpanProcessor or SimpleSpanProcessor). Defaults to BatchSpanProcessor.
         """
+        self._environment = detect_environment(environment)
         # Create the exporter
         # Convert api_url to the full endpoint URL that OtelExporter expects
         exporter_url = None
@@ -358,6 +364,13 @@ class BraintrustSpanProcessor:
             # Set the attribute if we found a parent value
             if parent_value:
                 span.set_attribute("braintrust.parent", parent_value)
+
+            context_json = merge_span_origin_context({}, "braintrust-python-otel", self._environment)
+            span.set_attribute("braintrust.context_json", json.dumps(context_json))
+            if self._environment:
+                span.set_attribute("braintrust.environment.type", self._environment["type"])
+                if self._environment.get("name"):
+                    span.set_attribute("braintrust.environment.name", self._environment["name"])
 
         except Exception as e:
             # If there's an exception, just don't set braintrust.parent
