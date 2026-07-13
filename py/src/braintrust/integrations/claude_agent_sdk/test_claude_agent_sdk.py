@@ -149,11 +149,14 @@ async def test_calculator_with_multiple_operations(memory_logger):
             options=options,
         )
 
+        assistant_messages = []
         result_message = None
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query("What is 15 multiplied by 7? Then subtract 5 from the result.")
             async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
+                if type(message).__name__ == "AssistantMessage":
+                    assistant_messages.append(message)
+                elif type(message).__name__ == "ResultMessage":
                     result_message = message
 
     spans = memory_logger.pop()
@@ -186,8 +189,23 @@ async def test_calculator_with_multiple_operations(memory_logger):
     llm_span_ids = {span["span_id"] for span in llm_spans}
     _assert_llm_spans_have_time_to_first_token(llm_spans)
 
-    llm_spans_with_metrics = [s for s in llm_spans if "prompt_tokens" in s.get("metrics", {})]
-    assert len(llm_spans_with_metrics) >= 1, "At least one LLM span should have token metrics"
+    _assert_per_span_usage_and_result_reconciliation(
+        llm_spans,
+        assistant_messages,
+        result_message,
+        task_span,
+    )
+
+    first_llm_span = min(llm_spans, key=lambda span: span["metrics"]["start"])
+    first_assistant_completion = _assistant_usage_metrics(assistant_messages[0])["completion_tokens"]
+    assert first_llm_span["metrics"]["completion_tokens"] == first_assistant_completion
+
+    result_usage_metrics, _ = extract_anthropic_usage(result_message.usage)
+    for metric_name, expected_total in result_usage_metrics.items():
+        observed_total = sum(llm_span.get("metrics", {}).get(metric_name, 0) for llm_span in llm_spans)
+        assert observed_total == expected_total, [
+            (metric_name, llm_span.get("metrics", {}).get(metric_name)) for llm_span in llm_spans
+        ]
 
     for llm_span in llm_spans:
         assert llm_span["span_attributes"]["name"] == "anthropic.messages.create"
@@ -195,7 +213,7 @@ async def test_calculator_with_multiple_operations(memory_logger):
         assert len(llm_span["output"]) > 0
         for metric_name in ("prompt_tokens", "completion_tokens", "tokens"):
             if metric_name in llm_span.get("metrics", {}):
-                assert llm_span["metrics"][metric_name] > 0
+                assert llm_span["metrics"][metric_name] >= 0
     assert any(llm_span.get("metadata", {}).get("usage_service_tier") == "standard" for llm_span in llm_spans)
     if any("usage_inference_geo" in llm_span.get("metadata", {}) for llm_span in llm_spans):
         assert all(
@@ -240,6 +258,86 @@ def _assert_llm_spans_have_time_to_first_token(llm_spans: list[dict[str, Any]]) 
     for llm_span in llm_spans:
         assert "time_to_first_token" in llm_span.get("metrics", {})
         assert llm_span["metrics"]["time_to_first_token"] >= 0
+
+
+def _assistant_usage_metrics(message: Any) -> dict[str, float]:
+    metrics, _ = extract_anthropic_usage(getattr(message, "usage", None))
+    return metrics
+
+
+def _assert_per_span_usage_and_result_reconciliation(
+    llm_spans: list[dict[str, Any]],
+    assistant_messages: list[Any],
+    result_message: Any,
+    root_task_span: dict[str, Any],
+) -> None:
+    assert llm_spans
+    assert assistant_messages
+    assert result_message is not None
+
+    assistant_models = {getattr(message, "model", None) for message in assistant_messages}
+    assistant_models.discard(None)
+    assistant_completion_by_model: dict[str, set[float]] = {}
+    for message in assistant_messages:
+        model = getattr(message, "model", None)
+        completion_tokens = _assistant_usage_metrics(message).get("completion_tokens")
+        if model is not None and completion_tokens is not None:
+            assistant_completion_by_model.setdefault(model, set()).add(completion_tokens)
+
+    for llm_span in llm_spans:
+        assert llm_span["span_attributes"]["name"] == "anthropic.messages.create"
+        metrics = llm_span.get("metrics", {})
+        for metric_name in ("prompt_tokens", "completion_tokens", "tokens"):
+            assert metric_name in metrics, f"Missing {metric_name} on LLM span {llm_span}"
+            assert metrics[metric_name] >= 0
+        model = llm_span.get("metadata", {}).get("model")
+        assert model in assistant_models
+
+    assert any(root_task_span["span_id"] in span.get("span_parents", []) for span in llm_spans)
+    final_assistant = next(
+        message for message in reversed(assistant_messages) if getattr(message, "parent_tool_use_id", None) is None
+    )
+    final_assistant_content = _serialize_content_blocks(final_assistant.content)
+    final_root_span = next(
+        span
+        for span in llm_spans
+        if any(
+            isinstance(output.get("content"), list)
+            and output["content"][-len(final_assistant_content) :] == final_assistant_content
+            for output in span.get("output", [])
+        )
+    )
+
+    for llm_span in llm_spans:
+        if llm_span is final_root_span:
+            continue
+        model = llm_span["metadata"]["model"]
+        assert (
+            llm_span["metrics"]["completion_tokens"] == 0
+            or llm_span["metrics"]["completion_tokens"] in assistant_completion_by_model[model]
+        )
+
+    result_metrics, result_metadata = extract_anthropic_usage(result_message.usage)
+    result_completion = result_metrics["completion_tokens"]
+    prior_completion = sum(span["metrics"]["completion_tokens"] for span in llm_spans if span is not final_root_span)
+    final_assistant_completion = _assistant_usage_metrics(final_assistant)["completion_tokens"]
+    expected_final_completion = (
+        result_completion - prior_completion if result_completion >= prior_completion else final_assistant_completion
+    )
+    assert final_root_span["metrics"]["completion_tokens"] == expected_final_completion
+
+    if result_completion >= prior_completion:
+        assert sum(span["metrics"]["completion_tokens"] for span in llm_spans) == result_completion
+
+    for metric_name, value in result_metrics.items():
+        if metric_name.startswith("server_tool_use_"):
+            assert final_root_span["metrics"][metric_name] == value
+    for metadata_name, value in result_metadata.items():
+        assert final_root_span["metadata"][metadata_name] == value
+
+    assert final_root_span["metrics"]["tokens"] == (
+        final_root_span["metrics"]["prompt_tokens"] + expected_final_completion
+    )
 
 
 def _sdk_cassette_name(base: str, *, min_version: str) -> str:
@@ -665,6 +763,8 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             options=options,
         )
 
+        assistant_messages = []
+        result_message = None
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(
                 "You must delegate this task to the bundled general-purpose agent. "
@@ -672,7 +772,10 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
                 "Do not answer directly without using the subagent."
             )
             async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
+                if type(message).__name__ == "AssistantMessage":
+                    assistant_messages.append(message)
+                elif type(message).__name__ == "ResultMessage":
+                    result_message = message
                     break
 
     spans = memory_logger.pop()
@@ -704,6 +807,12 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
 
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     _assert_llm_spans_have_time_to_first_token(llm_spans)
+    _assert_per_span_usage_and_result_reconciliation(
+        llm_spans,
+        assistant_messages,
+        result_message,
+        root_task_span,
+    )
     assert any(
         subagent_span["span_id"] in llm_span["span_parents"]
         for subagent_span in subagent_spans
@@ -716,6 +825,22 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
         if any(subagent_span["span_id"] in llm_span["span_parents"] for subagent_span in subagent_spans)
     ]
     assert delegated_llm_spans, "Expected at least one delegated LLM span nested under a subagent task span"
+
+    delegated_assistant_messages = [
+        message for message in assistant_messages if getattr(message, "parent_tool_use_id", None) is not None
+    ]
+    delegated_usage_by_model = {
+        (
+            getattr(message, "model", None),
+            _assistant_usage_metrics(message).get("completion_tokens"),
+        )
+        for message in delegated_assistant_messages
+    }
+    for delegated_llm_span in delegated_llm_spans:
+        assert (
+            delegated_llm_span["metadata"]["model"],
+            delegated_llm_span["metrics"]["completion_tokens"],
+        ) in delegated_usage_by_model
 
     assert any(
         any(llm_span["span_id"] in tool_span["span_parents"] for llm_span in delegated_llm_spans)
@@ -2271,6 +2396,8 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
             options=options,
         )
 
+        assistant_messages = []
+        result_message = None
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(
                 "Use exactly three bundled general-purpose subagents and start all three Agent tool calls "
@@ -2283,7 +2410,10 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
                 "Do not ask clarifying questions. Do not answer directly without using all three subagents."
             )
             async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
+                if type(message).__name__ == "AssistantMessage":
+                    assistant_messages.append(message)
+                elif type(message).__name__ == "ResultMessage":
+                    result_message = message
                     break
 
     spans = memory_logger.pop()
@@ -2292,8 +2422,17 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
     tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
 
     root_task_span = find_span_by_name(task_spans, "Claude Agent")
+    _assert_per_span_usage_and_result_reconciliation(
+        llm_spans,
+        assistant_messages,
+        result_message,
+        root_task_span,
+    )
 
     if not _sdk_version_at_least("0.1.11"):
+        assert {span["metadata"]["model"] for span in llm_spans} == {
+            getattr(message, "model", None) for message in assistant_messages
+        }
         return
 
     subagent_spans = [span for span in task_spans if span["span_id"] != root_task_span["span_id"]]

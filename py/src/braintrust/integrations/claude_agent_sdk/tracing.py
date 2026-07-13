@@ -1,13 +1,15 @@
 import asyncio
 import collections
+import copy
 import dataclasses
+import importlib
 import json
 import threading
 import time
 from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any
 
-from braintrust.integrations.anthropic._utils import Wrapper, extract_anthropic_usage
+from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk._constants import (
     ANTHROPIC_MESSAGES_CREATE_SPAN_NAME,
     CLAUDE_AGENT_RUN_FAILED_ERROR,
@@ -540,6 +542,128 @@ def _task_output(message: Any) -> dict[str, Any] | None:
     }
 
 
+def _ensure_assistant_usage_parsing() -> None:
+    """Retain assistant usage that claude-agent-sdk 0.1.10 drops while parsing."""
+    try:
+        types_module = importlib.import_module("claude_agent_sdk.types")
+        assistant_message_class = getattr(types_module, MessageClassName.ASSISTANT)
+        if "usage" in getattr(assistant_message_class, "__dataclass_fields__", {}):
+            return
+        parser_module = importlib.import_module("claude_agent_sdk._internal.message_parser")
+    except ImportError:
+        return
+
+    original_parse_message = getattr(parser_module, "parse_message", None)
+    if original_parse_message is None or getattr(original_parse_message, "_braintrust_retains_usage", False):
+        return
+
+    def parse_message_with_usage(data: Any) -> Any:
+        message = original_parse_message(data)
+        if type(message).__name__ == MessageClassName.ASSISTANT and getattr(message, "usage", None) is None:
+            raw_message = data.get("message") if isinstance(data, dict) else None
+            usage = raw_message.get("usage") if isinstance(raw_message, dict) else None
+            if usage is not None:
+                message.usage = copy.deepcopy(usage)
+        return message
+
+    parse_message_with_usage._braintrust_retains_usage = True  # type: ignore[attr-defined]
+    parser_module.parse_message = parse_message_with_usage
+
+    # The one-shot query path imports parse_message at module import time in
+    # claude-agent-sdk 0.1.10, while ClaudeSDKClient imports it lazily.
+    try:
+        client_module = importlib.import_module("claude_agent_sdk._internal.client")
+    except ImportError:
+        return
+    if getattr(client_module, "parse_message", None) is original_parse_message:
+        client_module.parse_message = parse_message_with_usage
+
+
+def _assistant_usage(message: Any) -> dict[str, Any] | None:
+    usage = _try_to_dict(getattr(message, "usage", None))
+    if not usage:
+        return None
+
+    metrics, metadata = extract_anthropic_usage(usage)
+    if not metrics and not metadata:
+        return None
+    return copy.deepcopy(usage)
+
+
+def _numeric_usage_value(usage: dict[str, Any] | None, *path: str) -> float | None:
+    value: Any = usage
+    for name in path:
+        value = value.get(name) if isinstance(value, dict) else None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    return None
+
+
+def _set_reconciled_usage_value(
+    merged_usage: dict[str, Any],
+    result_usage: dict[str, Any],
+    prior_usages: list[dict[str, Any]],
+    *path: str,
+) -> None:
+    result_value = _numeric_usage_value(result_usage, *path)
+    if result_value is None:
+        return
+
+    prior_value = sum(_numeric_usage_value(usage, *path) or 0.0 for usage in prior_usages)
+    adjusted_value = result_value - prior_value
+    if adjusted_value < 0:
+        return
+
+    target = merged_usage
+    for name in path[:-1]:
+        nested = target.get(name)
+        if not isinstance(nested, dict):
+            nested = {}
+            target[name] = nested
+        target = nested
+    target[path[-1]] = adjusted_value
+
+
+def _reconciled_usage(
+    base_usage: dict[str, Any] | None,
+    result_usage: dict[str, Any],
+    prior_usages: list[dict[str, Any]],
+) -> dict[str, Any]:
+    merged_usage = copy.deepcopy(base_usage or {})
+    for field_name in (
+        "input_tokens",
+        "output_tokens",
+        "cache_read_input_tokens",
+        "cache_creation_input_tokens",
+    ):
+        _set_reconciled_usage_value(merged_usage, result_usage, prior_usages, field_name)
+
+    for container_name in ("cache_creation", "server_tool_use"):
+        container = _try_to_dict(result_usage.get(container_name)) or {}
+        for field_name in container:
+            _set_reconciled_usage_value(
+                merged_usage,
+                result_usage,
+                prior_usages,
+                container_name,
+                field_name,
+            )
+
+    for field_name in ("service_tier", "inference_geo"):
+        if field_name in result_usage:
+            merged_usage[field_name] = copy.deepcopy(result_usage[field_name])
+    return merged_usage
+
+
+def _log_anthropic_usage(span: Any, usage: dict[str, Any] | None) -> None:
+    if span is None or usage is None:
+        return
+
+    metrics, metadata = extract_anthropic_usage(usage)
+    if metrics or metadata:
+        span.log(metrics=metrics or None, metadata=metadata or None)
+
+
 def _message_starts_subagent_tool(message: Any) -> bool:
     if not hasattr(message, "content"):
         return False
@@ -560,6 +684,8 @@ class _AgentContext:
     llm_span: Any | None = None
     llm_parent_export: str | None = None
     llm_output: list[dict[str, Any]] | None = None
+    llm_usage: dict[str, Any] | None = None
+    last_usage_snapshot: dict[str, Any] | None = None
     next_llm_start: float | None = None
     task_span: Any | None = None
     task_confirmed: bool = False
@@ -584,6 +710,7 @@ class ContextTracker:
         self._contexts: dict[str | None, _AgentContext] = {None: _AgentContext(next_llm_start=query_start_time)}
         self._active_key: str | None = None
         self._task_order: list[str | None] = []
+        self._finalized_llm_usages: list[dict[str, Any]] = []
 
         self._final_results: list[dict[str, Any]] = []
         self._result_output: Any | None = None
@@ -627,9 +754,7 @@ class ContextTracker:
     def cleanup(self) -> None:
         """End all open LLM spans, TASK spans, and TOOL spans; clear thread-local."""
         for ctx in self._contexts.values():
-            if ctx.llm_span:
-                ctx.llm_span.end()
-                ctx.llm_span = None
+            self._finish_llm_span(ctx)
             if ctx.task_span:
                 ctx.task_span.end()
                 ctx.task_span = None
@@ -698,6 +823,21 @@ class ContextTracker:
         parent_export = self._llm_parent_for_message(message)
         final_content, extended = self._start_or_merge_llm_span(message, parent_export, ctx)
 
+        usage = _assistant_usage(message)
+        if usage is not None and ctx.llm_span is not None:
+            span_usage = usage
+            # The CLI may replay the same cumulative usage snapshot after a
+            # tool result while dispatching another block from one model call.
+            # Log the delta so a new span does not duplicate that model usage.
+            if ctx.llm_usage is None and ctx.last_usage_snapshot is not None and usage == ctx.last_usage_snapshot:
+                span_usage = _reconciled_usage(None, usage, [ctx.last_usage_snapshot])
+            ctx.llm_usage = span_usage
+            ctx.last_usage_snapshot = usage
+            model = getattr(message, "model", None)
+            if model is not None:
+                ctx.llm_span.log(metadata={"model": model})
+            _log_anthropic_usage(ctx.llm_span, span_usage)
+
         message_error = getattr(message, "error", None)
         if message_error and ctx.llm_span is not None:
             ctx.llm_span.log(error=str(message_error))
@@ -727,11 +867,20 @@ class ContextTracker:
 
     def _handle_result(self, message: Any) -> None:
         self._active_key = None
-        if hasattr(message, "usage"):
-            usage_metrics, usage_metadata = extract_anthropic_usage(message.usage)
-            ctx = self._get_context(None)
-            if ctx.llm_span and (usage_metrics or usage_metadata):
-                ctx.llm_span.log(metrics=usage_metrics or None, metadata=usage_metadata or None)
+        result_usage = _assistant_usage(message)
+        root_ctx = self._get_context(None)
+        if result_usage is not None and root_ctx.llm_span is not None:
+            prior_usages = [
+                *self._finalized_llm_usages,
+                *(
+                    ctx.llm_usage
+                    for key, ctx in self._contexts.items()
+                    if key is not None and ctx.llm_span is not None and ctx.llm_usage is not None
+                ),
+            ]
+            merged_usage = _reconciled_usage(root_ctx.llm_usage, result_usage, prior_usages)
+            root_ctx.llm_usage = merged_usage
+            _log_anthropic_usage(root_ctx.llm_span, merged_usage)
 
         result_value = getattr(message, "result", None)
         if result_value is not None:
@@ -840,7 +989,7 @@ class ContextTracker:
         first_token_time = time.time()
 
         if ctx.llm_span:
-            ctx.llm_span.end(end_time=resolved_start)
+            self._finish_llm_span(ctx, end_time=resolved_start)
 
         final_content, span = _create_llm_span_for_messages(
             [message],
@@ -856,6 +1005,18 @@ class ContextTracker:
         ctx.llm_output = [final_content] if final_content is not None else None
         ctx.next_llm_start = None
         return final_content, False
+
+    def _finish_llm_span(self, ctx: _AgentContext, *, end_time: float | None = None) -> None:
+        if ctx.llm_span is None:
+            return
+
+        if ctx.llm_usage is not None:
+            self._finalized_llm_usages.append(copy.deepcopy(ctx.llm_usage))
+        ctx.llm_span.end(end_time=end_time)
+        ctx.llm_span = None
+        ctx.llm_parent_export = None
+        ctx.llm_output = None
+        ctx.llm_usage = None
 
     def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:
         """Handle TaskStarted / TaskProgress / TaskNotification system messages."""
@@ -1022,6 +1183,7 @@ async def _stream_messages_with_tracing(
 
 def _create_query_wrapper_function(original_query: Any) -> Any:
     """Create a tracing wrapper for the exported one-shot ``query()`` helper."""
+    _ensure_assistant_usage_parsing()
 
     async def wrapped_query(*args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
         query_start_time = time.time()
@@ -1052,6 +1214,7 @@ def _create_query_wrapper_function(original_query: Any) -> Any:
 
 def _create_client_wrapper_class(original_client_class: Any) -> Any:
     """Creates a wrapper class for ClaudeSDKClient that wraps query and receive_response."""
+    _ensure_assistant_usage_parsing()
 
     class WrappedClaudeSDKClient(Wrapper):
         def __init__(self, *args: Any, **kwargs: Any):
