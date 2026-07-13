@@ -13,7 +13,7 @@ import anthropic
 import pytest
 from braintrust import Attachment, logger
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
-from braintrust.integrations.anthropic._utils import extract_anthropic_usage
+from braintrust.integrations.anthropic._utils import _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.anthropic.tracing import (
     _get_input_from_kwargs,
     _get_metadata_from_kwargs,
@@ -22,6 +22,7 @@ from braintrust.integrations.anthropic.tracing import (
 from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
+from pydantic import BaseModel
 
 
 PROJECT_NAME = "test-anthropic-app"
@@ -39,6 +40,17 @@ STRUCTURED_OUTPUT_SCHEMA = {
     "required": ["answer", "label"],
     "additionalProperties": False,
 }
+STRUCTURED_OUTPUT_TOOLS = [
+    {
+        "name": "calculator",
+        "description": "Evaluate simple arithmetic expressions.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"expression": {"type": "string"}},
+            "required": ["expression"],
+        },
+    }
+]
 PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
 PDF_BASE64 = "JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg=="
 PROMPT_CACHE_TEST_TEXT = "\n".join(f"Cached geography fact {i}: Paris is the capital of France." for i in range(300))
@@ -50,6 +62,11 @@ def _get_client():
 
 def _get_async_client():
     return anthropic.AsyncAnthropic()
+
+
+class ParsedAnswer(BaseModel):
+    answer: int
+    label: str
 
 
 def _get_supported_structured_output_param():
@@ -73,6 +90,28 @@ def _get_supported_structured_output_param():
             },
         )
     pytest.skip("Installed anthropic SDK does not support structured outputs parameters")
+
+
+def _skip_if_messages_parse_unsupported():
+    if not hasattr(_get_client().messages, "parse"):
+        pytest.skip("Installed anthropic SDK does not support messages.parse")
+
+
+def test_wrap_anthropic_preserves_messages_parse_feature_detection():
+    class MessagesWithoutParse:
+        pass
+
+    class FakeAnthropic:
+        messages = MessagesWithoutParse()
+
+    class FakeAsyncAnthropic:
+        messages = MessagesWithoutParse()
+
+    for client in (FakeAnthropic(), FakeAsyncAnthropic()):
+        messages = wrap_anthropic(client).messages
+        assert not hasattr(messages, "parse")
+        with pytest.raises(AttributeError):
+            getattr(messages, "parse")
 
 
 def _skip_if_server_tool_content_blocks_unsupported():
@@ -556,6 +595,93 @@ def test_anthropic_messages_create_tracks_structured_outputs_metadata(memory_log
     span = spans[0]
     assert span["metadata"]["model"] == STRUCTURED_OUTPUT_MODEL
     assert span["metadata"][structured_output_param_name] == structured_output_param_value
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+def test_anthropic_messages_parse_sync(memory_logger):
+    _skip_if_messages_parse_unsupported()
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_client())
+    params = {
+        "model": STRUCTURED_OUTPUT_MODEL,
+        "max_tokens": 128,
+        "system": "Return only the requested structured JSON object.",
+        "messages": [
+            {
+                "role": "user",
+                "content": 'Return a JSON object with answer=2 and label="ok".',
+            }
+        ],
+        "tools": STRUCTURED_OUTPUT_TOOLS,
+        "tool_choice": {"type": "none"},
+        "output_format": ParsedAnswer,
+    }
+
+    start = time.time()
+    response = client.messages.parse(**params)
+    end = time.time()
+
+    assert _try_to_dict(response.parsed_output) == {"answer": 2, "label": "ok"}
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "anthropic.messages.parse"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["metadata"]["provider"] == "anthropic"
+    assert span["metadata"]["model"] == STRUCTURED_OUTPUT_MODEL
+    assert span["metadata"]["output_format"].endswith("ParsedAnswer")
+    assert span["metadata"]["tools"] == STRUCTURED_OUTPUT_TOOLS
+    assert span["input"] == [
+        *params["messages"],
+        {"role": "system", "content": params["system"]},
+    ]
+    assert span["output"]["parsed_output"] == {"answer": 2, "label": "ok"}
+    assert span["output"]["model"] == response.model
+    _assert_metrics_are_valid(span["metrics"], start, end)
+    assert span["metrics"]["prompt_tokens"] == response.usage.input_tokens
+    assert span["metrics"]["completion_tokens"] == response.usage.output_tokens
+    assert span["metrics"]["tokens"] == response.usage.input_tokens + response.usage.output_tokens
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+async def test_anthropic_messages_parse_async(memory_logger):
+    _skip_if_messages_parse_unsupported()
+    assert not memory_logger.pop()
+
+    client = wrap_anthropic(_get_async_client())
+    params = {
+        "model": STRUCTURED_OUTPUT_MODEL,
+        "max_tokens": 128,
+        "messages": [
+            {
+                "role": "user",
+                "content": 'Return a JSON object with answer=3 and label="async".',
+            }
+        ],
+        "output_format": ParsedAnswer,
+    }
+
+    start = time.time()
+    response = await client.messages.parse(**params)
+    end = time.time()
+
+    assert _try_to_dict(response.parsed_output) == {"answer": 3, "label": "async"}
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == "anthropic.messages.parse"
+    assert span["metadata"]["provider"] == "anthropic"
+    assert span["metadata"]["model"] == STRUCTURED_OUTPUT_MODEL
+    assert span["metadata"]["output_format"].endswith("ParsedAnswer")
+    assert span["input"] == params["messages"]
+    assert span["output"]["parsed_output"] == {"answer": 3, "label": "async"}
+    _assert_metrics_are_valid(span["metrics"], start, end)
+    assert span["metrics"]["prompt_tokens"] == response.usage.input_tokens
+    assert span["metrics"]["completion_tokens"] == response.usage.output_tokens
 
 
 @pytest.mark.vcr
