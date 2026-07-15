@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 import os
 import warnings
 from urllib.parse import urljoin
