@@ -1,9 +1,11 @@
+import json
 import logging
 import os
 import warnings
 from urllib.parse import urljoin
 
 from braintrust.env import BraintrustEnv
+from braintrust.span_origin import SpanOriginEnvironment, detect_environment, merge_span_origin_context
 
 
 INSTALL_ERR_MSG = (
@@ -62,6 +64,32 @@ def _forward_on_ending(processor, span) -> None:
     on_ending = getattr(processor, "_on_ending", None)
     if callable(on_ending):
         on_ending(span)
+
+
+class _SpanWithAttributes:
+    def __init__(self, span, attributes):
+        self._span = span
+        self.attributes = attributes
+
+    def __getattr__(self, name):
+        return getattr(self._span, name)
+
+
+def _with_span_origin_attributes(span, environment):
+    attributes = dict(getattr(span, "attributes", {}) or {})
+    existing_context = {}
+    raw_context = attributes.get("braintrust.context_json")
+    if isinstance(raw_context, str) and raw_context:
+        try:
+            parsed = json.loads(raw_context)
+            if isinstance(parsed, dict):
+                existing_context = parsed
+        except Exception:
+            existing_context = {}
+    attributes["braintrust.context_json"] = json.dumps(
+        merge_span_origin_context(existing_context, "braintrust-python-otel", environment)
+    )
+    return _SpanWithAttributes(span, attributes)
 
 
 class AISpanProcessor:
@@ -256,6 +284,7 @@ def add_braintrust_span_processor(
     filter_ai_spans: bool = False,
     custom_filter=None,
     headers: dict[str, str] | None = None,
+    environment: SpanOriginEnvironment | None = None,
 ):
     processor = BraintrustSpanProcessor(
         api_key=api_key,
@@ -264,6 +293,7 @@ def add_braintrust_span_processor(
         filter_ai_spans=filter_ai_spans,
         custom_filter=custom_filter,
         headers=headers,
+        environment=environment,
     )
     tracer_provider.add_span_processor(processor)
 
@@ -291,6 +321,7 @@ class BraintrustSpanProcessor:
         filter_ai_spans: bool = False,
         custom_filter=None,
         headers: dict[str, str] | None = None,
+        environment: SpanOriginEnvironment | None = None,
         SpanProcessor: type | None = None,
     ):
         """
@@ -305,6 +336,7 @@ class BraintrustSpanProcessor:
             headers: Additional headers to include in requests.
             SpanProcessor: Optional span processor class (BatchSpanProcessor or SimpleSpanProcessor). Defaults to BatchSpanProcessor.
         """
+        self._environment = detect_environment(environment)
         # Create the exporter
         # Convert api_url to the full endpoint URL that OtelExporter expects
         exporter_url = None
@@ -386,7 +418,7 @@ class BraintrustSpanProcessor:
     def on_end(self, span):
         """Forward span end events to the inner processor."""
         self._exporter.initialize()
-        self._processor.on_end(span)
+        self._processor.on_end(_with_span_origin_attributes(span, self._environment))
 
     def _on_ending(self, span):
         """Forward pre-end hook when the wrapped processor supports it."""
