@@ -163,6 +163,20 @@ def test_detect_environment_classifies_aws_ecs_before_lambda(monkeypatch):
     assert detect_environment() == {"type": "server", "name": "ecs"}
 
 
+def test_detect_environment_preserves_explicit_name_without_type(monkeypatch):
+    from braintrust.span_origin import detect_environment
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITLAB_CI", raising=False)
+    monkeypatch.delenv("CIRCLECI", raising=False)
+    monkeypatch.delenv("BUILDKITE", raising=False)
+    monkeypatch.delenv("CI", raising=False)
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_TYPE", raising=False)
+    monkeypatch.setenv("BRAINTRUST_ENVIRONMENT_NAME", "staging")
+
+    assert detect_environment() == {"name": "staging"}
+
+
 def test_detect_environment_classifies_lambda_when_lambda_specific(monkeypatch):
     from braintrust.span_origin import detect_environment
 

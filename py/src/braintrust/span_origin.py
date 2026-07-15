@@ -17,9 +17,12 @@ def detect_environment(
         return explicit
 
     env_type = BraintrustEnv.ENVIRONMENT_TYPE.get(None, use_dotenv=True)
-    if env_type:
-        env_name = BraintrustEnv.ENVIRONMENT_NAME.get(None, use_dotenv=True)
-        return {"type": env_type, **({"name": env_name} if env_name else {})}
+    env_name = BraintrustEnv.ENVIRONMENT_NAME.get(None, use_dotenv=True)
+    if env_type or env_name:
+        return {
+            **({"type": env_type} if env_type else {}),
+            **({"name": env_name} if env_name else {}),
+        }
 
     ci = _first_present(
         {
