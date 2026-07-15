@@ -140,6 +140,8 @@ def test_braintrust_span_processor_merges_span_origin_with_context_json_set_afte
         assert context["metadata"]["source"] == "late-attribute"
         assert context["span_origin"]["name"] == "braintrust.sdk.python"
         assert context["span_origin"]["instrumentation"]["name"] == "braintrust-python-otel"
+        assert "braintrust.environment.type" not in spans[0].attributes
+        assert "braintrust.environment.name" not in spans[0].attributes
     finally:
         provider.shutdown()
 

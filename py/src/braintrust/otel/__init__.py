@@ -89,10 +89,6 @@ def _with_span_origin_attributes(span, environment):
     attributes["braintrust.context_json"] = json.dumps(
         merge_span_origin_context(existing_context, "braintrust-python-otel", environment)
     )
-    if environment:
-        attributes["braintrust.environment.type"] = environment["type"]
-        if environment.get("name"):
-            attributes["braintrust.environment.name"] = environment["name"]
     return _SpanWithAttributes(span, attributes)
 
 
