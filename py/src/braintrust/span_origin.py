@@ -44,13 +44,27 @@ def detect_environment(
         {
             "VERCEL": "vercel",
             "NETLIFY": "netlify",
-            "AWS_LAMBDA_FUNCTION_NAME": "aws_lambda",
-            "AWS_EXECUTION_ENV": "aws_lambda",
+        }
+    )
+    if server:
+        return {"type": "server", "name": server}
+
+    if os.environ.get("ECS_CONTAINER_METADATA_URI") or os.environ.get("ECS_CONTAINER_METADATA_URI_V4"):
+        return {"type": "server", "name": "ecs"}
+    aws_execution_env = os.environ.get("AWS_EXECUTION_ENV")
+    if aws_execution_env:
+        if aws_execution_env.startswith("AWS_ECS_"):
+            return {"type": "server", "name": "ecs"}
+        if aws_execution_env.startswith("AWS_Lambda_"):
+            return {"type": "server", "name": "aws_lambda"}
+    if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        return {"type": "server", "name": "aws_lambda"}
+
+    server = _first_present(
+        {
             "K_SERVICE": "cloud_run",
             "FUNCTION_TARGET": "gcp_functions",
             "KUBERNETES_SERVICE_HOST": "kubernetes",
-            "ECS_CONTAINER_METADATA_URI": "ecs",
-            "ECS_CONTAINER_METADATA_URI_V4": "ecs",
             "DYNO": "heroku",
             "FLY_APP_NAME": "fly",
             "RAILWAY_ENVIRONMENT": "railway",

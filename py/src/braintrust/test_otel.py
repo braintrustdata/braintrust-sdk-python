@@ -1,4 +1,5 @@
 # pylint: disable=not-context-manager
+import json
 import sys
 
 import pytest
@@ -110,6 +111,71 @@ def test_otel_exporter_uses_env_braintrust_api_key(tmp_path):
         exporter.force_flush()
 
         assert exporter._headers["Authorization"] == "Bearer file-api-key"
+
+
+def test_braintrust_span_processor_merges_span_origin_with_context_json_set_after_start():
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import BraintrustSpanProcessor
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    memory_exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    processor = BraintrustSpanProcessor(api_key="test-api-key", parent="project_name:test")
+    processor._processor = SimpleSpanProcessor(memory_exporter)
+    provider.add_span_processor(processor)
+    tracer = provider.get_tracer("test_tracer")
+
+    try:
+        with tracer.start_as_current_span("late-context") as span:
+            span.set_attribute("braintrust.context_json", json.dumps({"metadata": {"source": "late-attribute"}}))
+
+        provider.force_flush()
+        spans = memory_exporter.get_finished_spans()
+        assert len(spans) == 1
+        context = json.loads(spans[0].attributes["braintrust.context_json"])
+        assert context["metadata"]["source"] == "late-attribute"
+        assert context["span_origin"]["name"] == "braintrust.sdk.python"
+        assert context["span_origin"]["instrumentation"]["name"] == "braintrust-python-otel"
+    finally:
+        provider.shutdown()
+
+
+def test_detect_environment_classifies_aws_ecs_before_lambda(monkeypatch):
+    from braintrust.span_origin import detect_environment
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITLAB_CI", raising=False)
+    monkeypatch.delenv("CIRCLECI", raising=False)
+    monkeypatch.delenv("BUILDKITE", raising=False)
+    monkeypatch.delenv("CI", raising=False)
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_TYPE", raising=False)
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_NAME", raising=False)
+    monkeypatch.delenv("ECS_CONTAINER_METADATA_URI", raising=False)
+    monkeypatch.delenv("ECS_CONTAINER_METADATA_URI_V4", raising=False)
+    monkeypatch.setenv("AWS_EXECUTION_ENV", "AWS_ECS_FARGATE")
+
+    assert detect_environment() == {"type": "server", "name": "ecs"}
+
+
+def test_detect_environment_classifies_lambda_when_lambda_specific(monkeypatch):
+    from braintrust.span_origin import detect_environment
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITLAB_CI", raising=False)
+    monkeypatch.delenv("CIRCLECI", raising=False)
+    monkeypatch.delenv("BUILDKITE", raising=False)
+    monkeypatch.delenv("CI", raising=False)
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_TYPE", raising=False)
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_NAME", raising=False)
+    monkeypatch.delenv("ECS_CONTAINER_METADATA_URI", raising=False)
+    monkeypatch.delenv("ECS_CONTAINER_METADATA_URI_V4", raising=False)
+    monkeypatch.setenv("AWS_EXECUTION_ENV", "AWS_Lambda_python3.12")
+
+    assert detect_environment() == {"type": "server", "name": "aws_lambda"}
 
 
 def test_braintrust_span_processor_missing_key_raises_on_span_end(tmp_path):

@@ -66,6 +66,36 @@ def _forward_on_ending(processor, span) -> None:
         on_ending(span)
 
 
+class _SpanWithAttributes:
+    def __init__(self, span, attributes):
+        self._span = span
+        self.attributes = attributes
+
+    def __getattr__(self, name):
+        return getattr(self._span, name)
+
+
+def _with_span_origin_attributes(span, environment):
+    attributes = dict(getattr(span, "attributes", {}) or {})
+    existing_context = {}
+    raw_context = attributes.get("braintrust.context_json")
+    if isinstance(raw_context, str) and raw_context:
+        try:
+            parsed = json.loads(raw_context)
+            if isinstance(parsed, dict):
+                existing_context = parsed
+        except Exception:
+            existing_context = {}
+    attributes["braintrust.context_json"] = json.dumps(
+        merge_span_origin_context(existing_context, "braintrust-python-otel", environment)
+    )
+    if environment:
+        attributes["braintrust.environment.type"] = environment["type"]
+        if environment.get("name"):
+            attributes["braintrust.environment.name"] = environment["name"]
+    return _SpanWithAttributes(span, attributes)
+
+
 class AISpanProcessor:
     """
     A span processor that filters spans to only export filtered telemetry.
@@ -365,13 +395,6 @@ class BraintrustSpanProcessor:
             if parent_value:
                 span.set_attribute("braintrust.parent", parent_value)
 
-            context_json = merge_span_origin_context({}, "braintrust-python-otel", self._environment)
-            span.set_attribute("braintrust.context_json", json.dumps(context_json))
-            if self._environment:
-                span.set_attribute("braintrust.environment.type", self._environment["type"])
-                if self._environment.get("name"):
-                    span.set_attribute("braintrust.environment.name", self._environment["name"])
-
         except Exception as e:
             # If there's an exception, just don't set braintrust.parent
             pass
@@ -399,7 +422,7 @@ class BraintrustSpanProcessor:
     def on_end(self, span):
         """Forward span end events to the inner processor."""
         self._exporter.initialize()
-        self._processor.on_end(span)
+        self._processor.on_end(_with_span_origin_attributes(span, self._environment))
 
     def _on_ending(self, span):
         """Forward pre-end hook when the wrapped processor supports it."""
