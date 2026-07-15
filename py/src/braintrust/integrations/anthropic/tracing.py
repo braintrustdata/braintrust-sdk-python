@@ -6,7 +6,15 @@ from typing import Any
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import log_exc_info_to_span, start_span
+from braintrust.logger import log_exc_info_to_span, start_span as _bt_start_span
+
+_INSTRUMENTATION = "anthropic-auto"  # instrumentation shadow: do not edit
+
+
+def start_span(*args, **kwargs):
+    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    return _bt_start_span(*args, **kwargs)
+
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import is_numeric
 

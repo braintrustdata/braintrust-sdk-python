@@ -13,7 +13,15 @@ from braintrust.integrations.utils import (
     _log_error_and_end_span,
     _merge_timing_and_usage_metrics,
 )
-from braintrust.logger import start_span
+from braintrust.logger import start_span as _bt_start_span
+
+_INSTRUMENTATION = "openrouter-auto"  # instrumentation shadow: do not edit
+
+
+def start_span(*args, **kwargs):
+    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    return _bt_start_span(*args, **kwargs)
+
 from braintrust.span_types import SpanTypeAttribute
 
 

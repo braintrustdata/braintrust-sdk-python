@@ -217,6 +217,7 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | dict | None = None,
+        instrumentation: str | None = None,
         **event: Any,
     ) -> "Span":
         """Create a new span. This is useful if you want to log more detailed trace information beyond the scope of a single log event. Data logged over several calls to `Span.log` will be merged into one logical row.
@@ -230,6 +231,7 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         :param start_time: Optional start time of the span, as a timestamp in seconds.
         :param set_current: If true (the default), the span will be marked as the currently-active span for the duration of the context manager.
         :param parent: Optional parent info string for the span. The string can be generated from `[Span,Experiment,Logger].export`. If not provided, the current span will be used (depending on context). This is useful for adding spans to an existing trace.
+        :param instrumentation: Optional identifier for the instrumentation code creating this span. Used by SDK integrations to stamp `context.span_origin.instrumentation.name` (e.g. `"openai-auto"`). Leave unset for manual tracing.
         :param **event: Data to be logged. See `Experiment.log` for full details.
         :returns: The newly-created `Span`
         """
@@ -360,6 +362,7 @@ class _NoopSpan(Span):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | dict | None = None,
+        instrumentation: str | None = None,
         **event: Any,
     ):
         return self
@@ -2918,6 +2921,7 @@ def start_span(
     parent: str | dict | None = None,
     propagated_event: dict[str, Any] | None = None,
     state: BraintrustState | None = None,
+    instrumentation: str | None = None,
     **event: Any,
 ) -> Span:
     """Lower-level alternative to `@traced` for starting a span at the toplevel. It creates a span under the first active object (using the same precedence order as `@traced`), or if `parent` is specified, under the specified parent row, or returns a no-op span object.
@@ -2957,6 +2961,7 @@ def start_span(
             event=event,
             state=state,
             lookup_span_parent=False,
+            instrumentation=instrumentation,
         )
     else:
         return parent_obj.start_span(
@@ -2967,6 +2972,7 @@ def start_span(
             set_current=set_current,
             parent=parent,
             propagated_event=propagated_event,
+            instrumentation=instrumentation,
             **event,
         )
 
@@ -4262,6 +4268,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         set_current: bool | None = None,
         parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
+        instrumentation: str | None = None,
         **event: Any,
     ) -> Span:
         """Create a new toplevel span underneath the experiment. The name defaults to "root" and the span type to "eval".
@@ -4277,6 +4284,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
             set_current=set_current,
             parent=parent,
             propagated_event=propagated_event,
+            instrumentation=instrumentation,
             **event,
         )
 
@@ -4416,6 +4424,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
         lookup_span_parent: bool = True,
+        instrumentation: str | None = None,
         **event: Any,
     ) -> Span:
         parent_args = _start_span_parent_args(
@@ -4437,6 +4446,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
             set_current=set_current,
             event=event,
             state=self.state,
+            instrumentation=instrumentation,
         )
 
     def __enter__(self) -> "Experiment":
@@ -4525,6 +4535,7 @@ class SpanImpl(Span):
         root_span_id: str | None = None,
         state: BraintrustState | None = None,
         lookup_span_parent: bool = True,
+        instrumentation: str | None = None,
     ):
         if span_attributes is None:
             span_attributes = SpanAttributes()
@@ -4594,7 +4605,9 @@ class SpanImpl(Span):
             caller_location or {},
             "braintrust-python-logger",
             self.state.span_origin_environment,
+            override_instrumentation_name=instrumentation,
         )
+        self._instrumentation = instrumentation
 
         # TODO: can be simplified after `event` is typed.
         id = event.pop("id", None)
@@ -4719,6 +4732,7 @@ class SpanImpl(Span):
         set_current: bool | None = None,
         parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
+        instrumentation: str | None = None,
         **event: Any,
     ) -> Span:
         if parent:
@@ -4749,6 +4763,7 @@ class SpanImpl(Span):
             event=event,
             lookup_span_parent=lookup_span_parent,
             state=self.state,
+            instrumentation=instrumentation,
         )
 
     def end(self, end_time: float | None = None) -> float:
@@ -5738,6 +5753,7 @@ class Logger(Exportable):
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
+        instrumentation: str | None = None,
         **event: Any,
     ) -> Span:
         """Create a new toplevel span underneath the logger. The name defaults to "root" and the span type to "task".
@@ -5755,6 +5771,7 @@ class Logger(Exportable):
             propagated_event=propagated_event,
             span_id=span_id,
             root_span_id=root_span_id,
+            instrumentation=instrumentation,
             **event,
         )
 
@@ -5789,6 +5806,7 @@ class Logger(Exportable):
         span_id: str | None = None,
         root_span_id: str | None = None,
         lookup_span_parent: bool = True,
+        instrumentation: str | None = None,
         **event: Any,
     ) -> Span:
         parent_args = _start_span_parent_args(
@@ -5812,6 +5830,7 @@ class Logger(Exportable):
             root_span_id=root_span_id,
             lookup_span_parent=lookup_span_parent,
             state=self.state,
+            instrumentation=instrumentation,
         )
 
     def export(self) -> str:

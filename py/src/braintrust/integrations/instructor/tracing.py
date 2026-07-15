@@ -28,7 +28,15 @@ import logging
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
-from braintrust.logger import start_span
+from braintrust.logger import start_span as _bt_start_span
+
+_INSTRUMENTATION = "instructor-auto"  # instrumentation shadow: do not edit
+
+
+def start_span(*args, **kwargs):
+    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    return _bt_start_span(*args, **kwargs)
+
 from braintrust.span_types import SpanTypeAttribute
 
 

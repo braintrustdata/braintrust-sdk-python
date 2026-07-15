@@ -19,7 +19,15 @@ from braintrust.integrations.utils import (
     _timing_metrics,
     _try_to_dict,
 )
-from braintrust.logger import Span, start_span
+from braintrust.logger import Span, start_span as _bt_start_span
+
+_INSTRUMENTATION = "openai-auto"  # instrumentation shadow: do not edit
+
+
+def start_span(*args, **kwargs):
+    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    return _bt_start_span(*args, **kwargs)
+
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones, merge_dicts
 from wrapt import FunctionWrapper

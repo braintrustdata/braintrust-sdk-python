@@ -16,7 +16,15 @@ from braintrust.integrations.utils import (
     _materialize_attachment,
     _merge_timing_and_usage_metrics,
 )
-from braintrust.logger import start_span
+from braintrust.logger import start_span as _bt_start_span
+
+_INSTRUMENTATION = "mistral-auto"  # instrumentation shadow: do not edit
+
+
+def start_span(*args, **kwargs):
+    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    return _bt_start_span(*args, **kwargs)
+
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones
 

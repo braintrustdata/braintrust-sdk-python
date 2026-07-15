@@ -10,7 +10,15 @@ from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import NOOP_SPAN, _state, current_logger, current_span, parent_context, start_span
+from braintrust.logger import NOOP_SPAN, _state, current_logger, current_span, parent_context, start_span as _bt_start_span
+
+_INSTRUMENTATION = "google-genai-auto"  # instrumentation shadow: do not edit
+
+
+def start_span(*args, **kwargs):
+    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    return _bt_start_span(*args, **kwargs)
+
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones
 

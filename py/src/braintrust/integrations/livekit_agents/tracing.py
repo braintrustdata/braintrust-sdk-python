@@ -16,8 +16,16 @@ from braintrust.logger import (
     _state,
     current_span,
     parent_context,
-    start_span,
+    start_span as _bt_start_span,
 )
+
+
+_INSTRUMENTATION = "livekit-agents-auto"  # instrumentation shadow: do not edit
+
+
+def start_span(*args, **kwargs):
+    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    return _bt_start_span(*args, **kwargs)
 
 
 _SESSION_PARENT_ATTR = "__braintrust_livekit_session_parent__"

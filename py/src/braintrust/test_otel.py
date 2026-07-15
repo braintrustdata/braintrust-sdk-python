@@ -146,6 +146,56 @@ def test_braintrust_span_processor_merges_span_origin_with_context_json_set_afte
         provider.shutdown()
 
 
+def test_merge_span_origin_context_default_instrumentation():
+    from braintrust.span_origin import merge_span_origin_context
+
+    merged = merge_span_origin_context({}, "braintrust-python-logger", None)
+    assert merged["span_origin"]["instrumentation"] == {"name": "braintrust-python-logger"}
+
+
+def test_merge_span_origin_context_override_instrumentation():
+    from braintrust.span_origin import merge_span_origin_context
+
+    merged = merge_span_origin_context(
+        {},
+        "braintrust-python-logger",
+        None,
+        override_instrumentation_name="openai-auto",
+    )
+    assert merged["span_origin"]["instrumentation"] == {"name": "openai-auto"}
+
+
+def test_merge_span_origin_context_empty_override_falls_back_to_default():
+    from braintrust.span_origin import merge_span_origin_context
+
+    for value in (None, ""):
+        merged = merge_span_origin_context(
+            {},
+            "braintrust-python-logger",
+            None,
+            override_instrumentation_name=value,
+        )
+        assert merged["span_origin"]["instrumentation"] == {"name": "braintrust-python-logger"}
+
+
+def test_span_impl_records_instrumentation_kwarg(monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_API_KEY", "test-key")
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_TYPE", raising=False)
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_NAME", raising=False)
+
+    from braintrust.logger import init_logger, start_span
+
+    init_logger(project="test_instrumentation_kwarg")
+
+    with start_span(name="parent", instrumentation="openai-auto") as parent:
+        with start_span(name="child") as child:
+            pass
+
+    assert parent._instrumentation == "openai-auto"
+    # Child spans do NOT inherit the parent's instrumentation name.
+    assert child._instrumentation is None
+
+
 def test_detect_environment_classifies_aws_ecs_before_lambda(monkeypatch):
     from braintrust.span_origin import detect_environment
 
