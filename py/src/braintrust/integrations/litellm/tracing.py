@@ -726,21 +726,102 @@ def _postprocess_responses_streaming_results(all_results: list[Any]) -> dict[str
 # ---------------------------------------------------------------------------
 
 
+_SAFE_METADATA_KEYS = frozenset(
+    {
+        "allowed_openai_params",
+        "audio",
+        "background",
+        "best_of",
+        "caching",
+        "custom_llm_provider",
+        "deployment_id",
+        "dimensions",
+        "echo",
+        "enable_json_schema_validation",
+        "encoding_format",
+        "frequency_penalty",
+        "function_call",
+        "functions",
+        "include",
+        "include_server_side_tool_invocations",
+        "instructions",
+        "language",
+        "litellm_call_id",
+        "logit_bias",
+        "logprobs",
+        "max_chunks_per_doc",
+        "max_completion_tokens",
+        "max_output_tokens",
+        "max_retries",
+        "max_tokens",
+        "max_tokens_per_doc",
+        "metadata",
+        "modalities",
+        "n",
+        "organization",
+        "parallel_tool_calls",
+        "prediction",
+        "presence_penalty",
+        "previous_response_id",
+        "project",
+        "quality",
+        "rank_fields",
+        "reasoning",
+        "reasoning_effort",
+        "response_format",
+        "return_documents",
+        "safety_identifier",
+        "seed",
+        "service_tier",
+        "size",
+        "speed",
+        "stop",
+        "store",
+        "stream",
+        "stream_options",
+        "style",
+        "suffix",
+        "temperature",
+        "text",
+        "text_format",
+        "thinking",
+        "timeout",
+        "timestamp_granularities",
+        "tool_choice",
+        "tools",
+        "top_logprobs",
+        "top_n",
+        "top_p",
+        "truncation",
+        "user",
+        "verbosity",
+        "voice",
+        "web_search_options",
+    }
+)
+
+
+def _build_span_metadata(params: dict[str, Any], model: Any) -> dict[str, Any]:
+    """Build span metadata from known-safe LiteLLM request parameters plus provider/model."""
+    metadata = {key: value for key, value in params.items() if key in _SAFE_METADATA_KEYS}
+    metadata.update(provider="litellm", model=model)
+    return metadata
+
+
 def _update_span_payload_from_params(params: dict[str, Any], input_key: str = "input") -> dict[str, Any]:
     """Updates the span payload with the parameters into LiteLLM's completion/acompletion methods.
 
     Works on a shallow copy so the caller's kwargs dict is never mutated.
     """
-    params = params.copy()
-    span_info_d = params.pop("span_info", {})
-
     params = _prettify_response_params(params)
+    span_info_d = params.pop("span_info", {})
     input_data = params.pop(input_key, None)
     model = params.pop("model", None)
+    metadata = _build_span_metadata(params, model)
 
     return merge_dicts(
         span_info_d,
-        {"input": input_data, "metadata": {**params, "provider": "litellm", "model": model}},
+        {"input": input_data, "metadata": metadata},
     )
 
 
@@ -752,15 +833,13 @@ def _update_rerank_span_payload_from_params(params: dict[str, Any]) -> dict[str,
     model and reranker-specific request parameters, and ``document_count`` is
     derived for convenience.
     """
-    params = params.copy()
-    span_info_d = params.pop("span_info", {})
-
     params = _prettify_response_params(params)
+    span_info_d = params.pop("span_info", {})
     query = params.pop("query", None)
     documents = params.pop("documents", None)
     model = params.pop("model", None)
 
-    metadata: dict[str, Any] = {**params, "provider": "litellm", "model": model}
+    metadata = _build_span_metadata(params, model)
     if isinstance(documents, (list, tuple)):
         metadata["document_count"] = len(documents)
 
@@ -772,18 +851,17 @@ def _update_rerank_span_payload_from_params(params: dict[str, Any]) -> dict[str,
 
 def _update_audio_span_payload_from_params(params: dict[str, Any]) -> dict[str, Any]:
     """Update the span payload for audio transcription calls."""
-    params = params.copy()
-    span_info_d = params.pop("span_info", {})
-
     params = _prettify_response_params(params)
+    span_info_d = params.pop("span_info", {})
     audio_file = _materialize_attachment(params.pop("file", None))
     model = params.pop("model", None)
 
     input_data = {"file": audio_file.attachment} if audio_file is not None else None
+    metadata = _build_span_metadata(params, model)
 
     return merge_dicts(
         span_info_d,
-        {"input": input_data, "metadata": {**params, "provider": "litellm", "model": model}},
+        {"input": input_data, "metadata": metadata},
     )
 
 

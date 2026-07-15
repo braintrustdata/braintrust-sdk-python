@@ -900,6 +900,8 @@ def test_litellm_openrouter_no_booleans_in_metrics(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     metrics = spans[0]["metrics"]
+    metadata_keys = set(spans[0]["metadata"])
+    assert "api_key" not in metadata_keys
 
     # No boolean values should be in metrics
     for key, value in metrics.items():
