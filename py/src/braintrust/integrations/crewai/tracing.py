@@ -47,7 +47,9 @@ from braintrust.integrations.utils import (
     _parse_openai_usage_metrics,
     _try_to_dict,
 )
-from braintrust.logger import NOOP_SPAN, Span, current_span, start_span as _bt_start_span
+from braintrust.logger import NOOP_SPAN, Span, current_span
+from braintrust.logger import start_span as _bt_start_span
+
 
 _INSTRUMENTATION = "crewai-auto"  # instrumentation shadow: do not edit
 
@@ -55,6 +57,7 @@ _INSTRUMENTATION = "crewai-auto"  # instrumentation shadow: do not edit
 def start_span(*args, **kwargs):
     kwargs.setdefault("instrumentation", _INSTRUMENTATION)
     return _bt_start_span(*args, **kwargs)
+
 
 from braintrust.span_types import SpanTypeAttribute
 

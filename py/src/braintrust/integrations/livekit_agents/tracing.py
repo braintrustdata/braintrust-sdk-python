@@ -16,6 +16,8 @@ from braintrust.logger import (
     _state,
     current_span,
     parent_context,
+)
+from braintrust.logger import (
     start_span as _bt_start_span,
 )
 

@@ -13,12 +13,14 @@ from braintrust.integrations.utils import (
 )
 from braintrust.logger import start_span as _bt_start_span
 
+
 _INSTRUMENTATION = "bedrock-runtime-auto"  # instrumentation shadow: do not edit
 
 
 def start_span(*args, **kwargs):
     kwargs.setdefault("instrumentation", _INSTRUMENTATION)
     return _bt_start_span(*args, **kwargs)
+
 
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import is_numeric

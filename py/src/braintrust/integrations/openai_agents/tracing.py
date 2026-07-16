@@ -4,7 +4,9 @@ import datetime
 from typing import Any
 
 from agents import tracing
-from braintrust.logger import NOOP_SPAN, Experiment, Logger, Span, current_span, flush, start_span as _bt_start_span
+from braintrust.logger import NOOP_SPAN, Experiment, Logger, Span, current_span, flush
+from braintrust.logger import start_span as _bt_start_span
+
 
 _INSTRUMENTATION = "openai-agents-auto"  # instrumentation shadow: do not edit
 
@@ -12,6 +14,7 @@ _INSTRUMENTATION = "openai-agents-auto"  # instrumentation shadow: do not edit
 def start_span(*args, **kwargs):
     kwargs.setdefault("instrumentation", _INSTRUMENTATION)
     return _bt_start_span(*args, **kwargs)
+
 
 from braintrust.span_types import SpanTypeAttribute
 

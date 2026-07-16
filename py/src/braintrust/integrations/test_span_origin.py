@@ -14,9 +14,9 @@ import importlib
 from typing import Any
 
 import pytest
-
 from braintrust import logger
 from braintrust.test_helpers import init_test_logger
+
 
 # Each entry: (module path, expected `<provider>-auto` name).
 _SHADOW_TARGETS: list[tuple[str, str]] = [
@@ -107,7 +107,7 @@ def test_temporal_plugin_declares_instrumentation() -> None:
     stamped = src.count('instrumentation="temporal-auto"')
     assert stamped == logger_calls, (
         f"temporal/plugin.py has {logger_calls} logger.start_span() sites but only "
-        f"{stamped} carry instrumentation=\"temporal-auto\""
+        f'{stamped} carry instrumentation="temporal-auto"'
     )
 
 
