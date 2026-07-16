@@ -4,6 +4,7 @@ from braintrust.integrations.base import CompositeFunctionWrapperPatcher, Functi
 
 from .tracing import (
     _agent_call_wrapper,
+    _capture_openai_stream_usage_wrapper,
     _fanout_pipeline_wrapper,
     _model_call_wrapper,
     _sequential_pipeline_wrapper,
@@ -72,6 +73,16 @@ class _OpenAIChatModelPatcher(FunctionWrapperPatcher):
     wrapper = _model_call_wrapper
 
 
+class _OpenAIStreamUsagePatcher(FunctionWrapperPatcher):
+    """Capture usage chunks that AgentScope 1.x does not yield to callers."""
+
+    name = "agentscope.model.openai_stream_usage"
+    target_module = "agentscope.model"
+    target_path = "OpenAIChatModel._parse_openai_stream_completion_response"
+    version_spec = ">=1,<2"
+    wrapper = _capture_openai_stream_usage_wrapper
+
+
 class _DashScopeChatModelPatcher(FunctionWrapperPatcher):
     name = "agentscope.model.dashscope"
     target_module = "agentscope.model"
@@ -113,6 +124,7 @@ class ChatModelPatcher(CompositeFunctionWrapperPatcher):
     name = "agentscope.model"
     sub_patchers = (
         _OpenAIChatModelPatcher,
+        _OpenAIStreamUsagePatcher,
         _DashScopeChatModelPatcher,
         _AnthropicChatModelPatcher,
         _OllamaChatModelPatcher,

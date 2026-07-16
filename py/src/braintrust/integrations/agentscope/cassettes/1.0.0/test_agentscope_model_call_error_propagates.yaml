@@ -1,0 +1,86 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"hello"}],"model":"gpt-4o-mini","stream":false,"temperature":0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '101'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"message\": \"Incorrect API key provided: sk-inval******************-key.
+        You can find your API key at https://platform.openai.com/account/api-keys.\",\n
+        \   \"type\": \"invalid_request_error\",\n    \"code\": \"invalid_api_key\",\n
+        \   \"param\": null\n  },\n  \"status\": 401\n}"
+    headers:
+      access-control-expose-headers:
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a1c2d7d2bd7844b0-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '276'
+      content-type:
+      - text/plain
+      date:
+      - Thu, 16 Jul 2026 17:49:21 GMT
+      server:
+      - cloudflare
+      set-cookie:
+      - __cf_bm=fw5AawKAtiBfybjDIj_R3LMPsv81WLDB5CQTZ3365nQ-1784224161.7172794-1.0.1.1-BWmnjx9aYPksUgoqoRSsMvFdzl21RDhJltuCefOlXneJbta1bJxVpJAmbEAxxINRKJjM1UDFJDJJTBzpctyjPZMtdaQRMxfOKPX5fh4JSHUB3b0a8IpgO3wzcH8KWztJ;
+        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Thu,
+        16 Jul 2026 18:19:21 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-error-json:
+      - ewogICJlcnJvciI6IHsKICAgICJtZXNzYWdlIjogIkluY29ycmVjdCBBUEkga2V5IHByb3ZpZGVkOiBzay1pbnZhbCoqKioqKioqKioqKioqKioqKi1rZXkuIFlvdSBjYW4gZmluZCB5b3VyIEFQSSBrZXkgYXQgaHR0cHM6Ly9wbGF0Zm9ybS5vcGVuYWkuY29tL2FjY291bnQvYXBpLWtleXMuIiwKICAgICJ0eXBlIjogImludmFsaWRfcmVxdWVzdF9lcnJvciIsCiAgICAiY29kZSI6ICJpbnZhbGlkX2FwaV9rZXkiLAogICAgInBhcmFtIjogbnVsbAogIH0sCiAgInN0YXR1cyI6IDQwMQp9
+      x-openai-authorization-error:
+      - '401'
+      x-openai-ide-error-code:
+      - invalid_api_key
+      x-openai-internal-caller:
+      - unknown_through_ide
+      x-request-id:
+      - req_ba6a808283f3468a9f18c1f0ce99cd0f
+    status:
+      code: 401
+      message: Unauthorized
+version: 1
