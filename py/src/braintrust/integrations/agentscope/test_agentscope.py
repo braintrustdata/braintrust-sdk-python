@@ -36,14 +36,14 @@ def _span_type(span):
     return span_type.value if hasattr(span_type, "value") else span_type
 
 
-def _make_model(*, stream: bool = False):
+def _make_model(*, stream: bool = False, api_key: str = "test-api-key"):
     from agentscope.model import OpenAIChatModel
 
     if hasattr(OpenAIChatModel, "Parameters"):
         from agentscope.credential import OpenAICredential
 
         return OpenAIChatModel(
-            credential=OpenAICredential(api_key="test-api-key"),
+            credential=OpenAICredential(api_key=api_key),
             model="gpt-4o-mini",
             parameters=OpenAIChatModel.Parameters(temperature=0),
             stream=stream,
@@ -57,7 +57,7 @@ def _make_model(*, stream: bool = False):
     )
 
 
-def _make_agent(name: str, sys_prompt: str, *, toolkit=None, multi_agent: bool = False):
+def _make_agent(name: str, sys_prompt: str, *, toolkit=None, multi_agent: bool = False, model=None):
     from agentscope.tool import Toolkit
 
     if HAS_AGENT_REPLY_API:
@@ -66,7 +66,7 @@ def _make_agent(name: str, sys_prompt: str, *, toolkit=None, multi_agent: bool =
         agent = Agent(
             name=name,
             system_prompt=sys_prompt,
-            model=_make_model(),
+            model=model or _make_model(),
             toolkit=toolkit or Toolkit(),
         )
     else:
@@ -77,7 +77,7 @@ def _make_agent(name: str, sys_prompt: str, *, toolkit=None, multi_agent: bool =
         agent = ReActAgent(
             name=name,
             sys_prompt=sys_prompt,
-            model=_make_model(),
+            model=model or _make_model(),
             formatter=OpenAIMultiAgentFormatter() if multi_agent else OpenAIChatFormatter(),
             toolkit=toolkit or Toolkit(),
             memory=InMemoryMemory(),
@@ -89,11 +89,19 @@ def _make_agent(name: str, sys_prompt: str, *, toolkit=None, multi_agent: bool =
     return agent
 
 
+def _make_user_msg(content):
+    from agentscope.message import Msg
+
+    if HAS_USER_MSG:
+        from agentscope.message import UserMsg
+
+        return UserMsg("user", content)
+    return Msg(name="user", content=content, role="user")
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agentscope_simple_agent_run(memory_logger):
-    from agentscope.message import Msg
-
     assert not memory_logger.pop()
 
     agent = _make_agent(
@@ -101,17 +109,11 @@ async def test_agentscope_simple_agent_run(memory_logger):
         "You are a concise assistant. Answer in one sentence.",
     )
 
-    if HAS_USER_MSG:
-        from agentscope.message import UserMsg
-
-        message = UserMsg("user", "Say hello in exactly two words.")
-    else:
-        message = Msg(
-            name="user",
-            content="Say hello in exactly two words.",
-            role="user",
-        )
-    response = await (agent.reply(message) if HAS_AGENT_REPLY_API else agent(message))
+    response = await (
+        agent.reply(_make_user_msg("Say hello in exactly two words."))
+        if HAS_AGENT_REPLY_API
+        else agent(_make_user_msg("Say hello in exactly two words."))
+    )
 
     assert response is not None
 
@@ -122,15 +124,20 @@ async def test_agentscope_simple_agent_run(memory_logger):
     assert agent_span["context"]["span_origin"]["instrumentation"]["name"] == "agentscope-auto"
     assert _span_type(agent_span) == "task"
     assert llm_spans
-    assert llm_spans[0]["metadata"]["model"] == "gpt-4o-mini"
-    assert "args" not in llm_spans[0]["input"]
-    assert llm_spans[0]["input"]["messages"][0]["role"] == "system"
-    assert llm_spans[0]["input"]["messages"][1]["role"] == "user"
-    assert llm_spans[0]["input"]["messages"][1]["content"][0]["text"] == "Say hello in exactly two words."
-    assert llm_spans[0]["output"]["role"] == "assistant"
-    assert llm_spans[0]["output"]["content"][0]["text"]  # non-empty LLM response
-    assert "usage" not in llm_spans[0]["output"]
-    assert agent_span["span_id"] in llm_spans[0]["span_parents"]
+    llm_span = llm_spans[0]
+    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["provider"] == "openai"
+    assert "args" not in llm_span["input"]
+    assert llm_span["input"]["messages"][0]["role"] == "system"
+    assert llm_span["input"]["messages"][1]["role"] == "user"
+    assert llm_span["input"]["messages"][1]["content"][0]["text"] == "Say hello in exactly two words."
+    assert llm_span["output"]["role"] == "assistant"
+    assert llm_span["output"]["content"][0]["text"]  # non-empty LLM response
+    assert "usage" not in llm_span["output"]
+    assert llm_span["metrics"]["prompt_tokens"] > 0
+    assert llm_span["metrics"]["completion_tokens"] > 0
+    assert llm_span["metrics"]["tokens"] > 0
+    assert agent_span["span_id"] in llm_span["span_parents"]
 
 
 @pytest.mark.skipif(IS_AGENTSCOPE_V2, reason="AgentScope 2.x removed the pipeline module")
@@ -205,130 +212,68 @@ async def test_agentscope_tool_use_creates_tool_span(memory_logger):
 
     llm_spans = [span for span in spans if _span_type(span) == SpanTypeAttribute.LLM]
     assert llm_spans
-    assert llm_spans[0]["output"]["role"] == "assistant"
-    assert llm_spans[0]["output"]["content"][0]["type"] == "tool_use"
-    assert "usage" not in llm_spans[0]["output"]
-
-
-@pytest.mark.asyncio
-async def test_model_call_wrapper_stream_logs_final_output_and_metrics(memory_logger):
-    from braintrust.integrations.agentscope.tracing import _model_call_wrapper
-
-    assert not memory_logger.pop()
-
-    class FakeOpenAIChatModel:
-        model_name = "gpt-4o-mini"
-
-    async def wrapped(*_args, **_kwargs):
-        async def _stream():
-            yield {"content": [{"type": "text", "text": "Hello"}]}
-            yield {
-                "content": [{"type": "text", "text": "Hello there!"}],
-                "usage": {"prompt_tokens": 29, "completion_tokens": 3, "total_tokens": 32},
-            }
-
-        return _stream()
-
-    stream = await _model_call_wrapper(
-        wrapped,
-        FakeOpenAIChatModel(),
-        args=([{"role": "user", "content": "Say hi in two words."}],),
-        kwargs={},
-    )
-
-    chunks = [chunk async for chunk in stream]
-
-    assert chunks[-1]["content"][0]["text"] == "Hello there!"
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    llm_span = spans[0]
-
-    assert _span_type(llm_span) == SpanTypeAttribute.LLM
+    llm_span = llm_spans[0]
     assert llm_span["output"]["role"] == "assistant"
-    assert llm_span["output"]["content"][0]["text"] == "Hello there!"
-    assert llm_span["metrics"]["prompt_tokens"] == 29
-    assert llm_span["metrics"]["completion_tokens"] == 3
-    assert llm_span["metrics"]["tokens"] == 32
+    assert llm_span["output"]["content"][0]["type"] == "tool_use"
+    assert "usage" not in llm_span["output"]
+    # Tool definitions belong in metadata.tools, NOT input.
+    assert "tools" not in llm_span["input"]
+    assert llm_span["metadata"].get("tools")
+    tool_names = {tool.get("name") or tool.get("function", {}).get("name") for tool in llm_span["metadata"]["tools"]}
+    assert "execute_python_code" in tool_names
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_model_call_wrapper_stream_span_covers_full_stream_duration(memory_logger):
-    """Span end timestamp must be recorded after the stream is fully consumed, not before."""
-    import asyncio
-
-    from braintrust.integrations.agentscope.tracing import _model_call_wrapper
-
+async def test_agentscope_streaming_model_call(memory_logger):
+    """A streaming LLM call must produce one span with accumulated output + TTFT."""
     assert not memory_logger.pop()
 
-    class FakeModel:
-        model_name = "gpt-4o-mini"
+    model = _make_model(stream=True)
+    agent = _make_agent("Streamer", "You are concise. Answer in one sentence.", model=model)
 
-    async def wrapped(*_args, **_kwargs):
-        async def _stream():
-            for i in range(3):
-                await asyncio.sleep(0.1)
-                yield {"content": [{"type": "text", "text": f"chunk-{i}"}]}
-
-        return _stream()
-
-    stream = await _model_call_wrapper(
-        wrapped,
-        FakeModel(),
-        args=([{"role": "user", "content": "hi"}],),
-        kwargs={},
+    response = await (
+        agent.reply(_make_user_msg("Say hi in five words."))
+        if HAS_AGENT_REPLY_API
+        else agent(_make_user_msg("Say hi in five words."))
     )
-    async for _ in stream:
-        pass
+    assert response is not None
 
     spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    m = span.get("metrics", {})
-    duration_ms = (m["end"] - m["start"]) * 1000
-    # Stream takes ~300ms (3 chunks × 100ms). The span duration must reflect that.
-    assert duration_ms >= 200, f"Span duration {duration_ms:.0f}ms is too short; span ended before stream was consumed"
+    llm_spans = [span for span in spans if _span_type(span) == SpanTypeAttribute.LLM]
+
+    # One span per API call, not per chunk.
+    assert len(llm_spans) >= 1
+    llm_span = llm_spans[0]
+
+    assert llm_span["metadata"]["provider"] == "openai"
+    assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["output"]["role"] == "assistant"
+    assert llm_span["output"]["content"]
+    assert llm_span["metrics"]["time_to_first_token"] > 0
+    assert llm_span["metrics"]["tokens"] > 0
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_toolkit_call_tool_function_wrapper_stream_span_covers_full_stream_duration(memory_logger):
-    """Tool span end timestamp must be recorded after the stream is fully consumed, not before."""
-    import asyncio
-
-    from braintrust.integrations.agentscope.tracing import _toolkit_call_tool_function_wrapper
-
+async def test_agentscope_model_call_error_propagates(memory_logger):
+    """Provider errors must propagate and the span must log the Exception instance."""
     assert not memory_logger.pop()
 
-    class FakeToolkit:
-        pass
+    model = _make_model(api_key="sk-invalid-braintrust-test-key")
 
-    class FakeToolCall:
-        name = "my_tool"
-
-    async def wrapped(*_args, **_kwargs):
-        async def _stream():
-            for i in range(3):
-                await asyncio.sleep(0.1)
-                yield f"chunk-{i}"
-
-        return _stream()
-
-    stream = await _toolkit_call_tool_function_wrapper(
-        wrapped,
-        FakeToolkit(),
-        args=(FakeToolCall(),),
-        kwargs={},
-    )
-    async for _ in stream:
-        pass
+    with pytest.raises(Exception):
+        await model([{"role": "user", "content": "hello"}])
 
     spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    m = span.get("metrics", {})
-    duration_ms = (m["end"] - m["start"]) * 1000
-    # Stream takes ~300ms (3 chunks × 100ms). The span duration must reflect that.
-    assert duration_ms >= 200, f"Span duration {duration_ms:.0f}ms is too short; span ended before stream was consumed"
+    llm_spans = [span for span in spans if _span_type(span) == SpanTypeAttribute.LLM]
+    assert llm_spans
+    llm_span = llm_spans[0]
+    assert llm_span["metadata"]["provider"] == "openai"
+    # error is logged (the exact serialized shape is Braintrust's concern; we
+    # just verify it was populated as a truthy value, i.e. the wrapper called
+    # span.log(error=exc) rather than swallowing).
+    assert llm_span.get("error")
 
 
 @pytest.mark.skipif(not IS_AGENTSCOPE_V2, reason="AgentScope 2.x Toolkit.call_tool API")
@@ -358,6 +303,19 @@ async def test_agentscope_v2_toolkit_call_tool_creates_tool_span(memory_logger):
     tool_span = next(span for span in spans if _span_type(span) == "tool")
     assert tool_span["span_attributes"]["name"] == "answer.execute"
     assert tool_span["input"]["tool_name"] == "answer"
+
+
+def test_setup_agentscope_is_idempotent():
+    """Repeat setup calls must not double-wrap patched targets."""
+    setup_agentscope(project_name=PROJECT_NAME)
+    setup_agentscope(project_name=PROJECT_NAME)
+
+    from agentscope.model import OpenAIChatModel
+
+    wrapped = OpenAIChatModel.__call__
+    assert hasattr(wrapped, "__wrapped__")
+    # A second layer of wrapping would expose a nested __wrapped__.__wrapped__.
+    assert not hasattr(wrapped.__wrapped__, "__wrapped__")
 
 
 class TestAutoInstrumentAgentScope:

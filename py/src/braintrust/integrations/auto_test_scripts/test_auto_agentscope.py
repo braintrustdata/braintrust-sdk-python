@@ -98,6 +98,7 @@ with autoinstrument_test_context("test_auto_agentscope", integration="agentscope
     assert agent_span["span_attributes"]["type"].value == "task"
     assert llm_spans, "Should have at least one LLM span"
     assert llm_spans[0]["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_spans[0]["metadata"]["provider"] == "openai"
     assert agent_span["span_id"] in llm_spans[0]["span_parents"]
 
 print("SUCCESS")
