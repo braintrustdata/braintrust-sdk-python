@@ -27,7 +27,7 @@ Do not design a new integration shape from scratch if an existing provider alrea
 
 The authoritative source for what integrations must capture, how spans must be structured, and which fields are allowed is the Braintrust instrumentation guide:
 
-- `braintrustdata/braintrust-spec` -> `docs/instrumentation-guide.md`
+- https://github.com/braintrustdata/braintrust-spec/blob/main/docs/instrumentation-guide.md
 
 Read the spec first when the task involves:
 
