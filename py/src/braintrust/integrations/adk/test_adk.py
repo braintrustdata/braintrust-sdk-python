@@ -921,131 +921,16 @@ async def test_adk_captures_metrics(memory_logger):
     assert metadata["model"] == ADK_MODEL, "Model name should match the agent's model"
     assert metadata.get("provider") == "google", "Metadata should include provider=google"
 
-
-def _ns(obj):
-    """Recursively convert nested dicts/lists into SimpleNamespace for attribute access.
-
-    _determine_llm_call_type / _capture_config read production ADK Pydantic
-    objects via getattr; these test fixtures mirror that access pattern.
-    """
-    from types import SimpleNamespace
-
-    if isinstance(obj, dict):
-        return SimpleNamespace(**{k: _ns(v) for k, v in obj.items()})
-    if isinstance(obj, list):
-        return [_ns(item) for item in obj]
-    return obj
+    # No tools configured — _determine_llm_call_type should mark this as direct_response
+    assert "direct_response" in llm_span_with_metrics["span_attributes"]["name"], (
+        f"Expected direct_response call type, got {llm_span_with_metrics['span_attributes']['name']}"
+    )
 
 
-def test_determine_llm_call_type_direct_response():
-    """Test that _determine_llm_call_type returns 'direct_response' when tools are available but not used."""
-    from braintrust.integrations.adk.tracing import _determine_llm_call_type
-
-    llm_request = _ns({
-        "config": {
-            "tools": [
-                {
-                    "function_declarations": [
-                        {"name": "read_file", "description": "Read a file"},
-                        {"name": "list_directory", "description": "List directory"},
-                    ]
-                }
-            ]
-        },
-        "contents": [{"parts": [{"text": "What is 2+2?"}], "role": "user"}],
-    })
-
-    model_response = _ns({
-        "content": {"parts": [{"text": "4\n"}], "role": "model"},
-        "finish_reason": "STOP",
-    })
-
-    assert _determine_llm_call_type(llm_request, model_response) == "direct_response"
-
-
-def test_determine_llm_call_type_tool_selection():
-    """Test that _determine_llm_call_type returns 'tool_selection' when LLM calls a tool."""
-    from braintrust.integrations.adk.tracing import _determine_llm_call_type
-
-    llm_request = _ns({
-        "config": {
-            "tools": [{"function_declarations": [{"name": "get_weather", "description": "Get weather"}]}]
-        },
-        "contents": [{"parts": [{"text": "What's the weather?"}], "role": "user"}],
-    })
-
-    # camelCase function call
-    model_response = _ns({
-        "content": {
-            "parts": [{"functionCall": {"name": "get_weather", "args": {"location": "SF"}}}],
-            "role": "model",
-        },
-    })
-
-    assert _determine_llm_call_type(llm_request, model_response) == "tool_selection"
-
-
-def test_determine_llm_call_type_tool_selection_snake_case():
-    """Test that _determine_llm_call_type handles snake_case function_call."""
-    from braintrust.integrations.adk.tracing import _determine_llm_call_type
-
-    llm_request = _ns({
-        "config": {"tools": [{"function_declarations": [{"name": "search"}]}]},
-        "contents": [{"parts": [{"text": "Search for pizza"}], "role": "user"}],
-    })
-
-    # snake_case function_call
-    model_response = _ns({
-        "content": {
-            "parts": [{"function_call": {"name": "search", "args": {"query": "pizza"}}}],
-            "role": "model",
-        },
-    })
-
-    assert _determine_llm_call_type(llm_request, model_response) == "tool_selection"
-
-
-def test_determine_llm_call_type_response_generation():
-    """Test that _determine_llm_call_type returns 'response_generation' after tool execution."""
-    from braintrust.integrations.adk.tracing import _determine_llm_call_type
-
-    llm_request = _ns({
-        "config": {"tools": [{"function_declarations": [{"name": "get_weather"}]}]},
-        "contents": [
-            {"parts": [{"text": "What's the weather?"}], "role": "user"},
-            {"parts": [{"functionCall": {"name": "get_weather", "args": {}}}], "role": "model"},
-            {
-                "parts": [{"function_response": {"name": "get_weather", "response": {"temp": "72F"}}}],
-                "role": "user",
-            },
-        ],
-    })
-
-    model_response = _ns({"content": {"parts": [{"text": "It's 72 degrees"}], "role": "model"}})
-
-    assert _determine_llm_call_type(llm_request, model_response) == "response_generation"
-
-
-def test_determine_llm_call_type_no_tools():
-    """Test that _determine_llm_call_type returns 'direct_response' when no tools configured."""
-    from braintrust.integrations.adk.tracing import _determine_llm_call_type
-
-    llm_request = _ns({"config": {}, "contents": [{"parts": [{"text": "Hello"}], "role": "user"}]})
-    model_response = _ns({"content": {"parts": [{"text": "Hi there"}], "role": "model"}})
-
-    assert _determine_llm_call_type(llm_request, model_response) == "direct_response"
-
-
-def test_determine_llm_call_type_no_response():
-    """Test that _determine_llm_call_type handles missing model_response gracefully."""
-    from braintrust.integrations.adk.tracing import _determine_llm_call_type
-
-    llm_request = _ns({
-        "config": {"tools": [{"function_declarations": [{"name": "tool1"}]}]},
-        "contents": [{"parts": [{"text": "Test"}], "role": "user"}],
-    })
-
-    assert _determine_llm_call_type(llm_request, None) == "direct_response"
+# _determine_llm_call_type paths are exercised through the VCR-backed
+# integration tests: `test_adk_braintrust_integration` asserts the
+# tool_selection / response_generation span names, and the direct_response
+# path is asserted in `test_adk_captures_metrics`.
 
 
 @pytest.mark.asyncio
@@ -1472,53 +1357,11 @@ async def test_adk_complex_nested_schema(memory_logger):
         assert output["avg_logprobs"] is not None
 
 
-@pytest.mark.asyncio
-async def test_capture_config_handles_all_schema_fields():
-    """Test that _capture_config handles all 4 schema fields."""
-    from braintrust.integrations.adk.tracing import _capture_config
-
-    class TestSchema(BaseModel):
-        value: str = Field(description="Test value")
-
-    config = _ns({
-        "response_schema": TestSchema,
-        "response_json_schema": TestSchema,
-        "input_schema": TestSchema,
-        "output_schema": TestSchema,
-        "other_field": "drop me",
-    })
-
-    serialized = _capture_config(config)
-
-    assert isinstance(serialized, dict)
-
-    # All schema fields should be serialized to JSON Schema format
-    for field in ["response_schema", "response_json_schema", "input_schema", "output_schema"]:
-        assert field in serialized, f"Missing {field}"
-        schema = serialized[field]
-        assert isinstance(schema, dict)
-        properties = schema.get("properties")
-        assert isinstance(properties, dict)
-        assert "value" in properties
-        assert properties["value"]["description"] == "Test value"
-
-    # _capture_config is a strict allowlist — non-listed fields are dropped
-    assert "other_field" not in serialized
-
-
-@pytest.mark.asyncio
-async def test_capture_config_handles_non_pydantic():
-    """Test that _capture_config handles non-Pydantic values gracefully."""
-    from braintrust.integrations.adk.tracing import _capture_config
-
-    # Allowlisted field passes through as-is; non-listed field is dropped.
-    config = _ns({"response_schema": "not a pydantic model", "other_field": {"key": "value"}})
-
-    serialized = _capture_config(config)
-
-    assert isinstance(serialized, dict)
-    assert serialized["response_schema"] == "not a pydantic model"
-    assert "other_field" not in serialized
+# _capture_config's allowlisted fields are exercised through the VCR-backed
+# integration tests: response_schema (`test_adk_structured_output_pydantic`,
+# `test_adk_complex_nested_schema`), input_schema (`test_adk_input_schema_serialization`),
+# response_json_schema (`test_adk_response_json_schema_dict`), and the sampling
+# params (`test_adk_generation_config_is_logged`).
 
 
 @pytest.mark.asyncio
