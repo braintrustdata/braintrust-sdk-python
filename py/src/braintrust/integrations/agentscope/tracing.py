@@ -360,6 +360,7 @@ async def _model_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: di
             finally:
                 _STREAM_METRICS.reset(stream_metrics_token)
             if _is_async_iterator(result):
+
                 def _stamp_ttft() -> None:
                     time_to_first_token[0] = time.time() - request_start_time
 
