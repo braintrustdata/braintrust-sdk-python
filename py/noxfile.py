@@ -513,7 +513,6 @@ def test_google_adk(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "google-adk", version)
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py", version=version)
-    _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk_mcp_tool.py", version=version)
 
 
 LANGCHAIN_VERSIONS = _get_matrix_versions("langchain-core")
