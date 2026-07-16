@@ -120,4 +120,4 @@ def _deployment_mode(value: str | None) -> SpanOriginEnvironment | None:
         return {"type": "server", "name": normalized}
     if normalized in ("development", "local"):
         return {"type": "local", "name": normalized}
-    return None
+    return {"name": value}

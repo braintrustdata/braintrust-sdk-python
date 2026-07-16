@@ -177,6 +177,43 @@ def test_detect_environment_preserves_explicit_name_without_type(monkeypatch):
     assert detect_environment() == {"name": "staging"}
 
 
+def test_detect_environment_preserves_custom_python_env(monkeypatch):
+    from braintrust.span_origin import detect_environment
+
+    for key in (
+        "BRAINTRUST_ENVIRONMENT_TYPE",
+        "BRAINTRUST_ENVIRONMENT_NAME",
+        "GITHUB_ACTIONS",
+        "GITLAB_CI",
+        "CIRCLECI",
+        "BUILDKITE",
+        "JENKINS_URL",
+        "JENKINS_HOME",
+        "TF_BUILD",
+        "TEAMCITY_VERSION",
+        "TRAVIS",
+        "BITBUCKET_BUILD_NUMBER",
+        "CI",
+        "VERCEL",
+        "NETLIFY",
+        "ECS_CONTAINER_METADATA_URI",
+        "ECS_CONTAINER_METADATA_URI_V4",
+        "AWS_EXECUTION_ENV",
+        "AWS_LAMBDA_FUNCTION_NAME",
+        "K_SERVICE",
+        "FUNCTION_TARGET",
+        "KUBERNETES_SERVICE_HOST",
+        "DYNO",
+        "FLY_APP_NAME",
+        "RAILWAY_ENVIRONMENT",
+        "RENDER_SERVICE_NAME",
+    ):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("PYTHON_ENV", "preview")
+
+    assert detect_environment() == {"name": "preview"}
+
+
 def test_detect_environment_classifies_lambda_when_lambda_specific(monkeypatch):
     from braintrust.span_origin import detect_environment
 
