@@ -57,14 +57,27 @@ def _split_model_call(
 
 
 def _prepare_model_input(input_data: dict[str, Any]) -> dict[str, Any]:
-    """Materialize inline media in an Agno request-input dict before logging."""
-    if "messages" in input_data:
-        return {**input_data, "messages": _materialize_agno_messages(input_data["messages"])}
-    return input_data
+    """Materialize inline media in an Agno request-input dict before logging.
+
+    Fast path: leave `messages` as raw Agno objects when no message carries
+    inline binary media — Braintrust's log-time serializer handles the rest.
+    """
+    messages = input_data.get("messages")
+    if not isinstance(messages, list) or not any(_message_has_inline_media(m) for m in messages):
+        return input_data
+    return {**input_data, "messages": _materialize_agno_messages(messages)}
 
 
 def _prepare_model_output(result: Any) -> Any:
-    """Convert an Agno model response to a materialized dict; pass through on failure."""
+    """Materialize inline media in an Agno model response before logging.
+
+    Fast path: pass the raw SDK object through when it has no inline binary
+    media — Braintrust's log-time serializer already converts dataclasses and
+    Pydantic models. Only when we actually need to swap in an Attachment do we
+    pay the dict conversion.
+    """
+    if not _result_has_inline_media(result):
+        return result
     try:
         as_dict = _try_to_dict(result)
     except Exception:
@@ -72,6 +85,42 @@ def _prepare_model_output(result: Any) -> Any:
     if not isinstance(as_dict, dict):
         return result
     return _materialize_agno_output_media(dict(as_dict))
+
+
+def _agno_media_has_inline_bytes(media: Any) -> bool:
+    """True when *media* carries a `content` byte payload or a `filepath`."""
+    if media is None:
+        return False
+    content = getattr(media, "content", None) if not isinstance(media, dict) else media.get("content")
+    if isinstance(content, (bytes, bytearray)) and content:
+        return True
+    if isinstance(content, str) and content:
+        return True
+    filepath = getattr(media, "filepath", None) if not isinstance(media, dict) else media.get("filepath")
+    return isinstance(filepath, str) and bool(filepath)
+
+
+def _iter_media_field(container: Any, field: str) -> Any:
+    val = getattr(container, field, None) if not isinstance(container, dict) else container.get(field)
+    if val is None:
+        return ()
+    return val if isinstance(val, list) else (val,)
+
+
+def _message_has_inline_media(msg: Any) -> bool:
+    for field, _ in _AGNO_MESSAGE_MEDIA_FIELDS:
+        for item in _iter_media_field(msg, field):
+            if _agno_media_has_inline_bytes(item):
+                return True
+    return False
+
+
+def _result_has_inline_media(result: Any) -> bool:
+    for field in ("images", "audio", "audios", "videos", "files"):
+        for item in _iter_media_field(result, field):
+            if _agno_media_has_inline_bytes(item):
+                return True
+    return False
 
 
 def is_sync_iterator(result: Any) -> bool:
