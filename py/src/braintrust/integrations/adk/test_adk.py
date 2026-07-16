@@ -482,6 +482,33 @@ async def test_adk_braintrust_integration(memory_logger):
     assert function_call["name"] == "get_weather"
     assert function_call["args"]["location"] == "San Francisco"
 
+    # Every integration-owned span carries the adk-auto instrumentation name
+    # (SKILL: "Every span an integration creates MUST carry ... instrumentation.name")
+    adk_spans = [
+        row
+        for row in spans
+        if row["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"
+    ]
+    span_types_by_origin = {row["span_attributes"]["type"] for row in adk_spans}
+    assert {"task", "llm", "tool"} <= span_types_by_origin, (
+        f"adk-auto origin missing on task/llm/tool spans: {span_types_by_origin}"
+    )
+
+    # Every llm span carries metadata.model, metadata.provider=google, and metadata.tools
+    # (with tools NOT leaking into input.config).
+    for span in llm_spans:
+        meta = span["metadata"]
+        assert meta.get("provider") == "google", f"Missing metadata.provider=google on {span['span_attributes']['name']}"
+        assert meta.get("model"), "Missing metadata.model on llm span"
+        assert meta.get("tools"), "metadata.tools should be non-empty for a tool-using agent"
+        tool_names = [
+            fn.get("name")
+            for tool_entry in meta["tools"]
+            for fn in (tool_entry.get("function_declarations") or [])
+        ]
+        assert "get_weather" in tool_names, f"get_weather missing from metadata.tools: {tool_names}"
+        assert "tools" not in span["input"].get("config", {}), "tools should not be in input.config"
+
     # Check response generation LLM call
     response_gen_spans = [span for span in llm_spans if "response_generation" in span["span_attributes"]["name"]]
     assert len(response_gen_spans) > 0, "Missing response generation LLM call"
@@ -896,6 +923,7 @@ async def test_adk_captures_metrics(memory_logger):
     metadata = llm_span_with_metrics.get("metadata", {})
     assert "model" in metadata, "Metadata should include model name"
     assert metadata["model"] == ADK_MODEL, "Model name should match the agent's model"
+    assert metadata.get("provider") == "google", "Metadata should include provider=google"
 
 
 def test_determine_llm_call_type_direct_response():
