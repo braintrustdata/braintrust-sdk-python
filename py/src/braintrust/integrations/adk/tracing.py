@@ -135,18 +135,7 @@ _CAPTURED_CONFIG_FIELDS = (
 
 
 def _capture_config(config: Any) -> dict[str, Any] | Any:
-    """
-    Capture the ADK config fields that make LLM spans readable.
-
-    Strict allowlist — only ``_CAPTURED_CONFIG_FIELDS`` are returned. Callers
-    that need additional fields (e.g. ``tools`` for ``metadata.tools``) should
-    extract them separately. Returns the original ``config`` untouched when it
-    is falsy or when no allowlisted field is set.
-
-    Google ADK uses these fields for schemas:
-    - response_schema, response_json_schema (in GenerateContentConfig for LLM requests)
-    - input_schema, output_schema (in agent config)
-    """
+    """Capture the ADK config fields that make LLM spans readable."""
     if config is None or not config:
         return config
 
