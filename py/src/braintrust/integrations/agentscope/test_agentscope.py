@@ -268,8 +268,11 @@ async def test_agentscope_model_call_error_propagates(memory_logger):
 
     model = _make_model(api_key="sk-invalid-braintrust-test-key")
 
-    with pytest.raises(Exception):
-        await model([{"role": "user", "content": "hello"}])
+    messages = [_make_user_msg("hello")] if IS_AGENTSCOPE_V2 else [{"role": "user", "content": "hello"}]
+    with pytest.raises(Exception) as exc_info:
+        await model(messages)
+
+    assert type(exc_info.value).__module__.startswith("openai")
 
     spans = memory_logger.pop()
     llm_spans = [span for span in spans if _span_type(span) == SpanTypeAttribute.LLM]
