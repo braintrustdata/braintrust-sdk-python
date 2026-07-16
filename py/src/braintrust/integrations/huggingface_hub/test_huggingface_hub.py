@@ -244,6 +244,7 @@ def test_wrap_huggingface_hub_chat_completion_sync(memory_logger):
     assert len(spans) == 1
     span = spans[0]
 
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "huggingface-hub-auto"
     assert span["span_attributes"]["name"] == "huggingface.chat_completion"
     assert span["span_attributes"]["type"] == "llm"
     # With no parent span on the stack, the LLM span is its own root and has

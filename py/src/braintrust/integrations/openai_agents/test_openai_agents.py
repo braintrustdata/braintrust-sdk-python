@@ -90,6 +90,7 @@ def test_braintrust_tracing_processor_trace_metadata_logging(memory_logger):
 
     spans = memory_logger.pop()
     root_span = spans[0]
+    assert root_span["context"]["span_origin"]["instrumentation"]["name"] == "openai-agents-auto"
     assert root_span["metadata"]["conversation_id"] == "test-12345"
 
 

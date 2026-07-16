@@ -482,6 +482,7 @@ def test_anthropic_messages_create_with_image_attachment_input(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
     content = span["input"][0]["content"]
     image_block = content[1]
 

@@ -222,6 +222,7 @@ def test_wrap_bedrock_converse_stream(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "bedrock-runtime-auto"
     _assert_converse_span(span, name="bedrock.converse-stream", start=start, end=end, model_id=CONVERSE_STREAM_MODEL)
     assert span["metadata"]["endpoint"] == "converse-stream"
     assert span["metadata"]["stream"] is True

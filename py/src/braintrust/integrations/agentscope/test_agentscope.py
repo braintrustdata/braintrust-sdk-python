@@ -119,6 +119,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
     agent_span = next(span for span in spans if span["span_attributes"]["name"] == "Friday.reply")
     llm_spans = [span for span in spans if _span_type(span) == SpanTypeAttribute.LLM]
 
+    assert agent_span["context"]["span_origin"]["instrumentation"]["name"] == "agentscope-auto"
     assert _span_type(agent_span) == "task"
     assert llm_spans
     assert llm_spans[0]["metadata"]["model"] == "gpt-4o-mini"

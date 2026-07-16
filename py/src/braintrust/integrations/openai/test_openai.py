@@ -119,6 +119,7 @@ def test_openai_chat_metrics(memory_logger):
         assert len(spans) == 1
         span = spans[0]
         assert span
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
         metrics = span["metrics"]
         assert_metrics_are_valid(metrics, start, end)
         assert TEST_MODEL in span["metadata"]["model"]

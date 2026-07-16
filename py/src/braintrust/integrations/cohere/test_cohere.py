@@ -247,6 +247,7 @@ def test_wrap_cohere_chat_v2_sync(memory_logger):
     assert len(spans) == 1
     span = spans[0]
 
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "cohere-auto"
     assert span["span_attributes"]["name"] == "cohere.chat"
     assert span["span_attributes"]["type"] == "llm"
     assert span["metadata"]["provider"] == "cohere"

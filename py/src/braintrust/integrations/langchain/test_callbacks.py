@@ -61,6 +61,8 @@ def test_llm_calls(logger_memory_logger):
 
     spans = memory_logger.pop()
     assert len(spans) == 3
+    for span in spans:
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "langchain-auto"
 
     # ``root_span_id`` is the root span's own span_id (the parent reference for
     # its children); ``trace_root_id`` is the trace shared by every span.

@@ -84,15 +84,13 @@ def merge_span_origin_context(
     context: dict[str, Any] | None,
     instrumentation_name: str,
     environment: SpanOriginEnvironment | None,
-    override_instrumentation_name: str | None = None,
 ) -> dict[str, Any]:
     merged = dict(context or {})
     span_origin = dict(merged.get("span_origin") or {})
-    resolved_instrumentation = override_instrumentation_name or instrumentation_name
     span_origin = {
         "name": "braintrust.sdk.python",
         "version": _sdk_version(),
-        "instrumentation": {"name": resolved_instrumentation},
+        "instrumentation": {"name": instrumentation_name},
         **({"environment": environment} if environment else {}),
         **span_origin,
     }

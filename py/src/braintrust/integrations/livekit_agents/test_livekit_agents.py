@@ -159,6 +159,7 @@ async def test_session_start_cleans_up_span_on_cancellation(memory_logger):
     logs = memory_logger.pop()
     session_logs = _spans_named(logs, "livekit_agent_session")
     assert len(session_logs) == 1
+    assert session_logs[0]["context"]["span_origin"]["instrumentation"]["name"] == "livekit-agents-auto"
 
 
 @pytest.mark.asyncio

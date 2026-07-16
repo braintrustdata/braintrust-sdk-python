@@ -62,6 +62,7 @@ def test_agno_simple_agent_execution(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans, got {len(spans)}"
 
     root_span = spans[0]
+    assert root_span["context"]["span_origin"]["instrumentation"]["name"] == "agno-auto"
     assert root_span["span_attributes"]["name"] == "Author Agent.run"
     assert root_span["span_attributes"]["type"].value == "task"
     root_input = root_span["input"]

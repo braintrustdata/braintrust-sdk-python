@@ -4601,13 +4601,12 @@ class SpanImpl(Span):
             span_attributes=dict(**{"type": type, "name": name, **span_attributes}, exec_counter=exec_counter),
             created=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         )
+        self._instrumentation = instrumentation or "braintrust-python-logger"
         internal_data["context"] = merge_span_origin_context(
             caller_location or {},
-            "braintrust-python-logger",
+            self._instrumentation,
             self.state.span_origin_environment,
-            override_instrumentation_name=instrumentation,
         )
-        self._instrumentation = instrumentation
 
         # TODO: can be simplified after `event` is typed.
         id = event.pop("id", None)

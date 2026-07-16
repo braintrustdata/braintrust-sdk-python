@@ -114,6 +114,7 @@ def test_llm_complete(logger_memory_logger):
     assert len(llm_spans) >= 1
 
     llm_span = llm_spans[0]
+    assert llm_span["context"]["span_origin"]["instrumentation"]["name"] == "llamaindex-auto"
     assert llm_span["span_attributes"]["name"] == "OpenAI"
     assert llm_span["input"] is not None
     assert llm_span["output"] is not None

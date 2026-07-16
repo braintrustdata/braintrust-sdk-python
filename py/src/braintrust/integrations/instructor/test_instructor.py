@@ -121,6 +121,7 @@ class TestInstructorOpenAISpans:
         assert len(llm_spans) == 1, f"Expected 1 llm span, got {len(llm_spans)}: names={_names(spans)}"
 
         parent = task_spans[0]
+        assert parent["context"]["span_origin"]["instrumentation"]["name"] == "instructor-auto"
         assert parent["span_attributes"]["name"] == "instructor.create"
         meta = parent.get("metadata", {})
         assert meta.get("response_model") == "Person"

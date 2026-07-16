@@ -198,6 +198,8 @@ async def test_adk_multi_turn_history_is_logged(memory_logger):
 
     invocation_spans = [row for row in spans if row["span_attributes"]["name"] == f"invocation [{app_name}]"]
     assert len(invocation_spans) == 2
+    for span in invocation_spans:
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"
     assert {span["metadata"]["session_id"] for span in invocation_spans} == {session_id}
     assert {span["input"]["new_message"]["parts"][0]["text"] for span in invocation_spans} == {
         "Hi, my name is Alice.",
