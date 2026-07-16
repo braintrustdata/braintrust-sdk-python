@@ -4,9 +4,6 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportUnknownVariableType=false
 # pyright: reportUnknownArgumentType=false
-import os
-from pathlib import Path
-
 import pytest
 from braintrust import logger
 from braintrust.integrations.agno import setup_agno
@@ -47,20 +44,6 @@ def _assert_tool_fields_not_in_input(llm_span) -> None:
     """Guardrail against regressing the SKILL rule that puts tool definitions in metadata."""
     for forbidden in _TOOL_METADATA_ONLY_KEYS:
         assert forbidden not in llm_span["input"], f"{forbidden!r} must live under metadata, not input"
-
-
-def _skip_if_cassette_missing(cassette_name: str) -> None:
-    """Skip a VCR-marked test when its cassette has not yet been recorded.
-
-    Prevents CI (``record_mode=none``) from failing while a new cassette is
-    still pending. Record with ``nox -s "test_agno(latest)" -- --vcr-record=all``.
-    """
-    version = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION")
-    base = Path(__file__).parent / "cassettes"
-    candidates = [base / version / cassette_name] if version else []
-    candidates.append(base / cassette_name)
-    if not any(p.exists() for p in candidates):
-        pytest.skip(f"cassette {cassette_name!r} not yet recorded — see re-record command in the test docstring")
 
 
 @pytest.mark.vcr
@@ -143,7 +126,6 @@ def test_agno_agent_tools_metadata_placement(memory_logger):
     tool. Re-record with ``nox -s "test_agno(latest)" -- --vcr-record=all -k
     "test_agno_agent_tools_metadata_placement"``.
     """
-    _skip_if_cassette_missing("test_agno_agent_tools_metadata_placement.yaml")
     agent_module = pytest.importorskip("agno.agent")
     openai_module = pytest.importorskip("agno.models.openai")
     Agent = agent_module.Agent
@@ -190,7 +172,6 @@ def test_agno_agent_image_input_materializes_attachment(memory_logger):
     Re-record with ``nox -s "test_agno(latest)" -- --vcr-record=all -k
     "test_agno_agent_image_input_materializes_attachment"``.
     """
-    _skip_if_cassette_missing("test_agno_agent_image_input_materializes_attachment.yaml")
     agent_module = pytest.importorskip("agno.agent")
     openai_module = pytest.importorskip("agno.models.openai")
     media_module = pytest.importorskip("agno.media")
@@ -202,8 +183,8 @@ def test_agno_agent_image_input_materializes_attachment(memory_logger):
     png_bytes = (
         b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
         b"\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4"
-        b"\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05"
-        b"\x0c\xd6\xa2\r\x00\x00\x00\x00IEND\xaeB`\x82"
+        b"\x89\x00\x00\x00\rIDATx\xdac\xfc\xcf\xc0\xf0\x1f\x00\x05\x05\x02"
+        b"\x00_\xc8\xf1\xd2\x00\x00\x00\x00IEND\xaeB`\x82"
     )
 
     assert not memory_logger.pop()

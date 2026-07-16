@@ -232,6 +232,23 @@ def skip_vcr_tests_in_wheel_mode(request):
             pytest.skip("VCR tests skipped in wheel mode (pre-release sanity check only)")
 
 
+_SENSITIVE_RESPONSE_HEADERS = {
+    "openai-organization",
+    "openai-project",
+    "set-cookie",
+}
+
+
+def _scrub_sensitive_response_headers(response):
+    """Remove sensitive provider headers before writing a cassette."""
+    response["headers"] = {
+        name: value
+        for name, value in response.get("headers", {}).items()
+        if name.lower() not in _SENSITIVE_RESPONSE_HEADERS
+    }
+    return response
+
+
 def get_vcr_config():
     """
     Get VCR configuration for recording/playing back HTTP interactions.
@@ -247,6 +264,9 @@ def get_vcr_config():
             "authorization",
             "Authorization",
             "openai-organization",
+            "openai-project",
+            "cookie",
+            "Cookie",
             "x-api-key",
             "api-key",
             "openai-api-key",
@@ -259,6 +279,7 @@ def get_vcr_config():
             "amz-sdk-request",
             "x-amzn-bedrock-api-key",
         ],
+        "before_record_response": _scrub_sensitive_response_headers,
     }
 
 
