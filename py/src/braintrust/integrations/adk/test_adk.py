@@ -482,8 +482,6 @@ async def test_adk_braintrust_integration(memory_logger):
     assert function_call["name"] == "get_weather"
     assert function_call["args"]["location"] == "San Francisco"
 
-    # Every integration-owned span carries the adk-auto instrumentation name
-    # (SKILL: "Every span an integration creates MUST carry ... instrumentation.name")
     adk_spans = [
         row
         for row in spans
@@ -494,8 +492,6 @@ async def test_adk_braintrust_integration(memory_logger):
         f"adk-auto origin missing on task/llm/tool spans: {span_types_by_origin}"
     )
 
-    # Every llm span carries metadata.model, metadata.provider=google, and metadata.tools
-    # (with tools NOT leaking into input.config).
     for span in llm_spans:
         meta = span["metadata"]
         assert meta.get("provider") == "google", f"Missing metadata.provider=google on {span['span_attributes']['name']}"
