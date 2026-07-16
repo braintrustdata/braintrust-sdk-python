@@ -3,7 +3,6 @@ import time
 import warnings
 from typing import Any
 
-from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.anthropic._utils import Wrapper, _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import log_exc_info_to_span
@@ -904,7 +903,7 @@ def _normalize_anthropic_data(value: Any) -> Any:
 
 
 def _normalize_anthropic_input(value: Any) -> Any:
-    return _process_input_attachments(_normalize_anthropic_data(bt_safe_deep_copy(value)))
+    return _process_input_attachments(_normalize_anthropic_data(value))
 
 
 def _managed_agents_model_name(value: Any) -> str | None:
@@ -1280,10 +1279,9 @@ def _process_input_attachments(value):
 
 
 def _get_input_from_kwargs(kwargs):
-    msgs = bt_safe_deep_copy(list(kwargs.get("messages", [])))
-    msgs = _process_input_attachments(msgs)
+    msgs = _process_input_attachments(list(kwargs.get("messages", [])))
 
-    system = bt_safe_deep_copy(kwargs.get("system", None))
+    system = kwargs.get("system", None)
     if system:
         msgs.append({"role": "system", "content": _process_input_attachments(system)})
 
@@ -1343,19 +1341,14 @@ _SERVER_TOOL_SPAN_REDACTED_KEYS = frozenset({"encrypted_content"})
 
 
 def _redact_server_tool_output(value: Any) -> Any:
-    value = bt_safe_deep_copy(value)
-
-    def _redact(inner: Any) -> Any:
-        if isinstance(inner, list):
-            return [_redact(item) for item in inner]
-        if isinstance(inner, dict):
-            return {
-                key: ("<redacted>" if key in _SERVER_TOOL_SPAN_REDACTED_KEYS else _redact(item))
-                for key, item in inner.items()
-            }
-        return inner
-
-    return _redact(value)
+    if isinstance(value, list):
+        return [_redact_server_tool_output(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: ("<redacted>" if key in _SERVER_TOOL_SPAN_REDACTED_KEYS else _redact_server_tool_output(item))
+            for key, item in value.items()
+        }
+    return value
 
 
 def _tool_span_output(result_item: dict[str, Any] | None) -> Any:
