@@ -37,7 +37,7 @@ from braintrust.integrations.utils import (
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "huggingface-hub-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "huggingface-hub-auto"
 
 
 def start_span(*args, **kwargs):

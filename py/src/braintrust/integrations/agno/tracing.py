@@ -6,7 +6,7 @@ from braintrust.integrations.utils import _try_to_dict
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "agno-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "agno-auto"
 
 
 def start_span(*args, **kwargs):

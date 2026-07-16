@@ -12,7 +12,7 @@ from braintrust.logger import _internal_get_global_state
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "pydantic-ai-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "pydantic-ai-auto"
 
 
 def start_span(*args, **kwargs):

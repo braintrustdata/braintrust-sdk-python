@@ -22,7 +22,7 @@ from braintrust.logger import (
 )
 
 
-_INSTRUMENTATION = "google-genai-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "google-genai-auto"
 
 
 def start_span(*args, **kwargs):

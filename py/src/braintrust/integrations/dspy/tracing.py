@@ -6,7 +6,7 @@ from braintrust.logger import current_span
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "dspy-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "dspy-auto"
 
 
 def start_span(*args, **kwargs):

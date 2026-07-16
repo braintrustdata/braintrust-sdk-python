@@ -15,7 +15,7 @@ from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "adk-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "adk-auto"
 
 
 def start_span(*args, **kwargs):

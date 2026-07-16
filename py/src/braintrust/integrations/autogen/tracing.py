@@ -7,7 +7,7 @@ from typing import Any
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "autogen-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "autogen-auto"
 
 
 def start_span(*args, **kwargs):

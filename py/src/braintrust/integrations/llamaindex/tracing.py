@@ -8,7 +8,7 @@ from braintrust.logger import NOOP_SPAN, Span, current_span
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "llamaindex-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "llamaindex-auto"
 
 
 def start_span(*args, **kwargs):

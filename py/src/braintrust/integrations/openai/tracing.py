@@ -23,7 +23,7 @@ from braintrust.logger import Span
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "openai-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "openai-auto"
 
 
 def start_span(*args, **kwargs):

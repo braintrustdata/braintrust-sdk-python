@@ -15,7 +15,7 @@ from braintrust.logger import NOOP_SPAN, Logger, Span, current_span, init_logger
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "langchain-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "langchain-auto"
 
 
 def start_span(*args, **kwargs):

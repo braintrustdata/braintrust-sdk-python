@@ -8,7 +8,7 @@ from braintrust.logger import NOOP_SPAN, Experiment, Logger, Span, current_span,
 from braintrust.logger import start_span as _bt_start_span
 
 
-_INSTRUMENTATION = "openai-agents-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "openai-agents-auto"
 
 
 def start_span(*args, **kwargs):

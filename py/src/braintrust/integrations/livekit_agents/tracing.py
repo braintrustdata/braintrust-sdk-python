@@ -22,7 +22,7 @@ from braintrust.logger import (
 )
 
 
-_INSTRUMENTATION = "livekit-agents-auto"  # instrumentation shadow: do not edit
+_INSTRUMENTATION = "livekit-agents-auto"
 
 
 def start_span(*args, **kwargs):
