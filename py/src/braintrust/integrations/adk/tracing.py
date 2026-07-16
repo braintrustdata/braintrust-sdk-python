@@ -118,40 +118,40 @@ def _serialize_pydantic_schema(schema_class: Any) -> dict[str, Any]:
     return {"__class__": schema_class.__name__ if inspect.isclass(schema_class) else str(type(schema_class).__name__)}
 
 
-def _capture_config(config: Any, exclude: tuple[str, ...] = ()) -> dict[str, Any] | Any:
+_CAPTURED_CONFIG_FIELDS = (
+    "system_instruction",
+    "response_mime_type",
+    "response_schema",
+    "response_json_schema",
+    "input_schema",
+    "output_schema",
+    "max_output_tokens",
+    "temperature",
+    "top_p",
+    "top_k",
+    "stop_sequences",
+    "candidate_count",
+)
+
+
+def _capture_config(config: Any) -> dict[str, Any] | Any:
     """
     Capture the ADK config fields that make LLM spans readable.
+
+    Strict allowlist — only ``_CAPTURED_CONFIG_FIELDS`` are returned. Callers
+    that need additional fields (e.g. ``tools`` for ``metadata.tools``) should
+    extract them separately. Returns the original ``config`` untouched when it
+    is falsy or when no allowlisted field is set.
 
     Google ADK uses these fields for schemas:
     - response_schema, response_json_schema (in GenerateContentConfig for LLM requests)
     - input_schema, output_schema (in agent config)
-
-    ``exclude`` drops named fields (e.g. tools/tool_config that belong in metadata).
     """
     if config is None or not config:
         return config
 
-    config_fields = [
-        "system_instruction",
-        "response_mime_type",
-        "response_schema",
-        "response_json_schema",
-        "input_schema",
-        "output_schema",
-        "max_output_tokens",
-        "temperature",
-        "top_p",
-        "top_k",
-        "stop_sequences",
-        "candidate_count",
-    ]
-    captured: dict[str, Any] = (
-        {k: v for k, v in config.items() if k not in exclude} if isinstance(config, dict) else {}
-    )
-
-    for field in config_fields:
-        if field in exclude:
-            continue
+    captured: dict[str, Any] = {}
+    for field in _CAPTURED_CONFIG_FIELDS:
         value = _get_field(config, field)
         if value is None:
             continue
@@ -254,7 +254,7 @@ def _capture_llm_request_input(llm_request: Any) -> Any:
             [_serialize_content(c) for c in contents] if isinstance(contents, list) else _serialize_content(contents)
         )
     if config:
-        captured["config"] = _capture_config(config, exclude=("tools", "tool_config"))
+        captured["config"] = _capture_config(config)
     if live_connect_config is not None or hasattr(llm_request, "live_connect_config") or isinstance(llm_request, dict):
         captured["live_connect_config"] = live_connect_config
 
@@ -275,10 +275,10 @@ def _extract_tool_metadata(llm_request: Any) -> dict[str, Any]:
     result: dict[str, Any] = {}
     tools = _get_field(config, "tools")
     if tools:
-        result["tools"] = bt_safe_deep_copy(tools)
+        result["tools"] = tools
     tool_config = _get_field(config, "tool_config")
     if tool_config:
-        result["tool_config"] = bt_safe_deep_copy(tool_config)
+        result["tool_config"] = tool_config
     return result
 
 

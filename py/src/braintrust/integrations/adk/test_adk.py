@@ -1501,7 +1501,7 @@ async def test_capture_config_handles_all_schema_fields():
         "response_json_schema": TestSchema,
         "input_schema": TestSchema,
         "output_schema": TestSchema,
-        "other_field": "keep me",
+        "other_field": "drop me",
     }
 
     serialized = _capture_config(config)
@@ -1518,8 +1518,8 @@ async def test_capture_config_handles_all_schema_fields():
         assert "value" in properties
         assert properties["value"]["description"] == "Test value"
 
-    # Other fields should be preserved
-    assert "other_field" in serialized
+    # _capture_config is a strict allowlist — non-listed fields are dropped
+    assert "other_field" not in serialized
 
 
 @pytest.mark.asyncio
@@ -1527,15 +1527,15 @@ async def test_capture_config_handles_non_pydantic():
     """Test that _capture_config handles non-Pydantic values gracefully."""
     from braintrust.integrations.adk.tracing import _capture_config
 
-    # Test with non-Pydantic values
+    # Test with non-Pydantic values — allowlisted field passes through as-is,
+    # non-listed field is dropped.
     config = {"response_schema": "not a pydantic model", "other_field": {"key": "value"}}
 
     serialized = _capture_config(config)
 
     assert isinstance(serialized, dict)
-    # Non-Pydantic schema should remain as-is
-    assert "response_schema" in serialized
     assert serialized["response_schema"] == "not a pydantic model"
+    assert "other_field" not in serialized
 
 
 @pytest.mark.asyncio
