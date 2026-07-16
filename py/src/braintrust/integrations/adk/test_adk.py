@@ -221,11 +221,7 @@ def test_adk_sync_runner_run_does_not_duplicate_invocation_spans(memory_logger):
 
     # Thread-bridge context propagation: every ADK span emitted on the worker
     # thread should share the outer parent's root_span_id.
-    adk_spans = [
-        row
-        for row in spans
-        if row["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"
-    ]
+    adk_spans = [row for row in spans if row["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"]
     assert adk_spans
     for row in adk_spans:
         assert row["root_span_id"] == parent_span.root_span_id, (
@@ -310,11 +306,7 @@ async def test_adk_braintrust_integration(memory_logger):
     assert function_call["name"] == "get_weather"
     assert function_call["args"]["location"] == "San Francisco"
 
-    adk_spans = [
-        row
-        for row in spans
-        if row["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"
-    ]
+    adk_spans = [row for row in spans if row["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"]
     span_types_by_origin = {row["span_attributes"]["type"] for row in adk_spans}
     assert {"task", "llm", "tool"} <= span_types_by_origin, (
         f"adk-auto origin missing on task/llm/tool spans: {span_types_by_origin}"
@@ -322,13 +314,13 @@ async def test_adk_braintrust_integration(memory_logger):
 
     for span in llm_spans:
         meta = span["metadata"]
-        assert meta.get("provider") == "google", f"Missing metadata.provider=google on {span['span_attributes']['name']}"
+        assert meta.get("provider") == "google", (
+            f"Missing metadata.provider=google on {span['span_attributes']['name']}"
+        )
         assert meta.get("model"), "Missing metadata.model on llm span"
         assert meta.get("tools"), "metadata.tools should be non-empty for a tool-using agent"
         tool_names = [
-            fn.get("name")
-            for tool_entry in meta["tools"]
-            for fn in (tool_entry.get("function_declarations") or [])
+            fn.get("name") for tool_entry in meta["tools"] for fn in (tool_entry.get("function_declarations") or [])
         ]
         assert "get_weather" in tool_names, f"get_weather missing from metadata.tools: {tool_names}"
         assert "tools" not in span["input"].get("config", {}), "tools should not be in input.config"
