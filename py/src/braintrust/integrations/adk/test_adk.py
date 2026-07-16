@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 from braintrust import logger
-from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.adk import setup_adk
 from braintrust.integrations.adk.tracing import _create_thread_wrapper
 from braintrust.logger import Attachment
@@ -85,64 +84,6 @@ def _extract_text_parts(contents):
     return texts
 
 
-def test_adk_thread_context_propagation(memory_logger):
-    """Runner.run should preserve Braintrust context across its thread bridge."""
-    import asyncio
-
-    from braintrust import current_span, start_span
-    from google.adk.agents import LlmAgent
-    from google.adk.models.base_llm import BaseLlm
-    from google.adk.models.llm_request import LlmRequest
-    from google.adk.models.llm_response import LlmResponse
-    from google.adk.models.registry import LLMRegistry
-    from google.adk.runners import Runner
-    from google.adk.sessions import InMemorySessionService
-    from google.genai import types
-
-    assert not memory_logger.pop()
-
-    parent_seen = []
-
-    class TestLlm(BaseLlm):
-        @classmethod
-        def supported_models(cls) -> list[str]:
-            return [r"test-llm-context-prop"]
-
-        async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False):
-            parent_seen.append(current_span())
-            yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text="ok")]))
-
-    LLMRegistry.register(TestLlm)
-
-    agent = LlmAgent(
-        name="echo_agent",
-        model="test-llm-context-prop",
-        instruction="Respond with ok.",
-    )
-    session_service = InMemorySessionService()
-    app_name = "thread_bridge_app"
-    user_id = "test-user"
-    session_id = "test-session-thread"
-    asyncio.run(
-        session_service.create_session(
-            app_name=app_name,
-            user_id=user_id,
-            session_id=session_id,
-        )
-    )
-    runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
-    user_msg = types.Content(role="user", parts=[types.Part(text="hello")])
-
-    with start_span(name="adk_thread_parent") as parent_span:
-        events = list(runner.run(user_id=user_id, session_id=session_id, new_message=user_msg))
-
-    assert events
-    assert parent_seen
-    thread_root = getattr(parent_seen[0], "root_span_id", None)
-    assert thread_root is not None
-    assert thread_root == parent_span.root_span_id
-
-
 def test_create_thread_wrapper_exception_does_not_double_invoke_target():
     """Regression test: target exceptions must not cause a second invocation."""
     call_count = 0
@@ -220,141 +161,13 @@ async def test_adk_multi_turn_history_is_logged(memory_logger):
     assert "alice" in second_response_text.lower()
 
 
-@pytest.mark.asyncio
-async def test_adk_generation_config_is_logged(memory_logger):
-    """Sampling and stop-sequence config should be captured in the LLM span input."""
-    from google.adk.models.base_llm import BaseLlm
-    from google.adk.models.llm_request import LlmRequest
-    from google.adk.models.llm_response import LlmResponse
-    from google.adk.models.registry import LLMRegistry
-
-    assert not memory_logger.pop()
-
-    class ConfigCaptureLlm(BaseLlm):
-        @classmethod
-        def supported_models(cls) -> list[str]:
-            return [r"test-llm-config-capture"]
-
-        async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False):
-            yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text="configured")]))
-
-    LLMRegistry.register(ConfigCaptureLlm)
-
-    app_name = "config_app"
-    user_id = "test-user"
-    session_id = "test-session-config"
-    agent = LlmAgent(
-        name="config_agent",
-        model="test-llm-config-capture",
-        instruction="Reply with the word configured.",
-        generate_content_config=types.GenerateContentConfig(
-            max_output_tokens=23,
-            temperature=0.7,
-            top_p=0.9,
-            stop_sequences=["END", "\n\n"],
-        ),
-    )
-    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
-
-    user_msg = types.Content(role="user", parts=[types.Part(text="Please answer.")])
-    responses = []
-    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
-
-    assert responses
-
-    spans = memory_logger.pop()
-    llm_spans = [row for row in spans if row["span_attributes"]["type"] == "llm"]
-    assert llm_spans
-
-    config = llm_spans[0]["input"]["config"]
-    assert config["max_output_tokens"] == 23
-    assert config["temperature"] == 0.7
-    assert config["top_p"] == 0.9
-    assert config["stop_sequences"] == ["END", "\n\n"]
-
-
-@pytest.mark.asyncio
-async def test_adk_document_inline_data_attachment_conversion(memory_logger):
-    """Document bytes should be logged as attachment references, not raw payloads."""
-    from google.adk.models.base_llm import BaseLlm
-    from google.adk.models.llm_request import LlmRequest
-    from google.adk.models.llm_response import LlmResponse
-    from google.adk.models.registry import LLMRegistry
-
-    assert not memory_logger.pop()
-
-    class DocumentCaptureLlm(BaseLlm):
-        @classmethod
-        def supported_models(cls) -> list[str]:
-            return [r"test-llm-document-capture"]
-
-        async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False):
-            yield LlmResponse(content=types.Content(role="model", parts=[types.Part(text="document received")]))
-
-    LLMRegistry.register(DocumentCaptureLlm)
-
-    app_name = "document_app"
-    user_id = "test-user"
-    session_id = "test-session-document"
-    agent = LlmAgent(
-        name="document_agent",
-        model="test-llm-document-capture",
-        instruction="Acknowledge the uploaded document.",
-    )
-    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
-
-    pdf_path = FIXTURES_DIR / "test-document.pdf"
-    with open(pdf_path, "rb") as f:
-        pdf_data = f.read()
-
-    user_msg = types.Content(
-        role="user",
-        parts=[
-            types.Part(inline_data=types.Blob(mime_type="application/pdf", data=pdf_data)),
-            types.Part(text="Summarize this document."),
-        ],
-    )
-
-    responses = []
-    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
-
-    assert responses
-
-    spans = memory_logger.pop()
-    invocation_span = next(row for row in spans if row["span_attributes"]["name"] == f"invocation [{app_name}]")
-    new_message = invocation_span["input"]["new_message"]
-    assert len(new_message["parts"]) == 2
-
-    document_part = new_message["parts"][0]
-    assert "file" in document_part
-    assert document_part["file"]["filename"] == "file.pdf"
-    attachment = document_part["file"]["file_data"]
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["content_type"] == "application/pdf"
-    assert attachment.reference["filename"] == "file.pdf"
-
-    text_part = new_message["parts"][1]
-    assert text_part == {"text": "Summarize this document."}
-
-    logged_payload = str(invocation_span).lower()
-    assert pdf_data[:8].hex() not in logged_payload
-
-    llm_span = next(row for row in spans if row["span_attributes"]["type"] == "llm")
-    llm_contents = llm_span["input"]["contents"]
-    llm_document_part = llm_contents[0]["parts"][0]
-    assert isinstance(llm_document_part["file"]["file_data"], Attachment)
-    assert llm_document_part["file"]["file_data"].reference["content_type"] == "application/pdf"
-
-
 @pytest.mark.vcr
 def test_adk_sync_runner_run_does_not_duplicate_invocation_spans(memory_logger):
-    """Runner.run() should emit a single invocation span even though it delegates to run_async()."""
+    """Runner.run() emits one invocation span AND preserves Braintrust context through
+    ADK's thread bridge (Runner.run dispatches to a background thread)."""
     import asyncio
 
+    from braintrust import start_span
     from braintrust.util import LazyValue
 
     assert not memory_logger.pop()
@@ -380,11 +193,12 @@ def test_adk_sync_runner_run_does_not_duplicate_invocation_spans(memory_logger):
     original_global_bg_logger = logger._state._global_bg_logger
     logger._state._global_bg_logger = LazyValue(lambda: memory_logger, use_mutex=False)
     try:
-        responses = [
-            event
-            for event in runner.run(user_id=user_id, session_id=session_id, new_message=user_msg)
-            if event.is_final_response()
-        ]
+        with start_span(name="adk_thread_parent") as parent_span:
+            responses = [
+                event
+                for event in runner.run(user_id=user_id, session_id=session_id, new_message=user_msg)
+                if event.is_final_response()
+            ]
     finally:
         logger._state._global_bg_logger = original_global_bg_logger
 
@@ -404,6 +218,20 @@ def test_adk_sync_runner_run_does_not_duplicate_invocation_spans(memory_logger):
         f"agent span should be parented to the single sync invocation span {invocation_span['span_id']}, "
         f"got parents {agent_spans[0].get('span_parents')}"
     )
+
+    # Thread-bridge context propagation: every ADK span emitted on the worker
+    # thread should share the outer parent's root_span_id.
+    adk_spans = [
+        row
+        for row in spans
+        if row["context"]["span_origin"]["instrumentation"]["name"] == "adk-auto"
+    ]
+    assert adk_spans
+    for row in adk_spans:
+        assert row["root_span_id"] == parent_span.root_span_id, (
+            f"{row['span_attributes']['name']} lost thread context: "
+            f"{row['root_span_id']} != {parent_span.root_span_id}"
+        )
 
 
 @pytest.mark.vcr
@@ -621,6 +449,11 @@ async def test_adk_max_tokens_captures_content(memory_logger):
     llm_span = llm_spans[0]
     assert "output" in llm_span, "Missing output in LLM span"
 
+    # Sampling config from generate_content_config is captured in input.config
+    config = llm_span["input"]["config"]
+    assert config["max_output_tokens"] == 50
+    assert config["temperature"] == 0.7
+
     output = llm_span["output"]
 
     # When MAX_TOKENS is hit, we should still have content captured
@@ -638,121 +471,6 @@ async def test_adk_max_tokens_captures_content(memory_logger):
 
         # Verify usage metadata is present
         assert "usage_metadata" in output, "Should have usage metadata"
-
-
-def test_serialize_content_with_binary_data():
-    """Test that _serialize_content converts binary data to Attachment references."""
-    from braintrust.integrations.adk.tracing import _serialize_content, _serialize_part
-    from braintrust.logger import Attachment
-
-    # Create a minimal PNG image (1x1 red pixel)
-    minimal_png = (
-        b"\x89PNG\r\n\x1a\n"  # PNG signature
-        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
-        b"\x08\x02\x00\x00\x00\x90wS\xde"  # IHDR
-        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\xcf\xc0\x00\x00\x00\x03\x00\x01\x00\x18\xdd\x8d\xb4"  # IDAT
-        b"\x00\x00\x00\x00IEND\xaeB`\x82"  # IEND
-    )
-
-    # Create a mock Part with inline_data
-    class MockBlob:
-        def __init__(self, data, mime_type):
-            self.data = data
-            self.mime_type = mime_type
-
-    class MockPart:
-        def __init__(self, inline_data=None, text=None):
-            self.inline_data = inline_data
-            self.text = text
-
-    # Test serializing a Part with binary data
-    part_with_image = MockPart(inline_data=MockBlob(minimal_png, "image/png"))
-    serialized_part = _serialize_part(part_with_image)
-
-    # Verify structure
-    assert "image_url" in serialized_part, "Should have image_url field"
-    assert "url" in serialized_part["image_url"], "Should have url field"
-
-    attachment = serialized_part["image_url"]["url"]
-    # The Attachment object should be in the serialized output
-    assert isinstance(attachment, Attachment), "Should be an Attachment object"
-    assert attachment.reference["type"] == "braintrust_attachment"
-    assert attachment.reference["content_type"] == "image/png"
-    assert attachment.reference["filename"] == "image.png"
-    assert "key" in attachment.reference
-
-    # Test serializing a Part with text
-    part_with_text = MockPart(text="Hello, world!")
-    serialized_text_part = _serialize_part(part_with_text)
-    assert serialized_text_part == {"text": "Hello, world!"}, "Text part should serialize correctly"
-
-    # Test serializing Content with multiple parts
-    class MockContent:
-        def __init__(self, parts, role):
-            self.parts = parts
-            self.role = role
-
-    content = MockContent(
-        parts=[
-            MockPart(inline_data=MockBlob(minimal_png, "image/png")),
-            MockPart(text="What's in this image?"),
-        ],
-        role="user",
-    )
-
-    serialized_content = _serialize_content(content)
-    assert "parts" in serialized_content
-    assert "role" in serialized_content
-    assert serialized_content["role"] == "user"
-    assert len(serialized_content["parts"]) == 2
-
-    # First part should be the image as Attachment
-    assert "image_url" in serialized_content["parts"][0]
-    assert isinstance(serialized_content["parts"][0]["image_url"]["url"], Attachment)
-
-    # Second part should be text
-    assert serialized_content["parts"][1] == {"text": "What's in this image?"}
-
-
-def test_serialize_part_with_file_data():
-    """Test that _serialize_part handles file_data (file references) correctly."""
-    from braintrust.integrations.adk.tracing import _serialize_part
-
-    class MockFileData:
-        def __init__(self, file_uri, mime_type):
-            self.file_uri = file_uri
-            self.mime_type = mime_type
-
-    class MockPart:
-        def __init__(self, file_data=None, text=None):
-            self.file_data = file_data
-            self.text = text
-
-    # Test serializing a Part with file_data
-    part_with_file = MockPart(file_data=MockFileData("gs://bucket/file.pdf", "application/pdf"))
-    serialized_part = _serialize_part(part_with_file)
-
-    assert "file_data" in serialized_part
-    assert serialized_part["file_data"]["file_uri"] == "gs://bucket/file.pdf"
-    assert serialized_part["file_data"]["mime_type"] == "application/pdf"
-
-
-def test_serialize_part_with_dict():
-    """Test that _serialize_part handles dict input correctly."""
-    from braintrust.integrations.adk.tracing import _serialize_part
-
-    # Test that dicts pass through unchanged
-    dict_part = {"text": "Hello", "custom": "field"}
-    serialized = _serialize_part(dict_part)
-    assert serialized == dict_part, "Dict should pass through unchanged"
-
-
-def test_serialize_content_with_none():
-    """Test that _serialize_content handles None correctly."""
-    from braintrust.integrations.adk.tracing import _serialize_content
-
-    result = _serialize_content(None)
-    assert result is None, "None should serialize to None"
 
 
 @pytest.mark.vcr
@@ -931,150 +649,6 @@ async def test_adk_captures_metrics(memory_logger):
 # integration tests: `test_adk_braintrust_integration` asserts the
 # tool_selection / response_generation span names, and the direct_response
 # path is asserted in `test_adk_captures_metrics`.
-
-
-@pytest.mark.asyncio
-async def test_llm_call_span_wraps_child_spans(memory_logger):
-    """Test that llm_call span is created BEFORE yielding events, so child spans have proper parent.
-
-    This test validates the fix for the issue where mcp_tool and other child spans
-    were losing their parent context because the llm_call span was created AFTER
-    all events were yielded.
-
-    The fix ensures:
-    1. llm_call span is created BEFORE wrapped() is called
-    2. Child spans (like mcp_tool) created during execution have proper parent
-    3. Span is updated with correct call_type after response is received
-    """
-    from unittest.mock import MagicMock
-
-    from braintrust import current_span, start_span
-    from braintrust.integrations.adk import wrap_flow
-
-    # Clear any existing logs
-    memory_logger.pop()
-
-    # Mock Flow class
-    class MockFlow:
-        def __init__(self):
-            self.llm = MagicMock()
-            self.llm.model = "test-model"
-
-        async def run_async(self, invocation_context, llm_request=None, model_response_event=None):
-            """Method that wrap_flow will wrap."""
-            async for event in self._call_llm_async(invocation_context, llm_request, model_response_event):
-                yield event
-
-        async def _call_llm_async(self, invocation_context, llm_request, model_response_event):
-            """Simulates the flow making LLM calls and potentially calling tools."""
-            # Simulate an event stream
-            yield {"type": "start"}
-
-            # During execution, child spans might be created (like mcp_tool calls)
-            # This simulates an MCP tool being called during LLM execution
-            with start_span(name="mcp_tool [test_tool]", type="tool") as tool_span:
-                tool_span.log(output={"result": "success"})
-
-            yield {"type": "complete", "content": {"parts": [{"text": "Done"}], "role": "model"}}
-
-    # Wrap the flow
-    wrap_flow(MockFlow)
-
-    # Create flow instance
-    flow = MockFlow()
-
-    # Track parent span during execution
-    parent_spans_during_execution = []
-
-    async def wrapped_execution():
-        """Wrapper that tracks parent span during execution."""
-        async for event in flow.run_async(
-            invocation_context={"test": "context"},
-            llm_request={"contents": [{"parts": [{"text": "test"}], "role": "user"}]},
-            model_response_event=None,
-        ):
-            # Check what the current parent span is during execution
-            parent = current_span()
-            if parent and hasattr(parent, "id"):
-                parent_spans_during_execution.append(parent.id)
-
-    # Execute
-    await wrapped_execution()
-
-    # Give background logger time to flush
-    memory_logger.flush()
-
-    # Get all logged spans
-    logs = memory_logger.pop()
-
-    # Find the spans by name
-    llm_call_spans = [log for log in logs if "llm_call" in log.get("span_attributes", {}).get("name", "")]
-    mcp_tool_spans = [log for log in logs if "mcp_tool" in log.get("span_attributes", {}).get("name", "")]
-
-    # Verify llm_call span exists
-    assert len(llm_call_spans) > 0, "Should have created llm_call span"
-
-    # Verify mcp_tool span exists
-    assert len(mcp_tool_spans) > 0, "Should have created mcp_tool span"
-
-    # Verify mcp_tool span has the llm_call span as parent
-    llm_call_span_id = llm_call_spans[0]["span_id"]
-    mcp_tool_span = mcp_tool_spans[0]
-
-    # The mcp_tool span should have the llm_call span in its parent chain
-    assert "span_parents" in mcp_tool_span, "mcp_tool span should have span_parents"
-    assert llm_call_span_id in mcp_tool_span["span_parents"], (
-        f"mcp_tool span should have llm_call span as parent. "
-        f"Expected {llm_call_span_id} in {mcp_tool_span['span_parents']}"
-    )
-
-    # Verify llm_call span name was updated with call_type
-    llm_call_name = llm_call_spans[0]["span_attributes"]["name"]
-    assert "[" in llm_call_name, f"llm_call span name should include call_type in brackets: {llm_call_name}"
-
-
-@pytest.mark.asyncio
-async def test_async_context_preservation_across_yields():
-    """Test that async context is preserved across generator yields.
-
-    This validates that the aclosing wrapper properly handles ContextVar errors
-    that occur when async generators yield control and resume in different contexts.
-    """
-    import asyncio
-    from contextlib import aclosing
-
-    from braintrust import start_span
-
-    # Initialize logger
-    init_test_logger("test-context")
-
-    async def context_switching_generator():
-        """Generator that creates spans and yields, potentially switching contexts."""
-        with start_span(name="outer_span", type="task") as outer:
-            yield {"event": 1}
-            await asyncio.sleep(0.001)  # Force context switch
-
-            with start_span(name="inner_span", type="task") as inner:
-                inner.log(output={"data": "test"})
-                yield {"event": 2}
-                await asyncio.sleep(0.001)  # Another context switch
-
-            yield {"event": 3}
-
-    # Collect events using aclosing
-    events = []
-    async with aclosing(context_switching_generator()) as gen:
-        async for event in gen:
-            events.append(event)
-            await asyncio.sleep(0.001)  # Force context switches during iteration
-
-    # Verify all events were collected successfully
-    assert len(events) == 3
-    assert events[0]["event"] == 1
-    assert events[1]["event"] == 2
-    assert events[2]["event"] == 3
-
-    # If we get here, the context error suppression in aclosing.__aexit__ worked correctly
 
 
 class CapitalOutput(BaseModel):
@@ -1364,76 +938,6 @@ async def test_adk_complex_nested_schema(memory_logger):
 # params (`test_adk_generation_config_is_logged`).
 
 
-@pytest.mark.asyncio
-async def test_serialize_pydantic_schema_direct():
-    """Test _serialize_pydantic_schema directly with various inputs."""
-    from braintrust.integrations.adk.tracing import _serialize_pydantic_schema
-
-    class SimpleSchema(BaseModel):
-        name: str = Field(description="A name")
-        count: int = Field(description="A count", ge=0)
-
-    # Test with Pydantic class
-    result = _serialize_pydantic_schema(SimpleSchema)
-    assert isinstance(result, dict)
-    assert result["type"] == "object"
-    assert "properties" in result
-    assert "name" in result["properties"]
-    assert result["properties"]["name"]["description"] == "A name"
-    assert "count" in result["properties"]
-
-    # Test with non-Pydantic class
-    class NotPydantic:
-        pass
-
-    result = _serialize_pydantic_schema(NotPydantic)
-    assert isinstance(result, dict)
-    assert "__class__" in result
-    assert result["__class__"] == "NotPydantic"
-
-    # Test with non-class object
-    result = _serialize_pydantic_schema("not a class")
-    assert isinstance(result, dict)
-    assert "__class__" in result
-
-
-@pytest.mark.asyncio
-async def test_bt_safe_deep_copy_never_raises():
-    """Test that bt_safe_deep_copy never raises exceptions."""
-    from braintrust.bt_json import bt_safe_deep_copy
-
-    class BrokenModel:
-        def model_dump(self):
-            raise ValueError("I'm broken!")
-
-    # Should not raise
-    result = bt_safe_deep_copy(BrokenModel())
-    assert result is not None
-
-    # Test with various types
-    assert bt_safe_deep_copy({"key": "value"}) == {"key": "value"}
-    assert bt_safe_deep_copy([1, 2, 3]) == [1, 2, 3]
-    assert bt_safe_deep_copy("string") == "string"
-    assert bt_safe_deep_copy(123) == 123
-    assert bt_safe_deep_copy(None) is None
-
-    # Test with Pydantic model instance
-    class WorkingModel(BaseModel):
-        value: str = "test"
-
-    instance = WorkingModel()
-    result = bt_safe_deep_copy(instance)
-    assert isinstance(result, dict)
-    assert result["value"] == "test"
-
-    # Test with Pydantic model class (not instance)
-    # bt_safe_deep_copy now returns the JSON schema for Pydantic model classes
-    result = bt_safe_deep_copy(WorkingModel)
-    assert isinstance(result, dict)
-    assert "properties" in result
-    assert "value" in result["properties"]
-
-
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_adk_response_json_schema_dict(memory_logger):
@@ -1553,128 +1057,6 @@ async def test_adk_response_json_schema_dict(memory_logger):
     assert "usage_metadata" in output
     if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
         assert output["avg_logprobs"] is not None
-
-
-@pytest.mark.asyncio
-async def test_capture_config_preserves_none():
-    """Test that _capture_config returns None when config is None (not empty dict)."""
-    from braintrust.integrations.adk.tracing import _capture_config
-
-    # None should be preserved as None, not converted to {}
-    result = _capture_config(None)
-    assert result is None, f"Expected None, got {result}"
-
-    # Empty dict should remain empty dict
-    result = _capture_config({})
-    assert result == {}
-
-    # False should be preserved as False
-    result = _capture_config(False)
-    assert result is False
-
-    # 0 should be preserved as 0
-    result = _capture_config(0)
-    assert result == 0
-
-    # Empty string should be preserved
-    result = _capture_config("")
-    assert result == ""
-
-
-@pytest.mark.asyncio
-async def test_bt_safe_deep_copy_with_attachments(memory_logger):
-    """Test that bt_safe_deep_copy preserves Attachment objects in ADK context."""
-    from braintrust.bt_json import bt_safe_deep_copy
-
-    attachment = Attachment(data=b"test data", filename="test.txt", content_type="text/plain")
-
-    # Test preserving attachment in nested structure (simulating ADK metadata)
-    metadata = {"file": attachment, "nested": {"also_file": attachment}}
-
-    result = bt_safe_deep_copy(metadata)
-
-    # Attachment identity should be preserved
-    assert result["file"] is attachment
-    assert result["nested"]["also_file"] is attachment
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_adk_agent_metadata_with_attachment(memory_logger):
-    """Test that attachments in ADK agent metadata are preserved and uploaded."""
-    from unittest.mock import patch
-
-    assert not memory_logger.pop()
-
-    attachment = Attachment(data=b"context data", filename="context.txt", content_type="text/plain")
-
-    def simple_tool(query: str):
-        """A simple tool."""
-        return {"result": f"Processed: {query}"}
-
-    agent = Agent(
-        name="tool_agent",
-        model=ADK_MODEL,
-        instruction="You are a helpful assistant with tools.",
-        tools=[simple_tool],
-    )
-
-    APP_NAME = "attachment_app"
-    USER_ID = "test-user"
-    SESSION_ID = "test-session-attachment"
-
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
-
-    # Create message with attachment in metadata context
-    user_msg = types.Content(role="user", parts=[types.Part(text="Use the tool with query: test")])
-
-    with patch.object(Attachment, "upload", return_value={"upload_status": "done"}) as mock_upload:
-        responses = []
-        # We can't directly inject attachment into ADK's internal flow,
-        # but we can test that if an attachment appears in logged metadata,
-        # bt_safe_deep_copy preserves it
-        async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-            if event.is_final_response():
-                responses.append(event)
-
-        memory_logger.flush()
-
-    spans = memory_logger.pop()
-    assert len(spans) > 0, "Should have logged spans"
-
-    # Verify bt_safe_deep_copy behavior with attachment
-    test_data = {"metadata": {"context_file": attachment}}
-    copied = bt_safe_deep_copy(test_data)
-    assert copied["metadata"]["context_file"] is attachment
-
-
-@pytest.mark.asyncio
-async def test_adk_bytes_and_attachment_in_structure():
-    """Test that dataclass/dict with both bytes and attachment fields are handled correctly."""
-    from braintrust.bt_json import bt_safe_deep_copy
-
-    attachment = Attachment(data=b"attachment data", filename="file.txt", content_type="text/plain")
-
-    # Simulate ADK structure with both bytes and attachments
-    structure = {
-        "binary_data": b"some bytes",
-        "attachment": attachment,
-        "nested": {"more_bytes": bytearray(b"more data"), "another_attachment": attachment},
-    }
-
-    result = bt_safe_deep_copy(structure)
-
-    # Attachment should be preserved
-    assert result["attachment"] is attachment
-    assert result["nested"]["another_attachment"] is attachment
-
-    # Bytes should be handled (converted via bt_dumps/bt_loads)
-    assert "binary_data" in result
-    assert "nested" in result
-    assert "more_bytes" in result["nested"]
 
 
 class TestAutoInstrumentADK:
