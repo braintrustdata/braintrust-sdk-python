@@ -5,242 +5,174 @@ description: Create or update Braintrust Python SDK integrations built on the in
 
 # SDK Integrations
 
-Use this skill for integration work under `py/src/braintrust/integrations/`.
-
-Use `sdk-wrapper-migrations` instead when the provider already has a real implementation under `py/src/braintrust/wrappers/<provider>/` and the task is to move that implementation into the integrations API.
-
-## Quick Start
-
-Before editing:
-
-1. Read the Braintrust instrumentation spec (see [Spec](#spec)).
-2. Read the shared integration primitives.
-3. Read the target provider package.
-4. Pick the nearest existing integration as a reference.
-5. Confirm provider versions and nox sessions from source files, not memory.
-6. Decide the span shape before writing patchers.
-7. Run the narrowest provider nox session first.
-
-Do not design a new integration shape from scratch if an existing provider already matches the problem. Do not invent span fields, metrics, or metadata keys that are not already in the spec.
+Work under `py/src/braintrust/integrations/`. Use `sdk-wrapper-migrations` instead if the task is moving a real implementation from `py/src/braintrust/wrappers/<provider>/` into the integrations API.
 
 ## Spec
 
-The authoritative source for what integrations must capture, how spans must be structured, and which fields are allowed is the Braintrust instrumentation guide:
+Authoritative source for span shape, allowed fields, and instrumentation rules: https://github.com/braintrustdata/braintrust-spec/blob/main/docs/instrumentation-guide.md
 
-- https://github.com/braintrustdata/braintrust-spec/blob/main/docs/instrumentation-guide.md
-
-Read the spec first when the task involves:
-
-- span type, name, or hierarchy decisions
-- what to put in `input`, `output`, `metadata`, `metrics`, `error`, or `context`
-- tool calls, tool results, or available tool definitions
-- prompt provenance metadata
-- streaming, reasoning models, or prompt caching
-- multimodal or attachment payloads
-- distinguishing completion-style vs agentic-style APIs
-- naming or namespacing new attributes
-
-Instrumentation MUST NOT capture data or emit metric/metadata keys that are not explicitly allowed by the spec. If the task needs a new field, update the spec before shipping the SDK change.
+Read it first for anything involving span type/name, `input`/`output`/`metadata`/`metrics`/`error`/`context` shape, tool calls, prompt provenance, streaming, reasoning models, prompt caching, multimodal, completion-vs-agentic, or new attribute namespacing. Do not invent new top-level span fields, metric keys, or span types; update the spec first.
 
 ## Read First
 
-Always read:
+Always: `integrations/base.py`, `integrations/versioning.py`, `integrations/__init__.py`, `integrations/utils.py`, `pyproject.toml`, `noxfile.py`.
 
-- `py/src/braintrust/integrations/base.py`
-- `py/src/braintrust/integrations/versioning.py`
-- `py/src/braintrust/integrations/__init__.py`
-- `py/src/braintrust/integrations/utils.py`
-- `py/pyproject.toml` for provider matrix pins and cassette directory mappings
-- `py/noxfile.py`
+Existing integration: `integrations/<provider>/{__init__,integration,patchers,tracing,test_*}.py`.
 
-Read these when working on an existing integration:
+Situational:
+- `auto.py` + `integrations/auto_test_scripts/` — anything touching `auto_instrument()` or import timing
+- `conftest.py`, `integrations/conftest.py` — VCR / per-version cassette resolution
+- `integrations/test_utils.py` — shared attachment / multimodal helpers
+- `integrations/{adk,anthropic,google_genai}/tracing.py` — attachment + multimodal reference implementations
 
-- `py/src/braintrust/integrations/<provider>/__init__.py`
-- `py/src/braintrust/integrations/<provider>/integration.py`
-- `py/src/braintrust/integrations/<provider>/patchers.py`
-- `py/src/braintrust/integrations/<provider>/tracing.py`
-- `py/src/braintrust/integrations/<provider>/test_*.py`
-
-Read these when relevant:
-
-- `py/src/braintrust/auto.py` for `auto_instrument()` changes
-- `py/src/braintrust/conftest.py` for VCR behavior
-- `py/src/braintrust/integrations/conftest.py` for per-version cassette directory resolution
-- `py/src/braintrust/integrations/auto_test_scripts/` for subprocess auto-instrument coverage
-- `py/src/braintrust/integrations/test_utils.py` when touching shared attachment materialization or multimodal payload shaping
-- `py/src/braintrust/integrations/adk/test_adk.py`, `py/src/braintrust/integrations/anthropic/test_anthropic.py`, and `py/src/braintrust/integrations/google_genai/test_google_genai.py` for attachment-focused test layout patterns
-- `py/src/braintrust/integrations/adk/tracing.py`, `py/src/braintrust/integrations/anthropic/tracing.py`, and `py/src/braintrust/integrations/google_genai/tracing.py` when handling multimodal content, binary inputs, generated media, or attachment materialization behavior
-
-Do not forget `auto.py` and `auto_test_scripts/`. Import-order and subprocess regressions often only show up there.
+Import-order and subprocess regressions usually only surface via `auto_test_scripts/`. Do not skip it.
 
 ## Version And CI Routing
 
-Do not guess which provider versions or sessions apply.
+Never guess versions or session names. The routing chain:
 
-Use these files as the routing chain:
+- `pyproject.toml` `[tool.braintrust.matrix]` — supported provider versions, what `latest` resolves to
+- `pyproject.toml` `[tool.braintrust.cassette-dirs]` — versioned cassette directory ownership
+- `integrations/versioning.py` — supported version helpers, gates
+- `noxfile.py` — session names, package install, `BRAINTRUST_TEST_PACKAGE_VERSION`
+- `.github/workflows/checks.yaml` — CI matrix + shard membership
 
-- `py/pyproject.toml` `[tool.braintrust.matrix]`: supported provider versions and what `latest` resolves to
-- `py/pyproject.toml` `[tool.braintrust.cassette-dirs]`: versioned cassette directory ownership
-- `py/src/braintrust/integrations/versioning.py`: supported version helpers and gates
-- `py/noxfile.py`: actual session names, package installation, and `BRAINTRUST_TEST_PACKAGE_VERSION`
-- `.github/workflows/checks.yaml`: CI matrix and which sessions run in shards or static checks
-
-When changing version-gated behavior:
-
-1. Identify every matrix version for the provider.
-2. Check whether the integration has `min_version`, `max_version`, `superseded_by`, or feature-detection branches.
-3. Test the narrowest affected version first.
-4. Add or update cassettes only for versions whose observable provider behavior intentionally changed.
+When changing version-gated behavior: identify every matrix version, check `min_version`/`max_version`/`superseded_by`/feature-detect branches, test the narrowest affected version first, re-record cassettes only for versions whose observable provider behavior intentionally changed.
 
 ## Pick A Reference
 
-Start from the nearest current integration:
+Start from the nearest existing integration:
 
-- ADK: direct method patching, `target_module`, `CompositeFunctionWrapperPatcher`, manual `wrap_*()` helpers, context propagation, inline data to `Attachment`
-- Agno: multi-target patching, several related patchers, version-conditional fallbacks with `superseded_by`
-- Anthropic: compact constructor patching, a small public surface, and multimodal request blocks that distinguish image vs document attachment payloads
-- Google GenAI: multimodal tracing, generated media, output-side `Attachment` handling, and nested attachment materialization while preserving non-attachment values
-
-Choose the reference based on the hardest part of the task:
-
-- patcher topology
-- tracing shape
-- streaming behavior
-- multimodal or binary payload handling
+- **ADK** — direct method patching, `target_module`, `CompositeFunctionWrapperPatcher`, manual `wrap_*()`, context propagation, inline data → `Attachment`
+- **Agno** — multi-target patching, related patchers, version-conditional fallbacks with `superseded_by`
+- **Anthropic** — compact constructor patching, small public surface, multimodal image-vs-document attachment payloads
+- **Google GenAI** — multimodal tracing, generated media, output-side attachments, nested materialization that preserves non-attachment values
 
 ## Default Workflow
 
-Use this order unless the task is clearly narrower:
+1. Read the spec section(s) covering the affected span shape.
+2. Read the provider package + shared primitives.
+3. Decide completion-style vs agentic-style (see [Span Design](#span-design)).
+4. Pick the public API surface to patch — prefer stable public entry points over internal helpers.
+5. Define span shape (`type`, `name`, `input`, `output`, `metadata`, `metrics`, `error`) before writing patchers.
+6. Implement patchers, then tracing helpers.
+7. For behavior changes: add/update a failing test first, then fix (red → green). Cassette-backed if the provider payload triggers the bug.
+8. Run the narrowest nox session first. Expand only if shared code changed.
 
-1. Read the spec sections that cover the affected span shape.
-2. Read shared primitives and the provider package.
-3. Decide whether the target API is completion-style or agentic-style (see [Span Design Rules](#span-design-rules)).
-4. Decide which public surface is being patched. Prefer stable public API entry points over internal helpers; internal targets break more often across provider versions.
-5. Define the span shape:
-   - span `type` and `name`
-   - `input`
-   - `output`
-   - `metadata`
-   - `metrics`
-   - `error` when failures matter
-6. Implement or update patchers.
-7. Implement or update tracing helpers.
-8. Add or update focused tests.
-9. For provider-behavior bugs, make the primary regression test cassette-backed when practical, even if the implementation change is in local tracing/span post-processing of the provider response.
-10. Be suspicious of mock/fake coverage for integrations. Do not choose mocks because they are convenient, faster, or easier to control.
-11. Run the narrowest nox session first, then expand only if shared code changed.
-
-Do not start by wiring wrappers and only later decide what the span should contain.
-
-For behavior changes, prefer adding or adjusting a failing test first, then implementing until it passes.
+Do not start by wiring patchers and defer span-shape decisions.
 
 ## Route The Task
 
-### New provider integration
+### New integration
 
-1. Create `py/src/braintrust/integrations/<provider>/`.
-2. Use this layout unless the provider is exceptionally small:
-   - `__init__.py`
-   - `integration.py`
-   - `patchers.py`
-   - `tracing.py`
-   - `test_<provider>.py`
-   - `cassettes/<version>/` when the provider uses HTTP (one subdirectory per version in the nox matrix, plus `latest/`)
-3. Export the integration from `py/src/braintrust/integrations/__init__.py`.
-4. Add or update the provider session in `py/noxfile.py`.
-5. Update `py/src/braintrust/auto.py` only if the integration should participate in `auto_instrument()`.
-6. Add subprocess coverage in `py/src/braintrust/integrations/auto_test_scripts/` when `auto_instrument()` changes.
-7. Add the `_INSTRUMENTATION = "<provider>-auto"` shadow described in [Span origin](#span-origin-instrumentationname) at the top of `tracing.py`, and include an assertion in the integration's test suite that `context.span_origin.instrumentation.name` matches.
+1. Create `integrations/<provider>/` with `__init__.py`, `integration.py`, `patchers.py`, `tracing.py`, `test_<provider>.py`, and `cassettes/<version>/` (one dir per matrix version + `latest/`).
+2. Export from `integrations/__init__.py`.
+3. Add the provider session in `noxfile.py`.
+4. Update `auto.py` only if it should participate in `auto_instrument()`; add a subprocess test in `auto_test_scripts/` when it does.
+5. Add the `_INSTRUMENTATION = "<provider>-auto"` shadow (see [Span origin](#span-origin)) and assert it in the test suite.
 
 ### Existing integration update
 
-1. Read the current provider package before editing.
-2. Change only the affected patchers, tracing helpers, exports, tests, and cassettes.
-3. Preserve the provider's public setup and `wrap_*()` surface unless the task explicitly changes it.
-4. Do not touch `auto.py`, `integrations/__init__.py`, or `py/noxfile.py` unless the task requires it.
-5. Even if `auto.py` does not change, check whether the behavior change also needs an auto-instrument subprocess test update.
-6. Preserve existing span shape conventions unless the task is intentionally correcting them to match the spec.
+Change only affected patchers, tracing, exports, tests, cassettes. Preserve the public `setup_*()` / `wrap_*()` surface. Don't touch `auto.py` / `integrations/__init__.py` / `noxfile.py` unless required. Check whether the change also needs a subprocess auto-instrument test update.
 
 ### `auto_instrument()` only
 
-1. Update `py/src/braintrust/auto.py`.
-2. Prefer `_instrument_integration(...)` over a custom `_instrument_*` helper when the standard pattern fits.
-3. Add the integration import near the other integration imports.
-4. Add or update the relevant subprocess auto-instrument test.
+Update `auto.py`. Prefer `_instrument_integration(...)` over a custom `_instrument_*` helper. Add/update the subprocess auto-instrument test.
 
-### Setup, manual wrapping, and auto-instrument
+### Entry-point parity
 
-Treat these as distinct entry points:
+The three entry points must emit equivalent spans:
+- `setup_<provider>()` — package-level patching
+- `wrap_*()` helpers — manual wrapping
+- `auto_instrument()` — import-order-sensitive discovery
 
-- `setup_<provider>()`: explicit package-level patching
-- public `wrap_*()` helpers: manual wrapping of a provided class, function, or client
-- `auto_instrument()`: import-order-sensitive discovery and setup
+If a behavior change lands in one, check the other two. Validate `auto_instrument()` with a subprocess test, not just in-process.
 
-When changing one entry point, check whether the other two should keep equivalent span behavior. Auto-instrument and manual paths should emit equivalent spans; if a provider-facing behavior change goes into one path, it usually needs to go into the other. If `auto_instrument()` changes or could be affected by import timing, validate it with a subprocess test instead of only calling the integration in-process.
+## Package Layout
 
-## Package Layout Rules
+Ownership:
+- `__init__.py` — public exports, `setup_<provider>()`, `wrap_*()` helpers
+- `integration.py` — `BaseIntegration` subclass + patcher registration (keep thin)
+- `patchers.py` — patchers and manual wrapping helpers
+- `tracing.py` — request/response normalization, metadata extraction, stream handling, error logging
+- `test_*.py` — provider behavior tests
+- `cassettes/` — VCR recordings
 
-Keep provider-specific behavior in `py/src/braintrust/integrations/<provider>/`.
-
-Typical ownership:
-
-- `__init__.py`: public exports, `setup_<provider>()`, public `wrap_*()` helpers
-- `integration.py`: `BaseIntegration` subclass and patcher registration
-- `patchers.py`: patchers and manual `wrap_*()` helpers
-- `tracing.py`: request/response normalization, metadata extraction, stream handling, error logging
-- `test_*.py`: provider behavior tests
-- `cassettes/`: VCR recordings for provider HTTP traffic
-
-Keep `integration.py` thin.
-
-If logic is genuinely shared across integrations, move it to `py/src/braintrust/integrations/utils.py` instead of copying it into multiple providers. Before adding a local helper, check `utils.py` and neighboring integrations for an existing one.
+If logic is shared across integrations, put it in `integrations/utils.py`, not copies. Check `utils.py` and neighboring integrations before writing a local helper.
 
 ## Integration Rules
 
-Set up the integration declaratively:
+Declarative setup on the `BaseIntegration` subclass: `name`, `import_names`, `patchers`. Use `min_version`/`max_version` only when feature detection isn't enough. Prefer `detect_module_version(...)` / `version_satisfies(...)` / `make_specifier(...)`.
 
-- set `name`
-- set `import_names`
-- set `patchers`
-- set `min_version` or `max_version` only when feature detection is not enough
+Let `BaseIntegration.resolve_patchers()` reject duplicate patcher ids; don't hide duplicates.
 
-Prefer feature detection first and version checks second. Use:
+**Non-invasiveness:**
+- Provider errors MUST propagate. Never swallow or rewrap.
+- Preserve return types, iterator/async-iterator semantics, generator/subclass behavior.
+- Sync and async traced schemas MUST stay aligned when both exist.
+- Setup / teardown / patching MUST be idempotent (rely on the base patcher marker).
+- Contain instrumentation failures. Extraction/normalization/logging errors must be logged or ignored, never raised into the user's call path.
+- Treat provider inputs/results/events/headers as untrusted. Avoid arbitrary attribute access; don't mutate third-party objects.
+- Only instrument AI-generation-relevant ops (LLM calls, embeddings, tool exec, media gen, agent runs). No unrelated CRUD.
 
-- `detect_module_version(...)`
-- `version_satisfies(...)`
-- `make_specifier(...)`
+## Span Design
 
-Let `BaseIntegration.resolve_patchers()` reject duplicate patcher ids. Do not hide duplicates.
+### Type + name
 
-### Non-invasiveness and safety
+- `llm` — one provider API call
+- `task` — parent for an agent run, pipeline step, or named operation
+- `tool` — model-initiated tool/function execution
 
-Instrumentation must not change user-visible behavior:
+Use spec-recommended names (`Chat Completion`, `anthropic.messages.create`, `generate_content`). For new providers, pick a stable provider-specific name.
 
-- Errors from the provider MUST propagate to the caller. Do not swallow or rewrap them.
-- Return values, iterator/async-iterator semantics, and generator/subclass behavior MUST be preserved.
-- Sync and async traced schemas MUST stay aligned when the provider exposes both.
-- Setup, teardown, and patching MUST be idempotent. Applying setup twice, tearing down twice, or wrapping twice must remain safe. Rely on the base patcher's idempotence marker.
-- Contain instrumentation failures. Errors in extraction, normalization, or logging code must be logged or ignored, not raised into the user's call path. Only intentional provider errors should surface.
-- Treat provider inputs, results, events, headers, and metadata as untrusted. Avoid attribute access that could trigger arbitrary code, and avoid mutating third-party objects.
-- Limit instrumentation to AI-generation-relevant operations (LLM calls, embeddings, tool executions, media generation, agent runs). Do not instrument unrelated CRUD or platform-management APIs.
+### Completion-style vs agentic-style
 
-### Scope of instrumentation
+- **Completion** (single request/response, user runs any tool calls): one `llm` span, no children. Tool calls appear in `output`.
+- **Agentic** (SDK/framework runs the tool loop): one parent `task` wrapping child `llm` (per model call) + `tool` (per tool exec) spans in execution order.
 
-Follow the spec closely for spec-defined fields — `input`, `output`, `metrics`, `error`, tool-call structure, prompt provenance, attachments. Do not invent new top-level fields, metric keys, or span types; update the spec first if you genuinely need one.
+Completion-style *frameworks* (LiteLLM, OpenRouter, etc.) still emit `llm` spans with `metadata.provider` set to the underlying provider, NOT the framework name. Agentic frameworks (Vercel AI SDK w/ tools, LangChain agents, OpenAI Agents SDK, Claude Agent SDK, ADK, Agno) emit the full parent+children tree.
 
-`metadata` is treated slightly more loosely: use an **allowlist per provider**, not a denylist. Capture the spec-defined keys (`model`, `provider`, `tools`, `tool_choice`, `parallel_tool_calls`, `max_tool_calls`, `prompt`, and the permitted request-config subset) plus provider-specific detail fields you deliberately choose to include — provider request/response ids, safety data, model-family flags, and similar. Do not dump entire raw request/response objects into metadata; each captured key should be an intentional decision. Redact obvious secrets. If a provider-specific field ends up broadly useful across SDKs, promote it to the spec.
+### Payload format
 
-Preserve provider behavior. Tracing code must not change return values, control flow, or error behavior unless the task explicitly requires it.
+Canonical shape is OpenAI Chat Completions format. Providers with dedicated UI normalizers (OpenAI, Anthropic, Google) MAY preserve provider-native payloads if `metadata.provider` is set correctly; all other providers MUST convert to OpenAI shape. If a provider passes system prompt separately, insert it as a `role: "system"` entry.
 
-### Span origin (`instrumentation.name`)
+### Fields
 
-Every span an integration creates MUST carry `context.span_origin.instrumentation.name` identifying which integration produced it. Naming convention: `<provider>-auto` (e.g. `openai-auto`, `anthropic-auto`, `adk-auto`, `google-genai-auto`). Match the JS SDK exactly for cross-SDK dashboards to work.
+- `input` — meaningful user request (messages / prompt / provider-native input)
+- `output` — meaningful provider result (normalized, not opaque SDK instances)
+- `metadata` — see below
+- `metrics` — spec-listed keys only (see [Metrics](#metrics))
+- `error` — pass the `Exception` instance directly to span logging; do not pre-format
 
-Braintrust's `start_span(...)` (and every provider-level `start_span` method) accepts an `internal: dict | None` kwarg reserved for SDK internals. Integrations pass `internal={"instrumentation": "<provider>-auto"}` to stamp `context.span_origin.instrumentation.name`. When unset, spans fall back to the channel default (`braintrust-python-logger` for direct logging, `braintrust-python-otel` for the OTel processor). The `internal` dict is intentionally opaque to signal that external callers should not use it — the keys inside are unstable.
+**Every `llm` span MUST include `metadata.model` and `metadata.provider`** (`provider` = whose pricing applies, even when going through a gateway or framework).
 
-**Only integration-created spans should carry the integration's name.** User-owned spans nested inside a wrapped provider call — for example a `@traced` scorer running inside a wrapped agent turn — must NOT inherit the integration's `instrumentation.name`. The value does not propagate through the span parent/child edge; each `start_span` call independently decides its own value.
+**Tool definitions go in `metadata.tools`** (OpenAI-shaped regardless of underlying provider), NOT in `input` messages. Preserve provider-native built-in tool types (Anthropic `computer_use`, OpenAI `web_search`) as opaque JSON-serializable entries. Never log executable tool handlers.
 
-The standard per-integration pattern is a small shadow at the top of the integration's `tracing.py` (or `callbacks.py`/`plugin.py`):
+**Prompt provenance goes in `metadata.prompt`** (`id`, `project_id`, `version`, `variables`, plus `prompt_session_id` for playground calls). Not in `input`, request payloads, or `metadata.tools`. Strip carrier fields like `span_info` before logging.
+
+**`metadata` allowlist-per-provider:** capture the spec-defined keys plus provider-specific detail fields (request/response ids, safety data, model-family flags) chosen deliberately. Do not dump entire raw request/response objects. Redact secrets. If a provider-specific field ends up broadly useful, promote it to the spec.
+
+### Token metrics
+
+The integration that directly owns the model/provider API response owns token accounting. Orchestration/framework integrations should not log token metrics when underlying provider integrations create leaf spans with usage. Agentic parent `task` spans MAY aggregate across children when the framework doesn't delegate to a separately instrumented provider client. Do not add "if OpenAI is patched, skip metrics" checks — define clear ownership instead.
+
+### Shaping guidance
+
+- Flatten positional args into named fields; normalize SDK objects into dicts/lists/scalars; drop noisy transport fields.
+- Aggregate streaming chunks into one final `output` + stream-specific `metrics`. One `llm` span per API call, not per chunk.
+- Do not over-serialize. Braintrust serializes at send/log time. Integration tracing only needs readable Python dicts/lists/scalars and materialized attachments.
+- Keep wrapper bodies thin: prepare traced input, open span, call provider, normalize result, log.
+- Do not wrap `span.log(...)` / `span.set_attributes(...)` in broad try/except. Braintrust span methods are boundary-safe.
+
+### Span origin
+
+Every span an integration creates MUST carry `context.span_origin.instrumentation.name = "<provider>-auto"` (e.g. `openai-auto`, `anthropic-auto`, `adk-auto`, `google-genai-auto`). Match the JS SDK exactly for cross-SDK filtering.
+
+`start_span(...)` and all provider-level `start_span` methods accept `internal: SpanInternalOptions | None`, a TypedDict reserved for SDK internals — external callers should not use it. Integrations pass `internal={"instrumentation": "<provider>-auto"}`. When unset, spans fall back to the channel default (`braintrust-python-logger` / `braintrust-python-otel`).
+
+The name does NOT propagate through the parent/child edge — each `start_span` call decides independently. User-owned spans nested inside a wrapped call (e.g. a `@traced` scorer) must NOT inherit the integration's name.
+
+Standard pattern at the top of `tracing.py` (or `callbacks.py` / `plugin.py`):
 
 ```python
 from braintrust.logger import start_span as _bt_start_span
@@ -255,216 +187,80 @@ def start_span(*args, **kwargs):
     return _bt_start_span(*args, **kwargs)
 ```
 
-Every direct `start_span(...)` call site inside the module then flows through the shadow automatically. If the integration opens spans through a `Logger`, `Experiment`, or existing `Span` instance (i.e. `logger.start_span(...)`, `parent.start_span(...)`), pass `internal={"instrumentation": _INSTRUMENTATION}` explicitly at those sites — the shadow only catches module-level `start_span` calls.
-
-Tests should assert on the emitted span's `context.span_origin.instrumentation.name`. `SpanImpl` also exposes the resolved value as `span._instrumentation` for direct inspection in tests.
-
-## Span Design Rules
-
-### Span type and name
-
-Every span must set the correct `type` and a stable `name`:
-
-- `llm`: a single provider API call
-- `task`: a parent span for an agent run, pipeline step, or named operation
-- `tool`: a model-initiated tool/function execution
-
-Use spec-recommended names where they exist (for example `Chat Completion` for OpenAI, `anthropic.messages.create` for Anthropic, `generate_content` for Google). For new providers, pick a stable, provider-specific name.
-
-### Completion-style vs agentic-style
-
-Decide the span shape before writing patchers:
-
-- Completion-style APIs (single request/response, user executes any tool calls): one `llm` span per API call, no children. Tool calls the model requests appear in the span's `output`; the SDK does not create `tool` spans.
-- Agentic-style APIs (the SDK/framework runs the tool loop internally): one parent `task` span wrapping child `llm` spans (one per underlying model call) and child `tool` spans (one per tool execution). Preserve execution order.
-
-For frameworks: completion-style frameworks (for example LiteLLM) must produce provider-shaped `llm` spans and set `metadata.provider` to the underlying provider (`openai`, `anthropic`, etc.), not the framework name. Agentic-style frameworks (Vercel AI SDK with tools, LangChain agents, OpenAI Agents SDK, Claude Agent SDK, ADK, Agno) must produce the full parent-plus-children tree.
-
-### Canonical payload format
-
-Braintrust uses the OpenAI Chat Completions message format as the canonical representation for LLM `input` and `output`. The UI parses, displays, and diffs spans assuming this format.
-
-- For providers that have a dedicated Braintrust UI normalizer (currently OpenAI, Anthropic, Google), instrumentation MAY preserve the provider-native payload. Set `metadata.provider` correctly so the UI can normalize.
-- For any other provider, instrumentation MUST convert payloads into the OpenAI Chat Completions format so the UI can render them. If the provider exposes a system prompt as a separate parameter, insert it into the messages array as a `role: "system"` entry.
-
-### Input, output, metadata, metrics, error
-
-Build readable spans. Do not dump raw `args` and `kwargs` unless the provider API already exposes a clean schema.
-
-Use this rubric:
-
-- `input`: the meaningful user request (messages, prompt, or provider-native input structure)
-- `output`: the meaningful provider result (choices, message, or provider-native response structure)
-- `metadata`: only spec-allowed fields such as `model`, `provider`, `tools`, `tool_choice`, `parallel_tool_calls`, `max_tool_calls`, `prompt`, and the permitted request-config subset (`temperature`, `top_p`, `max_tokens`, `frequency_penalty`, `presence_penalty`, `stop`, `response_format`)
-- `metrics`: only spec-allowed keys (see [Metrics](#metrics))
-- `error`: exceptions or failure information; pass the `Exception` instance directly to span logging rather than pre-formatting it into strings
-
-Every `llm` span MUST include `metadata.model` (the resolved model id from the response, including any version suffix when the API returns one) and `metadata.provider` (the provider whose pricing applies, even when the caller went through a gateway or framework).
-
-Tool definitions are request configuration, not conversation content: the schemas passed to the model MUST go in `metadata.tools` (OpenAI-shaped, regardless of the underlying provider), not in the `input` messages. Preserve provider-native built-in tool types (for example Anthropic `computer_use`, OpenAI `web_search`) as opaque JSON-serializable entries in `metadata.tools`. Do not log executable tool handlers or closures.
-
-Prompt provenance for Braintrust-managed prompts MUST go in `metadata.prompt` (`id`, `project_id`, `version`, `variables`, and `prompt_session_id` for playground/prompt-session calls). Do not put prompt provenance in `input`, request payloads, or `metadata.tools`. Wrapper-only carrier fields such as `span_info` are internal plumbing; strip them from the provider request and do not log them.
-
-### Token metrics
-
-Avoid double-counting token metrics:
-
-- the integration that directly owns the model/provider API response should own token accounting
-- orchestration/framework integrations should usually not log token metrics when underlying provider integrations can create leaf spans with usage metrics; agentic parent `task` spans MAY aggregate token counts across children when the framework does not delegate to a separately instrumented provider client
-- do not add fragile provider-specific ownership checks such as "if OpenAI is patched, skip metrics"; prefer a clear span ownership rule instead
-
-### Shaping guidance
-
-Good span shaping usually means:
-
-- flatten positional arguments into named fields
-- normalize provider SDK objects into dicts, lists, or scalars when that improves readability
-- drop duplicate or noisy transport fields
-- aggregate streaming chunks into one final `output` plus stream-specific `metrics`
-
-Do not over-serialize in integration code. Braintrust handles serialization when sending/logging spans, so integration tracing helpers usually only need to shape readable Python dicts/lists/scalars and materialize attachments where appropriate. Avoid unnecessary JSON dumps/loads, recursive conversion, or stringification just to make values serializable.
-
-Keep wrapper bodies thin: prepare traced input, open the span, call the provider, normalize the result, and log `output`/`metadata`/`metrics`.
-
-Braintrust span logging methods are boundary-safe and should not throw during normal integration use. Do not wrap `span.log(...)`, `span.set_attributes(...)`, or similar Braintrust span methods in broad `try`/`except` blocks. Only catch exceptions around provider calls or around integration-owned conversion code when there is a specific expected failure mode and a clear fallback.
-
-Prefer provider-local helpers in `tracing.py`, for example:
-
-```python
-def _prepare_traced_call(args: list[Any], kwargs: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-    ...
-
-
-def _process_result(result: Any, start: float) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    ...
-```
+Module-level `start_span(...)` calls flow through automatically. Calls that go through a `Logger` / `Experiment` / parent-`Span` instance (`logger.start_span(...)`, `parent.start_span(...)`) need `internal={"instrumentation": _INSTRUMENTATION}` explicitly. Tests assert `span["context"]["span_origin"]["instrumentation"]["name"] == "<provider>-auto"`; `SpanImpl._instrumentation` exposes the resolved value.
 
 ## Metrics
 
-Only emit spec-listed metric keys. Do not invent metric keys.
+Only emit spec-listed keys:
+- `tokens`, `prompt_tokens`, `completion_tokens` — required for LLM spans; values MUST be non-negative
+- `time_to_first_token` — required for streaming; SDK measures from request start to first chunk
+- `completion_reasoning_tokens` — required when provider reports reasoning tokens (o-series etc.)
+- `prompt_cached_tokens`, `prompt_cache_creation_tokens`, `prompt_cache_creation_5m_tokens`, `prompt_cache_creation_1h_tokens` — provider prompt caching
+- `prompt_audio_tokens`, `completion_audio_tokens`, `completion_image_tokens` — audio/image models when provider reports
+- `start`, `end` — standard span timing
 
-Standard LLM metrics:
+For streaming, still produce one span per API call with accumulated `input`/`output`. Capture usage from stream metadata (e.g. OpenAI `stream_options.include_usage`) when surfaced.
 
-- `tokens`, `prompt_tokens`, `completion_tokens`: required for LLM spans (values MUST be non-negative)
-- `time_to_first_token`: required for streaming spans; measured by the SDK from request start to the first chunk
-- `completion_reasoning_tokens`: required when the provider reports reasoning tokens (for example OpenAI o-series)
-- `prompt_cached_tokens`, `prompt_cache_creation_tokens`, `prompt_cache_creation_5m_tokens`, `prompt_cache_creation_1h_tokens`: capture when the provider reports prompt caching
-- `prompt_audio_tokens`, `completion_audio_tokens`, `completion_image_tokens`: capture when the provider reports them for audio/image models
-- `start`, `end`: standard span timing
-
-Streaming spans still produce a single `llm` span per API call, with `input`/`output` accumulated from chunks. Capture token counts from stream usage metadata when the provider surfaces it (for example OpenAI `stream_options.include_usage`).
-
-For reasoning models, capture the full output structure (reasoning summaries plus assistant message blocks) when the provider exposes them, and include prior reasoning blocks in the `input` for multi-turn calls.
+For reasoning models, capture the full output structure (reasoning summaries + message blocks) and include prior reasoning in `input` for multi-turn calls.
 
 ## Multimodal And Attachments
 
-When a request or response contains inline binary media (images, PDFs, audio, video, and similar), replace the raw media leaf in the span payload with a Braintrust attachment. Do not add a separate top-level `attachments` list.
+Inline binary media (images, PDFs, audio, video) MUST be replaced by a Braintrust attachment at the leaf position. Do not add a separate top-level `attachments` list.
 
-Treat binary payloads as attachments, not logged bytes:
-
-- prefer the shared `_materialize_attachment(...)` helper in `py/src/braintrust/integrations/utils.py` over provider-local base64 or file-decoding code
-- convert provider-owned raw `bytes`, base64 payloads, data URLs, file inputs, and generated media into `braintrust.logger.Attachment` objects when Braintrust should upload the content (the SDK converts these into `braintrust_attachment` references on the wire)
-- preserve normal remote URLs as strings; do not fetch remote URLs solely to create an attachment
-- use the repo's existing multimodal payload shapes after materialization:
-  - images -> `{"image_url": {"url": attachment}}`
-  - non-image media/documents/files -> `{"file": {"file_data": attachment, "filename": resolved.filename}}`
-- do not force non-image payloads through `image_url` shims
-- if attachment materialization or upload fails, keep the original value instead of dropping it or replacing it with `None`, and do not raise into the user's call path
-- preserve non-attachment values while walking nested payloads unless you are intentionally normalizing them for readability
-- keep useful metadata such as MIME type, size, safety data, filenames, or provider ids next to the attachment
-- when a provider-native payload has a dedicated UI normalizer (OpenAI, Anthropic, Google), you may preserve the provider-native structure and replace only the raw media leaf
-
-For generated media on the output side, log the attachment inside `output` (not `metadata`). For streaming media outputs, aggregate chunks into the final `output` attachment; do not log raw chunks as separate blobs.
+- Prefer `_materialize_attachment(...)` in `integrations/utils.py`. Don't reimplement base64/file decoding.
+- Convert raw `bytes` / base64 / data URLs / file inputs / generated media → `braintrust.logger.Attachment`. Preserve remote URLs as strings — do not fetch to create an attachment.
+- Payload shape after materialization:
+  - images → `{"image_url": {"url": attachment}}`
+  - non-image media/documents/files → `{"file": {"file_data": attachment, "filename": resolved.filename}}`
+- Do not force non-image payloads through `image_url`.
+- If materialization fails, keep the original value; never drop, null it out, or raise.
+- Preserve non-attachment values while walking nested payloads unless intentionally normalizing.
+- Keep MIME type, size, safety data, filenames, provider ids next to the attachment.
+- Providers with UI normalizers (OpenAI, Anthropic, Google) — MAY preserve the provider-native structure and only replace the raw media leaf.
+- Generated media → log the attachment in `output`, not `metadata`. For streaming, aggregate into one final `output` attachment.
 
 ## Patcher Rules
 
-Create one patcher per coherent patch target.
+One patcher per coherent target. Prefer:
 
-Prefer:
+- `FunctionWrapperPatcher` — one import path / one constructor / one method surface
+- `CompositeFunctionWrapperPatcher` — one logical surface across multiple related targets
+- `CallbackPatcher` — setup side effects after applicability succeeds
 
-- `FunctionWrapperPatcher` for one import path or one constructor/method surface
-- `CompositeFunctionWrapperPatcher` for one logical surface spread across multiple related targets
-- `CallbackPatcher` for setup side effects after applicability succeeds
+Use `target_module` for patch targets outside the module named by `import_names` (deep or optional submodules). Use `superseded_by` for version-conditional fallbacks — not custom target-selection logic. Use lower `priority` only when ordering matters (e.g. context propagation before tracing).
 
-Use `target_module` when the patch target lives outside the module named by `import_names`, especially for optional or deep submodules.
-
-Use `superseded_by` for version-conditional fallbacks instead of custom target-selection logic.
-
-Use lower `priority` only when patch ordering really matters, such as context propagation before tracing.
-
-Manual wrapping helpers should be thin:
+Manual wrapping helpers stay thin:
 
 ```python
 def wrap_agent(Agent: Any) -> Any:
     return AgentPatcher.wrap_target(Agent)
 ```
 
-Require every patcher to have:
-
-- a stable `name`
-- clean existence checks
-- version gating only when necessary
-- idempotence through the base patcher marker
-
-Prefer patching stable public API surfaces (documented client methods, top-level constructors). Reach into internal helpers only when the public surface is genuinely insufficient, and expect those patches to need version-specific maintenance.
+Every patcher needs: stable `name`, clean existence checks, version gating only when necessary, idempotence via the base patcher marker. Prefer patching stable public API surfaces; internal helpers need version-specific maintenance.
 
 ## Testing Rules
 
-Keep tests in the provider package.
+Tests live in the provider package. Default bug-fix workflow: red → green — add/update a failing test first, then fix.
 
-Default bug-fix workflow: red -> green.
+**Prefer VCR-backed real provider coverage with `@pytest.mark.vcr`.** The burden of proof is on mocks: use them only for narrow error injection, purely local version-routing logic, patcher existence checks, or provider-independent helpers where the response shape is not part of the contract. Do not swap a cassette-backed regression for a mock just because the fix lives in `tracing.py` or a serializer — if a real payload triggers the bug, the primary regression stays cassette-backed.
 
-- First add or update a focused test that reproduces the integration bug.
-- Then implement the fix.
-- Only skip this when the task explicitly asks for a different approach.
-
-Prefer VCR-backed real provider coverage with `@pytest.mark.vcr`. This includes span-shaping/tracing bugs where the bad behavior is triggered by a real provider response payload; do not treat those as mock-first just because the code path is local.
-
-Default stance: if the behavior is provider-facing, assume mocks/fakes are the wrong tool until proven otherwise. A mock should need justification, not the other way around.
-
-Use mocks or fakes only for cases that are hard to drive through recordings, such as:
-
-- narrow error injection
-- purely local version-routing logic
-- patcher existence checks
-- provider-independent helper logic where the provider response shape is not part of the contract being validated
-
-Do not replace or skip a cassette-backed regression with a mock/fake test merely because the implementation change lives in `tracing.py`, a serializer, or another local post-processing layer. If a real provider payload is what triggers the bug, the main regression test should reflect that real payload.
-
-Test emitted spans, not just provider return values. In particular, assert on:
-
+Assert on emitted spans (not just provider return values):
 - span `type` and `name`
-- `input` shape (messages/prompt/config fields the spec requires)
-- `output` shape (normalized provider result, not opaque SDK instances)
-- `metadata.model`, `metadata.provider`, and any `metadata.tools` / `metadata.tool_choice` / `metadata.prompt` present
-- required `metrics` keys (token counts for LLM spans; `time_to_first_token` for streaming)
-- parent/child structure for agentic APIs (parent `task`, child `llm` and `tool` spans in execution order)
-- `context.span_origin.instrumentation.name` equals the integration's `<provider>-auto` identifier
-- attachment conversion for binary inputs or generated media, including that images land under `image_url.url`, non-image payloads land under `file.file_data`, and traced payloads contain `Attachment` objects rather than raw bytes or base64 blobs
-- error propagation and error logging behavior
-- idempotence of setup/teardown/wrapping
-- patcher resolution and duplicate detection when relevant
+- `input` shape (spec-required messages/prompt/config fields)
+- `output` shape (normalized, not opaque SDK instances)
+- `metadata.model`, `metadata.provider`, `metadata.tools`/`tool_choice`/`prompt` when present
+- required `metrics` keys (tokens for LLM; `time_to_first_token` for streaming)
+- parent/child structure for agentic APIs (parent `task`, child `llm`+`tool` in execution order)
+- `context.span_origin.instrumentation.name == "<provider>-auto"`
+- attachments: images under `image_url.url`, non-images under `file.file_data`, `Attachment` objects (not raw bytes/base64)
+- error propagation, error logging
+- setup/teardown/wrapping idempotence, patcher resolution when relevant
 
-Cover the surfaces that changed:
+For streaming, assert both the provider iterator/async-iterator still works AND the final span has aggregated `output` + stream-specific `metrics`.
 
-- direct `wrap_*()` behavior
-- setup-time patching
-- sync behavior
-- async behavior
-- streaming behavior
-- idempotence
-- failure and error logging
+Cassettes live in `integrations/<provider>/cassettes/<version>/` (e.g. `cassettes/latest/`, `cassettes/0.48.0/`). Nox sets `BRAINTRUST_TEST_PACKAGE_VERSION` so cassettes land correctly. Do not add per-test `vcr_cassette_dir` / `cassette_library_dir` fixtures — `integrations/conftest.py` handles it. Re-record only when behavior intentionally changed. Sanitize cassettes when the provider returns binary bodies.
 
-For streaming changes, verify both:
-
-- the provider still returns the expected iterator or async iterator
-- the final logged span contains the aggregated `output` and stream-specific `metrics`
-
-Keep VCR cassettes in `py/src/braintrust/integrations/<provider>/cassettes/<version>/` (e.g. `cassettes/latest/`, `cassettes/0.48.0/`). Nox sessions set `BRAINTRUST_TEST_PACKAGE_VERSION` automatically so cassettes land in the correct version subdirectory. Do not add per-test `vcr_cassette_dir` or `cassette_library_dir` fixtures; the shared `py/src/braintrust/integrations/conftest.py` handles version routing. Re-record only when behavior intentionally changes.
-
-When the provider returns binary HTTP responses or generated media, sanitize cassettes as needed so fixtures do not store raw file bytes.
-
-When choosing test commands, confirm the actual session name in `py/noxfile.py` instead of assuming it matches the provider folder.
+Confirm the exact session name from `noxfile.py` — don't assume it matches the folder.
 
 ## Commands
 
@@ -478,34 +274,29 @@ cd py && make lint
 
 ## Validation Checklist
 
-- Run the narrowest provider session first.
-- If the change touches patchers, setup behavior, import timing, or anything that could affect `auto_instrument()`, run the relevant subprocess auto-instrument test from `py/src/braintrust/integrations/auto_test_scripts/`.
-- Run the relevant auto-instrument subprocess test if `auto.py` changed.
-- Run `cd py && make test-core` if shared integration code changed.
-- Run `cd py && make lint` before handoff when shared files or repo-level wiring changed.
+- Narrowest provider session first.
+- Subprocess auto-instrument test if patchers / setup / import timing / `auto.py` changed.
+- `make test-core` if shared integration code changed.
+- `make lint` before handoff if shared files or repo wiring changed.
 
 ## Common Mistakes
 
-Avoid these failures:
-
-- treating a wrapper migration as fresh integration work
-- changing shared integration primitives when provider-local code should own the behavior
-- combining unrelated patch targets into one patcher
-- forgetting repo-level wiring for new providers: `integrations/__init__.py`, `py/noxfile.py`, and sometimes `auto.py`
-- forgetting the subprocess auto-instrument tests
-- forgetting async or streaming coverage
-- re-recording cassettes when behavior did not intentionally change
-- adding a custom `_instrument_*` helper where `_instrument_integration()` already fits
-- forgetting `target_module` for deep or optional patch targets
-- inventing new top-level span fields, metric keys, or span types beyond what the spec allows (metadata is treated more loosely — see the metadata allowlist guidance above)
-- putting tool definitions in `input` instead of `metadata.tools`, or including prompt provenance anywhere other than `metadata.prompt`
-- forgetting to set `instrumentation=<provider>-auto` on spans an integration opens, or leaking that identifier onto user-owned spans nested inside a wrapped call
-- using the framework name as `metadata.provider` for a completion-style framework wrapper instead of the underlying provider
-- producing per-chunk spans for a streamed call instead of one accumulated span per API call
-- letting instrumentation errors surface into the user's call path, or swallowing real provider errors
-- double-counting token metrics in both orchestration/framework spans and provider leaf spans
-- adding provider-specific token ownership detection instead of defining clear metric ownership for the integration
-- doing excessive serialization/stringification in tracing code even though Braintrust serializes span payloads at send/log time
-- wrapping Braintrust span logging methods in broad `try`/`except` blocks even though those methods are designed not to throw
-- forcing non-image attachments through `image_url` shims, dropping unrecognized file inputs, or re-serializing non-attachment values while materializing payloads
-- patching internal helpers when a stable public API surface would work
+- Treating a wrapper migration as fresh integration work (use `sdk-wrapper-migrations`).
+- Changing shared primitives when provider-local code should own the behavior.
+- Combining unrelated patch targets into one patcher.
+- Forgetting repo wiring for new providers (`integrations/__init__.py`, `noxfile.py`, sometimes `auto.py`).
+- Forgetting subprocess auto-instrument tests, or async/streaming coverage.
+- Re-recording cassettes when behavior didn't intentionally change.
+- Custom `_instrument_*` helper where `_instrument_integration()` fits.
+- Missing `target_module` for deep/optional patch targets.
+- Inventing new top-level span fields / metric keys / span types (metadata is looser — see allowlist-per-provider).
+- Tool definitions in `input` instead of `metadata.tools`; prompt provenance outside `metadata.prompt`.
+- Missing `internal={"instrumentation": "<provider>-auto"}` on integration spans, or leaking it onto user spans nested inside.
+- Framework name in `metadata.provider` for a completion-style framework wrapper.
+- Per-chunk spans for streamed calls (should be one accumulated span per API call).
+- Instrumentation errors escaping into the user's call path, or swallowing real provider errors.
+- Double-counting tokens across orchestration + provider spans, or provider-specific ownership checks instead of clear rules.
+- Over-serializing (JSON dumps/loads, recursive conversion) in tracing code.
+- `try`/`except` around Braintrust span-logging methods — they're boundary-safe.
+- Forcing non-image attachments through `image_url` shims; dropping unrecognized file inputs; re-serializing non-attachment values.
+- Patching internal helpers when a stable public API surface would work.
