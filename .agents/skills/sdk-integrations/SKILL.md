@@ -236,11 +236,11 @@ Preserve provider behavior. Tracing code must not change return values, control 
 
 Every span an integration creates MUST carry `context.span_origin.instrumentation.name` identifying which integration produced it. Naming convention: `<provider>-auto` (e.g. `openai-auto`, `anthropic-auto`, `adk-auto`, `google-genai-auto`). Match the JS SDK exactly for cross-SDK dashboards to work.
 
-Braintrust's `start_span(...)` (and every provider-level `start_span` method) accepts an `instrumentation: str | None` kwarg. When set, the SDK stamps it into `context.span_origin.instrumentation.name`. When unset, spans fall back to the channel default (`braintrust-python-logger` for direct logging, `braintrust-python-otel` for the OTel processor).
+Braintrust's `start_span(...)` (and every provider-level `start_span` method) accepts an `internal: dict | None` kwarg reserved for SDK internals. Integrations pass `internal={"instrumentation": "<provider>-auto"}` to stamp `context.span_origin.instrumentation.name`. When unset, spans fall back to the channel default (`braintrust-python-logger` for direct logging, `braintrust-python-otel` for the OTel processor). The `internal` dict is intentionally opaque to signal that external callers should not use it — the keys inside are unstable.
 
 **Only integration-created spans should carry the integration's name.** User-owned spans nested inside a wrapped provider call — for example a `@traced` scorer running inside a wrapped agent turn — must NOT inherit the integration's `instrumentation.name`. The value does not propagate through the span parent/child edge; each `start_span` call independently decides its own value.
 
-The standard per-integration pattern is a two-line shadow at the top of the integration's `tracing.py` (or `callbacks.py`/`plugin.py`):
+The standard per-integration pattern is a small shadow at the top of the integration's `tracing.py` (or `callbacks.py`/`plugin.py`):
 
 ```python
 from braintrust.logger import start_span as _bt_start_span
@@ -249,11 +249,13 @@ _INSTRUMENTATION = "<provider>-auto"
 
 
 def start_span(*args, **kwargs):
-    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
     return _bt_start_span(*args, **kwargs)
 ```
 
-Every direct `start_span(...)` call site inside the module then flows through the shadow automatically. If the integration opens spans through a `Logger`, `Experiment`, or existing `Span` instance (i.e. `logger.start_span(...)`, `parent.start_span(...)`), pass `instrumentation=_INSTRUMENTATION` explicitly at those sites — the shadow only catches module-level `start_span` calls.
+Every direct `start_span(...)` call site inside the module then flows through the shadow automatically. If the integration opens spans through a `Logger`, `Experiment`, or existing `Span` instance (i.e. `logger.start_span(...)`, `parent.start_span(...)`), pass `internal={"instrumentation": _INSTRUMENTATION}` explicitly at those sites — the shadow only catches module-level `start_span` calls.
 
 Tests should assert on the emitted span's `context.span_origin.instrumentation.name`. `SpanImpl` also exposes the resolved value as `span._instrumentation` for direct inspection in tests.
 

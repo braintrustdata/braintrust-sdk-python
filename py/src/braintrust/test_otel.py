@@ -153,7 +153,7 @@ def test_merge_span_origin_context_uses_passed_instrumentation_name():
     assert merged["span_origin"]["instrumentation"] == {"name": "openai-auto"}
 
 
-def test_span_impl_records_instrumentation_kwarg(monkeypatch):
+def test_span_impl_records_internal_instrumentation(monkeypatch):
     monkeypatch.setenv("BRAINTRUST_API_KEY", "test-key")
     monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_TYPE", raising=False)
     monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_NAME", raising=False)
@@ -162,7 +162,7 @@ def test_span_impl_records_instrumentation_kwarg(monkeypatch):
 
     init_logger(project="test_instrumentation_kwarg")
 
-    with start_span(name="parent", instrumentation="openai-auto") as parent:
+    with start_span(name="parent", internal={"instrumentation": "openai-auto"}) as parent:
         with start_span(name="child") as child:
             pass
 

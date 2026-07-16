@@ -247,7 +247,7 @@ class _BraintrustActivityInboundInterceptor(temporalio.worker.ActivityInboundInt
 
         # Create Braintrust span for activity execution, linked to workflow span
         span = logger.start_span(
-            instrumentation="temporal-auto",
+            internal={"instrumentation": "temporal-auto"},
             name=f"temporal.activity.{info.activity_type}",
             type="task",
             parent=parent_span_context or None,
@@ -318,7 +318,7 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                         self._parent_span_context = _workflow_span_context(parent, ids)
                     else:
                         span = logger.start_span(
-                            instrumentation="temporal-auto",
+                            internal={"instrumentation": "temporal-auto"},
                             name=f"temporal.workflow.{info.workflow_type}",
                             type="task",
                             parent=parent,
@@ -335,7 +335,7 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                         self._parent_span_context = _workflow_span_context(parent, ids)
                 elif not temporalio.workflow.unsafe.is_replaying():
                     span = logger.start_span(
-                        instrumentation="temporal-auto",
+                        internal={"instrumentation": "temporal-auto"},
                         name=f"temporal.workflow.{info.workflow_type}",
                         type="task",
                         parent=parent_span_context or None,

@@ -12,7 +12,9 @@ _INSTRUMENTATION = "openai-agents-auto"
 
 
 def start_span(*args, **kwargs):
-    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
     return _bt_start_span(*args, **kwargs)
 
 
@@ -143,7 +145,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
                 name=trace.name,
                 span_attributes={"type": "task", "name": trace.name},
                 metadata=metadata,
-                instrumentation=_INSTRUMENTATION,
+                internal={"instrumentation": _INSTRUMENTATION},
             )
         elif self._logger is not None:
             span = self._logger.start_span(
@@ -151,7 +153,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
                 span_id=trace.trace_id,
                 root_span_id=trace.trace_id,
                 metadata=metadata,
-                instrumentation=_INSTRUMENTATION,
+                internal={"instrumentation": _INSTRUMENTATION},
             )
         else:
             span = start_span(
@@ -349,7 +351,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             name=_span_name(span),
             type=_span_type(span),
             start_time=_timestamp_from_maybe_iso(span.started_at),
-            instrumentation=_INSTRUMENTATION,
+            internal={"instrumentation": _INSTRUMENTATION},
         )
         self._spans[span.span_id] = created_span
         created_span.set_current()

@@ -19,7 +19,9 @@ _INSTRUMENTATION = "langchain-auto"
 
 
 def start_span(*args, **kwargs):
-    kwargs.setdefault("instrumentation", _INSTRUMENTATION)
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
     return _bt_start_span(*args, **kwargs)
 
 
