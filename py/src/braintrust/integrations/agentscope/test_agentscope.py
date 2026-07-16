@@ -1,6 +1,8 @@
 # pylint: disable=import-error,no-name-in-module,no-value-for-parameter,unexpected-keyword-arg,no-member
 import importlib
 import importlib.metadata
+import inspect
+import os
 
 import pytest
 from braintrust import logger
@@ -36,14 +38,15 @@ def _span_type(span):
     return span_type.value if hasattr(span_type, "value") else span_type
 
 
-def _make_model(*, stream: bool = False, api_key: str = "test-api-key"):
+def _make_model(*, stream: bool = False, api_key: str | None = None):
     from agentscope.model import OpenAIChatModel
 
+    resolved_api_key = api_key if api_key is not None else os.environ["OPENAI_API_KEY"]
     if hasattr(OpenAIChatModel, "Parameters"):
         from agentscope.credential import OpenAICredential
 
         return OpenAIChatModel(
-            credential=OpenAICredential(api_key=api_key),
+            credential=OpenAICredential(api_key=resolved_api_key),
             model="gpt-4o-mini",
             parameters=OpenAIChatModel.Parameters(temperature=0),
             stream=stream,
@@ -52,6 +55,7 @@ def _make_model(*, stream: bool = False, api_key: str = "test-api-key"):
 
     return OpenAIChatModel(
         model_name="gpt-4o-mini",
+        api_key=resolved_api_key,
         stream=stream,
         generate_kwargs={"temperature": 0},
     )
@@ -251,6 +255,8 @@ async def test_agentscope_streaming_model_call(memory_logger):
     assert llm_span["output"]["role"] == "assistant"
     assert llm_span["output"]["content"]
     assert llm_span["metrics"]["time_to_first_token"] > 0
+    assert llm_span["metrics"]["prompt_tokens"] > 0
+    assert llm_span["metrics"]["completion_tokens"] > 0
     assert llm_span["metrics"]["tokens"] > 0
 
 
@@ -307,15 +313,15 @@ async def test_agentscope_v2_toolkit_call_tool_creates_tool_span(memory_logger):
 
 def test_setup_agentscope_is_idempotent():
     """Repeat setup calls must not double-wrap patched targets."""
-    setup_agentscope(project_name=PROJECT_NAME)
-    setup_agentscope(project_name=PROJECT_NAME)
-
     from agentscope.model import OpenAIChatModel
 
-    wrapped = OpenAIChatModel.__call__
+    wrapped = inspect.getattr_static(OpenAIChatModel, "__call__")
     assert hasattr(wrapped, "__wrapped__")
-    # A second layer of wrapping would expose a nested __wrapped__.__wrapped__.
-    assert not hasattr(wrapped.__wrapped__, "__wrapped__")
+
+    setup_agentscope(project_name=PROJECT_NAME)
+    setup_agentscope(project_name=PROJECT_NAME)
+
+    assert inspect.getattr_static(OpenAIChatModel, "__call__") is wrapped
 
 
 class TestAutoInstrumentAgentScope:
