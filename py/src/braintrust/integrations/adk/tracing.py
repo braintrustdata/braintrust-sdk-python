@@ -4,7 +4,6 @@ import contextvars
 import inspect
 import logging
 import time
-from collections.abc import Mapping
 from contextlib import aclosing
 from functools import lru_cache
 from itertools import chain
@@ -141,7 +140,7 @@ def _capture_config(config: Any) -> dict[str, Any] | Any:
 
     captured: dict[str, Any] = {}
     for field in _CAPTURED_CONFIG_FIELDS:
-        value = _get_field(config, field)
+        value = getattr(config, field, None)
         if value is None:
             continue
         if inspect.isclass(value):
@@ -217,12 +216,8 @@ def _extract_model_name(response: Any, llm_request: Any, instance: Any) -> str |
     return None
 
 
-def _get_field(value: Any, field: str, default: Any = None) -> Any:
-    return value.get(field, default) if isinstance(value, Mapping) else getattr(value, field, default)
-
-
 def _part_has_field(part: Any, *field_names: str) -> bool:
-    return any(_get_field(part, field_name) is not None for field_name in field_names)
+    return any(getattr(part, field_name, None) is not None for field_name in field_names)
 
 
 def _capture_llm_request_input(llm_request: Any) -> Any:
@@ -230,10 +225,9 @@ def _capture_llm_request_input(llm_request: Any) -> Any:
     if llm_request is None:
         return None
 
-    contents = _get_field(llm_request, "contents")
-    config = _get_field(llm_request, "config")
-    model = _get_field(llm_request, "model")
-    live_connect_config = _get_field(llm_request, "live_connect_config")
+    contents = getattr(llm_request, "contents", None)
+    config = getattr(llm_request, "config", None)
+    model = getattr(llm_request, "model", None)
 
     captured: dict[str, Any] = {}
     if model:
@@ -244,8 +238,8 @@ def _capture_llm_request_input(llm_request: Any) -> Any:
         )
     if config:
         captured["config"] = _capture_config(config)
-    if live_connect_config is not None or hasattr(llm_request, "live_connect_config") or isinstance(llm_request, dict):
-        captured["live_connect_config"] = live_connect_config
+    if hasattr(llm_request, "live_connect_config"):
+        captured["live_connect_config"] = getattr(llm_request, "live_connect_config", None)
 
     return captured or llm_request
 
@@ -258,29 +252,26 @@ def _extract_tool_metadata(llm_request: Any) -> dict[str, Any]:
     """
     if llm_request is None:
         return {}
-    config = _get_field(llm_request, "config")
+    config = getattr(llm_request, "config", None)
     if config is None:
         return {}
     result: dict[str, Any] = {}
-    tools = _get_field(config, "tools")
+    tools = getattr(config, "tools", None)
     if tools:
         result["tools"] = tools
-    tool_config = _get_field(config, "tool_config")
+    tool_config = getattr(config, "tool_config", None)
     if tool_config:
         result["tool_config"] = tool_config
     return result
 
 
 def _event_output_with_content(last_event: Any, event_with_content: Any | None) -> Any:
-    if event_with_content is None or _get_field(last_event, "content") is not None:
+    if event_with_content is None or getattr(last_event, "content", None) is not None:
         return last_event
 
-    content = _get_field(event_with_content, "content")
+    content = getattr(event_with_content, "content", None)
     if content is None:
         return last_event
-
-    if isinstance(last_event, dict):
-        return {**last_event, "content": content}
 
     # Keep the original event instead of recursively serializing it; add the
     # captured content alongside it so Braintrust can serialize both values.
@@ -299,8 +290,8 @@ def _determine_llm_call_type(llm_request: Any, model_response: Any = None) -> st
     try:
         has_function_response = any(
             _part_has_field(part, "function_response", "functionResponse")
-            for content in (_get_field(llm_request, "contents", []) or [])
-            for part in (_get_field(content, "parts", []) or [])
+            for content in (getattr(llm_request, "contents", None) or [])
+            for part in (getattr(content, "parts", None) or [])
         )
 
         response_has_function_call = False
@@ -313,11 +304,11 @@ def _determine_llm_call_type(llm_request: Any, model_response: Any = None) -> st
                     pass
 
             if not response_has_function_call:
-                content = _get_field(model_response, "content")
+                content = getattr(model_response, "content", None)
                 response_has_function_call = any(
                     _part_has_field(part, "function_call", "functionCall")
                     for part in chain(
-                        _get_field(content, "parts", []) or [], _get_field(model_response, "parts", []) or []
+                        getattr(content, "parts", None) or [], getattr(model_response, "parts", None) or []
                     )
                 )
 
