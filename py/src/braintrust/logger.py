@@ -150,6 +150,20 @@ class ParametersRef(TypedDict, total=False):
     version: str
 
 
+class SpanInternalOptions(TypedDict, total=False):
+    """Options reserved for Braintrust SDK internals.
+
+    Passed as the `internal` kwarg on `start_span` and its variants. External
+    callers should not use these fields; keys and semantics may change without
+    notice.
+    """
+
+    instrumentation: str
+    """Identifier for the instrumentation code creating the span. Stamped into
+    `context.span_origin.instrumentation.name`. Set by SDK integrations
+    (`openai-auto`, `anthropic-auto`, etc.)."""
+
+
 T = TypeVar("T")
 TMapping = TypeVar("TMapping", bound=Mapping[str, Any])
 TMutableMapping = TypeVar("TMutableMapping", bound=MutableMapping[str, Any])
@@ -217,7 +231,7 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | dict | None = None,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
         **event: Any,
     ) -> "Span":
         """Create a new span. This is useful if you want to log more detailed trace information beyond the scope of a single log event. Data logged over several calls to `Span.log` will be merged into one logical row.
@@ -231,7 +245,7 @@ class Span(Exportable, contextlib.AbstractContextManager, ABC):
         :param start_time: Optional start time of the span, as a timestamp in seconds.
         :param set_current: If true (the default), the span will be marked as the currently-active span for the duration of the context manager.
         :param parent: Optional parent info string for the span. The string can be generated from `[Span,Experiment,Logger].export`. If not provided, the current span will be used (depending on context). This is useful for adding spans to an existing trace.
-        :param internal: Reserved for Braintrust SDK internals. Not for external callers; the keys inside this dict are unstable and may change without notice.
+        :param internal: Reserved for Braintrust SDK internals (see `SpanInternalOptions`). Not for external callers; the keys inside this dict are unstable and may change without notice.
         :param **event: Data to be logged. See `Experiment.log` for full details.
         :returns: The newly-created `Span`
         """
@@ -362,7 +376,7 @@ class _NoopSpan(Span):
         start_time: float | None = None,
         set_current: bool | None = None,
         parent: str | dict | None = None,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
         **event: Any,
     ):
         return self
@@ -2921,7 +2935,7 @@ def start_span(
     parent: str | dict | None = None,
     propagated_event: dict[str, Any] | None = None,
     state: BraintrustState | None = None,
-    internal: dict[str, Any] | None = None,
+    internal: SpanInternalOptions | None = None,
     **event: Any,
 ) -> Span:
     """Lower-level alternative to `@traced` for starting a span at the toplevel. It creates a span under the first active object (using the same precedence order as `@traced`), or if `parent` is specified, under the specified parent row, or returns a no-op span object.
@@ -4268,7 +4282,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         set_current: bool | None = None,
         parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
         **event: Any,
     ) -> Span:
         """Create a new toplevel span underneath the experiment. The name defaults to "root" and the span type to "eval".
@@ -4424,7 +4438,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
         lookup_span_parent: bool = True,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
         **event: Any,
     ) -> Span:
         parent_args = _start_span_parent_args(
@@ -4535,7 +4549,7 @@ class SpanImpl(Span):
         root_span_id: str | None = None,
         state: BraintrustState | None = None,
         lookup_span_parent: bool = True,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
     ):
         if span_attributes is None:
             span_attributes = SpanAttributes()
@@ -4731,7 +4745,7 @@ class SpanImpl(Span):
         set_current: bool | None = None,
         parent: str | dict | None = None,
         propagated_event: dict[str, Any] | None = None,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
         **event: Any,
     ) -> Span:
         if parent:
@@ -5752,7 +5766,7 @@ class Logger(Exportable):
         propagated_event: dict[str, Any] | None = None,
         span_id: str | None = None,
         root_span_id: str | None = None,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
         **event: Any,
     ) -> Span:
         """Create a new toplevel span underneath the logger. The name defaults to "root" and the span type to "task".
@@ -5805,7 +5819,7 @@ class Logger(Exportable):
         span_id: str | None = None,
         root_span_id: str | None = None,
         lookup_span_parent: bool = True,
-        internal: dict[str, Any] | None = None,
+        internal: SpanInternalOptions | None = None,
         **event: Any,
     ) -> Span:
         parent_args = _start_span_parent_args(
