@@ -42,9 +42,8 @@ def _split_model_call(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Bind positional args to their names and split into (input, metadata_extras).
 
-    Tool definitions, tool_choice, function schemas and tool-call limits go
-    into metadata per the integrations spec; everything else that names a
-    request field lands in input. Pure — no materialization side effects.
+    Tools, tool_choice, function schemas and tool-call limits go to metadata;
+    everything else that names a request field stays in input.
     """
     combined: dict[str, Any] = dict(kwargs)
     for i, key in enumerate(positional_order):
