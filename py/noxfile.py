@@ -442,6 +442,11 @@ def test_pydantic_ai_wrap_openai(session, version):
     """Test pydantic_ai with wrap_openai() approach - supports older versions."""
     _install_test_deps(session)
     _install_matrix_dep(session, "pydantic-ai-wrap-openai", version)
+    # pydantic-ai 0.1.9 unconditionally imports ``from opentelemetry._events import Event``.
+    # The ``_events`` module was removed from ``opentelemetry-api`` in 1.40+, so a fresh
+    # resolution on newer opentelemetry releases picks a version that breaks import.
+    if version == "0.1.9":
+        session.install("opentelemetry-api<1.40", silent=SILENT_INSTALLS)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_wrap_openai.py", version=version)
 
 
