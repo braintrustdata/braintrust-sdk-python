@@ -7,7 +7,11 @@ from contextlib import aclosing
 from contextvars import ContextVar
 from typing import Any
 
-from braintrust.integrations.utils import _normalize_chat_messages
+from braintrust.integrations.utils import (
+    _is_supported_metric_value,
+    _normalize_chat_messages,
+    _parse_openai_usage_metrics,
+)
 from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones
@@ -55,6 +59,25 @@ _METADATA_CONFIG_KEYS = frozenset(
     }
 )
 
+# Provider usage payloads that vary between chat- and responses-style APIs.
+_USAGE_NAME_MAP = {
+    "input_tokens": "prompt_tokens",
+    "output_tokens": "completion_tokens",
+    "total_tokens": "tokens",
+}
+_USAGE_PREFIX_MAP = {
+    "input": "prompt",
+    "output": "completion",
+}
+
+
+def _kw_or_pos(kwargs: dict[str, Any], key: str, args: Any, index: int) -> Any:
+    """Return ``kwargs[key]`` if set, otherwise ``args[index]`` if in range."""
+    value = kwargs.get(key)
+    if value is not None:
+        return value
+    return args[index] if len(args) > index else None
+
 
 def _args_kwargs_input(args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
     return clean_nones(
@@ -82,30 +105,20 @@ def _pipeline_metadata(args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 def _extract_metrics(*candidates: Any) -> dict[str, float] | None:
-    key_map = {
-        "prompt_tokens": "prompt_tokens",
-        "input_tokens": "prompt_tokens",
-        "completion_tokens": "completion_tokens",
-        "output_tokens": "completion_tokens",
-        "total_tokens": "tokens",
-        "tokens": "tokens",
-    }
-
     for candidate in candidates:
-        data = _field_value(candidate, "usage") or candidate
-
-        metrics = {}
-        for source_key, target_key in key_map.items():
-            value = _field_value(data, source_key)
-            if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
-                metrics[target_key] = float(value)
-
+        usage = _field_value(candidate, "usage")
+        if usage is None:
+            continue
+        parsed = _parse_openai_usage_metrics(
+            usage,
+            token_name_map=_USAGE_NAME_MAP,
+            token_prefix_map=_USAGE_PREFIX_MAP,
+        )
+        metrics = {k: float(v) for k, v in parsed.items() if _is_supported_metric_value(v) and v >= 0}
         if "tokens" not in metrics and "prompt_tokens" in metrics and "completion_tokens" in metrics:
             metrics["tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
-
         if metrics:
             return metrics
-
     return None
 
 
@@ -125,34 +138,17 @@ def _model_metadata(instance: Any) -> dict[str, Any]:
 
 
 def _model_call_input(args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
-    messages = kwargs.get("messages")
-    if messages is None and args:
-        messages = args[0]
-
-    return clean_nones({"messages": _normalize_chat_messages(messages)})
+    return clean_nones({"messages": _normalize_chat_messages(_kw_or_pos(kwargs, "messages", args, 0))})
 
 
 def _model_call_metadata(instance: Any, args: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
-    tools = kwargs.get("tools")
-    if tools is None and len(args) > 1:
-        tools = args[1]
-
-    tool_choice = kwargs.get("tool_choice")
-    if tool_choice is None and len(args) > 2:
-        tool_choice = args[2]
-
-    structured_model = kwargs.get("structured_model")
-    if structured_model is None and len(args) > 3:
-        structured_model = args[3]
-
-    extra = {key: kwargs[key] for key in _METADATA_CONFIG_KEYS if key in kwargs and kwargs[key] is not None}
-
+    extra = {k: v for k, v in kwargs.items() if k in _METADATA_CONFIG_KEYS and v is not None}
     return clean_nones(
         {
             **_model_metadata(instance),
-            "tools": tools,
-            "tool_choice": tool_choice,
-            "structured_model": structured_model,
+            "tools": _kw_or_pos(kwargs, "tools", args, 1),
+            "tool_choice": _kw_or_pos(kwargs, "tool_choice", args, 2),
+            "structured_model": _kw_or_pos(kwargs, "structured_model", args, 3),
             **extra,
         }
     )
@@ -182,10 +178,7 @@ def _model_call_output(result: Any) -> Any:
 def _field_value(data: Any, key: str) -> Any:
     if isinstance(data, dict):
         return data.get(key)
-    try:
-        return getattr(data, key, None)
-    except Exception:
-        return None
+    return getattr(data, key, None)
 
 
 def _tool_name(tool_call: Any) -> str:
@@ -250,23 +243,30 @@ def _deferred_stream_trace(
     span: Any,
     stack: contextlib.ExitStack,
     log_fn: Any,
-    request_start_time: float | None = None,
+    on_first_chunk: Any = None,
 ) -> Any:
-    """Wrap an async iterator so the span stays open until the stream is consumed."""
+    """Wrap an async iterator so the span stays open until the stream is consumed.
+
+    ``log_fn(span, last_chunk)`` is invoked once at stream end. ``on_first_chunk``
+    (optional) is invoked with no arguments the first time a chunk is yielded, e.g.
+    to stamp ``time_to_first_token``.
+    """
     deferred = stack.pop_all()
 
     async def _trace():
         with deferred:
             last_chunk = None
-            time_to_first_token: float | None = None
+            first_seen = False
             async with aclosing(result) as agen:
                 async for chunk in agen:
-                    if time_to_first_token is None and request_start_time is not None:
-                        time_to_first_token = time.time() - request_start_time
+                    if not first_seen:
+                        first_seen = True
+                        if on_first_chunk is not None:
+                            on_first_chunk()
                     last_chunk = chunk
                     yield chunk
             if last_chunk is not None:
-                log_fn(span, last_chunk, time_to_first_token)
+                log_fn(span, last_chunk)
 
     return _trace()
 
@@ -297,7 +297,7 @@ async def _toolkit_call_tool_function_wrapper(wrapped: Any, instance: Any, args:
                     result,
                     span,
                     stack,
-                    lambda s, chunk, _ttft: s.log(output=chunk),
+                    lambda s, chunk: s.log(output=chunk),
                 )
 
             span.log(output=result)
@@ -325,9 +325,12 @@ def _capture_openai_stream_usage_wrapper(
 
     async def _capture_usage():
         async for chunk in response:
-            chunk_metrics = _extract_metrics(chunk)
-            if chunk_metrics:
-                metrics.update(chunk_metrics)
+            # OpenAI only sets `usage` on the terminal chunk when
+            # `stream_options.include_usage` is set; skip parsing every chunk.
+            if _field_value(chunk, "usage") is not None:
+                chunk_metrics = _extract_metrics(chunk)
+                if chunk_metrics:
+                    metrics.update(chunk_metrics)
             yield chunk
 
     if len(positional) > 1:
@@ -335,18 +338,6 @@ def _capture_openai_stream_usage_wrapper(
     else:
         kwargs = {**kwargs, "response": _capture_usage()}
     return wrapped(*positional, **kwargs)
-
-
-def _log_model_stream_chunk(
-    span: Any,
-    chunk: Any,
-    time_to_first_token: float | None,
-    captured_metrics: dict[str, float],
-) -> None:
-    metrics = {**captured_metrics, **(_extract_metrics(chunk) or {})}
-    if time_to_first_token is not None:
-        metrics["time_to_first_token"] = time_to_first_token
-    span.log(output=_model_call_output(chunk), metrics=metrics or None)
 
 
 async def _model_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
@@ -362,23 +353,28 @@ async def _model_call_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: di
         try:
             request_start_time = time.time()
             captured_stream_metrics: dict[str, float] = {}
+            time_to_first_token: list[float | None] = [None]
             stream_metrics_token = _STREAM_METRICS.set(captured_stream_metrics)
             try:
                 result = await wrapped(*args, **kwargs)
             finally:
                 _STREAM_METRICS.reset(stream_metrics_token)
             if _is_async_iterator(result):
+                def _stamp_ttft() -> None:
+                    time_to_first_token[0] = time.time() - request_start_time
+
+                def _log_final(s: Any, chunk: Any) -> None:
+                    metrics = {**captured_stream_metrics, **(_extract_metrics(chunk) or {})}
+                    if time_to_first_token[0] is not None:
+                        metrics["time_to_first_token"] = time_to_first_token[0]
+                    s.log(output=_model_call_output(chunk), metrics=metrics or None)
+
                 return _deferred_stream_trace(
                     result,
                     span,
                     stack,
-                    lambda s, chunk, ttft: _log_model_stream_chunk(
-                        s,
-                        chunk,
-                        ttft,
-                        captured_stream_metrics,
-                    ),
-                    request_start_time=request_start_time,
+                    _log_final,
+                    on_first_chunk=_stamp_ttft,
                 )
 
             span.log(output=_model_call_output(result), metrics=_extract_metrics(result))

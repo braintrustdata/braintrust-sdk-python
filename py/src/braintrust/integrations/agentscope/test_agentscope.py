@@ -103,6 +103,11 @@ def _make_user_msg(content):
     return Msg(name="user", content=content, role="user")
 
 
+async def _run_agent(agent, content):
+    msg = _make_user_msg(content)
+    return await (agent.reply(msg) if HAS_AGENT_REPLY_API else agent(msg))
+
+
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agentscope_simple_agent_run(memory_logger):
@@ -113,11 +118,7 @@ async def test_agentscope_simple_agent_run(memory_logger):
         "You are a concise assistant. Answer in one sentence.",
     )
 
-    response = await (
-        agent.reply(_make_user_msg("Say hello in exactly two words."))
-        if HAS_AGENT_REPLY_API
-        else agent(_make_user_msg("Say hello in exactly two words."))
-    )
+    response = await _run_agent(agent, "Say hello in exactly two words.")
 
     assert response is not None
 
@@ -236,11 +237,7 @@ async def test_agentscope_streaming_model_call(memory_logger):
     model = _make_model(stream=True)
     agent = _make_agent("Streamer", "You are concise. Answer in one sentence.", model=model)
 
-    response = await (
-        agent.reply(_make_user_msg("Say hi in five words."))
-        if HAS_AGENT_REPLY_API
-        else agent(_make_user_msg("Say hi in five words."))
-    )
+    response = await _run_agent(agent, "Say hi in five words.")
     assert response is not None
 
     spans = memory_logger.pop()
