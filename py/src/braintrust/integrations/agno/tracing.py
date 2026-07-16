@@ -2,7 +2,7 @@ import time
 from inspect import isawaitable
 from typing import Any
 
-from braintrust.integrations.utils import _try_to_dict
+from braintrust.integrations.utils import _materialize_attachment, _try_to_dict
 from braintrust.logger import start_span as _bt_start_span
 
 
@@ -33,8 +33,94 @@ def clean(obj: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in obj.items() if v is not None}
 
 
-def get_args_kwargs(args: list[str], kwargs: dict[str, Any], keys: list[str]):
-    return {k: args[i] if args else kwargs.get(k) for i, k in enumerate(keys)}, omit(kwargs, keys)
+# Keys the SDK-integrations spec routes into metadata rather than the span input.
+_MODEL_METADATA_KEYS = ("tools", "tool_choice", "functions", "tool_call_limit")
+
+
+def _split_model_call(
+    args: tuple, kwargs: dict[str, Any], positional_order: list[str]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Bind positional args to their names and split into (input, metadata_extras).
+
+    Tools, tool_choice, function schemas and tool-call limits go to metadata;
+    everything else that names a request field stays in input.
+    """
+    combined: dict[str, Any] = dict(kwargs)
+    for i, key in enumerate(positional_order):
+        if i < len(args):
+            combined[key] = args[i]
+    metadata_extras: dict[str, Any] = {}
+    for k in _MODEL_METADATA_KEYS:
+        if k in combined:
+            metadata_extras[k] = combined.pop(k)
+    return combined, metadata_extras
+
+
+def _prepare_model_input(input_data: dict[str, Any]) -> dict[str, Any]:
+    """Materialize inline media in an Agno request-input dict before logging.
+
+    Fast path: leave `messages` as raw Agno objects when no message carries
+    inline binary media — Braintrust's log-time serializer handles the rest.
+    """
+    messages = input_data.get("messages")
+    if not isinstance(messages, list) or not any(_message_has_inline_media(m) for m in messages):
+        return input_data
+    return {**input_data, "messages": _materialize_agno_messages(messages)}
+
+
+def _prepare_model_output(result: Any) -> Any:
+    """Materialize inline media in an Agno model response before logging.
+
+    Fast path: pass the raw SDK object through when it has no inline binary
+    media — Braintrust's log-time serializer already converts dataclasses and
+    Pydantic models. Only when we actually need to swap in an Attachment do we
+    pay the dict conversion.
+    """
+    if not _result_has_inline_media(result):
+        return result
+    try:
+        as_dict = _try_to_dict(result)
+    except Exception:
+        return result
+    if not isinstance(as_dict, dict):
+        return result
+    return _materialize_agno_output_media(dict(as_dict))
+
+
+def _agno_media_has_inline_bytes(media: Any) -> bool:
+    """True when *media* carries a `content` byte payload or a `filepath`."""
+    if media is None:
+        return False
+    content = getattr(media, "content", None) if not isinstance(media, dict) else media.get("content")
+    if isinstance(content, (bytes, bytearray)) and content:
+        return True
+    if isinstance(content, str) and content:
+        return True
+    filepath = getattr(media, "filepath", None) if not isinstance(media, dict) else media.get("filepath")
+    return isinstance(filepath, str) and bool(filepath)
+
+
+def _iter_media_field(container: Any, field: str) -> Any:
+    val = getattr(container, field, None) if not isinstance(container, dict) else container.get(field)
+    if val is None:
+        return ()
+    return val if isinstance(val, list) else (val,)
+
+
+def _message_has_inline_media(msg: Any) -> bool:
+    for field, _ in _AGNO_MESSAGE_MEDIA_FIELDS:
+        for item in _iter_media_field(msg, field):
+            if _agno_media_has_inline_bytes(item):
+                return True
+    return False
+
+
+def _result_has_inline_media(result: Any) -> bool:
+    for field in ("images", "audio", "audios", "videos", "files"):
+        for item in _iter_media_field(result, field):
+            if _agno_media_has_inline_bytes(item):
+                return True
+    return False
 
 
 def is_sync_iterator(result: Any) -> bool:
@@ -43,6 +129,126 @@ def is_sync_iterator(result: Any) -> bool:
 
 def is_async_iterator(result: Any) -> bool:
     return hasattr(result, "__aiter__") and hasattr(result, "__anext__")
+
+
+# ---------------------------------------------------------------------------
+# Multimodal materialization
+# ---------------------------------------------------------------------------
+#
+# Agno's Image / Audio / Video / File objects carry inline bytes on ``content``
+# (plus optional ``url`` / ``filepath`` / ``mime_type`` / ``format`` / ``filename``).
+# The integrations spec requires inline binary media to be converted to
+# Braintrust ``Attachment`` objects at the leaf position; remote URLs stay as
+# strings and unrecognized shapes pass through unchanged.
+
+
+def _agno_media_mime_type(as_dict: dict[str, Any], media_kind: str) -> str | None:
+    mime = as_dict.get("mime_type")
+    if isinstance(mime, str) and mime:
+        return mime
+    fmt = as_dict.get("format")
+    if isinstance(fmt, str) and fmt:
+        return f"{media_kind}/{fmt}"
+    return None
+
+
+def _materialize_agno_media(value: Any, media_kind: str) -> Any:
+    """Materialize a single Agno media object to a serializable dict.
+
+    Returns the input unchanged when it is not a recognizable Agno media object
+    or when materialization is not possible.
+    """
+    if value is None:
+        return value
+
+    as_dict = value if isinstance(value, dict) else _try_to_dict(value)
+    if not isinstance(as_dict, dict):
+        return value
+
+    content = as_dict.get("content")
+    filepath = as_dict.get("filepath")
+    url = as_dict.get("url")
+    filename = as_dict.get("filename")
+    mime_type = _agno_media_mime_type(as_dict, media_kind)
+
+    raw: Any = content if isinstance(content, (bytes, bytearray, str)) and content else None
+    if raw is None and isinstance(filepath, str) and filepath:
+        raw = filepath
+
+    resolved = None
+    if raw is not None:
+        try:
+            resolved = _materialize_attachment(
+                raw,
+                mime_type=mime_type,
+                filename=filename if isinstance(filename, str) else None,
+                label=media_kind,
+                prefix=media_kind,
+            )
+        except Exception:
+            resolved = None
+
+    result: dict[str, Any] = {k: v for k, v in as_dict.items() if k not in ("content", "filepath")}
+    if resolved is not None:
+        result.update(resolved.multimodal_part_payload)
+    elif isinstance(url, str) and url and "url" not in result:
+        # Preserve remote URL references verbatim per the spec.
+        result["url"] = url
+    return result
+
+
+def _materialize_agno_media_list(value: Any, media_kind: str) -> Any:
+    if not isinstance(value, list):
+        return value
+    return [_materialize_agno_media(v, media_kind) for v in value]
+
+
+_AGNO_MESSAGE_MEDIA_FIELDS = (
+    ("images", "image"),
+    ("image_output", "image"),
+    ("audio", "audio"),
+    ("audio_output", "audio"),
+    ("videos", "video"),
+    ("video_output", "video"),
+    ("files", "file"),
+    ("file_output", "file"),
+)
+
+
+def _materialize_agno_message(msg: Any) -> Any:
+    """Return a dict form of an Agno Message with inline media replaced by attachments."""
+    as_dict = msg if isinstance(msg, dict) else _try_to_dict(msg)
+    if not isinstance(as_dict, dict):
+        return msg
+    result = dict(as_dict)
+    for field, kind in _AGNO_MESSAGE_MEDIA_FIELDS:
+        if field in result and result[field]:
+            if isinstance(result[field], list):
+                result[field] = [_materialize_agno_media(v, kind) for v in result[field]]
+            else:
+                result[field] = _materialize_agno_media(result[field], kind)
+    return result
+
+
+def _materialize_agno_messages(messages: Any) -> Any:
+    if not isinstance(messages, list):
+        return messages
+    return [_materialize_agno_message(m) for m in messages]
+
+
+def _materialize_agno_output_media(aggregated: dict[str, Any]) -> dict[str, Any]:
+    """Materialize model-response-style media fields in an aggregated dict in place."""
+    for field, kind in (("images", "image"), ("videos", "video"), ("files", "file")):
+        val = aggregated.get(field)
+        if isinstance(val, list) and val:
+            aggregated[field] = [_materialize_agno_media(v, kind) for v in val]
+    audio_val = aggregated.get("audio")
+    if audio_val is not None:
+        if isinstance(audio_val, list):
+            aggregated["audio"] = [_materialize_agno_media(v, "audio") for v in audio_val]
+        else:
+            aggregated["audio"] = _materialize_agno_media(audio_val, "audio")
+    return aggregated
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +413,7 @@ def _aggregate_model_chunks(chunks: list[Any]) -> dict[str, Any]:
     else:
         aggregated["metrics"] = None
 
-    return aggregated
+    return _materialize_agno_output_media(aggregated)
 
 
 def _aggregate_response_stream_chunks(chunks: list[Any]) -> dict[str, Any]:
@@ -267,7 +473,7 @@ def _aggregate_response_stream_chunks(chunks: list[Any]) -> dict[str, Any]:
     else:
         aggregated["metrics"] = None
 
-    return aggregated
+    return _materialize_agno_output_media(aggregated)
 
 
 def _aggregate_agent_chunks(chunks: list[Any]) -> dict[str, Any]:
@@ -393,7 +599,7 @@ def _trace_sync_stream(result: Any, span: Any, start: float):
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -421,7 +627,7 @@ def _trace_async_stream(result: Any, span: Any, start: float):
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -506,7 +712,7 @@ def _agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -547,7 +753,7 @@ def _agent_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -622,7 +828,7 @@ def _team_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -663,7 +869,7 @@ def _team_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -710,7 +916,7 @@ def _run_public_dispatch_wrapper(
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise
@@ -754,7 +960,7 @@ def _arun_public_dispatch_wrapper(
                     span.log(output=awaited, metrics=extract_metrics(awaited))
                     return awaited
                 except Exception as e:
-                    span.log(error=str(e))
+                    span.log(error=e)
                     raise
                 finally:
                     if should_end_span:
@@ -771,7 +977,7 @@ def _arun_public_dispatch_wrapper(
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise
@@ -817,41 +1023,38 @@ def _get_model_name(instance: Any) -> str:
 
 def _model_invoke_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["assistant_message", "messages", "response_format", "tools", "tool_choice"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["assistant_message", "messages"])
+    input = _prepare_model_input(input)
     with start_span(
         name=f"{model_name}.invoke",
         type=SpanTypeAttribute.LLM,
         input=input,
-        metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+        metadata={**metadata_extras, **extract_metadata(instance, "model")},
     ) as span:
         result = wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result, kwargs.get("messages", [])))
+        span.log(output=_prepare_model_output(result), metrics=extract_metrics(result, kwargs.get("messages", [])))
         return result
 
 
 async def _model_ainvoke_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["messages", "assistant_message", "response_format", "tools", "tool_choice"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["messages", "assistant_message"])
+    input = _prepare_model_input(input)
     with start_span(
         name=f"{model_name}.ainvoke",
         type=SpanTypeAttribute.LLM,
         input=input,
-        metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+        metadata={**metadata_extras, **extract_metadata(instance, "model")},
     ) as span:
         result = await wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result, kwargs.get("messages", [])))
+        span.log(output=_prepare_model_output(result), metrics=extract_metrics(result, kwargs.get("messages", [])))
         return result
 
 
 def _model_invoke_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["messages", "assistant_messages", "response_format", "tools", "tool_choice"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["messages", "assistant_messages"])
+    input = _prepare_model_input(input)
 
     def _trace_stream():
         start = time.time()
@@ -859,7 +1062,7 @@ def _model_invoke_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs:
             name=f"{model_name}.invoke_stream",
             type=SpanTypeAttribute.LLM,
             input=input,
-            metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+            metadata={**metadata_extras, **extract_metadata(instance, "model")},
         ) as span:
             first = True
             collected_chunks = []
@@ -877,9 +1080,8 @@ def _model_invoke_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs:
 
 def _model_ainvoke_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["messages", "assistant_messages", "response_format", "tools", "tool_choice"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["messages", "assistant_messages"])
+    input = _prepare_model_input(input)
 
     async def _trace_astream():
         start = time.time()
@@ -887,7 +1089,7 @@ def _model_ainvoke_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs
             name=f"{model_name}.ainvoke_stream",
             type=SpanTypeAttribute.LLM,
             input=input,
-            metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+            metadata={**metadata_extras, **extract_metadata(instance, "model")},
         ) as span:
             first = True
             collected_chunks = []
@@ -905,41 +1107,38 @@ def _model_ainvoke_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs
 
 def _model_response_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["messages", "response_format", "tools", "functions", "tool_chocie", "tool_call_limit"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["messages"])
+    input = _prepare_model_input(input)
     with start_span(
         name=f"{model_name}.response",
         type=SpanTypeAttribute.LLM,
         input=input,
-        metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+        metadata={**metadata_extras, **extract_metadata(instance, "model")},
     ) as span:
         result = wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result, kwargs.get("messages", [])))
+        span.log(output=_prepare_model_output(result), metrics=extract_metrics(result, kwargs.get("messages", [])))
         return result
 
 
 async def _model_aresponse_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["messages", "response_format", "tools", "functions", "tool_chocie", "tool_call_limit"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["messages"])
+    input = _prepare_model_input(input)
     with start_span(
         name=f"{model_name}.aresponse",
         type=SpanTypeAttribute.LLM,
         input=input,
-        metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+        metadata={**metadata_extras, **extract_metadata(instance, "model")},
     ) as span:
         result = await wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result, kwargs.get("messages", [])))
+        span.log(output=_prepare_model_output(result), metrics=extract_metrics(result, kwargs.get("messages", [])))
         return result
 
 
 def _model_response_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["messages", "response_format", "tools", "functions", "tool_chocie", "tool_call_limit"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["messages"])
+    input = _prepare_model_input(input)
 
     def _trace_stream():
         start = time.time()
@@ -947,7 +1146,7 @@ def _model_response_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
             name=f"{model_name}.response_stream",
             type=SpanTypeAttribute.LLM,
             input=input,
-            metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+            metadata={**metadata_extras, **extract_metadata(instance, "model")},
         ) as span:
             first = True
             collected_chunks = []
@@ -965,9 +1164,8 @@ def _model_response_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
 
 def _model_aresponse_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     model_name = _get_model_name(instance)
-    input, clean_kwargs = get_args_kwargs(
-        args, kwargs, ["messages", "response_format", "tools", "functions", "tool_chocie", "tool_call_limit"]
-    )
+    input, metadata_extras = _split_model_call(args, kwargs, ["messages"])
+    input = _prepare_model_input(input)
 
     async def _trace_astream():
         start = time.time()
@@ -975,7 +1173,7 @@ def _model_aresponse_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwar
             name=f"{model_name}.aresponse_stream",
             type=SpanTypeAttribute.LLM,
             input=input,
-            metadata={**clean_kwargs, **extract_metadata(instance, "model")},
+            metadata={**metadata_extras, **extract_metadata(instance, "model")},
         ) as span:
             first = True
             collected_chunks = []
@@ -1002,18 +1200,34 @@ def _get_function_name(instance) -> str:
     return "Unknown"
 
 
+def _function_call_metadata(instance: Any) -> dict[str, Any]:
+    """Best-effort metadata extraction for a FunctionCall. Contains instrumentation errors."""
+    metadata: dict[str, Any] = {}
+    try:
+        metadata["name"] = instance.function.name
+    except Exception:
+        pass
+    try:
+        metadata["entrypoint"] = instance.function.entrypoint.__name__
+    except Exception:
+        pass
+    try:
+        entrypoint_args = instance._build_entrypoint_args()
+        if entrypoint_args:
+            metadata.update(entrypoint_args)
+    except Exception:
+        pass
+    return metadata
+
+
 def _function_call_execute_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     function_name = _get_function_name(instance)
-    entrypoint_args = instance._build_entrypoint_args()
+    metadata = _function_call_metadata(instance)
     with start_span(
         name=f"{function_name}.execute",
         type=SpanTypeAttribute.TOOL,
-        input=(instance.arguments or {}),
-        metadata={
-            "name": instance.function.name,
-            "entrypoint": instance.function.entrypoint.__name__,
-            **(entrypoint_args or {}),
-        },
+        input=(getattr(instance, "arguments", None) or {}),
+        metadata=metadata,
     ) as span:
         result = wrapped(*args, **kwargs)
         span.log(output=result)
@@ -1022,16 +1236,12 @@ def _function_call_execute_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
 
 async def _function_call_aexecute_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     function_name = _get_function_name(instance)
-    entrypoint_args = instance._build_entrypoint_args()
+    metadata = _function_call_metadata(instance)
     with start_span(
         name=f"{function_name}.aexecute",
         type=SpanTypeAttribute.TOOL,
-        input=(instance.arguments or {}),
-        metadata={
-            "name": instance.function.name,
-            "entrypoint": instance.function.entrypoint.__name__,
-            **(entrypoint_args or {}),
-        },
+        input=(getattr(instance, "arguments", None) or {}),
+        metadata=metadata,
     ) as span:
         result = await wrapped(*args, **kwargs)
         span.log(output=result)
@@ -1125,7 +1335,7 @@ def _workflow_execute_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwa
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -1183,7 +1393,7 @@ def _workflow_aexecute_stream_wrapper(wrapped: Any, instance: Any, args: Any, kw
             should_unset = False
             raise
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             if should_unset:
@@ -1230,7 +1440,7 @@ def _workflow_execute_workflow_agent_wrapper(wrapped: Any, instance: Any, args: 
                     should_unset = False
                     raise
                 except Exception as e:
-                    span.log(error=str(e))
+                    span.log(error=e)
                     raise
                 finally:
                     if should_unset:
@@ -1244,7 +1454,7 @@ def _workflow_execute_workflow_agent_wrapper(wrapped: Any, instance: Any, args: 
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise
@@ -1287,7 +1497,7 @@ async def _workflow_aexecute_workflow_agent_wrapper(wrapped: Any, instance: Any,
                     should_unset = False
                     raise
                 except Exception as e:
-                    span.log(error=str(e))
+                    span.log(error=e)
                     raise
                 finally:
                     if should_unset:
@@ -1301,7 +1511,7 @@ async def _workflow_aexecute_workflow_agent_wrapper(wrapped: Any, instance: Any,
         span.end()
         return result
     except Exception as e:
-        span.log(error=str(e))
+        span.log(error=e)
         span.unset_current()
         span.end()
         raise

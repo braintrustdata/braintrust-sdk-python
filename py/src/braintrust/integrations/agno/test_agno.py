@@ -10,7 +10,7 @@ from braintrust.integrations.agno import setup_agno
 from braintrust.integrations.agno import tracing as agno_tracing_module
 from braintrust.integrations.agno.patchers import wrap_agent, wrap_team
 from braintrust.integrations.test_utils import verify_autoinstrument_script
-from braintrust.logger import start_span
+from braintrust.logger import Attachment, start_span
 from braintrust.test_helpers import init_test_logger
 
 from ._test_agno_helpers import (
@@ -35,6 +35,15 @@ def memory_logger():
 def setup_wrapper():
     setup_agno(project_name=PROJECT_NAME)
     yield
+
+
+_TOOL_METADATA_ONLY_KEYS = ("tools", "tool_choice", "functions", "tool_call_limit")
+
+
+def _assert_tool_fields_not_in_input(llm_span) -> None:
+    """Guardrail against regressing the SKILL rule that puts tool definitions in metadata."""
+    for forbidden in _TOOL_METADATA_ONLY_KEYS:
+        assert forbidden not in llm_span["input"], f"{forbidden!r} must live under metadata, not input"
 
 
 @pytest.mark.vcr
@@ -97,6 +106,9 @@ def test_agno_simple_agent_execution(memory_logger):
     assert "librarian" in messages[0]["content"]
     assert messages[1]["role"] == "user"
     assert messages[1]["content"] == "Charlotte's Web"
+    # Tool-related fields must not leak into `input` even when they are absent
+    # from this particular call — see integrations SKILL "Span Design / Fields".
+    _assert_tool_fields_not_in_input(llm_span)
     assert llm_span["output"]["content"] == "E.B. White"
     assert llm_span["metrics"]["prompt_tokens"] > 0
     assert llm_span["metrics"]["completion_tokens"] > 0
@@ -104,6 +116,108 @@ def test_agno_simple_agent_execution(memory_logger):
         llm_span["metrics"]["tokens"]
         == llm_span["metrics"]["prompt_tokens"] + llm_span["metrics"]["completion_tokens"]
     )
+
+
+@pytest.mark.vcr
+def test_agno_agent_tools_metadata_placement(memory_logger):
+    """Tool definitions must live in `metadata.tools`, not in the span input.
+
+    Cassette: recorded against the real OpenAI API with a small ``get_weather``
+    tool. Re-record with ``nox -s "test_agno(latest)" -- --vcr-record=all -k
+    "test_agno_agent_tools_metadata_placement"``.
+    """
+    agent_module = pytest.importorskip("agno.agent")
+    openai_module = pytest.importorskip("agno.models.openai")
+    Agent = agent_module.Agent
+    OpenAIChat = openai_module.OpenAIChat
+
+    def get_weather(city: str) -> str:
+        """Return the current weather for *city*."""
+        return f"The weather in {city} is 72F and sunny."
+
+    assert not memory_logger.pop()
+
+    agent = Agent(
+        name="Weather Agent",
+        model=OpenAIChat(id="gpt-4o-mini"),
+        tools=[get_weather],
+        instructions="Use the get_weather tool to answer questions.",
+    )
+
+    response = agent.run("What's the weather in Paris?")
+    assert response and response.content
+
+    spans = memory_logger.pop()
+    llm_spans = [s for s in spans if s["span_attributes"]["type"].value == "llm"]
+    assert llm_spans, "expected at least one llm span"
+
+    for llm_span in llm_spans:
+        _assert_tool_fields_not_in_input(llm_span)
+        tools_meta = llm_span["metadata"].get("tools")
+        assert tools_meta, "expected metadata.tools to be populated on llm spans"
+        # Agno passes its own tool schema (name / description / parameters) to
+        # Model.response — spec placement rule is satisfied as long as the tool
+        # definitions live in metadata, not input. Normalization to the fully
+        # OpenAI-wrapped `{"type": "function", "function": {...}}` shape is
+        # tracked separately.
+        names = {t.get("name") or t.get("function", {}).get("name") for t in tools_meta}
+        assert "get_weather" in names
+
+
+@pytest.mark.vcr
+def test_agno_agent_image_input_materializes_attachment(memory_logger):
+    """Inline image bytes must be replaced by a Braintrust ``Attachment``.
+
+    Cassette: recorded against the real OpenAI vision API with a 1x1 PNG.
+    Re-record with ``nox -s "test_agno(latest)" -- --vcr-record=all -k
+    "test_agno_agent_image_input_materializes_attachment"``.
+    """
+    agent_module = pytest.importorskip("agno.agent")
+    openai_module = pytest.importorskip("agno.models.openai")
+    media_module = pytest.importorskip("agno.media")
+    Agent = agent_module.Agent
+    OpenAIChat = openai_module.OpenAIChat
+    Image = media_module.Image
+
+    # 1x1 transparent PNG
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+        b"\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4"
+        b"\x89\x00\x00\x00\rIDATx\xdac\xfc\xcf\xc0\xf0\x1f\x00\x05\x05\x02"
+        b"\x00_\xc8\xf1\xd2\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+
+    assert not memory_logger.pop()
+
+    agent = Agent(
+        name="Vision Agent",
+        model=OpenAIChat(id="gpt-4o-mini"),
+        instructions="Describe the image in one word.",
+    )
+
+    response = agent.run("What's in this image?", images=[Image(content=png_bytes, format="png")])
+    assert response and response.content
+
+    spans = memory_logger.pop()
+    llm_spans = [s for s in spans if s["span_attributes"]["type"].value == "llm"]
+    assert llm_spans
+
+    def _find_attachments(obj):
+        found = []
+        if isinstance(obj, Attachment):
+            found.append(obj)
+        elif isinstance(obj, dict):
+            for v in obj.values():
+                found.extend(_find_attachments(v))
+        elif isinstance(obj, list):
+            for v in obj:
+                found.extend(_find_attachments(v))
+        return found
+
+    attachments = _find_attachments(llm_spans[0]["input"])
+    assert attachments, "expected image bytes to be materialized as an Attachment"
+    att = attachments[0]
+    assert att.reference["content_type"].startswith("image/")
 
 
 def test_get_model_name_prefers_stable_provider_attribute():

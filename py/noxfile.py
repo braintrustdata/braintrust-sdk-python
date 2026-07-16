@@ -348,8 +348,7 @@ def test_agno(session, version):
     _install_test_deps(session)
     _install_matrix_dep(session, "agno", version)
     _install_group_locked(session, "test-agno")
-    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_agno.py", version=version)
-    _run_tests(session, f"{INTEGRATION_DIR}/agno/test_workflow.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/agno", version=version)
 
 
 LIVEKIT_AGENTS_VERSIONS = _get_matrix_versions("livekit-agents")
