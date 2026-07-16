@@ -262,6 +262,7 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
     kickoff_span = by_name["crewai.kickoff"][0]
     llm_span = by_name["crewai.llm"][0]
 
+    assert kickoff_span["context"]["span_origin"]["instrumentation"]["name"] == "crewai-auto"
     assert kickoff_span["span_attributes"]["type"] == "task"
     assert llm_span["span_attributes"]["type"] == "llm"
 

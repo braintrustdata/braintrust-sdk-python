@@ -10,7 +10,28 @@ from typing import TYPE_CHECKING, Any
 
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import NOOP_SPAN, _state, current_logger, current_span, parent_context, start_span
+from braintrust.logger import (
+    NOOP_SPAN,
+    _state,
+    current_logger,
+    current_span,
+    parent_context,
+)
+from braintrust.logger import (
+    start_span as _bt_start_span,
+)
+
+
+_INSTRUMENTATION = "google-genai-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
+
+
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import clean_nones
 
@@ -1158,6 +1179,7 @@ def _stream_span_context(
                 input=input,
                 metadata=metadata,
                 lookup_span_parent=False,
+                internal={"instrumentation": _INSTRUMENTATION},
             ) as span:
                 yield span
             return

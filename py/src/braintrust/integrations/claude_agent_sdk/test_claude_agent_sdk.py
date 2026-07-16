@@ -162,6 +162,7 @@ async def test_calculator_with_multiple_operations(memory_logger):
     assert len(task_spans) == 1, f"Should have exactly one task span, got {len(task_spans)}"
 
     task_span = task_spans[0]
+    assert task_span["context"]["span_origin"]["instrumentation"]["name"] == "claude-agent-sdk-auto"
     assert task_span["span_attributes"]["name"] == "Claude Agent"
     assert "15 multiplied by 7" in task_span["input"]
     assert task_span["output"] is not None

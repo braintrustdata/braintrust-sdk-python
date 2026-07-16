@@ -4,7 +4,20 @@ import datetime
 from typing import Any
 
 from agents import tracing
-from braintrust.logger import NOOP_SPAN, Experiment, Logger, Span, current_span, flush, start_span
+from braintrust.logger import NOOP_SPAN, Experiment, Logger, Span, current_span, flush
+from braintrust.logger import start_span as _bt_start_span
+
+
+_INSTRUMENTATION = "openai-agents-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
+
+
 from braintrust.span_types import SpanTypeAttribute
 
 
@@ -132,6 +145,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
                 name=trace.name,
                 span_attributes={"type": "task", "name": trace.name},
                 metadata=metadata,
+                internal={"instrumentation": _INSTRUMENTATION},
             )
         elif self._logger is not None:
             span = self._logger.start_span(
@@ -139,6 +153,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
                 span_id=trace.trace_id,
                 root_span_id=trace.trace_id,
                 metadata=metadata,
+                internal={"instrumentation": _INSTRUMENTATION},
             )
         else:
             span = start_span(
@@ -336,6 +351,7 @@ class BraintrustTracingProcessor(tracing.TracingProcessor):
             name=_span_name(span),
             type=_span_type(span),
             start_time=_timestamp_from_maybe_iso(span.started_at),
+            internal={"instrumentation": _INSTRUMENTATION},
         )
         self._spans[span.span_id] = created_span
         created_span.set_current()

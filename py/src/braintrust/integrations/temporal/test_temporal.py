@@ -526,6 +526,10 @@ class TestBraintrustPluginIntegration:
         assert len(workflow_spans) == 1
         assert len(activity_spans) == 2
         workflow_span = workflow_spans[0]
+        assert workflow_span["context"]["span_origin"]["instrumentation"]["name"] == "temporal-auto"
+        assert all(
+            span["context"]["span_origin"]["instrumentation"]["name"] == "temporal-auto" for span in activity_spans
+        )
         assert all(workflow_span["span_id"] in span.get("span_parents", []) for span in activity_spans)
         assert all(workflow_span["root_span_id"] == span["root_span_id"] for span in activity_spans)
         if with_client_parent:

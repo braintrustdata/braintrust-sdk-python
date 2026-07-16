@@ -34,7 +34,19 @@ from braintrust.integrations.utils import (
     _timing_metrics,
     _try_to_dict,
 )
-from braintrust.logger import start_span
+from braintrust.logger import start_span as _bt_start_span
+
+
+_INSTRUMENTATION = "huggingface-hub-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
+
+
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.util import is_numeric
 

@@ -246,6 +246,7 @@ def test_wrap_mistral_chat_complete_sync(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "mistral-auto"
     assert span["input"] == [{"role": "user", "content": "What is 2+2? Reply with just the number."}]
     assert span["metadata"]["provider"] == "mistral"
     assert span["metadata"]["model"] == CHAT_MODEL

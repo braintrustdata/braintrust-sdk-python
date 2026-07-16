@@ -12,7 +12,19 @@ from typing import Any
 
 from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import start_span
+from braintrust.logger import start_span as _bt_start_span
+
+
+_INSTRUMENTATION = "adk-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
+
+
 from braintrust.span_types import SpanTypeAttribute
 
 

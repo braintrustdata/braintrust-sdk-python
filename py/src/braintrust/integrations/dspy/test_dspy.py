@@ -43,6 +43,7 @@ def test_dspy_callback(memory_logger):
     spans_by_name = {span["span_attributes"]["name"]: span for span in spans}
 
     lm_span = spans_by_name["dspy.lm"]
+    assert lm_span["context"]["span_origin"]["instrumentation"]["name"] == "dspy-auto"
     assert "metadata" in lm_span
     assert "model" in lm_span["metadata"]
     assert MODEL in lm_span["metadata"]["model"]

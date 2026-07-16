@@ -11,7 +11,20 @@ from typing import (
 from uuid import UUID
 
 from braintrust.generated_types import SpanAttributes
-from braintrust.logger import NOOP_SPAN, Logger, Span, current_span, init_logger, start_span
+from braintrust.logger import NOOP_SPAN, Logger, Span, current_span, init_logger
+from braintrust.logger import start_span as _bt_start_span
+
+
+_INSTRUMENTATION = "langchain-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
+
+
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.version import VERSION as sdk_version
 from langchain_core.agents import AgentAction, AgentFinish
@@ -132,6 +145,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
                 start_time=start_time,
                 set_current=set_current,
                 parent=parent,
+                internal={"instrumentation": _INSTRUMENTATION},
                 **event,
             )
 
@@ -146,6 +160,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
                 start_time=start_time,
                 set_current=set_current,
                 parent=parent,
+                internal={"instrumentation": _INSTRUMENTATION},
                 **event,
             )
 

@@ -50,6 +50,7 @@ def test_wrap_openrouter_chat_send_sync(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "openrouter-auto"
     assert span["input"] == [{"role": "user", "content": "What is 2+2? Reply with just the number."}]
     assert span["metadata"]["provider"] == "openai"
     assert span["metadata"]["model"] == "gpt-4o-mini"

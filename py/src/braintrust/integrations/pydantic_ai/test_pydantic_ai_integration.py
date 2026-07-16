@@ -131,6 +131,7 @@ async def test_direct_model_request_creates_nested_chat_span_without_class_scan(
 
     assert direct_span is not None, "model_request span not found"
     assert chat_span is not None, "chat span not found"
+    assert direct_span["context"]["span_origin"]["instrumentation"]["name"] == "pydantic-ai-auto"
     assert chat_span["span_parents"] == [direct_span["span_id"]]
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"

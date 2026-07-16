@@ -146,6 +146,32 @@ def test_braintrust_span_processor_merges_span_origin_with_context_json_set_afte
         provider.shutdown()
 
 
+def test_merge_span_origin_context_uses_passed_instrumentation_name():
+    from braintrust.span_origin import merge_span_origin_context
+
+    merged = merge_span_origin_context({}, "openai-auto", None)
+    assert merged["span_origin"]["instrumentation"] == {"name": "openai-auto"}
+
+
+def test_span_impl_records_internal_instrumentation(monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_API_KEY", "test-key")
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_TYPE", raising=False)
+    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_NAME", raising=False)
+
+    from braintrust.logger import init_logger, start_span
+
+    init_logger(project="test_instrumentation_kwarg")
+
+    with start_span(name="parent", internal={"instrumentation": "openai-auto"}) as parent:
+        with start_span(name="child") as child:
+            pass
+
+    assert parent._instrumentation == "openai-auto"
+    # Child spans do NOT inherit the parent's instrumentation name;
+    # they fall back to the channel default.
+    assert child._instrumentation == "braintrust-python-logger"
+
+
 def test_detect_environment_classifies_aws_ecs_before_lambda(monkeypatch):
     from braintrust.span_origin import detect_environment
 

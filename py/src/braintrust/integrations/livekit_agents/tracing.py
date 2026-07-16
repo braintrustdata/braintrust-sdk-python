@@ -16,8 +16,20 @@ from braintrust.logger import (
     _state,
     current_span,
     parent_context,
-    start_span,
 )
+from braintrust.logger import (
+    start_span as _bt_start_span,
+)
+
+
+_INSTRUMENTATION = "livekit-agents-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
 
 
 _SESSION_PARENT_ATTR = "__braintrust_livekit_session_parent__"

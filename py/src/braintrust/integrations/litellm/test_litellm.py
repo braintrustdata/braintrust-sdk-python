@@ -68,6 +68,7 @@ def test_litellm_completion_metrics(memory_logger) -> None:
     assert len(spans) == 1
     span = spans[0]
     assert span
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "litellm-auto"
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL

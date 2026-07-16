@@ -4,7 +4,20 @@ import inspect
 import time
 from typing import Any
 
-from braintrust.logger import NOOP_SPAN, Span, current_span, start_span
+from braintrust.logger import NOOP_SPAN, Span, current_span
+from braintrust.logger import start_span as _bt_start_span
+
+
+_INSTRUMENTATION = "llamaindex-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
+
+
 from braintrust.span_types import SpanTypeAttribute
 
 
@@ -201,7 +214,13 @@ try:
                 event["input"] = input_data
 
             if parent_bt_span is not None:
-                bt_span = parent_bt_span.start_span(name=span_name, type=span_type, start_time=start_time, **event)
+                bt_span = parent_bt_span.start_span(
+                    name=span_name,
+                    type=span_type,
+                    start_time=start_time,
+                    internal={"instrumentation": _INSTRUMENTATION},
+                    **event,
+                )
             else:
                 bt_span = start_span(name=span_name, type=span_type, start_time=start_time, **event)
 

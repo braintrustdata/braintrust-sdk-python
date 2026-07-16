@@ -47,6 +47,7 @@ async def test_autogen_agent_run_creates_braintrust_spans(memory_logger):
     assert result.messages[-1].content
     spans = memory_logger.pop()
     agent_span = next(span for span in spans if span["span_attributes"]["name"] == "assistant.run")
+    assert agent_span["context"]["span_origin"]["instrumentation"]["name"] == "autogen-auto"
     assert _span_type(agent_span) == "task"
     assert agent_span["input"]["task"] == "Say hello in exactly two words."
     assert agent_span["metadata"]["component"] == "agent"

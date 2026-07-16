@@ -215,6 +215,7 @@ def test_basic_completion(memory_logger, mode):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-genai-auto"
     assert span["metadata"]["model"] == MODEL
     assert "What is the capital of France?" in str(span["input"])
     assert span["output"]
