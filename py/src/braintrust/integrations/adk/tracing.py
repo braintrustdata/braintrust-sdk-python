@@ -4,7 +4,6 @@ import contextvars
 import inspect
 import logging
 import time
-from collections.abc import Iterable, Mapping
 from contextlib import aclosing
 from functools import lru_cache
 from itertools import chain
@@ -118,35 +117,30 @@ def _serialize_pydantic_schema(schema_class: Any) -> dict[str, Any]:
     return {"__class__": schema_class.__name__ if inspect.isclass(schema_class) else str(type(schema_class).__name__)}
 
 
-def _capture_config(config: Any) -> dict[str, Any] | Any:
-    """
-    Capture the ADK config fields that make LLM spans readable.
+_CAPTURED_CONFIG_FIELDS = (
+    "system_instruction",
+    "response_mime_type",
+    "response_schema",
+    "response_json_schema",
+    "input_schema",
+    "output_schema",
+    "max_output_tokens",
+    "temperature",
+    "top_p",
+    "top_k",
+    "stop_sequences",
+    "candidate_count",
+)
 
-    Google ADK uses these fields for schemas:
-    - response_schema, response_json_schema (in GenerateContentConfig for LLM requests)
-    - input_schema, output_schema (in agent config)
-    """
+
+def _capture_config(config: Any) -> dict[str, Any] | Any:
+    """Capture the ADK config fields that make LLM spans readable."""
     if config is None or not config:
         return config
 
-    config_fields = [
-        "system_instruction",
-        "response_mime_type",
-        "response_schema",
-        "response_json_schema",
-        "input_schema",
-        "output_schema",
-        "max_output_tokens",
-        "temperature",
-        "top_p",
-        "top_k",
-        "stop_sequences",
-        "candidate_count",
-    ]
-    captured: dict[str, Any] = dict(config) if isinstance(config, dict) else {}
-
-    for field in config_fields:
-        value = _get_field(config, field)
+    captured: dict[str, Any] = {}
+    for field in _CAPTURED_CONFIG_FIELDS:
+        value = getattr(config, field, None)
         if value is None:
             continue
         if inspect.isclass(value):
@@ -161,10 +155,6 @@ def _capture_config(config: Any) -> dict[str, Any] | Any:
         captured[field] = value
 
     return captured or config
-
-
-def _omit(obj: Any, keys: Iterable[str]):
-    return {k: v for k, v in obj.items() if k not in keys}
 
 
 def _extract_metrics(response: Any) -> dict[str, float] | None:
@@ -226,12 +216,8 @@ def _extract_model_name(response: Any, llm_request: Any, instance: Any) -> str |
     return None
 
 
-def _get_field(value: Any, field: str, default: Any = None) -> Any:
-    return value.get(field, default) if isinstance(value, Mapping) else getattr(value, field, default)
-
-
 def _part_has_field(part: Any, *field_names: str) -> bool:
-    return any(_get_field(part, field_name) is not None for field_name in field_names)
+    return any(getattr(part, field_name, None) is not None for field_name in field_names)
 
 
 def _capture_llm_request_input(llm_request: Any) -> Any:
@@ -239,10 +225,9 @@ def _capture_llm_request_input(llm_request: Any) -> Any:
     if llm_request is None:
         return None
 
-    contents = _get_field(llm_request, "contents")
-    config = _get_field(llm_request, "config")
-    model = _get_field(llm_request, "model")
-    live_connect_config = _get_field(llm_request, "live_connect_config")
+    contents = getattr(llm_request, "contents", None)
+    config = getattr(llm_request, "config", None)
+    model = getattr(llm_request, "model", None)
 
     captured: dict[str, Any] = {}
     if model:
@@ -253,22 +238,40 @@ def _capture_llm_request_input(llm_request: Any) -> Any:
         )
     if config:
         captured["config"] = _capture_config(config)
-    if live_connect_config is not None or hasattr(llm_request, "live_connect_config") or isinstance(llm_request, dict):
-        captured["live_connect_config"] = live_connect_config
+    if hasattr(llm_request, "live_connect_config"):
+        captured["live_connect_config"] = getattr(llm_request, "live_connect_config", None)
 
     return captured or llm_request
 
 
+def _extract_tool_metadata(llm_request: Any) -> dict[str, Any]:
+    """Extract tool definitions and tool_config from an ADK LLM request for metadata.tools.
+
+    Google-native shape is preserved; ADK is Google-backed and metadata.provider="google"
+    lets the UI apply the Google normalizer.
+    """
+    if llm_request is None:
+        return {}
+    config = getattr(llm_request, "config", None)
+    if config is None:
+        return {}
+    result: dict[str, Any] = {}
+    tools = getattr(config, "tools", None)
+    if tools:
+        result["tools"] = tools
+    tool_config = getattr(config, "tool_config", None)
+    if tool_config:
+        result["tool_config"] = tool_config
+    return result
+
+
 def _event_output_with_content(last_event: Any, event_with_content: Any | None) -> Any:
-    if event_with_content is None or _get_field(last_event, "content") is not None:
+    if event_with_content is None or getattr(last_event, "content", None) is not None:
         return last_event
 
-    content = _get_field(event_with_content, "content")
+    content = getattr(event_with_content, "content", None)
     if content is None:
         return last_event
-
-    if isinstance(last_event, dict):
-        return {**last_event, "content": content}
 
     # Keep the original event instead of recursively serializing it; add the
     # captured content alongside it so Braintrust can serialize both values.
@@ -287,8 +290,8 @@ def _determine_llm_call_type(llm_request: Any, model_response: Any = None) -> st
     try:
         has_function_response = any(
             _part_has_field(part, "function_response", "functionResponse")
-            for content in (_get_field(llm_request, "contents", []) or [])
-            for part in (_get_field(content, "parts", []) or [])
+            for content in (getattr(llm_request, "contents", None) or [])
+            for part in (getattr(content, "parts", None) or [])
         )
 
         response_has_function_call = False
@@ -301,11 +304,11 @@ def _determine_llm_call_type(llm_request: Any, model_response: Any = None) -> st
                     pass
 
             if not response_has_function_call:
-                content = _get_field(model_response, "content")
+                content = getattr(model_response, "content", None)
                 response_has_function_call = any(
                     _part_has_field(part, "function_call", "functionCall")
                     for part in chain(
-                        _get_field(content, "parts", []) or [], _get_field(model_response, "parts", []) or []
+                        getattr(content, "parts", None) or [], getattr(model_response, "parts", None) or []
                     )
                 )
 
@@ -349,13 +352,11 @@ def _create_thread_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) 
 
 
 async def _agent_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-    parent_context = args[0] if len(args) > 0 else kwargs.get("parent_context")
-
     async def _trace():
         with start_span(
             name=f"agent_run [{instance.name}]",
             type=SpanTypeAttribute.TASK,
-            metadata={"parent_context": parent_context, **_omit(kwargs, ["parent_context"])},
+            metadata={"agent_name": instance.name},
         ) as agent_span:
             last_event = None
             async with aclosing(wrapped(*args, **kwargs)) as agen:
@@ -372,16 +373,11 @@ async def _agent_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
 
 
 async def _flow_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-    invocation_context = args[0] if len(args) > 0 else kwargs.get("invocation_context")
-
     async def _trace():
         with start_span(
             name="call_llm",
             type=SpanTypeAttribute.TASK,
-            metadata={
-                "invocation_context": invocation_context,
-                **_omit(kwargs, ["invocation_context"]),
-            },
+            metadata={"flow_class": instance.__class__.__name__},
         ) as llm_span:
             last_event = None
             async with aclosing(wrapped(*args, **kwargs)) as agen:
@@ -397,9 +393,7 @@ async def _flow_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs
 
 
 async def _flow_call_llm_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-    invocation_context = args[0] if len(args) > 0 else kwargs.get("invocation_context")
     llm_request = args[1] if len(args) > 1 else kwargs.get("llm_request")
-    model_response_event = args[2] if len(args) > 2 else kwargs.get("model_response_event")
 
     async def _trace():
         # Capture only the fields we need to alter: contents may contain binary
@@ -410,19 +404,20 @@ async def _flow_call_llm_async_wrapper(wrapped: Any, instance: Any, args: Any, k
         # Extract model name from request or instance
         model_name = _extract_model_name(None, llm_request, instance)
 
+        metadata: dict[str, Any] = {
+            "flow_class": instance.__class__.__name__,
+            "model": model_name,
+            "provider": "google",
+        }
+        metadata.update(_extract_tool_metadata(llm_request))
+
         # Create span BEFORE execution so child spans (like mcp_tool) have proper parent
         # Start with generic name - we'll update it after we see the response
         with start_span(
             name="llm_call",
             type=SpanTypeAttribute.LLM,
             input=captured_request,
-            metadata={
-                "invocation_context": invocation_context,
-                "model_response_event": model_response_event,
-                "flow_class": instance.__class__.__name__,
-                "model": model_name,
-                **_omit(kwargs, ["invocation_context", "model_response_event", "flow_class", "llm_call_type"]),
-            },
+            metadata=metadata,
         ) as llm_span:
             # Execute the LLM call and yield events while span is active
             last_event = None
@@ -487,10 +482,10 @@ async def _runner_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwar
             type=SpanTypeAttribute.TASK,
             input={"new_message": serialized_message},
             metadata={
+                "app_name": instance.app_name,
                 "user_id": user_id,
                 "session_id": session_id,
                 "state_delta": state_delta,
-                **_omit(kwargs, ["user_id", "session_id", "new_message", "state_delta"]),
             },
         ) as runner_span:
             last_event = None
@@ -528,7 +523,7 @@ async def _tool_call_async_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
             tool_span.log(output=result)
             return result
         except Exception as e:
-            tool_span.log(error=str(e))
+            tool_span.log(error=e)
             raise
 
 
@@ -541,7 +536,7 @@ async def _mcp_tool_run_async_wrapper_async(wrapped: Any, instance: Any, args: A
         name=f"mcp_tool [{tool_name}]",
         type=SpanTypeAttribute.TOOL,
         input={"tool_name": tool_name, "arguments": tool_args},
-        metadata=_omit(kwargs, ["args"]),
+        metadata={"tool_class": instance.__class__.__name__},
     ) as tool_span:
         try:
             result = await wrapped(*args, **kwargs)
@@ -549,5 +544,5 @@ async def _mcp_tool_run_async_wrapper_async(wrapped: Any, instance: Any, args: A
             return result
         except Exception as e:
             # Log error to span but re-raise for ADK to handle
-            tool_span.log(error=str(e))
+            tool_span.log(error=e)
             raise
