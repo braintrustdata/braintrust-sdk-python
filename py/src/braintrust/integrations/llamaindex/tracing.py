@@ -214,7 +214,13 @@ try:
                 event["input"] = input_data
 
             if parent_bt_span is not None:
-                bt_span = parent_bt_span.start_span(name=span_name, type=span_type, start_time=start_time, **event)
+                bt_span = parent_bt_span.start_span(
+                    name=span_name,
+                    type=span_type,
+                    start_time=start_time,
+                    internal={"instrumentation": _INSTRUMENTATION},
+                    **event,
+                )
             else:
                 bt_span = start_span(name=span_name, type=span_type, start_time=start_time, **event)
 

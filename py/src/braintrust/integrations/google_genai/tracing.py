@@ -1179,6 +1179,7 @@ def _stream_span_context(
                 input=input,
                 metadata=metadata,
                 lookup_span_parent=False,
+                internal={"instrumentation": _INSTRUMENTATION},
             ) as span:
                 yield span
             return

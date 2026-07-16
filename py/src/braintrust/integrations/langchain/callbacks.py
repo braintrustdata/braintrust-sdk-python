@@ -145,6 +145,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
                 start_time=start_time,
                 set_current=set_current,
                 parent=parent,
+                internal={"instrumentation": _INSTRUMENTATION},
                 **event,
             )
 
@@ -159,6 +160,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
                 start_time=start_time,
                 set_current=set_current,
                 parent=parent,
+                internal={"instrumentation": _INSTRUMENTATION},
                 **event,
             )
 
