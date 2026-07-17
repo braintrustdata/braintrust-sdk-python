@@ -73,12 +73,7 @@ def _provider_from_serialized(serialized: Mapping[str, Any] | None) -> str | Non
 
 
 def _resolve_name(name: str | None, serialized: Mapping[str, Any] | None, default: str) -> str:
-    return (
-        name
-        or (serialized or {}).get("name")
-        or last_item((serialized or {}).get("id") or [])
-        or default
-    )
+    return name or (serialized or {}).get("name") or last_item((serialized or {}).get("id") or []) or default
 
 
 _TOOL_KEYS = ("tools", "functions")
