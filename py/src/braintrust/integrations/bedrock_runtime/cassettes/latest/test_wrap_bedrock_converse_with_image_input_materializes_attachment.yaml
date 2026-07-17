@@ -1,0 +1,36 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": [{"text": "Describe this image
+      in one word."}, {"image": {"format": "png", "source": {"bytes": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="}}}]}],
+      "inferenceConfig": {"maxTokens": 20, "temperature": 0}}'
+    headers:
+      Content-Length:
+      - '294'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My40NiBtZC9Cb3RvY29yZSMxLjQzLjQ2IHVhLzIuMSBvcy9tYWNvcyMyNS41LjAg
+        bWQvYXJjaCNhcm02NCBsYW5nL3B5dGhvbiMzLjE0LjYgbWQvcHlpbXBsI0NQeXRob24gbS8zLFos
+        YixEIGNmZy9yZXRyeS1tb2RlI2xlZ2FjeSBCb3RvY29yZS8xLjQzLjQ2
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-lite-v1%3A0/converse
+  response:
+    body:
+      string: '{"metrics":{"latencyMs":636},"output":{"message":{"content":[{"text":"Serene"}],"role":"assistant"}},"stopReason":"end_turn","usage":{"inputTokens":537,"outputTokens":3,"serverToolUsage":{},"totalTokens":540}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '209'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 23:55:11 GMT
+      x-amzn-RequestId:
+      - 41351ba5-3dcd-4035-a0b2-e5e94a836225
+    status:
+      code: 200
+      message: OK
+version: 1

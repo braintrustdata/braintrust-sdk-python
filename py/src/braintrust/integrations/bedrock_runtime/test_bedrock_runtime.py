@@ -303,9 +303,7 @@ _WEATHER_TOOL = {
 def _converse_tool_kwargs(model_id=CONVERSE_MODEL):
     return {
         "modelId": model_id,
-        "messages": [
-            {"role": "user", "content": [{"text": "What's the weather in Paris? Use the tool."}]}
-        ],
+        "messages": [{"role": "user", "content": [{"text": "What's the weather in Paris? Use the tool."}]}],
         "inferenceConfig": {"maxTokens": 200, "temperature": 0},
         "toolConfig": {
             "tools": [_WEATHER_TOOL],
@@ -396,6 +394,8 @@ def test_wrap_bedrock_converse_with_image_input_materializes_attachment(memory_l
 def test_wrap_bedrock_converse_with_document_input_materializes_attachment(memory_logger):
     assert not memory_logger.pop()
     client = wrap_bedrock(_bedrock_client())
+    if "document" not in client.meta.service_model.shape_for("ContentBlock").members:
+        pytest.skip("installed botocore does not support Converse document content blocks")
 
     kwargs = {
         "modelId": CONVERSE_MODEL,
@@ -407,7 +407,7 @@ def test_wrap_bedrock_converse_with_document_input_materializes_attachment(memor
                     {
                         "document": {
                             "format": "pdf",
-                            "name": "tiny.pdf",
+                            "name": "tiny-pdf",
                             "source": {"bytes": _TINY_PDF_BYTES},
                         }
                     },
@@ -426,8 +426,8 @@ def test_wrap_bedrock_converse_with_document_input_materializes_attachment(memor
     parts = span["input"][0]["content"]
     file_part = next(p for p in parts if p.get("type") == "file")
     assert file_part["format"] == "pdf"
-    assert file_part["name"] == "tiny.pdf"
-    assert file_part["file"]["filename"] == "tiny.pdf"
+    assert file_part["name"] == "tiny-pdf"
+    assert file_part["file"]["filename"] == "tiny-pdf"
     assert isinstance(file_part["file"]["file_data"], Attachment)
     assert file_part["file"]["file_data"].reference["content_type"] == "application/pdf"
     assert "source" not in file_part
