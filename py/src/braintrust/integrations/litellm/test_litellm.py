@@ -118,7 +118,7 @@ def test_litellm_text_completion_metrics(memory_logger) -> None:
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_TEXT_MODEL
-    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["provider"] == "text-completion-openai"
     assert TEST_PROMPT in str(span["input"])
     assert "text" in span["output"][0]
 
@@ -143,7 +143,7 @@ async def test_litellm_atext_completion_metrics(memory_logger):
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_TEXT_MODEL
-    assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["provider"] == "text-completion-openai"
     assert TEST_PROMPT in str(span["input"])
     assert "text" in span["output"][0]
 
