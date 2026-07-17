@@ -8,7 +8,6 @@ import time
 from collections.abc import Awaitable, Callable, Iterable
 from typing import TYPE_CHECKING, Any
 
-from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import _materialize_attachment
 from braintrust.logger import (
     NOOP_SPAN,
@@ -46,6 +45,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_PROVIDER = "google"
 _MEDIA_CONTENT_TYPES = {"image", "audio", "video", "document"}
 _TOOL_CALL_TYPES = {
     "function_call",
@@ -81,80 +81,58 @@ _interaction_tool_spans: contextvars.ContextVar[dict[str, _ActiveInteractionTool
 # ---------------------------------------------------------------------------
 
 
-def _serialize_input(api_client: Any, input: dict[str, Any]) -> dict[str, Any]:
-    config = bt_safe_deep_copy(input.get("config"))
+def _config_for_input(config: Any) -> Any:
+    """Return a shallow view of *config* with ``tools`` stripped.
 
-    if config is not None:
-        tools = _serialize_tools(api_client, input)
-
-        if tools is not None:
-            config["tools"] = tools
-
-        input["config"] = config
-
-    # Serialize contents to handle binary data (e.g., images)
-    if "contents" in input:
-        input["contents"] = _serialize_contents(input["contents"])
-
-    return input
+    Tools live on ``metadata.tools``; keep the rest of config as-is so
+    bt_json handles pydantic model_dump at log time.
+    """
+    if config is None:
+        return None
+    if isinstance(config, dict):
+        return {k: v for k, v in config.items() if k != "tools"}
+    fields = getattr(type(config), "model_fields", None)
+    if fields is not None:
+        return {k: getattr(config, k) for k in fields if k != "tools" and getattr(config, k, None) is not None}
+    if hasattr(config, "__dict__"):
+        return {k: v for k, v in vars(config).items() if k != "tools" and v is not None}
+    return config
 
 
 def _serialize_contents(contents: Any) -> Any:
-    """Serialize contents, converting binary inline_data into attachments.
-
-    Most of the heavy lifting (Pydantic model_dump, deep-copy, etc.) is
-    handled downstream by ``bt_safe_deep_copy``.  This pass only needs to
-    walk the Content/Part tree and replace binary ``inline_data`` with
-    :class:`Attachment` objects so the background logger can upload them.
-    """
     if contents is None:
         return None
-
     if isinstance(contents, list):
         return [_serialize_content_item(item) for item in contents]
-
     return _serialize_content_item(contents)
 
 
 def _serialize_content_item(item: Any) -> Any:
-    """Replace binary inline_data inside a content item with Attachments.
-
-    Content-like objects (with ``parts``) are recursed into so nested
-    binary data is converted.  Everything else is returned as-is for
-    ``bt_safe_deep_copy`` to serialise later.
-    """
     if item is None or isinstance(item, (str, int, float, bool)):
         return item
 
-    # Content-like wrapper (has "parts") — recurse into each part.
     parts = _get_parts(item)
     if parts is not None:
         serialized_parts = [_serialize_content_item(p) for p in parts]
         if isinstance(item, dict):
             return {**item, "parts": serialized_parts}
-        # Object form (e.g. types.Content): build a minimal dict so that
-        # the replaced Attachment parts survive bt_safe_deep_copy.
         result: dict[str, Any] = {"parts": serialized_parts}
         role = getattr(item, "role", None)
         if role is not None:
             result["role"] = role
         return result
 
-    # Leaf part — replace binary inline_data with an Attachment if present.
     resolved = _try_materialize_inline_data(item)
     if resolved is not None:
         return resolved
 
-    # No binary data — return as-is; bt_safe_deep_copy handles the rest.
     return item
 
 
 def _get_parts(item: Any) -> list[Any] | None:
-    """Extract the ``parts`` list from a Content-like object or dict, or None."""
     if isinstance(item, dict):
         parts = item.get("parts")
         return parts if isinstance(parts, list) else None
-    # Object with .parts that is not itself a Part.
     if getattr(getattr(item, "__class__", None), "__name__", None) == "Part":
         return None
     parts = getattr(item, "parts", None)
@@ -162,7 +140,6 @@ def _get_parts(item: Any) -> list[Any] | None:
 
 
 def _try_materialize_inline_data(item: Any) -> Any | None:
-    """If *item* carries binary ``inline_data``, convert it to an attachment payload."""
     if isinstance(item, dict):
         inline_data = item.get("inline_data") or item.get("inlineData")
     else:
@@ -186,20 +163,19 @@ def _try_materialize_inline_data(item: Any) -> Any | None:
 
 
 def _serialize_tools(api_client: Any, input: Any | None) -> Any | None:
+    """Reuse google-genai's internal serializer so python callables become tool declarations."""
     try:
         from google.genai.models import (
             _GenerateContentParameters_to_mldev,  # pyright: ignore [reportPrivateUsage]
             _GenerateContentParameters_to_vertex,  # pyright: ignore [reportPrivateUsage]
         )
 
-        # cheat by reusing genai library's serializers (they deal with interpreting a function signature etc.)
         if api_client.vertexai:
             serialized = _GenerateContentParameters_to_vertex(api_client, input)
         else:
             serialized = _GenerateContentParameters_to_mldev(api_client, input)
 
-        tools = serialized.get("tools")
-        return tools
+        return serialized.get("tools")
     except Exception:
         return None
 
@@ -263,7 +239,18 @@ def _prepare_traced_call(
     api_client: Any, args: list[Any], kwargs: dict[str, Any]
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     input, clean_kwargs = _get_args_kwargs(args, kwargs, ["model", "contents", "config"], ["contents", "config"])
-    return _serialize_input(api_client, input), clean_kwargs
+
+    metadata: dict[str, Any] = {"provider": _PROVIDER, **clean_kwargs}
+    tools = _serialize_tools(api_client, input)
+    if tools is not None:
+        metadata["tools"] = tools
+
+    if "contents" in input:
+        input["contents"] = _serialize_contents(input["contents"])
+    if input.get("config") is not None:
+        input["config"] = _config_for_input(input["config"])
+
+    return input, metadata
 
 
 def _prepare_generate_images_traced_call(
@@ -271,9 +258,7 @@ def _prepare_generate_images_traced_call(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     del api_client
     input, clean_kwargs = _get_args_kwargs(args, kwargs, ["model", "prompt", "config"], ["prompt", "config"])
-    if input.get("config") is not None:
-        input["config"] = bt_safe_deep_copy(input["config"])
-    return clean_nones(input), clean_kwargs
+    return clean_nones(input), {"provider": _PROVIDER, **clean_kwargs}
 
 
 def _prepare_interaction_create_traced_call(
@@ -295,16 +280,17 @@ def _prepare_interaction_create_traced_call(
             "store": kwargs.get("store"),
             "stream": kwargs.get("stream"),
             "system_instruction": kwargs.get("system_instruction"),
-            "tools": _materialize_interaction_value(kwargs.get("tools")),
             "agent_config": _materialize_interaction_value(kwargs.get("agent_config")),
         }
     )
     metadata = clean_nones(
         {
+            "provider": _PROVIDER,
             "api_version": kwargs.get("api_version"),
             "model": kwargs.get("model"),
             "agent": kwargs.get("agent"),
             "previous_interaction_id": kwargs.get("previous_interaction_id"),
+            "tools": kwargs.get("tools"),
         }
     )
     return input_data, metadata
@@ -324,7 +310,7 @@ def _prepare_interaction_get_traced_call(
             "stream": kwargs.get("stream"),
         }
     )
-    metadata = clean_nones({"api_version": kwargs.get("api_version")})
+    metadata = clean_nones({"provider": _PROVIDER, "api_version": kwargs.get("api_version")})
     return input_data, metadata
 
 
@@ -335,7 +321,7 @@ def _prepare_interaction_id_traced_call(
 
     interaction_id = args[0] if args else kwargs.get("id")
     input_data = clean_nones({"id": interaction_id})
-    metadata = clean_nones({"api_version": kwargs.get("api_version")})
+    metadata = clean_nones({"provider": _PROVIDER, "api_version": kwargs.get("api_version")})
     return input_data, metadata
 
 
@@ -347,7 +333,6 @@ def _prepare_interaction_id_traced_call(
 def _extract_usage_metadata_metrics(
     usage_metadata: "GenerateContentResponseUsageMetadata", metrics: dict[str, Any]
 ) -> None:
-    """Mutate metrics in-place with token counts from a usage_metadata object."""
     if hasattr(usage_metadata, "prompt_token_count"):
         metrics["prompt_tokens"] = usage_metadata.prompt_token_count
     if hasattr(usage_metadata, "candidates_token_count"):
@@ -361,7 +346,6 @@ def _extract_usage_metadata_metrics(
 
 
 def _extract_generate_content_metrics(response: "GenerateContentResponse", start: float) -> dict[str, Any]:
-    """Extract metrics from a non-streaming generate_content response."""
     end_time = time.time()
     metrics = dict(
         start=start,
@@ -439,8 +423,6 @@ def _extract_generate_images_output(response: Any) -> dict[str, Any]:
             }
         )
 
-        # Convert image bytes to an Attachment so the SDK uploads them to
-        # object storage and the Braintrust UI can render the image.
         if isinstance(image_bytes, bytes) and mime_type:
             resolved_attachment = _materialize_attachment(
                 image_bytes,
@@ -511,7 +493,6 @@ def _extract_interaction_text(outputs: list[dict[str, Any]]) -> str | None:
 
 
 def _interaction_outputs_from_steps(response: "Interaction") -> list[dict[str, Any]]:
-    """Extract response outputs from google-genai 2.x interaction steps."""
     steps = _materialize_interaction_value(getattr(response, "steps", None))
     if not isinstance(steps, list):
         return []
@@ -608,21 +589,16 @@ def _tool_span_name(call_item: dict[str, Any] | None, result_item: dict[str, Any
     return str(item.get("type") or "interaction_tool")
 
 
+_TOOL_CALL_INPUT_FIELDS = ("arguments", "code", "language", "url", "query")
+_TOOL_RESULT_OUTPUT_FIELDS = ("result", "output", "outcome", "content")
+
+
 def _tool_span_input(call_item: dict[str, Any] | None) -> Any:
     if not call_item:
         return None
     if call_item.get("arguments") is not None:
         return call_item["arguments"]
-    return (
-        clean_nones(
-            {
-                key: value
-                for key, value in call_item.items()
-                if key not in {"id", "name", "type", "signature", "server_name"}
-            }
-        )
-        or None
-    )
+    return clean_nones({k: call_item.get(k) for k in _TOOL_CALL_INPUT_FIELDS}) or None
 
 
 def _tool_span_output(result_item: dict[str, Any] | None) -> Any:
@@ -630,16 +606,7 @@ def _tool_span_output(result_item: dict[str, Any] | None) -> Any:
         return None
     if result_item.get("result") is not None:
         return result_item["result"]
-    return (
-        clean_nones(
-            {
-                key: value
-                for key, value in result_item.items()
-                if key not in {"call_id", "name", "type", "signature", "server_name", "is_error"}
-            }
-        )
-        or None
-    )
+    return clean_nones({k: result_item.get(k) for k in _TOOL_RESULT_OUTPUT_FIELDS}) or None
 
 
 def _interaction_process_result(
@@ -665,7 +632,6 @@ def _generic_process_result(result: Any, start: float) -> tuple[Any, dict[str, A
 def _aggregate_generate_content_chunks(
     chunks: "list[GenerateContentResponse]", start: float, first_token_time: float | None = None
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Aggregate streaming chunks into a single response with metrics."""
     end_time = time.time()
     metrics = dict(
         start=start,
@@ -673,14 +639,12 @@ def _aggregate_generate_content_chunks(
         duration=end_time - start,
     )
 
-    # Add time_to_first_token if available
     if first_token_time is not None:
         metrics["time_to_first_token"] = first_token_time - start
 
     if not chunks:
         return {}, metrics
 
-    # Accumulate text and metadata
     text = ""
     thought_text = ""
     other_parts = []
@@ -690,23 +654,19 @@ def _aggregate_generate_content_chunks(
     for chunk in chunks:
         last_response = chunk
 
-        # Accumulate usage metadata
         if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
             usage_metadata = chunk.usage_metadata
 
-        # Process candidates and their parts
         if hasattr(chunk, "candidates") and chunk.candidates:
             for candidate in chunk.candidates:
                 if hasattr(candidate, "content") and candidate.content:
                     if hasattr(candidate.content, "parts") and candidate.content.parts:
                         for part in candidate.content.parts:
-                            # Handle text parts
                             if hasattr(part, "text") and part.text:
                                 if hasattr(part, "thought") and part.thought:
                                     thought_text += part.text
                                 else:
                                     text += part.text
-                            # Collect non-text parts
                             elif hasattr(part, "function_call"):
                                 other_parts.append({"function_call": part.function_call})
                             elif hasattr(part, "code_execution_result"):
@@ -714,10 +674,8 @@ def _aggregate_generate_content_chunks(
                             elif hasattr(part, "executable_code"):
                                 other_parts.append({"executable_code": part.executable_code})
 
-    # Build aggregated response
     aggregated = {}
 
-    # Build parts list
     parts = []
     if thought_text:
         parts.append({"text": thought_text, "thought": True})
@@ -725,39 +683,30 @@ def _aggregate_generate_content_chunks(
         parts.append({"text": text})
     parts.extend(other_parts)
 
-    # Build candidates
     if parts and last_response and hasattr(last_response, "candidates"):
         candidates = []
         for candidate in last_response.candidates:
             candidate_dict = {"content": {"parts": parts, "role": "model"}}
 
-            # Add metadata from last candidate
             if hasattr(candidate, "finish_reason"):
                 candidate_dict["finish_reason"] = candidate.finish_reason
             if hasattr(candidate, "safety_ratings"):
                 candidate_dict["safety_ratings"] = candidate.safety_ratings
             if hasattr(candidate, "grounding_metadata") and candidate.grounding_metadata:
-                gm = candidate.grounding_metadata
-                candidate_dict["grounding_metadata"] = (
-                    gm.model_dump(exclude_none=True) if hasattr(gm, "model_dump") else gm
-                )
+                candidate_dict["grounding_metadata"] = candidate.grounding_metadata
 
             candidates.append(candidate_dict)
 
         aggregated["candidates"] = candidates
 
-    # Add usage metadata
     if usage_metadata:
         aggregated["usage_metadata"] = usage_metadata
         _extract_usage_metadata_metrics(usage_metadata, metrics)
 
-    # Add convenience text property
     if text:
         aggregated["text"] = text
 
-    clean_metrics = clean_nones(dict(metrics))
-
-    return aggregated, clean_metrics
+    return aggregated, clean_nones(dict(metrics))
 
 
 def _is_interaction_content_event(event: Any) -> bool:

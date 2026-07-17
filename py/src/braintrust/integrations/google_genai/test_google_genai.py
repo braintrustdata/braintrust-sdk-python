@@ -217,6 +217,7 @@ def test_basic_completion(memory_logger, mode):
     span = spans[0]
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-genai-auto"
     assert span["metadata"]["model"] == MODEL
+    assert span["metadata"]["provider"] == "google"
     assert "What is the capital of France?" in str(span["input"])
     assert span["output"]
     assert "Paris" in str(span["output"])
@@ -627,6 +628,10 @@ def test_tool_use(memory_logger, mode):
     # Check the first span (initial request with tool call)
     span = spans[0]
     assert span["metadata"]["model"] == model
+    assert span["metadata"]["provider"] == "google"
+    assert span["metadata"]["tools"], "tools should be surfaced on metadata.tools"
+    assert "get_weather" in str(span["metadata"]["tools"])
+    assert "tools" not in (span["input"].get("config") or {}), "tools should not leak into input.config"
     assert "Paris" in str(span["input"]) or "weather" in str(span["input"])
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
@@ -974,10 +979,11 @@ def test_tool_use_with_result(memory_logger):
 
     first_span, second_span = spans
     assert first_span["metadata"]["model"] == model
-    assert "calculate" in str(first_span["input"])
+    assert "calculate" in str(first_span["metadata"]["tools"])
     assert first_span["output"]
 
     assert second_span["metadata"]["model"] == model
+    assert "calculate" in str(second_span["metadata"]["tools"])
     assert "function_response" in str(second_span["input"])
     assert "6223" in str(second_span["input"])
     assert "6223" in str(second_span["output"]).replace(",", "")
@@ -1480,7 +1486,9 @@ def test_interactions_create_and_get(memory_logger):
     get_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "interactions.get")
 
     assert create_span["metadata"]["model"] == INTERACTIONS_MODEL
+    assert create_span["metadata"]["provider"] == "google"
     assert create_span["metadata"]["interaction_id"] == response.id
+    assert get_span["metadata"]["provider"] == "google"
     assert create_span["output"]["status"] == "completed"
     assert "Paris" in create_span["output"]["text"]
     assert create_span["metrics"]["prompt_tokens"] > 0
@@ -1567,6 +1575,8 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
     tool_span = find_span_by_name(tool_spans, "get_weather")
 
     assert first_span["output"]["status"] == "requires_action"
+    assert first_span["metadata"]["tools"], "interactions tools should be on metadata.tools"
+    assert "tools" not in first_span["input"], "tools should not leak into input"
     assert second_span["metadata"]["previous_interaction_id"] == first_response.id
     assert second_span["output"]["status"] == "completed"
     assert "sunny" in second_span["output"]["text"].lower()
