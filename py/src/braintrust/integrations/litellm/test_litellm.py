@@ -8,7 +8,6 @@ from braintrust import Attachment, logger
 from braintrust.integrations.litellm import patch_litellm
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
-    run_in_subprocess,
     verify_autoinstrument_script,
 )
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
@@ -72,7 +71,7 @@ def test_litellm_completion_metrics(memory_logger) -> None:
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
 
 
@@ -96,7 +95,7 @@ async def test_litellm_acompletion_metrics(memory_logger):
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
 
 
@@ -119,7 +118,7 @@ def test_litellm_text_completion_metrics(memory_logger) -> None:
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_TEXT_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
     assert "text" in span["output"][0]
 
@@ -144,7 +143,7 @@ async def test_litellm_atext_completion_metrics(memory_logger):
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_TEXT_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
     assert "text" in span["output"][0]
 
@@ -186,7 +185,7 @@ def test_litellm_completion_streaming_sync(memory_logger):
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
     assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
 
@@ -220,7 +219,7 @@ async def test_litellm_acompletion_streaming_async(memory_logger):
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
 
 
@@ -250,7 +249,7 @@ def test_litellm_responses_metrics(memory_logger):
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
 
 
@@ -281,7 +280,7 @@ async def test_litellm_aresponses_metrics(memory_logger):
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
     assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
 
 
@@ -303,7 +302,7 @@ def test_litellm_embeddings(memory_logger):
     span = spans[0]
     assert span
     assert span["metadata"]["model"] == "text-embedding-ada-002"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert "This is a test" in str(span["input"])
 
 
@@ -323,7 +322,7 @@ async def test_litellm_aembedding(memory_logger):
     span = spans[0]
     assert span
     assert span["metadata"]["model"] == "text-embedding-ada-002"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert "This is a test" in str(span["input"])
 
 
@@ -344,7 +343,7 @@ def test_litellm_moderation(memory_logger):
     span = spans[0]
     assert span
     assert span["metadata"]["model"] == "omni-moderation-latest"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert "This is a test message" in str(span["input"])
 
 
@@ -362,7 +361,7 @@ async def test_litellm_amoderation(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == "omni-moderation-latest"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert "This is a test message" in str(span["input"])
 
 
@@ -386,7 +385,7 @@ def test_litellm_image_generation(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == "gpt-image-1-mini"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
     assert span["metrics"]["duration"] >= 0
@@ -413,7 +412,7 @@ async def test_litellm_aimage_generation(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == "gpt-image-1-mini"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert span["input"] == prompt
     assert span["output"]["images_count"] == 1
     assert span["metrics"]["duration"] >= 0
@@ -457,7 +456,7 @@ def test_litellm_transcription(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == "whisper-1"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert isinstance(span["input"]["file"], Attachment)
     assert span["input"]["file"].reference["filename"] == "test_audio.wav"
     assert span["input"]["file"].reference["content_type"] in ("audio/x-wav", "audio/wav")  # OS-dependent
@@ -479,7 +478,7 @@ async def test_litellm_atranscription(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["metadata"]["model"] == "whisper-1"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert isinstance(span["input"]["file"], Attachment)
     assert span["input"]["file"].reference["filename"] == "test_audio.wav"
     assert span["input"]["file"].reference["content_type"] in ("audio/x-wav", "audio/wav")  # OS-dependent
@@ -506,7 +505,7 @@ def test_litellm_speech(memory_logger):
     assert span["metadata"]["model"] == "tts-1"
     assert span["metadata"]["voice"] == "alloy"
     assert span["metadata"]["response_format"] == "mp3"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert span["input"] == "Hello, this is a test."
     _assert_speech_output_attachment(span)
 
@@ -532,7 +531,7 @@ async def test_litellm_aspeech(memory_logger):
     assert span["metadata"]["model"] == "tts-1"
     assert span["metadata"]["voice"] == "alloy"
     assert span["metadata"]["response_format"] == "mp3"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
     assert span["input"] == "Hello, this is a test."
     _assert_speech_output_attachment(span)
 
@@ -636,7 +635,7 @@ async def test_litellm_async_parallel_requests(memory_logger):
     # Verify each span has proper data
     for i, span in enumerate(spans):
         assert span["metadata"]["model"] == TEST_MODEL
-        assert span["metadata"]["provider"] == "litellm"
+        assert span["metadata"]["provider"] == "openai"
         assert prompts[i] in str(span["input"])
         assert_metrics_are_valid(span["metrics"])
 
@@ -687,7 +686,7 @@ def test_litellm_tool_calls(memory_logger):
             "span_attributes": {"type": "llm", "name": "Completion"},
             "metadata": {
                 "model": TEST_MODEL,
-                "provider": "litellm",
+                "provider": "openai",
                 "tools": lambda tools_list: (
                     len(tools_list) == 1
                     and any(tool.get("function", {}).get("name") == "get_weather" for tool in tools_list)
@@ -790,45 +789,6 @@ def test_patch_litellm_responses():
     verify_autoinstrument_script("test_patch_litellm_responses.py")
 
 
-def test_is_litellm_patched_internal_helper():
-    """Internal ``_is_litellm_patched()`` flips True after setup and honors manual wrap.
-
-    Run in a subprocess so that marker attributes set by other tests in this
-    module do not leak into the assertion.
-    """
-    result = run_in_subprocess(
-        """
-        from braintrust.integrations.litellm import _is_litellm_patched, patch_litellm, wrap_litellm
-        assert _is_litellm_patched() is False, 'expected unpatched at startup'
-        assert patch_litellm() is True
-        assert _is_litellm_patched() is True, 'expected True after patch_litellm()'
-        # idempotent wrap on the already-patched module stays True.
-        import litellm
-        wrap_litellm(litellm)
-        assert _is_litellm_patched() is True
-        print("SUCCESS")
-        """
-    )
-    assert result.returncode == 0, result.stderr
-    assert "SUCCESS" in result.stdout
-
-
-def test_is_litellm_patched_returns_false_without_litellm_installed():
-    """``_is_litellm_patched()`` must not raise when ``litellm`` is absent."""
-    result = run_in_subprocess(
-        """
-        import sys
-        # Simulate a missing litellm install.
-        sys.modules['litellm'] = None
-        from braintrust.integrations.litellm import _is_litellm_patched
-        assert _is_litellm_patched() is False
-        print("SUCCESS")
-        """
-    )
-    assert result.returncode == 0, result.stderr
-    assert "SUCCESS" in result.stdout
-
-
 def test_patch_litellm_aresponses():
     """Test that patch_litellm() patches aresponses (subprocess to avoid global state pollution)."""
     verify_autoinstrument_script("test_patch_litellm_aresponses.py")
@@ -901,10 +861,10 @@ def test_litellm_openrouter_no_booleans_in_metrics(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 1
     metrics = spans[0]["metrics"]
-    metadata_keys = set(spans[0]["metadata"])
-    assert "api_key" not in metadata_keys
+    metadata = spans[0]["metadata"]
+    assert "api_key" not in metadata
+    assert metadata["provider"] == "openrouter"
 
-    # No boolean values should be in metrics
     for key, value in metrics.items():
         assert not isinstance(value, bool)
     assert "is_byok" not in metrics
@@ -934,7 +894,7 @@ def test_litellm_rerank(memory_logger):
     span = spans[0]
     assert span["span_attributes"]["name"] == "Rerank"
     assert span["span_attributes"]["type"] == "llm"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "cohere"
     assert span["metadata"]["model"] == RERANK_MODEL
     assert span["metadata"]["top_n"] == 2
     assert span["metadata"]["document_count"] == 3
@@ -979,7 +939,7 @@ async def test_litellm_arerank(memory_logger):
     assert len(spans) == 1
     span = spans[0]
     assert span["span_attributes"]["name"] == "Rerank"
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "cohere"
     assert span["metadata"]["model"] == RERANK_MODEL
     assert span["metadata"]["top_n"] == 2
     assert span["metadata"]["document_count"] == 3
