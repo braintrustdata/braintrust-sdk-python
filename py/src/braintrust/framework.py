@@ -1463,17 +1463,17 @@ async def _run_evaluator_internal_impl(
             if isinstance(result, Iterable) and not isinstance(result, (str, bytes, Mapping)):
                 normalized_scores = []
                 for s in result:
+                    original_score = s
+                    score_error = None
                     if isinstance(s, dict):
                         try:
                             s = Score.from_dict(s)
                         except Exception as e:
-                            raise ValueError(
-                                f"When returning an array of scores, each score must be a valid Score object. Got: {s}"
-                            ) from e
-                    if not is_score(s):
+                            score_error = e
+                    if score_error is not None or not is_score(s):
                         raise ValueError(
-                            f"When returning an array of scores, each score must be a valid Score object. Got: {s}"
-                        )
+                            f"When returning an array of scores, each score must be a valid Score object. Got: {original_score}"
+                        ) from score_error
                     normalized_scores.append(s)
                 result = normalized_scores
             elif is_score(result):
