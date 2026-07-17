@@ -32,7 +32,6 @@ from braintrust.integrations.utils import (
     _log_error_and_end_span,
     _normalize_chat_messages,
     _timing_metrics,
-    _try_to_dict,
 )
 from braintrust.logger import start_span as _bt_start_span
 
@@ -136,27 +135,14 @@ _RESPONSE_METADATA_KEYS = (
 
 # ---------------------------------------------------------------------------
 # Field helpers
+#
+# HuggingFace inference response types (chat/text-generation/stream chunks)
+# all inherit from ``dict`` via ``BaseInferenceType``, so ``.get()`` works
+# uniformly on responses, chunks, and their nested fields.
 # ---------------------------------------------------------------------------
 
 
-def _get_field(obj: Any, key: str) -> Any:
-    """Return a field from either a mapping or a HuggingFace SDK model object.
-
-    The inference SDK returns dataclass-like objects (``BaseInferenceType``)
-    for most responses, but ``parse_obj_as_instance`` may surface them as
-    plain dicts when fields don't match the schema, and streaming chunks may
-    arrive as either.  Centralizing the access keeps the rest of the module
-    indifferent to the runtime shape.
-    """
-    if obj is None:
-        return None
-    if isinstance(obj, dict):
-        return obj.get(key)
-    return getattr(obj, key, None)
-
-
 def _first_nonempty_str(*candidates: Any, default: str | None = None) -> str | None:
-    """Return the first non-empty string in *candidates*, else *default*."""
     for value in candidates:
         if isinstance(value, str) and value:
             return value
@@ -164,23 +150,19 @@ def _first_nonempty_str(*candidates: Any, default: str | None = None) -> str | N
 
 
 def _resolve_provider_and_model(kwargs: dict[str, Any], instance: Any) -> tuple[str, str | None]:
-    """Return (provider, model) using request kwargs first, instance second.
+    """Return (provider, model) with per-call kwargs winning over instance defaults.
 
-    The HuggingFace Python SDK lets callers pin a default ``provider`` and
-    ``model`` on the ``InferenceClient`` instance and override them per-call.
-    Spans should mirror what actually went on the wire: per-call values win
-    over instance defaults, with ``"huggingface"`` as the final fallback for
-    provider so the integration identity is always present. ``model`` has no
-    such fallback — it stays ``None`` when neither side supplies one.
+    ``"huggingface"`` is the final fallback for provider so the integration
+    identity is always present; ``model`` has no such fallback.
     """
     provider = _first_nonempty_str(
         kwargs.get("provider"),
-        _get_field(instance, "provider"),
+        getattr(instance, "provider", None),
         default=_PROVIDER,
     )
     model = _first_nonempty_str(
         kwargs.get("model"),
-        _get_field(instance, "model"),
+        getattr(instance, "model", None),
     )
     return provider, model
 
@@ -218,13 +200,13 @@ def _extract_response_metadata(result: Any) -> dict[str, Any]:
         return {}
     metadata: dict[str, Any] = {}
     for key in _RESPONSE_METADATA_KEYS:
-        value = _get_field(result, key)
+        value = result.get(key)
         if value is not None:
             metadata[key] = value
 
-    choices = _get_field(result, "choices")
+    choices = result.get("choices")
     if isinstance(choices, list) and choices:
-        finish_reason = _get_field(choices[0], "finish_reason")
+        finish_reason = choices[0].get("finish_reason")
         if isinstance(finish_reason, str):
             metadata["finish_reason"] = finish_reason
     return metadata
@@ -235,17 +217,17 @@ def _parse_usage_metrics(result: Any) -> dict[str, float]:
     if result is None:
         return {}
 
-    metrics: dict[str, float] = {}
-    usage = _get_field(result, "usage")
+    usage = result.get("usage")
     if usage is None:
-        return metrics
+        return {}
 
+    metrics: dict[str, float] = {}
     for key, metric in (
         ("prompt_tokens", "prompt_tokens"),
         ("completion_tokens", "completion_tokens"),
         ("total_tokens", "tokens"),
     ):
-        value = _get_field(usage, key)
+        value = usage.get(key)
         if is_numeric(value):
             metrics[metric] = float(value)
 
@@ -257,28 +239,23 @@ def _parse_usage_metrics(result: Any) -> dict[str, float]:
 def _text_generation_metrics(details: Any) -> dict[str, float]:
     """Extract metrics from a ``TextGenerationOutput.details`` payload.
 
-    - ``prompt_tokens`` from ``details.prefill`` length when available.
-    - ``completion_tokens`` from ``details.generated_tokens`` (or the length
-      of ``details.tokens`` if ``generated_tokens`` is missing).
-    - ``tokens`` = ``prompt_tokens + completion_tokens`` when either side is
-      known (missing side counted as 0).
+    ``prompt_tokens`` from ``details.prefill`` length, ``completion_tokens``
+    from ``details.generated_tokens`` (falling back to ``len(details.tokens)``
+    if the counter is missing), and ``tokens`` = their sum when either is
+    known.
     """
     if details is None:
         return {}
 
-    prefill = _get_field(details, "prefill")
-    prompt_tokens: float | None = None
-    if isinstance(prefill, list):
-        prompt_tokens = float(len(prefill))
+    prefill = details.get("prefill")
+    prompt_tokens: float | None = float(len(prefill)) if isinstance(prefill, list) else None
 
-    completion_tokens: float | None = None
-    generated_tokens = _get_field(details, "generated_tokens")
+    generated_tokens = details.get("generated_tokens")
     if is_numeric(generated_tokens):
-        completion_tokens = float(generated_tokens)
+        completion_tokens: float | None = float(generated_tokens)
     else:
-        tokens_list = _get_field(details, "tokens")
-        if isinstance(tokens_list, list):
-            completion_tokens = float(len(tokens_list))
+        tokens_list = details.get("tokens")
+        completion_tokens = float(len(tokens_list)) if isinstance(tokens_list, list) else None
 
     metrics: dict[str, float] = {}
     if prompt_tokens is not None:
@@ -298,32 +275,26 @@ def _text_generation_metrics(details: Any) -> dict[str, float]:
 def _chat_output(result: Any) -> Any:
     """Return the chat response's ``choices`` list verbatim.
 
-    The full ``choices`` array, with each entry's ``message`` / ``finish_reason``
-    intact, is what the span logs as ``output``. This keeps tool calls,
-    logprobs, multiple choices, and any future fields available to consumers
-    without extra normalization.
+    Keeps tool calls, logprobs, multiple choices, and any future fields
+    available to consumers without extra normalization.
     """
     if result is None:
         return None
-    choices = _get_field(result, "choices")
-    if not isinstance(choices, list):
-        return None
-    return choices
+    choices = result.get("choices")
+    return choices if isinstance(choices, list) else None
 
 
 def _text_generation_output(result: Any) -> Any:
     """Return ``{generated_text: ...}`` for any text-generation response shape.
 
-    Always emit an object so consumers can rely on a stable key regardless of
-    whether ``details=True`` was passed.  When ``details=False`` the SDK
-    returns a plain ``str``; we wrap it.  When ``details=True`` we pull
-    ``generated_text`` from the ``TextGenerationOutput``.
+    ``details=False`` returns a plain ``str``; ``details=True`` returns a
+    ``TextGenerationOutput``. Wrap both into a stable-shape dict.
     """
     if result is None:
         return None
     if isinstance(result, str):
         return {"generated_text": result}
-    generated_text = _get_field(result, "generated_text")
+    generated_text = result.get("generated_text")
     if isinstance(generated_text, str):
         return {"generated_text": generated_text}
     return result
@@ -430,28 +401,25 @@ def _merge_tool_call_delta(
     """Merge a chat-completion streaming tool-call delta into the accumulator.
 
     Each delta contains ``index``, ``id``, ``type`` and a ``function`` block
-    whose ``arguments`` string is delivered piecewise across chunks.  The
-    accumulator keeps function ``name`` once seen and concatenates the
-    incremental ``arguments`` strings. Tool-call entries are emitted in
-    ``sorted(index)`` order downstream, so no explicit order list is needed
-    here.
+    whose ``arguments`` string is delivered piecewise across chunks. The
+    accumulator concatenates the incremental ``arguments`` strings and keeps
+    function ``name`` once seen; entries are emitted in ``sorted(index)``
+    order downstream.
     """
     if not isinstance(delta_tool_calls, list):
         return
     for entry in delta_tool_calls:
-        entry_dict = entry if isinstance(entry, dict) else _try_to_dict(entry)
-        if not isinstance(entry_dict, dict):
+        if not isinstance(entry, dict):
             continue
-        index = entry_dict.get("index")
+        index = entry.get("index")
         if not isinstance(index, int):
             index = len(tool_calls_by_index)
         existing = tool_calls_by_index.get(index, {})
-        # Carry forward static fields (id, type) when first seen.
         for key in ("id", "type"):
-            value = entry_dict.get(key)
+            value = entry.get(key)
             if value is not None:
                 existing[key] = value
-        incoming_fn = entry_dict.get("function")
+        incoming_fn = entry.get("function")
         if isinstance(incoming_fn, dict):
             existing_fn = existing.get("function") or {}
             name = incoming_fn.get("name")
@@ -459,7 +427,7 @@ def _merge_tool_call_delta(
                 existing_fn["name"] = name
             args_delta = incoming_fn.get("arguments")
             if isinstance(args_delta, str):
-                existing_fn["arguments"] = f"{existing_fn.get('arguments', '') or ''}{args_delta}"
+                existing_fn["arguments"] = f"{existing_fn.get('arguments', '')}{args_delta}"
             existing["function"] = existing_fn
         tool_calls_by_index[index] = existing
 
@@ -478,14 +446,14 @@ class _ChatStreamAggregator:
         if chunk is None:
             return
         for key in _RESPONSE_METADATA_KEYS:
-            value = _get_field(chunk, key)
+            value = chunk.get(key)
             if value is not None and key not in self.metadata:
                 self.metadata[key] = value
 
-        choices = _get_field(chunk, "choices")
+        choices = chunk.get("choices")
         if isinstance(choices, list):
             for choice in choices:
-                idx_raw = _get_field(choice, "index")
+                idx_raw = choice.get("index")
                 index = idx_raw if isinstance(idx_raw, int) else 0
                 acc = self.choices_by_index.setdefault(
                     index,
@@ -497,18 +465,18 @@ class _ChatStreamAggregator:
                     },
                 )
 
-                delta = _get_field(choice, "delta")
-                content = _get_field(delta, "content")
+                delta = choice.get("delta") or {}
+                content = delta.get("content")
                 if isinstance(content, str) and content:
                     acc["content_parts"].append(content)
 
-                role_value = _get_field(delta, "role")
+                role_value = delta.get("role")
                 if isinstance(role_value, str):
                     acc["role"] = role_value
 
-                _merge_tool_call_delta(acc["tool_calls_by_index"], _get_field(delta, "tool_calls"))
+                _merge_tool_call_delta(acc["tool_calls_by_index"], delta.get("tool_calls"))
 
-                fr = _get_field(choice, "finish_reason")
+                fr = choice.get("finish_reason")
                 if isinstance(fr, str):
                     acc["finish_reason"] = fr
 
@@ -567,15 +535,16 @@ class _TextGenerationStreamAggregator:
             self.pieces.append(chunk)
             return
 
-        token_text = _get_field(_get_field(chunk, "token"), "text")
+        token = chunk.get("token") or {}
+        token_text = token.get("text")
         if isinstance(token_text, str):
             self.pieces.append(token_text)
 
-        generated_text = _get_field(chunk, "generated_text")
+        generated_text = chunk.get("generated_text")
         if isinstance(generated_text, str):
             self.final_text = generated_text
 
-        details = _get_field(chunk, "details")
+        details = chunk.get("details")
         if details is not None:
             self.last_details = details
             self.metadata.update(_text_generation_extra_metadata(details))
@@ -744,18 +713,20 @@ def _text_generation_extra_metadata(details: Any) -> dict[str, Any]:
     Shared by the non-streaming and streaming code paths so the two stay in
     sync when new ``details`` fields are added.
     """
+    if details is None:
+        return {}
     metadata: dict[str, Any] = {}
-    finish_reason = _get_field(details, "finish_reason")
+    finish_reason = details.get("finish_reason")
     if isinstance(finish_reason, str):
         metadata["finish_reason"] = finish_reason
-    seed = _get_field(details, "seed")
+    seed = details.get("seed")
     if seed is not None:
         metadata["seed"] = seed
     return metadata
 
 
 def _log_text_generation_result(span, start_time: float, result: Any) -> None:
-    details = _get_field(result, "details")
+    details = result.get("details") if isinstance(result, dict) else None
     metrics = {
         **_timing_metrics(start_time, time.time()),
         **_text_generation_metrics(details),
