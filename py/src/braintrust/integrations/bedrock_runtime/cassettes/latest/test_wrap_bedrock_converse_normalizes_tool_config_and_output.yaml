@@ -1,0 +1,39 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": [{"text": "What''s the weather
+      in Paris? Use the tool."}]}], "inferenceConfig": {"maxTokens": 200, "temperature":
+      0}, "toolConfig": {"tools": [{"toolSpec": {"name": "get_weather", "description":
+      "Get the current weather for a city.", "inputSchema": {"json": {"type": "object",
+      "properties": {"city": {"type": "string", "description": "City name"}}, "required":
+      ["city"]}}}}], "toolChoice": {"tool": {"name": "get_weather"}}}}'
+    headers:
+      Content-Length:
+      - '466'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My40NiBtZC9Cb3RvY29yZSMxLjQzLjQ2IHVhLzIuMSBvcy9tYWNvcyMyNS41LjAg
+        bWQvYXJjaCNhcm02NCBsYW5nL3B5dGhvbiMzLjE0LjYgbWQvcHlpbXBsI0NQeXRob24gbS8zLFos
+        YixEIGNmZy9yZXRyeS1tb2RlI2xlZ2FjeSBCb3RvY29yZS8xLjQzLjQ2
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-lite-v1%3A0/converse
+  response:
+    body:
+      string: '{"metrics":{"latencyMs":592},"output":{"message":{"content":[{"toolUse":{"input":{"city":"Paris"},"name":"get_weather","toolUseId":"tooluse_Yq5W3hF35lip9DBOtn4cFO"}}],"role":"assistant"}},"stopReason":"tool_use","usage":{"inputTokens":411,"outputTokens":16,"serverToolUsage":{},"totalTokens":427}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '297'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 23:55:11 GMT
+      x-amzn-RequestId:
+      - 17e70e3c-ae3e-4a8d-8ba7-1a773b61e39f
+    status:
+      code: 200
+      message: OK
+version: 1

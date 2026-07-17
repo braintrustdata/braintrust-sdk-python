@@ -1,0 +1,38 @@
+interactions:
+- request:
+    body: '{"messages": [{"role": "user", "content": [{"text": "Summarize this document."},
+      {"document": {"format": "pdf", "name": "tiny-pdf", "source": {"bytes": "JVBERi0xLjEKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9NZWRpYUJveFswIDAgOCA4XT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZgowMDAwMDAwMDEwIDAwMDAwIG4KMDAwMDAwMDA1MyAwMDAwMCBuCjAwMDAwMDAwOTYgMDAwMDAgbgp0cmFpbGVyPDwvU2l6ZSA0L1Jvb3QgMSAwIFI+PgpzdGFydHhyZWYKMTQ0CiUlRU9G"}}}]}],
+      "inferenceConfig": {"maxTokens": 40, "temperature": 0}}'
+    headers:
+      Content-Length:
+      - '609'
+      Content-Type:
+      - !!binary |
+        YXBwbGljYXRpb24vanNvbg==
+      User-Agent:
+      - !!binary |
+        Qm90bzMvMS40My40NiBtZC9Cb3RvY29yZSMxLjQzLjQ2IHVhLzIuMSBvcy9tYWNvcyMyNS41LjAg
+        bWQvYXJjaCNhcm02NCBsYW5nL3B5dGhvbiMzLjE0LjYgbWQvcHlpbXBsI0NQeXRob24gbS9iLDMs
+        RCxaIGNmZy9yZXRyeS1tb2RlI2xlZ2FjeSBCb3RvY29yZS8xLjQzLjQ2
+    method: POST
+    uri: https://bedrock-runtime.us-east-1.amazonaws.com/model/us.amazon.nova-lite-v1%3A0/converse
+  response:
+    body:
+      string: '{"metrics":{"latencyMs":1430},"output":{"message":{"content":[{"text":"Sorry,
+        I cannot process this request because the document is not provided. Can you
+        provide more information about the document?"}],"role":"assistant"}},"stopReason":"end_turn","usage":{"inputTokens":536,"outputTokens":24,"serverToolUsage":{},"totalTokens":560}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '332'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 16 Jul 2026 23:57:28 GMT
+      x-amzn-RequestId:
+      - d21e398c-670a-46c9-a1a3-e1c8bb8c9e13
+    status:
+      code: 200
+      message: OK
+version: 1

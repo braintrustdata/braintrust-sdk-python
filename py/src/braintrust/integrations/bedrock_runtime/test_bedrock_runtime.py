@@ -1,12 +1,13 @@
 """Tests for the boto3 Bedrock Runtime integration."""
 
+import base64
 import inspect
 import json
 import os
 import time
 
 import pytest
-from braintrust import logger
+from braintrust import Attachment, logger
 from braintrust.integrations.bedrock_runtime import BedrockRuntimeIntegration, setup_bedrock, wrap_bedrock
 from braintrust.integrations.bedrock_runtime.patchers import (
     BedrockClientCreatorPatcher,
@@ -264,6 +265,172 @@ def test_wrap_bedrock_invoke_model_preserves_response_body_and_logs_json(memory_
     assert span["input"]["body"] == body
     assert span["output"] == response_body
     assert_metrics_are_valid(span["metrics"], start, end)
+
+
+# A 1x1 transparent PNG for image tests.
+_TINY_PNG_BYTES = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+)
+
+# A minimal valid PDF for document tests.
+_TINY_PDF_BYTES = (
+    b"%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+    b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 8 8]>>endobj\n"
+    b"xref\n0 4\n0000000000 65535 f\n"
+    b"0000000010 00000 n\n0000000053 00000 n\n0000000096 00000 n\n"
+    b"trailer<</Size 4/Root 1 0 R>>\nstartxref\n144\n%%EOF"
+)
+
+
+_WEATHER_TOOL = {
+    "toolSpec": {
+        "name": "get_weather",
+        "description": "Get the current weather for a city.",
+        "inputSchema": {
+            "json": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"},
+                },
+                "required": ["city"],
+            }
+        },
+    }
+}
+
+
+def _converse_tool_kwargs(model_id=CONVERSE_MODEL):
+    return {
+        "modelId": model_id,
+        "messages": [{"role": "user", "content": [{"text": "What's the weather in Paris? Use the tool."}]}],
+        "inferenceConfig": {"maxTokens": 200, "temperature": 0},
+        "toolConfig": {
+            "tools": [_WEATHER_TOOL],
+            "toolChoice": {"tool": {"name": "get_weather"}},
+        },
+    }
+
+
+@pytest.mark.vcr
+def test_wrap_bedrock_converse_normalizes_tool_config_and_output(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+
+    response = client.converse(**_converse_tool_kwargs())
+
+    assert response["output"]["message"]["role"] == "assistant"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    # Tools are normalized to OpenAI shape and live in metadata.
+    assert span["metadata"]["tools"] == [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get the current weather for a city.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"city": {"type": "string", "description": "City name"}},
+                    "required": ["city"],
+                },
+            },
+        }
+    ]
+    assert span["metadata"]["tool_choice"] == {"type": "function", "function": {"name": "get_weather"}}
+    # No raw Bedrock-shaped copy left behind.
+    assert "tool_config" not in span["metadata"]
+
+    # Output tool_use block is normalized.
+    content = span["output"][0]["content"]
+    tool_uses = [block for block in content if block.get("type") == "tool_use"]
+    assert tool_uses, f"expected a tool_use block in {content!r}"
+    tool_use = tool_uses[0]
+    assert tool_use.get("name") == "get_weather"
+    assert "id" in tool_use
+    assert isinstance(tool_use.get("input"), dict)
+
+
+@pytest.mark.vcr
+def test_wrap_bedrock_converse_with_image_input_materializes_attachment(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+
+    kwargs = {
+        "modelId": CONVERSE_MODEL,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"text": "Describe this image in one word."},
+                    {"image": {"format": "png", "source": {"bytes": _TINY_PNG_BYTES}}},
+                ],
+            }
+        ],
+        "inferenceConfig": {"maxTokens": 20, "temperature": 0},
+    }
+    response = client.converse(**kwargs)
+    assert response["output"]["message"]["role"] == "assistant"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    parts = span["input"][0]["content"]
+    image_part = next(p for p in parts if p.get("type") == "image_url")
+    assert image_part["format"] == "png"
+    assert isinstance(image_part["image_url"]["url"], Attachment)
+    assert image_part["image_url"]["url"].reference["content_type"] == "image/png"
+    # No raw bytes hanging around next to the attachment.
+    assert "source" not in image_part
+    # Original request kwargs are not mutated.
+    assert kwargs["messages"][0]["content"][1]["image"]["source"]["bytes"] == _TINY_PNG_BYTES
+
+
+@pytest.mark.vcr
+def test_wrap_bedrock_converse_with_document_input_materializes_attachment(memory_logger):
+    assert not memory_logger.pop()
+    client = wrap_bedrock(_bedrock_client())
+    if "document" not in client.meta.service_model.shape_for("ContentBlock").members:
+        pytest.skip("installed botocore does not support Converse document content blocks")
+
+    kwargs = {
+        "modelId": CONVERSE_MODEL,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"text": "Summarize this document."},
+                    {
+                        "document": {
+                            "format": "pdf",
+                            "name": "tiny-pdf",
+                            "source": {"bytes": _TINY_PDF_BYTES},
+                        }
+                    },
+                ],
+            }
+        ],
+        "inferenceConfig": {"maxTokens": 40, "temperature": 0},
+    }
+    response = client.converse(**kwargs)
+    assert response["output"]["message"]["role"] == "assistant"
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+
+    parts = span["input"][0]["content"]
+    file_part = next(p for p in parts if p.get("type") == "file")
+    assert file_part["format"] == "pdf"
+    assert file_part["name"] == "tiny-pdf"
+    assert file_part["file"]["filename"] == "tiny-pdf"
+    assert isinstance(file_part["file"]["file_data"], Attachment)
+    assert file_part["file"]["file_data"].reference["content_type"] == "application/pdf"
+    assert "source" not in file_part
 
 
 @pytest.mark.vcr

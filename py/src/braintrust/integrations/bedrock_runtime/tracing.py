@@ -32,7 +32,6 @@ _PROVIDER = "bedrock"
 
 _CONVERSE_METADATA_KEYS = (
     "guardrailConfig",
-    "toolConfig",
     "additionalModelRequestFields",
     "additionalModelResponseFieldPaths",
     "performanceConfig",
@@ -63,7 +62,6 @@ def _converse_wrapper(wrapped, instance, args, kwargs):  # noqa: ARG001
     metrics = {
         **_timing_metrics(start_time, time.time()),
         **_converse_usage_metrics(result.get("usage") if isinstance(result, dict) else None),
-        **_bedrock_latency_metrics(result.get("metrics") if isinstance(result, dict) else None),
     }
     _log_and_end_span(span, output=_converse_output(result), metrics=metrics, metadata=metadata or None)
     return result
@@ -160,6 +158,9 @@ def _converse_metadata(kwargs: dict[str, Any], *, endpoint: str, stream: bool = 
             value = inference_config.get(source_key)
             if value is not None:
                 metadata[dest_key] = value
+    tool_config = kwargs.get("toolConfig")
+    if isinstance(tool_config, dict):
+        metadata.update(_tool_config_to_metadata(tool_config))
     for key in _CONVERSE_METADATA_KEYS:
         value = kwargs.get(key)
         if value is not None:
@@ -167,6 +168,55 @@ def _converse_metadata(kwargs: dict[str, Any], *, endpoint: str, stream: bool = 
     if stream:
         metadata["stream"] = True
     return metadata
+
+
+def _tool_config_to_metadata(tool_config: dict[str, Any]) -> dict[str, Any]:
+    """Normalize a Bedrock Converse ``toolConfig`` into OpenAI-shaped metadata."""
+    result: dict[str, Any] = {}
+    tools = tool_config.get("tools")
+    if isinstance(tools, list):
+        openai_tools = [_tool_spec_to_openai(t) for t in tools]
+        if openai_tools:
+            result["tools"] = openai_tools
+    tool_choice = _tool_choice_to_openai(tool_config.get("toolChoice"))
+    if tool_choice is not None:
+        result["tool_choice"] = tool_choice
+    return result
+
+
+def _tool_spec_to_openai(tool: Any) -> Any:
+    if not isinstance(tool, dict):
+        return tool
+    spec = tool.get("toolSpec")
+    if not isinstance(spec, dict):
+        return tool
+    function: dict[str, Any] = {}
+    name = spec.get("name")
+    if name is not None:
+        function["name"] = name
+    description = spec.get("description")
+    if description is not None:
+        function["description"] = description
+    input_schema = spec.get("inputSchema")
+    if isinstance(input_schema, dict) and isinstance(input_schema.get("json"), dict):
+        function["parameters"] = input_schema["json"]
+    elif input_schema is not None:
+        function["parameters"] = input_schema
+    return {"type": "function", "function": function}
+
+
+def _tool_choice_to_openai(tool_choice: Any) -> Any:
+    if not isinstance(tool_choice, dict):
+        return None
+    if "auto" in tool_choice:
+        return "auto"
+    if "any" in tool_choice:
+        return "required"
+    if isinstance(tool_choice.get("tool"), dict):
+        name = tool_choice["tool"].get("name")
+        if isinstance(name, str):
+            return {"type": "function", "function": {"name": name}}
+    return tool_choice
 
 
 def _invoke_model_metadata(model_id: Any, *, endpoint: str, stream: bool = False) -> dict[str, Any]:
@@ -181,8 +231,8 @@ def _invoke_model_metadata(model_id: Any, *, endpoint: str, stream: bool = False
 def _camel_metadata_key(key: str) -> str:
     return {
         "guardrailConfig": "guardrail_config",
-        "toolConfig": "tool_config",
         "additionalModelRequestFields": "additional_model_request_fields",
+        "additionalModelResponseFields": "additional_model_response_fields",
         "additionalModelResponseFieldPaths": "additional_model_response_field_paths",
         "performanceConfig": "performance_config",
         "requestMetadata": "request_metadata",
@@ -286,44 +336,54 @@ def _tool_result_content_to_json(block: Any) -> Any:
 def _image_to_json(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {"type": "image", "value": value}
-    result: dict[str, Any] = {"type": "image"}
     image_format = value.get("format")
+    source = value.get("source")
+    if isinstance(source, dict) and isinstance(source.get("bytes"), (bytes, bytearray)):
+        mime_type = f"image/{image_format or 'png'}"
+        resolved = _materialize_attachment(source["bytes"], mime_type=mime_type, prefix="image")
+        if resolved is not None:
+            result: dict[str, Any] = {"type": "image_url", **resolved.multimodal_part_payload}
+            if image_format is not None:
+                result["format"] = image_format
+            return result
+    # Preserve provider-native shape (e.g. s3Location references) when we can't materialize.
+    result = {"type": "image"}
     if image_format is not None:
         result["format"] = image_format
-    source = value.get("source")
-    if isinstance(source, dict):
-        source_result = dict(source)
-        image_bytes = source_result.pop("bytes", None)
-        if image_bytes is not None:
-            mime_type = f"image/{image_format or 'png'}"
-            resolved = _materialize_attachment(image_bytes, mime_type=mime_type, prefix="image")
-            if resolved is not None:
-                result["image_url"] = {"url": resolved.attachment}
-            else:
-                source_result["bytes"] = image_bytes
-        result["source"] = source_result
+    if source is not None:
+        result["source"] = source
     return result
 
 
 def _document_to_json(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {"type": "document", "value": value}
-    result: dict[str, Any] = {"type": "document"}
+    document_format = value.get("format")
+    name = value.get("name") if isinstance(value.get("name"), str) else None
+    source = value.get("source")
+    if isinstance(source, dict) and isinstance(source.get("bytes"), (bytes, bytearray)):
+        mime_type = _document_mime_type(document_format)
+        resolved = _materialize_attachment(
+            source["bytes"],
+            mime_type=mime_type,
+            filename=name,
+            prefix="document",
+        )
+        if resolved is not None:
+            result: dict[str, Any] = {"type": "file", **resolved.multimodal_part_payload}
+            if document_format is not None:
+                result["format"] = document_format
+            if value.get("name") is not None:
+                result["name"] = value["name"]
+            if value.get("citations") is not None:
+                result["citations"] = value["citations"]
+            return result
+    result = {"type": "document"}
     for key in ("format", "name", "citations"):
         if value.get(key) is not None:
             result[key] = value[key]
-    source = value.get("source")
-    if isinstance(source, dict):
-        source_result = dict(source)
-        document_bytes = source_result.pop("bytes", None)
-        if document_bytes is not None:
-            mime_type = _document_mime_type(value.get("format"))
-            resolved = _materialize_attachment(document_bytes, mime_type=mime_type, prefix="document")
-            if resolved is not None:
-                result["file"] = {"file_data": resolved.attachment, "filename": resolved.filename}
-            else:
-                source_result["bytes"] = document_bytes
-        result["source"] = source_result
+    if source is not None:
+        result["source"] = source
     return result
 
 
@@ -373,6 +433,9 @@ def _converse_response_metadata(result: Any) -> dict[str, Any]:
     for key in ("additionalModelResponseFields", "trace"):
         if result.get(key) is not None:
             metadata[_camel_metadata_key(key)] = result[key]
+    latency = _bedrock_latency_ms(result.get("metrics"))
+    if latency is not None:
+        metadata["bedrock_latency_ms"] = latency
     return metadata
 
 
@@ -398,11 +461,11 @@ def _converse_usage_metrics(usage: Any) -> dict[str, Any]:
     return metrics
 
 
-def _bedrock_latency_metrics(metrics_payload: Any) -> dict[str, Any]:
+def _bedrock_latency_ms(metrics_payload: Any) -> Any:
     if not isinstance(metrics_payload, dict):
-        return {}
+        return None
     latency = metrics_payload.get("latencyMs")
-    return {"bedrock_latency_ms": latency} if is_numeric(latency) else {}
+    return latency if is_numeric(latency) else None
 
 
 def _numeric_or_zero(value: Any) -> Any:
@@ -598,13 +661,17 @@ class _TracedConverseStream:
                 block["text"] = text
         content = [self._content_blocks[idx] for idx in sorted(self._content_blocks)]
         output = [{"role": self._message_role, "content": content}] if content else None
-        metadata = {"stop_reason": self._stop_reason} if self._stop_reason else None
+        metadata: dict[str, Any] = {}
+        if self._stop_reason:
+            metadata["stop_reason"] = self._stop_reason
+        latency = _bedrock_latency_ms(self._metrics_payload)
+        if latency is not None:
+            metadata["bedrock_latency_ms"] = latency
         metrics = {
             **_timing_metrics(self._start_time, time.time(), self._first_token_time),
             **_converse_usage_metrics(self._usage),
-            **_bedrock_latency_metrics(self._metrics_payload),
         }
-        _log_and_end_span(self._span, output=output, metrics=metrics, metadata=metadata)
+        _log_and_end_span(self._span, output=output, metrics=metrics, metadata=metadata or None)
 
 
 class _TracedInvokeModelStream:
