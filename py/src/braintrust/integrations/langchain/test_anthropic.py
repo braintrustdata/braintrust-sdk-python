@@ -65,6 +65,7 @@ def test_langchain_anthropic_integration(
 
     llm_span = llm_spans[0]
     assert llm_span["metadata"]["model"] == MODEL
+    assert llm_span["metadata"]["provider"] == "anthropic"
 
     prompt_spans = [span for span in spans if "ChatPromptTemplate" in span["span_attributes"].get("name", "")]
     if prompt_spans:
