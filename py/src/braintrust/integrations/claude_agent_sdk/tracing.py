@@ -178,23 +178,43 @@ def _serialize_system_message(message: Any) -> dict[str, Any]:
     return serialized
 
 
-_HOOK_REDACTED_FIELDS = frozenset({"cwd", "transcript_path", "agent_transcript_path"})
+# Top-level allowlist for hook payloads (both `input_data` handed to the hook
+# and whatever the hook returns). Anything outside this set — notably
+# `cwd`, `transcript_path`, and `agent_transcript_path` — is dropped. Applied
+# only at the top level so nested values (e.g. arbitrary keys inside
+# `tool_input` or `hookSpecificOutput`) pass through and reach Braintrust's
+# log-time serializer intact.
+_HOOK_ALLOWED_FIELDS = frozenset({
+    # Common input fields
+    "session_id",
+    "hook_event_name",
+    # Event-specific input fields
+    "tool_name",
+    "tool_input",
+    "tool_response",
+    "prompt",
+    "message",
+    "stop_hook_active",
+    "trigger",
+    "custom_instructions",
+    "source",
+    "reason",
+    "agent_id",
+    "agent_type",
+    # Hook return fields (Claude Code hook protocol)
+    "continue",
+    "stopReason",
+    "suppressOutput",
+    "decision",
+    "hookSpecificOutput",
+    "systemMessage",
+})
 
 
 def _serialize_hook_value(value: Any) -> Any:
-    if dataclasses.is_dataclass(value):
-        return _serialize_hook_value(dataclasses.asdict(value))
     if isinstance(value, dict):
-        return {
-            str(key): _serialize_hook_value(item)
-            for key, item in value.items()
-            if str(key) not in _HOOK_REDACTED_FIELDS
-        }
-    if isinstance(value, (list, tuple)):
-        return [_serialize_hook_value(item) for item in value]
-    if isinstance(value, (str, int, float, bool)) or value is None:
-        return value
-    return str(value)
+        return {key: item for key, item in value.items() if str(key) in _HOOK_ALLOWED_FIELDS}
+    return value
 
 
 def _hook_event_name(input_data: Any) -> str:
@@ -1215,12 +1235,16 @@ def _create_llm_span_for_messages(
             content = _serialize_content_blocks(msg.content)
             outputs.append({"content": content, "role": "assistant"})
 
+    metadata: dict[str, Any] = {"provider": "anthropic"}
+    if model:
+        metadata["model"] = model
+
     llm_span = start_span(
         name=ANTHROPIC_MESSAGES_CREATE_SPAN_NAME,
         span_attributes={"type": SpanTypeAttribute.LLM},
         input=input_messages,
         output=outputs,
-        metadata={"model": model} if model else None,
+        metadata=metadata,
         parent=parent,
         start_time=start_time,
     )
@@ -1256,41 +1280,45 @@ def _merge_assistant_messages(existing_message: dict[str, Any] | None, new_messa
 
 
 def _serialize_content_blocks(content: Any) -> Any:
-    """Converts content blocks to a serializable format with proper type fields.
+    """Convert Claude Agent SDK content-block dataclasses into readable dicts.
 
-    Claude Agent SDK uses dataclasses for content blocks, so we use dataclasses.asdict()
-    for serialization and add the 'type' field based on the class name.
+    Shallow field copy only. Braintrust serializes nested values (including
+    ToolUseBlock.input payloads and any nested content-block dataclasses) at
+    log time via bt_json, so we do not recursively walk here. We only add the
+    provider-shaped ``type`` discriminator that bt_json cannot infer, and
+    apply the ToolResult flatten/prune rules that require field-level checks.
     """
-    if isinstance(content, list):
-        result = []
-        for block in content:
-            if dataclasses.is_dataclass(block):
-                serialized = dataclasses.asdict(block)
+    if not isinstance(content, list):
+        return content
+    return [_serialize_block(block) for block in content]
 
-                block_type = type(block).__name__
-                serialized_type = SERIALIZED_CONTENT_TYPE_BY_BLOCK_CLASS.get(block_type)
-                if serialized_type is not None:
-                    serialized["type"] = serialized_type
 
-                if block_type == BlockClassName.TOOL_RESULT:
-                    content_value = serialized.get("content")
-                    if isinstance(content_value, list) and len(content_value) == 1:
-                        item = content_value[0]
-                        if (
-                            isinstance(item, dict)
-                            and item.get("type") == SerializedContentType.TEXT
-                            and SerializedContentType.TEXT in item
-                        ):
-                            serialized["content"] = item[SerializedContentType.TEXT]
+def _serialize_block(block: Any) -> Any:
+    if not dataclasses.is_dataclass(block):
+        return block
 
-                    if "is_error" in serialized and serialized["is_error"] is None:
-                        del serialized["is_error"]
-            else:
-                serialized = block
+    serialized = {f.name: getattr(block, f.name) for f in dataclasses.fields(block)}
 
-            result.append(serialized)
-        return result
-    return content
+    block_type = type(block).__name__
+    serialized_type = SERIALIZED_CONTENT_TYPE_BY_BLOCK_CLASS.get(block_type)
+    if serialized_type is not None:
+        serialized["type"] = serialized_type
+
+    if block_type == BlockClassName.TOOL_RESULT:
+        content_value = serialized.get("content")
+        if isinstance(content_value, list) and len(content_value) == 1:
+            item = content_value[0]
+            if (
+                isinstance(item, dict)
+                and item.get("type") == SerializedContentType.TEXT
+                and SerializedContentType.TEXT in item
+            ):
+                serialized["content"] = item[SerializedContentType.TEXT]
+
+        if "is_error" in serialized and serialized["is_error"] is None:
+            del serialized["is_error"]
+
+    return serialized
 
 
 def _build_llm_input(prompt: Any, conversation_history: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
