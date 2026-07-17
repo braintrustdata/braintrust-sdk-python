@@ -54,6 +54,16 @@ TOKEN_PREFIX_MAP: dict[str, str] = {
 
 _RERANK_MAX_RESULTS = 100
 
+# litellm reports the legacy /v1/completions endpoint under its own routing
+# key, but pricing/billing is against the underlying provider — normalize so
+# metadata.provider stays consistent across chat and text-completion calls.
+_PROVIDER_ALIASES: dict[str, str] = {
+    "text-completion-openai": "openai",
+    "azure_text": "azure",
+    "text-completion-codestral": "codestral",
+    "text-completion-inception": "inception",
+}
+
 
 def _get_field(obj: Any, key: str, default: Any = None) -> Any:
     """Read *key* off *obj* whether it's a dict or an SDK/pydantic object."""
@@ -72,7 +82,7 @@ def _resolve_provider(model: str) -> str:
 
         _, provider, _, _ = litellm.get_llm_provider(model)
         if isinstance(provider, str) and provider:
-            return provider
+            return _PROVIDER_ALIASES.get(provider, provider)
     except Exception:
         _log.debug("litellm.get_llm_provider failed for model=%r", model, exc_info=True)
     return "litellm"
