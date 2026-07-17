@@ -20,20 +20,21 @@ Thread-safety: the bus uses up to ``max_workers=10`` workers, so start and
 end events for the same scope can race across threads. A listener-level
 :class:`threading.Lock` guards the ``event_id -> Span`` map.
 
-Token-metric rule (leaf-only):
+Token-metric rule (wrapper-only):
 
-CrewAI delegates LLM calls to LiteLLM.  When the LiteLLM integration is
-also patched, the ``Completion`` span LiteLLM produces is the leaf span
-and already owns token accounting.  Emitting tokens on the enclosing
-``crewai.llm`` span in that configuration would make trace-tree rollup
-double-count the same tokens at every ancestor.
+CrewAI is always an orchestration layer: every LLM call it emits is
+routed through an underlying provider SDK (LiteLLM, or a native
+``openai`` / ``anthropic`` / ``bedrock`` / ``google-genai`` client).
+Whichever of those the user has patched — commonly all of them via
+``auto_instrument()`` — owns the leaf span with real token accounting.
+If ``crewai.llm`` also logged tokens, trace-tree rollup would
+double-count them at every ancestor.
 
-We therefore follow the same pattern as the pydantic_ai integration
-(see ``_wrapper_span_metrics`` in ``pydantic_ai/tracing.py``):
-``crewai.llm`` emits timing + ``time_to_first_token`` unconditionally, and
-token metrics only when LiteLLM is *not* patched.  The check happens at
-log time via the internal ``_is_litellm_patched`` helper on the LiteLLM
-integration.
+We therefore follow the same rule ``pydantic_ai`` uses for its wrapper
+spans (see ``_wrapper_span_metrics`` in ``pydantic_ai/tracing.py``):
+``crewai.llm`` emits timing + ``time_to_first_token`` only. Tokens live
+on the leaf provider span. This is the "clear ownership" pattern the
+sdk-integrations SKILL prefers over "if X is patched, skip" checks.
 """
 
 # pylint: disable=import-error
@@ -42,10 +43,7 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any
 
-from braintrust.integrations.utils import (
-    _normalize_chat_messages,
-    _parse_openai_usage_metrics,
-)
+from braintrust.integrations.utils import _normalize_chat_messages
 from braintrust.logger import NOOP_SPAN, Span, current_span
 from braintrust.logger import start_span as _bt_start_span
 
@@ -67,24 +65,6 @@ if TYPE_CHECKING:
     from crewai.events.event_bus import CrewAIEventsBus
 
 
-# LiteLLM / LiteLLM-over-OpenAI usage field translation.  Mirrors the
-# mapping in ``braintrust.integrations.litellm.tracing`` so ``crewai.llm``
-# spans use identical metric names when LiteLLM is not the leaf.
-_TOKEN_NAME_MAP: dict[str, str] = {
-    "total_tokens": "tokens",
-    "prompt_tokens": "prompt_tokens",
-    "completion_tokens": "completion_tokens",
-    "tokens": "tokens",
-    "input_tokens": "prompt_tokens",
-    "output_tokens": "completion_tokens",
-}
-
-_TOKEN_PREFIX_MAP: dict[str, str] = {
-    "input": "prompt",
-    "output": "completion",
-}
-
-
 # Provider parameters we want to surface on `crewai.llm` metadata.
 _LLM_CONFIG_FIELDS: tuple[str, ...] = (
     "temperature",
@@ -103,21 +83,6 @@ _LLM_CONFIG_FIELDS: tuple[str, ...] = (
     "logprobs",
     "timeout",
 )
-
-
-def _litellm_owns_leaf_span() -> bool:
-    """Return True when LiteLLM's completion entry points have been patched.
-
-    Late-imported so that importing the CrewAI integration never forces a
-    LiteLLM import.  Errors are swallowed so a broken LiteLLM install
-    never prevents CrewAI tracing from running.
-    """
-    try:
-        from braintrust.integrations.litellm import _is_litellm_patched
-
-        return _is_litellm_patched()
-    except Exception:
-        return False
 
 
 # ---------------------------------------------------------------------------
@@ -493,24 +458,13 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
         if getattr(event, "model", None):
             metadata["model"] = event.model
 
-        # Timing metrics are always safe.  Token metrics are only emitted
-        # when LiteLLM is NOT patching the completion entry points, to
-        # avoid double-counting with the downstream ``Completion`` span.
-        extra_metrics: dict[str, Any] = {}
-        if not _litellm_owns_leaf_span():
-            usage = getattr(event, "usage", None)
-            if usage is not None:
-                extra_metrics = _parse_openai_usage_metrics(
-                    usage,
-                    token_name_map=_TOKEN_NAME_MAP,
-                    token_prefix_map=_TOKEN_PREFIX_MAP,
-                )
-
+        # Timing metrics only. Token metrics belong on the leaf provider
+        # span (openai / anthropic / bedrock / litellm / ...) so trace-tree
+        # rollup does not double-count. See the module docstring.
         self._end_span(
             event,
             output=getattr(event, "response", None),
             metadata=metadata or None,
-            extra_metrics=extra_metrics,
         )
 
     @crewai_event_bus.on(LLMCallFailedEvent)
@@ -659,7 +613,6 @@ def _end_span(
     output: Any = None,
     error: Any = None,
     metadata: dict[str, Any] | None = None,
-    extra_metrics: dict[str, Any] | None = None,
 ) -> None:
     """Close the span opened by the matching start event.
 
@@ -670,9 +623,7 @@ def _end_span(
     started_event_id = getattr(event, "started_event_id", None) or getattr(event, "event_id", None)
     if not started_event_id:
         return
-    self._end_span_by_event_id(
-        started_event_id, output=output, error=error, metadata=metadata, extra_metrics=extra_metrics
-    )
+    self._end_span_by_event_id(started_event_id, output=output, error=error, metadata=metadata)
 
 
 def _end_span_by_event_id(
@@ -682,7 +633,6 @@ def _end_span_by_event_id(
     output: Any = None,
     error: Any = None,
     metadata: dict[str, Any] | None = None,
-    extra_metrics: dict[str, Any] | None = None,
 ) -> None:
     with self._lock:
         span = self._spans.pop(started_event_id, None)
@@ -695,8 +645,6 @@ def _end_span_by_event_id(
     metrics: dict[str, Any] = {"end": end_time}
     if first_token_time is not None and start_time is not None:
         metrics["time_to_first_token"] = first_token_time - start_time
-    if extra_metrics:
-        metrics.update(extra_metrics)
 
     log_payload: dict[str, Any] = {"metrics": metrics}
     if output is not None:

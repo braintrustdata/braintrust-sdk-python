@@ -71,11 +71,6 @@ def _reset_listener():
     """Force a clean CrewAI listener for each test.
 
     The module-level ``_LISTENER`` singleton leaks between tests otherwise.
-    We deliberately do *not* touch LiteLLM patch markers here: stripping them
-    would confuse ``is_patched`` and let a subsequent ``patch_litellm()``
-    double-wrap the module. The leaf-only token-metric tests below instead
-    monkeypatch ``is_litellm_patched`` directly when they need to pretend
-    LiteLLM is (or is not) patched.
     """
     _reset_for_testing()
     yield
@@ -320,14 +315,17 @@ def test_llm_tools_route_to_metadata_not_input(memory_logger):
     assert "tools" not in span["input"], span["input"]
 
 
-def test_llm_tokens_skipped_when_litellm_patched(memory_logger, monkeypatch):
-    """Leaf-only rule: LiteLLM patched -> no token metrics on crewai.llm."""
-    # Pretend LiteLLM is patched without actually wrapping the module, so
-    # tests later in the suite that rely on a clean LiteLLM still see it.
-    monkeypatch.setattr(
-        "braintrust.integrations.crewai.tracing._litellm_owns_leaf_span",
-        lambda: True,
-    )
+def test_llm_never_emits_token_metrics(memory_logger):
+    """Wrapper-only rule: crewai.llm MUST NOT log token metrics.
+
+    CrewAI always delegates the actual API call to a provider SDK
+    (LiteLLM, or a native openai / anthropic / bedrock / gemini
+    client). Whichever of those is patched owns the leaf span with
+    tokens. If crewai.llm also logged them, trace-tree rollup would
+    double-count at every ancestor. This must hold regardless of which
+    (if any) provider integration is patched — the "clear ownership"
+    pattern from the sdk-integrations SKILL.
+    """
     patch_crewai()
 
     llm_started = _build_llm_started()
@@ -345,31 +343,14 @@ def test_llm_tokens_skipped_when_litellm_patched(memory_logger, monkeypatch):
     metrics = by_name["crewai.llm"][0]["metrics"]
 
     assert "start" in metrics and "end" in metrics
-    for token_key in ("tokens", "prompt_tokens", "completion_tokens"):
-        assert token_key not in metrics, f"crewai.llm leaked {token_key}={metrics[token_key]} while litellm is patched"
-
-
-def test_llm_tokens_emitted_when_litellm_not_patched(memory_logger, monkeypatch):
-    """Leaf: LiteLLM unpatched -> crewai.llm owns token metrics."""
-    monkeypatch.setattr(
-        "braintrust.integrations.crewai.tracing._litellm_owns_leaf_span",
-        lambda: False,
-    )
-    patch_crewai()
-
-    llm_started = _build_llm_started()
-    _emit(llm_started)
-    _emit(
-        _build_llm_completed(
-            llm_started,
-            usage={"prompt_tokens": 11, "completion_tokens": 22, "total_tokens": 33},
-        )
-    )
-
-    metrics = memory_logger.pop()[0]["metrics"]
-    assert metrics["prompt_tokens"] == 11
-    assert metrics["completion_tokens"] == 22
-    assert metrics["tokens"] == 33
+    for token_key in (
+        "tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "prompt_cached_tokens",
+        "completion_reasoning_tokens",
+    ):
+        assert token_key not in metrics, f"crewai.llm leaked {token_key}={metrics.get(token_key)}"
 
 
 def test_llm_call_failed_logs_error(memory_logger):
