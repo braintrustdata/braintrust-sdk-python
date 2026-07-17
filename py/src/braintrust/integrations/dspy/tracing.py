@@ -8,12 +8,7 @@ from braintrust.span_types import SpanTypeAttribute
 
 _INSTRUMENTATION = "dspy-auto"
 
-# LiteLLM-style model strings are "<provider>/<model>" (e.g. "openai/gpt-4o-mini").
-# The prefix identifies the provider whose pricing applies.
 _LM_METADATA_PARAM_ALLOWLIST = ("temperature", "max_tokens", "top_p", "top_k", "stop")
-
-# Aggregate eval stats that DSPy Evaluate surfaces on its return dict. These are
-# domain-level scores, not spec-listed span `metrics` keys, so they go in metadata.
 _EVALUATE_METADATA_ALLOWLIST = ("accuracy", "score", "total", "correct")
 
 
@@ -139,13 +134,6 @@ class BraintrustDSpyCallback(BaseCallback):
             if key in inputs:
                 metadata[key] = inputs[key]
 
-        # dspy.lm is intentionally NOT typed as `llm`. DSPy delegates the actual
-        # provider call to LiteLLM (or a patched provider client), which owns the
-        # `llm` leaf span and its token accounting. Typing this parent as `llm`
-        # would produce two `llm` spans per model call when the underlying
-        # provider is also instrumented, and this span cannot supply the tokens
-        # required for `llm` because DSPy's callback contract does not expose
-        # usage in `outputs`.
         span = start_span(
             name="dspy.lm",
             input=inputs,

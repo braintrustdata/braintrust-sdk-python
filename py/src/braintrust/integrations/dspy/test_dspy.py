@@ -42,29 +42,21 @@ def test_dspy_callback(memory_logger):
 
     spans_by_name = {span["span_attributes"]["name"]: span for span in spans}
 
-    # DSPy modules are pipeline steps → task per spec.
-    module_span = spans_by_name.get("dspy.module.ChainOfThought")
-    assert module_span is not None
+    module_span = spans_by_name["dspy.module.ChainOfThought"]
     assert module_span["span_attributes"]["type"] == "task"
     assert module_span["metadata"]["module_class"].endswith("ChainOfThought")
 
     lm_span = spans_by_name["dspy.lm"]
     assert lm_span["context"]["span_origin"]["instrumentation"]["name"] == "dspy-auto"
-    # dspy.lm intentionally has no `llm` type — the underlying provider integration
-    # (litellm/openai/anthropic) owns the `llm` leaf and its token accounting.
     assert lm_span["span_attributes"].get("type") != "llm"
     assert "metadata" in lm_span
     assert "model" in lm_span["metadata"]
     assert MODEL in lm_span["metadata"]["model"]
-    # Still record provider so downstream tools can attribute the call correctly;
-    # derived from the litellm-style "openai/..." prefix.
     assert lm_span["metadata"]["provider"] == "openai"
     assert "input" in lm_span
     assert "output" in lm_span
 
     format_span = spans_by_name["dspy.adapter.format"]
-    parse_span = spans_by_name["dspy.adapter.parse"]
-
     assert format_span["span_attributes"]["type"] == "task"
     assert format_span["metadata"]["adapter_class"].endswith("ChatAdapter")
     assert "signature" in format_span["input"]
@@ -72,6 +64,7 @@ def test_dspy_callback(memory_logger):
     assert "inputs" in format_span["input"]
     assert isinstance(format_span["output"], list)
 
+    parse_span = spans_by_name["dspy.adapter.parse"]
     assert parse_span["span_attributes"]["type"] == "task"
     assert parse_span["metadata"]["adapter_class"].endswith("ChatAdapter")
     assert "signature" in parse_span["input"]
