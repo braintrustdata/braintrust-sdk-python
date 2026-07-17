@@ -250,8 +250,23 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
 
     kickoff = _build_kickoff_started()
     _emit(kickoff)
+
+    # Emit with a real CrewAI LLM as source so ``metadata.provider`` gets
+    # populated from ``LLM.provider`` — the spec requires every llm span
+    # to carry provider metadata.
+    from crewai import LLM
+    from crewai.events.event_bus import crewai_event_bus
+
+    llm_source = LLM(model="gpt-4o-mini")
     llm_started = _build_llm_started(parent_event_id=kickoff.event_id)
-    _emit(llm_started)
+    future = crewai_event_bus.emit(llm_source, llm_started)
+    if future is not None:
+        try:
+            future.result(timeout=5.0)
+        except Exception:
+            pass
+    _flush_event_bus(crewai_event_bus, timeout=5.0)
+
     _emit(_build_llm_completed(llm_started, usage={"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}))
     _emit(_build_kickoff_completed(kickoff))
 
@@ -277,10 +292,32 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
     # Shape assertions.
     assert llm_span["input"]["messages"] == llm_started.messages
     assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    # Every llm span must carry ``metadata.provider`` per the instrumentation spec.
+    assert llm_span["metadata"]["provider"] == "openai"
     assert llm_span["metadata"]["call_id"] == "call-1"
     assert llm_span["output"] == "4"
     assert kickoff_span["output"] == "final answer"
     assert kickoff_span["input"] == kickoff.inputs
+
+
+def test_llm_tools_route_to_metadata_not_input(memory_logger):
+    """Tool definitions belong in ``metadata.tools`` per the spec, not in ``input``."""
+    patch_crewai()
+
+    tools = [
+        {"type": "function", "function": {"name": "search", "description": "search the web"}},
+        {"type": "function", "function": {"name": "sum", "description": "add two numbers"}},
+    ]
+    started = _build_llm_started(tools=tools)
+    _emit(started)
+    _emit(_build_llm_completed(started))
+
+    span = memory_logger.pop()[0]
+    assert span["span_attributes"]["name"] == "crewai.llm"
+    # Positive: tools land in metadata untouched (no eager serialization).
+    assert span["metadata"]["tools"] == tools
+    # Negative: tools MUST NOT leak into input.
+    assert "tools" not in span["input"], span["input"]
 
 
 def test_llm_tokens_skipped_when_litellm_patched(memory_logger, monkeypatch):
