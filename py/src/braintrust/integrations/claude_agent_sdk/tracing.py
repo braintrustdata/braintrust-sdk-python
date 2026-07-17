@@ -184,31 +184,33 @@ def _serialize_system_message(message: Any) -> dict[str, Any]:
 # only at the top level so nested values (e.g. arbitrary keys inside
 # `tool_input` or `hookSpecificOutput`) pass through and reach Braintrust's
 # log-time serializer intact.
-_HOOK_ALLOWED_FIELDS = frozenset({
-    # Common input fields
-    "session_id",
-    "hook_event_name",
-    # Event-specific input fields
-    "tool_name",
-    "tool_input",
-    "tool_response",
-    "prompt",
-    "message",
-    "stop_hook_active",
-    "trigger",
-    "custom_instructions",
-    "source",
-    "reason",
-    "agent_id",
-    "agent_type",
-    # Hook return fields (Claude Code hook protocol)
-    "continue",
-    "stopReason",
-    "suppressOutput",
-    "decision",
-    "hookSpecificOutput",
-    "systemMessage",
-})
+_HOOK_ALLOWED_FIELDS = frozenset(
+    {
+        # Common input fields
+        "session_id",
+        "hook_event_name",
+        # Event-specific input fields
+        "tool_name",
+        "tool_input",
+        "tool_response",
+        "prompt",
+        "message",
+        "stop_hook_active",
+        "trigger",
+        "custom_instructions",
+        "source",
+        "reason",
+        "agent_id",
+        "agent_type",
+        # Hook return fields (Claude Code hook protocol)
+        "continue",
+        "stopReason",
+        "suppressOutput",
+        "decision",
+        "hookSpecificOutput",
+        "systemMessage",
+    }
+)
 
 
 def _serialize_hook_value(value: Any) -> Any:
