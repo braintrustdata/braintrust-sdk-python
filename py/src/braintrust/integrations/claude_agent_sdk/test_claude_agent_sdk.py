@@ -192,6 +192,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
 
     for llm_span in llm_spans:
         assert llm_span["span_attributes"]["name"] == "anthropic.messages.create"
+        assert llm_span.get("metadata", {}).get("provider") == "anthropic"
+        assert llm_span.get("metadata", {}).get("model")
         assert isinstance(llm_span["output"], list)
         assert len(llm_span["output"]) > 0
         for metric_name in ("prompt_tokens", "completion_tokens", "tokens"):
