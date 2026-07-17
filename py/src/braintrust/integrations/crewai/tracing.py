@@ -20,20 +20,21 @@ Thread-safety: the bus uses up to ``max_workers=10`` workers, so start and
 end events for the same scope can race across threads. A listener-level
 :class:`threading.Lock` guards the ``event_id -> Span`` map.
 
-Token-metric rule (leaf-only):
+Token-metric rule (wrapper-only):
 
-CrewAI delegates LLM calls to LiteLLM.  When the LiteLLM integration is
-also patched, the ``Completion`` span LiteLLM produces is the leaf span
-and already owns token accounting.  Emitting tokens on the enclosing
-``crewai.llm`` span in that configuration would make trace-tree rollup
-double-count the same tokens at every ancestor.
+CrewAI is always an orchestration layer: every LLM call it emits is
+routed through an underlying provider SDK (LiteLLM, or a native
+``openai`` / ``anthropic`` / ``bedrock`` / ``google-genai`` client).
+Whichever of those the user has patched — commonly all of them via
+``auto_instrument()`` — owns the leaf span with real token accounting.
+If ``crewai.llm`` also logged tokens, trace-tree rollup would
+double-count them at every ancestor.
 
-We therefore follow the same pattern as the pydantic_ai integration
-(see ``_wrapper_span_metrics`` in ``pydantic_ai/tracing.py``):
-``crewai.llm`` emits timing + ``time_to_first_token`` unconditionally, and
-token metrics only when LiteLLM is *not* patched.  The check happens at
-log time via the internal ``_is_litellm_patched`` helper on the LiteLLM
-integration.
+We therefore follow the same rule ``pydantic_ai`` uses for its wrapper
+spans (see ``_wrapper_span_metrics`` in ``pydantic_ai/tracing.py``):
+``crewai.llm`` emits timing + ``time_to_first_token`` only. Tokens live
+on the leaf provider span. This is the "clear ownership" pattern the
+sdk-integrations SKILL prefers over "if X is patched, skip" checks.
 """
 
 # pylint: disable=import-error
@@ -42,11 +43,7 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any
 
-from braintrust.integrations.utils import (
-    _normalize_chat_messages,
-    _parse_openai_usage_metrics,
-    _try_to_dict,
-)
+from braintrust.integrations.utils import _normalize_chat_messages
 from braintrust.logger import NOOP_SPAN, Span, current_span
 from braintrust.logger import start_span as _bt_start_span
 
@@ -66,24 +63,6 @@ from braintrust.span_types import SpanTypeAttribute
 
 if TYPE_CHECKING:
     from crewai.events.event_bus import CrewAIEventsBus
-
-
-# LiteLLM / LiteLLM-over-OpenAI usage field translation.  Mirrors the
-# mapping in ``braintrust.integrations.litellm.tracing`` so ``crewai.llm``
-# spans use identical metric names when LiteLLM is not the leaf.
-_TOKEN_NAME_MAP: dict[str, str] = {
-    "total_tokens": "tokens",
-    "prompt_tokens": "prompt_tokens",
-    "completion_tokens": "completion_tokens",
-    "tokens": "tokens",
-    "input_tokens": "prompt_tokens",
-    "output_tokens": "completion_tokens",
-}
-
-_TOKEN_PREFIX_MAP: dict[str, str] = {
-    "input": "prompt",
-    "output": "completion",
-}
 
 
 # Provider parameters we want to surface on `crewai.llm` metadata.
@@ -106,21 +85,6 @@ _LLM_CONFIG_FIELDS: tuple[str, ...] = (
 )
 
 
-def _litellm_owns_leaf_span() -> bool:
-    """Return True when LiteLLM's completion entry points have been patched.
-
-    Late-imported so that importing the CrewAI integration never forces a
-    LiteLLM import.  Errors are swallowed so a broken LiteLLM install
-    never prevents CrewAI tracing from running.
-    """
-    try:
-        from braintrust.integrations.litellm import _is_litellm_patched
-
-        return _is_litellm_patched()
-    except Exception:
-        return False
-
-
 # ---------------------------------------------------------------------------
 # Payload normalization helpers
 # ---------------------------------------------------------------------------
@@ -137,7 +101,9 @@ def _agent_metadata(agent: Any) -> dict[str, Any]:
             meta[f"agent_{attr}"] = str(value) if attr == "id" else value
     llm = getattr(agent, "llm", None)
     if llm is not None:
-        meta["agent_llm"] = getattr(llm, "model", None) or str(llm)
+        model_name = getattr(llm, "model", None)
+        if model_name:
+            meta["agent_llm"] = model_name
     return meta
 
 
@@ -198,32 +164,14 @@ def _llm_config_metadata(source: Any) -> dict[str, Any]:
     return meta
 
 
-def _normalize_tools(tools: Any) -> Any:
-    """Normalize a list of CrewAI tool descriptors for logging."""
-    if tools is None:
+def _provider_from_source(source: Any) -> str | None:
+    """Return the ``provider`` string off the emitting CrewAI ``LLM`` object."""
+    if source is None:
         return None
-    if isinstance(tools, (list, tuple)):
-        out = []
-        for tool in tools:
-            if isinstance(tool, dict):
-                out.append(tool)
-            else:
-                out.append(_try_to_dict(tool))
-        return out
-    return _try_to_dict(tools)
-
-
-def _normalize_output(value: Any) -> Any:
-    """Coerce provider-owned output objects into plain dicts/strings for logging."""
-    if value is None:
-        return None
-    if isinstance(value, (str, int, float, bool, dict, list)):
-        return value
-    coerced = _try_to_dict(value)
-    if coerced is value and not isinstance(value, (str, int, float, bool, dict, list)):
-        # Last-resort: render as a string rather than log a raw SDK object.
-        return str(value)
-    return coerced
+    provider = getattr(source, "provider", None)
+    if isinstance(provider, str) and provider:
+        return provider
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -366,7 +314,7 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
 
     @crewai_event_bus.on(CrewKickoffCompletedEvent)
     def on_crew_kickoff_completed(_source: Any, event: CrewKickoffCompletedEvent) -> None:
-        self._end_span(event, output=_normalize_output(getattr(event, "output", None)))
+        self._end_span(event, output=getattr(event, "output", None))
         # Kickoff is the outermost scope; drop any orphan entries left over
         # when an inner end-event was never delivered so state does not grow
         # unbounded in long-running services.
@@ -399,7 +347,7 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
 
     @crewai_event_bus.on(TaskCompletedEvent)
     def on_task_completed(_source: Any, event: TaskCompletedEvent) -> None:
-        self._end_span(event, output=_normalize_output(getattr(event, "output", None)))
+        self._end_span(event, output=getattr(event, "output", None))
 
     @crewai_event_bus.on(TaskFailedEvent)
     def on_task_failed(_source: Any, event: TaskFailedEvent) -> None:
@@ -418,7 +366,9 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
             **_task_metadata(task),
             **_causal_metadata(event),
         }
-        metadata["tools"] = _normalize_tools(getattr(event, "tools", None))
+        agent_tools = getattr(event, "tools", None)
+        if agent_tools:
+            metadata["tools"] = agent_tools
         self._open_span(
             event,
             name="crewai.agent",
@@ -447,18 +397,20 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
         }
         if getattr(event, "model", None):
             metadata["model"] = event.model
+        provider = _provider_from_source(source)
+        if provider:
+            metadata["provider"] = provider
         if getattr(event, "call_id", None):
             metadata["call_id"] = event.call_id
         available_functions = getattr(event, "available_functions", None)
         if available_functions:
             metadata["available_functions"] = list(available_functions)
-        span_input: dict[str, Any] = {
-            "messages": getattr(event, "messages", None),
-        }
         tools = getattr(event, "tools", None)
         if tools:
-            span_input["tools"] = _normalize_tools(tools)
-        span_input["messages"] = _normalize_chat_messages(span_input["messages"])
+            metadata["tools"] = tools
+        span_input: dict[str, Any] = {
+            "messages": _normalize_chat_messages(getattr(event, "messages", None)),
+        }
         self._open_span(
             event,
             name="crewai.llm",
@@ -482,24 +434,10 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
         if getattr(event, "model", None):
             metadata["model"] = event.model
 
-        # Timing metrics are always safe.  Token metrics are only emitted
-        # when LiteLLM is NOT patching the completion entry points, to
-        # avoid double-counting with the downstream ``Completion`` span.
-        extra_metrics: dict[str, Any] = {}
-        if not _litellm_owns_leaf_span():
-            usage = getattr(event, "usage", None)
-            if usage is not None:
-                extra_metrics = _parse_openai_usage_metrics(
-                    usage,
-                    token_name_map=_TOKEN_NAME_MAP,
-                    token_prefix_map=_TOKEN_PREFIX_MAP,
-                )
-
         self._end_span(
             event,
-            output=_normalize_output(getattr(event, "response", None)),
+            output=getattr(event, "response", None),
             metadata=metadata or None,
-            extra_metrics=extra_metrics,
         )
 
     @crewai_event_bus.on(LLMCallFailedEvent)
@@ -540,7 +478,7 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
             extra_metadata["run_attempts"] = run_attempts
         self._end_span(
             event,
-            output=_normalize_output(getattr(event, "output", None)),
+            output=getattr(event, "output", None),
             metadata=extra_metadata or None,
         )
 
@@ -648,7 +586,6 @@ def _end_span(
     output: Any = None,
     error: Any = None,
     metadata: dict[str, Any] | None = None,
-    extra_metrics: dict[str, Any] | None = None,
 ) -> None:
     """Close the span opened by the matching start event.
 
@@ -659,9 +596,7 @@ def _end_span(
     started_event_id = getattr(event, "started_event_id", None) or getattr(event, "event_id", None)
     if not started_event_id:
         return
-    self._end_span_by_event_id(
-        started_event_id, output=output, error=error, metadata=metadata, extra_metrics=extra_metrics
-    )
+    self._end_span_by_event_id(started_event_id, output=output, error=error, metadata=metadata)
 
 
 def _end_span_by_event_id(
@@ -671,7 +606,6 @@ def _end_span_by_event_id(
     output: Any = None,
     error: Any = None,
     metadata: dict[str, Any] | None = None,
-    extra_metrics: dict[str, Any] | None = None,
 ) -> None:
     with self._lock:
         span = self._spans.pop(started_event_id, None)
@@ -684,8 +618,6 @@ def _end_span_by_event_id(
     metrics: dict[str, Any] = {"end": end_time}
     if first_token_time is not None and start_time is not None:
         metrics["time_to_first_token"] = first_token_time - start_time
-    if extra_metrics:
-        metrics.update(extra_metrics)
 
     log_payload: dict[str, Any] = {"metrics": metrics}
     if output is not None:

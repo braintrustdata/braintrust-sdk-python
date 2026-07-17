@@ -71,11 +71,6 @@ def _reset_listener():
     """Force a clean CrewAI listener for each test.
 
     The module-level ``_LISTENER`` singleton leaks between tests otherwise.
-    We deliberately do *not* touch LiteLLM patch markers here: stripping them
-    would confuse ``is_patched`` and let a subsequent ``patch_litellm()``
-    double-wrap the module. The leaf-only token-metric tests below instead
-    monkeypatch ``is_litellm_patched`` directly when they need to pretend
-    LiteLLM is (or is not) patched.
     """
     _reset_for_testing()
     yield
@@ -250,8 +245,22 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
 
     kickoff = _build_kickoff_started()
     _emit(kickoff)
+
+    # A real CrewAI LLM is needed as ``source`` so ``metadata.provider``
+    # gets populated from ``LLM.provider``.
+    from crewai import LLM
+    from crewai.events.event_bus import crewai_event_bus
+
+    llm_source = LLM(model="gpt-4o-mini")
     llm_started = _build_llm_started(parent_event_id=kickoff.event_id)
-    _emit(llm_started)
+    future = crewai_event_bus.emit(llm_source, llm_started)
+    if future is not None:
+        try:
+            future.result(timeout=5.0)
+        except Exception:
+            pass
+    _flush_event_bus(crewai_event_bus, timeout=5.0)
+
     _emit(_build_llm_completed(llm_started, usage={"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}))
     _emit(_build_kickoff_completed(kickoff))
 
@@ -277,20 +286,33 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
     # Shape assertions.
     assert llm_span["input"]["messages"] == llm_started.messages
     assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["provider"] == "openai"
     assert llm_span["metadata"]["call_id"] == "call-1"
     assert llm_span["output"] == "4"
     assert kickoff_span["output"] == "final answer"
     assert kickoff_span["input"] == kickoff.inputs
 
 
-def test_llm_tokens_skipped_when_litellm_patched(memory_logger, monkeypatch):
-    """Leaf-only rule: LiteLLM patched -> no token metrics on crewai.llm."""
-    # Pretend LiteLLM is patched without actually wrapping the module, so
-    # tests later in the suite that rely on a clean LiteLLM still see it.
-    monkeypatch.setattr(
-        "braintrust.integrations.crewai.tracing._litellm_owns_leaf_span",
-        lambda: True,
-    )
+def test_llm_tools_route_to_metadata_not_input(memory_logger):
+    """Tool definitions belong in ``metadata.tools`` per the spec, not in ``input``."""
+    patch_crewai()
+
+    tools = [
+        {"type": "function", "function": {"name": "search", "description": "search the web"}},
+        {"type": "function", "function": {"name": "sum", "description": "add two numbers"}},
+    ]
+    started = _build_llm_started(tools=tools)
+    _emit(started)
+    _emit(_build_llm_completed(started))
+
+    span = memory_logger.pop()[0]
+    assert span["span_attributes"]["name"] == "crewai.llm"
+    assert span["metadata"]["tools"] == tools
+    assert "tools" not in span["input"], span["input"]
+
+
+def test_llm_never_emits_token_metrics(memory_logger):
+    """crewai.llm is a wrapper span; the leaf provider owns tokens (see module docstring)."""
     patch_crewai()
 
     llm_started = _build_llm_started()
@@ -308,31 +330,14 @@ def test_llm_tokens_skipped_when_litellm_patched(memory_logger, monkeypatch):
     metrics = by_name["crewai.llm"][0]["metrics"]
 
     assert "start" in metrics and "end" in metrics
-    for token_key in ("tokens", "prompt_tokens", "completion_tokens"):
-        assert token_key not in metrics, f"crewai.llm leaked {token_key}={metrics[token_key]} while litellm is patched"
-
-
-def test_llm_tokens_emitted_when_litellm_not_patched(memory_logger, monkeypatch):
-    """Leaf: LiteLLM unpatched -> crewai.llm owns token metrics."""
-    monkeypatch.setattr(
-        "braintrust.integrations.crewai.tracing._litellm_owns_leaf_span",
-        lambda: False,
-    )
-    patch_crewai()
-
-    llm_started = _build_llm_started()
-    _emit(llm_started)
-    _emit(
-        _build_llm_completed(
-            llm_started,
-            usage={"prompt_tokens": 11, "completion_tokens": 22, "total_tokens": 33},
-        )
-    )
-
-    metrics = memory_logger.pop()[0]["metrics"]
-    assert metrics["prompt_tokens"] == 11
-    assert metrics["completion_tokens"] == 22
-    assert metrics["tokens"] == 33
+    for token_key in (
+        "tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "prompt_cached_tokens",
+        "completion_reasoning_tokens",
+    ):
+        assert token_key not in metrics, f"crewai.llm leaked {token_key}={metrics.get(token_key)}"
 
 
 def test_llm_call_failed_logs_error(memory_logger):
