@@ -1,30 +1,13 @@
 import json
 import logging
-import re
 import time
 from collections.abc import Mapping, Sequence
-from re import Pattern
-from typing import (
-    Any,
-    TypedDict,
-)
+from typing import Any, TypedDict
 from uuid import UUID
 
 from braintrust.generated_types import SpanAttributes
 from braintrust.logger import NOOP_SPAN, Logger, Span, current_span, init_logger
 from braintrust.logger import start_span as _bt_start_span
-
-
-_INSTRUMENTATION = "langchain-auto"
-
-
-def start_span(*args, **kwargs):
-    internal = dict(kwargs.get("internal") or {})
-    internal.setdefault("instrumentation", _INSTRUMENTATION)
-    kwargs["internal"] = internal
-    return _bt_start_span(*args, **kwargs)
-
-
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.version import VERSION as sdk_version
 from langchain_core.agents import AgentAction, AgentFinish
@@ -36,9 +19,17 @@ from tenacity import RetryCallState
 from typing_extensions import NotRequired
 
 
+_INSTRUMENTATION = "langchain-auto"
+_INTEGRATION_NAME = "langchain-py"
+
 _logger = logging.getLogger("braintrust.wrappers.langchain")
 
-_INTEGRATION_NAME = "langchain-py"
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
 
 
 class LogEvent(TypedDict):
@@ -54,6 +45,58 @@ class LogEvent(TypedDict):
     dataset_record_id: NotRequired[str]
 
 
+# Only aliases where the package name doesn't strip cleanly to the provider.
+_PROVIDER_ALIASES: dict[str, str] = {
+    "langchain_google_vertexai": "google",
+    "langchain_google_genai": "google",
+    "langchain_google": "google",
+    "langchain_aws": "aws",
+    "langchain_bedrock": "aws",
+    "langchain_azure_ai": "azure",
+    "langchain_azure": "azure",
+    "langchain_mistralai": "mistral",
+}
+
+
+def _provider_from_serialized(serialized: Mapping[str, Any] | None) -> str | None:
+    if not serialized:
+        return None
+    for part in serialized.get("id") or []:
+        if not isinstance(part, str):
+            continue
+        head = part.lower().split(".", 1)[0]
+        if head in _PROVIDER_ALIASES:
+            return _PROVIDER_ALIASES[head]
+        if head.startswith("langchain_"):
+            return head[len("langchain_") :]
+    return None
+
+
+def _resolve_name(name: str | None, serialized: Mapping[str, Any] | None, default: str) -> str:
+    return name or (serialized or {}).get("name") or last_item((serialized or {}).get("id") or []) or default
+
+
+_TOOL_KEYS = ("tools", "functions")
+_TOOL_CHOICE_KEYS = ("tool_choice", "function_call")
+
+
+def _split_tools(invocation_params: Mapping[str, Any] | None) -> tuple[dict[str, Any], Any, Any]:
+    if not invocation_params:
+        return {}, None, None
+    tools: Any = None
+    tool_choice: Any = None
+    remaining: dict[str, Any] = {}
+    for key, value in invocation_params.items():
+        if key in _TOOL_KEYS and tools is None and value:
+            tools = value
+            continue
+        if key in _TOOL_CHOICE_KEYS and tool_choice is None and value is not None:
+            tool_choice = value
+            continue
+        remaining[key] = value
+    return remaining, tools, tool_choice
+
+
 class BraintrustCallbackHandler(BaseCallbackHandler):
     root_run_id: UUID | None = None
 
@@ -61,17 +104,12 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self,
         logger: Logger | Span | None = None,
         debug: bool = False,
-        exclude_metadata_props: Pattern[str] | None = None,
     ):
         self.logger = logger
         self.spans: dict[UUID, Span] = {}
-        self.debug = debug  # DEPRECATED
-        self.exclude_metadata_props = exclude_metadata_props or re.compile(
-            r"^(l[sc]_|langgraph_|__pregel_|checkpoint_ns)"
-        )
+        self.debug = debug
         self.skipped_runs: set[UUID] = set()
-        # Set run_inline=True to avoid thread executor in async contexts
-        # This ensures memory logger context is preserved
+        # Preserve memory logger context across async callbacks.
         self.run_inline = True
 
         self._start_times: dict[UUID, float] = {}
@@ -91,7 +129,6 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         event: LogEvent | None = None,
     ) -> Span | None:
         if run_id in self.spans:
-            # XXX: See graph test case of an example where this _may_ be intended.
             _logger.warning(f"Span already exists for run_id {run_id} (this is likely a bug)")
             return
 
@@ -115,7 +152,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             **event,
             "tags": None,
             "metadata": {
-                **({"tags": tags}),
+                "tags": tags,
                 **(event.get("metadata") or {}),
                 "run_id": run_id,
                 "parent_run_id": parent_run_id,
@@ -165,7 +202,6 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             )
 
         span.set_current()
-
         self.spans[run_id] = span
         return span
 
@@ -210,10 +246,8 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             dataset_record_id=dataset_record_id,
         )
 
-        # In async workflows, callbacks may execute in different async contexts.
-        # The span's context variable token may have been created in a different
-        # context, causing ValueError when trying to reset it. We catch and ignore
-        # this specific error since the span hierarchy is maintained via self.spans.
+        # Async callbacks may unset from a different context; span state is
+        # tracked in self.spans, so this ValueError is benign.
         try:
             span.unset_current()
         except ValueError as e:
@@ -230,10 +264,9 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: UUID | None = None,
-        **kwargs: Any,  # TODO: response=
+        **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
-
+        self._end_span(run_id, error=str(error))
         self._start_times.pop(run_id, None)
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
@@ -244,9 +277,9 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: UUID | None = None,
-        **kwargs: Any,  # TODO: some metadata
+        **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
+        self._end_span(run_id, error=str(error))
 
     def on_tool_error(
         self,
@@ -256,7 +289,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
+        self._end_span(run_id, error=str(error))
 
     def on_retriever_error(
         self,
@@ -266,9 +299,8 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, error=str(error), metadata={**kwargs})
+        self._end_span(run_id, error=str(error))
 
-    # Agent Methods
     def on_agent_action(
         self,
         action: AgentAction,
@@ -280,9 +312,9 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._start_span(
             parent_run_id,
             run_id,
-            type=SpanTypeAttribute.LLM,
+            type=SpanTypeAttribute.TOOL,
             name=action.tool,
-            event={"input": action, "metadata": {**kwargs}},
+            event={"input": action},
         )
 
     def on_agent_finish(
@@ -293,7 +325,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, output=finish, metadata={**kwargs})
+        self._end_span(run_id, output=finish)
 
     def on_chain_start(
         self,
@@ -308,8 +340,6 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         **kwargs: Any,
     ) -> None:
         tags = tags or []
-
-        # avoids extra logs that seem not as useful esp. with langgraph
         if "langsmith:hidden" in tags:
             self.skipped_runs.add(run_id)
             return
@@ -318,8 +348,8 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         resolved_name = (
             name
             or metadata.get("langgraph_node")
-            or serialized.get("name")
-            or last_item(serialized.get("id") or [])
+            or (serialized or {}).get("name")
+            or last_item((serialized or {}).get("id") or [])
             or "Chain"
         )
 
@@ -330,12 +360,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             event={
                 "input": inputs,
                 "tags": tags,
-                "metadata": {
-                    "serialized": serialized,
-                    "name": name,
-                    "metadata": metadata,
-                    **kwargs,
-                },
+                "metadata": {"metadata": metadata},
             },
         )
 
@@ -348,7 +373,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, output=outputs, tags=tags, metadata={**kwargs})
+        self._end_span(run_id, output=outputs, tags=tags)
 
     def on_llm_start(
         self,
@@ -366,22 +391,17 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
 
-        name = name or serialized.get("name") or last_item(serialized.get("id") or []) or "LLM"
+        span_metadata: dict[str, Any] = {"metadata": metadata or {}}
+        provider = _provider_from_serialized(serialized)
+        if provider:
+            span_metadata["provider"] = provider
+
         self._start_span(
             parent_run_id,
             run_id,
-            name=name,
+            name=_resolve_name(name, serialized, "LLM"),
             type=SpanTypeAttribute.LLM,
-            event={
-                "input": prompts,
-                "tags": tags,
-                "metadata": {
-                    "serialized": serialized,
-                    "name": name,
-                    "metadata": metadata,
-                    **kwargs,
-                },
-            },
+            event={"input": prompts, "tags": tags, "metadata": span_metadata},
         )
 
     def on_chat_model_start(
@@ -401,25 +421,26 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._first_token_times.pop(run_id, None)
         self._ttft_ms.pop(run_id, None)
 
-        invocation_params = invocation_params or {}
+        remaining_params, tools, tool_choice = _split_tools(invocation_params)
+        provider = _provider_from_serialized(serialized)
+
+        span_metadata: dict[str, Any] = {
+            "invocation_params": remaining_params,
+            "metadata": metadata or {},
+        }
+        if tools:
+            span_metadata["tools"] = tools
+        if tool_choice is not None:
+            span_metadata["tool_choice"] = tool_choice
+        if provider:
+            span_metadata["provider"] = provider
+
         self._start_span(
             parent_run_id,
             run_id,
-            name=name or serialized.get("name") or last_item(serialized.get("id") or []) or "Chat Model",
+            name=_resolve_name(name, serialized, "Chat Model"),
             type=SpanTypeAttribute.LLM,
-            event={
-                "input": messages,
-                "tags": tags,
-                "metadata": (
-                    {
-                        "serialized": serialized,
-                        "invocation_params": invocation_params,
-                        "metadata": metadata or {},
-                        "name": name,
-                        **kwargs,
-                    }
-                ),
-            },
+            event={"input": messages, "tags": tags, "metadata": span_metadata},
         )
 
     def on_llm_end(
@@ -435,25 +456,26 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
             return
 
         metrics = _get_metrics_from_response(response)
-
         ttft = self._ttft_ms.pop(run_id, None)
         if ttft is not None:
             metrics["time_to_first_token"] = ttft
 
-        model_name = _get_model_name_from_response(response)
-
         self._start_times.pop(run_id, None)
         self._first_token_times.pop(run_id, None)
+
+        model_name, provider = _model_and_provider_from_response(response)
+        end_metadata: dict[str, Any] = {}
+        if model_name:
+            end_metadata["model"] = model_name
+        if provider:
+            end_metadata["provider"] = provider
 
         self._end_span(
             run_id,
             output=response,
             metrics=metrics,
             tags=tags,
-            metadata={
-                "model": model_name,
-                **kwargs,
-            },
+            metadata=end_metadata,
         )
 
     def on_tool_start(
@@ -472,20 +494,12 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._start_span(
             parent_run_id,
             run_id,
-            name=name or serialized.get("name") or last_item(serialized.get("id") or []) or "Tool",
+            name=_resolve_name(name, serialized, "Tool"),
             type=SpanTypeAttribute.TOOL,
             event={
-                "input": inputs or safe_parse_serialized_json(input_str),
+                "input": inputs if inputs is not None else safe_parse_serialized_json(input_str),
                 "tags": tags,
-                "metadata": {
-                    "metadata": metadata,
-                    "serialized": serialized,
-                    "input_str": input_str,
-                    "input": safe_parse_serialized_json(input_str),
-                    "inputs": inputs,
-                    "name": name,
-                    **kwargs,
-                },
+                "metadata": {"metadata": metadata or {}},
             },
         )
 
@@ -497,7 +511,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, output=output, metadata={**kwargs})
+        self._end_span(run_id, output=output)
 
     def on_retriever_start(
         self,
@@ -514,17 +528,12 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         self._start_span(
             parent_run_id,
             run_id,
-            name=name or serialized.get("name") or last_item(serialized.get("id") or []) or "Retriever",
+            name=_resolve_name(name, serialized, "Retriever"),
             type=SpanTypeAttribute.FUNCTION,
             event={
                 "input": query,
                 "tags": tags,
-                "metadata": {
-                    "serialized": serialized,
-                    "metadata": metadata,
-                    "name": name,
-                    **kwargs,
-                },
+                "metadata": {"metadata": metadata or {}},
             },
         )
 
@@ -536,7 +545,7 @@ class BraintrustCallbackHandler(BaseCallbackHandler):
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        self._end_span(run_id, output=documents, metadata={**kwargs})
+        self._end_span(run_id, output=documents)
 
     def on_llm_new_token(
         self,
@@ -611,29 +620,34 @@ def _walk_generations(response: LLMResult):
         yield from generations or []
 
 
-def _get_model_name_from_response(response: LLMResult) -> str | None:
-    model_name = None
+def _model_and_provider_from_response(response: LLMResult) -> tuple[str | None, str | None]:
+    model_name: str | None = None
+    provider: str | None = None
     for generation in _walk_generations(response):
         message = getattr(generation, "message", None)
         if not message:
             continue
-
-        response_metadata = getattr(message, "response_metadata", None)
-        if response_metadata and isinstance(response_metadata, dict):
-            model_name = response_metadata.get("model_name")
-
-        if model_name:
+        rmeta = getattr(message, "response_metadata", None)
+        if not isinstance(rmeta, dict):
+            continue
+        if not model_name:
+            model_name = rmeta.get("model_name") or None
+        if not provider:
+            prov = rmeta.get("model_provider")
+            if isinstance(prov, str) and prov:
+                provider = prov.lower()
+        if model_name and provider:
             break
 
     if not model_name:
         llm_output: dict[str, Any] = response.llm_output or {}
-        model_name = llm_output.get("model_name") or llm_output.get("model") or ""
+        model_name = llm_output.get("model_name") or llm_output.get("model") or None
 
-    return model_name
+    return model_name, provider
 
 
 def _get_metrics_from_response(response: LLMResult):
-    metrics = {}
+    metrics: dict[str, Any] = {}
 
     for generation in _walk_generations(response):
         message = getattr(generation, "message", None)
@@ -641,58 +655,55 @@ def _get_metrics_from_response(response: LLMResult):
             continue
 
         usage_metadata = getattr(message, "usage_metadata", None)
+        if not (usage_metadata and isinstance(usage_metadata, dict)):
+            continue
 
-        if usage_metadata and isinstance(usage_metadata, dict):
-            metrics.update(
-                clean_object(
-                    {
-                        "total_tokens": usage_metadata.get("total_tokens"),
-                        "prompt_tokens": usage_metadata.get("input_tokens"),
-                        "completion_tokens": usage_metadata.get("output_tokens"),
-                    }
-                )
+        metrics.update(
+            clean_object(
+                {
+                    "total_tokens": usage_metadata.get("total_tokens"),
+                    "prompt_tokens": usage_metadata.get("input_tokens"),
+                    "completion_tokens": usage_metadata.get("output_tokens"),
+                }
             )
+        )
 
-            # Extract cache tokens from nested input_token_details (LangChain format)
-            # Maps to Braintrust's standard cache token metric names
-            input_token_details = usage_metadata.get("input_token_details")
-            if input_token_details and isinstance(input_token_details, dict):
-                cache_read = input_token_details.get("cache_read")
-                cache_creation = input_token_details.get("cache_creation")
-                cache_creation_5m = input_token_details.get("ephemeral_5m_input_tokens")
-                cache_creation_1h = input_token_details.get("ephemeral_1h_input_tokens")
-                has_cache_creation_breakdown = cache_creation_5m is not None or cache_creation_1h is not None
+        input_token_details = usage_metadata.get("input_token_details")
+        if not (input_token_details and isinstance(input_token_details, dict)):
+            continue
 
-                if cache_read is not None:
-                    metrics["prompt_cached_tokens"] = cache_read
-                if has_cache_creation_breakdown:
-                    # Anthropic exposes TTL-specific cache creation buckets. Preserve the
-                    # split so downstream cost tooling can price 5m vs 1h writes correctly.
-                    if cache_creation_5m is not None:
-                        metrics["prompt_cache_creation_5m_tokens"] = cache_creation_5m
-                    if cache_creation_1h is not None:
-                        metrics["prompt_cache_creation_1h_tokens"] = cache_creation_1h
-                    effective_cache_creation = (cache_creation_5m or 0) + (cache_creation_1h or 0)
-                else:
-                    if cache_creation is not None:
-                        metrics["prompt_cache_creation_tokens"] = cache_creation
-                    effective_cache_creation = cache_creation or 0
-                cache_tokens = (cache_read or 0) + effective_cache_creation
-                prompt_tokens = metrics.get("prompt_tokens")
-                completion_tokens = metrics.get("completion_tokens")
-                total_tokens = metrics.get("total_tokens")
-                if prompt_tokens is not None and completion_tokens is not None:
-                    # LangChain's UsageMetadata contract makes input_token_details a
-                    # breakdown of input_tokens, so cache tokens already count toward
-                    # the prompt total (langchain-anthropic >= 0.2.3, langchain-aws,
-                    # langchain-openai all comply). Cache tokens exceeding the prompt
-                    # total means the integration reported uncached input only — fold
-                    # cache tokens back in so prompt/total stay internally consistent.
-                    if cache_tokens > prompt_tokens and total_tokens == prompt_tokens + completion_tokens:
-                        prompt_tokens += cache_tokens
-                        metrics["prompt_tokens"] = prompt_tokens
-                        metrics["total_tokens"] = total_tokens + cache_tokens
-                    metrics["tokens"] = prompt_tokens + completion_tokens
+        cache_read = input_token_details.get("cache_read")
+        cache_creation = input_token_details.get("cache_creation")
+        cache_creation_5m = input_token_details.get("ephemeral_5m_input_tokens")
+        cache_creation_1h = input_token_details.get("ephemeral_1h_input_tokens")
+        has_cache_creation_split = cache_creation_5m is not None or cache_creation_1h is not None
+
+        if cache_read is not None:
+            metrics["prompt_cached_tokens"] = cache_read
+        if has_cache_creation_split:
+            if cache_creation_5m is not None:
+                metrics["prompt_cache_creation_5m_tokens"] = cache_creation_5m
+            if cache_creation_1h is not None:
+                metrics["prompt_cache_creation_1h_tokens"] = cache_creation_1h
+            effective_cache_creation = (cache_creation_5m or 0) + (cache_creation_1h or 0)
+        else:
+            if cache_creation is not None:
+                metrics["prompt_cache_creation_tokens"] = cache_creation
+            effective_cache_creation = cache_creation or 0
+        cache_tokens = (cache_read or 0) + effective_cache_creation
+
+        prompt_tokens = metrics.get("prompt_tokens")
+        completion_tokens = metrics.get("completion_tokens")
+        total_tokens = metrics.get("total_tokens")
+        if prompt_tokens is not None and completion_tokens is not None:
+            # LangChain's input_token_details is a breakdown of input_tokens.
+            # Fold cache tokens back into prompt/total only if the integration
+            # reported uncached-input-only (cache tokens exceeding prompt total).
+            if cache_tokens > prompt_tokens and total_tokens == prompt_tokens + completion_tokens:
+                prompt_tokens += cache_tokens
+                metrics["prompt_tokens"] = prompt_tokens
+                metrics["total_tokens"] = total_tokens + cache_tokens
+            metrics["tokens"] = prompt_tokens + completion_tokens
 
     if not metrics or not any(metrics.values()):
         llm_output: dict[str, Any] = response.llm_output or {}

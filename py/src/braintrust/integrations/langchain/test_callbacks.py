@@ -148,6 +148,7 @@ def test_llm_calls(logger_memory_logger):
                 "metadata": {
                     "tags": ["seq:step:2"],
                     "model": "gpt-4o-mini-2024-07-18",
+                    "provider": "openai",
                 },
                 "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
@@ -257,6 +258,7 @@ def test_chain_with_memory(logger_memory_logger):
                 "metadata": {
                     "tags": ["seq:step:2", "test"],
                     "model": "gpt-4o-mini-2024-07-18",
+                    "provider": "openai",
                 },
                 "root_span_id": trace_root_id,
                 "span_parents": [root_span_id],
@@ -332,18 +334,17 @@ def test_tool_usage(logger_memory_logger):
                 "metadata": {
                     "tags": [],
                     "model": "gpt-4o-mini-2024-07-18",
-                    "invocation_params": {
-                        "tools": [
-                            {
-                                "type": "function",
-                                "function": {
-                                    "name": "calculator",
-                                    "description": "Can perform mathematical operations.",
-                                    "parameters": ANY,  # Complex JSON schema
-                                },
-                            }
-                        ],
-                    },
+                    "provider": "openai",
+                    "tools": [
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": "calculator",
+                                "description": "Can perform mathematical operations.",
+                                "parameters": ANY,  # Complex JSON schema
+                            },
+                        }
+                    ],
                 },
                 "output": {
                     "generations": [
@@ -572,6 +573,7 @@ def test_langgraph_state_management(logger_memory_logger):
             ],
             "metadata": {
                 "model": "gpt-4o-mini-2024-07-18",
+                "provider": "openai",
                 "tags": [],
             },
             "output": {
