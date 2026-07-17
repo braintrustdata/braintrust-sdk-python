@@ -101,8 +101,6 @@ def _agent_metadata(agent: Any) -> dict[str, Any]:
             meta[f"agent_{attr}"] = str(value) if attr == "id" else value
     llm = getattr(agent, "llm", None)
     if llm is not None:
-        # ``str(llm)`` on CrewAI's ``LLM`` dumps the full pydantic repr,
-        # which includes ``api_key`` / ``api_base`` / ``client_params``.
         model_name = getattr(llm, "model", None)
         if model_name:
             meta["agent_llm"] = model_name
@@ -406,7 +404,6 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
             metadata["call_id"] = event.call_id
         available_functions = getattr(event, "available_functions", None)
         if available_functions:
-            # ``list(dict)`` yields only the function names, never the callables.
             metadata["available_functions"] = list(available_functions)
         tools = getattr(event, "tools", None)
         if tools:
