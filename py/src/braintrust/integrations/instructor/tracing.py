@@ -16,12 +16,13 @@ Parent span shape:
 - ``output``: the extracted Pydantic model (or list of models for
   iterable/partial helpers).  This is Instructor's product and is not
   present on any provider child span.
-- ``metadata``: ``response_model`` (class name), ``mode``, ``max_retries``,
-  ``retry_count``, ``validation_errors``.
+- ``metadata``: ``model``, ``provider``, ``response_model`` (class name),
+  ``mode``, ``max_retries``, ``retry_count``, ``validation_errors``.  The
+  ``model`` / ``provider`` pair carries attribution for the framework span
+  per the SKILL "framework delegates transport" rule; the provider child
+  span still owns token accounting.
 - ``metrics``: empty.  Token usage stays on the provider child span.
 """
-
-from __future__ import annotations
 
 import inspect
 import logging
@@ -29,6 +30,7 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 from braintrust.logger import start_span as _bt_start_span
+from braintrust.span_types import SpanTypeAttribute
 
 
 _INSTRUMENTATION = "instructor-auto"
@@ -39,9 +41,6 @@ def start_span(*args, **kwargs):
     internal.setdefault("instrumentation", _INSTRUMENTATION)
     kwargs["internal"] = internal
     return _bt_start_span(*args, **kwargs)
-
-
-from braintrust.span_types import SpanTypeAttribute
 
 
 log = logging.getLogger(__name__)
@@ -79,6 +78,37 @@ def _mode_name(instance: Any) -> str | None:
     if mode is None:
         return None
     return getattr(mode, "name", None) or str(mode)
+
+
+def _provider_name(instance: Any) -> str | None:
+    """Read the underlying provider ("openai", "anthropic", ...) from the client.
+
+    Instructor exposes a ``Provider`` enum on every ``Instructor`` /
+    ``AsyncInstructor`` instance whose ``value`` is exactly the short provider
+    string we want for ``metadata.provider``.  Fall back to the enum ``name``
+    lowercased for older builds that only expose the name.
+    """
+    provider = getattr(instance, "provider", None)
+    if provider is None:
+        return None
+    value = getattr(provider, "value", None)
+    if isinstance(value, str) and value:
+        return value
+    name = getattr(provider, "name", None)
+    if isinstance(name, str) and name:
+        return name.lower()
+    return None
+
+
+def _model_name(kwargs: Any, instance: Any) -> str | None:
+    """Pull the underlying model name from call kwargs (or the client default)."""
+    model = kwargs.get("model") if isinstance(kwargs, dict) else None
+    if isinstance(model, str) and model:
+        return model
+    default = getattr(instance, "default_model", None)
+    if isinstance(default, str) and default:
+        return default
+    return None
 
 
 def _max_retries_value(max_retries: Any) -> Any:
@@ -124,11 +154,14 @@ def _build_metadata(
     *,
     response_model: Any,
     instance: Any,
+    kwargs: Any,
     max_retries: Any,
     retry_count: int,
     validation_errors: list[str],
 ) -> dict[str, Any]:
     return {
+        "model": _model_name(kwargs, instance),
+        "provider": _provider_name(instance),
         "response_model": _response_model_name(response_model),
         "mode": _mode_name(instance),
         "max_retries": _max_retries_value(max_retries),
@@ -211,6 +244,7 @@ def _make_sync_wrapper(span_name: str):
                     metadata=_build_metadata(
                         response_model=response_model,
                         instance=instance,
+                        kwargs=kwargs,
                         max_retries=max_retries,
                         retry_count=tracker.retry_count,
                         validation_errors=tracker.validation_errors,
@@ -222,6 +256,7 @@ def _make_sync_wrapper(span_name: str):
                 metadata=_build_metadata(
                     response_model=response_model,
                     instance=instance,
+                    kwargs=kwargs,
                     max_retries=max_retries,
                     retry_count=tracker.retry_count,
                     validation_errors=tracker.validation_errors,
@@ -252,6 +287,7 @@ def _make_async_wrapper(span_name: str):
                     metadata=_build_metadata(
                         response_model=response_model,
                         instance=instance,
+                        kwargs=kwargs,
                         max_retries=max_retries,
                         retry_count=tracker.retry_count,
                         validation_errors=tracker.validation_errors,
@@ -263,6 +299,7 @@ def _make_async_wrapper(span_name: str):
                 metadata=_build_metadata(
                     response_model=response_model,
                     instance=instance,
+                    kwargs=kwargs,
                     max_retries=max_retries,
                     retry_count=tracker.retry_count,
                     validation_errors=tracker.validation_errors,
@@ -299,6 +336,7 @@ def _make_sync_iterable_wrapper(span_name: str):
                         metadata=_build_metadata(
                             response_model=response_model,
                             instance=instance,
+                            kwargs=kwargs,
                             max_retries=max_retries,
                             retry_count=tracker.retry_count,
                             validation_errors=tracker.validation_errors,
@@ -310,6 +348,7 @@ def _make_sync_iterable_wrapper(span_name: str):
                     metadata=_build_metadata(
                         response_model=response_model,
                         instance=instance,
+                        kwargs=kwargs,
                         max_retries=max_retries,
                         retry_count=tracker.retry_count,
                         validation_errors=tracker.validation_errors,
@@ -349,6 +388,7 @@ def _make_async_iterable_wrapper(span_name: str):
                         metadata=_build_metadata(
                             response_model=response_model,
                             instance=instance,
+                            kwargs=kwargs,
                             max_retries=max_retries,
                             retry_count=tracker.retry_count,
                             validation_errors=tracker.validation_errors,
@@ -360,6 +400,7 @@ def _make_async_iterable_wrapper(span_name: str):
                     metadata=_build_metadata(
                         response_model=response_model,
                         instance=instance,
+                        kwargs=kwargs,
                         max_retries=max_retries,
                         retry_count=tracker.retry_count,
                         validation_errors=tracker.validation_errors,
