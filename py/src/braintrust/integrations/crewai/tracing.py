@@ -91,12 +91,7 @@ _LLM_CONFIG_FIELDS: tuple[str, ...] = (
 
 
 def _agent_metadata(agent: Any) -> dict[str, Any]:
-    """Extract identity + configuration metadata from a CrewAI agent object.
-
-    Only attributes on the explicit allowlist below are read, so an SDK-level
-    change that adds new fields (potentially containing API keys or other
-    secrets) does not silently leak into span metadata.
-    """
+    """Extract identity + configuration metadata from a CrewAI agent object."""
     if agent is None:
         return {}
     meta: dict[str, Any] = {}
@@ -106,9 +101,8 @@ def _agent_metadata(agent: Any) -> dict[str, Any]:
             meta[f"agent_{attr}"] = str(value) if attr == "id" else value
     llm = getattr(agent, "llm", None)
     if llm is not None:
-        # Only read the model name off the LLM object. Falling back to
-        # ``str(llm)`` would dump the full pydantic repr, which on CrewAI's
-        # ``LLM`` includes ``api_key`` / ``api_base`` / ``client_params``.
+        # ``str(llm)`` on CrewAI's ``LLM`` dumps the full pydantic repr,
+        # which includes ``api_key`` / ``api_base`` / ``client_params``.
         model_name = getattr(llm, "model", None)
         if model_name:
             meta["agent_llm"] = model_name
@@ -173,13 +167,7 @@ def _llm_config_metadata(source: Any) -> dict[str, Any]:
 
 
 def _provider_from_source(source: Any) -> str | None:
-    """Best-effort extraction of the underlying provider for a CrewAI LLM call.
-
-    CrewAI's :class:`LLM` object exposes a ``provider`` string
-    (``"openai"``, ``"anthropic"``, ``"bedrock"``, ...). Every ``llm`` span
-    must carry ``metadata.provider`` per the instrumentation spec, so we
-    pull it directly from the emitting source when possible.
-    """
+    """Return the ``provider`` string off the emitting CrewAI ``LLM`` object."""
     if source is None:
         return None
     provider = getattr(source, "provider", None)
@@ -328,9 +316,6 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
 
     @crewai_event_bus.on(CrewKickoffCompletedEvent)
     def on_crew_kickoff_completed(_source: Any, event: CrewKickoffCompletedEvent) -> None:
-        # Pass provider objects through untouched — ``bt_json`` at log time
-        # handles Pydantic models, dataclasses, and stringly fallbacks, so
-        # eagerly ``model_dump``-ing here would just be wasted work.
         self._end_span(event, output=getattr(event, "output", None))
         # Kickoff is the outermost scope; drop any orphan entries left over
         # when an inner end-event was never delivered so state does not grow
@@ -414,9 +399,6 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
         }
         if getattr(event, "model", None):
             metadata["model"] = event.model
-        # Every ``llm`` span must carry ``metadata.provider`` per the
-        # instrumentation spec. CrewAI ``LLM`` objects expose ``.provider``
-        # directly (``openai`` / ``anthropic`` / ``bedrock`` / ...).
         provider = _provider_from_source(source)
         if provider:
             metadata["provider"] = provider
@@ -424,11 +406,8 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
             metadata["call_id"] = event.call_id
         available_functions = getattr(event, "available_functions", None)
         if available_functions:
-            # Only the callable *names* — never the callables themselves.
+            # ``list(dict)`` yields only the function names, never the callables.
             metadata["available_functions"] = list(available_functions)
-        # Tool definitions belong in ``metadata.tools``, not ``input``,
-        # per the spec. ``bt_json`` at log time handles Pydantic models
-        # and dataclasses, so pass through without eager serialization.
         tools = getattr(event, "tools", None)
         if tools:
             metadata["tools"] = tools
@@ -458,9 +437,6 @@ def _listener_setup_listeners(self: Any, crewai_event_bus: "CrewAIEventsBus") ->
         if getattr(event, "model", None):
             metadata["model"] = event.model
 
-        # Timing metrics only. Token metrics belong on the leaf provider
-        # span (openai / anthropic / bedrock / litellm / ...) so trace-tree
-        # rollup does not double-count. See the module docstring.
         self._end_span(
             event,
             output=getattr(event, "response", None),

@@ -246,9 +246,8 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
     kickoff = _build_kickoff_started()
     _emit(kickoff)
 
-    # Emit with a real CrewAI LLM as source so ``metadata.provider`` gets
-    # populated from ``LLM.provider`` — the spec requires every llm span
-    # to carry provider metadata.
+    # A real CrewAI LLM is needed as ``source`` so ``metadata.provider``
+    # gets populated from ``LLM.provider``.
     from crewai import LLM
     from crewai.events.event_bus import crewai_event_bus
 
@@ -287,7 +286,6 @@ def test_kickoff_llm_event_tree_parents_and_shape(memory_logger):
     # Shape assertions.
     assert llm_span["input"]["messages"] == llm_started.messages
     assert llm_span["metadata"]["model"] == "gpt-4o-mini"
-    # Every llm span must carry ``metadata.provider`` per the instrumentation spec.
     assert llm_span["metadata"]["provider"] == "openai"
     assert llm_span["metadata"]["call_id"] == "call-1"
     assert llm_span["output"] == "4"
@@ -309,23 +307,12 @@ def test_llm_tools_route_to_metadata_not_input(memory_logger):
 
     span = memory_logger.pop()[0]
     assert span["span_attributes"]["name"] == "crewai.llm"
-    # Positive: tools land in metadata untouched (no eager serialization).
     assert span["metadata"]["tools"] == tools
-    # Negative: tools MUST NOT leak into input.
     assert "tools" not in span["input"], span["input"]
 
 
 def test_llm_never_emits_token_metrics(memory_logger):
-    """Wrapper-only rule: crewai.llm MUST NOT log token metrics.
-
-    CrewAI always delegates the actual API call to a provider SDK
-    (LiteLLM, or a native openai / anthropic / bedrock / gemini
-    client). Whichever of those is patched owns the leaf span with
-    tokens. If crewai.llm also logged them, trace-tree rollup would
-    double-count at every ancestor. This must hold regardless of which
-    (if any) provider integration is patched — the "clear ownership"
-    pattern from the sdk-integrations SKILL.
-    """
+    """crewai.llm is a wrapper span; the leaf provider owns tokens (see module docstring)."""
     patch_crewai()
 
     llm_started = _build_llm_started()
