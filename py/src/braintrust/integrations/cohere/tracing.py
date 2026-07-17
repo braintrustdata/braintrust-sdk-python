@@ -632,10 +632,7 @@ def _tool_call_metadata(tool_call: Any) -> dict[str, Any] | None:
 def _iter_tool_calls(output: Any):
     if output is None:
         return
-    output_dict = output if isinstance(output, dict) else _try_to_dict(output)
-    if not isinstance(output_dict, dict):
-        return
-    tool_calls = output_dict.get("tool_calls")
+    tool_calls = _get_field(output, "tool_calls")
     if not isinstance(tool_calls, list):
         return
     for tool_call in tool_calls:
