@@ -1,7 +1,9 @@
 """LiteLLM tracing helpers — spans, metadata extraction, stream handling."""
 
+import logging
 import time
 from collections.abc import AsyncGenerator, Generator
+from functools import lru_cache
 from types import TracebackType
 from typing import Any
 
@@ -16,9 +18,13 @@ from braintrust.integrations.utils import (
 )
 from braintrust.logger import Span
 from braintrust.logger import start_span as _bt_start_span
+from braintrust.span_types import SpanTypeAttribute
+from braintrust.util import clean_nones, is_numeric, merge_dicts
 
 
 _INSTRUMENTATION = "litellm-auto"
+
+_log = logging.getLogger(__name__)
 
 
 def start_span(*args, **kwargs):
@@ -26,10 +32,6 @@ def start_span(*args, **kwargs):
     internal.setdefault("instrumentation", _INSTRUMENTATION)
     kwargs["internal"] = internal
     return _bt_start_span(*args, **kwargs)
-
-
-from braintrust.span_types import SpanTypeAttribute
-from braintrust.util import clean_nones, is_numeric, merge_dicts
 
 
 # LiteLLM's representation to Braintrust's representation
@@ -48,6 +50,42 @@ TOKEN_PREFIX_MAP: dict[str, str] = {
     "input": "prompt",
     "output": "completion",
 }
+
+
+_RERANK_MAX_RESULTS = 100
+
+# litellm reports the legacy /v1/completions endpoint under its own routing
+# key, but pricing/billing is against the underlying provider — normalize so
+# metadata.provider stays consistent across chat and text-completion calls.
+_PROVIDER_ALIASES: dict[str, str] = {
+    "text-completion-openai": "openai",
+    "azure_text": "azure",
+    "text-completion-codestral": "codestral",
+    "text-completion-inception": "inception",
+}
+
+
+def _get_field(obj: Any, key: str, default: Any = None) -> Any:
+    """Read *key* off *obj* whether it's a dict or an SDK/pydantic object."""
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+@lru_cache(maxsize=256)
+def _resolve_provider(model: str) -> str:
+    # Lazy import: tracing.py loads eagerly via auto.py even when litellm isn't installed.
+    try:
+        import litellm
+
+        _, provider, _, _ = litellm.get_llm_provider(model)
+        if isinstance(provider, str) and provider:
+            return _PROVIDER_ALIASES.get(provider, provider)
+    except Exception:
+        _log.debug("litellm.get_llm_provider failed for model=%r", model, exc_info=True)
+    return "litellm"
 
 
 # ---------------------------------------------------------------------------
@@ -198,10 +236,9 @@ def _completion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
             should_end = False
             return _handle_completion_streaming(completion_response, span, start, is_async=False)
 
-        log_response = _try_to_dict(completion_response)
-        metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
+        metrics = _parse_metrics_from_usage(_get_field(completion_response, "usage"))
         metrics["time_to_first_token"] = time.time() - start
-        span.log(metrics=metrics, output=log_response["choices"])
+        span.log(metrics=metrics, output=_get_field(completion_response, "choices"))
         return completion_response
     finally:
         if should_end:
@@ -225,10 +262,9 @@ async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
             should_end = False
             return _handle_completion_streaming(completion_response, span, start, is_async=True)
 
-        log_response = _try_to_dict(completion_response)
-        metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
+        metrics = _parse_metrics_from_usage(_get_field(completion_response, "usage"))
         metrics["time_to_first_token"] = time.time() - start
-        span.log(metrics=metrics, output=log_response["choices"])
+        span.log(metrics=metrics, output=_get_field(completion_response, "choices"))
         return completion_response
     finally:
         if should_end:
@@ -236,27 +272,22 @@ async def _acompletion_wrapper_impl(wrapped, args, kwargs, *, input_key: str):
 
 
 def _completion_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.completion."""
     return _completion_wrapper_impl(wrapped, args, kwargs, input_key="messages")
 
 
 def _text_completion_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.text_completion."""
     return _completion_wrapper_impl(wrapped, args, kwargs, input_key="prompt")
 
 
 async def _acompletion_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.acompletion."""
     return await _acompletion_wrapper_impl(wrapped, args, kwargs, input_key="messages")
 
 
 async def _atext_completion_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.atext_completion."""
     return await _acompletion_wrapper_impl(wrapped, args, kwargs, input_key="prompt")
 
 
 def _responses_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.responses."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
     is_streaming = kwargs.get("stream", False)
 
@@ -272,19 +303,17 @@ def _responses_wrapper(wrapped, instance, args, kwargs):
         if is_streaming:
             should_end = False
             return _handle_responses_streaming(response, span, start, is_async=False)
-        else:
-            log_response = _try_to_dict(response)
-            metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
-            metrics["time_to_first_token"] = time.time() - start
-            span.log(metrics=metrics, output=log_response["output"])
-            return response
+
+        metrics = _parse_metrics_from_usage(_get_field(response, "usage"))
+        metrics["time_to_first_token"] = time.time() - start
+        span.log(metrics=metrics, output=_get_field(response, "output"))
+        return response
     finally:
         if should_end:
             span.end()
 
 
 async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.aresponses."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
     is_streaming = kwargs.get("stream", False)
 
@@ -300,12 +329,11 @@ async def _aresponses_wrapper_async(wrapped, instance, args, kwargs):
         if is_streaming:
             should_end = False
             return _handle_responses_streaming(response, span, start, is_async=True)
-        else:
-            log_response = _try_to_dict(response)
-            metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
-            metrics["time_to_first_token"] = time.time() - start
-            span.log(metrics=metrics, output=log_response["output"])
-            return response
+
+        metrics = _parse_metrics_from_usage(_get_field(response, "usage"))
+        metrics["time_to_first_token"] = time.time() - start
+        span.log(metrics=metrics, output=_get_field(response, "output"))
+        return response
     finally:
         if should_end:
             span.end()
@@ -329,25 +357,18 @@ def _image_attachment_from_base64(
     return resolved_attachment, len(resolved_attachment.attachment.data)
 
 
-def _extract_image_generation_output(response: dict[str, Any]) -> dict[str, Any]:
-    images = []
-    output_format = response.get("output_format")
+def _extract_image_generation_output(response: Any) -> Any:
+    images: list[dict[str, Any]] = []
+    output_format = _get_field(response, "output_format")
 
-    for index, image in enumerate(response.get("data") or []):
-        image_dict = _try_to_dict(image)
-        if not isinstance(image_dict, dict):
-            continue
+    for index, image in enumerate(_get_field(response, "data") or []):
+        image_entry = clean_nones({"revised_prompt": _get_field(image, "revised_prompt")})
 
-        image_entry = clean_nones(
-            {
-                "revised_prompt": image_dict.get("revised_prompt"),
-            }
-        )
+        url = _get_field(image, "url")
+        if isinstance(url, str):
+            image_entry["image_url"] = {"url": url}
 
-        if isinstance(image_dict.get("url"), str):
-            image_entry["image_url"] = {"url": image_dict["url"]}
-
-        b64_json = image_dict.get("b64_json")
+        b64_json = _get_field(image, "b64_json")
         resolved_attachment, image_size_bytes = _image_attachment_from_base64(
             b64_json,
             output_format=output_format,
@@ -364,21 +385,25 @@ def _extract_image_generation_output(response: dict[str, Any]) -> dict[str, Any]
 
     return clean_nones(
         {
-            "created": response.get("created"),
-            "background": response.get("background"),
+            "created": _get_field(response, "created"),
+            "background": _get_field(response, "background"),
             "output_format": output_format,
-            "quality": response.get("quality"),
-            "size": response.get("size"),
+            "quality": _get_field(response, "quality"),
+            "size": _get_field(response, "size"),
             "images_count": len(images),
             "images": images,
         }
     )
 
 
-def _image_generation_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.image_generation."""
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="prompt")
+def _log_image_generation(span: Span, image_response: Any, start: float) -> None:
+    metrics = _timing_metrics(start, time.time())
+    metrics.update(_parse_metrics_from_usage(_get_field(image_response, "usage")))
+    span.log(metrics=metrics, output=_extract_image_generation_output(image_response))
 
+
+def _image_generation_wrapper(wrapped, instance, args, kwargs):
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="prompt")
     with start_span(
         **merge_dicts(
             dict(name="Image Generation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
@@ -386,21 +411,12 @@ def _image_generation_wrapper(wrapped, instance, args, kwargs):
     ) as span:
         start = time.time()
         image_response = wrapped(*args, **kwargs)
-        log_response = _try_to_dict(image_response)
-        metrics = _timing_metrics(start, time.time())
-        if isinstance(log_response, dict):
-            metrics.update(_parse_metrics_from_usage(log_response.get("usage", {})))
-        span.log(
-            metrics=metrics,
-            output=_extract_image_generation_output(log_response) if isinstance(log_response, dict) else log_response,
-        )
+        _log_image_generation(span, image_response, start)
         return image_response
 
 
 async def _aimage_generation_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.aimage_generation."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="prompt")
-
     with start_span(
         **merge_dicts(
             dict(name="Image Generation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
@@ -408,67 +424,49 @@ async def _aimage_generation_wrapper_async(wrapped, instance, args, kwargs):
     ) as span:
         start = time.time()
         image_response = await wrapped(*args, **kwargs)
-        log_response = _try_to_dict(image_response)
-        metrics = _timing_metrics(start, time.time())
-        if isinstance(log_response, dict):
-            metrics.update(_parse_metrics_from_usage(log_response.get("usage", {})))
-        span.log(
-            metrics=metrics,
-            output=_extract_image_generation_output(log_response) if isinstance(log_response, dict) else log_response,
-        )
+        _log_image_generation(span, image_response, start)
         return image_response
 
 
-def _embedding_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.embedding."""
-    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
+def _log_embedding_response(span: Span, embedding_response: Any) -> None:
+    data = _get_field(embedding_response, "data") or []
+    first = data[0] if data else None
+    length = len(_get_field(first, "embedding") or [])
+    span.log(
+        metrics=_parse_metrics_from_usage(_get_field(embedding_response, "usage")),
+        output={"embedding_length": length},
+    )
 
+
+def _embedding_wrapper(wrapped, instance, args, kwargs):
+    updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
     with start_span(
         **merge_dicts(dict(name="Embedding", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
         embedding_response = wrapped(*args, **kwargs)
-        log_response = _try_to_dict(embedding_response)
-        usage = log_response.get("usage")
-        metrics = _parse_metrics_from_usage(usage)
-        span.log(
-            metrics=metrics,
-            output={"embedding_length": len(log_response["data"][0]["embedding"])},
-        )
+        _log_embedding_response(span, embedding_response)
         return embedding_response
 
 
 async def _aembedding_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.aembedding."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
-
     with start_span(
         **merge_dicts(dict(name="Embedding", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
         embedding_response = await wrapped(*args, **kwargs)
-        log_response = _try_to_dict(embedding_response)
-        usage = log_response.get("usage")
-        metrics = _parse_metrics_from_usage(usage)
-        span.log(
-            metrics=metrics,
-            output={"embedding_length": len(log_response["data"][0]["embedding"])},
-        )
+        _log_embedding_response(span, embedding_response)
         return embedding_response
 
 
 def _log_moderation_response(span: Span, moderation_response: Any) -> None:
-    log_response = _try_to_dict(moderation_response)
-    usage = log_response.get("usage")
-    metrics = _parse_metrics_from_usage(usage)
     span.log(
-        metrics=metrics,
-        output=log_response["results"],
+        metrics=_parse_metrics_from_usage(_get_field(moderation_response, "usage")),
+        output=_get_field(moderation_response, "results"),
     )
 
 
 def _moderation_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.moderation."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
-
     with start_span(
         **merge_dicts(dict(name="Moderation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
@@ -478,9 +476,7 @@ def _moderation_wrapper(wrapped, instance, args, kwargs):
 
 
 async def _amoderation_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.amoderation."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
-
     with start_span(
         **merge_dicts(dict(name="Moderation", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
@@ -490,9 +486,7 @@ async def _amoderation_wrapper_async(wrapped, instance, args, kwargs):
 
 
 def _speech_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.speech."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
-
     with start_span(
         **merge_dicts(dict(name="Speech", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
@@ -510,9 +504,7 @@ def _speech_wrapper(wrapped, instance, args, kwargs):
 
 
 async def _aspeech_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.aspeech."""
     updated_span_payload = _update_span_payload_from_params(kwargs, input_key="input")
-
     with start_span(
         **merge_dicts(dict(name="Speech", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
@@ -530,74 +522,58 @@ async def _aspeech_wrapper_async(wrapped, instance, args, kwargs):
 
 
 def _rerank_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.rerank."""
     updated_span_payload = _update_rerank_span_payload_from_params(kwargs)
-
     with start_span(
         **merge_dicts(dict(name="Rerank", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
         start = time.time()
         rerank_response = wrapped(*args, **kwargs)
-        log_response = _try_to_dict(rerank_response)
         metrics = _timing_metrics(start, time.time())
-        metrics.update(_parse_rerank_metrics(log_response))
-        span.log(
-            metrics=metrics,
-            output=_extract_rerank_output(log_response),
-        )
+        metrics.update(_parse_rerank_metrics(rerank_response))
+        span.log(metrics=metrics, output=_extract_rerank_output(rerank_response))
         return rerank_response
 
 
 async def _arerank_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.arerank."""
     updated_span_payload = _update_rerank_span_payload_from_params(kwargs)
-
     with start_span(
         **merge_dicts(dict(name="Rerank", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload)
     ) as span:
         start = time.time()
         rerank_response = await wrapped(*args, **kwargs)
-        log_response = _try_to_dict(rerank_response)
         metrics = _timing_metrics(start, time.time())
-        metrics.update(_parse_rerank_metrics(log_response))
-        span.log(
-            metrics=metrics,
-            output=_extract_rerank_output(log_response),
-        )
+        metrics.update(_parse_rerank_metrics(rerank_response))
+        span.log(metrics=metrics, output=_extract_rerank_output(rerank_response))
         return rerank_response
 
 
 def _transcription_wrapper(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.transcription."""
     updated_span_payload = _update_audio_span_payload_from_params(kwargs)
-
     with start_span(
         **merge_dicts(
             dict(name="Transcription", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
         )
     ) as span:
         transcription_response = wrapped(*args, **kwargs)
-        log_response = _try_to_dict(transcription_response)
-        usage = log_response.get("usage") if isinstance(log_response, dict) else None
-        metrics = _parse_metrics_from_usage(usage)
-        span.log(metrics=metrics, output=_extract_transcription_text(log_response))
+        span.log(
+            metrics=_parse_metrics_from_usage(_get_field(transcription_response, "usage")),
+            output=_extract_transcription_text(transcription_response),
+        )
         return transcription_response
 
 
 async def _atranscription_wrapper_async(wrapped, instance, args, kwargs):
-    """wrapt wrapper for litellm.atranscription."""
     updated_span_payload = _update_audio_span_payload_from_params(kwargs)
-
     with start_span(
         **merge_dicts(
             dict(name="Transcription", span_attributes={"type": SpanTypeAttribute.LLM}), updated_span_payload
         )
     ) as span:
         transcription_response = await wrapped(*args, **kwargs)
-        log_response = _try_to_dict(transcription_response)
-        usage = log_response.get("usage") if isinstance(log_response, dict) else None
-        metrics = _parse_metrics_from_usage(usage)
-        span.log(metrics=metrics, output=_extract_transcription_text(log_response))
+        span.log(
+            metrics=_parse_metrics_from_usage(_get_field(transcription_response, "usage")),
+            output=_extract_transcription_text(transcription_response),
+        )
         return transcription_response
 
 
@@ -817,7 +793,8 @@ _SAFE_METADATA_KEYS = frozenset(
 def _build_span_metadata(params: dict[str, Any], model: Any) -> dict[str, Any]:
     """Build span metadata from known-safe LiteLLM request parameters plus provider/model."""
     metadata = {key: value for key, value in params.items() if key in _SAFE_METADATA_KEYS}
-    metadata.update(provider="litellm", model=model)
+    provider = _resolve_provider(model) if isinstance(model, str) and model else "litellm"
+    metadata.update(provider=provider, model=model)
     return metadata
 
 
@@ -879,12 +856,9 @@ def _update_audio_span_payload_from_params(params: dict[str, Any]) -> dict[str, 
 
 
 def _extract_transcription_text(response: Any) -> str | None:
-    """Extract text output from a LiteLLM transcription response."""
-    if isinstance(response, dict):
-        return response.get("text")
     if isinstance(response, str):
         return response.strip()
-    return getattr(response, "text", None)
+    return _get_field(response, "text")
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
@@ -914,67 +888,49 @@ _RERANK_TOKENS_MAP: dict[str, str] = {
 def _parse_rerank_metrics(response: Any) -> dict[str, Any]:
     """Parse token / billed-unit metrics from a LiteLLM rerank response.
 
-    LiteLLM follows Cohere's rerank response shape: usage lives under
-    ``meta.billed_units`` (the authoritative billing counter) and
-    ``meta.tokens``.  ``billed_units`` wins when both are present.
+    Why: LiteLLM follows Cohere's shape — usage lives under ``meta.billed_units``
+    (authoritative billing counter) and ``meta.tokens``. ``billed_units`` wins
+    when both are present.
     """
     metrics: dict[str, Any] = {}
-    response_dict = _try_to_dict(response)
-    if not isinstance(response_dict, dict):
+    meta = _get_field(response, "meta")
+    if meta is None:
         return metrics
 
-    meta = _try_to_dict(response_dict.get("meta"))
-    if not isinstance(meta, dict):
-        return metrics
-
-    tokens_block = _try_to_dict(meta.get("tokens"))
-    if isinstance(tokens_block, dict):
-        for src_key, dst_key in _RERANK_TOKENS_MAP.items():
-            value = tokens_block.get(src_key)
+    def _read(block: Any, mapping: dict[str, str]) -> None:
+        if block is None:
+            return
+        for src_key, dst_key in mapping.items():
+            value = _get_field(block, src_key)
             if is_numeric(value):
                 metrics[dst_key] = value
 
-    # ``billed_units`` is Cohere's authoritative billing counter and
-    # intentionally overrides values from ``tokens`` when both are present.
-    billed = _try_to_dict(meta.get("billed_units"))
-    if isinstance(billed, dict):
-        for src_key, dst_key in _RERANK_BILLED_UNITS_MAP.items():
-            value = billed.get(src_key)
-            if is_numeric(value):
-                metrics[dst_key] = value
+    _read(_get_field(meta, "tokens"), _RERANK_TOKENS_MAP)
+    _read(_get_field(meta, "billed_units"), _RERANK_BILLED_UNITS_MAP)
 
     if "tokens" not in metrics and "prompt_tokens" in metrics and "completion_tokens" in metrics:
         metrics["tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
-
     return metrics
 
 
 def _extract_rerank_output(response: Any) -> list[dict[str, Any]] | None:
     """Return the ranked ``{index, relevance_score}`` list from a rerank response.
 
-    The document payload (returned when ``return_documents=True``) is dropped
-    on purpose to keep the span compact and avoid logging the raw corpus.
-    Results are capped at 100 entries.
+    The document payload (from ``return_documents=True``) is dropped and the
+    list is capped at ``_RERANK_MAX_RESULTS`` to keep the span compact.
     """
-    response_dict = _try_to_dict(response)
-    if not isinstance(response_dict, dict):
-        return None
-
-    results = response_dict.get("results")
+    results = _get_field(response, "results")
     if not isinstance(results, list):
         return None
 
     out: list[dict[str, Any]] = []
-    for item in results[:100]:
+    for item in results[:_RERANK_MAX_RESULTS]:
         if item is None:
-            continue
-        item_dict = _try_to_dict(item)
-        if not isinstance(item_dict, dict):
             continue
         out.append(
             {
-                "index": item_dict.get("index"),
-                "relevance_score": item_dict.get("relevance_score"),
+                "index": _get_field(item, "index"),
+                "relevance_score": _get_field(item, "relevance_score"),
             }
         )
     return out

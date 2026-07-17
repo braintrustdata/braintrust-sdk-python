@@ -165,6 +165,7 @@ The integration that directly owns the model/provider API response owns token ac
 - Do not over-serialize. Braintrust serializes at send/log time. Integration tracing only needs readable Python dicts/lists/scalars and materialized attachments.
 - Keep wrapper bodies thin: prepare traced input, open span, call provider, normalize result, log.
 - Do not wrap `span.log(...)` / `span.set_attributes(...)` in broad try/except. Braintrust span methods are boundary-safe.
+- **Rerank exception to "no silent caps":** rerank result lists can be huge and are noisy in the span UI; cap the `output` list at a fixed max (e.g. 100 entries) via a named constant. The cap is compact-span hygiene, not coverage bounding — the model already ranked everything.
 
 ### Span origin
 

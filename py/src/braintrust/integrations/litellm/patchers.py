@@ -171,37 +171,9 @@ _ALL_LITELLM_PATCHERS = (
 
 
 def wrap_litellm(litellm: Any) -> Any:
-    """Wrap a LiteLLM module to add Braintrust tracing.
+    """Wrap a LiteLLM module-like object in-place with Braintrust tracing.
 
-    Unlike :func:`patch_litellm`, which patches the globally-imported ``litellm``
-    module, this function instruments a specific module object (or any object
-    that exposes the same top-level callables such as ``completion``,
-    ``acompletion``, ``responses``, ``aresponses``, ``image_generation``,
-    ``text_completion``, ``atext_completion``, ``aimage_generation``,
-    ``embedding``, ``aembedding``, ``moderation``, ``amoderation``, ``speech``,
-    ``aspeech``, ``transcription``, ``atranscription``, ``rerank``, and
-    ``arerank``). Each patcher is applied idempotently — calling
-    ``wrap_litellm`` twice on the same object is safe.
-
-    Args:
-        litellm: The ``litellm`` module or a module-like object that exposes
-            the standard LiteLLM top-level functions.
-
-    Returns:
-        The same *litellm* object, with tracing wrappers applied in-place.
-
-    Example::
-
-        import litellm
-        from braintrust.integrations.litellm import wrap_litellm
-
-        wrap_litellm(litellm)
-
-        # All subsequent calls are automatically traced.
-        response = litellm.completion(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "Hello"}],
-        )
+    Idempotent; safe to call twice on the same object.
     """
     for patcher in _ALL_LITELLM_PATCHERS:
         patcher.wrap_target(litellm)

@@ -32,6 +32,6 @@ with autoinstrument_test_context("test_auto_litellm", integration="litellm") as 
     spans = memory_logger.pop()
     assert len(spans) == 1, f"Expected 1 span, got {len(spans)}"
     span = spans[0]
-    assert span["metadata"]["provider"] == "litellm"
+    assert span["metadata"]["provider"] == "openai"
 
 print("SUCCESS")
