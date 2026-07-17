@@ -2,11 +2,19 @@
 
 from typing import Any
 
-from braintrust.logger import current_span
 from braintrust.logger import start_span as _bt_start_span
+from braintrust.span_types import SpanTypeAttribute
 
 
 _INSTRUMENTATION = "dspy-auto"
+
+# LiteLLM-style model strings are "<provider>/<model>" (e.g. "openai/gpt-4o-mini").
+# The prefix identifies the provider whose pricing applies.
+_LM_METADATA_PARAM_ALLOWLIST = ("temperature", "max_tokens", "top_p", "top_k", "stop")
+
+# Aggregate eval stats that DSPy Evaluate surfaces on its return dict. These are
+# domain-level scores, not spec-listed span `metrics` keys, so they go in metadata.
+_EVALUATE_METADATA_ALLOWLIST = ("accuracy", "score", "total", "correct")
 
 
 def start_span(*args, **kwargs):
@@ -16,7 +24,13 @@ def start_span(*args, **kwargs):
     return _bt_start_span(*args, **kwargs)
 
 
-from braintrust.span_types import SpanTypeAttribute
+def _extract_provider(instance: Any, model: Any) -> str | None:
+    provider = getattr(instance, "provider", None)
+    if isinstance(provider, str) and provider:
+        return provider
+    if isinstance(model, str) and "/" in model:
+        return model.split("/", 1)[0]
+    return None
 
 
 try:
@@ -113,24 +127,29 @@ class BraintrustDSpyCallback(BaseCallback):
             instance: The LM instance being called
             inputs: Input parameters to the LM
         """
-        metadata = {}
-        if hasattr(instance, "model"):
-            metadata["model"] = instance.model
-        if hasattr(instance, "provider"):
-            metadata["provider"] = str(instance.provider)
+        metadata: dict[str, Any] = {}
+        model = getattr(instance, "model", None)
+        if model is not None:
+            metadata["model"] = model
+        provider = _extract_provider(instance, model)
+        if provider is not None:
+            metadata["provider"] = provider
 
-        for key in ["temperature", "max_tokens", "top_p", "top_k", "stop"]:
+        for key in _LM_METADATA_PARAM_ALLOWLIST:
             if key in inputs:
                 metadata[key] = inputs[key]
 
-        parent = current_span()
-        parent_export = parent.export() if parent else None
-
+        # dspy.lm is intentionally NOT typed as `llm`. DSPy delegates the actual
+        # provider call to LiteLLM (or a patched provider client), which owns the
+        # `llm` leaf span and its token accounting. Typing this parent as `llm`
+        # would produce two `llm` spans per model call when the underlying
+        # provider is also instrumented, and this span cannot supply the tokens
+        # required for `llm` because DSPy's callback contract does not expose
+        # usage in `outputs`.
         span = start_span(
             name="dspy.lm",
             input=inputs,
             metadata=metadata,
-            parent=parent_export,
         )
         span.set_current()
         self._spans[call_id] = span
@@ -191,14 +210,11 @@ class BraintrustDSpyCallback(BaseCallback):
         cls_name = cls.__name__
         module_name = f"{cls.__module__}.{cls_name}"
 
-        parent = current_span()
-        parent_export = parent.export() if parent else None
-
         span = start_span(
             name=f"dspy.module.{cls_name}",
+            type=SpanTypeAttribute.TASK,
             input=inputs,
             metadata={"module_class": module_name},
-            parent=parent_export,
         )
         span.set_current()
         self._spans[call_id] = span
@@ -216,11 +232,6 @@ class BraintrustDSpyCallback(BaseCallback):
             outputs: Output from the module, or None if there was an exception
             exception: Exception raised during execution, if any
         """
-        if outputs is not None:
-            if hasattr(outputs, "toDict"):
-                outputs = outputs.toDict()
-            elif hasattr(outputs, "__dict__"):
-                outputs = outputs.__dict__
         self._end_span(call_id, outputs, exception)
 
     def _start_adapter_span(
@@ -234,14 +245,11 @@ class BraintrustDSpyCallback(BaseCallback):
         cls = instance.__class__
         metadata = {"adapter_class": f"{cls.__module__}.{cls.__name__}"}
 
-        parent = current_span()
-        parent_export = parent.export() if parent else None
-
         span = start_span(
             name=span_name,
+            type=SpanTypeAttribute.TASK,
             input=inputs,
             metadata=metadata,
-            parent=parent_export,
         )
         span.set_current()
         self._spans[call_id] = span
@@ -327,14 +335,10 @@ class BraintrustDSpyCallback(BaseCallback):
         elif hasattr(instance, "func") and hasattr(instance.func, "__name__"):
             tool_name = instance.func.__name__
 
-        parent = current_span()
-        parent_export = parent.export() if parent else None
-
         span = start_span(
             name=tool_name,
-            span_attributes={"type": SpanTypeAttribute.TOOL},
+            type=SpanTypeAttribute.TOOL,
             input=inputs,
-            parent=parent_export,
         )
         span.set_current()
         self._spans[call_id] = span
@@ -374,14 +378,11 @@ class BraintrustDSpyCallback(BaseCallback):
         if hasattr(instance, "num_threads"):
             metadata["num_threads"] = instance.num_threads
 
-        parent = current_span()
-        parent_export = parent.export() if parent else None
-
         span = start_span(
             name="dspy.evaluate",
+            type=SpanTypeAttribute.TASK,
             input=inputs,
             metadata=metadata,
-            parent=parent_export,
         )
         span.set_current()
         self._spans[call_id] = span
@@ -404,21 +405,18 @@ class BraintrustDSpyCallback(BaseCallback):
             return
 
         try:
-            log_data = {}
+            log_data: dict[str, Any] = {}
             if exception:
                 log_data["error"] = exception
             if outputs is not None:
                 log_data["output"] = outputs
                 if isinstance(outputs, dict):
-                    metrics = {}
-                    for key in ["accuracy", "score", "total", "correct"]:
+                    metadata: dict[str, Any] = {}
+                    for key in _EVALUATE_METADATA_ALLOWLIST:
                         if key in outputs:
-                            try:
-                                metrics[key] = float(outputs[key])
-                            except (ValueError, TypeError):
-                                pass
-                    if metrics:
-                        log_data["metrics"] = metrics
+                            metadata[key] = outputs[key]
+                    if metadata:
+                        log_data["metadata"] = metadata
 
             if log_data:
                 span.log(**log_data)

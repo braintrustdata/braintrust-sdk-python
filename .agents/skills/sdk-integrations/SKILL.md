@@ -156,6 +156,8 @@ Canonical shape is OpenAI Chat Completions format. Providers with dedicated UI n
 
 The integration that directly owns the model/provider API response owns token accounting. Orchestration/framework integrations should not log token metrics when underlying provider integrations create leaf spans with usage. Agentic parent `task` spans MAY aggregate across children when the framework doesn't delegate to a separately instrumented provider client. Do not add "if OpenAI is patched, skip metrics" checks — define clear ownership instead.
 
+**Framework `llm`-like spans that delegate to a separately instrumented client:** if the framework's per-model-call span sits above a call the framework itself dispatches through another patched client (e.g. DSPy's LM callback → LiteLLM → OpenAI), do NOT type the framework's span `llm`. Two nested `llm` spans for one API call is confusing in the UI and — because the framework typically cannot supply tokens from its own callback contract — would produce a token-less `llm` span that violates the "tokens required for LLM spans" rule. Leave the framework span untyped (or `task`), keep `metadata.model` / `metadata.provider` on it for attribution, and let the underlying provider integration own the `llm` leaf with usage. The same logic applies to any framework that always delegates the transport layer to another instrumentable client.
+
 ### Shaping guidance
 
 - Flatten positional args into named fields; normalize SDK objects into dicts/lists/scalars; drop noisy transport fields.
