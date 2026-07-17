@@ -124,6 +124,8 @@ class TestInstructorOpenAISpans:
         assert parent["context"]["span_origin"]["instrumentation"]["name"] == "instructor-auto"
         assert parent["span_attributes"]["name"] == "instructor.create"
         meta = parent.get("metadata", {})
+        assert meta.get("model") == "gpt-4o-mini"
+        assert meta.get("provider") == "openai"
         assert meta.get("response_model") == "Person"
         assert meta.get("mode") == "TOOLS"
         assert meta.get("max_retries") == 3
@@ -172,6 +174,8 @@ class TestInstructorOpenAISpans:
 
         parent = task_spans[0]
         meta = parent.get("metadata", {})
+        assert meta.get("model") == "gpt-4o-mini"
+        assert meta.get("provider") == "openai"
         assert meta.get("response_model") == "Person"
         assert meta.get("mode") == "TOOLS"
         assert meta.get("max_retries") == 3
