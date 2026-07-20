@@ -3569,6 +3569,10 @@ class TopicMapData(TypedDict):
     """
     Whether new topic generation should ignore the previously saved report during reconciliation. Defaults to false when omitted.
     """
+    reconcile_mode: NotRequired[Literal['evolve', 'names_only'] | None]
+    """
+    How reconciliation carries the previous map forward: "evolve" re-routes new samples into the previous topics before naming; "names_only" keeps the fresh clustering and carries only topic ids/names. Defaults to "evolve" when omitted.
+    """
     distance_threshold: NotRequired[float | None]
     """
     Maximum distance to nearest centroid. If exceeded, returns no_match.
