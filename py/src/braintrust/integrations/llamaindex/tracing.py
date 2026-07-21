@@ -30,7 +30,7 @@ def _extract_provider(instance: Any) -> str | None:
     module = getattr(type(instance), "__module__", "") or ""
     for prefix in (_LLM_MODULE_PROVIDER_PREFIX, _EMBEDDING_MODULE_PROVIDER_PREFIX):
         if module.startswith(prefix):
-            return module[len(prefix):].split(".", 1)[0] or None
+            return module[len(prefix) :].split(".", 1)[0] or None
     return None
 
 
