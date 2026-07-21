@@ -99,22 +99,16 @@ from temporalio.worker import WorkflowRunner
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 
 
-# Braintrust dynamically chooses its context implementation at runtime based on
-# BRAINTRUST_OTEL_COMPAT environment variable. When first accessed, it reads
-# os.environ which is restricted in the sandbox. Therefore if the first use
-# is inside the sandbox, it will fail. So we eagerly reference it here to
-# force initialization at import time (before sandbox evaluation).
+# Braintrust picks its context implementation on first access by reading
+# BRAINTRUST_OTEL_COMPAT from os.environ, which the sandbox blocks. Force
+# init at import time so the first access doesn't happen inside the sandbox.
 try:
     braintrust.current_span()
 except Exception:
-    # It's okay if this fails (e.g., no logger initialized yet)
     pass
 
-# Store module-level reference to braintrust.current_span to avoid re-importing
-# inside extern functions (which can trigger sandbox restrictions)
 _current_span = braintrust.current_span
 
-# Header key for passing span context between client, workflows, and activities
 _HEADER_KEY = "_braintrust-span"
 _SPAN_ID_NAMESPACE = "braintrust.temporal.workflow"
 _SPAN_CONTEXT_PATCH_ID = "braintrust-temporal-workflow-span-context-v1"
@@ -138,42 +132,28 @@ class BraintrustInterceptor(temporalio.client.Interceptor, temporalio.worker.Int
     """
 
     def __init__(self, logger: Any | None = None) -> None:
-        """Initialize interceptor.
-
-        Args:
-            logger: Optional background logger for testing.
-        """
         self.payload_converter = temporalio.converter.PayloadConverter.default
         self._bg_logger = logger
-        # Capture logger instance at init time for cross-thread use
         if logger:
             braintrust.logger._state._override_bg_logger.logger = logger
         self._logger = braintrust.current_logger()
 
     def _get_logger(self) -> Any | None:
-        """Get logger for creating spans.
-
-        Sets thread-local override if background logger provided (for testing),
-        then returns captured logger instance.
-        """
         if self._bg_logger:
             braintrust.logger._state._override_bg_logger.logger = self._bg_logger
         return self._logger
 
     def intercept_client(self, next: temporalio.client.OutboundInterceptor) -> temporalio.client.OutboundInterceptor:
-        """Intercept client calls to propagate span context to workflows."""
         return _BraintrustClientOutboundInterceptor(next, self)
 
     def intercept_activity(
         self, next: temporalio.worker.ActivityInboundInterceptor
     ) -> temporalio.worker.ActivityInboundInterceptor:
-        """Intercept activity executions to create activity spans."""
         return _BraintrustActivityInboundInterceptor(next, self)
 
     def workflow_interceptor_class(
         self, input: temporalio.worker.WorkflowInterceptorClassInput
     ) -> type["BraintrustWorkflowInboundInterceptor"] | None:
-        """Return workflow interceptor class to propagate context to activities."""
         input.unsafe_extern_functions["__braintrust_get_logger"] = self._get_logger
         return BraintrustWorkflowInboundInterceptor
 
@@ -182,7 +162,6 @@ class BraintrustInterceptor(temporalio.client.Interceptor, temporalio.worker.Int
         span_context: Any,
         headers: Mapping[str, temporalio.api.common.v1.Payload],
     ) -> Mapping[str, temporalio.api.common.v1.Payload]:
-        """Add span context to headers."""
         if span_context:
             payloads = self.payload_converter.to_payloads([span_context])
             if payloads:
@@ -193,7 +172,6 @@ class BraintrustInterceptor(temporalio.client.Interceptor, temporalio.worker.Int
         return headers
 
     def _span_context_from_headers(self, headers: Mapping[str, temporalio.api.common.v1.Payload]) -> Any | None:
-        """Extract span context from headers."""
         if _HEADER_KEY not in headers:
             return None
         header_payload = headers.get(_HEADER_KEY)
@@ -215,12 +193,10 @@ class _BraintrustClientOutboundInterceptor(temporalio.client.OutboundInterceptor
     async def start_workflow(
         self, input: temporalio.client.StartWorkflowInput
     ) -> temporalio.client.WorkflowHandle[Any, Any]:
-        # Get current span context and add it to workflow headers
         current_span = _current_span()
         if current_span:
             span_context = current_span.export()
             input.headers = self.root._span_context_to_headers(span_context, input.headers)
-
         return await super().start_workflow(input)
 
 
@@ -237,15 +213,12 @@ class _BraintrustActivityInboundInterceptor(temporalio.worker.ActivityInboundInt
 
     async def execute_activity(self, input: temporalio.worker.ExecuteActivityInput) -> Any:
         info = temporalio.activity.info()
-
-        # Extract parent span context from headers
         parent_span_context = self.root._span_context_from_headers(input.headers)
 
         logger = self.root._get_logger()
         if not logger:
             return await super().execute_activity(input)
 
-        # Create Braintrust span for activity execution, linked to workflow span
         span = logger.start_span(
             internal={"instrumentation": "temporal-auto"},
             name=f"temporal.activity.{info.activity_type}",
@@ -261,10 +234,9 @@ class _BraintrustActivityInboundInterceptor(temporalio.worker.ActivityInboundInt
         span.set_current()
 
         try:
-            result = await super().execute_activity(input)
-            return result
+            return await super().execute_activity(input)
         except Exception as e:
-            span.log(error=str(e))
+            span.log(error=e)
             raise
         finally:
             span.unset_current()
@@ -289,7 +261,6 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
         super().init(_BraintrustWorkflowOutboundInterceptor(outbound, self))
 
     async def execute_workflow(self, input: temporalio.worker.ExecuteWorkflowInput) -> Any:
-        # Extract parent span context from workflow headers (set by client)
         parent_span_context = None
         if _HEADER_KEY in input.headers:
             header_payload = input.headers.get(_HEADER_KEY)
@@ -298,14 +269,11 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
                 if payloads:
                     parent_span_context = payloads[0]
 
-        # Store parent span context for activities (will be overwritten if we create a workflow span)
         self._parent_span_context = parent_span_context
 
-        # Create a span for the workflow execution using sandbox_unrestricted
-        # to bypass the sandbox restrictions on logger state access
+        # sandbox_unrestricted lets us touch logger state that the workflow sandbox would otherwise block.
         span = None
         with temporalio.workflow.unsafe.sandbox_unrestricted():
-            # Get logger via extern function (supports test logger parameter)
             get_logger = temporalio.workflow.extern_functions()["__braintrust_get_logger"]
             logger = get_logger()
 
@@ -351,12 +319,11 @@ class BraintrustWorkflowInboundInterceptor(temporalio.worker.WorkflowInboundInte
         self._workflow_span = span
 
         try:
-            result = await super().execute_workflow(input)
-            return result
+            return await super().execute_workflow(input)
         except Exception as e:
             if self._workflow_span:
                 with temporalio.workflow.unsafe.sandbox_unrestricted():
-                    self._workflow_span.log(error=str(e))
+                    self._workflow_span.log(error=e)
             raise
         finally:
             if self._workflow_span:
@@ -379,13 +346,8 @@ class _BraintrustWorkflowOutboundInterceptor(temporalio.worker.WorkflowOutboundI
     def _add_span_context_to_headers(
         self, headers: Mapping[str, temporalio.api.common.v1.Payload]
     ) -> Mapping[str, temporalio.api.common.v1.Payload]:
-        """Add parent span context to headers if available.
-
-        Note: We always pass span context through headers, even during replay,
-        so activities can maintain proper parent-child relationships. The replay
-        safety is handled in the activity interceptor, which only creates spans
-        when the activity actually executes (not during replay).
-        """
+        # Always propagate context — even during replay — so activities can find their parent.
+        # Replay safety is enforced in the activity interceptor, which only spans on real execution.
         if self.root._parent_span_context:
             payloads = self.root.payload_converter.to_payloads([self.root._parent_span_context])
             if payloads:
@@ -410,7 +372,6 @@ class _BraintrustWorkflowOutboundInterceptor(temporalio.worker.WorkflowOutboundI
 
 
 def _modify_workflow_runner(existing: WorkflowRunner | None) -> WorkflowRunner | None:
-    """Add braintrust to sandbox passthrough modules."""
     if isinstance(existing, SandboxedWorkflowRunner):
         new_restrictions = existing.restrictions.with_passthrough_modules("braintrust")
         return dataclasses.replace(existing, restrictions=new_restrictions)
@@ -471,20 +432,13 @@ class BraintrustPlugin(SimplePlugin):
     """
 
     def __init__(self, logger: Any | None = None) -> None:
-        """Initialize the Braintrust plugin.
-
-        Args:
-            logger: Optional background logger for testing.
-        """
         interceptor = BraintrustInterceptor(logger=logger)
         import inspect
 
         params = inspect.signature(SimplePlugin.__init__).parameters
 
-        # temporalio plugin APIs differ by version. Newer releases may expose
-        # a merged `interceptors` kwarg, while older releases keep separate
-        # client/worker interceptor kwargs. Build kwargs dynamically so pylint
-        # does not validate unsupported keywords against the installed version.
+        # Newer temporalio exposes a merged `interceptors` kwarg; older releases keep separate
+        # client_/worker_interceptors. Build kwargs dynamically to stay compatible.
         kwargs: dict[str, Any] = {
             "name": "braintrust",
             "workflow_runner": _modify_workflow_runner,
