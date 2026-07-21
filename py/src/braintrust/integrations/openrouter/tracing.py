@@ -3,17 +3,18 @@
 import logging
 import time
 from collections.abc import AsyncIterator, Iterator
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from braintrust.bt_json import bt_safe_deep_copy
 from braintrust.integrations.utils import (
     _camel_to_snake,
     _is_supported_metric_value,
     _log_and_end_span,
     _log_error_and_end_span,
     _merge_timing_and_usage_metrics,
+    _try_to_dict,
 )
 from braintrust.logger import start_span as _bt_start_span
+from braintrust.span_types import SpanTypeAttribute
 
 
 _INSTRUMENTATION = "openrouter-auto"
@@ -26,22 +27,8 @@ def start_span(*args, **kwargs):
     return _bt_start_span(*args, **kwargs)
 
 
-from braintrust.span_types import SpanTypeAttribute
-
-
-if TYPE_CHECKING:
-    pass
-
 logger = logging.getLogger(__name__)
 
-_OMITTED_KEYS = {
-    "execute",
-    "render",
-    "nextTurnParams",
-    "next_turn_params",
-    "requireApproval",
-    "require_approval",
-}
 _TOKEN_NAME_MAP = {
     "promptTokens": "prompt_tokens",
     "inputTokens": "prompt_tokens",
@@ -67,90 +54,177 @@ _TOKEN_DETAIL_PREFIX_MAP = {
     "cost_details": "cost",
 }
 
+_CHAT_REQUEST_KEYS = (
+    "temperature",
+    "top_p",
+    "top_k",
+    "top_a",
+    "min_p",
+    "max_tokens",
+    "max_completion_tokens",
+    "stop",
+    "presence_penalty",
+    "frequency_penalty",
+    "repetition_penalty",
+    "n",
+    "seed",
+    "logit_bias",
+    "logprobs",
+    "top_logprobs",
+    "response_format",
+    "tool_choice",
+    "tools",
+    "parallel_tool_calls",
+    "reasoning",
+    "prediction",
+    "modalities",
+    "web_search_options",
+    "user",
+    "verbosity",
+    "stream",
+    "stream_options",
+    "service_tier",
+    "transforms",
+    "models",
+    "route",
+    "plugins",
+)
+_EMBEDDINGS_REQUEST_KEYS = (
+    "encoding_format",
+    "dimensions",
+    "input_type",
+    "user",
+)
+_RESPONSES_REQUEST_KEYS = (
+    "temperature",
+    "top_p",
+    "max_output_tokens",
+    "stop",
+    "presence_penalty",
+    "frequency_penalty",
+    "top_logprobs",
+    "logprobs",
+    "response_format",
+    "tool_choice",
+    "tools",
+    "parallel_tool_calls",
+    "max_tool_calls",
+    "reasoning",
+    "background",
+    "previous_response_id",
+    "service_tier",
+    "truncation",
+    "store",
+    "instructions",
+    "text",
+    "safety_identifier",
+    "prompt_cache_key",
+    "include",
+    "user",
+    "stream",
+    "metadata",
+)
+_CHAT_RESPONSE_KEYS = (
+    "id",
+    "object",
+    "created",
+    "system_fingerprint",
+    "service_tier",
+)
+_RESPONSES_RESPONSE_KEYS = (
+    "id",
+    "object",
+    "created_at",
+    "completed_at",
+    "status",
+    "service_tier",
+    "background",
+    "previous_response_id",
+    "safety_identifier",
+    "prompt_cache_key",
+    "truncation",
+    "incomplete_details",
+)
+_EMBEDDINGS_RESPONSE_KEYS = (
+    "id",
+    "object",
+)
 
-def sanitize_openrouter_logged_value(value: Any) -> Any:
-    safe = bt_safe_deep_copy(value)
 
-    if callable(safe):
-        return "[Function]"
-    if isinstance(safe, list):
-        return [sanitize_openrouter_logged_value(item) for item in safe]
-    if isinstance(safe, tuple):
-        return [sanitize_openrouter_logged_value(item) for item in safe]
-    if isinstance(safe, dict):
-        sanitized = {}
-        for key, entry in safe.items():
-            if key in _OMITTED_KEYS:
-                continue
-            sanitized[key] = sanitize_openrouter_logged_value(entry)
-        return sanitized
-    return safe
+def _get_field(obj: Any, key: str, default: Any = None) -> Any:
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
 
 
-def _parse_openrouter_model_string(model: Any) -> dict[str, Any]:
+def _parse_openrouter_model_string(model: Any) -> tuple[Any, str | None]:
     if not isinstance(model, str):
-        return {"model": model}
-
-    slash_index = model.find("/")
-    if 0 < slash_index < len(model) - 1:
-        return {
-            "provider": model[:slash_index],
-            "model": model[slash_index + 1 :],
-        }
-
-    return {"model": model}
+        return model, None
+    slash = model.find("/")
+    if 0 < slash < len(model) - 1:
+        return model[slash + 1 :], model[:slash]
+    return model, None
 
 
-def _build_openrouter_metadata(metadata: dict[str, Any], *, embedding: bool = False) -> dict[str, Any]:
-    sanitized = sanitize_openrouter_logged_value(metadata)
-    record = sanitized if isinstance(sanitized, dict) else {}
-    model = record.pop("model", None)
-    provider_routing = record.pop("provider", None)
-    normalized_model = _parse_openrouter_model_string(model)
-
-    result = dict(record)
-    if normalized_model.get("model") is not None:
-        result["model"] = normalized_model["model"]
-    if provider_routing is not None:
-        result["provider_routing"] = provider_routing
-    result["provider"] = normalized_model.get("provider") or "openrouter"
-    if embedding and isinstance(result.get("model"), str):
-        result["embedding_model"] = result["model"]
-    return result
+def _stamp_model_and_provider(metadata: dict[str, Any], raw_model: Any, routing: Any) -> Any:
+    """Set model / provider / provider_routing on ``metadata``. Returns the parsed model."""
+    model, provider = _parse_openrouter_model_string(raw_model)
+    if model is not None:
+        metadata["model"] = model
+    if provider is not None:
+        metadata["provider"] = provider
+    if routing is not None:
+        metadata["provider_routing"] = routing
+    return model
 
 
-def _extract_openrouter_usage_metadata(usage: Any) -> dict[str, Any]:
-    if not isinstance(usage, dict):
-        usage = sanitize_openrouter_logged_value(usage)
-    if not isinstance(usage, dict):
+def _build_request_metadata(
+    kwargs: dict[str, Any], keys: tuple[str, ...], *, embedding: bool = False
+) -> dict[str, Any]:
+    metadata = {key: kwargs[key] for key in keys if key in kwargs and kwargs[key] is not None}
+    model = _stamp_model_and_provider(metadata, kwargs.get("model"), kwargs.get("provider"))
+    metadata.setdefault("provider", "openrouter")
+    if embedding and isinstance(model, str):
+        metadata["embedding_model"] = model
+    return metadata
+
+
+def _pick_response_metadata(response: Any, keys: tuple[str, ...]) -> dict[str, Any]:
+    if response is None:
         return {}
 
-    if isinstance(usage.get("is_byok"), bool):
-        return {"is_byok": usage["is_byok"]}
-    if isinstance(usage.get("isByok"), bool):
-        return {"is_byok": usage["isByok"]}
-    return {}
+    picked: dict[str, Any] = {}
+    for key in keys:
+        value = _get_field(response, key)
+        if value is not None:
+            picked[key] = value
+
+    _stamp_model_and_provider(picked, _get_field(response, "model"), _get_field(response, "provider"))
+    return picked
+
+
+def _usage_metadata(usage: Any) -> dict[str, Any]:
+    is_byok = _get_field(usage, "is_byok")
+    if is_byok is None:
+        is_byok = _get_field(usage, "isByok")
+    return {"is_byok": is_byok} if isinstance(is_byok, bool) else {}
 
 
 def _parse_openrouter_metrics_from_usage(usage: Any) -> dict[str, float]:
-    if not isinstance(usage, dict):
-        usage = sanitize_openrouter_logged_value(usage)
-    if not isinstance(usage, dict):
+    usage_dict = _try_to_dict(usage)
+    if not isinstance(usage_dict, dict):
         return {}
 
-    metrics = {}
-    for name, value in usage.items():
+    metrics: dict[str, float] = {}
+    for name, value in usage_dict.items():
         if _is_supported_metric_value(value):
             metrics[_TOKEN_NAME_MAP.get(name, _camel_to_snake(name))] = float(value)
             continue
-
-        if not isinstance(value, dict):
-            continue
-
         prefix = _TOKEN_DETAIL_PREFIX_MAP.get(name)
-        if prefix is None:
+        if prefix is None or not isinstance(value, dict):
             continue
-
         for nested_name, nested_value in value.items():
             if _is_supported_metric_value(nested_value):
                 metrics[f"{prefix}_{_camel_to_snake(nested_name)}"] = float(nested_value)
@@ -167,37 +241,10 @@ def _merge_metrics(start_time: float, usage: Any, first_token_time: float | None
     )
 
 
-def _response_to_output(response: Any, *, fallback_output: Any | None = None) -> Any:
-    if hasattr(response, "output") and getattr(response, "output") is not None:
-        return sanitize_openrouter_logged_value(getattr(response, "output"))
-    if hasattr(response, "choices") and getattr(response, "choices") is not None:
-        return sanitize_openrouter_logged_value(getattr(response, "choices"))
-    if fallback_output is not None:
-        return sanitize_openrouter_logged_value(fallback_output)
-    return None
-
-
-def _response_to_metadata(response: Any, *, embedding: bool = False) -> dict[str, Any]:
-    if response is None:
-        return {}
-
-    data = sanitize_openrouter_logged_value(response)
-    if not isinstance(data, dict):
-        return {}
-
-    data.pop("output", None)
-    data.pop("choices", None)
-    data.pop("data", None)
-    usage = data.pop("usage", None)
-    metadata = _build_openrouter_metadata(data, embedding=embedding)
-    metadata.update(_extract_openrouter_usage_metadata(usage))
-    return metadata
-
-
 def _embeddings_output(response: Any) -> dict[str, Any]:
-    items = getattr(response, "data", None) or []
+    items = _get_field(response, "data") or []
     first = items[0] if items else None
-    embedding = getattr(first, "embedding", None) if first is not None else None
+    embedding = _get_field(first, "embedding") if first is not None else None
     return {
         "embedding_length": len(embedding) if embedding is not None else None,
         "embeddings_count": len(items),
@@ -208,7 +255,7 @@ def _start_span(name: str, span_input: Any, metadata: dict[str, Any]):
     return start_span(
         name=name,
         type=SpanTypeAttribute.LLM,
-        input=sanitize_openrouter_logged_value(span_input),
+        input=span_input,
         metadata=metadata,
     )
 
@@ -264,19 +311,7 @@ class _TracedOpenRouterSyncStream:
             _log_error_and_end_span(self._span, error)
             return
 
-        if self._kind == "chat":
-            output, usage = _aggregate_chat_stream(self._items)
-            metadata = dict(self._metadata)
-        else:
-            output, usage, response_metadata = _aggregate_responses_stream(self._items)
-            metadata = {**self._metadata, **response_metadata}
-
-        _log_and_end_span(
-            self._span,
-            output=output,
-            metrics=_merge_metrics(self._start_time, usage, self._first_token_time),
-            metadata=metadata,
-        )
+        _finalize_stream(self._span, self._metadata, self._items, self._kind, self._start_time, self._first_token_time)
 
 
 class _TracedOpenRouterAsyncStream:
@@ -330,19 +365,30 @@ class _TracedOpenRouterAsyncStream:
             _log_error_and_end_span(self._span, error)
             return
 
-        if self._kind == "chat":
-            output, usage = _aggregate_chat_stream(self._items)
-            metadata = dict(self._metadata)
-        else:
-            output, usage, response_metadata = _aggregate_responses_stream(self._items)
-            metadata = {**self._metadata, **response_metadata}
+        _finalize_stream(self._span, self._metadata, self._items, self._kind, self._start_time, self._first_token_time)
 
-        _log_and_end_span(
-            self._span,
-            output=output,
-            metrics=_merge_metrics(self._start_time, usage, self._first_token_time),
-            metadata=metadata,
-        )
+
+def _finalize_stream(
+    span: Any,
+    request_metadata: dict[str, Any],
+    items: list[Any],
+    kind: str,
+    start_time: float,
+    first_token_time: float | None,
+) -> None:
+    if kind == "chat":
+        output, usage = _aggregate_chat_stream(items)
+        metadata = {**request_metadata, **_usage_metadata(usage)}
+    else:
+        output, usage, response_metadata = _aggregate_responses_stream(items)
+        metadata = {**request_metadata, **response_metadata, **_usage_metadata(usage)}
+
+    _log_and_end_span(
+        span,
+        output=output,
+        metrics=_merge_metrics(start_time, usage, first_token_time),
+        metadata=metadata,
+    )
 
 
 def _chunk_has_output(item: Any) -> bool:
@@ -366,7 +412,7 @@ def _chunk_has_output(item: Any) -> bool:
 
 
 def _aggregate_chat_stream(chunks: list[Any]) -> tuple[list[dict[str, Any]], Any]:
-    choices = {}
+    choices: dict[int, dict[str, Any]] = {}
     usage = None
 
     for chunk in chunks:
@@ -440,7 +486,7 @@ def _aggregate_chat_stream(chunks: list[Any]) -> tuple[list[dict[str, Any]], Any
 def _aggregate_responses_stream(chunks: list[Any]) -> tuple[Any, Any, dict[str, Any]]:
     completed_response = None
     usage = None
-    output_items = {}
+    output_items: dict[int, Any] = {}
 
     for chunk in chunks:
         chunk_type = getattr(chunk, "type", None)
@@ -453,44 +499,40 @@ def _aggregate_responses_stream(chunks: list[Any]) -> tuple[Any, Any, dict[str, 
 
     if completed_response is not None:
         return (
-            _response_to_output(completed_response),
+            _get_field(completed_response, "output"),
             getattr(completed_response, "usage", None),
-            _response_to_metadata(completed_response),
+            _pick_response_metadata(completed_response, _RESPONSES_RESPONSE_KEYS),
         )
 
     output = [output_items[index] for index in sorted(output_items)]
-    return sanitize_openrouter_logged_value(output), usage, {}
+    return output, usage, {}
 
 
-def _finalize_chat_response(span: Any, request_metadata: dict[str, Any], result: Any, start_time: float):
+def _finalize_response(
+    span: Any,
+    request_metadata: dict[str, Any],
+    result: Any,
+    start_time: float,
+    *,
+    output: Any,
+    response_keys: tuple[str, ...],
+) -> None:
+    usage = _get_field(result, "usage")
+    metadata = {
+        **request_metadata,
+        **_pick_response_metadata(result, response_keys),
+        **_usage_metadata(usage),
+    }
     _log_and_end_span(
         span,
-        output=_response_to_output(result),
-        metrics=_merge_metrics(start_time, getattr(result, "usage", None)),
-        metadata={**request_metadata, **_response_to_metadata(result)},
-    )
-
-
-def _finalize_embeddings_response(span: Any, request_metadata: dict[str, Any], result: Any, start_time: float):
-    _log_and_end_span(
-        span,
-        output=_embeddings_output(result),
-        metrics=_merge_metrics(start_time, getattr(result, "usage", None)),
-        metadata={**request_metadata, **_response_to_metadata(result, embedding=True)},
-    )
-
-
-def _finalize_responses_response(span: Any, request_metadata: dict[str, Any], result: Any, start_time: float):
-    _log_and_end_span(
-        span,
-        output=_response_to_output(result, fallback_output=getattr(result, "output_text", None)),
-        metrics=_merge_metrics(start_time, getattr(result, "usage", None)),
-        metadata={**request_metadata, **_response_to_metadata(result)},
+        output=output,
+        metrics=_merge_metrics(start_time, usage),
+        metadata=metadata,
     )
 
 
 def _chat_send_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_openrouter_metadata(dict(kwargs))
+    request_metadata = _build_request_metadata(kwargs, _CHAT_REQUEST_KEYS)
     span = _start_span("openrouter.chat.send", kwargs.get("messages"), request_metadata)
     start_time = time.time()
 
@@ -503,12 +545,19 @@ def _chat_send_wrapper(wrapped, instance, args, kwargs):
     if kwargs.get("stream"):
         return _TracedOpenRouterSyncStream(result, span, request_metadata, "chat", start_time)
 
-    _finalize_chat_response(span, request_metadata, result, start_time)
+    _finalize_response(
+        span,
+        request_metadata,
+        result,
+        start_time,
+        output=_get_field(result, "choices"),
+        response_keys=_CHAT_RESPONSE_KEYS,
+    )
     return result
 
 
 async def _chat_send_async_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_openrouter_metadata(dict(kwargs))
+    request_metadata = _build_request_metadata(kwargs, _CHAT_REQUEST_KEYS)
     span = _start_span("openrouter.chat.send", kwargs.get("messages"), request_metadata)
     start_time = time.time()
 
@@ -521,12 +570,19 @@ async def _chat_send_async_wrapper(wrapped, instance, args, kwargs):
     if kwargs.get("stream"):
         return _TracedOpenRouterAsyncStream(result, span, request_metadata, "chat", start_time)
 
-    _finalize_chat_response(span, request_metadata, result, start_time)
+    _finalize_response(
+        span,
+        request_metadata,
+        result,
+        start_time,
+        output=_get_field(result, "choices"),
+        response_keys=_CHAT_RESPONSE_KEYS,
+    )
     return result
 
 
 def _embeddings_generate_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_openrouter_metadata(dict(kwargs), embedding=True)
+    request_metadata = _build_request_metadata(kwargs, _EMBEDDINGS_REQUEST_KEYS, embedding=True)
     span = _start_span("openrouter.embeddings.generate", kwargs.get("input"), request_metadata)
     start_time = time.time()
 
@@ -536,12 +592,19 @@ def _embeddings_generate_wrapper(wrapped, instance, args, kwargs):
         _log_error_and_end_span(span, error)
         raise
 
-    _finalize_embeddings_response(span, request_metadata, result, start_time)
+    _finalize_response(
+        span,
+        request_metadata,
+        result,
+        start_time,
+        output=_embeddings_output(result),
+        response_keys=_EMBEDDINGS_RESPONSE_KEYS,
+    )
     return result
 
 
 async def _embeddings_generate_async_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_openrouter_metadata(dict(kwargs), embedding=True)
+    request_metadata = _build_request_metadata(kwargs, _EMBEDDINGS_REQUEST_KEYS, embedding=True)
     span = _start_span("openrouter.embeddings.generate", kwargs.get("input"), request_metadata)
     start_time = time.time()
 
@@ -551,12 +614,19 @@ async def _embeddings_generate_async_wrapper(wrapped, instance, args, kwargs):
         _log_error_and_end_span(span, error)
         raise
 
-    _finalize_embeddings_response(span, request_metadata, result, start_time)
+    _finalize_response(
+        span,
+        request_metadata,
+        result,
+        start_time,
+        output=_embeddings_output(result),
+        response_keys=_EMBEDDINGS_RESPONSE_KEYS,
+    )
     return result
 
 
 def _responses_send_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_openrouter_metadata(dict(kwargs))
+    request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS)
     span = _start_span("openrouter.beta.responses.send", kwargs.get("input"), request_metadata)
     start_time = time.time()
 
@@ -569,12 +639,19 @@ def _responses_send_wrapper(wrapped, instance, args, kwargs):
     if kwargs.get("stream"):
         return _TracedOpenRouterSyncStream(result, span, request_metadata, "responses", start_time)
 
-    _finalize_responses_response(span, request_metadata, result, start_time)
+    _finalize_response(
+        span,
+        request_metadata,
+        result,
+        start_time,
+        output=_get_field(result, "output") or _get_field(result, "output_text"),
+        response_keys=_RESPONSES_RESPONSE_KEYS,
+    )
     return result
 
 
 async def _responses_send_async_wrapper(wrapped, instance, args, kwargs):
-    request_metadata = _build_openrouter_metadata(dict(kwargs))
+    request_metadata = _build_request_metadata(kwargs, _RESPONSES_REQUEST_KEYS)
     span = _start_span("openrouter.beta.responses.send", kwargs.get("input"), request_metadata)
     start_time = time.time()
 
@@ -587,7 +664,14 @@ async def _responses_send_async_wrapper(wrapped, instance, args, kwargs):
     if kwargs.get("stream"):
         return _TracedOpenRouterAsyncStream(result, span, request_metadata, "responses", start_time)
 
-    _finalize_responses_response(span, request_metadata, result, start_time)
+    _finalize_response(
+        span,
+        request_metadata,
+        result,
+        start_time,
+        output=_get_field(result, "output") or _get_field(result, "output_text"),
+        response_keys=_RESPONSES_RESPONSE_KEYS,
+    )
     return result
 
 
