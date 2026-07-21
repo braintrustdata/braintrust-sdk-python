@@ -844,11 +844,17 @@ class _RawResponseWithTracedStream(NamedWrapper):
     """Proxy for LegacyAPIResponse that replaces parse() with a traced stream,
     so that with_raw_response + stream=True preserves both headers and tracing."""
 
-    def __init__(self, raw_response: Any, traced_stream: Any) -> None:
+    def __init__(self, raw_response: Any, traced_stream: Any, *, async_parse: bool = False) -> None:
         self._traced_stream = traced_stream
+        self._async_parse = async_parse
         super().__init__(raw_response)
 
     def parse(self, *args: Any, **kwargs: Any) -> Any:
+        if self._async_parse:
+            return self._aparse()
+        return self._traced_stream
+
+    async def _aparse(self) -> Any:
         return self._traced_stream
 
 
@@ -1066,8 +1072,12 @@ class ResponseWrapper:
         try:
             start = time.time()
             create_response = await self.acreate_fn(*args, **kwargs)
+            parse_was_awaitable = False
             if hasattr(create_response, "parse"):
                 raw_response = create_response.parse()
+                if inspect.isawaitable(raw_response):
+                    parse_was_awaitable = True
+                    raw_response = await raw_response
                 log_headers(create_response, span)
             else:
                 raw_response = create_response
@@ -1097,7 +1107,11 @@ class ResponseWrapper:
                 should_end = False
                 streamer = gen()
                 if raw_requested and hasattr(create_response, "parse"):
-                    return _RawResponseWithTracedStream(create_response, _AsyncTracedStream(raw_response, streamer))
+                    return _RawResponseWithTracedStream(
+                        create_response,
+                        _AsyncTracedStream(raw_response, streamer),
+                        async_parse=parse_was_awaitable,
+                    )
                 return _AsyncTracedStream(raw_response, streamer)
             else:
                 log_response = _try_to_dict(raw_response)

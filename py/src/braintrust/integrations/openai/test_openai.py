@@ -7,6 +7,7 @@ import tempfile
 import time
 import zlib
 
+import httpx
 import openai
 import pytest
 from braintrust import Attachment, logger, wrap_openai
@@ -2781,6 +2782,35 @@ class TestOpenAIIntegrationSetupAsyncSpans:
         assert span["metadata"]["provider"] == "openai"
         assert "gpt-4o-mini" in span["metadata"]["model"]
         assert span["input"]
+
+    @pytest.mark.asyncio
+    async def test_setup_streaming_response_parse_remains_awaitable(self, memory_logger):
+        """OpenAI Agents awaits parse() on the streaming response wrapper."""
+        assert not memory_logger.pop()
+
+        async def handle_request(request):
+            return httpx.Response(
+                200,
+                headers={"content-type": "text/event-stream"},
+                content=b"data: [DONE]\n\n",
+                request=request,
+            )
+
+        OpenAIIntegration.setup()
+        transport = httpx.MockTransport(handle_request)
+        async with httpx.AsyncClient(transport=transport) as http_client:
+            client = openai.AsyncOpenAI(api_key="test-api-key", http_client=http_client)
+            async with client.responses.with_streaming_response.create(
+                model=TEST_MODEL,
+                input=TEST_PROMPT,
+                stream=True,
+            ) as raw_response:
+                stream = await raw_response.parse()
+                assert hasattr(stream, "__aiter__")
+                await stream.close()
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
 
 
 class TestAutoInstrumentOpenAI:
