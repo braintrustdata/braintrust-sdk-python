@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.9.0
+      - pydantic-ai/2.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.45.0
+      - 2.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -35,104 +35,104 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
       string: 'event: response.created
 
-        data: {"type":"response.created","response":{"id":"resp_038a6afcd7546e43006a5502305aec81a084a911d18f5f38be","object":"response","created_at":1783956016,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
+        data: {"type":"response.created","response":{"id":"resp_0025dac1fcb2ad5c006a5eb9fa25708199bf441de372392ad4","object":"response","created_at":1784592890,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
         final response which ends this conversation","name":"final_result","output_schema":null,"parameters":{"properties":{"name":{"type":"string"},"price":{"type":"number"}},"required":["name","price"],"type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
 
 
         event: response.in_progress
 
-        data: {"type":"response.in_progress","response":{"id":"resp_038a6afcd7546e43006a5502305aec81a084a911d18f5f38be","object":"response","created_at":1783956016,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
+        data: {"type":"response.in_progress","response":{"id":"resp_0025dac1fcb2ad5c006a5eb9fa25708199bf441de372392ad4","object":"response","created_at":1784592890,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
         final response which ends this conversation","name":"final_result","output_schema":null,"parameters":{"properties":{"name":{"type":"string"},"price":{"type":"number"}},"required":["name","price"],"type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","type":"function_call","status":"in_progress","arguments":"","call_id":"call_2oeaOQWKLWHNMFtuaIxiDz7K","name":"final_result"},"output_index":0,"sequence_number":2}
+        data: {"type":"response.output_item.added","item":{"id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","type":"function_call","status":"in_progress","arguments":"","call_id":"call_kGqVZ88omv9hGkKyPeml2yyF","name":"final_result"},"output_index":0,"sequence_number":2}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"{\"","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"A84yDlvver76dG","output_index":0,"sequence_number":3}
+        data: {"type":"response.function_call_arguments.delta","delta":"{\"","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"avetmtp8F2nO03","output_index":0,"sequence_number":3}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"name","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"IHnXvI0PKAwY","output_index":0,"sequence_number":4}
+        data: {"type":"response.function_call_arguments.delta","delta":"name","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"H1y2UoYFz3I5","output_index":0,"sequence_number":4}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\":\"","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"Oya2EnyWSTBQ1","output_index":0,"sequence_number":5}
+        data: {"type":"response.function_call_arguments.delta","delta":"\":\"","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"sMr1cuOeFPdNE","output_index":0,"sequence_number":5}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"Wireless","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"xPIOLFML","output_index":0,"sequence_number":6}
+        data: {"type":"response.function_call_arguments.delta","delta":"Wireless","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"TRssXqQ1","output_index":0,"sequence_number":6}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":" Mouse","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"56vchvC5Ur","output_index":0,"sequence_number":7}
+        data: {"type":"response.function_call_arguments.delta","delta":" Mouse","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"y4PxesTUeP","output_index":0,"sequence_number":7}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\",\"","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"QdG5HUrLCExpy","output_index":0,"sequence_number":8}
+        data: {"type":"response.function_call_arguments.delta","delta":"\",\"","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"fRG8V0s0Q94hD","output_index":0,"sequence_number":8}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"price","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"O7RaubbyazG","output_index":0,"sequence_number":9}
+        data: {"type":"response.function_call_arguments.delta","delta":"price","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"v4eNXvnuunl","output_index":0,"sequence_number":9}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\":","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"pNgDeT9rWInQK3","output_index":0,"sequence_number":10}
+        data: {"type":"response.function_call_arguments.delta","delta":"\":","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"zcuTxXs05NeHZY","output_index":0,"sequence_number":10}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"29","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"s3HWb477XGZXOK","output_index":0,"sequence_number":11}
+        data: {"type":"response.function_call_arguments.delta","delta":"29","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"uo5GwqchicI48x","output_index":0,"sequence_number":11}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":".","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"Yeyg8bJq7j0pYt6","output_index":0,"sequence_number":12}
+        data: {"type":"response.function_call_arguments.delta","delta":".","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"YMWhIdw1h9YrXYi","output_index":0,"sequence_number":12}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"99","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"e8ywHcMYi1Coqa","output_index":0,"sequence_number":13}
+        data: {"type":"response.function_call_arguments.delta","delta":"99","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"ALiiyyskzozhZE","output_index":0,"sequence_number":13}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"}","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","obfuscation":"sc11VwRcEDBpIFo","output_index":0,"sequence_number":14}
+        data: {"type":"response.function_call_arguments.delta","delta":"}","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","obfuscation":"y2Wus0zdRjGgpA3","output_index":0,"sequence_number":14}
 
 
         event: response.function_call_arguments.done
 
         data: {"type":"response.function_call_arguments.done","arguments":"{\"name\":\"Wireless
-        Mouse\",\"price\":29.99}","item_id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","output_index":0,"sequence_number":15}
+        Mouse\",\"price\":29.99}","item_id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","output_index":0,"sequence_number":15}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
-        Mouse\",\"price\":29.99}","call_id":"call_2oeaOQWKLWHNMFtuaIxiDz7K","name":"final_result"},"output_index":0,"sequence_number":16}
+        data: {"type":"response.output_item.done","item":{"id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
+        Mouse\",\"price\":29.99}","call_id":"call_kGqVZ88omv9hGkKyPeml2yyF","name":"final_result"},"output_index":0,"sequence_number":16}
 
 
         event: response.completed
 
-        data: {"type":"response.completed","response":{"id":"resp_038a6afcd7546e43006a5502305aec81a084a911d18f5f38be","object":"response","created_at":1783956016,"status":"completed","background":false,"completed_at":1783956017,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"fc_038a6afcd7546e43006a550231591c81a091675044389307f5","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
-        Mouse\",\"price\":29.99}","call_id":"call_2oeaOQWKLWHNMFtuaIxiDz7K","name":"final_result"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
+        data: {"type":"response.completed","response":{"id":"resp_0025dac1fcb2ad5c006a5eb9fa25708199bf441de372392ad4","object":"response","created_at":1784592890,"status":"completed","background":false,"completed_at":1784592890,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"fc_0025dac1fcb2ad5c006a5eb9faa4148199a5d6b04d0c31f8ea","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
+        Mouse\",\"price\":29.99}","call_id":"call_kGqVZ88omv9hGkKyPeml2yyF","name":"final_result"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
         final response which ends this conversation","name":"final_result","output_schema":null,"parameters":{"properties":{"name":{"type":"string"},"price":{"type":"number"}},"required":["name","price"],"type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":{"input_tokens":63,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":13,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":76},"user":null,"metadata":{}},"sequence_number":17}
 
 
@@ -147,27 +147,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a9454ddfbebf5d-YYZ
+      - a1e601fb3cbfe418-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 13 Jul 2026 15:20:16 GMT
-      openai-organization:
-      - braintrust-data
+      - Tue, 21 Jul 2026 00:14:50 GMT
       openai-processing-ms:
-      - '236'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '118'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=cJ2BviPY0ae8jRoofI.NRZcEOv3fuocaychIooUamlM-1783956016.2956893-1.0.1.1-n8IgavvnnDa8.SYu991Tukk96Cs.ntB8ohncVZnUVCXGdjRE2MPM9xY0FpD1JRTL12NDFpgz4GzlzHLGadTX7CkJ.3wKYfDhT2nAfM9Ba0mlenrpA8_uPpRVrY6EX1cf;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        13 Jul 2026 15:50:16 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -175,7 +167,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_7230839b61194367959dc45076cef7c6
+      - req_08d976762819449797466163fe6fc323
     status:
       code: 200
       message: OK

@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS1iZTU1NzBhYjQ0NGI0NDk4ZjY2YzlkOGY4ZTg2OGU1NQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tYmU1NTcwYWI0
-      NDRiNDQ5OGY2NmM5ZDhmOGU4NjhlNTUNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWJlNTU3MGFiNDQ0YjQ0OThmNjZjOWQ4ZjhlODY4ZTU1
+      LS0zMzIwY2I2YWFkNGM0ZjY1MDhhNDZhMTY3Mjc4YTMxMw0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tMzMyMGNiNmFh
+      ZDRjNGY2NTA4YTQ2YTE2NzI3OGEzMTMNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTMzMjBjYjZhYWQ0YzRmNjUwOGE0NmExNjcyNzhhMzEz
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tYmU1NTcwYWI0NDRiNDQ5OGY2NmM5ZDhmOGU4NjhlNTUtLQ0K
+      Ci0tMzMyMGNiNmFhZDRjNGY2NTA4YTQ2YTE2NzI3OGEzMTMtLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=be5570ab444b4498f66c9d8f8e868e55
+      - multipart/form-data; boundary=3320cb6aad4c4f6508a46a167278a313
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.44.0
+      - OpenAI/Python 2.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -602,13 +602,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\".\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":13,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":3}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"and\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.done\",\"text\":\"and\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":13,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":3}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -621,27 +621,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a13574eceb18ac75-YYZ
+      - a1e5eb5b0d5bdf0a-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 29 Jun 2026 14:00:19 GMT
-      openai-organization:
-      - braintrust-data
+      - Mon, 20 Jul 2026 23:59:23 GMT
       openai-processing-ms:
-      - '537'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '235'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=cXSSL3VViEw6LZlZuMzo5K4ivtgGJHpJrzuHBjAtS3c-1782741618.7114122-1.0.1.1-4KFxLUU_qd2EGTtsbAGY11fggCVKUzvSYJn9V2LsDX1H3AVWW2Pasn.k_wY8ZvOjMC6_DHPg3Gt25hHoVR_tAB9sJgH1a2736_LUeFj.7uhfGRn_dumNBdjST4BaCR0T;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 14:30:19 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -657,7 +649,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_e28b2ac68c354d8daf67f74079ad6503
+      - req_3ccdbb240c434b499ee65d48a3f410a0
     status:
       code: 200
       message: OK

@@ -16,57 +16,86 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-07-13T15:23:55.742025Z","conversation_id":"conv_019f5c13e12574cbbe2aa2421f60f858"}
+        data: {"type":"conversation.response.started","created_at":"2026-07-21T00:18:51.689447Z","conversation_id":"conv_019f820a2686718abe054b3299945f3b"}
 
 
         event: tool.execution.started
 
-        data: {"type":"tool.execution.started","created_at":"2026-07-13T15:23:55.768783Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
+        data: {"type":"tool.execution.started","created_at":"2026-07-21T00:18:51.693090Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-13T15:23:55.770303Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.704848Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-13T15:23:55.771689Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","arguments":"\":
-        \"21","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.721667Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"\":
+        \"#","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-13T15:23:55.773005Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","arguments":"
-        * 2\"}","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.741743Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"
+        Calculate the","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.757384Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"
+        product of 2","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.773491Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"1
+        and 2","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.790503Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"\\nresult
+        = ","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.807604Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"21
+        * ","function":"code_interpreter"}
+
+
+        event: tool.execution.delta
+
+        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.824349Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"2\\nresult\"}","function":"code_interpreter"}
 
 
         event: tool.execution.done
 
-        data: {"type":"tool.execution.done","created_at":"2026-07-13T15:23:58.448239Z","output_index":0,"id":"tool_exec_019f5c13e5f8758684fbd66c9ea3da80","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
-        * 2","code_output":"42\n"}}
+        data: {"type":"tool.execution.done","created_at":"2026-07-21T00:18:54.362762Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"#
+        Calculate the product of 21 and 2\nresult = 21 * 2\nresult","code_output":"42\n"}}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-07-13T15:23:58.583906Z","output_index":1,"id":"msg_019f5c13f0f774afb408fff4aa3f8ef7","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
+        data: {"type":"message.output.delta","created_at":"2026-07-21T00:18:54.548429Z","output_index":1,"id":"msg_019f820a33d472768663862bb033e8e1","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-07-13T15:23:58.598834Z","output_index":1,"id":"msg_019f5c13f0f774afb408fff4aa3f8ef7","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
+        data: {"type":"message.output.delta","created_at":"2026-07-21T00:18:54.566088Z","output_index":1,"id":"msg_019f820a33d472768663862bb033e8e1","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-07-13T15:23:58.615276Z","usage":{"prompt_tokens":240,"completion_tokens":19,"total_tokens":264,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
+        data: {"type":"conversation.response.done","created_at":"2026-07-21T00:18:54.583465Z","usage":{"prompt_tokens":240,"completion_tokens":35,"total_tokens":280,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
 
 
         '
@@ -78,21 +107,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94aa14976ab84-YYZ
+      - a1e607dd08f5d56a-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 13 Jul 2026 15:23:55 GMT
+      - Tue, 21 Jul 2026 00:18:51 GMT
       mistral-correlation-id:
-      - 019f5c13-e110-7414-80c5-4cb1887282cc
+      - 019f820a-2677-7109-a199-35bc4fceddc2
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=M6O3QVATS7zsAZpXv.A88cxlYMvzNa2G_56ga8JxE8w-1783956234.451602-1.0.1.1-0WFaIcSeZRks70NcmEjCJHSMcwOo9dvZIRFpmmmfjUimfEZWUU_FeEGdZmmtR_aBsmMaAC.d9X8dColFURInVX5foHz1Y7K17i3ILokFIn_KKfJb1FG8HR1EBJC4jFMg;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:53:55 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -100,13 +125,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '1215'
+      - '555'
       x-kong-proxy-latency:
-      - '16'
+      - '11'
       x-kong-request-id:
-      - 019f5c13-e110-7414-80c5-4cb1887282cc
+      - 019f820a-2677-7109-a199-35bc4fceddc2
       x-kong-upstream-latency:
-      - '1219'
+      - '556'
     status:
       code: 200
       message: OK

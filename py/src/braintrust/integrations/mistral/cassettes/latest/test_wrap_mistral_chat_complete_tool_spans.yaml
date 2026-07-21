@@ -17,12 +17,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions
   response:
     body:
-      string: '{"id":"73d293110a6044e6b71d9c19ac21718c","created":1783956227,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"TLgZK4DB1","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+      string: '{"id":"8a76d39fd25e4b9bbd1c211fb05834a2","created":1784593126,"model":"mistral-small-latest","usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"j558Nn0MW","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
         \"Paris\"}"},"index":0}],"content":""}}]}'
     headers:
       access-control-allow-origin:
@@ -32,7 +32,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94a768ead375a-YYZ
+      - a1e607be8d7cf3e8-SJC
       connection:
       - keep-alive
       content-length:
@@ -40,15 +40,11 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 13 Jul 2026 15:23:47 GMT
+      - Tue, 21 Jul 2026 00:18:46 GMT
       mistral-correlation-id:
-      - 019f5c13-c64f-719f-9d86-d9840f2afaf7
+      - 019f820a-136f-7280-b58a-5a863267ee7e
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=kWiBVevKdnZpoImWKlutFz6ibCbQTicvhn8TYXrA6Dc-1783956227.6083837-1.0.1.1-Yhx9w6cNSeBZqZYzonqKjxdV7tRq_R8XFJx75k1Wldiq4S.QB0UBGTwfoCNgyGfnJCRdts83rnEN3lrWZqORRtURtZjXFdygLulwZAhG9p1yFInzk8IRDXogzgn.0yvs;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:53:47 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -56,13 +52,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '235'
+      - '253'
       x-kong-proxy-latency:
-      - '10'
+      - '8'
       x-kong-request-id:
-      - 019f5c13-c64f-719f-9d86-d9840f2afaf7
+      - 019f820a-136f-7280-b58a-5a863267ee7e
       x-kong-upstream-latency:
-      - '236'
+      - '254'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:

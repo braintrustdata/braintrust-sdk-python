@@ -16,7 +16,7 @@ interactions:
       host:
       - openrouter.ai
       user-agent:
-      - OpenAI/Python 2.44.0
+      - OpenAI/Python 2.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,18 +34,21 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://openrouter.ai/api/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"gen-1782741649-zDbIvaJ90eoxujTt4530","object":"chat.completion.chunk","created":1782741649,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_51b9c32e14","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
+      string: ': OPENROUTER PROCESSING
 
 
-        data: {"id":"gen-1782741649-zDbIvaJ90eoxujTt4530","object":"chat.completion.chunk","created":1782741649,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_51b9c32e14","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
+        data: {"id":"gen-1784591987-z43wL1sbV6K38AF9sKSZ","object":"chat.completion.chunk","created":1784591987,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_965c8b9ecf","choices":[{"index":0,"delta":{"content":"10","role":"assistant"},"finish_reason":null,"native_finish_reason":null}]}
 
 
-        data: {"id":"gen-1782741649-zDbIvaJ90eoxujTt4530","object":"chat.completion.chunk","created":1782741649,"model":"openai/gpt-4o-mini","provider":"OpenAI","system_fingerprint":"fp_51b9c32e14","service_tier":null,"choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":1,"total_tokens":21,"cost":0.0000036,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000036,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":6e-7},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
+        data: {"id":"gen-1784591987-z43wL1sbV6K38AF9sKSZ","object":"chat.completion.chunk","created":1784591987,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_965c8b9ecf","choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}]}
+
+
+        data: {"id":"gen-1784591987-z43wL1sbV6K38AF9sKSZ","object":"chat.completion.chunk","created":1784591987,"model":"openai/gpt-4o-mini","provider":"Azure","system_fingerprint":"fp_965c8b9ecf","service_tier":null,"choices":[{"index":0,"delta":{"content":"","role":"assistant"},"finish_reason":"stop","native_finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":2,"total_tokens":22,"cost":0.0000042,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0,"cache_write_tokens":0,"audio_tokens":0,"video_tokens":0},"cost_details":{"upstream_inference_cost":0.0000042,"upstream_inference_prompt_cost":0.000003,"upstream_inference_completions_cost":0.0000012},"completion_tokens_details":{"reasoning_tokens":0,"image_tokens":0,"audio_tokens":0}}}
 
 
         data: [DONE]
@@ -56,17 +59,17 @@ interactions:
       access-control-allow-origin:
       - '*'
       access-control-expose-headers:
-      - X-Generation-Id,cf-ray
+      - X-Generation-Id,X-Provider-Name,cf-ray
       cache-control:
       - no-cache
       cf-ray:
-      - a13575adba5af337-YYZ
+      - a1e5ebf4dd3bc8de-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream
       date:
-      - Mon, 29 Jun 2026 14:00:49 GMT
+      - Mon, 20 Jul 2026 23:59:48 GMT
       permissions-policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
@@ -79,7 +82,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-generation-id:
-      - gen-1782741649-zDbIvaJ90eoxujTt4530
+      - gen-1784591987-z43wL1sbV6K38AF9sKSZ
     status:
       code: 200
       message: OK

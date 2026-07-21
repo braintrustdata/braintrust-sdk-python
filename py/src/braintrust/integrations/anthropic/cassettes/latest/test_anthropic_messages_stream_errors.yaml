@@ -18,7 +18,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 0.116.0
+      - Anthropic/Python 0.117.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -30,7 +30,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 0.116.0
+      - 0.117.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,7 +38,7 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
       x-stainless-stream-helper:
       - messages
       x-stainless-timeout:
@@ -49,12 +49,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_01QNWhnDeY3TxmmHsFRnrXm9","type":"message","role":"assistant","content":[],"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2,"service_tier":"standard","inference_geo":"not_available"}}           }
+        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CdEDiJqZwzGfTo3VBcSSp","type":"message","role":"assistant","content":[],"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2,"service_tier":"standard","inference_geo":"not_available"}}         }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}         }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}            }
 
 
         event: ping
@@ -64,22 +64,22 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"4"}     }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"4"}               }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0     }
+        data: {"type":"content_block_stop","index":0 }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null},"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":5}   }
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null},"usage":{"input_tokens":19,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":5}}
 
 
         event: message_stop
 
-        data: {"type":"message_stop"         }
+        data: {"type":"message_stop"}
 
 
         '
@@ -91,49 +91,49 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-07-06T15:39:07Z'
+      - '2026-07-21T00:00:55Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-07-06T15:39:07Z'
+      - '2026-07-21T00:00:55Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-07-06T15:39:07Z'
+      - '2026-07-21T00:00:55Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-07-06T15:39:07Z'
+      - '2026-07-21T00:00:55Z'
       cache-control:
       - no-cache
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fb3498f94a21d-YYZ
+      - a1e5ed9bb97667a0-SJC
       connection:
       - keep-alive
       content-length:
-      - '1159'
+      - '1154'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 06 Jul 2026 15:39:08 GMT
+      - Tue, 21 Jul 2026 00:00:56 GMT
       request-id:
-      - req_011Ccm484D9kutBh1JkdGTQV
+      - req_011CdEDiJS1acVRntg1cxQZX
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-345a43c4907c9fb8deea62e8aafac6e3-183a4af95eb84a49-01
+      - 00-9fd87b7bd033cb192dfcc15c052171e7-ca5faa78aacfcf14-01
       transfer-encoding:
       - chunked
       vary:
