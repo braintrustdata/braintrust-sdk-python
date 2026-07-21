@@ -1339,14 +1339,14 @@ def test_normalize_mistral_multimodal_value_leaves_non_base64_input_audio_unchan
     assert sanitized == original
 
 
-class _UnsupportedUsageResponse:
+class _PlainResponse:
     def __init__(self, **attrs):
         for key, value in attrs.items():
             setattr(self, key, value)
 
 
 @pytest.mark.parametrize(
-    ("wrapper", "kwargs", "response", "missing_metric_keys"),
+    ("wrapper", "kwargs", "response", "expected_metric_keys"),
     [
         (
             _chat_complete_wrapper,
@@ -1354,7 +1354,7 @@ class _UnsupportedUsageResponse:
                 "model": CHAT_MODEL,
                 "messages": [{"role": "user", "content": "hello"}],
             },
-            _UnsupportedUsageResponse(usage={"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5}),
+            _PlainResponse(usage={"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5}),
             {"tokens", "prompt_tokens", "completion_tokens"},
         ),
         (
@@ -1363,7 +1363,7 @@ class _UnsupportedUsageResponse:
                 "model": CHAT_MODEL,
                 "inputs": [{"role": "user", "content": "hello"}],
             },
-            _UnsupportedUsageResponse(usage={"prompt_tokens": 4, "completion_tokens": 1, "total_tokens": 5}),
+            _PlainResponse(usage={"prompt_tokens": 4, "completion_tokens": 1, "total_tokens": 5}),
             {"tokens", "prompt_tokens", "completion_tokens"},
         ),
         (
@@ -1372,13 +1372,13 @@ class _UnsupportedUsageResponse:
                 "model": OCR_MODEL,
                 "document": {"type": "document_url", "document_url": TEST_PDF_DATA_URL},
             },
-            _UnsupportedUsageResponse(usage_info={"pages_processed": 1, "doc_size_bytes": 70}),
+            _PlainResponse(usage_info={"pages_processed": 1, "doc_size_bytes": 70}),
             {"pages_processed", "doc_size_bytes"},
         ),
     ],
 )
-def test_wrappers_ignore_usage_when_response_normalization_fails(
-    memory_logger, wrapper, kwargs, response, missing_metric_keys
+def test_wrappers_read_usage_from_plain_python_responses(
+    memory_logger, wrapper, kwargs, response, expected_metric_keys
 ):
     assert not memory_logger.pop()
 
@@ -1389,8 +1389,8 @@ def test_wrappers_ignore_usage_when_response_normalization_fails(
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    for key in missing_metric_keys:
-        assert key not in span["metrics"]
+    for key in expected_metric_keys:
+        assert key in span["metrics"]
     assert span["metrics"]["duration"] >= 0
 
 
@@ -1447,7 +1447,7 @@ def test_aggregate_completion_events_merges_tool_calls_and_content():
 
     assert aggregated["id"] == "cmpl_123"
     assert aggregated["model"] == CHAT_MODEL
-    assert aggregated["usage"]["total_tokens"] == 14
+    assert getattr(aggregated["usage"], "total_tokens", None) == 14
     assert aggregated["choices"][0]["finish_reason"] == "tool_calls"
     tool_call = aggregated["choices"][0]["message"]["tool_calls"][0]
     assert tool_call["id"] == "call_1"
