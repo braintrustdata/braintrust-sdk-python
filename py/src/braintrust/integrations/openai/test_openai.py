@@ -632,7 +632,7 @@ def test_openai_chat_stream_helper_sync(memory_logger):
         metrics = span["metrics"]
         assert_metrics_are_valid(metrics, start, end)
         assert span["metadata"]["stream"] == True
-        assert span["metadata"]["extra_headers"]["X-Stainless-Helper-Method"] == "chat.completions.stream"
+        assert "extra_headers" not in span["metadata"]
         assert TEST_MODEL in span["metadata"]["model"]
         assert span["metadata"]["provider"] == "openai"
         assert TEST_PROMPT in str(span["input"])
@@ -1187,7 +1187,7 @@ async def test_openai_chat_stream_helper_async(memory_logger):
         metrics = span["metrics"]
         assert_metrics_are_valid(metrics, start, end)
         assert span["metadata"]["stream"] == True
-        assert span["metadata"]["extra_headers"]["X-Stainless-Helper-Method"] == "chat.completions.stream"
+        assert "extra_headers" not in span["metadata"]
         assert TEST_MODEL in span["metadata"]["model"]
         assert span["metadata"]["provider"] == "openai"
         assert TEST_PROMPT in str(span["input"])
@@ -2760,7 +2760,7 @@ class TestOpenAIIntegrationSetupSpans:
         span = spans[0]
         assert_metrics_are_valid(span["metrics"], start, end)
         assert span["metadata"]["stream"] == True
-        assert span["metadata"]["extra_headers"]["X-Stainless-Helper-Method"] == "chat.completions.stream"
+        assert "extra_headers" not in span["metadata"]
         assert span["metadata"]["provider"] == "openai"
         assert TEST_MODEL in span["metadata"]["model"]
         assert TEST_PROMPT in str(span["input"])
