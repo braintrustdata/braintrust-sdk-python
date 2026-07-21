@@ -5,21 +5,37 @@ import weakref
 from typing import Any
 
 from braintrust.integrations.utils import _is_supported_metric_value
-from braintrust.logger import Span, start_span
+from braintrust.logger import Span
+from braintrust.logger import start_span as _bt_start_span
 from braintrust.span_types import SpanTypeAttribute
 
+
+_INSTRUMENTATION = "strands-auto"
 
 _SPANS_BY_OTEL_SPAN: "weakref.WeakKeyDictionary[Any, Span]" = weakref.WeakKeyDictionary()
 _SPANS_BY_INVALID_OTEL_KEY: dict[uuid.UUID, Span] = {}
 
+_STRANDS_USAGE_KEYS = {
+    "inputTokens": "input_tokens",
+    "outputTokens": "output_tokens",
+    "totalTokens": "total_tokens",
+    "cacheReadInputTokens": "cache_read_input_tokens",
+    "cacheCreationInputTokens": "cache_creation_input_tokens",
+    "cacheWriteInputTokens": "cache_write_input_tokens",
+}
+
+_STRANDS_METRIC_KEYS: dict[str, str] = {"latencyMs": "latencyMs", "timeToFirstByteMs": "timeToFirstByteMs"}
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
+
 
 class _InvalidOtelSpanKey:
-    """Per-call key for OTEL's shared INVALID_SPAN singleton.
-
-    Strands keeps using the returned span object as an OTEL span, so this proxy
-    delegates span methods to INVALID_SPAN while giving Braintrust a unique key
-    for matching each start/end lifecycle pair.
-    """
+    """Per-call key for OTEL's shared INVALID_SPAN singleton."""
 
     def __init__(self, otel_span: Any):
         self.key = uuid.uuid4()
@@ -44,38 +60,32 @@ def _arg(args: Any, kwargs: dict[str, Any], index: int, name: str, default: Any 
     return kwargs.get(name, default)
 
 
-def _strands_usage_from_usage(usage: Any) -> dict[str, Any]:
-    if not isinstance(usage, dict):
+def _pick_numeric(source: Any, keys: dict[str, str]) -> dict[str, Any]:
+    if not isinstance(source, dict):
         return {}
-    strands_usage: dict[str, Any] = {}
-    mapping = {
-        "inputTokens": "input_tokens",
-        "outputTokens": "output_tokens",
-        "totalTokens": "total_tokens",
-        "cacheReadInputTokens": "cache_read_input_tokens",
-        "cacheCreationInputTokens": "cache_creation_input_tokens",
-    }
-    for source, target in mapping.items():
-        value = usage.get(source)
+    result: dict[str, Any] = {}
+    for src_key, dst_key in keys.items():
+        value = source.get(src_key)
         if _is_supported_metric_value(value):
-            strands_usage[target] = value
-    return strands_usage
+            result[dst_key] = value
+    return result
 
 
-def _agent_metrics_and_metadata(result: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+def _agent_metadata_from_result(result: Any) -> dict[str, Any]:
     metrics_obj = getattr(result, "metrics", None)
-    metrics = metrics_obj
-    if not isinstance(metrics, dict):
-        return {}, {}
-
-    bt_metrics: dict[str, Any] = {}
-    cycles = metrics.get("cycle_count") or metrics.get("cycleCount")
-    if _is_supported_metric_value(cycles):
-        bt_metrics["cycles"] = cycles
-
-    usage = metrics.get("accumulated_usage") or metrics.get("usage") or metrics.get("accumulatedUsage")
-    metadata = {"strands_usage": _strands_usage_from_usage(usage)}
-    return bt_metrics, metadata
+    if metrics_obj is None:
+        return {}
+    metadata: dict[str, Any] = {}
+    cycle_count = getattr(metrics_obj, "cycle_count", None)
+    if _is_supported_metric_value(cycle_count):
+        metadata["cycle_count"] = cycle_count
+    strands_usage = _pick_numeric(getattr(metrics_obj, "accumulated_usage", None), _STRANDS_USAGE_KEYS)
+    if strands_usage:
+        metadata["strands_usage"] = strands_usage
+    strands_metrics = _pick_numeric(getattr(metrics_obj, "accumulated_metrics", None), _STRANDS_METRIC_KEYS)
+    if strands_metrics:
+        metadata["strands_metrics"] = strands_metrics
+    return metadata
 
 
 def _is_valid_otel_span(otel_span: Any) -> bool:
@@ -91,17 +101,26 @@ def _span_for_otel(otel_span: Any) -> Span | None:
     return _SPANS_BY_OTEL_SPAN.get(otel_span)
 
 
-def _start_span_for_otel(otel_span: Any, *, name: str, span_type: str, input: Any = None, metadata: Any = None) -> Any:
+def _start_span_for_otel(
+    otel_span: Any,
+    *,
+    name: str,
+    span_type: str,
+    input: Any = None,
+    metadata: Any = None,
+    parent_otel_span: Any = None,
+) -> Any:
     if otel_span is None:
         return otel_span
     span_key = otel_span if _is_valid_otel_span(otel_span) else _InvalidOtelSpanKey(otel_span)
-    parent = None
-    # Strands passes parent OTEL spans into child start methods. If present, nest under the mirrored BT span.
-    if isinstance(metadata, dict):
-        parent_otel = metadata.pop("_bt_parent_otel_span", None)
-        parent = _span_for_otel(parent_otel)
-    span = (parent.start_span if parent is not None else start_span)(
-        name=name, type=span_type, input=input, metadata=metadata
+    parent = _span_for_otel(parent_otel_span)
+    start = parent.start_span if parent is not None else start_span
+    span = start(
+        name=name,
+        type=span_type,
+        input=input,
+        metadata=metadata,
+        internal={"instrumentation": _INSTRUMENTATION},
     )
     if isinstance(span_key, _InvalidOtelSpanKey):
         _SPANS_BY_INVALID_OTEL_KEY[span_key.key] = span
@@ -115,7 +134,6 @@ def _end_span_for_otel(
     *,
     output: Any = None,
     metadata: Any = None,
-    metrics: Any = None,
     error: BaseException | None = None,
 ) -> None:
     span = (
@@ -127,7 +145,7 @@ def _end_span_for_otel(
         return
     if error is not None:
         span.log(error=repr(error))
-    span.log(output=output, metadata=metadata, metrics=metrics)
+    span.log(output=output, metadata=metadata)
     span.end()
 
 
@@ -139,9 +157,9 @@ def _start_agent_span_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
     metadata = {
         "agent_name": agent_name,
         "model": model_id,
-        "tools": kwargs.get("tools"),
-        "tools_config": kwargs.get("tools_config"),
-        "trace_attributes": kwargs.get("custom_trace_attributes"),
+        "tools": _arg(args, kwargs, 3, "tools"),
+        "trace_attributes": _arg(args, kwargs, 4, "custom_trace_attributes"),
+        "tools_config": _arg(args, kwargs, 5, "tools_config"),
     }
     return _start_span_for_otel(
         otel_span,
@@ -168,8 +186,8 @@ def _end_agent_span_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any)
             if response is not None
             else None
         )
-        metrics, metadata = _agent_metrics_and_metadata(response)
-        _end_span_for_otel(span, output=output, metadata=metadata, metrics=metrics, error=error)
+        metadata = _agent_metadata_from_result(response)
+        _end_span_for_otel(span, output=output, metadata=metadata, error=error)
 
 
 def _start_event_loop_cycle_span_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
@@ -184,7 +202,6 @@ def _start_event_loop_cycle_span_wrapper(wrapped: Any, instance: Any, args: Any,
         event_loop_cycle_id = invocation_state.get("event_loop_cycle_id")
     metadata = {
         "event_loop_cycle_id": str(event_loop_cycle_id) if event_loop_cycle_id is not None else None,
-        "_bt_parent_otel_span": parent_span,
     }
     return _start_span_for_otel(
         otel_span,
@@ -192,6 +209,7 @@ def _start_event_loop_cycle_span_wrapper(wrapped: Any, instance: Any, args: Any,
         span_type=SpanTypeAttribute.TASK,
         input={"messages": messages},
         metadata=metadata,
+        parent_otel_span=parent_span,
     )
 
 
@@ -212,10 +230,9 @@ def _start_model_invoke_span_wrapper(wrapped: Any, instance: Any, args: Any, kwa
     model_id = _arg(args, kwargs, 2, "model_id")
     metadata = {
         "model": model_id,
-        "system_prompt": kwargs.get("system_prompt"),
-        "system_prompt_content": kwargs.get("system_prompt_content"),
-        "trace_attributes": kwargs.get("custom_trace_attributes"),
-        "_bt_parent_otel_span": parent_span,
+        "trace_attributes": _arg(args, kwargs, 3, "custom_trace_attributes"),
+        "system_prompt": _arg(args, kwargs, 4, "system_prompt"),
+        "system_prompt_content": _arg(args, kwargs, 5, "system_prompt_content"),
     }
     return _start_span_for_otel(
         otel_span,
@@ -223,6 +240,7 @@ def _start_model_invoke_span_wrapper(wrapped: Any, instance: Any, args: Any, kwa
         span_type=SpanTypeAttribute.LLM,
         input={"messages": messages},
         metadata=metadata,
+        parent_otel_span=parent_span,
     )
 
 
@@ -235,11 +253,14 @@ def _end_model_invoke_span_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
     try:
         return wrapped(*args, **kwargs)
     finally:
-        bt_metrics = {}
-        if isinstance(metrics, dict):
-            bt_metrics.update({k: v for k, v in metrics.items() if _is_supported_metric_value(v)})
-        metadata = {"stop_reason": stop_reason, "strands_usage": _strands_usage_from_usage(usage)}
-        _end_span_for_otel(span, output={"message": message}, metadata=metadata, metrics=bt_metrics)
+        metadata: dict[str, Any] = {
+            "stop_reason": stop_reason,
+            "strands_usage": _pick_numeric(usage, _STRANDS_USAGE_KEYS),
+        }
+        strands_metrics = _pick_numeric(metrics, _STRANDS_METRIC_KEYS)
+        if strands_metrics:
+            metadata["strands_metrics"] = strands_metrics
+        _end_span_for_otel(span, output={"message": message}, metadata=metadata)
 
 
 def _start_tool_call_span_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
@@ -253,7 +274,8 @@ def _start_tool_call_span_wrapper(wrapped: Any, instance: Any, args: Any, kwargs
         name=f"{name or 'tool'}.execute",
         span_type=SpanTypeAttribute.TOOL,
         input=tool,
-        metadata={"tool_name": name, "tool_use_id": tool_use_id, "_bt_parent_otel_span": parent_span},
+        metadata={"tool_name": name, "tool_use_id": tool_use_id},
+        parent_otel_span=parent_span,
     )
 
 
