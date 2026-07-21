@@ -17,16 +17,16 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"d96ee27767564963a4fc4aaf74e6f76a","object":"chat.completion.chunk","created":1783956228,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"8a0778409bd74db68e4c388816a4c05a","object":"chat.completion.chunk","created":1784593126,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"d96ee27767564963a4fc4aaf74e6f76a","object":"chat.completion.chunk","created":1783956228,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"tool_calls":[{"id":"uIeDLdM43","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
-        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefgh"}
+        data: {"id":"8a0778409bd74db68e4c388816a4c05a","object":"chat.completion.chunk","created":1784593126,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"tool_calls":[{"id":"5c5DiyIrB","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmno"}
 
 
         data: [DONE]
@@ -41,21 +41,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94a797b5dec72-YYZ
+      - a1e607c1aa2ac79e-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 13 Jul 2026 15:23:48 GMT
+      - Tue, 21 Jul 2026 00:18:47 GMT
       mistral-correlation-id:
-      - 019f5c13-c82a-71ad-8b01-338767182d5c
+      - 019f820a-155a-7529-9da6-00bc75226350
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=4UqRTstAC97ZeZyrYdijsx_dhYVBlawLAEhy9AkZ9W8-1783956228.0774484-1.0.1.1-fXbPOUQp8mEgjVjQtdt9jwJN4XxcQZ_gef.QuWLoa3h4GrYbZBgJXYYk7cBtoDDdyLomeWjmOb6yEmGAavhMnUo_vThSDKkYJG9Rf8VEoS3Bv7bzvYM.W1wd21xoLHmD;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:53:48 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -63,13 +59,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '272'
+      - '216'
       x-kong-proxy-latency:
-      - '15'
+      - '9'
       x-kong-request-id:
-      - 019f5c13-c82a-71ad-8b01-338767182d5c
+      - 019f820a-155a-7529-9da6-00bc75226350
       x-kong-upstream-latency:
-      - '273'
+      - '217'
       x-max-retry-attempts-reached:
       - 'false'
     status:

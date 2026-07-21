@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.44.0
+      - OpenAI/Python 2.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.46.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -35,17 +35,17 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/completions
   response:
     body:
-      string: "{\n  \"id\": \"cmpl-DyfrwA093vP1yDDWxW86pq5BDjHih\",\n  \"object\":
-        \"text_completion\",\n  \"created\": 1783352996,\n  \"model\": \"gpt-3.5-turbo-instruct:20230824-v2\",\n
-        \ \"choices\": [\n    {\n      \"text\": \"\\n\\n24\",\n      \"index\": 0,\n
-        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
-        \ \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\": 2,\n
-        \   \"total_tokens\": 10\n  }\n}\n"
+      string: "{\n  \"id\": \"cmpl-E3sOEh32GIVtUYYGxWkWkzWnSmaDS\",\n  \"object\":
+        \"text_completion\",\n  \"created\": 1784592766,\n  \"model\": \"gpt-3.5-turbo-instruct:20230824-v2\",\n
+        \ \"choices\": [\n    {\n      \"text\": \"\\n12 + 12 = 24\",\n      \"index\":
+        0,\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
+        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\":
+        8,\n    \"total_tokens\": 16\n  }\n}\n"
     headers:
       access-control-allow-origin:
       - '*'
@@ -60,41 +60,33 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fc321a9ba5383-YYZ
+      - a1e5fef4bec5138a-SJC
       connection:
       - keep-alive
       content-length:
-      - '375'
+      - '383'
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 15:49:56 GMT
+      - Tue, 21 Jul 2026 00:12:46 GMT
       openai-model:
       - gpt-3.5-turbo-instruct:20230824-v2
-      openai-organization:
-      - braintrust-data
       openai-processing-ms:
-      - '305'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '207'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=pydYUxdUxPYfNNInsl9OMKGDAYG0JvdVDZqZrYIhnr0-1783352996.102539-1.0.1.1-1Gg8rTRFlzE7xb53EO7yhvCFcUxj4h2XbeB6p.nIepbFLCZ0PZ.Hq9t7FbOcsZkaejHQY0mRtATjebFJzLehwD1vK5ZpJ.chaiV3q5LqXJF9MvnN0E4dFgQST2Tmrsso;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:19:56 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
       - chunked
       via:
-      - envoy-router-canary-75d85646f-5qd99
+      - envoy-router-8587569f68-fztxl
       x-content-type-options:
       - nosniff
       x-engine-geography:
-      - AU
+      - US
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -104,13 +96,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '3498'
       x-ratelimit-remaining-tokens:
-      - '89996'
+      - '89995'
       x-ratelimit-reset-requests:
       - 17ms
       x-ratelimit-reset-tokens:
       - 2ms
       x-request-id:
-      - req_0008a0101fe44ba0807c2fc9c07b679f
+      - req_e406820081d4412b8145a6cb0b58957f
     status:
       code: 200
       message: OK

@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS00MDU5NmJhZmE0MzQ2MTAzMjU0NDZhMjdkZDFiNjU3Ng0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tNDA1OTZiYWZh
-      NDM0NjEwMzI1NDQ2YTI3ZGQxYjY1NzYNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTQwNTk2YmFmYTQzNDYxMDMyNTQ0NmEyN2RkMWI2NTc2
+      LS04M2NlZDI1Mzc0OGRhZGFiODdkYzZhNThmNzhlMzAwOQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tODNjZWQyNTM3
+      NDhkYWRhYjg3ZGM2YTU4Zjc4ZTMwMDkNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTgzY2VkMjUzNzQ4ZGFkYWI4N2RjNmE1OGY3OGUzMDA5
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tNDA1OTZiYWZhNDM0NjEwMzI1NDQ2YTI3ZGQxYjY1NzYtLQ0K
+      Ci0tODNjZWQyNTM3NDhkYWRhYjg3ZGM2YTU4Zjc4ZTMwMDktLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=40596bafa434610325446a27dd1b6576
+      - multipart/form-data; boundary=83ced253748dadab87dc6a58f78e3009
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 2.44.0
+      - AsyncOpenAI/Python 2.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -602,13 +602,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"As\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"As\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":13,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":3}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"Hello\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.done\",\"text\":\"Hello\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":13,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":3}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -621,27 +621,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a13575443a33ac3a-YYZ
+      - a1e5eb95cde988fa-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 29 Jun 2026 14:00:33 GMT
-      openai-organization:
-      - braintrust-data
+      - Mon, 20 Jul 2026 23:59:33 GMT
       openai-processing-ms:
-      - '365'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '222'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=mAWoNSpEykxWP5Glwvst7XDLbk7yJFy1yYRVMsGAJgU-1782741632.6789055-1.0.1.1-6f9dL6Wjbh8ZTdmQPWSlwgTp8S8e4FjYbwVwxKi0cUmiCYwWU3PsWCQ59mw6yQytC79l2Ao2pJshwBh6NZelFVjF3usKSFSv2RAp8bSHekQo44hgeGisysyV6OwMdOaM;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 14:30:33 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -657,7 +649,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_d8938955216f465c8dabe14c27748abb
+      - req_737778f41dda44e4bc13ecc225f80d9c
     status:
       code: 200
       message: OK

@@ -16,26 +16,26 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"cac5825c5aad46b5b41ab2936598261a","object":"chat.completion.chunk","created":1783956254,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"c4550f9446cd49f5b727a0f6be725fdc","object":"chat.completion.chunk","created":1784593150,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"cac5825c5aad46b5b41ab2936598261a","object":"chat.completion.chunk","created":1783956254,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abc"}
+        data: {"id":"c4550f9446cd49f5b727a0f6be725fdc","object":"chat.completion.chunk","created":1784593150,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"ab"}
 
 
-        data: {"id":"cac5825c5aad46b5b41ab2936598261a","object":"chat.completion.chunk","created":1783956254,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        *"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuv"}
+        data: {"id":"c4550f9446cd49f5b727a0f6be725fdc","object":"chat.completion.chunk","created":1784593150,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        *"},"finish_reason":null}],"p":"abcdefghijkl"}
 
 
-        data: {"id":"cac5825c5aad46b5b41ab2936598261a","object":"chat.completion.chunk","created":1783956254,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        b"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234567"}
+        data: {"id":"c4550f9446cd49f5b727a0f6be725fdc","object":"chat.completion.chunk","created":1784593150,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghijklmnopqr"}
 
 
-        data: {"id":"cac5825c5aad46b5b41ab2936598261a","object":"chat.completion.chunk","created":1783956254,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrstuvwxyz01"}
+        data: {"id":"c4550f9446cd49f5b727a0f6be725fdc","object":"chat.completion.chunk","created":1784593150,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"total_tokens":28,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrstuvwxy"}
 
 
         data: [DONE]
@@ -50,21 +50,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94b208ccf39e3-YYZ
+      - a1e60854fee28fc5-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 13 Jul 2026 15:24:15 GMT
+      - Tue, 21 Jul 2026 00:19:10 GMT
       mistral-correlation-id:
-      - 019f5c14-3098-75de-9cc0-f7bb3a75247a
+      - 019f820a-7172-7708-8a8a-86787586e6a2
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=gQm9vELecOZq4l_w8J_OGIlebTnTIsY_oAgMo8z4LuI-1783956254.8088012-1.0.1.1-He0s1NRU7oscYzVvRyKiSESjlZlLDI0OHxYQYiBLPmmiZZKh58mReFKsLAYq8HB_wmUdAUl.CLjK2_HmBP4AxZEcKPkLz.7CLMaM_iaOokvwbIH0MHw2N9_nx01A9AQA;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:54:15 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -72,13 +68,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '128'
-      x-kong-proxy-latency:
-      - '13'
-      x-kong-request-id:
-      - 019f5c14-3098-75de-9cc0-f7bb3a75247a
-      x-kong-upstream-latency:
       - '129'
+      x-kong-proxy-latency:
+      - '12'
+      x-kong-request-id:
+      - 019f820a-7172-7708-8a8a-86787586e6a2
+      x-kong-upstream-latency:
+      - '130'
       x-max-retry-attempts-reached:
       - 'false'
     status:

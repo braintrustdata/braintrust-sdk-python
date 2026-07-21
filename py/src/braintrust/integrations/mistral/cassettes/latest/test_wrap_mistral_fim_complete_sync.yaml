@@ -16,13 +16,13 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions
   response:
     body:
-      string: '{"id":"12d1a5083c3a4ee78311f7f1c5b46049","created":1783956254,"model":"codestral-latest","usage":{"prompt_tokens":22,"total_tokens":27,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"a
-        + b\n"}}]}'
+      string: '{"id":"a87d0263b83f4a4083de8a228e528ea1","created":1784593149,"model":"codestral-latest","usage":{"prompt_tokens":22,"total_tokens":38,"completion_tokens":16,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"length","message":{"role":"assistant","tool_calls":null,"content":"a
+        + b\n\n\ndef sub(a, b):\n    return a - b\n\n\n"}}]}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -31,23 +31,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94b1e2b20130e-YYZ
+      - a1e608518ec52ed1-SJC
       connection:
       - keep-alive
       content-length:
-      - '345'
+      - '390'
       content-type:
       - application/json
       date:
-      - Mon, 13 Jul 2026 15:24:14 GMT
+      - Tue, 21 Jul 2026 00:19:10 GMT
       mistral-correlation-id:
-      - 019f5c14-2f1c-70cb-a334-ba6818cea088
+      - 019f820a-6f47-755c-943f-4c75377645c5
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=oZp26itnqjT9_BDq4tKihaaVjVgrbghCxj5OSt9xz7c-1783956254.4274223-1.0.1.1-v.AKt0CtcmiBXqIUDM8oOqESo9Fw3h38n9AUZN2tknY9lPh8MFGzFEERP_YlhJLY1S05.WtaVYN8V3.N1snQxB0JNhL0tUVsXyUFY4ja6o4_TobOpTRedVIIwilcGLZs;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:54:14 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -55,13 +51,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '140'
+      - '254'
       x-kong-proxy-latency:
-      - '14'
+      - '9'
       x-kong-request-id:
-      - 019f5c14-2f1c-70cb-a334-ba6818cea088
+      - 019f820a-6f47-755c-943f-4c75377645c5
       x-kong-upstream-latency:
-      - '141'
+      - '255'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
@@ -71,9 +67,9 @@ interactions:
       x-ratelimit-remaining-req-minute:
       - '124'
       x-ratelimit-remaining-tokens-minute:
-      - '624973'
+      - '624962'
       x-ratelimit-tokens-query-cost:
-      - '27'
+      - '38'
     status:
       code: 200
       message: OK

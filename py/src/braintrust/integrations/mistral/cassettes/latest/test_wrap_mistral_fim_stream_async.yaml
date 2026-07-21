@@ -16,26 +16,26 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions#stream
   response:
     body:
-      string: 'data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"a8115f28d70946f085c3ba6fd1efcf44","object":"chat.completion.chunk","created":1784593151,"model":"codestral-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwx"}
+        data: {"id":"a8115f28d70946f085c3ba6fd1efcf44","object":"chat.completion.chunk","created":1784593151,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}],"p":"abcdefghijk"}
 
 
-        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        /"},"finish_reason":null}],"p":"abcdef"}
+        data: {"id":"a8115f28d70946f085c3ba6fd1efcf44","object":"chat.completion.chunk","created":1784593151,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        /"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuvwxyz01234567"}
 
 
-        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
-        b"},"finish_reason":null}],"p":"abcdefghij"}
+        data: {"id":"a8115f28d70946f085c3ba6fd1efcf44","object":"chat.completion.chunk","created":1784593151,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":"
+        b"},"finish_reason":null}],"p":"abcdefghijklmnopq"}
 
 
-        data: {"id":"f5e83039605748478e86d7eeba12c6ad","object":"chat.completion.chunk","created":1783956256,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":23,"total_tokens":27,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrstuvwxyz0123"}
+        data: {"id":"a8115f28d70946f085c3ba6fd1efcf44","object":"chat.completion.chunk","created":1784593151,"model":"codestral-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":23,"total_tokens":27,"completion_tokens":4,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghij"}
 
 
         data: [DONE]
@@ -50,21 +50,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94b272fc5ac5a-YYZ
+      - a1e6085b3b95eb21-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 13 Jul 2026 15:24:16 GMT
+      - Tue, 21 Jul 2026 00:19:11 GMT
       mistral-correlation-id:
-      - 019f5c14-34b9-7621-bc81-822667e33ed3
+      - 019f820a-7557-7207-90eb-92fda8b5e9c1
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=mH7PDIf3l1ijYJRB_wmlbVg0M5SbTsipXi0M9LwoidA-1783956255.8623435-1.0.1.1-CGz8qcDOF2USV7rhv6G.xB9_M8X687_0LnI6bZZM8oNOLZjNM5dbsAImxDTWEqKXM9RogVG0PLJn.XWodakm_i84ASXygHL_EvGFaXAohQeyTzA1BFzkgmrdYotKyXeq;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:54:16 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -72,13 +68,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '128'
+      - '125'
       x-kong-proxy-latency:
-      - '8'
+      - '12'
       x-kong-request-id:
-      - 019f5c14-34b9-7621-bc81-822667e33ed3
+      - 019f820a-7557-7207-90eb-92fda8b5e9c1
       x-kong-upstream-latency:
-      - '129'
+      - '126'
       x-max-retry-attempts-reached:
       - 'false'
     status:

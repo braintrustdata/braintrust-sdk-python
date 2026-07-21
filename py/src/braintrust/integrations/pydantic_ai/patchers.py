@@ -7,6 +7,7 @@ from braintrust.integrations.base import ClassScanPatcher, CompositeFunctionWrap
 
 from .tracing import (
     _agent_get_model_wrapper,
+    _agent_resolve_model_selection_wrapper,
     _agent_run_stream_events_wrapper,
     _agent_run_stream_sync_wrapper,
     _agent_run_stream_wrapper,
@@ -75,6 +76,13 @@ class _AgentGetModelPatcher(FunctionWrapperPatcher):
     wrapper = _agent_get_model_wrapper
 
 
+class _AgentResolveModelSelectionPatcher(FunctionWrapperPatcher):
+    name = "pydantic_ai.agent.resolve_model_selection"
+    target_module = "pydantic_ai"
+    target_path = "Agent._resolve_model_selection"
+    wrapper = _agent_resolve_model_selection_wrapper
+
+
 class AgentPatcher(CompositeFunctionWrapperPatcher):
     """Patch Pydantic AI agent entrypoints for tracing."""
 
@@ -87,6 +95,7 @@ class AgentPatcher(CompositeFunctionWrapperPatcher):
         _AgentRunStreamSyncPatcher,
         _AgentRunStreamEventsPatcher,
         _AgentGetModelPatcher,
+        _AgentResolveModelSelectionPatcher,
     )
 
 

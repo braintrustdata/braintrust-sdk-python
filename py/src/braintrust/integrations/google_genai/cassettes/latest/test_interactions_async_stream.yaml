@@ -6,8 +6,6 @@ interactions:
       - text/event-stream
       accept-encoding:
       - gzip, deflate
-      api-revision:
-      - '2026-05-20'
       connection:
       - keep-alive
       content-length:
@@ -17,21 +15,21 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
+      - speakeasy-sdk/python 2.4.1-preview.5 2.913.3 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.9.0 gl-python/3.14.3
+      - google-genai-sdk/2.12.1 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChdqWE01YXVQcUhLLTNfdU1QOHB6ZzBRRRIXalhNNWF1UHFISy0zX3VNUDhwemcwUUU","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
+        data: {"interaction":{"id":"v1_ChZ4YnBlYXZ2a0NzSGp1Z2VVcE1yNUN3EhZ4YnBlYXZ2a0NzSGp1Z2VVcE1yNUN3","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdqWE01YXVQcUhLLTNfdU1QOHB6ZzBRRRIXalhNNWF1UHFISy0zX3VNUDhwemcwUUU","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_ChZ4YnBlYXZ2a0NzSGp1Z2VVcE1yNUN3EhZ4YnBlYXZ2a0NzSGp1Z2VVcE1yNUN3","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
@@ -41,12 +39,12 @@ interactions:
 
         event: step.delta
 
-        data: {"index":0,"delta":{"signature":"CmMBDDnWx3E4H9elpjXR8+cHuyLiCbP/kZdy81F4/H9s1KTqS89bS7MksxFv4LfIF5QoieJpwrk69dqMSIIjweNPANAakQgFbRLmDFeNp2GhcIWNkEgKmP2vfGLY4QI53EMNutwKKQEMOdbHaaoPUFvbntzVHVBv+eoaa/9nFyS9UN64jGholhzb9iyqt1NV","type":"thought_signature"},"event_type":"step.delta"}
+        data: {"index":0,"delta":{"signature":"ClUBEU0yD/WEB7/H4FCB6fn6uJ2OKgfscPi+wPSBtGgwerp8KO/wLe67bdafNC+W4Sr4FJ8KPPNCEiYwfx34lCk2Qib8/iR9wZfSzX3YOlJ17JtdXK2VClYBEU0yD3ivIFIss5HtVzyDO4ThV0pDucRps5eBQbNCjB+7O8kH6tr7+N1dgpTvjkOzkUWyqulpiX+bdk4XsfubVoS3S/ooJ4Zh3dOkVSRJCzIfNtWO6A==","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
 
-        data: {"index":0,"usage":{"total_tokens":25,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":18},"event_type":"step.stop"}
+        data: {"index":0,"event_type":"step.stop"}
 
 
         event: step.start
@@ -66,7 +64,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChdqWE01YXVQcUhLLTNfdU1QOHB6ZzBRRRIXalhNNWF1UHFISy0zX3VNUDhwemcwUUU","status":"completed","usage":{"total_tokens":25,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":18},"created":"2026-06-22T17:40:30Z","updated":"2026-06-22T17:40:30Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_ChZ4YnBlYXZ2a0NzSGp1Z2VVcE1yNUN3EhZ4YnBlYXZ2a0NzSGp1Z2VVcE1yNUN3","status":"completed","usage":{"total_tokens":35,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":28},"created":"2026-07-21T00:18:13Z","updated":"2026-07-21T00:18:13Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -79,15 +77,15 @@ interactions:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1926'
+      - '1750'
       content-type:
       - text/event-stream
       date:
-      - Mon, 22 Jun 2026 17:40:29 GMT
+      - Tue, 21 Jul 2026 00:18:13 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=88
+      - gfet4t7; dur=118
       transfer-encoding:
       - chunked
       vary:

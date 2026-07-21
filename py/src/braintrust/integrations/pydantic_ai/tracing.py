@@ -53,6 +53,10 @@ def _agent_get_model_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
     return _wrap_model_instance(wrapped(*args, **kwargs))
 
 
+async def _agent_resolve_model_selection_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    return _wrap_model_instance(await wrapped(*args, **kwargs))
+
+
 def _direct_prepare_model_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     return _wrap_model_instance(wrapped(*args, **kwargs))
 

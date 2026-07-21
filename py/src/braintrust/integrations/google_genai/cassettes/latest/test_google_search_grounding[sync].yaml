@@ -17,16 +17,16 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.9.0 gl-python/3.14.3
+      - google-genai-sdk/2.12.1 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.9.0 gl-python/3.14.3
+      - google-genai-sdk/2.12.1 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The current population of Tokyo, Japan,
-        varies depending on the\"\n          }\n        ],\n        \"role\": \"model\"\n
+        [\n          {\n            \"text\": \"The estimated population of Tokyo
+        Metropolis is 14.2\"\n          }\n        ],\n        \"role\": \"model\"\n
         \     },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\":
         {\n        \"searchEntryPoint\": {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container
         {\\n  align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
@@ -91,31 +91,30 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFerOoRft0VLE-rc11pKgxOiUsbwkjpFo1BbnqVu9tnwwdMkdTlW3HpLQAonn76gnYDijId-WNl7WOvoFgzonuwyTo3MJ1rue2yse8TX50stNiqQcfX0Bku5OyCwB0m9sVD8PeiiI7hcPgY3lmyhbFLJSEoTNfMh4n1LFPK0gXmG5mNVmd8omytfGO5zhSCFw7MTHdAism3XsBjs54Fw-8=\\\"\\u003eTokyo
-        population latest data\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGST8AANd9nepbv2dh4XC6Cotn1GGj8WhRXSVFUS41CvUDC5lsNRKMiEwK6RYGLlo-aa3QuWup0fI8XwHCiMOyUE6ng3lsRaJdGqTDbd9RsCf9HxJd_eKCLNgHPo25hF9t01AEoTLsTAA4Zk4qm2KYyihFguEJp44VeMijA2feasW9LUjbUl8EmF00WEhJyNMdCh2YrMiRwPpKm4QUuaY6leLR7\\\"\\u003ecurrent
-        population of Tokyo 2024\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEyks7phE8N4ZuwrZ58xe0xR_Z-NJebJuYKcOl3k8GPzC5NTX78yvluIHqySRMhktkTeZesZIgbRmXNvojS3pufjlNouEBGJKGee95NGluAXSNNKm-XZM_pWq73CqB4JgJ7RIsvbC4_G00fGXzPqkkXamcSYuiTXAzrIrdf0rJ21BJH3Otn0s5Re00jOZ1fTLq-rap4V0UVUgCqTPiUpwk-enQv8w==\\\"\\u003ecurrent
+        population of Tokyo, Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
         \       },\n        \"webSearchQueries\": [\n          \"current population
-        of Tokyo 2024\",\n          \"Tokyo population latest data\"\n        ]\n
-        \     }\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n
-        \   \"candidatesTokenCount\": 38,\n    \"totalTokenCount\": 534,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n
-        \     }\n    ],\n    \"toolUsePromptTokenCount\": 119,\n    \"toolUsePromptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 119\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 366,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"anM5apz2IrGb1MkP_92h8Qo\"\n}\n"
+        of Tokyo, Japan\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\": {\n
+        \   \"promptTokenCount\": 11,\n    \"candidatesTokenCount\": 29,\n    \"totalTokenCount\":
+        444,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 11\n      }\n    ],\n    \"toolUsePromptTokenCount\":
+        74,\n    \"toolUsePromptTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 74\n      }\n    ],\n    \"thoughtsTokenCount\":
+        330,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"rLpeaqGbPPXj_uMPltaHwAQ\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '6552'
+      - '6136'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 22 Jun 2026 17:39:59 GMT
+      - Tue, 21 Jul 2026 00:17:51 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=5228
+      - gfet4t7; dur=2901
       transfer-encoding:
       - chunked
       vary:

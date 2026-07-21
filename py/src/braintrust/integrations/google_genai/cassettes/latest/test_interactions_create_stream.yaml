@@ -6,8 +6,6 @@ interactions:
       - text/event-stream
       accept-encoding:
       - gzip, deflate
-      api-revision:
-      - '2026-05-20'
       connection:
       - keep-alive
       content-length:
@@ -17,21 +15,21 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
+      - speakeasy-sdk/python 2.4.1-preview.5 2.913.3 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.9.0 gl-python/3.14.3
+      - google-genai-sdk/2.12.1 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChdmSE01YXZPdU1PTEotOFlQMjluU3dRURIXZkhNNWF2T3VNT0xKLThZUDI5blN3UVE","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
+        data: {"interaction":{"id":"v1_Chd1N3BlYXF1Y0xmUEktOFlQMElmSThBSRIXdTdwZWFxdWNMZlBJLThZUDBJZkk4QUk","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdmSE01YXZPdU1PTEotOFlQMjluU3dRURIXZkhNNWF2T3VNT0xKLThZUDI5blN3UVE","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_Chd1N3BlYXF1Y0xmUEktOFlQMElmSThBSRIXdTdwZWFxdWNMZlBJLThZUDBJZkk4QUk","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
@@ -41,12 +39,12 @@ interactions:
 
         event: step.delta
 
-        data: {"index":0,"delta":{"signature":"CiQBDDnWxxeEueqNnhKIHwUCVTu2fZypb1SFbcgmusu9L+WUfGoKYAEMOdbHDgDwYJ2lKLZ00pWwQKJTwlt/UEO6c73GPzBetFHsYReJFuV6t+MXyaMt8eeXCYPRUPZdEvefdhqxbYHcOG1ujffTV3EF/2bsF9dqsqyr6vGs91Z+jPhSx2p5Tgq7AQEMOdbHZYGhTnbsQslMTiCOcbmRqUK0dPYe+qoJS43uIHyjaoxZu/XNOsOv2Bj80aW4DLmMCPCPVWLGSOuTAjtkkWveFFetfBTjDFjN0G0u0o59Ra9/Imel11wZSKW/iNawsQJcjjWc6ENMWFCRNBL5hmycRJ+oqK2/FVcPff9MWR9rcwV1t/eI09Tf/BKzC09kFW5ClPanJA1SXldHlKFfe15fQPh3xpcis6XDjFzLF+yX79Qb3CERhuIKMgEMOdbH33CITfCjcvX6/uWGnTHG7I2B4gbIh3US+CwzkojB1WLBlJRxjB/oD/n57K9+","type":"thought_signature"},"event_type":"step.delta"}
+        data: {"index":0,"delta":{"signature":"ClkBEU0yD8s8nyS6yD1pbdnOrUxcUXS7JuLTLa+hCFvgHzJ0W/vsGyHhwygR356wgxUCcJusOgRfBkjZyuL53vh5jMs65Cfy/3x54V2uOBlnWwSPORIxh5rUhAqrAQERTTIP+lDJ5Iq8IKUxcOfJJjq5wvG+0Nz1+2UqhVJvvd+Z2zzzqsnvaxHeo0syLImsPVqOukSmEnZnF5mCH1WTTELIZiFCdm5k8ym1ShGoiCYNBJkDVN4oJxSoGcySMxHO0BCKxeZIpuh5zJE5pdJa8sk6dpxFGl+BHWSliWwS1Mhon3j/H+UadxbW34hx9tfhlFYJT5aOcwhaiQrk8bOUL/vKuMmgITYFMw==","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
 
-        data: {"index":0,"usage":{"total_tokens":83,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":72},"event_type":"step.stop"}
+        data: {"index":0,"event_type":"step.stop"}
 
 
         event: step.start
@@ -56,7 +54,7 @@ interactions:
 
         event: step.delta
 
-        data: {"index":1,"delta":{"text":"Hi!","type":"text"},"event_type":"step.delta"}
+        data: {"index":1,"delta":{"text":"Hi there!","type":"text"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -66,7 +64,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChdmSE01YXZPdU1PTEotOFlQMjluU3dRURIXZkhNNWF2T3VNT0xKLThZUDI5blN3UVE","status":"completed","usage":{"total_tokens":83,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":72},"created":"2026-06-22T17:40:13Z","updated":"2026-06-22T17:40:13Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_Chd1N3BlYXF1Y0xmUEktOFlQMElmSThBSRIXdTdwZWFxdWNMZlBJLThZUDBJZkk4QUk","status":"completed","usage":{"total_tokens":69,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":3,"total_tool_use_tokens":0,"total_thought_tokens":57},"created":"2026-07-21T00:18:04Z","updated":"2026-07-21T00:18:04Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -79,15 +77,15 @@ interactions:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '2238'
+      - '1885'
       content-type:
       - text/event-stream
       date:
-      - Mon, 22 Jun 2026 17:40:12 GMT
+      - Tue, 21 Jul 2026 00:18:03 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=81
+      - gfet4t7; dur=147
       transfer-encoding:
       - chunked
       vary:

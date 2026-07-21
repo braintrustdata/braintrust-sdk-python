@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.44.0
+      - OpenAI/Python 2.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,19 +34,19 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: 'data: {"id":"chatcmpl-Dw6mWyMyb8olO5FA9hLg8QP61ZYcr","object":"chat.completion.chunk","created":1782741464,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_7b8553d7fb","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":{"content":[],"refusal":null},"finish_reason":null}],"obfuscation":"vOmsmEQqgRqIm"}
+      string: 'data: {"id":"chatcmpl-E3s8yvtuDfse530knMxfSQGza2K22","object":"chat.completion.chunk","created":1784591820,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_330ce8a4ae","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":{"content":[],"refusal":null},"finish_reason":null}],"obfuscation":"GoIGdy5BhrVOK"}
 
 
-        data: {"id":"chatcmpl-Dw6mWyMyb8olO5FA9hLg8QP61ZYcr","object":"chat.completion.chunk","created":1782741464,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_7b8553d7fb","choices":[{"index":0,"delta":{"content":"OK"},"logprobs":{"content":[{"token":"OK","logprob":0.0,"bytes":[79,75],"top_logprobs":[{"token":"OK","logprob":0.0,"bytes":[79,75]},{"token":"
-        OK","logprob":-19.125,"bytes":[32,79,75]}]}],"refusal":null},"finish_reason":null}],"obfuscation":"4BELkH2aYMRJEM"}
+        data: {"id":"chatcmpl-E3s8yvtuDfse530knMxfSQGza2K22","object":"chat.completion.chunk","created":1784591820,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_330ce8a4ae","choices":[{"index":0,"delta":{"content":"OK"},"logprobs":{"content":[{"token":"OK","logprob":0.0,"bytes":[79,75],"top_logprobs":[{"token":"OK","logprob":0.0,"bytes":[79,75]},{"token":"
+        OK","logprob":-19.125,"bytes":[32,79,75]}]}],"refusal":null},"finish_reason":null}],"obfuscation":"knThzIVDpMdELU"}
 
 
-        data: {"id":"chatcmpl-Dw6mWyMyb8olO5FA9hLg8QP61ZYcr","object":"chat.completion.chunk","created":1782741464,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_7b8553d7fb","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"obfuscation":"v7"}
+        data: {"id":"chatcmpl-E3s8yvtuDfse530knMxfSQGza2K22","object":"chat.completion.chunk","created":1784591820,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_330ce8a4ae","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"obfuscation":"lf"}
 
 
         data: [DONE]
@@ -63,27 +63,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a13571274e3b3786-YYZ
+      - a1e5e7db7a23b586-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 29 Jun 2026 13:57:44 GMT
-      openai-organization:
-      - braintrust-data
+      - Mon, 20 Jul 2026 23:57:00 GMT
       openai-processing-ms:
-      - '211'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '386'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=Zfhlr1iha7.eQkOr.aP59USKqsqjWHRQXqGS.puLE40-1782741464.204656-1.0.1.1-5yvZwEJy64MczLFtXXEI3Irib7i1XbOtKlzhWJjGVJPc2ZhNNXhWxRLQqh4.de2lQ37BVSuJgjLs25Lrq9kdzc0evvNLzNP6pQ.vXodTv_zbDkt82B1awyWCtMKuTtcU;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        29 Jun 2026 14:27:44 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -99,13 +91,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999982'
+      - '149999980'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_012ed752e55c4fc68aa111bcba6d8011
+      - req_31c3698b5f5f4e3692e2890417b0658f
     status:
       code: 200
       message: OK

@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"mistral-small-latest","name":"braintrust-test-agent-1783956241619","instructions":"You
+    body: '{"model":"mistral-small-latest","name":"braintrust-test-agent-1784593137622","instructions":"You
       are concise. Keep responses under five words."}'
     headers:
       accept:
@@ -16,12 +16,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/agents
   response:
     body:
-      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null},"guardrails":[],"model":"mistral-small-latest","name":"braintrust-test-agent-1783956241619","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_019f5c13fd867264b5a4e4f2a4dbd0c6","version":0,"versions":[],"created_at":"2026-07-13T15:24:01.821321Z","updated_at":"2026-07-13T15:24:01.821323Z","deployment_chat":false,"source":"api","version_message":null}'
+      string: '{"instructions":"You are concise. Keep responses under five words.","tools":[],"completion_args":{"stop":null,"presence_penalty":null,"frequency_penalty":null,"temperature":null,"top_p":null,"max_tokens":null,"random_seed":null,"prediction":null,"response_format":null,"tool_choice":"auto","reasoning_effort":null},"guardrails":[],"model":"mistral-small-latest","name":"braintrust-test-agent-1784593137622","description":null,"handoffs":null,"metadata":null,"object":"agent","id":"ag_019f820a4095735f92a5dded60524205","version":0,"versions":[],"created_at":"2026-07-21T00:18:57.835953Z","updated_at":"2026-07-21T00:18:57.835956Z","deployment_chat":false,"source":"api","version_message":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -30,7 +30,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94ace9b7f39f0-YYZ
+      - a1e60806ac93b8e7-SJC
       connection:
       - keep-alive
       content-length:
@@ -38,15 +38,11 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 13 Jul 2026 15:24:01 GMT
+      - Tue, 21 Jul 2026 00:18:57 GMT
       mistral-correlation-id:
-      - 019f5c13-fd65-7292-a9ac-2a97b559f658
+      - 019f820a-4078-7bfd-b158-125430113b04
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=vFhzOZ7M3mDbXKlsg.kYUzrDNieqEKzD9Fp9H1RlZS8-1783956241.7002292-1.0.1.1-miCa36K3PGT58eirB_yKV43M57OJU3wNKk0jPe_rPxYq2V1qi4g3chr5boqmk8Ab8a3nOoRPwRAt5K3cSUQxr1WS3JLmIWrBPxCjbeC1ZweQvNFlxWHjyCMOWjvn_2nl;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:54:01 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -54,18 +50,18 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '65'
+      - '70'
       x-kong-proxy-latency:
-      - '13'
+      - '7'
       x-kong-request-id:
-      - 019f5c13-fd65-7292-a9ac-2a97b559f658
+      - 019f820a-4078-7bfd-b158-125430113b04
       x-kong-upstream-latency:
-      - '67'
+      - '72'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"messages":[{"content":"Use get_weather for Paris. Do not answer directly.","role":"user"}],"agent_id":"ag_019f5c13fd867264b5a4e4f2a4dbd0c6","max_tokens":100,"stream":false,"tools":[{"function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]},"description":"Get
+    body: '{"messages":[{"content":"Use get_weather for Paris. Do not answer directly.","role":"user"}],"agent_id":"ag_019f820a4095735f92a5dded60524205","max_tokens":100,"stream":false,"tools":[{"function":{"name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]},"description":"Get
       the weather for a city."},"type":"function"}],"tool_choice":"any"}'
     headers:
       accept:
@@ -78,17 +74,15 @@ interactions:
       - '393'
       content-type:
       - application/json
-      cookie:
-      - __cf_bm=vFhzOZ7M3mDbXKlsg.kYUzrDNieqEKzD9Fp9H1RlZS8-1783956241.7002292-1.0.1.1-miCa36K3PGT58eirB_yKV43M57OJU3wNKk0jPe_rPxYq2V1qi4g3chr5boqmk8Ab8a3nOoRPwRAt5K3cSUQxr1WS3JLmIWrBPxCjbeC1ZweQvNFlxWHjyCMOWjvn_2nl
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/agents/completions
   response:
     body:
-      string: '{"id":"330db23f32d2454d9feb0a73a4f792f7","created":1783956242,"model":"mistral-small-latest","usage":{"prompt_tokens":100,"total_tokens":112,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"VG1YXzbSx","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+      string: '{"id":"6c7c64361bff43b9865985bf367ff2ba","created":1784593138,"model":"mistral-small-latest","usage":{"prompt_tokens":100,"total_tokens":112,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"tool_calls","message":{"role":"assistant","tool_calls":[{"id":"axc6WTqNH","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
         \"Paris\"}"},"index":0}],"content":""}}]}'
     headers:
       access-control-allow-origin:
@@ -98,7 +92,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94ad04d0f39f0-YYZ
+      - a1e608085ef5b8e7-SJC
       connection:
       - keep-alive
       content-length:
@@ -106,9 +100,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 13 Jul 2026 15:24:03 GMT
+      - Tue, 21 Jul 2026 00:18:58 GMT
       mistral-correlation-id:
-      - 019f5c13-feaa-760c-8c57-ab98b68fab13
+      - 019f820a-4186-7c12-bc2b-080c4ef058c4
       server:
       - cloudflare
       strict-transport-security:
@@ -118,13 +112,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '840'
+      - '291'
       x-kong-proxy-latency:
-      - '17'
+      - '12'
       x-kong-request-id:
-      - 019f5c13-feaa-760c-8c57-ab98b68fab13
+      - 019f820a-4186-7c12-bc2b-080c4ef058c4
       x-kong-upstream-latency:
-      - '840'
+      - '292'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
@@ -132,9 +126,9 @@ interactions:
       x-ratelimit-limit-tokens-minute:
       - '50000'
       x-ratelimit-remaining-req-minute:
-      - '49'
+      - '44'
       x-ratelimit-remaining-tokens-minute:
-      - '49888'
+      - '49597'
       x-ratelimit-tokens-query-cost:
       - '112'
     status:
@@ -149,14 +143,12 @@ interactions:
       - gzip, deflate
       connection:
       - keep-alive
-      cookie:
-      - __cf_bm=vFhzOZ7M3mDbXKlsg.kYUzrDNieqEKzD9Fp9H1RlZS8-1783956241.7002292-1.0.1.1-miCa36K3PGT58eirB_yKV43M57OJU3wNKk0jPe_rPxYq2V1qi4g3chr5boqmk8Ab8a3nOoRPwRAt5K3cSUQxr1WS3JLmIWrBPxCjbeC1ZweQvNFlxWHjyCMOWjvn_2nl
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: DELETE
-    uri: https://api.mistral.ai/v1/agents/ag_019f5c13fd867264b5a4e4f2a4dbd0c6
+    uri: https://api.mistral.ai/v1/agents/ag_019f820a4095735f92a5dded60524205
   response:
     body:
       string: ''
@@ -168,13 +160,13 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94ad74aec39f0-YYZ
+      - a1e6080b4b83b8e7-SJC
       connection:
       - keep-alive
       date:
-      - Mon, 13 Jul 2026 15:24:03 GMT
+      - Tue, 21 Jul 2026 00:18:58 GMT
       mistral-correlation-id:
-      - 019f5c14-02ce-7f7c-be30-40e4317ffcd2
+      - 019f820a-4362-7fb0-9307-6599b529b506
       server:
       - cloudflare
       strict-transport-security:
@@ -182,13 +174,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '82'
+      - '90'
       x-kong-proxy-latency:
-      - '13'
+      - '14'
       x-kong-request-id:
-      - 019f5c14-02ce-7f7c-be30-40e4317ffcd2
+      - 019f820a-4362-7fb0-9307-6599b529b506
       x-kong-upstream-latency:
-      - '84'
+      - '91'
     status:
       code: 204
       message: No Content

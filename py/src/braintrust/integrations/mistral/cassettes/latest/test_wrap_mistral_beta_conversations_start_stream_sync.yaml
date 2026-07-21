@@ -15,24 +15,24 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.6.0
+      - mistral-client-python/2.7.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-07-13T15:24:00.198441Z","conversation_id":"conv_019f5c13f6797433ae27f17955cf25c8"}
+        data: {"type":"conversation.response.started","created_at":"2026-07-21T00:18:56.524160Z","conversation_id":"conv_019f820a3ade7159bb98fe398d17db65"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-07-13T15:24:00.201287Z","output_index":0,"id":"msg_019f5c13f74972ee84e72b8048e3934a","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
+        data: {"type":"message.output.delta","created_at":"2026-07-21T00:18:56.526851Z","output_index":0,"id":"msg_019f820a3b8e75e19072302dca8d9f93","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"7"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-07-13T15:24:00.237432Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
+        data: {"type":"conversation.response.done","created_at":"2026-07-21T00:18:56.552925Z","usage":{"prompt_tokens":16,"completion_tokens":2,"total_tokens":18}}
 
 
         '
@@ -44,21 +44,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a94ac379deac75-YYZ
+      - a1e607fd9ac46e82-SJC
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 13 Jul 2026 15:24:00 GMT
+      - Tue, 21 Jul 2026 00:18:56 GMT
       mistral-correlation-id:
-      - 019f5c13-f66c-76ed-9b3f-2ac1a7c6a13c
+      - 019f820a-3ad2-753c-8c39-615f82c49ca8
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=0b7g1na2ywqBY0QBUp8lY8HtcgXrkwdVHS32PugLPXc-1783956239.9180744-1.0.1.1-._Slfbohz.L4GrSDJdIXgI5ZKZBnowsmuLs5ZtuTjjuDKpucLkn9InMHsVnr6uNCA0NMY3ZDLkR9VSHRfmDfQf8gCR2xKZ158gFsls8VqbIa4uYv_srNVgFjH8IeMW5d;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=mistral.ai; Expires=Mon, 13
-        Jul 2026 15:54:00 GMT
       strict-transport-security:
       - max-age=15552000; includeSubDomains; preload
       transfer-encoding:
@@ -66,13 +62,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '220'
+      - '180'
       x-kong-proxy-latency:
-      - '9'
+      - '8'
       x-kong-request-id:
-      - 019f5c13-f66c-76ed-9b3f-2ac1a7c6a13c
+      - 019f820a-3ad2-753c-8c39-615f82c49ca8
       x-kong-upstream-latency:
-      - '222'
+      - '181'
     status:
       code: 200
       message: OK

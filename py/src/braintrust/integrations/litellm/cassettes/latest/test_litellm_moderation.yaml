@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.44.0
+      - OpenAI/Python 2.46.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.44.0
+      - 2.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,12 +33,12 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/moderations
   response:
     body:
-      string: "{\n  \"id\": \"modr-7966\",\n  \"model\": \"omni-moderation-latest\",\n
+      string: "{\n  \"id\": \"modr-5502\",\n  \"model\": \"omni-moderation-latest\",\n
         \ \"results\": [\n    {\n      \"flagged\": false,\n      \"categories\":
         {\n        \"harassment\": false,\n        \"harassment/threatening\": false,\n
         \       \"sexual\": false,\n        \"hate\": false,\n        \"hate/threatening\":
@@ -52,11 +52,11 @@ interactions:
         2.561282210758673e-7,\n        \"illicit\": 0.00004108485376346404,\n        \"illicit/violent\":
         8.750299760661308e-6,\n        \"self-harm/intent\": 0.00021166499492301485,\n
         \       \"self-harm/instructions\": 1.3846004563753396e-6,\n        \"self-harm\":
-        8.61465062380632e-6,\n        \"sexual/minors\": 2.586743108135441e-6,\n        \"violence\":
-        0.00048297182378774457,\n        \"violence/graphic\": 4.683888424952456e-6\n
-        \     },\n      \"category_applied_input_types\": {\n        \"harassment\":
-        [\n          \"text\"\n        ],\n        \"harassment/threatening\": [\n
-        \         \"text\"\n        ],\n        \"sexual\": [\n          \"text\"\n
+        8.61465062380632e-6,\n        \"sexual/minors\": 2.5466403947055455e-6,\n
+        \       \"violence\": 0.00048297182378774457,\n        \"violence/graphic\":
+        4.832563818725537e-6\n      },\n      \"category_applied_input_types\": {\n
+        \       \"harassment\": [\n          \"text\"\n        ],\n        \"harassment/threatening\":
+        [\n          \"text\"\n        ],\n        \"sexual\": [\n          \"text\"\n
         \       ],\n        \"hate\": [\n          \"text\"\n        ],\n        \"hate/threatening\":
         [\n          \"text\"\n        ],\n        \"illicit\": [\n          \"text\"\n
         \       ],\n        \"illicit/violent\": [\n          \"text\"\n        ],\n
@@ -73,29 +73,21 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a16fc3546abdac64-YYZ
+      - a1e5ff16eb0d9e50-SJC
       connection:
       - keep-alive
       content-length:
-      - '1970'
+      - '1971'
       content-type:
       - application/json
       date:
-      - Mon, 06 Jul 2026 15:50:05 GMT
-      openai-organization:
-      - braintrust-data
+      - Tue, 21 Jul 2026 00:12:52 GMT
       openai-processing-ms:
-      - '160'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '123'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=VIzAWJs.Nn6F_OFbST_ioKtJPIMmtklXd.SINHDmsYk-1783353004.2294428-1.0.1.1-.vhG2tVRo_avZWa9cQuY_x0Y.eUxlyBU1G5m4WKgqKyZcofKFoJt_pszglsni8p4HKyD0KU73fFFIQViwIUElg9QzGI96ydZfMwNlLA_iNXk3g0yGDlanlPVSccEsKa7;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        06 Jul 2026 16:20:05 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -105,7 +97,7 @@ interactions:
       x-openai-proxy-wasm:
       - v0.1
       x-request-id:
-      - req_79758445fbf34282b33474bd050dce51
+      - req_94591fb9c15a4fc9a6c0628ca1ca6f74
     status:
       code: 200
       message: OK

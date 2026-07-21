@@ -1,15 +1,12 @@
 interactions:
 - request:
     body: '{"model":"gemini-2.5-flash","input":"What is the weather like in Paris?
-      Use the tool.","tools":[{"type":"function","name":"get_weather","description":"Get
-      the current weather for a location.","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}]}'
+      Use the tool.","tools":[{"description":"Get the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]},"type":"function"}]}'
     headers:
       accept:
       - application/json
       accept-encoding:
       - gzip, deflate
-      api-revision:
-      - '2026-05-20'
       connection:
       - keep-alive
       content-length:
@@ -19,27 +16,27 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
+      - speakeasy-sdk/python 2.4.1-preview.5 2.913.3 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.9.0 gl-python/3.14.3
+      - google-genai-sdk/2.12.1 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdnWE01YXZIMU1Oek0tc0FQOE5HTnlBSRIXZ1hNNWF2SDFNTnpNLXNBUDhOR055QUk","status":"requires_action","usage":{"total_tokens":128,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":60},"created":"2026-06-22T17:40:17Z","updated":"2026-06-22T17:40:17Z","service_tier":"standard","steps":[{"signature":"CpcCAQw51sdV15EEyCuGnMPu7ID/zll8M2S+zeIhNd6tunfbbb2FQapuI1O8xbaK/PBFC3oUYlOgiEiHpJtx16VKLbQYZS5zfMs+nvm2yd8foqqRy1I+hoz3YLtFQNhz/VvkR1zK6JzOZgx5zfcUoHBMyo9M8qhVryWgu+WIEWh6BVamuvRG8K7BA/gYMXxcEI1AcTVKJA96vrBf1t30dvC3BTxwXh86WlpiOCZEmCbvHpNnNQ6fJ5fSee2SeEcHIMVz2SCD9S/ZYgwwBBeupkxqb7p6WbMbybive0qFHbzubMFf4lze7oUu32itjX/mruIsXZuhfRIsuJwapTrBBeYTCdMwagi6DH4GQNbzbsIuco7bhxYm+d2K","type":"thought"},{"id":"hg3yms1z","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
+      string: '{"id":"v1_Chd2N3BlYXBpTVBJZWRfdU1QbHVLZDhRaxIXdjdwZWFwaU1QSWVkX3VNUGx1S2Q4UWs","status":"requires_action","usage":{"total_tokens":119,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":51},"created":"2026-07-21T00:18:07Z","updated":"2026-07-21T00:18:07Z","service_tier":"standard","steps":[{"id":"pxmdyo72","signature":"Cv4BARFNMg/mGaMMOm4wQYVcarBh8Cq/yBx1+gNbBLZ2m4rySvuJFgX7KmoxsoKNdFOjC4/X/tAYUl0fpIv2kK1ofBdVjm5HZ4BUDa/CP3HR8/D0PpY201A3jL+loouqokHdflUiCqdHkdkaDu7vUc9VqkR47c5/VN8CtxNi6Q3/VcU/fz9Y3R+dAqqOdibo8IP2IpbdjE1OUCDCluxHBOjZJhJ6Q//7zqAFkqaRV9A3Qxz9AAlejq7zB2PFBagqY58Ezgb/vmCOnma0hjY1Liq24MougN3i6VaUpRQa8Yvwhc5oxxUyPGcbsLaV495hmKCA7+/+WCOlNkC/AMKQlo0=","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '978'
+      - '927'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:40:18 GMT
+      - Tue, 21 Jul 2026 00:18:08 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1219
+      - gfet4t7; dur=1235
       transfer-encoding:
       - chunked
       vary:
@@ -56,15 +53,13 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"model":"gemini-2.5-flash","input":[{"call_id":"hg3yms1z","result":{"forecast":"sunny"},"type":"function_result","name":"get_weather"}],"tools":[{"type":"function","name":"get_weather","description":"Get
-      the current weather for a location.","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]}}],"previous_interaction_id":"v1_ChdnWE01YXZIMU1Oek0tc0FQOE5HTnlBSRIXZ1hNNWF2SDFNTnpNLXNBUDhOR055QUk"}'
+    body: '{"model":"gemini-2.5-flash","input":[{"call_id":"pxmdyo72","result":{"forecast":"sunny"},"name":"get_weather","type":"function_result"}],"tools":[{"description":"Get
+      the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]},"type":"function"}],"previous_interaction_id":"v1_Chd2N3BlYXBpTVBJZWRfdU1QbHVLZDhRaxIXdjdwZWFwaU1QSWVkX3VNUGx1S2Q4UWs"}'
     headers:
       accept:
       - application/json
       accept-encoding:
       - gzip, deflate
-      api-revision:
-      - '2026-05-20'
       connection:
       - keep-alive
       content-length:
@@ -74,28 +69,28 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - speakeasy-sdk/python 2.4.1-preview.5 2.911.0 v1beta google-genai
+      - speakeasy-sdk/python 2.4.1-preview.5 2.913.3 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.9.0 gl-python/3.14.3
+      - google-genai-sdk/2.12.1 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChdnWE01YXZIMU1Oek0tc0FQOE5HTnlBSRIWZ25NNWF1cnZMTW5Tak1jUHFiUHJNQQ","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-06-22T17:40:18Z","updated":"2026-06-22T17:40:18Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_Chd2N3BlYXBpTVBJZWRfdU1QbHVLZDhRaxIXd2JwZWFvX1dDcmliX3VNUDM4emd3UVE","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-07-21T00:18:09Z","updated":"2026-07-21T00:18:09Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
         weather in Paris is sunny.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '641'
+      - '642'
       content-type:
       - application/json
       date:
-      - Mon, 22 Jun 2026 17:40:19 GMT
+      - Tue, 21 Jul 2026 00:18:09 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1035
+      - gfet4t7; dur=1282
       transfer-encoding:
       - chunked
       vary:

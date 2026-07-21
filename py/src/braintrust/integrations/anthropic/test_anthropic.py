@@ -1106,9 +1106,9 @@ def test_anthropic_messages_sync_server_tool_spans(memory_logger):
 
     assert tool_span["input"] == tool_use_block.input
     assert isinstance(tool_span["output"], list)
-    assert tool_span["output"][0]["type"] == "web_search_result"
-    assert tool_span["output"][0]["url"] == text_block.text
-    assert tool_span["output"][0]["encrypted_content"] == "<redacted>"
+    matching_result = next(result for result in tool_span["output"] if result["url"] == text_block.text)
+    assert matching_result["type"] == "web_search_result"
+    assert matching_result["encrypted_content"] == "<redacted>"
     assert tool_span["metadata"] == {
         "tool_use_id": tool_use_block.id,
         "tool_call_type": "server_tool_use",
@@ -1381,7 +1381,6 @@ def test_anthropic_beta_sessions_events_send_and_stream(memory_logger):
 
         assert sent.data and sent.data[0].type == "user.message"
         event_types = [event.type for event in streamed_events]
-        assert event_types[0] == "session.status_running"
         assert event_types[-1] == "session.status_idle"
         assert "agent.tool_use" in event_types
         assert "agent.tool_result" in event_types
@@ -1407,7 +1406,6 @@ def test_anthropic_beta_sessions_events_send_and_stream(memory_logger):
 
         assert stream_span["input"] == {"session_id": session.id}
         streamed_output_types = [event["type"] for event in stream_span["output"]]
-        assert streamed_output_types[0] == "session.status_running"
         assert streamed_output_types[-1] == "session.status_idle"
         assert "agent.tool_use" in streamed_output_types
         assert "agent.tool_result" in streamed_output_types

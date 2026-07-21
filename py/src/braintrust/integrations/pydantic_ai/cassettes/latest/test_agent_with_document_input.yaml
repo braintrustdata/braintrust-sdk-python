@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.9.0
+      - pydantic-ai/2.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.45.0
+      - 2.46.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,26 +34,26 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0974620b2479e91c006a550225d5e881929358b7ba94131a1f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1783956009,\n  \"status\":
+      string: "{\n  \"id\": \"resp_07484c2fa76dc34c006a5eb9f2a2f88198aff5ed2382669635\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1784592882,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1783956010,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1784592884,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 150,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0974620b2479e91c006a550229bf708192a9e2f936cfa13438\",\n
+        \     \"id\": \"msg_07484c2fa76dc34c006a5eb9f3affc8198b60cef05e0991794\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"The document appears
-        to be a test document labeled \\\"Test Document.\\\" Without additional content
-        or context, it's difficult to determine its purpose or details. If you can
-        provide more information or clarify your request, I'd be happy to help!\"\n
-        \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        to be a test document, but without more information or specific content, I
+        can't provide further details. If you need help regarding a specific section
+        or topic within the document, please share that information!\"\n        }\n
+        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
@@ -68,8 +68,8 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 32,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 46,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 78\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 43,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 75\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -81,29 +81,21 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1a9450c2ba090e5-YYZ
+      - a1e601cc2abfa473-SJC
       connection:
       - keep-alive
       content-length:
-      - '2212'
+      - '2202'
       content-type:
       - application/json
       date:
-      - Mon, 13 Jul 2026 15:20:10 GMT
-      openai-organization:
-      - braintrust-data
+      - Tue, 21 Jul 2026 00:14:44 GMT
       openai-processing-ms:
-      - '4393'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '1621'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
-      set-cookie:
-      - __cf_bm=2pbCqBEJnqC_VZcuKDPiRFpNTmSZ08X4ihtEZp0or.U-1783956005.7895916-1.0.1.1-0Ac8MCUOdE22sVuGVsY6QRUgegDZC7Ddllpg4BJgxjTfQ3VRL3hX_tParDw52gCAn5.Qy5sO9WbaOQ89s0u9fZgy0ZVLQ1Rst9puhCCuYNxZdSMKUdZsLED1sKRTdoSi;
-        HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com; Expires=Mon,
-        13 Jul 2026 15:50:10 GMT
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:
@@ -117,13 +109,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999950'
+      - '149999947'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_44601c794b78470ebd010bedc47c6271
+      - req_3da2f364cd0e44e6a5a9a61d316efd39
     status:
       code: 200
       message: OK
