@@ -12,10 +12,12 @@ from typing import Any
 from braintrust.integrations.utils import (
     _extract_audio_output,
     _infer_audio_mime_type,
+    _is_not_given,
     _materialize_attachment,
     _parse_openai_usage_metrics,
     _prettify_response_params,
     _ResolvedAttachment,
+    _serialize_response_format,
     _timing_metrics,
     _try_to_dict,
 )
@@ -41,6 +43,143 @@ from wrapt import FunctionWrapper
 X_LEGACY_CACHED_HEADER = "x-cached"
 X_CACHED_HEADER = "x-bt-cached"
 RAW_RESPONSE_HEADER = "x-stainless-raw-response"
+
+
+# Allowlists filter request/result kwargs into span metadata. Anything outside
+# these tuples (extra_headers, user, safety_identifier, ...) is dropped.
+_CHAT_COMPLETION_METADATA_PARAMS = (
+    "model",
+    "temperature",
+    "top_p",
+    "top_logprobs",
+    "logprobs",
+    "n",
+    "max_tokens",
+    "max_completion_tokens",
+    "stream",
+    "stream_options",
+    "stop",
+    "presence_penalty",
+    "frequency_penalty",
+    "logit_bias",
+    "tools",
+    "tool_choice",
+    "parallel_tool_calls",
+    "functions",
+    "function_call",
+    "response_format",
+    "seed",
+    "modalities",
+    "audio",
+    "reasoning_effort",
+    "service_tier",
+    "store",
+    "prediction",
+    "web_search_options",
+    "verbosity",
+    "moderation",
+)
+
+_RESPONSES_METADATA_PARAMS = (
+    "model",
+    "instructions",
+    "temperature",
+    "top_p",
+    "max_output_tokens",
+    "stream",
+    "stream_options",
+    "tools",
+    "tool_choice",
+    "parallel_tool_calls",
+    "reasoning",
+    "reasoning_effort",
+    "text",
+    "text_format",
+    "response_format",
+    "include",
+    "truncation",
+    "background",
+    "service_tier",
+    "store",
+    "previous_response_id",
+    "conversation",
+    "verbosity",
+    "moderation",
+)
+
+_RESPONSES_RESULT_METADATA_KEYS = (
+    "id",
+    "model",
+    "status",
+    "created_at",
+    "moderation",
+    "service_tier",
+    "object",
+    "background",
+    "incomplete_details",
+)
+
+_EMBEDDING_METADATA_PARAMS = (
+    "model",
+    "dimensions",
+    "encoding_format",
+)
+
+_MODERATION_METADATA_PARAMS = ("model",)
+
+_SPEECH_METADATA_PARAMS = (
+    "model",
+    "voice",
+    "response_format",
+    "speed",
+    "instructions",
+    "stream_format",
+)
+
+_AUDIO_FILE_METADATA_PARAMS = (
+    "model",
+    "language",
+    "prompt",
+    "response_format",
+    "temperature",
+    "stream",
+    "include",
+    "timestamp_granularities",
+    "chunking_strategy",
+)
+
+_IMAGE_METADATA_PARAMS = (
+    "model",
+    "n",
+    "size",
+    "quality",
+    "style",
+    "response_format",
+    "background",
+    "moderation",
+    "output_format",
+    "output_compression",
+)
+
+
+def _get_attr(obj: Any, key: str) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(key)
+    return getattr(obj, key, None)
+
+
+def _filter_metadata(params: dict[str, Any], allowlist: tuple[str, ...]) -> dict[str, Any]:
+    metadata: dict[str, Any] = {"provider": "openai"}
+    for key in allowlist:
+        if key not in params:
+            continue
+        value = params[key]
+        if value is None or _is_not_given(value):
+            continue
+        if key == "response_format":
+            value = _serialize_response_format(value)
+        metadata[key] = value
+    return metadata
 
 
 class NamedWrapper:
@@ -105,10 +244,9 @@ def log_headers(response: Any, span: Span):
         )
 
 
-def _extract_moderation_metadata(response: dict[str, Any]) -> dict[str, Any]:
-    if "moderation" in response and response.get("moderation") is not None:
-        return {"moderation": response.get("moderation")}
-    return {}
+def _extract_moderation_metadata(response: Any) -> dict[str, Any]:
+    moderation = response.get("moderation") if isinstance(response, dict) else getattr(response, "moderation", None)
+    return {"moderation": moderation} if moderation is not None else {}
 
 
 def _raw_response_requested(kwargs: dict[str, Any]) -> bool:
@@ -421,6 +559,14 @@ def _responses_raw_parse_wrapper(wrapped, instance, args, kwargs):
 # ---------------------------------------------------------------------------
 
 
+def _choices_output(response: Any, *, audio_format: str | None) -> Any:
+    choices = _get_attr(response, "choices")
+    if choices is None:
+        return None
+    dumped = [_try_to_dict(choice) for choice in choices]
+    return _process_attachments_in_chat_output(dumped, audio_format=audio_format)
+
+
 class ChatCompletionWrapper:
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         self.create_fn = create_fn
@@ -471,13 +617,12 @@ class ChatCompletionWrapper:
                     return _RawResponseWithTracedStream(create_response, _TracedStream(raw_response, gen()))
                 return _TracedStream(raw_response, gen())
             else:
-                log_response = _try_to_dict(raw_response)
-                metrics = _parse_metrics_from_usage(log_response.get("usage", {}))
+                metrics = _parse_metrics_from_usage(getattr(raw_response, "usage", None))
                 metrics["time_to_first_token"] = time.time() - start
                 span.log(
                     metrics=metrics,
-                    output=_process_attachments_in_chat_output(log_response["choices"], audio_format=audio_format),
-                    metadata=_extract_moderation_metadata(log_response),
+                    output=_choices_output(raw_response, audio_format=audio_format),
+                    metadata=_extract_moderation_metadata(raw_response),
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -532,13 +677,12 @@ class ChatCompletionWrapper:
                     return _RawResponseWithTracedStream(create_response, _AsyncTracedStream(raw_response, streamer))
                 return _AsyncTracedStream(raw_response, streamer)
             else:
-                log_response = _try_to_dict(raw_response)
-                metrics = _parse_metrics_from_usage(log_response.get("usage"))
+                metrics = _parse_metrics_from_usage(getattr(raw_response, "usage", None))
                 metrics["time_to_first_token"] = time.time() - start
                 span.log(
                     metrics=metrics,
-                    output=_process_attachments_in_chat_output(log_response["choices"], audio_format=audio_format),
-                    metadata=_extract_moderation_metadata(log_response),
+                    output=_choices_output(raw_response, audio_format=audio_format),
+                    metadata=_extract_moderation_metadata(raw_response),
                 )
                 return create_response if (raw_requested and hasattr(create_response, "parse")) else raw_response
         finally:
@@ -547,21 +691,13 @@ class ChatCompletionWrapper:
 
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
-        # First, destructively remove span_info
         ret = params.pop("span_info", {})
-
-        # Then, copy the rest of the params
-        params = prettify_params(params)
-        messages = params.pop("messages", None)
-
-        # Process attachments in input (convert data URLs to Attachment objects)
-        processed_input = _process_attachments_in_input(messages)
-
+        processed_input = _process_attachments_in_input(params.get("messages"))
         return merge_dicts(
             ret,
             {
                 "input": processed_input,
-                "metadata": {**params, "provider": "openai"},
+                "metadata": _filter_metadata(params, _CHAT_COMPLETION_METADATA_PARAMS),
             },
         )
 
@@ -1043,8 +1179,7 @@ class ResponseWrapper:
                     return _RawResponseWithTracedStream(create_response, _TracedStream(raw_response, gen()))
                 return _TracedStream(raw_response, gen())
             else:
-                log_response = _try_to_dict(raw_response)
-                event_data = self._parse_event_from_result(log_response)
+                event_data = self._parse_event_from_result(raw_response)
                 if "metrics" not in event_data:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
@@ -1100,8 +1235,7 @@ class ResponseWrapper:
                     return _RawResponseWithTracedStream(create_response, _AsyncTracedStream(raw_response, streamer))
                 return _AsyncTracedStream(raw_response, streamer)
             else:
-                log_response = _try_to_dict(raw_response)
-                event_data = self._parse_event_from_result(log_response)
+                event_data = self._parse_event_from_result(raw_response)
                 if "metrics" not in event_data:
                     event_data["metrics"] = {}
                 event_data["metrics"]["time_to_first_token"] = time.time() - start
@@ -1114,41 +1248,38 @@ class ResponseWrapper:
 
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
-        # First, destructively remove span_info
         ret = params.pop("span_info", {})
-
-        # Then, copy the rest of the params
-        params = prettify_params(params)
-        input_data = params.pop("input", None)
-
-        # Process attachments in input (convert data URLs to Attachment objects)
-        processed_input = _process_attachments_in_input(input_data)
-
+        processed_input = _process_attachments_in_input(params.get("input"))
         return merge_dicts(
             ret,
             {
                 "input": processed_input,
-                "metadata": {**params, "provider": "openai"},
+                "metadata": _filter_metadata(params, _RESPONSES_METADATA_PARAMS),
             },
         )
 
     @classmethod
-    def _parse_event_from_result(cls, result: dict[str, Any]) -> dict[str, Any]:
-        """Parse event from response result"""
-        data = {"metrics": {}}
+    def _parse_event_from_result(cls, result: Any) -> dict[str, Any]:
+        data: dict[str, Any] = {"metrics": {}}
 
         if not result:
             return data
 
-        if "output" in result:
-            data["output"] = result["output"]
+        output = _get_attr(result, "output")
+        if output is not None:
+            data["output"] = output
 
-        metadata = {k: v for k, v in result.items() if k not in ["output", "usage"]}
+        metadata = {}
+        for key in _RESPONSES_RESULT_METADATA_KEYS:
+            value = _get_attr(result, key)
+            if value is not None:
+                metadata[key] = value
         if metadata:
             data["metadata"] = metadata
 
-        if "usage" in result:
-            data["metrics"] = _parse_metrics_from_usage(result["usage"])
+        usage = _get_attr(result, "usage")
+        if usage is not None:
+            data["metrics"] = _parse_metrics_from_usage(usage)
 
         return data
 
@@ -1363,22 +1494,17 @@ class BaseWrapper(abc.ABC):
             self.process_output(log_response, span)
             return raw_response
 
+    _metadata_params: tuple[str, ...] = ()
+
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
-        # First, destructively remove span_info
         ret = params.pop("span_info", {})
-
-        params = prettify_params(params)
-        input_data = params.pop("input", None)
-
-        # Process attachments in input (convert data URLs to Attachment objects)
-        processed_input = _process_attachments_in_input(input_data)
-
+        processed_input = _process_attachments_in_input(params.get("input"))
         return merge_dicts(
             ret,
             {
                 "input": processed_input,
-                "metadata": {**params, "provider": "openai"},
+                "metadata": _filter_metadata(params, cls._metadata_params),
             },
         )
 
@@ -1433,10 +1559,9 @@ class _ImageBaseWrapper(BaseWrapper):
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         ret = params.pop("span_info", {})
-        params = prettify_params(params)
-        prompt = params.pop("prompt", None)
-        image = params.pop("image", None)
-        mask = params.pop("mask", None)
+        prompt = params.get("prompt")
+        image = params.get("image")
+        mask = params.get("mask")
 
         input_data = clean_nones(
             {
@@ -1450,7 +1575,7 @@ class _ImageBaseWrapper(BaseWrapper):
             ret,
             {
                 "input": prompt if (prompt is not None and len(input_data) == 1) else (input_data or None),
-                "metadata": {**params, "provider": "openai"},
+                "metadata": _filter_metadata(params, _IMAGE_METADATA_PARAMS),
             },
         )
 
@@ -1471,6 +1596,8 @@ class ImageVariationWrapper(_ImageBaseWrapper):
 
 
 class EmbeddingWrapper(BaseWrapper):
+    _metadata_params = _EMBEDDING_METADATA_PARAMS
+
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         super().__init__(create_fn, acreate_fn, "Embedding")
 
@@ -1486,6 +1613,8 @@ class EmbeddingWrapper(BaseWrapper):
 
 
 class ModerationWrapper(BaseWrapper):
+    _metadata_params = _MODERATION_METADATA_PARAMS
+
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         super().__init__(create_fn, acreate_fn, "Moderation")
 
@@ -1496,6 +1625,8 @@ class ModerationWrapper(BaseWrapper):
 
 
 class SpeechWrapper(BaseWrapper):
+    _metadata_params = _SPEECH_METADATA_PARAMS
+
     def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None):
         super().__init__(create_fn, acreate_fn, "Speech")
 
@@ -1506,19 +1637,18 @@ class SpeechWrapper(BaseWrapper):
 class _AudioFileWrapper(BaseWrapper):
     """Base for transcription/translation wrappers that accept audio file input."""
 
+    _metadata_params = _AUDIO_FILE_METADATA_PARAMS
+
     @classmethod
     def _parse_params(cls, params: dict[str, Any]) -> dict[str, Any]:
         ret = params.pop("span_info", {})
-        params = prettify_params(params)
-        # Remove the file object after prettifying — prettify_params already
-        # made a copy so the original kwargs (used by the API call) are preserved.
-        file_input = _materialize_logged_file_input(params.pop("file", None))
+        file_input = _materialize_logged_file_input(params.get("file"))
         input_data = {"file": file_input} if file_input is not None else None
         return merge_dicts(
             ret,
             {
                 "input": input_data,
-                "metadata": {**params, "provider": "openai"},
+                "metadata": _filter_metadata(params, cls._metadata_params),
             },
         )
 
