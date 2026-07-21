@@ -84,8 +84,6 @@ class _AgentResolveModelSelectionPatcher(FunctionWrapperPatcher):
 
 
 class AgentPatcher(CompositeFunctionWrapperPatcher):
-    """Patch Pydantic AI agent entrypoints for tracing."""
-
     name = "pydantic_ai.agent"
     sub_patchers = (
         _AgentRunPatcher,
@@ -152,10 +150,7 @@ class StreamedResponseSyncStartProducerPatcher(FunctionWrapperPatcher):
 
 class _ToolManagerExecuteFunctionToolPatcher(FunctionWrapperPatcher):
     name = "pydantic_ai.tool_manager.execute_function_tool"
-    # Regression compatibility note: pydantic_ai 1.78.0 moved ToolManager out
-    # of the private ``pydantic_ai._tool_manager`` module into
-    # ``pydantic_ai.tool_manager``. ``pydantic_ai._agent_graph.ToolManager`` is
-    # a stable alias in both the old and new layouts, so patch that seam.
+    # pydantic_ai 1.78.0 relocated ToolManager; `_agent_graph.ToolManager` is a stable alias.
     target_module = "pydantic_ai._agent_graph"
     target_path = "ToolManager._execute_function_tool_call"
     wrapper = _tool_manager_execute_function_tool_wrapper
@@ -191,11 +186,7 @@ def wrap_agent(Agent: Any) -> Any:
 
 
 class ModelClassesPatcher(ClassScanPatcher):
-    """Deprecated compatibility fallback for model subclass scanning.
-
-    Normal setup now wraps resolved models via ``Agent._get_model`` and
-    ``pydantic_ai.direct._prepare_model`` instead of relying on subclass scans.
-    """
+    """Deprecated fallback; normal setup wraps models via `Agent._get_model` and `_prepare_model`."""
 
     name = "pydantic_ai.models"
     priority: ClassVar[int] = 200

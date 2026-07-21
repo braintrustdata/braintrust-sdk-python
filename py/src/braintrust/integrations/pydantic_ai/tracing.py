@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import inspect
 import logging
 import sys
 import time
@@ -39,7 +40,6 @@ def wrap_agent(Agent: Any) -> Any:
 
 
 def _wrap_model_instance(model: Any) -> Any:
-    """Ensure a resolved model class is wrapped exactly once."""
     if model is None:
         return model
 
@@ -209,8 +209,6 @@ def _agent_run_stream_events_wrapper(wrapped: Any, instance: Any, args: Any, kwa
 
 
 def _create_direct_model_request_wrapper():
-    """Create wrapper for direct.model_request()."""
-
     async def wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         input_data, metadata = _build_direct_model_input_and_metadata(args, kwargs)
 
@@ -232,8 +230,6 @@ def _create_direct_model_request_wrapper():
 
 
 def _create_direct_model_request_sync_wrapper():
-    """Create wrapper for direct.model_request_sync()."""
-
     def wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         input_data, metadata = _build_direct_model_input_and_metadata(args, kwargs)
 
@@ -255,8 +251,6 @@ def _create_direct_model_request_sync_wrapper():
 
 
 def _create_direct_model_request_stream_wrapper():
-    """Create wrapper for direct.model_request_stream()."""
-
     def wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         input_data, metadata = _build_direct_model_input_and_metadata(args, kwargs)
 
@@ -272,8 +266,6 @@ def _create_direct_model_request_stream_wrapper():
 
 
 def _create_direct_model_request_stream_sync_wrapper():
-    """Create wrapper for direct.model_request_stream_sync()."""
-
     def wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         input_data, metadata = _build_direct_model_input_and_metadata(args, kwargs)
 
@@ -359,11 +351,6 @@ def wrap_model_request_stream_sync(original_func: Any) -> Any:
 
 
 def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any):
-    """Build input data and metadata for model class request wrappers.
-
-    Returns:
-        Tuple of (model_name, display_name, input_data, metadata)
-    """
     model_name, provider = _extract_model_info_from_model_instance(instance)
     display_name = model_name or type(instance).__name__
 
@@ -382,8 +369,6 @@ def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any)
 
 
 def _wrap_concrete_model_class(model_class: Any):
-    """Wrap a concrete model class to trace its request methods."""
-
     async def model_request_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
         model_name, display_name, input_data, metadata = _build_model_class_input_and_metadata(instance, args, kwargs)
 
@@ -419,7 +404,7 @@ def _wrap_concrete_model_class(model_class: Any):
 
 
 class _AgentStreamEventsWrapper(AbstractAsyncContextManager):
-    """Wrapper for agent.run_stream_events() supporting pre-v2 and v2 stream shapes."""
+    """agent.run_stream_events() wrapper supporting pre-v2 and v2 stream shapes."""
 
     def __init__(self, event_source: Any, span_name: str, input_data: Any, metadata: Any):
         self.event_source = event_source
@@ -508,8 +493,6 @@ class _AgentStreamEventsWrapper(AbstractAsyncContextManager):
 
 
 class _AgentStreamEventsIteratorProxy:
-    """Proxy for stream events that counts events and captures final output."""
-
     def __init__(self, event_stream: Any, wrapper: _AgentStreamEventsWrapper):
         self._event_stream = event_stream
         self._wrapper = wrapper
@@ -561,8 +544,6 @@ def _extract_stream_response(stream: Any) -> Any:
 
 
 class _AgentStreamWrapper(AbstractAsyncContextManager):
-    """Wrapper for agent.run_stream() that adds tracing while passing through the stream result."""
-
     def __init__(self, stream_cm: Any, span_name: str, input_data: Any, metadata: Any):
         self.stream_cm = stream_cm
         self.span_name = span_name
@@ -578,8 +559,6 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
     async def __aenter__(self):
         self._enter_task = asyncio.current_task()
 
-        # Use context manager properly so span stays current
-        # DON'T pass start_time here - we'll set it via metrics in __aexit__
         self.span_cm = start_span(
             name=self.span_name,
             type=SpanTypeAttribute.TASK,
@@ -588,12 +567,10 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
         )
         self.span_cm.__enter__()
 
-        # Capture start time right before entering the stream (API call initiation)
         self._tool_trace_token = _start_tool_trace_capture()
         self.start_time = time.time()
         self.stream_result = await self.stream_cm.__aenter__()
 
-        # Wrap the stream result to capture first token time
         return _StreamResultProxy(self.stream_result, self)
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -611,7 +588,6 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
                     metrics=_wrapper_span_metrics(self.start_time, end_time, self._first_token_time),
                 )
 
-            # Clean up span context
             if self.span_cm:
                 if asyncio.current_task() is self._enter_task:
                     self.span_cm.__exit__(None, None, None)
@@ -625,17 +601,13 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
 
 
 class _StreamResultProxy:
-    """Proxy for stream result that captures first token time."""
-
     def __init__(self, stream_result: Any, wrapper: _AgentStreamWrapper):
         self._stream_result = stream_result
         self._wrapper = wrapper
 
     def __getattr__(self, name: str):
-        """Delegate all attribute access to the wrapped stream result."""
         attr = getattr(self._stream_result, name)
 
-        # Wrap streaming methods to capture first token time
         if callable(attr) and name in ("stream_text", "stream_output"):
 
             async def wrapped_method(*args, **kwargs):
@@ -651,12 +623,7 @@ class _StreamResultProxy:
 
 
 class _DirectStreamWrapper(AbstractAsyncContextManager):
-    """Wrapper for model_request_stream() that adds tracing while passing through the stream.
-
-    Used both as the leaf `chat <model>` span (from `_wrap_concrete_model_class`, default
-    `span_type=LLM`) and as a non-leaf wrapper around a nested model call (from
-    `direct.model_request_stream`, which passes `span_type=TASK` to avoid double-counting).
-    """
+    """Wrapper for model_request_stream. LLM span for leaf model calls, TASK when nested."""
 
     def __init__(
         self,
@@ -680,8 +647,6 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
     async def __aenter__(self):
         self._enter_task = asyncio.current_task()
 
-        # Use context manager properly so span stays current
-        # DON'T pass start_time here - we'll set it via metrics in __aexit__
         self.span_cm = start_span(
             name=self.span_name,
             type=self.span_type,
@@ -690,11 +655,9 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
         )
         self.span_cm.__enter__()
 
-        # Capture start time right before entering the stream (API call initiation)
         self.start_time = time.time()
         self.stream = await self.stream_cm.__aenter__()
 
-        # Wrap the stream to capture first token time
         return _DirectStreamIteratorProxy(self.stream, self)
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -717,7 +680,6 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
                 except Exception as e:
                     logger.debug(f"Failed to extract stream output/metrics: {e}")
 
-            # Clean up span context
             if self.span_cm:
                 if asyncio.current_task() is self._enter_task:
                     self.span_cm.__exit__(None, None, None)
@@ -728,27 +690,20 @@ class _DirectStreamWrapper(AbstractAsyncContextManager):
 
 
 class _DirectStreamIteratorProxy:
-    """Proxy for direct stream that captures first token time."""
-
     def __init__(self, stream: Any, wrapper: _DirectStreamWrapper):
         self._stream = stream
         self._wrapper = wrapper
         self._iterator = None
 
     def __getattr__(self, name: str):
-        """Delegate all attribute access to the wrapped stream."""
         return getattr(self._stream, name)
 
     def __aiter__(self):
-        """Return async iterator that captures first token time."""
-        # Get the actual async iterator from the stream
         self._iterator = self._stream.__aiter__() if hasattr(self._stream, "__aiter__") else self._stream
         return self
 
     async def __anext__(self):
-        """Capture first token time on first iteration."""
         if self._iterator is None:
-            # In case __aiter__ wasn't called, initialize it
             self._iterator = self._stream.__aiter__() if hasattr(self._stream, "__aiter__") else self._stream
 
         item = await self._iterator.__anext__()
@@ -758,8 +713,6 @@ class _DirectStreamIteratorProxy:
 
 
 class _AgentStreamResultSyncProxy:
-    """Proxy for agent.run_stream_sync() result that adds tracing while delegating to actual stream result."""
-
     def __init__(
         self,
         stream_result: Any,
@@ -778,16 +731,13 @@ class _AgentStreamResultSyncProxy:
         self._tool_trace_token = tool_trace_token
 
     def __getattr__(self, name: str):
-        """Delegate all attribute access to the wrapped stream result."""
         attr = getattr(self._stream_result, name)
 
-        # Wrap any method that returns an iterator to auto-finalize when exhausted
         if callable(attr) and name in ("stream_text", "stream_output", "__iter__"):
 
             def wrapped_method(*args, **kwargs):
                 try:
                     iterator = attr(*args, **kwargs)
-                    # If it's an iterator, wrap it
                     if hasattr(iterator, "__iter__") or hasattr(iterator, "__next__"):
                         try:
                             for item in iterator:
@@ -796,7 +746,7 @@ class _AgentStreamResultSyncProxy:
                                 yield item
                         finally:
                             self._finalize()
-                            self._finalize_on_del = False  # Don't finalize again in __del__
+                            self._finalize_on_del = False
                     else:
                         return iterator
                 except Exception:
@@ -809,7 +759,6 @@ class _AgentStreamResultSyncProxy:
         return attr
 
     def _finalize(self):
-        """Log metrics and close span."""
         if self._span and not self._logged and self._stream_result:
             try:
                 end_time = time.time()
@@ -832,14 +781,11 @@ class _AgentStreamResultSyncProxy:
                     self._tool_trace_token = None
 
     def __del__(self):
-        """Ensure span is closed when proxy is destroyed."""
         if getattr(self, "_finalize_on_del", False):
             self._finalize()
 
 
 class _DirectStreamWrapperSync:
-    """Wrapper for model_request_stream_sync() that adds tracing while passing through the stream."""
-
     def __init__(self, stream_cm: Any, span_name: str, input_data: Any, metadata: Any):
         self.stream_cm = stream_cm
         self.span_name = span_name
@@ -851,21 +797,17 @@ class _DirectStreamWrapperSync:
         self._first_token_time = None
 
     def __enter__(self):
-        # Use context manager properly so span stays current
-        # DON'T pass start_time here - we'll set it via metrics in __exit__
         self.span_cm = start_span(
             name=self.span_name,
             type=SpanTypeAttribute.TASK,
             input=self.input_data if self.input_data else None,
             metadata=self.metadata,
         )
-        span = self.span_cm.__enter__()
+        self.span_cm.__enter__()
 
-        # Capture start time right before entering the stream (API call initiation)
         self.start_time = time.time()
         self.stream = self.stream_cm.__enter__()
 
-        # Wrap the stream to capture first token time
         return _DirectStreamIteratorSyncProxy(self.stream, self)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -885,7 +827,6 @@ class _DirectStreamWrapperSync:
 
             self.stream_cm.__exit__(exc_type, exc_val, exc_tb)
         finally:
-            # Always clean up span context
             if self.span_cm:
                 self.span_cm.__exit__(None, None, None)
 
@@ -893,27 +834,20 @@ class _DirectStreamWrapperSync:
 
 
 class _DirectStreamIteratorSyncProxy:
-    """Proxy for direct stream (sync) that captures first token time."""
-
     def __init__(self, stream: Any, wrapper: _DirectStreamWrapperSync):
         self._stream = stream
         self._wrapper = wrapper
         self._iterator = None
 
     def __getattr__(self, name: str):
-        """Delegate all attribute access to the wrapped stream."""
         return getattr(self._stream, name)
 
     def __iter__(self):
-        """Return iterator that captures first token time."""
-        # Get the actual iterator from the stream
         self._iterator = self._stream.__iter__() if hasattr(self._stream, "__iter__") else self._stream
         return self
 
     def __next__(self):
-        """Capture first token time on first iteration."""
         if self._iterator is None:
-            # In case __iter__ wasn't called, initialize it
             self._iterator = self._stream.__iter__() if hasattr(self._stream, "__iter__") else self._stream
 
         item = self._iterator.__next__()
@@ -964,17 +898,12 @@ async def _tool_manager_execute_function_tool_wrapper(wrapped: Any, instance: An
 
 
 def _create_tool_spans_from_messages(result: Any) -> None:
-    """
-    Create TOOL-type spans from tool call/return message parts in a completed agent result.
-
-    Uses message timestamps from PydanticAI to position spans correctly in the trace:
-    - start_time = ModelResponse.timestamp (when the model requested the tool call)
-    - end_time = ModelRequest.timestamp (when the tool result was sent back)
-    """
+    # Reconstruct TOOL-type spans from tool call/return message parts, using
+    # ModelResponse/ModelRequest timestamps to position spans in the trace.
     try:
         _create_tool_spans_from_messages_impl(result)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Failed to reconstruct tool spans from messages: {e}")
 
 
 def _create_tool_spans_from_messages_impl(result: Any) -> None:
@@ -1035,7 +964,6 @@ def _create_tool_spans_from_messages_impl(result: Any) -> None:
 
 
 def _msg_timestamp(msg: Any) -> float | None:
-    """Extract epoch-seconds timestamp from a PydanticAI message, or None."""
     ts = getattr(msg, "timestamp", None)
     if ts is None:
         return None
@@ -1063,38 +991,79 @@ _RESPONSE_FIELDS = (
     "conversation_id",
 )
 
+# Agent.run / run_sync / run_stream / run_stream_events / to_cli_sync kwargs we
+# pass through to the span. Allowlisted so future pydantic_ai versions can add
+# kwargs (including secrets like `deps` or callables like `event_stream_handler`)
+# without them silently landing in spans.
+_AGENT_INPUT_ALLOWLIST = (
+    "output_type",
+    "message_history",
+    "deferred_tool_results",
+    "instructions",
+    "model_settings",
+    "usage_limits",
+    "toolsets",
+    "metadata",
+    "retries",
+    "capabilities",
+    "spec",
+    "conversation_id",
+    "prog_name",
+)
+
+# direct.model_request / model_request_sync / model_request_stream* kwargs.
+# `model` and `messages` are handled positionally; `instrument` is telemetry
+# routing config.
+_DIRECT_MODEL_INPUT_ALLOWLIST = (
+    "model_settings",
+    "model_request_parameters",
+)
+
 
 def _shape_user_prompt(user_prompt: Any) -> Any:
-    """Shape user prompt, materializing BinaryContent where needed."""
     if user_prompt is None or isinstance(user_prompt, str):
         return user_prompt
 
     if isinstance(user_prompt, list):
+        if not any(_has_binary_leaf(part) for part in user_prompt):
+            return user_prompt
         return [_shape_content_part(part) for part in user_prompt]
 
     return _shape_content_part(user_prompt)
 
 
 def _shape_messages(messages: Any) -> Any:
-    """Shape messages, replacing binary content in message parts with Attachments."""
     if not messages:
         return []
-
     return [_shape_message(message) for message in messages]
+
+
+def _has_binary_leaf(part: Any) -> bool:
+    if part is None or isinstance(part, str):
+        return False
+    if isinstance(part, list):
+        return any(_has_binary_leaf(item) for item in part)
+    if _field_value(part, "kind") == "binary":
+        return True
+    content = _field_value(part, "content")
+    if content is _MISSING:
+        return False
+    return _has_binary_leaf(content)
 
 
 def _shape_message(message: Any) -> Any:
     parts = _field_value(message, "parts")
     if not parts:
         return message
-
+    if not any(_has_binary_leaf(part) for part in parts):
+        # Let Braintrust's dataclass/Pydantic serializer preserve every field.
+        return message
     return _shape_object(
         message, fields=_MESSAGE_FIELDS, overrides={"parts": [_shape_content_part(part) for part in parts]}
     )
 
 
 def _shape_content_part(part: Any) -> Any:
-    """Shape a content part, materializing binary content into Braintrust Attachments."""
     if part is None or isinstance(part, str):
         return part
 
@@ -1103,15 +1072,13 @@ def _shape_content_part(part: Any) -> Any:
         return attachment_payload
 
     content = _field_value(part, "content")
-    if content is not _MISSING:
-        shaped_content = (
-            [_shape_content_part(item) for item in content]
-            if isinstance(content, list)
-            else _shape_content_part(content)
-        )
-        return _shape_object(part, fields=_PART_FIELDS, overrides={"content": shaped_content})
+    if content is _MISSING or not _has_binary_leaf(content):
+        return part
 
-    return part
+    shaped_content = (
+        [_shape_content_part(item) for item in content] if isinstance(content, list) else _shape_content_part(content)
+    )
+    return _shape_object(part, fields=_PART_FIELDS, overrides={"content": shaped_content})
 
 
 def _shape_binary_content(part: Any) -> dict[str, Any] | None:
@@ -1135,11 +1102,6 @@ def _shape_binary_content(part: Any) -> dict[str, Any] | None:
 
 
 def _shape_object(value: Any, *, fields: tuple[str, ...], overrides: dict[str, Any]) -> dict[str, Any]:
-    """Return a shallow readable shape with selected fields and overrides.
-
-    Braintrust handles final serialization. This helper only builds a small dict
-    when we need to replace nested binary content with Attachments.
-    """
     shaped = {}
     for field in fields:
         field_value = _field_value(value, field)
@@ -1156,7 +1118,6 @@ def _field_value(value: Any, field: str) -> Any:
 
 
 def _shape_result_output(result: Any) -> Any:
-    """Shape agent run result output."""
     if not result:
         return None
 
@@ -1172,7 +1133,6 @@ def _shape_result_output(result: Any) -> Any:
 
 
 def _shape_stream_output(stream_result: Any) -> Any:
-    """Shape stream result output."""
     if not stream_result:
         return None
 
@@ -1185,30 +1145,22 @@ def _shape_stream_output(stream_result: Any) -> Any:
 
 
 def _shape_model_response(response: Any) -> Any:
-    """Shape a model response, replacing binary parts with Attachments when present."""
     if not response:
         return None
 
     parts = _field_value(response, "parts")
-    if parts is not _MISSING:
-        return _shape_object(
-            response,
-            fields=_RESPONSE_FIELDS,
-            overrides={"parts": [_shape_content_part(part) for part in parts]},
-        )
-
-    return response
+    if parts is _MISSING:
+        return response
+    if not any(_has_binary_leaf(part) for part in parts):
+        return response
+    return _shape_object(
+        response,
+        fields=_RESPONSE_FIELDS,
+        overrides={"parts": [_shape_content_part(part) for part in parts]},
+    )
 
 
 def _extract_model_info_from_model_instance(model: Any) -> tuple[str | None, str | None]:
-    """Extract model name and provider from a model instance.
-
-    Args:
-        model: A Pydantic AI model instance (OpenAIChatModel, AnthropicModel, etc.)
-
-    Returns:
-        Tuple of (model_name, provider)
-    """
     if not model:
         return None, None
 
@@ -1247,14 +1199,6 @@ def _extract_model_info_from_model_instance(model: Any) -> tuple[str | None, str
 
 
 def _extract_model_info(agent: Any) -> tuple[str | None, str | None]:
-    """Extract model name and provider from agent.
-
-    Args:
-        agent: A Pydantic AI Agent instance
-
-    Returns:
-        Tuple of (model_name, provider)
-    """
     if not hasattr(agent, "model"):
         return None, None
 
@@ -1262,16 +1206,6 @@ def _extract_model_info(agent: Any) -> tuple[str | None, str | None]:
 
 
 def _build_model_metadata(model_name: str | None, provider: str | None, model_settings: Any = None) -> dict[str, Any]:
-    """Build metadata dictionary with model info.
-
-    Args:
-        model_name: The model name (e.g., "gpt-4o")
-        provider: The provider (e.g., "openai")
-        model_settings: Optional model settings to include
-
-    Returns:
-        Dictionary of metadata
-    """
     metadata = {}
     if model_name:
         metadata["model"] = model_name
@@ -1283,10 +1217,7 @@ def _build_model_metadata(model_name: str | None, provider: str | None, model_se
 
 
 def _parse_model_string(model: Any) -> tuple[str | None, str | None]:
-    """Parse model string to extract provider and model name.
-
-    Pydantic AI uses format: "provider:model-name" (e.g., "openai:gpt-4o")
-    """
+    """Parse pydantic_ai's "provider:model-name" string form."""
     if not model:
         return None, None
 
@@ -1302,9 +1233,8 @@ def _parse_model_string(model: Any) -> tuple[str | None, str | None]:
 def _wrapper_span_metrics(
     start_time: float, end_time: float, first_token_time: float | None = None
 ) -> dict[str, float]:
-    # Wrapper spans (agent_run, model_request, streaming wrappers) must NOT log token or
-    # cost metrics. The leaf `chat <model>` span already logs them, and trace-tree rollup
-    # (self + descendants) would then double-count tokens/cost at every wrapper ancestor.
+    # Wrapper spans must NOT log tokens/cost — the leaf `chat <model>` owns them,
+    # and trace-tree rollup would double-count at every wrapper ancestor.
     metrics: dict[str, float] = {
         "start": start_time,
         "end": end_time,
@@ -1318,7 +1248,6 @@ def _wrapper_span_metrics(
 def _extract_response_metrics(
     response: Any, start_time: float, end_time: float, first_token_time: float | None = None
 ) -> dict[str, float] | None:
-    """Extract metrics from model response."""
     metrics: dict[str, float] = {}
 
     metrics["start"] = start_time
@@ -1352,12 +1281,7 @@ def _extract_response_metrics(
         if hasattr(usage, "output_audio_tokens") and usage.output_audio_tokens is not None:
             metrics["completion_audio_tokens"] = float(usage.output_audio_tokens)
 
-        # pydantic_ai's RequestUsage.details is dict[str, int]. Providers stash extra
-        # token counts here -- e.g. OpenAI's responses API puts reasoning_tokens here,
-        # and chat completions spreads completion_tokens_details (reasoning_tokens,
-        # audio_tokens, ...). cached_tokens may also surface here on some providers
-        # alongside the top-level cache_read_tokens. Reading attributes off `details`
-        # would silently drop everything since dict has no such attrs.
+        # RequestUsage.details is a dict; providers stash reasoning_tokens/cached_tokens here.
         details = getattr(usage, "details", None)
         if isinstance(details, dict):
             reasoning = details.get("reasoning_tokens")
@@ -1371,8 +1295,6 @@ def _extract_response_metrics(
 
 
 class _ContextPropagatingAsyncContextManager(AbstractAsyncContextManager):
-    """Async context manager wrapper that applies a copied context in the current task."""
-
     def __init__(self, cm: Any, ctx: contextvars.Context):
         self._cm = cm
         self._ctx = ctx
@@ -1415,7 +1337,7 @@ class _ContextPropagatingAsyncContextManager(AbstractAsyncContextManager):
 
 
 def _sync_stream_bridge_init_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> None:
-    """Propagate Braintrust context into Pydantic AI's SyncStreamBridge portal thread."""
+    # Propagate Braintrust context into Pydantic AI's SyncStreamBridge portal thread.
     ctx = contextvars.copy_context()
     if args:
         args = (_ContextPropagatingAsyncContextManager(args[0], ctx), *args[1:])
@@ -1425,12 +1347,8 @@ def _sync_stream_bridge_init_wrapper(wrapped: Any, instance: Any, args: Any, kwa
 
 
 def _create_start_producer_wrapper():
-    """Create wrapper for StreamedResponseSync._start_producer to propagate context.
-
-    StreamedResponseSync._start_producer creates a background thread that doesn't
-    inherit contextvars. This wrapper ensures Braintrust context flows to that thread
-    so nested instrumentation (like wrap_openai) creates properly parented spans.
-    """
+    # StreamedResponseSync._start_producer spawns a thread that doesn't inherit contextvars.
+    # Propagate Braintrust context so nested instrumentation nests spans correctly.
 
     def wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> None:
         ctx = contextvars.copy_context()
@@ -1449,21 +1367,11 @@ def _create_start_producer_wrapper():
 
 
 def _shape_type(obj: Any) -> Any:
-    """Shape a type/class for logging, handling Pydantic models and other types.
-
-    This is useful for output_type, toolsets, and similar type parameters.
-    Returns full JSON schema for Pydantic models so engineers can see exactly
-    what structured output schema was used.
-    """
-    import inspect
-
-    # For sequences of types (like Union types or list of models)
     if isinstance(obj, (list, tuple)):
         return [_shape_type(item) for item in obj]
 
-    # Handle Pydantic AI's output wrappers (ToolOutput, NativeOutput, PromptedOutput, TextOutput)
+    # Pydantic AI's output wrappers: ToolOutput, NativeOutput, PromptedOutput, TextOutput.
     if hasattr(obj, "output"):
-        # These are wrapper classes with an 'output' field containing the actual type
         wrapper_info = {"wrapper": type(obj).__name__}
         if hasattr(obj, "name") and obj.name:
             wrapper_info["name"] = obj.name
@@ -1472,21 +1380,17 @@ def _shape_type(obj: Any) -> Any:
         wrapper_info["output"] = _shape_type(obj.output)
         return wrapper_info
 
-    # If it's a Pydantic model class, return its full JSON schema
     if inspect.isclass(obj):
         try:
             from pydantic import BaseModel
 
             if issubclass(obj, BaseModel):
-                # Return the full JSON schema - includes all field info, descriptions, constraints, etc.
                 return obj.model_json_schema()
         except (ImportError, AttributeError, TypeError):
             pass
 
-        # Not a Pydantic model, return class name
         return obj.__name__
 
-    # If it has a __name__ attribute (like functions), use that
     if hasattr(obj, "__name__"):
         return obj.__name__
 
@@ -1494,25 +1398,22 @@ def _shape_type(obj: Any) -> Any:
 
 
 def _build_agent_input_and_metadata(args: Any, kwargs: Any, instance: Any) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Build input data and metadata for agent wrappers.
-
-    Returns:
-        Tuple of (input_data, metadata)
-    """
-    input_data = {}
+    input_data: dict[str, Any] = {}
 
     user_prompt = args[0] if len(args) > 0 else kwargs.get("user_prompt")
     if user_prompt is not None:
         input_data["user_prompt"] = _shape_user_prompt(user_prompt)
 
-    for key, value in kwargs.items():
-        if key == "deps":
+    for key in _AGENT_INPUT_ALLOWLIST:
+        if key not in kwargs:
             continue
+        value = kwargs[key]
+        if value is None:
+            input_data[key] = None
         elif key == "message_history":
-            input_data[key] = _shape_messages(value) if value is not None else None
+            input_data[key] = _shape_messages(value)
         elif key in ("output_type", "toolsets"):
-            # These often contain types/classes, use special serialization
-            input_data[key] = _shape_type(value) if value is not None else None
+            input_data[key] = _shape_type(value)
         else:
             input_data[key] = value
 
@@ -1521,70 +1422,34 @@ def _build_agent_input_and_metadata(args: Any, kwargs: Any, instance: Any) -> tu
     else:
         model_name, provider = _extract_model_info(instance)
 
-    # Extract agent-level configuration for metadata
-    # Only add to metadata if NOT explicitly passed in kwargs (those go in input)
     agent_model_settings = None
     if "model_settings" not in kwargs and hasattr(instance, "model_settings") and instance.model_settings is not None:
         agent_model_settings = instance.model_settings
 
     metadata = _build_model_metadata(model_name, provider, agent_model_settings)
 
-    # Extract additional agent configuration (only if not passed as kwargs)
     if "name" not in kwargs and hasattr(instance, "name") and instance.name is not None:
         metadata["agent_name"] = instance.name
 
     if "end_strategy" not in kwargs and hasattr(instance, "end_strategy") and instance.end_strategy is not None:
         metadata["end_strategy"] = str(instance.end_strategy)
 
-    # Extract output_type if set on agent and not passed as kwarg
-    # output_type can be a Pydantic model, str, or other types that get converted to JSON schema
     if "output_type" not in kwargs and hasattr(instance, "output_type") and instance.output_type is not None:
         try:
             metadata["output_type"] = _shape_type(instance.output_type)
         except Exception as e:
             logger.debug(f"Failed to extract output_type from agent: {e}")
 
-    # Extract toolsets if set on agent and not passed as kwarg
-    # Toolsets go in INPUT (not metadata) because agent.run() accepts toolsets parameter
+    # Toolsets on the agent go in input (not metadata) because agent.run() accepts them too.
     if "toolsets" not in kwargs and hasattr(instance, "toolsets"):
         try:
             toolsets = instance.toolsets
             if toolsets:
-                # Convert toolsets to a list with FULL tool schemas for input
-                shaped_toolsets = []
-                for ts in toolsets:
-                    ts_info = {
-                        "id": getattr(ts, "id", str(type(ts).__name__)),
-                        "label": getattr(ts, "label", None),
-                    }
-                    # Add full tool schemas (not just names) since toolsets can be passed to agent.run()
-                    if hasattr(ts, "tools") and ts.tools:
-                        tools_list = []
-                        tools_dict = ts.tools
-                        # tools is a dict mapping tool name -> Tool object
-                        for tool_name, tool_obj in tools_dict.items():
-                            tool_dict = {
-                                "name": tool_name,
-                            }
-                            # Extract description
-                            if hasattr(tool_obj, "description") and tool_obj.description:
-                                tool_dict["description"] = tool_obj.description
-                            # Extract JSON schema for parameters
-                            if hasattr(tool_obj, "function_schema") and hasattr(
-                                tool_obj.function_schema, "json_schema"
-                            ):
-                                tool_dict["parameters"] = tool_obj.function_schema.json_schema
-                            tools_list.append(tool_dict)
-                        ts_info["tools"] = tools_list
-                    shaped_toolsets.append(ts_info)
-                input_data["toolsets"] = shaped_toolsets
+                input_data["toolsets"] = [_shape_toolset(ts) for ts in toolsets]
         except Exception as e:
             logger.debug(f"Failed to extract toolsets from agent: {e}")
 
-    # Extract system_prompt from agent if not passed as kwarg
-    # Note: system_prompt goes in input (not metadata) because it's semantically part of the LLM input
-    # Pydantic AI doesn't expose a public API for this, so we access the private _system_prompts
-    # attribute. This is wrapped in try/except to gracefully handle if the internal structure changes.
+    # Accessing `_system_prompts` is private API; guard against removal.
     if "system_prompt" not in kwargs:
         try:
             if hasattr(instance, "_system_prompts") and instance._system_prompts:
@@ -1595,13 +1460,30 @@ def _build_agent_input_and_metadata(args: Any, kwargs: Any, instance: Any) -> tu
     return input_data, metadata
 
 
-def _build_direct_model_input_and_metadata(args: Any, kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Build input data and metadata for direct model request wrappers.
+def _shape_toolset(ts: Any) -> dict[str, Any]:
+    ts_info: dict[str, Any] = {
+        "id": getattr(ts, "id", type(ts).__name__),
+        "label": getattr(ts, "label", None),
+    }
+    tools_dict = getattr(ts, "tools", None)
+    if tools_dict:
+        tools_list = []
+        for tool_name, tool_obj in tools_dict.items():
+            tool_dict: dict[str, Any] = {"name": tool_name}
+            description = getattr(tool_obj, "description", None)
+            if description:
+                tool_dict["description"] = description
+            function_schema = getattr(tool_obj, "function_schema", None)
+            json_schema = getattr(function_schema, "json_schema", None) if function_schema is not None else None
+            if json_schema is not None:
+                tool_dict["parameters"] = json_schema
+            tools_list.append(tool_dict)
+        ts_info["tools"] = tools_list
+    return ts_info
 
-    Returns:
-        Tuple of (input_data, metadata)
-    """
-    input_data = {}
+
+def _build_direct_model_input_and_metadata(args: Any, kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    input_data: dict[str, Any] = {}
 
     model = args[0] if len(args) > 0 else kwargs.get("model")
     if model is not None:
@@ -1611,9 +1493,9 @@ def _build_direct_model_input_and_metadata(args: Any, kwargs: Any) -> tuple[dict
     if messages:
         input_data["messages"] = _shape_messages(messages)
 
-    for key, value in kwargs.items():
-        if key not in ["model", "messages"]:
-            input_data[key] = value
+    for key in _DIRECT_MODEL_INPUT_ALLOWLIST:
+        if key in kwargs:
+            input_data[key] = kwargs[key]
 
     model_name, provider = _parse_model_string(model)
     metadata = _build_model_metadata(model_name, provider)

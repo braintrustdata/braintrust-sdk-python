@@ -709,25 +709,28 @@ def test_direct_model_request_sync(memory_logger, direct):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_direct_model_request_with_settings(memory_logger, direct):
-    """Test that model_settings appears in input for direct API calls."""
+    """Test that model_settings appears in input for direct API calls, and that the
+    non-allowlisted `instrument` kwarg (telemetry routing config) does not leak."""
     assert not memory_logger.pop()
 
     messages = [ModelRequest(parts=[UserPromptPart(content="Say hello")])]
     custom_settings = ModelSettings(max_tokens=50, temperature=0.7)
 
     start = time.time()
-    result = await direct.model_request(model=MODEL, messages=messages, model_settings=custom_settings)
+    result = await direct.model_request(
+        model=MODEL,
+        messages=messages,
+        model_settings=custom_settings,
+        # Does not affect the outbound HTTP request; must be dropped from span input.
+        instrument=False,
+    )
     end = time.time()
 
-    # Verify result
     assert result.parts
 
-    # Check spans
     spans = memory_logger.pop()
-    # Direct API calls may create 1 or 2 spans depending on model wrapping
     assert len(spans) >= 1
 
-    # Find the direct API span
     direct_span = next((s for s in spans if s["span_attributes"]["name"] == "model_request"), None)
     assert direct_span is not None
 
@@ -739,10 +742,11 @@ async def test_direct_model_request_with_settings(memory_logger, direct):
     assert settings["max_tokens"] == 50
     assert settings["temperature"] == 0.7
 
-    # Verify model_settings is NOT in metadata
     assert "model_settings" not in direct_span["metadata"], "model_settings should NOT be in metadata"
 
-    # Verify metadata still has model and provider
+    # Security invariant: `instrument` is telemetry-routing config, not user input.
+    assert "instrument" not in direct_span["input"]
+
     assert direct_span["metadata"]["model"] == "gpt-4o-mini"
     assert direct_span["metadata"]["provider"] == "openai"
 
@@ -1103,22 +1107,29 @@ async def test_agent_with_message_history(memory_logger):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agent_with_custom_settings(memory_logger):
-    """Test Agent with custom model settings."""
+    """Test Agent with custom model settings, and that non-allowlisted kwargs
+    (`infer_name`, `usage`) do not leak into span input."""
+    from pydantic_ai.usage import RunUsage
+
     assert not memory_logger.pop()
 
     agent = Agent(MODEL)
 
     start = time.time()
-    result = await agent.run("Say hello", model_settings=ModelSettings(max_tokens=20, temperature=0.5, top_p=0.9))
+    result = await agent.run(
+        "Say hello",
+        model_settings=ModelSettings(max_tokens=20, temperature=0.5, top_p=0.9),
+        # Neither affects the outbound HTTP request; both must be dropped from span input.
+        infer_name=False,
+        usage=RunUsage(),
+    )
     end = time.time()
 
     assert result.output
 
-    # Check spans - should now have parent agent_run + nested chat span
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
-    # Find agent_run span
     agent_span = next(
         (
             s
@@ -1135,6 +1146,11 @@ async def test_agent_with_custom_settings(memory_logger):
     assert settings["max_tokens"] == 20
     assert settings["temperature"] == 0.5
     assert settings["top_p"] == 0.9
+
+    # Security invariant: non-allowlisted kwargs must not leak into span input.
+    assert "infer_name" not in agent_span["input"]
+    assert "usage" not in agent_span["input"]
+
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
@@ -2370,33 +2386,25 @@ def test_wrap_model_instance_does_not_emit_public_deprecation_warning():
     assert not [warning for warning in caught if issubclass(warning.category, DeprecationWarning)]
 
 
-def test_v2_message_and_response_fields_are_shaped():
+def test_shape_message_and_response_pass_through_when_no_binary():
+    # No binary content -> return the object unchanged so Braintrust's dataclass/Pydantic
+    # serializer preserves every field (including new v2 fields like state, provider_name,
+    # run_id, conversation_id, metadata, ...). Reshaping was dropping those.
     from types import SimpleNamespace
 
     from braintrust.integrations.pydantic_ai.tracing import _shape_message, _shape_model_response
 
     message = SimpleNamespace(kind="request", state="complete", parts=["hello"])
-    assert _shape_message(message)["state"] == "complete"
+    assert _shape_message(message) is message
 
     response = SimpleNamespace(
         kind="response",
         state="complete",
         model_name="gpt-4o-mini",
         provider_name="openai",
-        provider_url="https://api.openai.com/v1/responses",
-        finish_reason="stop",
-        run_id="run-123",
-        conversation_id="conv-123",
         parts=["done"],
     )
-
-    shaped = _shape_model_response(response)
-    assert shaped["state"] == "complete"
-    assert shaped["provider_name"] == "openai"
-    assert shaped["provider_url"] == "https://api.openai.com/v1/responses"
-    assert shaped["finish_reason"] == "stop"
-    assert shaped["run_id"] == "run-123"
-    assert shaped["conversation_id"] == "conv-123"
+    assert _shape_model_response(response) is response
 
 
 def test_v2_model_provider_inference():
