@@ -1037,26 +1037,17 @@ def _promoted_metrics(metrics_obj: Any, metrics_type: str | None) -> dict[str, A
 
 
 def _get_number(obj: Any, name: str) -> float | int | None:
-    value = getattr(obj, name, None) if obj is not None else None
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, (int, float)):
-        return value
-    return None
-
-
-def _get_positive_number(obj: Any, name: str) -> float | int | None:
-    value = _get_number(obj, name)
-    if value is None or value <= 0:
+    value = getattr(obj, name, None)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
     return value
 
 
+def _get_positive_number(obj: Any, name: str) -> float | int | None:
+    value = _get_number(obj, name)
+    return value if value is not None and value > 0 else None
+
+
 def _get_str(obj: Any, name: str) -> str | None:
-    if obj is None:
-        return None
-    if isinstance(obj, dict):
-        value = obj.get(name)
-    else:
-        value = getattr(obj, name, None)
+    value = obj.get(name) if isinstance(obj, dict) else getattr(obj, name, None)
     return value if isinstance(value, str) else None
