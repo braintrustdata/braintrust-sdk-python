@@ -1076,9 +1076,7 @@ def _shape_content_part(part: Any) -> Any:
         return part
 
     shaped_content = (
-        [_shape_content_part(item) for item in content]
-        if isinstance(content, list)
-        else _shape_content_part(content)
+        [_shape_content_part(item) for item in content] if isinstance(content, list) else _shape_content_part(content)
     )
     return _shape_object(part, fields=_PART_FIELDS, overrides={"content": shaped_content})
 
