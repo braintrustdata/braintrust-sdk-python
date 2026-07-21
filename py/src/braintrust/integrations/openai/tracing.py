@@ -162,19 +162,13 @@ _IMAGE_METADATA_PARAMS = (
 )
 
 
-def _get_attr(obj: Any, key: str) -> Any:
-    if isinstance(obj, dict):
-        return obj.get(key)
-    return getattr(obj, key, None)
-
-
 def _filter_metadata(params: dict[str, Any], allowlist: tuple[str, ...]) -> dict[str, Any]:
     metadata: dict[str, Any] = {"provider": "openai"}
     for key in allowlist:
         if key not in params:
             continue
         value = params[key]
-        if value is None or _is_not_given(value):
+        if _is_not_given(value):
             continue
         if key == "response_format":
             value = _serialize_response_format(value)
@@ -560,7 +554,7 @@ def _responses_raw_parse_wrapper(wrapped, instance, args, kwargs):
 
 
 def _choices_output(response: Any, *, audio_format: str | None) -> Any:
-    choices = _get_attr(response, "choices")
+    choices = getattr(response, "choices", None)
     if choices is None:
         return None
     dumped = [_try_to_dict(choice) for choice in choices]
@@ -1265,19 +1259,19 @@ class ResponseWrapper:
         if not result:
             return data
 
-        output = _get_attr(result, "output")
+        output = getattr(result, "output", None)
         if output is not None:
             data["output"] = output
 
         metadata = {}
         for key in _RESPONSES_RESULT_METADATA_KEYS:
-            value = _get_attr(result, key)
+            value = getattr(result, key, None)
             if value is not None:
                 metadata[key] = value
         if metadata:
             data["metadata"] = metadata
 
-        usage = _get_attr(result, "usage")
+        usage = getattr(result, "usage", None)
         if usage is not None:
             data["metrics"] = _parse_metrics_from_usage(usage)
 
