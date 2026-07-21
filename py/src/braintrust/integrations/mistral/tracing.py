@@ -261,11 +261,11 @@ def _build_request_metadata(
         value = kwargs.get(key)
         if value is None or _is_unset(value):
             continue
-        metadata[key] = _normalize_mistral_multimodal_value(value)
+        metadata[key] = value
 
     request_metadata = kwargs.get("metadata")
     if request_metadata is not None and not _is_unset(request_metadata):
-        metadata["request_metadata"] = _normalize_mistral_multimodal_value(request_metadata)
+        metadata["request_metadata"] = request_metadata
 
     if stream is not None:
         metadata["stream"] = stream
@@ -452,47 +452,38 @@ def _merge_ocr_metrics(start_time: float, usage: Any) -> dict[str, Any]:
     return _merge_timing_and_usage_metrics(start_time, usage, _parse_ocr_usage_metrics)
 
 
-def _response_data_to_metadata(data: dict[str, Any] | None) -> dict[str, Any]:
-    if data is None:
+def _response_to_metadata(response: Any) -> dict[str, Any]:
+    if response is None:
         return {}
 
     metadata = {}
     for key in ("id", "model", "object", "created"):
-        value = data.get(key)
+        value = _get_value(response, key)
         if value is not None:
             metadata[key] = value
     return metadata
 
 
-def _response_to_metadata(response: Any) -> dict[str, Any]:
-    return _response_data_to_metadata(_normalized_mistral_dict(response))
-
-
-def _conversation_outputs_data(data: dict[str, Any] | None) -> list[Any]:
-    if data is None:
-        return []
-
-    outputs = data.get("outputs")
+def _conversation_outputs(response: Any) -> list[Any]:
+    outputs = _get_value(response, "outputs")
     return outputs if isinstance(outputs, list) else []
 
 
-def _conversation_response_data_to_metadata(data: dict[str, Any] | None) -> dict[str, Any]:
-    if data is None:
+def _conversation_response_metadata(response: Any) -> dict[str, Any]:
+    if response is None:
         return {}
 
     metadata = {}
-    conversation_id = data.get("conversation_id")
+    conversation_id = _get_value(response, "conversation_id")
     if conversation_id is not None:
         metadata["conversation_id"] = conversation_id
 
-    object_type = data.get("object")
+    object_type = _get_value(response, "object")
     if object_type is not None:
         metadata["object"] = object_type
 
-    for output in _conversation_outputs_data(data):
-        if not isinstance(output, dict):
-            continue
-        model = output.get("model")
+    for output in _conversation_outputs(response):
+        model = _get_value(output, "model")
         if model is not None:
             metadata["model"] = model
             break
@@ -511,19 +502,6 @@ def _embeddings_output(response: Any) -> dict[str, Any]:
     }
     if first is not None and getattr(first, "index", None) is not None:
         output["first_index"] = first.index
-    return output
-
-
-def _ocr_output_data(data: dict[str, Any] | None) -> dict[str, Any]:
-    if data is None:
-        return {"pages": []}
-
-    output = {
-        "pages": data.get("pages") or [],
-    }
-    document_annotation = data.get("document_annotation")
-    if document_annotation is not None:
-        output["document_annotation"] = document_annotation
     return output
 
 
@@ -719,11 +697,11 @@ def _aggregate_transcription_events(items: list[Any]) -> dict[str, Any]:
     if model is not None:
         result["model"] = model
     if usage is not None:
-        result["usage"] = _normalize_mistral_multimodal_value(usage)
+        result["usage"] = usage
     if language is not None:
         result["language"] = language
     if isinstance(segments, list):
-        result["segments"] = _normalize_mistral_multimodal_value(segments)
+        result["segments"] = segments
     if finish_reason is not None:
         result["finish_reason"] = finish_reason
     return result
@@ -754,7 +732,7 @@ def _aggregate_speech_events(items: list[Any]) -> dict[str, Any]:
 
     result = {"audio_data": "".join(audio_parts)}
     if usage is not None:
-        result["usage"] = _normalize_mistral_multimodal_value(usage)
+        result["usage"] = usage
     return result
 
 
@@ -814,7 +792,7 @@ def _aggregate_completion_events(items: list[Any]) -> dict[str, Any]:
     if created is not None:
         result["created"] = created
     if usage is not None:
-        result["usage"] = _normalize_mistral_multimodal_value(usage)
+        result["usage"] = usage
     return result
 
 
@@ -962,7 +940,7 @@ def _aggregate_conversation_events(items: list[Any]) -> dict[str, Any]:
     if conversation_id is not None:
         result["conversation_id"] = conversation_id
     if usage is not None:
-        result["usage"] = _normalize_mistral_multimodal_value(usage)
+        result["usage"] = usage
     return result
 
 
@@ -975,27 +953,21 @@ def _maybe_parse_tool_arguments(arguments: Any) -> Any:
         return arguments
 
 
-def _completion_tool_calls(response_data: dict[str, Any] | None) -> list[tuple[int, int, dict[str, Any]]]:
-    if not response_data:
-        return []
-
-    tool_calls = []
-    choices = response_data.get("choices")
+def _completion_tool_calls(response: Any) -> list[tuple[int, int, Any]]:
+    choices = _get_value(response, "choices")
     if not isinstance(choices, list):
         return []
 
+    tool_calls = []
     for choice_index, choice in enumerate(choices):
-        if not isinstance(choice, dict):
+        message = _get_value(choice, "message")
+        if message is None:
             continue
-        message = choice.get("message")
-        if not isinstance(message, dict):
-            continue
-        choice_tool_calls = message.get("tool_calls")
+        choice_tool_calls = _get_value(message, "tool_calls")
         if not isinstance(choice_tool_calls, list):
             continue
         for tool_index, tool_call in enumerate(choice_tool_calls):
-            if isinstance(tool_call, dict):
-                tool_calls.append((choice_index, tool_index, tool_call))
+            tool_calls.append((choice_index, tool_index, tool_call))
     return tool_calls
 
 
@@ -1020,111 +992,105 @@ def _start_child_tool_span(
         pass
 
 
-def _log_completion_tool_spans(response_data: dict[str, Any] | None, *, parent_span: Any) -> None:
-    tool_calls = _completion_tool_calls(response_data)
+def _log_completion_tool_spans(response: Any, *, parent_span: Any) -> None:
+    tool_calls = _completion_tool_calls(response)
     if not tool_calls:
         return
 
     parent_export = parent_span.export() if parent_span is not None else None
     for choice_index, tool_index, tool_call in tool_calls:
-        function = tool_call.get("function") if isinstance(tool_call.get("function"), dict) else {}
-        tool_type = tool_call.get("type") or ("function" if function else None)
-        name = function.get("name") or tool_type or "tool"
+        function = _get_value(tool_call, "function")
+        function_name = _get_value(function, "name") if function is not None else None
+        tool_type = _get_value(tool_call, "type") or ("function" if function is not None else None)
+        arguments = _get_value(function, "arguments") if function is not None else None
+        call_index = _get_value(tool_call, "index")
         _start_child_tool_span(
             parent_export=parent_export,
-            name=name,
-            tool_input=_maybe_parse_tool_arguments(function.get("arguments")),
+            name=function_name or tool_type or "tool",
+            tool_input=_maybe_parse_tool_arguments(arguments),
             metadata={
-                "tool_call_id": tool_call.get("id"),
+                "tool_call_id": _get_value(tool_call, "id"),
                 "tool_type": tool_type,
-                "tool_index": tool_call.get("index", tool_index),
+                "tool_index": call_index if isinstance(call_index, int) else tool_index,
                 "choice_index": choice_index,
             },
         )
 
 
-def _conversation_tool_outputs(response_data: dict[str, Any] | None) -> list[tuple[int, dict[str, Any]]]:
+def _conversation_tool_outputs(response: Any) -> list[tuple[int, Any]]:
     tool_outputs = []
-    for output_index, output in enumerate(_conversation_outputs_data(response_data)):
-        if not isinstance(output, dict):
-            continue
-        output_type = output.get("type")
+    for output_index, output in enumerate(_conversation_outputs(response)):
+        output_type = _get_value(output, "type")
         if output_type in {"tool.execution", "tool_execution"}:
             tool_outputs.append((output_index, output))
     return tool_outputs
 
 
-def _log_conversation_tool_spans(response_data: dict[str, Any] | None, *, parent_span: Any) -> None:
-    tool_outputs = _conversation_tool_outputs(response_data)
+def _log_conversation_tool_spans(response: Any, *, parent_span: Any) -> None:
+    tool_outputs = _conversation_tool_outputs(response)
     if not tool_outputs:
         return
 
     parent_export = parent_span.export() if parent_span is not None else None
     for output_index, output in tool_outputs:
-        tool_type = output.get("type")
-        name = output.get("name") or tool_type or "tool"
-        tool_output = output.get("info") if "info" in output else output.get("output")
+        tool_type = _get_value(output, "type")
+        info = _get_value(output, "info")
+        tool_output = info if info is not None else _get_value(output, "output")
         _start_child_tool_span(
             parent_export=parent_export,
-            name=name,
-            tool_input=_maybe_parse_tool_arguments(output.get("arguments")),
+            name=_get_value(output, "name") or tool_type or "tool",
+            tool_input=_maybe_parse_tool_arguments(_get_value(output, "arguments")),
             output=tool_output,
             metadata={
-                "tool_call_id": output.get("id") or output.get("tool_call_id"),
+                "tool_call_id": _get_value(output, "id", "tool_call_id"),
                 "tool_type": tool_type,
                 "tool_index": output_index,
-                "agent_id": output.get("agent_id"),
-                "model": output.get("model"),
+                "agent_id": _get_value(output, "agent_id"),
+                "model": _get_value(output, "model"),
             },
         )
 
 
 def _finalize_completion_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
-    response_data = _normalized_mistral_dict(response)
-    response_metadata = _response_data_to_metadata(response_data)
-    usage = response_data.get("usage") if response_data else None
-
-    _log_completion_tool_spans(response_data, parent_span=span)
+    _log_completion_tool_spans(response, parent_span=span)
     _log_and_end_span(
         span,
-        output=response_data.get("choices") if response_data else None,
-        metrics=_merge_metrics(start_time, usage),
-        metadata={**request_metadata, **response_metadata},
+        output=_get_value(response, "choices"),
+        metrics=_merge_metrics(start_time, _get_value(response, "usage")),
+        metadata={**request_metadata, **_response_to_metadata(response)},
     )
 
 
 def _finalize_conversation_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
-    response_data = _normalized_mistral_dict(response)
-    response_metadata = _conversation_response_data_to_metadata(response_data)
-    usage = response_data.get("usage") if response_data else None
-    _log_conversation_tool_spans(response_data, parent_span=span)
+    _log_conversation_tool_spans(response, parent_span=span)
     _log_and_end_span(
         span,
-        output=_conversation_outputs_data(response_data),
-        metrics=_merge_metrics(start_time, usage),
-        metadata={**request_metadata, **response_metadata},
+        output=_conversation_outputs(response),
+        metrics=_merge_metrics(start_time, _get_value(response, "usage")),
+        metadata={**request_metadata, **_conversation_response_metadata(response)},
     )
 
 
 def _finalize_embeddings_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
-    response_metadata = _response_to_metadata(response)
     _log_and_end_span(
         span,
         output=_embeddings_output(response),
-        metrics=_merge_metrics(start_time, getattr(response, "usage", None)),
-        metadata={**request_metadata, **response_metadata},
+        metrics=_merge_metrics(start_time, _get_value(response, "usage")),
+        metadata={**request_metadata, **_response_to_metadata(response)},
     )
 
 
 def _finalize_ocr_response(span: Any, request_metadata: dict[str, Any], response: Any, start_time: float):
-    response_data = _normalized_mistral_dict(response)
-    pages = response_data.get("pages") if response_data else None
+    pages = _get_value(response, "pages")
     response_metadata = {"page_count": len(pages)} if isinstance(pages, list) else {}
-    usage_info = response_data.get("usage_info") if response_data else None
+    output: dict[str, Any] = {"pages": pages if isinstance(pages, list) else []}
+    document_annotation = _get_value(response, "document_annotation")
+    if document_annotation is not None:
+        output["document_annotation"] = document_annotation
     _log_and_end_span(
         span,
-        output=_ocr_output_data(response_data),
-        metrics=_merge_ocr_metrics(start_time, usage_info),
+        output=output,
+        metrics=_merge_ocr_metrics(start_time, _get_value(response, "usage_info")),
         metadata={**request_metadata, **response_metadata},
     )
 
@@ -1156,13 +1122,12 @@ def _finalize_completion_stream(
     first_token_time: float | None,
 ):
     response = _aggregate_completion_events(items)
-    response_metadata = _response_data_to_metadata(response)
     _log_completion_tool_spans(response, parent_span=span)
     _log_and_end_span(
         span,
         output=response.get("choices"),
         metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
-        metadata={**metadata, **response_metadata},
+        metadata={**metadata, **_response_to_metadata(response)},
     )
 
 
@@ -1174,13 +1139,12 @@ def _finalize_conversation_stream(
     first_token_time: float | None,
 ):
     response = _aggregate_conversation_events(items)
-    response_metadata = _conversation_response_data_to_metadata(response)
     _log_conversation_tool_spans(response, parent_span=span)
     _log_and_end_span(
         span,
         output=response.get("outputs"),
         metrics=_merge_metrics(start_time, response.get("usage"), first_token_time),
-        metadata={**metadata, **response_metadata},
+        metadata={**metadata, **_conversation_response_metadata(response)},
     )
 
 
