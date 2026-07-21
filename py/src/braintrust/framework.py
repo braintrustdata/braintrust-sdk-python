@@ -1324,6 +1324,19 @@ def _build_classification_span_output(
     return grouped_output
 
 
+def _normalize_score(value: Any, error_message: str) -> ScoreLike:
+    original_value = value
+    if isinstance(value, dict):
+        try:
+            value = Score.from_dict(value)
+        except Exception as e:
+            raise ValueError(f"{error_message} Got: {original_value}") from e
+
+    if not is_score(value):
+        raise ValueError(f"{error_message} Got: {original_value}")
+    return value
+
+
 def _validate_classification_result(value: Any, classifier_name: str) -> Classification:
     if isinstance(value, Mapping):
         if not value:
@@ -1455,18 +1468,16 @@ async def _run_evaluator_internal_impl(
 
             result = await call_user_fn(event_loop, score, **kwargs)
             if isinstance(result, dict):
-                try:
-                    result = Score.from_dict(result)
-                except Exception as e:
-                    raise ValueError(f"When returning a dict, it must be a valid Score object. Got: {result}") from e
+                result = _normalize_score(result, "When returning a dict, it must be a valid Score object.")
 
             if isinstance(result, Iterable) and not isinstance(result, (str, bytes, Mapping)):
-                for s in result:
-                    if not is_score(s):
-                        raise ValueError(
-                            f"When returning an array of scores, each score must be a valid Score object. Got: {s}"
-                        )
-                result = list(result)
+                result = [
+                    _normalize_score(
+                        score,
+                        "When returning an array of scores, each score must be a valid Score object.",
+                    )
+                    for score in result
+                ]
             elif is_score(result):
                 result = [result]
             else:

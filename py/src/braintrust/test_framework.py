@@ -297,6 +297,46 @@ async def test_run_evaluator_with_many_scorers():
 
 
 @pytest.mark.asyncio
+async def test_run_evaluator_normalizes_list_of_dict_scores():
+    data = [
+        EvalCase(input=1, expected=1),
+        EvalCase(input=2, expected=2),
+    ]
+
+    def simple_task(input_value):
+        return input_value
+
+    def list_dict_scorer(input_value, output, expected):
+        return [
+            {"name": "per_result", "score": 1.0},
+            {"name": "summary_only", "score": 1.0},
+        ]
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-list-dict-scorer",
+        data=data,
+        task=simple_task,
+        scores=[list_dict_scorer],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    result = await run_evaluator(None, evaluator, None, [])
+
+    assert isinstance(result, EvalResultWithSummary)
+    assert len(result.results) == 2
+
+    for eval_result in result.results:
+        assert eval_result.scores["per_result"] == 1.0
+        assert eval_result.scores["summary_only"] == 1.0
+
+    assert result.summary.project_name == "test-project"
+    assert result.summary.scores["per_result"].score == 1.0
+    assert result.summary.scores["summary_only"].score == 1.0
+
+
+@pytest.mark.asyncio
 @pytest.mark.skipif(
     sys.version_info < (3, 14),
     reason="PEP 649 lazy annotation evaluation is 3.14+",
