@@ -499,8 +499,12 @@ class ChatCompletionWrapper:
             start = time.time()
             create_response = await self.acreate_fn(*args, **kwargs)
 
+            parse_was_awaitable = False
             if hasattr(create_response, "parse"):
                 raw_response = create_response.parse()
+                if inspect.isawaitable(raw_response):
+                    parse_was_awaitable = True
+                    raw_response = await raw_response
                 log_headers(create_response, span)
             else:
                 raw_response = create_response
@@ -529,7 +533,11 @@ class ChatCompletionWrapper:
                 should_end = False
                 streamer = gen()
                 if raw_requested and hasattr(create_response, "parse"):
-                    return _RawResponseWithTracedStream(create_response, _AsyncTracedStream(raw_response, streamer))
+                    return _RawResponseWithTracedStream(
+                        create_response,
+                        _AsyncTracedStream(raw_response, streamer),
+                        async_parse=parse_was_awaitable,
+                    )
                 return _AsyncTracedStream(raw_response, streamer)
             else:
                 log_response = _try_to_dict(raw_response)
