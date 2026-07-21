@@ -709,25 +709,28 @@ def test_direct_model_request_sync(memory_logger, direct):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_direct_model_request_with_settings(memory_logger, direct):
-    """Test that model_settings appears in input for direct API calls."""
+    """Test that model_settings appears in input for direct API calls, and that the
+    non-allowlisted `instrument` kwarg (telemetry routing config) does not leak."""
     assert not memory_logger.pop()
 
     messages = [ModelRequest(parts=[UserPromptPart(content="Say hello")])]
     custom_settings = ModelSettings(max_tokens=50, temperature=0.7)
 
     start = time.time()
-    result = await direct.model_request(model=MODEL, messages=messages, model_settings=custom_settings)
+    result = await direct.model_request(
+        model=MODEL,
+        messages=messages,
+        model_settings=custom_settings,
+        # Does not affect the outbound HTTP request; must be dropped from span input.
+        instrument=False,
+    )
     end = time.time()
 
-    # Verify result
     assert result.parts
 
-    # Check spans
     spans = memory_logger.pop()
-    # Direct API calls may create 1 or 2 spans depending on model wrapping
     assert len(spans) >= 1
 
-    # Find the direct API span
     direct_span = next((s for s in spans if s["span_attributes"]["name"] == "model_request"), None)
     assert direct_span is not None
 
@@ -739,10 +742,11 @@ async def test_direct_model_request_with_settings(memory_logger, direct):
     assert settings["max_tokens"] == 50
     assert settings["temperature"] == 0.7
 
-    # Verify model_settings is NOT in metadata
     assert "model_settings" not in direct_span["metadata"], "model_settings should NOT be in metadata"
 
-    # Verify metadata still has model and provider
+    # Security invariant: `instrument` is telemetry-routing config, not user input.
+    assert "instrument" not in direct_span["input"]
+
     assert direct_span["metadata"]["model"] == "gpt-4o-mini"
     assert direct_span["metadata"]["provider"] == "openai"
 
@@ -1103,22 +1107,29 @@ async def test_agent_with_message_history(memory_logger):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agent_with_custom_settings(memory_logger):
-    """Test Agent with custom model settings."""
+    """Test Agent with custom model settings, and that non-allowlisted kwargs
+    (`infer_name`, `usage`) do not leak into span input."""
+    from pydantic_ai.usage import RunUsage
+
     assert not memory_logger.pop()
 
     agent = Agent(MODEL)
 
     start = time.time()
-    result = await agent.run("Say hello", model_settings=ModelSettings(max_tokens=20, temperature=0.5, top_p=0.9))
+    result = await agent.run(
+        "Say hello",
+        model_settings=ModelSettings(max_tokens=20, temperature=0.5, top_p=0.9),
+        # Neither affects the outbound HTTP request; both must be dropped from span input.
+        infer_name=False,
+        usage=RunUsage(),
+    )
     end = time.time()
 
     assert result.output
 
-    # Check spans - should now have parent agent_run + nested chat span
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
-    # Find agent_run span
     agent_span = next(
         (
             s
@@ -1135,6 +1146,11 @@ async def test_agent_with_custom_settings(memory_logger):
     assert settings["max_tokens"] == 20
     assert settings["temperature"] == 0.5
     assert settings["top_p"] == 0.9
+
+    # Security invariant: non-allowlisted kwargs must not leak into span input.
+    assert "infer_name" not in agent_span["input"]
+    assert "usage" not in agent_span["input"]
+
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
@@ -2121,55 +2137,6 @@ def test_agent_tool_with_custom_name():
     assert "parameters" in tool, "Tool should have parameters schema"
     assert "a" in tool["parameters"]["properties"]
     assert "b" in tool["parameters"]["properties"]
-
-
-def test_agent_input_kwargs_are_allowlisted():
-    """Sensitive/opaque kwargs (deps, usage, event_stream_handler, infer_name) must NOT
-    leak into span input; allowlisted ones (model_settings, usage_limits, instructions,
-    metadata, retries, conversation_id) must."""
-    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
-
-    agent = Agent(MODEL)
-
-    kwargs = {
-        # Allowlisted -> included in input.
-        "instructions": "be brief",
-        "usage_limits": UsageLimits(request_limit=5),
-        "retries": 2,
-        "conversation_id": "conv-42",
-        "metadata": {"user_tag": "trace-me"},
-        # Not allowlisted -> excluded.
-        "deps": {"api_key": "sk-secret-should-not-leak"},
-        "usage": object(),
-        "event_stream_handler": lambda _event: None,
-        "infer_name": False,
-    }
-    input_data, _ = _build_agent_input_and_metadata(("hi",), kwargs, agent)
-
-    for key in ("instructions", "usage_limits", "retries", "conversation_id", "metadata"):
-        assert key in input_data, f"{key} must be in input"
-    for key in ("deps", "usage", "event_stream_handler", "infer_name"):
-        assert key not in input_data, f"{key} must not leak into span input"
-    assert "sk-secret-should-not-leak" not in str(input_data)
-
-
-def test_direct_model_request_kwargs_are_allowlisted():
-    """`instrument` (telemetry routing) must not leak; `model_settings` /
-    `model_request_parameters` are allowlisted."""
-    from braintrust.integrations.pydantic_ai.tracing import _build_direct_model_input_and_metadata
-
-    kwargs = {
-        "model_settings": {"temperature": 0.1},
-        "model_request_parameters": {"tools": []},
-        "instrument": True,
-        "future_secret_kwarg": "sk-nope",
-    }
-    input_data, _ = _build_direct_model_input_and_metadata((), kwargs)
-
-    assert "model_settings" in input_data
-    assert "model_request_parameters" in input_data
-    assert "instrument" not in input_data
-    assert "future_secret_kwarg" not in input_data
 
 
 def test_explicit_toolsets_kwarg_in_input():
