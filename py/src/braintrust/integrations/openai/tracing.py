@@ -170,7 +170,7 @@ def _filter_metadata(params: dict[str, Any], allowlist: tuple[str, ...]) -> dict
         value = params[key]
         if _is_not_given(value):
             continue
-        if key == "response_format":
+        if key in ("response_format", "text_format"):
             value = _serialize_response_format(value)
         metadata[key] = value
     return metadata
