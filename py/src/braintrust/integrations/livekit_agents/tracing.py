@@ -1,5 +1,3 @@
-"""Direct tracing helpers for LiveKit Agents."""
-
 import asyncio
 import contextlib
 import io
@@ -51,7 +49,6 @@ _ACTIVE_SESSION_PARENT: ContextVar[str | None] = ContextVar("braintrust_livekit_
 
 
 def attach_metrics_handler(obj: Any) -> bool:
-    """Attach one Braintrust metrics listener to a LiveKit event emitter."""
     if getattr(obj, _METRICS_HANDLER_ATTACHED_ATTR, False):
         return True
     on = getattr(obj, "on", None)
@@ -392,10 +389,6 @@ def traced_session_say(wrapped: Any, instance: Any, args: tuple[Any, ...], kwarg
     return wrapped(*args, **kwargs)
 
 
-def traced_metrics_emitter_call(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-    return wrapped(*args, **kwargs)
-
-
 def traced_vad_stream(wrapped: Any, instance: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
     return wrapped(*args, **kwargs)
 
@@ -533,7 +526,6 @@ def _propagate_session_parent_to_start_args(instance: Any, args: tuple[Any, ...]
     if not isinstance(parent, str):
         return
     span = getattr(instance, _SESSION_SPAN_ATTR, None)
-    event_parent = getattr(instance, _SESSION_PARENT_ATTR, None)
     agent = args[0] if args else kwargs.get("agent")
     if agent is not None:
         _set_component_session(agent, parent, span)
@@ -548,7 +540,6 @@ def _propagate_session_parent_to_components(instance: Any) -> None:
     if not isinstance(parent, str):
         return
     span = getattr(instance, _SESSION_SPAN_ATTR, None)
-    event_parent = getattr(instance, _SESSION_PARENT_ATTR, None)
     _set_component_session(instance, parent, span)
     for attr in ("llm", "stt", "tts", "vad", "_llm", "_stt", "_tts", "_vad", "_agent", "agent", "output"):
         component = getattr(instance, attr, None)
@@ -808,72 +799,78 @@ def _log_metric_span(
     output: dict[str, Any] | None = None,
     **metadata: Any,
 ) -> None:
-    metrics_payload = _metrics_from_object(metrics_obj)
-    event = _metric_event(metrics_payload, **metadata)
+    metrics_type = _get_str(metrics_obj, "type")
+    event = _metric_event(metrics_obj, metrics_type, **metadata)
     if name == "eou_detection":
-        event.update(_eou_detection_io(metrics_payload))
+        event.update(_eou_detection_io(metrics_obj))
     if output is not None:
         event["output"] = output
     if name == "eou_detection":
-        start_time, end_time = _eou_detection_span_times(metrics_payload)
+        start_time, end_time = _eou_detection_span_times(metrics_obj)
     else:
-        start_time, end_time = _metric_span_times(metrics_payload)
+        start_time, end_time = _metric_span_times(metrics_obj)
     span = start_span(name=name, type=span_type, start_time=start_time, set_current=False, parent=parent, input=input)
     span.log(**event)
     span.end(end_time=end_time)
 
 
-def _eou_detection_span_times(metrics_payload: dict[str, Any]) -> tuple[float | None, float | None]:
-    timestamp = metrics_payload.get("timestamp")
-    if not isinstance(timestamp, (int, float)) or isinstance(timestamp, bool):
-        return _metric_span_times(metrics_payload)
-    eou_delay = _first_numeric_metric(
-        metrics_payload,
+def _eou_detection_span_times(metrics_obj: Any) -> tuple[float | None, float | None]:
+    timestamp = _get_number(metrics_obj, "timestamp")
+    if timestamp is None:
+        return _metric_span_times(metrics_obj)
+    eou_delay = _first_numeric(
+        metrics_obj,
         "end_of_utterance_delay",
         "end_of_turn_delay",
         "endpointing_delay",
         "eou_delay",
     )
     if eou_delay is None or eou_delay <= 0:
-        return _metric_span_times(metrics_payload)
+        return _metric_span_times(metrics_obj)
     return timestamp - eou_delay, timestamp
 
 
-def _first_numeric_metric(metrics_payload: dict[str, Any], *keys: str) -> float | None:
+def _first_numeric(metrics_obj: Any, *keys: str) -> float | None:
     for key in keys:
-        value = metrics_payload.get(key)
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
+        value = _get_number(metrics_obj, key)
+        if value is not None:
             return float(value)
     return None
 
 
-def _eou_detection_io(metrics_payload: dict[str, Any]) -> dict[str, Any]:
+def _eou_detection_io(metrics_obj: Any) -> dict[str, Any]:
     event: dict[str, Any] = {}
-    text = _latest_user_text(metrics_payload)
+    text = _latest_user_text(metrics_obj)
     if text:
         event["input"] = {"text": text}
-    output = {
-        "probability": metrics_payload.get("probability"),
-        "language": metrics_payload.get("language"),
-        "unlikely_threshold": metrics_payload.get("unlikely_threshold"),
-    }
-    probability = output["probability"]
-    threshold = output["unlikely_threshold"]
-    if isinstance(probability, (int, float)) and isinstance(threshold, (int, float)):
+    probability = _get_number(metrics_obj, "probability")
+    threshold = _get_number(metrics_obj, "unlikely_threshold")
+    language = _get_str(metrics_obj, "language")
+    output: dict[str, Any] = {}
+    if probability is not None:
+        output["probability"] = probability
+    if language is not None:
+        output["language"] = language
+    if threshold is not None:
+        output["unlikely_threshold"] = threshold
+    if probability is not None and threshold is not None:
         output["is_end_of_turn"] = probability >= threshold
-    output = {key: value for key, value in output.items() if value is not None}
     if output:
         event["output"] = output
     return event
 
 
-def _latest_user_text(metrics_payload: dict[str, Any]) -> str | None:
+def _latest_user_text(metrics_obj: Any) -> str | None:
     for key in ("text", "user_text", "transcript", "user_transcript"):
-        value = metrics_payload.get(key)
-        if isinstance(value, str) and value:
+        value = _get_str(metrics_obj, key)
+        if value:
             return value
-    chat_ctx = metrics_payload.get("chat_ctx")
-    parsed = _parse_jsonish(chat_ctx)
+    parsed = _parse_jsonish(getattr(metrics_obj, "chat_ctx", None))
+    if hasattr(parsed, "model_dump"):
+        try:
+            parsed = parsed.model_dump(mode="python")
+        except Exception:
+            parsed = None
     items = parsed.get("items") if isinstance(parsed, dict) else None
     if not isinstance(items, list):
         return None
@@ -903,15 +900,15 @@ def _speech_event_output(event: Any) -> dict[str, Any]:
     return {key: value for key, value in output.items() if value is not None}
 
 
-def _metric_span_times(metrics_payload: dict[str, Any]) -> tuple[float | None, float | None]:
-    timestamp = metrics_payload.get("timestamp")
-    if not isinstance(timestamp, (int, float)) or isinstance(timestamp, bool):
+def _metric_span_times(metrics_obj: Any) -> tuple[float | None, float | None]:
+    timestamp = _get_number(metrics_obj, "timestamp")
+    if timestamp is None:
         return None, None
-    duration = metrics_payload.get("duration")
-    if isinstance(duration, (int, float)) and not isinstance(duration, bool) and duration > 0:
+    duration = _get_positive_number(metrics_obj, "duration")
+    if duration is not None:
         return timestamp - duration, timestamp
-    audio_duration = metrics_payload.get("audio_duration")
-    if isinstance(audio_duration, (int, float)) and not isinstance(audio_duration, bool) and audio_duration > 0:
+    audio_duration = _get_positive_number(metrics_obj, "audio_duration")
+    if audio_duration is not None:
         return timestamp - audio_duration, timestamp
     return timestamp, timestamp
 
@@ -920,146 +917,137 @@ def _log_metric_on_existing_span(obj: Any, metrics_obj: Any) -> None:
     span = getattr(obj, _SESSION_SPAN_ATTR, None)
     if span is None:
         return
-    metrics_payload = _metrics_from_object(metrics_obj)
-    event = _metric_event(metrics_payload)
-    _drop_llm_token_metrics(event, metrics_payload)
+    metrics_type = _get_str(metrics_obj, "type")
+    event = _metric_event(metrics_obj, metrics_type)
     span.log(**event)
 
 
-def _drop_llm_token_metrics(event: dict[str, Any], metrics_payload: dict[str, Any]) -> None:
-    metrics = event.get("metrics")
-    token_fields = (
-        "completion_tokens",
-        "input_tokens",
-        "output_tokens",
-        "prompt_tokens",
-        "tokens",
-        "total_tokens",
-    )
-    if isinstance(metrics, dict):
-        for key in token_fields:
-            metrics.pop(key, None)
-    metadata = event.setdefault("metadata", {})
-    if not isinstance(metadata, dict):
-        return
-    livekit_metrics = metadata.setdefault("livekit_metrics", {})
-    if not isinstance(livekit_metrics, dict):
-        return
-    for key in token_fields:
-        value = metrics_payload.get(key)
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            livekit_metrics.setdefault(key, value)
-
-
-def _metric_event(metrics_payload: dict[str, Any], **metadata: Any) -> dict[str, Any]:
-    bt_metrics = _promoted_metrics(metrics_payload)
-    promoted_metadata = _promoted_metadata(metrics_payload)
+def _metric_event(metrics_obj: Any, metrics_type: str | None, **metadata: Any) -> dict[str, Any]:
+    bt_metrics = _promoted_metrics(metrics_obj, metrics_type)
+    promoted_metadata = _promoted_metadata(metrics_obj)
     metadata_payload = {**promoted_metadata, **metadata}
-    livekit_metrics = _compact_livekit_metrics(metrics_payload, bt_metrics, promoted_metadata)
+    livekit_metrics = _livekit_metrics_from_allowlist(metrics_obj, metrics_type)
     if livekit_metrics:
         metadata_payload["livekit_metrics"] = livekit_metrics
     return {"metrics": bt_metrics, "metadata": metadata_payload}
 
 
-def _metrics_from_object(metrics_obj: Any) -> dict[str, Any]:
-    to_dict = getattr(metrics_obj, "model_dump", None)
-    if callable(to_dict):
-        try:
-            ret = to_dict(mode="python")
-            if isinstance(ret, dict):
-                return ret
-        except Exception:
-            pass
-    return dict(getattr(metrics_obj, "__dict__", {}) or {})
+_LIVEKIT_METRICS_METADATA_ALLOWLIST: dict[str, tuple[str, ...]] = {
+    "llm_metrics": (
+        "cancelled",
+        "completion_tokens",
+        "prompt_cached_tokens",
+        "prompt_tokens",
+        "tokens_per_second",
+        "total_tokens",
+    ),
+    "realtime_model_metrics": (
+        "cancelled",
+        "duration",
+        "input_audio_tokens",
+        "input_cached_audio_tokens",
+        "input_cached_tokens",
+        "input_text_tokens",
+        "input_tokens",
+        "output_audio_tokens",
+        "output_text_tokens",
+        "output_tokens",
+        "tokens_per_second",
+        "total_tokens",
+        "ttft",
+    ),
+    "tts_metrics": ("audio_duration", "cancelled", "characters_count", "streamed"),
+    "stt_metrics": ("audio_duration", "streamed"),
+    "eou_metrics": (
+        "end_of_turn_delay",
+        "end_of_utterance_delay",
+        "endpointing_delay",
+        "eou_delay",
+        "on_user_turn_completed_delay",
+        "transcription_delay",
+    ),
+    "vad_metrics": ("idle_time", "inference_count", "inference_duration_total"),
+}
 
 
-def _compact_livekit_metrics(
-    metrics_payload: dict[str, Any], promoted_metrics: dict[str, Any], promoted_metadata: dict[str, Any]
-) -> dict[str, Any]:
-    promoted_metric_sources = {
-        source
-        for source, dest in _PROMOTED_METRIC_FIELDS
-        if dest in promoted_metrics and metrics_payload.get(source) == promoted_metrics[dest]
-    }
-    if promoted_metrics.get("time_to_first_token") == metrics_payload.get("ttft"):
-        promoted_metric_sources.add("ttft")
-    if promoted_metrics.get("time_to_first_token") == metrics_payload.get("ttfb"):
-        promoted_metric_sources.add("ttfb")
-    promoted_metadata_sources = {
-        source
-        for source in (
-            "label",
-            "request_id",
-            "speech_id",
-            "segment_id",
-            "generation_id",
-            "interrupted",
-            "function_calls",
-            "function_tools",
-        )
-        if source in promoted_metadata and metrics_payload.get(source) == promoted_metadata[source]
-    }
-    compact = {
-        key: value
-        for key, value in metrics_payload.items()
-        if key not in promoted_metric_sources
-        and key not in promoted_metadata_sources
-        and key not in {"metadata", "type"}
-    }
-    return compact
-
-
-def _promoted_metadata(metrics_payload: dict[str, Any]) -> dict[str, Any]:
+def _livekit_metrics_from_allowlist(metrics_obj: Any, metrics_type: str | None) -> dict[str, Any]:
+    allowlist = _LIVEKIT_METRICS_METADATA_ALLOWLIST.get(metrics_type or "", ())
     ret: dict[str, Any] = {}
-    nested_metadata = metrics_payload.get("metadata")
-    if isinstance(nested_metadata, dict):
-        model = nested_metadata.get("model_name")
-        provider = nested_metadata.get("model_provider")
-        if isinstance(model, str):
-            ret["model"] = model
-        if isinstance(provider, str):
-            ret["provider"] = provider
-    for source, dest in (
-        ("label", "label"),
-        ("request_id", "request_id"),
-        ("speech_id", "speech_id"),
-        ("segment_id", "segment_id"),
-        ("generation_id", "generation_id"),
-        ("function_calls", "function_calls"),
-        ("function_tools", "function_tools"),
-    ):
-        value = metrics_payload.get(source)
-        if isinstance(value, str):
-            ret[dest] = value
-    interrupted = metrics_payload.get("interrupted")
+    for field in allowlist:
+        value = getattr(metrics_obj, field, None)
+        if value is None:
+            continue
+        if hasattr(value, "model_dump"):
+            try:
+                value = value.model_dump(mode="python")
+            except Exception:
+                continue
+        ret[field] = value
+    return ret
+
+
+_PROMOTED_METADATA_STRING_FIELDS = (
+    "label",
+    "request_id",
+    "speech_id",
+    "segment_id",
+    "generation_id",
+    "function_calls",
+    "function_tools",
+)
+
+
+def _promoted_metadata(metrics_obj: Any) -> dict[str, Any]:
+    ret: dict[str, Any] = {}
+    nested_metadata = getattr(metrics_obj, "metadata", None)
+    model = _get_str(nested_metadata, "model_name") if nested_metadata is not None else None
+    provider = _get_str(nested_metadata, "model_provider") if nested_metadata is not None else None
+    if model is not None:
+        ret["model"] = model
+    if provider is not None:
+        ret["provider"] = provider
+    for field in _PROMOTED_METADATA_STRING_FIELDS:
+        value = _get_str(metrics_obj, field)
+        if value is not None:
+            ret[field] = value
+    interrupted = getattr(metrics_obj, "interrupted", None)
     if isinstance(interrupted, bool):
         ret["interrupted"] = interrupted
     return ret
 
 
-_PROMOTED_METRIC_FIELDS = (
-    ("duration", "duration"),
-    ("prompt_tokens", "prompt_tokens"),
-    ("completion_tokens", "completion_tokens"),
-    ("total_tokens", "tokens"),
-    ("input_tokens", "prompt_tokens"),
-    ("output_tokens", "completion_tokens"),
-)
+_PROMOTED_METRICS_BY_TYPE: dict[str, tuple[tuple[str, str], ...]] = {
+    "tts_metrics": (("duration", "duration"), ("ttfb", "time_to_first_token")),
+    "stt_metrics": (("duration", "duration"),),
+    "llm_metrics": (("ttft", "time_to_first_token"),),
+    "realtime_model_metrics": (("ttft", "time_to_first_token"),),
+    "eou_metrics": (),
+    "vad_metrics": (),
+}
 
 
-def _promoted_metrics(metrics_payload: dict[str, Any]) -> dict[str, Any]:
+def _promoted_metrics(metrics_obj: Any, metrics_type: str | None) -> dict[str, Any]:
+    promotions = _PROMOTED_METRICS_BY_TYPE.get(metrics_type or "", (("duration", "duration"),))
     ret: dict[str, Any] = {}
-    if isinstance(metrics_payload.get("ttft"), (int, float)):
-        ret["time_to_first_token"] = metrics_payload["ttft"]
-    if isinstance(metrics_payload.get("ttfb"), (int, float)):
-        ret["time_to_first_token"] = metrics_payload["ttfb"]
-    for source, dest in _PROMOTED_METRIC_FIELDS:
-        value = metrics_payload.get(source)
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            if (
-                source in {"input_tokens", "output_tokens", "prompt_tokens", "completion_tokens", "total_tokens"}
-                and value == 0
-            ):
-                continue
+    for source, dest in promotions:
+        value = _get_number(metrics_obj, source)
+        if value is not None:
             ret[dest] = value
     return ret
+
+
+def _get_number(obj: Any, name: str) -> float | int | None:
+    value = getattr(obj, name, None)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return value
+
+
+def _get_positive_number(obj: Any, name: str) -> float | int | None:
+    value = _get_number(obj, name)
+    return value if value is not None and value > 0 else None
+
+
+def _get_str(obj: Any, name: str) -> str | None:
+    value = obj.get(name) if isinstance(obj, dict) else getattr(obj, name, None)
+    return value if isinstance(value, str) else None
