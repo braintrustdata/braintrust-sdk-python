@@ -110,16 +110,17 @@ def test_llm_complete(logger_memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2
 
-    llm_spans = _find_spans_by_attributes(spans, type="llm")
-    assert len(llm_spans) >= 1
+    openai_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "OpenAI"]
+    assert len(openai_spans) >= 1
 
-    llm_span = llm_spans[0]
+    llm_span = openai_spans[0]
+    assert llm_span["span_attributes"]["type"] == "task"
     assert llm_span["context"]["span_origin"]["instrumentation"]["name"] == "llamaindex-auto"
-    assert llm_span["span_attributes"]["name"] == "OpenAI"
     assert llm_span["input"] is not None
     assert llm_span["output"] is not None
     assert llm_span["metadata"]["class"] == "OpenAI"
     assert llm_span["metadata"]["model"] == "gpt-4o-mini"
+    assert llm_span["metadata"]["provider"] == "openai"
 
 
 @pytest.mark.vcr
@@ -142,14 +143,16 @@ def test_llm_chat(logger_memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2
 
-    llm_spans = _find_spans_by_attributes(spans, type="llm")
-    assert len(llm_spans) >= 1
+    openai_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "OpenAI"]
+    assert len(openai_spans) >= 1
 
-    llm_span = llm_spans[0]
+    llm_span = openai_spans[0]
+    assert llm_span["span_attributes"]["type"] == "task"
     assert llm_span["input"] is not None
     assert llm_span["output"] is not None
     assert isinstance(llm_span["output"], dict)
     assert "content" in llm_span["output"] or "role" in llm_span["output"]
+    assert llm_span["metadata"]["provider"] == "openai"
 
 
 def test_document_processing(logger_memory_logger):
@@ -224,7 +227,6 @@ def test_query_engine(logger_memory_logger):
 
     span_types = {s.get("span_attributes", {}).get("type") for s in spans}
     assert "task" in span_types
-    assert "llm" in span_types or "function" in span_types
 
 
 def test_span_hierarchy(logger_memory_logger):
@@ -266,9 +268,9 @@ def test_llm_error_handling(logger_memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2
 
-    llm_spans = _find_spans_by_attributes(spans, type="llm")
-    assert len(llm_spans) >= 1
-    assert llm_spans[0].get("error") is not None
+    openai_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "OpenAI"]
+    assert len(openai_spans) >= 1
+    assert openai_spans[0].get("error") is not None
 
 
 @pytest.mark.vcr
@@ -287,8 +289,9 @@ async def test_async_llm_complete(logger_memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2
 
-    llm_spans = _find_spans_by_attributes(spans, type="llm")
-    assert len(llm_spans) >= 1
+    openai_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "OpenAI"]
+    assert len(openai_spans) >= 1
+    assert openai_spans[0]["span_attributes"]["type"] == "task"
 
 
 @pytest.mark.vcr
@@ -311,5 +314,6 @@ async def test_async_llm_chat(logger_memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2
 
-    llm_spans = _find_spans_by_attributes(spans, type="llm")
-    assert len(llm_spans) >= 1
+    openai_spans = [s for s in spans if s.get("span_attributes", {}).get("name") == "OpenAI"]
+    assert len(openai_spans) >= 1
+    assert openai_spans[0]["span_attributes"]["type"] == "task"

@@ -6,9 +6,14 @@ from typing import Any
 
 from braintrust.logger import NOOP_SPAN, Span, current_span
 from braintrust.logger import start_span as _bt_start_span
+from braintrust.span_types import SpanTypeAttribute
 
 
 _INSTRUMENTATION = "llamaindex-auto"
+
+_LLM_METADATA_ALLOWLIST = ("model", "model_name", "temperature", "max_tokens")
+_LLM_MODULE_PROVIDER_PREFIX = "llama_index.llms."
+_EMBEDDING_MODULE_PROVIDER_PREFIX = "llama_index.embeddings."
 
 
 def start_span(*args, **kwargs):
@@ -18,7 +23,15 @@ def start_span(*args, **kwargs):
     return _bt_start_span(*args, **kwargs)
 
 
-from braintrust.span_types import SpanTypeAttribute
+def _extract_provider(instance: Any) -> str | None:
+    provider = getattr(instance, "provider", None)
+    if isinstance(provider, str) and provider:
+        return provider
+    module = getattr(type(instance), "__module__", "") or ""
+    for prefix in (_LLM_MODULE_PROVIDER_PREFIX, _EMBEDDING_MODULE_PROVIDER_PREFIX):
+        if module.startswith(prefix):
+            return module[len(prefix) :].split(".", 1)[0] or None
+    return None
 
 
 def _extract_block_content(message: Any) -> str | None:
@@ -55,11 +68,8 @@ def _extract_messages(messages: Any) -> list[dict[str, Any]] | None:
 def _extract_response_output(result: Any) -> Any:
     if result is None:
         return None
-    # Streaming/coroutine responses are consumed outside this span handler.
-    # Do not log unstable object reprs such as "<generator object ...>".
     if inspect.isgenerator(result) or inspect.isasyncgen(result) or inspect.iscoroutine(result):
         return None
-    # ChatResponse
     if hasattr(result, "message") and hasattr(result, "raw"):
         msg = result.message
         if not msg:
@@ -70,21 +80,18 @@ def _extract_response_output(result: Any) -> Any:
         if content is not None:
             output["content"] = content
         return output
-    # CompletionResponse
     if hasattr(result, "text") and hasattr(result, "raw"):
         return {"text": result.text}
-    # Query response
     if hasattr(result, "response") and hasattr(result, "source_nodes"):
         output = {"response": result.response}
         if result.source_nodes:
             output["source_nodes"] = _extract_nodes(result.source_nodes)
         return output
-    # List of NodeWithScore
     if isinstance(result, list) and result and hasattr(result[0], "node"):
         return _extract_nodes(result)
     if isinstance(result, str):
         return result
-    return str(result)
+    return None
 
 
 def _extract_nodes(nodes: list[Any]) -> list[dict[str, Any]]:
@@ -111,8 +118,12 @@ def _classify_instance(instance: Any) -> tuple[SpanTypeAttribute, str]:
     cls_name = type(instance).__name__
     mro_names = {c.__name__ for c in type(instance).__mro__}
 
+    # LLM classes always delegate to a separately-instrumentable provider client
+    # (openai, anthropic, ...). Two nested llm spans for one API call is
+    # confusing and would produce token-less framework spans — so type this as
+    # task and let the underlying provider integration own the llm leaf.
     if "BaseLLM" in mro_names or "LLM" in mro_names:
-        return SpanTypeAttribute.LLM, cls_name
+        return SpanTypeAttribute.TASK, cls_name
 
     if "BaseTool" in mro_names or "FunctionTool" in mro_names:
         return SpanTypeAttribute.TOOL, getattr(instance, "name", None) or cls_name
@@ -200,10 +211,13 @@ try:
             metadata: dict[str, Any] = {}
             if instance is not None:
                 metadata["class"] = type(instance).__name__
-                for attr in ("model", "model_name", "temperature", "max_tokens"):
+                for attr in _LLM_METADATA_ALLOWLIST:
                     val = getattr(instance, attr, None)
                     if val is not None:
                         metadata[attr] = val
+                provider = _extract_provider(instance)
+                if provider is not None:
+                    metadata["provider"] = provider
 
             parent_bt_span = self._find_parent_bt_span(parent_span_id)
 
@@ -244,15 +258,10 @@ try:
             bt_span = record.bt_span
             output = _extract_response_output(result)
 
-            # Token usage is intentionally not logged on LlamaIndex spans.
-            # LlamaIndex is an orchestration layer; provider integrations own
-            # token accounting. Emitting usage here would double-count when
-            # provider spans are also present.
-            log_kwargs: dict[str, Any] = {}
+            # Token accounting belongs to the underlying provider integration
+            # (openai, anthropic, ...) — do not log usage here.
             if output is not None:
-                log_kwargs["output"] = output
-            if log_kwargs:
-                bt_span.log(**log_kwargs)
+                bt_span.log(output=output)
 
             bt_span.unset_current()
             bt_span.end()
@@ -271,7 +280,8 @@ try:
                 return None
 
             bt_span = record.bt_span
-            bt_span.log(error=f"{type(err).__name__}: {err}" if err else "Unknown error")
+            if err is not None:
+                bt_span.log(error=err)
 
             bt_span.unset_current()
             bt_span.end()
