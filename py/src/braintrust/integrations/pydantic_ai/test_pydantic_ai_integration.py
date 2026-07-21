@@ -2123,6 +2123,55 @@ def test_agent_tool_with_custom_name():
     assert "b" in tool["parameters"]["properties"]
 
 
+def test_agent_input_kwargs_are_allowlisted():
+    """Sensitive/opaque kwargs (deps, usage, event_stream_handler, infer_name) must NOT
+    leak into span input; allowlisted ones (model_settings, usage_limits, instructions,
+    metadata, retries, conversation_id) must."""
+    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
+
+    agent = Agent(MODEL)
+
+    kwargs = {
+        # Allowlisted -> included in input.
+        "instructions": "be brief",
+        "usage_limits": UsageLimits(request_limit=5),
+        "retries": 2,
+        "conversation_id": "conv-42",
+        "metadata": {"user_tag": "trace-me"},
+        # Not allowlisted -> excluded.
+        "deps": {"api_key": "sk-secret-should-not-leak"},
+        "usage": object(),
+        "event_stream_handler": lambda _event: None,
+        "infer_name": False,
+    }
+    input_data, _ = _build_agent_input_and_metadata(("hi",), kwargs, agent)
+
+    for key in ("instructions", "usage_limits", "retries", "conversation_id", "metadata"):
+        assert key in input_data, f"{key} must be in input"
+    for key in ("deps", "usage", "event_stream_handler", "infer_name"):
+        assert key not in input_data, f"{key} must not leak into span input"
+    assert "sk-secret-should-not-leak" not in str(input_data)
+
+
+def test_direct_model_request_kwargs_are_allowlisted():
+    """`instrument` (telemetry routing) must not leak; `model_settings` /
+    `model_request_parameters` are allowlisted."""
+    from braintrust.integrations.pydantic_ai.tracing import _build_direct_model_input_and_metadata
+
+    kwargs = {
+        "model_settings": {"temperature": 0.1},
+        "model_request_parameters": {"tools": []},
+        "instrument": True,
+        "future_secret_kwarg": "sk-nope",
+    }
+    input_data, _ = _build_direct_model_input_and_metadata((), kwargs)
+
+    assert "model_settings" in input_data
+    assert "model_request_parameters" in input_data
+    assert "instrument" not in input_data
+    assert "future_secret_kwarg" not in input_data
+
+
 def test_explicit_toolsets_kwarg_in_input():
     """Test that explicitly passed toolsets kwarg goes to input (not just metadata)."""
     from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
@@ -2370,33 +2419,25 @@ def test_wrap_model_instance_does_not_emit_public_deprecation_warning():
     assert not [warning for warning in caught if issubclass(warning.category, DeprecationWarning)]
 
 
-def test_v2_message_and_response_fields_are_shaped():
+def test_shape_message_and_response_pass_through_when_no_binary():
+    # No binary content -> return the object unchanged so Braintrust's dataclass/Pydantic
+    # serializer preserves every field (including new v2 fields like state, provider_name,
+    # run_id, conversation_id, metadata, ...). Reshaping was dropping those.
     from types import SimpleNamespace
 
     from braintrust.integrations.pydantic_ai.tracing import _shape_message, _shape_model_response
 
     message = SimpleNamespace(kind="request", state="complete", parts=["hello"])
-    assert _shape_message(message)["state"] == "complete"
+    assert _shape_message(message) is message
 
     response = SimpleNamespace(
         kind="response",
         state="complete",
         model_name="gpt-4o-mini",
         provider_name="openai",
-        provider_url="https://api.openai.com/v1/responses",
-        finish_reason="stop",
-        run_id="run-123",
-        conversation_id="conv-123",
         parts=["done"],
     )
-
-    shaped = _shape_model_response(response)
-    assert shaped["state"] == "complete"
-    assert shaped["provider_name"] == "openai"
-    assert shaped["provider_url"] == "https://api.openai.com/v1/responses"
-    assert shaped["finish_reason"] == "stop"
-    assert shaped["run_id"] == "run-123"
-    assert shaped["conversation_id"] == "conv-123"
+    assert _shape_model_response(response) is response
 
 
 def test_v2_model_provider_inference():
