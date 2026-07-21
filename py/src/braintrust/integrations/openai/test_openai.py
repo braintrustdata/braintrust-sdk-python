@@ -1066,16 +1066,23 @@ async def test_openai_chat_streaming_async(memory_logger):
     for client, is_wrapped in clients:
         start = time.time()
 
-        stream = await client.chat.completions.create(
-            model=TEST_MODEL,
-            messages=[{"role": "user", "content": TEST_PROMPT}],
-            stream=True,
-            stream_options={"include_usage": True},
-        )
-
-        chunks = []
-        async for chunk in stream:
-            chunks.append(chunk)
+        create_kwargs = {
+            "model": TEST_MODEL,
+            "messages": [{"role": "user", "content": TEST_PROMPT}],
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        if is_wrapped:
+            async with client.chat.completions.with_streaming_response.create(**create_kwargs) as raw_response:
+                assert raw_response.headers
+                parse_result = raw_response.parse()
+                assert inspect.isawaitable(parse_result)
+                stream = await parse_result
+                assert stream.response
+                chunks = [chunk async for chunk in stream]
+        else:
+            stream = await client.chat.completions.create(**create_kwargs)
+            chunks = [chunk async for chunk in stream]
         end = time.time()
 
         assert chunks
@@ -1978,7 +1985,7 @@ async def test_openai_responses_with_raw_response_async(memory_logger):
 @pytest.mark.asyncio
 @pytest.mark.vcr
 async def test_openai_responses_with_raw_response_create_stream_async(memory_logger):
-    """Async version of test_openai_responses_with_raw_response_create_stream."""
+    """Async raw-response variants preserve headers, parsing, streams, and tracing."""
     assert not memory_logger.pop()
 
     # Unwrapped client: headers accessible, stream iterable via parse(), no spans.
@@ -1996,21 +2003,23 @@ async def test_openai_responses_with_raw_response_create_stream_async(memory_log
     assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
     assert not memory_logger.pop()
 
-    # Wrapped client: headers still accessible, parse() yields traced stream, span generated.
+    # Wrapped client: the newer streaming-response wrapper keeps async parse() and tracing.
     client = wrap_openai(AsyncOpenAI())
     start = time.time()
-    raw = await client.responses.with_raw_response.create(
+    async with client.responses.with_streaming_response.create(
         model=TEST_MODEL,
         input=TEST_PROMPT,
         stream=True,
-    )
-    assert raw.headers
-    stream = raw.parse()
-    assert stream.response  # SDK-specific attribute preserved
-    chunks = []
-    async for chunk in stream:
-        if chunk.type == "response.output_text.delta":
-            chunks.append(chunk.delta)
+    ) as raw:
+        assert raw.headers
+        parse_result = raw.parse()
+        assert inspect.isawaitable(parse_result)
+        stream = await parse_result
+        assert stream.response  # SDK-specific attribute preserved
+        chunks = []
+        async for chunk in stream:
+            if chunk.type == "response.output_text.delta":
+                chunks.append(chunk.delta)
     end = time.time()
     assert "24" in "".join(chunks) or "twenty-four" in "".join(chunks).lower()
 
