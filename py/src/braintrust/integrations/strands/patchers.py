@@ -89,19 +89,5 @@ class TracerPatcher(CompositeFunctionWrapperPatcher):
 
 
 def wrap_strands_tracer(Tracer: Any) -> Any:
-    """Manually patch a Strands ``Tracer`` class for Braintrust tracing.
-
-    Most users should call ``setup_strands()`` instead. Use this helper only
-    when you need to instrument a specific imported/custom Strands ``Tracer``
-    class directly, for example before constructing agents in an environment
-    where automatic integration setup is not used.
-
-    Example:
-        ```python
-        from braintrust.integrations.strands import wrap_strands_tracer
-        from strands.telemetry.tracer import Tracer
-
-        wrap_strands_tracer(Tracer)
-        ```
-    """
+    """Manually patch a Strands ``Tracer`` class for Braintrust tracing."""
     return TracerPatcher.wrap_target(Tracer)

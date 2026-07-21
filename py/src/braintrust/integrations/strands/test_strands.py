@@ -57,6 +57,8 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     assert "prompt_tokens" not in llm_span.get("metrics", {})
     assert "completion_tokens" not in llm_span.get("metrics", {})
     assert "tokens" not in llm_span.get("metrics", {})
+    for span in spans:
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "strands-auto"
 
 
 def test_strands_setup_is_idempotent():
