@@ -1,5 +1,3 @@
-"""LiveKit Agents integration."""
-
 from braintrust.integrations.base import BaseIntegration
 
 from .patchers import AgentSessionPatcher, MetricsEmitterPatcher

@@ -1,5 +1,3 @@
-"""Direct LiveKit Agents patchers."""
-
 from typing import Any
 
 from braintrust.integrations.base import (
@@ -211,12 +209,6 @@ class MetricsEmitterPatcher(CompositeFunctionWrapperPatcher):
 
 
 def wrap_livekit_agents(target: Any) -> Any:
-    """Instrument a LiveKit Agents class or instance directly.
-
-    This helper is useful when global setup is not desired. It applies any
-    LiveKit Agents patchers whose target method exists on ``target`` and returns
-    ``target`` for convenient chaining.
-    """
     AgentSessionPatcher.wrap_target(target)
     MetricsEmitterPatcher.wrap_target(target)
     return target
