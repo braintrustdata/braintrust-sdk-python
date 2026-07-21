@@ -2805,8 +2805,11 @@ class TestOpenAIIntegrationSetupAsyncSpans:
                 input=TEST_PROMPT,
                 stream=True,
             ) as raw_response:
-                stream = await raw_response.parse()
+                parse_result = raw_response.parse()
+                assert inspect.isawaitable(parse_result)
+                stream = await parse_result
                 assert hasattr(stream, "__aiter__")
+                assert [event async for event in stream] == []
                 await stream.close()
 
         spans = memory_logger.pop()
