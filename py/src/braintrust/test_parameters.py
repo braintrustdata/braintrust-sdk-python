@@ -635,3 +635,26 @@ def test_prompt_parameter_defaults_omit_none_values_from_dict():
     assert "function_call" not in default["prompt"]["messages"][0]
     assert "tool_calls" not in default["prompt"]["messages"][0]
     _assert_no_none_values(default)
+
+
+@pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
+def test_serialize_eval_parameters_omits_description_when_absent():
+    from pydantic import BaseModel
+
+    class TemplateParam(BaseModel):
+        value: str = "default template"
+
+    serialized = serialize_eval_parameters(
+        {
+            "template": TemplateParam,
+            "main": {"type": "prompt"},
+            "judge_model": {"type": "model"},
+        }
+    )
+
+    assert serialized["template"]["type"] == "data"
+    assert serialized["template"]["default"] == "default template"
+    assert serialized["main"]["type"] == "prompt"
+    assert serialized["judge_model"]["type"] == "model"
+    for name in ("template", "main", "judge_model"):
+        assert "description" not in serialized[name]
