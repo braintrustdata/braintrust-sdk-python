@@ -1030,10 +1030,14 @@ def test_reasoning(memory_logger):
     assert len(spans) == 2
 
     first_span, second_span = spans
-    for span in spans:
+    for span, response in ((first_span, first_response), (second_span, follow_up_response)):
         assert span["metadata"]["model"] == REASONING_MODEL
         assert span["input"]["config"]["thinking_config"]["include_thoughts"] is True
         assert span["metrics"]["completion_reasoning_tokens"] > 0
+        assert response.usage_metadata
+        assert span["metrics"]["completion_tokens"] == (
+            response.usage_metadata.candidates_token_count + response.usage_metadata.thoughts_token_count
+        )
         assert span["output"]
 
     assert first_prompt in str(first_span["input"])

@@ -335,8 +335,13 @@ def _extract_usage_metadata_metrics(
 ) -> None:
     if hasattr(usage_metadata, "prompt_token_count"):
         metrics["prompt_tokens"] = usage_metadata.prompt_token_count
+    thoughts_token_count = getattr(usage_metadata, "thoughts_token_count", None)
     if hasattr(usage_metadata, "candidates_token_count"):
-        metrics["completion_tokens"] = usage_metadata.candidates_token_count
+        candidates_token_count = usage_metadata.candidates_token_count
+        if candidates_token_count is None and thoughts_token_count is None:
+            metrics["completion_tokens"] = None
+        else:
+            metrics["completion_tokens"] = (candidates_token_count or 0) + (thoughts_token_count or 0)
     if hasattr(usage_metadata, "total_token_count"):
         metrics["tokens"] = usage_metadata.total_token_count
     if hasattr(usage_metadata, "cached_content_token_count"):
