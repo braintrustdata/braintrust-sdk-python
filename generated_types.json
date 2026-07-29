@@ -4537,6 +4537,13 @@
                 ],
                 "additionalProperties": {},
                 "description": "Partial function definition to merge with the function being invoked. Fields are validated against the function type's schema at runtime. For facets: { preprocessor?, prompt?, model? }. For prompts: { model?, ... }."
+              },
+              "endpoint_name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Name of the AI provider secret to pin this invocation to."
               }
             }
           }
@@ -7059,6 +7066,12 @@
           },
           "position": {
             "type": "string"
+          },
+          "endpoint_name": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -7076,6 +7089,12 @@
           },
           "position": {
             "type": "string"
+          },
+          "endpoint_name": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -7757,6 +7776,13 @@
                 }
               }
             }
+          },
+          "endpoint_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Name of the AI provider secret to pin this run to."
           }
         },
         "required": [
