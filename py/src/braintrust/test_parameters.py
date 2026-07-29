@@ -635,3 +635,42 @@ def test_prompt_parameter_defaults_omit_none_values_from_dict():
     assert "function_call" not in default["prompt"]["messages"][0]
     assert "tool_calls" not in default["prompt"]["messages"][0]
     _assert_no_none_values(default)
+
+
+def test_serialize_eval_parameters_omits_description_when_absent():
+    class _FakeField:
+        required = False
+
+    class TemplateParam:
+        __fields__ = {"value": _FakeField()}
+
+        @classmethod
+        def parse_obj(cls, value):
+            return value
+
+        @classmethod
+        def schema(cls):
+            return {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "string",
+                        "default": "default template",
+                    }
+                },
+            }
+
+    serialized = serialize_eval_parameters(
+        {
+            "template": TemplateParam,
+            "main": {"type": "prompt"},
+            "judge_model": {"type": "model"},
+        }
+    )
+
+    assert serialized["template"]["type"] == "data"
+    assert serialized["template"]["default"] == "default template"
+    assert serialized["main"]["type"] == "prompt"
+    assert serialized["judge_model"]["type"] == "model"
+    for name in ("template", "main", "judge_model"):
+        assert "description" not in serialized[name]

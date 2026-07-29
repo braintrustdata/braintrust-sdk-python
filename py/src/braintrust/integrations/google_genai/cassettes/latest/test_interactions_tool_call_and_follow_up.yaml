@@ -16,27 +16,27 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - speakeasy-sdk/python 2.4.1-preview.5 2.913.3 v1beta google-genai
+      - speakeasy-sdk/python 2.4.1-preview.5 2.918.3 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.12.1 gl-python/3.14.6
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_Chd2YnBlYXAzNUp1SDNqckVQc3NXVHNRVRIXdmJwZWFwMzVKdUgzanJFUHNzV1RzUVU","status":"requires_action","usage":{"total_tokens":119,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":51},"created":"2026-07-21T00:18:05Z","updated":"2026-07-21T00:18:05Z","service_tier":"standard","steps":[{"id":"u5yo7p6j","signature":"Cv4BARFNMg8yGFiyUDNQe4JUmYRp3Wh26BIj2P/U3/NR8M1fvgpSoyGqqvYq5Qm7av4TP/++AqEFpo48tuKH3NYD79Bjw8QzRozLyeqcm7yhWxN+MBp75PFuiSqBKzfJWbeEVATrLLYeCDiSFevaveHGbrEg4A1G03HRVVf3rXDnKW6IOwQ5iLAmyDsyvrH7hobSG/lSpmqG9vArro9Y8GEiL/TzTZn5az2z+JGhua7jcOKUwAvTFxsrS2fFkVlzpoAwrUnZVdFzXuqVdFs6AwyemJmWn8AUIQKv28BatoAn7nO+0SaMryKMkMbtjmg+BOy/dGm2GwuUxs2yUHZqqfI=","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
+      string: '{"id":"v1_ChYxQUJxYXBYS01jLU0zOUlQMDlYSlVREhYxQUJxYXBYS01jLU0zOUlQMDlYSlVR","status":"requires_action","usage":{"total_tokens":167,"total_input_tokens":53,"input_tokens_by_modality":[{"modality":"text","tokens":53}],"total_cached_tokens":0,"total_output_tokens":15,"total_tool_use_tokens":0,"total_thought_tokens":99},"created":"2026-07-29T13:32:04Z","updated":"2026-07-29T13:32:04Z","service_tier":"standard","steps":[{"signature":"CssDARFNMg/7UrRZJgRm+7kdfgLSmK53YyV7967sEcvGXcR1znUtQLWrNzegtY6o5iWJjklhnh9ocLs6dP3m7SPKdhGPOKOLDCUFENWB7ug/EI7cbgCHNkIwLxvdr/dmHlHgqv9fnPhB2KuK8CG/m2c5ngQrhNmjsL/BWtCb61szRdRSKi+UbEL/BIq3gWoQ+erH1Gz49UsDmjkrUQLJ9pw9fFaC1J4h2aV6HA9GzXN3IzNIbEu6EZLV3R+1YluOjzR1WToHRxB5e0C67NngV/3YLVgYdtP4jUzwUFET8LZTVqS4u9ta6IEp81lVUdwwKEWWpMC0HIhtvIsUjF1H6+UOg8ndG2L18bB+lb50sNmNJ0Eq7I4gaX6pCdeYVOKJaNyDrm3o+iQ9Ap72bgsmlqEKOzSGYn3mcXcxJHzI7p/H8biGsSd7zwOI/OPYY2utEHkCNpi+PNMfhK5NNlGM+eCHxxGylk+wWDK/KbedYWaUrReI3z6uuSw7MB6Z/GaMt5FhLARwbY5InOURXZ0Izl9iBQh4J2diJopdCQ5s6C4fej0KJPWWyQmTrydE4oSd6E4RdSv+shlA8xyu4CP2RDw3W9Sm9ao4f1jMULBa","type":"thought"},{"id":"4kr2ino7","type":"function_call","name":"get_weather","arguments":{"location":"Paris"}}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '927'
+      - '1215'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:18:06 GMT
+      - Wed, 29 Jul 2026 13:32:05 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1154
+      - gfet4t7; dur=1619
       transfer-encoding:
       - chunked
       vary:
@@ -53,8 +53,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"model":"gemini-2.5-flash","input":[{"call_id":"u5yo7p6j","result":{"forecast":"sunny"},"name":"get_weather","type":"function_result"}],"tools":[{"description":"Get
-      the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]},"type":"function"}],"previous_interaction_id":"v1_Chd2YnBlYXAzNUp1SDNqckVQc3NXVHNRVRIXdmJwZWFwMzVKdUgzanJFUHNzV1RzUVU"}'
+    body: '{"model":"gemini-2.5-flash","input":[{"call_id":"4kr2ino7","result":{"forecast":"sunny"},"name":"get_weather","type":"function_result"}],"tools":[{"description":"Get
+      the current weather for a location.","name":"get_weather","parameters":{"type":"object","properties":{"location":{"type":"string"}},"required":["location"]},"type":"function"}],"previous_interaction_id":"v1_ChYxQUJxYXBYS01jLU0zOUlQMDlYSlVREhYxQUJxYXBYS01jLU0zOUlQMDlYSlVR"}'
     headers:
       accept:
       - application/json
@@ -63,34 +63,34 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '442'
+      - '439'
       content-type:
       - application/json
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - speakeasy-sdk/python 2.4.1-preview.5 2.913.3 v1beta google-genai
+      - speakeasy-sdk/python 2.4.1-preview.5 2.918.3 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.12.1 gl-python/3.14.6
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_Chd2YnBlYXAzNUp1SDNqckVQc3NXVHNRVRIXdnJwZWF2SDFKdkgzanJFUDd0U0V1UVk","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-07-21T00:18:06Z","updated":"2026-07-21T00:18:06Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_ChYxQUJxYXBYS01jLU0zOUlQMDlYSlVREhcxUUJxYXNta09PV09qckVQOHVQdzBRcw","status":"completed","usage":{"total_tokens":90,"total_input_tokens":83,"input_tokens_by_modality":[{"modality":"text","tokens":83}],"total_cached_tokens":0,"total_output_tokens":7,"total_tool_use_tokens":0,"total_thought_tokens":0},"created":"2026-07-29T13:32:05Z","updated":"2026-07-29T13:32:05Z","service_tier":"standard","steps":[{"signature":"CiRlMjQ4MzBhNy01Y2Q2LTQyZmUtOTk4Yi1lZTUzOWU3MmI5YzM=","type":"thought"},{"content":[{"text":"The
         weather in Paris is sunny.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '642'
+      - '641'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:18:07 GMT
+      - Wed, 29 Jul 2026 13:32:06 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=920
+      - gfet4t7; dur=963
       transfer-encoding:
       - chunked
       vary:

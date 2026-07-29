@@ -17,15 +17,15 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.12.1 gl-python/3.14.6
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.12.1 gl-python/3.14.6
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
       string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
-        current population of Tokyo, Japan, is estimated to\"}],\"role\": \"model\"},\"finishReason\":
+        current population of Tokyo, Japan, is estimated\"}],\"role\": \"model\"},\"finishReason\":
         \"MAX_TOKENS\",\"index\": 0,\"groundingMetadata\": {\"searchEntryPoint\":
         {\"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n  align-items:
         center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family: Google
@@ -89,17 +89,14 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE7lSi67YBgIrBfAuP2ucPt7ocRWcGkfGPCgCOeQ261qloRlzevxdQEMCbgR68dbiHXVrD1PL8XD1rObIS9d3QIKsoxehcOlUcCN4LE0sygBmzczWKq18nQXZRJRvf3tITiHQ2y99eq4A1cQn9VRcnP2ln6Oe9GhwcTBkCMZvCgIwuWp3U0MKIpZpFDch3cAyQthrRPH7By\\\"\\u003eTokyo
-        population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFfiatFkF0yb9IhEhebnZHPGXIwglol1tOoHbew1n-VeGraEcKimd54o6G7pVPUJnRdBdHhqHqo4LfbEfRiMbFi2o05iWYndkbEvNq5SojLEOOHrFQzd7TueqdtMcscSHzphnhijv-2floTLE-zpytwFLm44yIYBnhEv7ZT811PtsEg4nelFHWO1Dolhsz4DJlOL7zZq9goWk1GcrAZXs6NsZx3\\\"\\u003ecurrent
-        population of Tokyo Japan\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFdCgTMb_zz1EQnwYB35XE3G0HXR-NQbpFGCYk9zvQ_CTCINQgIybWQRwkF7__YgRln9u6aOzBTC33E2A9atiGo1IP6HnNSQ_M79nnk4kM_Os5K0K3wIaiRfRsOFZ_ImJmpckwXA6Jgfy_q7trRumMux_i2ZOQH1iqqGi_MwpGLfJe9h0z5eTgOeAkl6cyznXkhZ5zlpgGhvOvEY_buJUVQ\\\"\\u003eTokyo
-        population estimate 2026\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"},\"webSearchQueries\":
-        [\"current population of Tokyo Japan\",\"Tokyo population 2026\",\"Tokyo population
-        estimate 2026\"]}}],\"usageMetadata\": {\"promptTokenCount\": 11,\"candidatesTokenCount\":
-        46,\"totalTokenCount\": 554,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        11}],\"toolUsePromptTokenCount\": 129,\"toolUsePromptTokensDetails\": [{\"modality\":
-        \"TEXT\",\"tokenCount\": 129}],\"thoughtsTokenCount\": 368,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"trpeasmnLs2o_uMPzO31kQ4\"}\r\n\r\n"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEJDTpPakfkyeoEwqZpC4CaR6qtaQfKILw7sb065Mo_XWSOb4FBpyAUqiyWmmSESzWfGxrG7hDwUDmZfds7vft9Y8lUJyAWWsemZq9eg_dr6cy_0GGIF96OtPbyuxphJ3koEWgPP217StQB4jX680VviGUTwxR_Q4mm2_Chj4CF_pa_J94k5IsXtnZQ2IH6qMckbgqo3mae5mCtUcU3Fv07pPvflUs=\\\"\\u003ecurrent
+        population of Tokyo, Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"},\"webSearchQueries\":
+        [\"current population of Tokyo, Japan\"]}}],\"usageMetadata\": {\"promptTokenCount\":
+        11,\"candidatesTokenCount\": 27,\"totalTokenCount\": 438,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 11}],\"toolUsePromptTokenCount\":
+        71,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        71}],\"thoughtsTokenCount\": 329,\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-2.5-flash\",\"responseId\": \"zQBqavCcMJa6jrEPxYRG\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -108,11 +105,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Tue, 21 Jul 2026 00:18:01 GMT
+      - Wed, 29 Jul 2026 13:32:00 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=3290
+      - gfet4t7; dur=2538
       transfer-encoding:
       - chunked
       vary:
