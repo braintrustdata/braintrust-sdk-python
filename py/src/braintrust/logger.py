@@ -33,7 +33,7 @@ from typing import (
     cast,
     overload,
 )
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import chevron
 import exceptiongroup
@@ -1818,6 +1818,7 @@ def init_dataset(
     use_output: bool = DEFAULT_IS_LEGACY_DATASET,
     _internal_btql: dict[str, Any] | None = None,
     state: BraintrustState | None = None,
+    environment: str | None = None,
 ) -> "Dataset":
     """
     Create a new dataset in a specified project. If the project does not exist, it will be created.
@@ -1826,6 +1827,7 @@ def init_dataset(
     :param name: The name of the dataset to create. If not specified, a name will be generated automatically.
     :param description: An optional description of the dataset.
     :param version: An optional version of the dataset (to read). If not specified, the latest version will be used.
+    :param environment: The environment to load the dataset from. If both `version` and `environment` are provided, `version` takes precedence.
     :param app_url: The URL of the Braintrust App. Defaults to https://www.braintrust.dev.
     :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable. If no API
     key is specified, will prompt the user to login.
@@ -1846,6 +1848,7 @@ def init_dataset(
             _internal_btql = dict(cli_internal_btql)
         else:
             _internal_btql = {**cli_internal_btql, **_internal_btql}
+    effective_environment = None if version is not None else environment
 
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
@@ -1866,6 +1869,7 @@ def init_dataset(
     return Dataset(
         lazy_metadata=LazyValue(compute_metadata, use_mutex=True),
         version=version,
+        environment=effective_environment,
         legacy=use_output,
         _internal_btql=_internal_btql,
         state=state,
@@ -5029,6 +5033,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         legacy: bool = DEFAULT_IS_LEGACY_DATASET,
         _internal_btql: dict[str, Any] | None = None,
         state: BraintrustState | None = None,
+        environment: str | None = None,
     ):
         if legacy:
             eprint(
@@ -5040,6 +5045,7 @@ class Dataset(ObjectFetcher[DatasetEvent]):
             return ensure_dataset_record(r, legacy)
 
         self._lazy_metadata = lazy_metadata
+        self._environment = environment
         self.new_records = 0
 
         ObjectFetcher.__init__(
@@ -5079,6 +5085,12 @@ class Dataset(ObjectFetcher[DatasetEvent]):
     def _get_state(self) -> BraintrustState:
         # Ensure the login state is populated by fetching the lazy_metadata.
         self._lazy_metadata.get()
+        if self._pinned_version is None and self._environment is not None:
+            environment_path = f"environment-object/dataset/{self.id}/{quote(self._environment, safe='')}"
+            response = self.state.api_conn().get_json(
+                environment_path, _populate_args({}, org_name=self.state.org_name)
+            )
+            self._pinned_version = response["object_version"]
         return self.state
 
     def _validate_event(

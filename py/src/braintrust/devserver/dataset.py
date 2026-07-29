@@ -40,6 +40,8 @@ async def get_dataset(state: BraintrustState, data: RunEvalData | RunEvalData1 |
                 state=state,
                 project=data["project_name"],
                 name=data["dataset_name"],
+                **({"version": data["dataset_version"]} if "dataset_version" in data else {}),
+                **({"environment": data["dataset_environment"]} if "dataset_environment" in data else {}),
                 # _internal_btql is optional
                 **({"_internal_btql": data["_internal_btql"]} if "_internal_btql" in data else {}),
             )
@@ -50,6 +52,8 @@ async def get_dataset(state: BraintrustState, data: RunEvalData | RunEvalData1 |
                 state=state,
                 project_id=dataset_info["project_id"],
                 name=dataset_info["dataset"],
+                **({"version": data["dataset_version"]} if "dataset_version" in data else {}),
+                **({"environment": data["dataset_environment"]} if "dataset_environment" in data else {}),
                 # _internal_btql is optional
                 **({"_internal_btql": data["_internal_btql"]} if "_internal_btql" in data else {}),
             )
