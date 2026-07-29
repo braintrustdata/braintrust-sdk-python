@@ -16,7 +16,6 @@ import sys
 import textwrap
 import threading
 import time
-from urllib.parse import quote
 import traceback
 import types
 import uuid
@@ -34,7 +33,7 @@ from typing import (
     cast,
     overload,
 )
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 import chevron
 import exceptiongroup
@@ -5087,8 +5086,9 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         # Ensure the login state is populated by fetching the lazy_metadata.
         self._lazy_metadata.get()
         if self._pinned_version is None and self._environment is not None:
+            environment_path = f"environment-object/dataset/{self.id}/{quote(self._environment, safe='')}"
             response = self.state.api_conn().get_json(
-                f"environment-object/dataset/{self.id}/{quote(self._environment, safe='')}"
+                environment_path, _populate_args({}, org_name=self.state.org_name)
             )
             self._pinned_version = response["object_version"]
         return self.state
