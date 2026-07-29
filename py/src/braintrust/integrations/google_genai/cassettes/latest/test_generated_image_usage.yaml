@@ -1,0 +1,64 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Generate a simple blue square icon."}],
+      "role": "user"}], "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '155'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
+  response:
+    body:
+      string: '{"candidates": [{"content": {"parts": [{"text": "Okay, here is your
+        simple blue square icon: "}, {"inlineData": {"mimeType": "image/png", "data":
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="}}],
+        "role": "model"}, "finishReason": "STOP", "index": 0}], "usageMetadata": {"promptTokenCount":
+        8, "candidatesTokenCount": 1301, "totalTokenCount": 1309, "promptTokensDetails":
+        [{"modality": "TEXT", "tokenCount": 8}], "candidatesTokensDetails": [{"modality":
+        "IMAGE", "tokenCount": 1290}], "serviceTier": "standard"}, "modelVersion":
+        "gemini-2.5-flash-image", "responseId": "p1Bqau2WMYy0jrEPpYy64A0"}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '1031610'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Wed, 29 Jul 2026 19:12:43 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=3829
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

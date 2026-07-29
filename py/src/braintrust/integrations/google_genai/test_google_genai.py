@@ -34,57 +34,69 @@ IMAGE_MODEL = "imagen-4.0-fast-generate-001"
 REASONING_MODEL = "gemini-2.5-flash"
 TOOL_MODEL = "gemini-2.5-flash" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else MODEL
 INTERACTIONS_MODEL = "gemini-2.5-flash"
+GENERATED_AUDIO_MODEL = "gemini-2.5-flash-preview-tts"
+GENERATED_IMAGE_MODEL = "gemini-2.5-flash-image"
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 TINY_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
+TINY_WAV_BASE64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="
+LATEST_ONLY = pytest.mark.skipif(
+    os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest",
+    reason="model is only covered by the latest google-genai matrix entry",
+)
 
 
-def _sanitize_generate_images_body(value):
+def _sanitize_media_body(value):
     if isinstance(value, dict):
-        return {
+        sanitized = {
             key: (
-                TINY_PNG_BASE64
-                if key == "bytesBase64Encoded" and isinstance(val, str)
-                else _sanitize_generate_images_body(val)
+                TINY_PNG_BASE64 if key == "bytesBase64Encoded" and isinstance(val, str) else _sanitize_media_body(val)
             )
             for key, val in value.items()
         }
+        inline_data = sanitized.get("inlineData")
+        if isinstance(inline_data, dict) and isinstance(inline_data.get("data"), str):
+            mime_type = inline_data.get("mimeType")
+            if isinstance(mime_type, str) and mime_type.startswith("image/"):
+                inline_data["data"] = TINY_PNG_BASE64
+            elif isinstance(mime_type, str) and mime_type.startswith("audio/"):
+                inline_data["data"] = TINY_WAV_BASE64
+        return sanitized
     if isinstance(value, list):
-        return [_sanitize_generate_images_body(item) for item in value]
+        return [_sanitize_media_body(item) for item in value]
     return value
 
 
-def _sanitize_generate_images_response(response):
-    body = response.get("body", {})
-    payload = body.get("string")
+def _sanitize_media_payload(payload):
     if not payload:
-        return response
+        return payload
 
     is_bytes = isinstance(payload, bytes)
-    is_gzipped = False
-
+    is_gzipped = is_bytes and payload[:2] == b"\x1f\x8b"
+    raw_payload = gzip.decompress(payload) if is_gzipped else payload
     if is_bytes:
-        raw_payload = payload
-        if raw_payload[:2] == b"\x1f\x8b":
-            raw_payload = gzip.decompress(raw_payload)
-            is_gzipped = True
-        payload = raw_payload.decode("utf-8")
+        raw_payload = raw_payload.decode("utf-8")
 
     try:
-        parsed = json.loads(payload)
+        parsed = json.loads(raw_payload)
     except Exception:
-        return response
+        return payload
 
-    sanitized = _sanitize_generate_images_body(parsed)
+    sanitized = _sanitize_media_body(parsed)
     if sanitized == parsed:
-        return response
+        return payload
 
     sanitized_payload = json.dumps(sanitized)
-    if is_bytes:
-        body["string"] = (
-            gzip.compress(sanitized_payload.encode("utf-8")) if is_gzipped else sanitized_payload.encode("utf-8")
-        )
-    else:
-        body["string"] = sanitized_payload
+    if not is_bytes:
+        return sanitized_payload
+    sanitized_bytes = sanitized_payload.encode("utf-8")
+    return gzip.compress(sanitized_bytes) if is_gzipped else sanitized_bytes
+
+
+def _sanitize_media_response(response):
+    body = response.get("body", {})
+    payload = body.get("string")
+    if payload:
+        body["string"] = _sanitize_media_payload(payload)
     return response
 
 
@@ -96,10 +108,11 @@ def vcr_config():
     def before_record_request(request):
         # Normalize HTTP method to uppercase for consistency (Google API quirk)
         request.method = request.method.upper()
+        request.body = _sanitize_media_payload(request.body)
         return request
 
     def before_record_response(response):
-        return _sanitize_generate_images_response(response)
+        return _sanitize_media_response(response)
 
     return {
         "record_mode": record_mode,
@@ -169,6 +182,18 @@ def _assert_attachment_part(part, *, content_type, filename):
 def _assert_binary_not_logged(span, binary_data):
     span_str = str(span).lower()
     assert binary_data[:8].hex() not in span_str
+
+
+def _modality_token_count(details, modality):
+    return sum(
+        detail.token_count or 0
+        for detail in details or []
+        if getattr(detail.modality, "value", detail.modality) == modality
+    )
+
+
+def _serialized_modality_details(details):
+    return [detail.model_dump(exclude_none=True) for detail in details or []]
 
 
 # Test 1: Basic Completion (Sync)
@@ -507,6 +532,33 @@ def test_document_input(memory_logger):
     _assert_binary_not_logged(span, pdf_data)
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
+
+
+@LATEST_ONLY
+@pytest.mark.vcr
+def test_audio_input_usage(memory_logger):
+    """Map Google prompt-side audio modality details to prompt_audio_tokens."""
+    assert not memory_logger.pop()
+
+    audio_data = (FIXTURES_DIR / "test_audio.wav").read_bytes()
+    client = Client()
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=[
+            types.Part.from_bytes(data=audio_data, mime_type="audio/wav"),
+            types.Part.from_text(text="Describe this audio in five words or less."),
+        ],
+        config=types.GenerateContentConfig(max_output_tokens=100),
+    )
+
+    assert response.text
+    assert response.usage_metadata
+    expected_audio_tokens = _modality_token_count(response.usage_metadata.prompt_tokens_details, "AUDIO")
+    assert expected_audio_tokens > 0
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["metrics"]["prompt_audio_tokens"] == expected_audio_tokens
 
 
 @pytest.mark.vcr
@@ -1030,14 +1082,72 @@ def test_reasoning(memory_logger):
     assert len(spans) == 2
 
     first_span, second_span = spans
-    for span in spans:
+    for span, response in zip(spans, (first_response, follow_up_response), strict=True):
+        usage_metadata = response.usage_metadata
+        assert usage_metadata is not None
         assert span["metadata"]["model"] == REASONING_MODEL
         assert span["input"]["config"]["thinking_config"]["include_thoughts"] is True
-        assert span["metrics"]["completion_reasoning_tokens"] > 0
+        assert span["metrics"]["completion_reasoning_tokens"] == usage_metadata.thoughts_token_count
+        assert span["metrics"]["completion_tokens"] == (
+            usage_metadata.candidates_token_count + usage_metadata.thoughts_token_count
+        )
         assert span["output"]
 
     assert first_prompt in str(first_span["input"])
     assert follow_up_prompt in str(second_span["input"])
+
+
+@LATEST_ONLY
+@pytest.mark.vcr
+def test_generated_audio_usage(memory_logger):
+    """Map Google candidate-side audio modality details to completion_audio_tokens."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.models.generate_content(
+        model=GENERATED_AUDIO_MODEL,
+        contents="Read this sentence aloud in a warm voice: Hello and welcome to Braintrust.",
+        config=types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore"),
+                )
+            ),
+        ),
+    )
+
+    assert response.candidates
+    assert response.usage_metadata
+    expected_audio_tokens = _modality_token_count(response.usage_metadata.candidates_tokens_details, "AUDIO")
+    assert expected_audio_tokens > 0
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["metrics"]["completion_audio_tokens"] == expected_audio_tokens
+
+
+@LATEST_ONLY
+@pytest.mark.vcr
+def test_generated_image_usage(memory_logger):
+    """Map Google candidate-side image modality details to completion_image_tokens."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    response = client.models.generate_content(
+        model=GENERATED_IMAGE_MODEL,
+        contents="Generate a simple blue square icon.",
+        config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
+    )
+
+    assert response.candidates
+    assert response.usage_metadata
+    expected_image_tokens = _modality_token_count(response.usage_metadata.candidates_tokens_details, "IMAGE")
+    assert expected_image_tokens > 0
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["metrics"]["completion_image_tokens"] == expected_image_tokens
 
 
 def test_attachment_in_config(memory_logger):
@@ -1331,6 +1441,7 @@ def test_google_search_grounding(memory_logger, mode):
     client = Client()
     start = time.time()
 
+    usage_metadata = None
     if mode == "sync":
         response = client.models.generate_content(
             model=GROUNDING_MODEL,
@@ -1341,6 +1452,7 @@ def test_google_search_grounding(memory_logger, mode):
             ),
         )
         text = response.text
+        usage_metadata = response.usage_metadata
     elif mode == "stream":
         stream = client.models.generate_content_stream(
             model=GROUNDING_MODEL,
@@ -1354,6 +1466,8 @@ def test_google_search_grounding(memory_logger, mode):
         for chunk in stream:
             if chunk.text:
                 text += chunk.text
+            if chunk.usage_metadata:
+                usage_metadata = chunk.usage_metadata
 
     end = time.time()
 
@@ -1369,9 +1483,54 @@ def test_google_search_grounding(memory_logger, mode):
     assert "population" in str(span["input"]).lower() or "Tokyo" in str(span["input"])
     assert span["output"]
     _assert_metrics_are_valid(span["metrics"], start, end)
+    assert usage_metadata is not None
+    assert span["metrics"]["prompt_tokens"] == usage_metadata.prompt_token_count + (
+        usage_metadata.tool_use_prompt_token_count or 0
+    )
+    assert span["metrics"]["completion_tokens"] == usage_metadata.candidates_token_count + (
+        usage_metadata.thoughts_token_count or 0
+    )
+    assert span["metrics"]["tokens"] == (span["metrics"]["prompt_tokens"] + span["metrics"]["completion_tokens"])
+    tool_use_details = _serialized_modality_details(usage_metadata.tool_use_prompt_tokens_details)
+    if tool_use_details:
+        assert span["metadata"]["usage_by_modality"]["tool_use_prompt_tokens_details"] == tool_use_details
 
     # Verify grounding metadata is captured
     _assert_grounding_metadata(span["output"])
+
+
+@LATEST_ONLY
+@pytest.mark.vcr
+def test_cached_content_usage_metadata(memory_logger):
+    """Preserve Google's cache modality details as provider-specific metadata."""
+    assert not memory_logger.pop()
+
+    client = Client()
+    cached_content = client.caches.create(
+        model=REASONING_MODEL,
+        config=types.CreateCachedContentConfig(
+            display_name="braintrust-google-genai-vcr-test",
+            contents="The sky is blue because molecules scatter blue light. " * 150,
+            ttl="300s",
+        ),
+    )
+    try:
+        response = client.models.generate_content(
+            model=REASONING_MODEL,
+            contents="In one sentence, why is the sky blue?",
+            config=types.GenerateContentConfig(cached_content=cached_content.name, max_output_tokens=100),
+        )
+    finally:
+        client.caches.delete(name=cached_content.name)
+
+    assert response.text
+    assert response.usage_metadata
+    cache_details = _serialized_modality_details(response.usage_metadata.cache_tokens_details)
+    assert cache_details
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    assert spans[0]["metadata"]["usage_by_modality"]["cache_tokens_details"] == cache_details
 
 
 # Test: Google Search Grounding (Async)
@@ -1491,8 +1650,12 @@ def test_interactions_create_and_get(memory_logger):
     assert get_span["metadata"]["provider"] == "google"
     assert create_span["output"]["status"] == "completed"
     assert "Paris" in create_span["output"]["text"]
-    assert create_span["metrics"]["prompt_tokens"] > 0
-    assert create_span["metrics"]["completion_tokens"] > 0
+    assert create_span["metrics"]["prompt_tokens"] == response.usage.total_input_tokens
+    assert create_span["metrics"]["completion_reasoning_tokens"] == response.usage.total_thought_tokens
+    assert create_span["metrics"]["completion_tokens"] == (
+        response.usage.total_output_tokens + response.usage.total_thought_tokens
+    )
+    assert create_span["metrics"]["tokens"] == response.usage.total_tokens
 
     assert get_span["input"]["id"] == response.id
     assert get_span["metadata"]["interaction_id"] == response.id
@@ -1524,6 +1687,11 @@ def test_interactions_create_stream(memory_logger):
     assert create_span["output"]["status"] == "completed"
     assert create_span["output"]["text"]
     assert create_span["metrics"]["time_to_first_token"] >= 0
+    final_interaction = next(event.interaction for event in reversed(events) if getattr(event, "interaction", None))
+    assert create_span["metrics"]["completion_reasoning_tokens"] == final_interaction.usage.total_thought_tokens
+    assert create_span["metrics"]["completion_tokens"] == (
+        final_interaction.usage.total_output_tokens + final_interaction.usage.total_thought_tokens
+    )
     assert any(
         event_type in create_span["metadata"]["stream_event_types"] for event_type in ("content.start", "step.start")
     )
