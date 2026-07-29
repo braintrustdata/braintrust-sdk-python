@@ -1,0 +1,150 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is the capital of France? Delegate
+      this to the specialist."}], "role": "user"}], "systemInstruction": {"parts":
+      [{"text": "You cannot answer questions yourself. For every request, immediately
+      call transfer_to_agent with agent_name=''capital_specialist''.\n\nYou are an
+      agent. Your internal name is \"coordinator\".\n\n The description about you
+      is \"Routes geography questions to the capital specialist without answering
+      them.\"\n\n\nYou have a list of other agents to transfer to:\n\n\nAgent name:
+      capital_specialist\nAgent description: The only agent allowed to answer geography
+      questions.\n\n\nIf you are the best to answer the question according to your
+      description, you\ncan answer it.\n\nIf another agent is better for answering
+      the question according to its\ndescription, call `transfer_to_agent` function
+      to transfer the\nquestion to that agent. When transferring, do not generate
+      any text other than\nthe function call.\n\n**NOTE**: the only available agents
+      for `transfer_to_agent` function are `capital_specialist`.\n"}], "role": "user"},
+      "tools": [{"functionDeclarations": [{"description": "Transfer the question to
+      another agent.\n\nThis tool hands off control to another agent when it''s more
+      suitable to\nanswer the user''s question according to the agent''s description.\n\nArgs:\n  agent_name:
+      the agent name to transfer to.\n", "name": "transfer_to_agent", "parameters":
+      {"properties": {"agent_name": {"type": "STRING"}}, "required": ["agent_name"],
+      "type": "OBJECT"}}]}], "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/1.75.0 gl-python/3.14.6 google-adk/1.14.1 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.14.6 google-adk/1.14.1 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"functionCall\": {\n              \"name\": \"transfer_to_agent\",\n
+        \             \"args\": {\n                \"agent_name\": \"capital_specialist\"\n
+        \             }\n            },\n            \"thoughtSignature\": \"CsgDARFNMg9EuJxGSb6Rw2/4urHga+Zn9WrSEdnTxJhJfb0a/9BQdsCh4EzVx5DHs4AYOpfVkx8GKuSmv3g3DQuQhQtaPqVURt+5PHAQ53BQO04DSUnyVOcyp4PYJVJc+eP6zdMPCyNfJiE1hSDPLdma0+0L1H5dirwmjNLVmehQe8OuE39nVqtm3BYQaZ+eyTXRIno9P1YCi4//rtrciIYqzq5GDhpwBoRB/A+wwC1pu5BSJK3vzV/OvS4vFapAwptwkd3iKpAvOh4jlwTElrN+wAsASVGuZ70Fg1nmFrrdCBAq0yW4wOJv7mY4OOrPFYAJFkEJ24on8eo8qR4bLVn5MoYTnBMWQqR4QtbK4dv9bdrKEfmV926a+lB9kOyxCahYATKEklEiq24OKGcH+zaB4hY5fXArGKOpfxYvj7fS1CIXxvFl7I5Ur3E4V2PVIhstsDyGIaue9mBHP2oLfg+CGOmLNz666gPYkrnwZna6gfkxYLDxvMVFpLnIauLWdITWcQbwOQcaTkRkfH/wMir8XKK3loisYHarOVMOqjerNk9hA+MMWki/ZIhEpX3uIqDz0ymJR4WoDHh0BP7PLWvVpHmg/zLA+rvf\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
+        function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        296,\n    \"candidatesTokenCount\": 22,\n    \"totalTokenCount\": 409,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 296\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 91,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"lwFqaoiON-WrjrEPrbb88Ak\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 29 Jul 2026 13:35:20 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=765
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '1439'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is the capital of France? Delegate
+      this to the specialist."}], "role": "user"}, {"parts": [{"text": "For context:"},
+      {"text": "[coordinator] called tool `transfer_to_agent` with parameters: {''agent_name'':
+      ''capital_specialist''}"}], "role": "user"}, {"parts": [{"text": "For context:"},
+      {"text": "[coordinator] `transfer_to_agent` tool returned result: {''result'':
+      None}"}], "role": "user"}], "systemInstruction": {"parts": [{"text": "Answer
+      geography questions accurately and in one short sentence.\n\nYou are an agent.
+      Your internal name is \"capital_specialist\".\n\n The description about you
+      is \"The only agent allowed to answer geography questions.\"\n\n\nYou have a
+      list of other agents to transfer to:\n\n\nAgent name: coordinator\nAgent description:
+      Routes geography questions to the capital specialist without answering them.\n\n\nIf
+      you are the best to answer the question according to your description, you\ncan
+      answer it.\n\nIf another agent is better for answering the question according
+      to its\ndescription, call `transfer_to_agent` function to transfer the\nquestion
+      to that agent. When transferring, do not generate any text other than\nthe function
+      call.\n\n**NOTE**: the only available agents for `transfer_to_agent` function
+      are `coordinator`.\n\nIf neither you nor the other agents are best for the question,
+      transfer to your parent agent coordinator.\n"}], "role": "user"}, "tools": [{"functionDeclarations":
+      [{"description": "Transfer the question to another agent.\n\nThis tool hands
+      off control to another agent when it''s more suitable to\nanswer the user''s
+      question according to the agent''s description.\n\nArgs:\n  agent_name: the
+      agent name to transfer to.\n", "name": "transfer_to_agent", "parameters": {"properties":
+      {"agent_name": {"type": "STRING"}}, "required": ["agent_name"], "type": "OBJECT"}}]}],
+      "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/1.75.0 gl-python/3.14.6 google-adk/1.14.1 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/1.75.0 gl-python/3.14.6 google-adk/1.14.1 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The capital of France is Paris.\",\n
+        \           \"thoughtSignature\": \"CrcDARFNMg+U1J/4jHXZRfFf7mqUm/nZzRdTIDuD9yyxroAVdvYxYiIlZc4++vCuNqT5XQJ+N5SfjvN26U1xReX9a7uMicxcpLZRhs+KZr4L1pSVFas3u6W8ylpFFl5F5FauQqY1tpMLGhF0bLp/MqzOSVtSfHp7ZXfWFNh7KIhodg6UDYlN9sGEE/jzLDJaYGjJBFYGo0MuXuv3nm8Fi2om9MVQ3XOVEUVnPtRKg4vJRrL6YuL1i9A2YO1tO11iVepTOQoGJ5v7I0rJhii9BhhGC/uV8kIvBo2XbxWxdNKTnEQfmhMPeZp1MQWm0kdwJvBAJnEBoPFqeafM1q555MnaMlo2HVj9qjgqUtLXwnrNLp1b6esIBuUqrEyAD7U8VQVJq51i0Ppo6fD0VJRkkbQkTvKWehgHkwipz3lVkpD0NAf3++Ylz+u39hBF0MS7mj8P+Jo2RDY8TnWdY+mK2TpvU0bJgcPyIsk61gNGw74F/HmmH0DGfkhMuwB0jxy/EZgUE50OIZeCJEX9AD62g/CncsPQK+/WvsW4ejxNdtfcQnqPo4WWM7KMacF4y1Ha18qcI1KM+FnGMw==\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        350,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 436,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 350\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 79,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"mAFqasSWMqOLjrEP1dG6-Qg\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 29 Jul 2026 13:35:21 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=728
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '1234'
+    status:
+      code: 200
+      message: OK
+version: 1
