@@ -140,6 +140,17 @@ test-agentscope = [
     "openai==2.31.0",
 ]
 
+# Compatibility constraints for older provider versions. These groups are
+# used as pip constraint files, so they do not install optional packages that
+# the provider itself does not require.
+test-mcp-v1 = [
+    "mcp==1.28.1",
+]
+
+test-pydantic-ai-otel-events = [
+    "opentelemetry-api==1.39.1",
+]
+
 test-strands = [
     {include-group = "test"},
     "openai==2.32.0",
@@ -299,6 +310,10 @@ conflicts = [
     [
         {group = "lint"},
         {group = "test-pydantic-ai-logfire"},
+        {group = "test-livekit-agents"},
+    ],
+    [
+        {group = "test-pydantic-ai-otel-events"},
         {group = "test-livekit-agents"},
     ],
 ]

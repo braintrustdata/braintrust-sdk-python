@@ -148,6 +148,10 @@ class ApiKey(TypedDict):
     """
     Unique identifier for the organization
     """
+    expires_at: NotRequired[str | None]
+    """
+    Date at which the API key expires. If null, the key never expires.
+    """
 
 
 class AsyncScoringControlAsyncScoringControl(TypedDict):
@@ -1916,6 +1920,10 @@ class ProjectSettings(TypedDict):
     """
     If true, disable real-time queries for this project. This can improve query performance for high-volume logs.
     """
+    monitor_charts_use_metrics_start: NotRequired[bool | None]
+    """
+    If true, use metrics.start rather than created for monitor chart time bucket dimensions.
+    """
     default_preprocessor: NotRequired[NullableSavedFunctionId | None]
 
 
@@ -2398,6 +2406,10 @@ class ServiceToken(TypedDict):
     """
     Unique identifier for the organization
     """
+    expires_at: NotRequired[str | None]
+    """
+    Date and time at which the service token expires. If null, the token never expires.
+    """
 
 
 class SpanIFrame(TypedDict):
@@ -2764,6 +2776,11 @@ class ViewOptionsViewOptions1SymbolGrouping(TypedDict):
     value: str
 
 
+class ViewOptionsViewOptions1PointSizeMetric(TypedDict):
+    type: Literal['none', 'score', 'metric', 'metadata']
+    value: str
+
+
 class ViewOptionsViewOptions1ChartAnnotation(TypedDict):
     id: str
     text: str
@@ -2792,6 +2809,7 @@ class ViewOptionsViewOptions1(TypedDict):
     yMetric: NotRequired[ViewOptionsViewOptions1YMetric | None]
     xAxis: NotRequired[ViewOptionsViewOptions1XAxis | None]
     symbolGrouping: NotRequired[ViewOptionsViewOptions1SymbolGrouping | None]
+    pointSizeMetric: NotRequired[ViewOptionsViewOptions1PointSizeMetric | None]
     xAxisAggregation: NotRequired[str | None]
     """
     One of 'avg', 'sum', 'min', 'max', 'median', 'all'
@@ -3339,6 +3357,49 @@ class OnlineScoreConfig(TypedDict):
     """
 
 
+class OrgAutomationConfig(TypedDict):
+    event_type: Literal['retention']
+    """
+    The type of automation.
+    """
+    object_type: RetentionObjectType
+    retention_days: int
+    """
+    The number of days to retain the object
+    """
+
+
+class OrgAutomation(TypedDict):
+    id: str
+    """
+    Unique identifier for the project automation
+    """
+    org_id: str
+    """
+    Unique identifier for the organization that the org automation belongs under
+    """
+    user_id: NotRequired[str | None]
+    """
+    Identifies the user who created the project automation
+    """
+    created: NotRequired[str | None]
+    """
+    Date of project automation creation
+    """
+    name: str
+    """
+    Name of the project automation
+    """
+    description: NotRequired[str | None]
+    """
+    Textual description of the project automation
+    """
+    config: OrgAutomationConfig
+    """
+    The configuration for the org automation rule
+    """
+
+
 class Project(TypedDict):
     id: str
     """
@@ -3416,7 +3477,7 @@ class ProjectAutomationConfig3(TypedDict):
     The type of automation.
     """
     object_type: RetentionObjectType
-    retention_days: float
+    retention_days: int
     """
     The number of days to retain the object
     """
@@ -3571,7 +3632,7 @@ class TopicMapData(TypedDict):
     """
     reconcile_mode: NotRequired[Literal['evolve', 'names_only'] | None]
     """
-    How reconciliation carries the previous map forward: "evolve" re-routes new samples into the previous topics before naming; "names_only" keeps the fresh clustering and carries only topic ids/names. Defaults to "evolve" when omitted.
+    How reconciliation carries the previous map forward: "evolve" re-routes new samples into the previous topics before naming; "names_only" keeps the fresh clustering and carries only topic ids/names. Defaults to "names_only" when omitted.
     """
     distance_threshold: NotRequired[float | None]
     """

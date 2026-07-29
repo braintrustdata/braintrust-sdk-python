@@ -12,6 +12,7 @@ from typing_extensions import NotRequired, TypeGuard
 from .generated_types import PromptBlockDataNullish, PromptOptionsNullish
 from .prompt import PromptData
 from .serializable_data_class import SerializableDataClass
+from .util import clean_nones
 
 
 if TYPE_CHECKING:
@@ -424,19 +425,23 @@ def serialize_eval_parameters(parameters: EvalParameters) -> dict[str, Any]:
 
     for name, schema in parameters.items():
         if _is_prompt_parameter(schema):
-            prompt_parameter_data: dict[str, Any] = {
-                "type": "prompt",
-                "description": schema.get("description"),
-            }
+            prompt_parameter_data = clean_nones(
+                {
+                    "type": "prompt",
+                    "description": schema.get("description"),
+                }
+            )
             prompt_default = schema.get("default")
             if prompt_default is not None:
                 prompt_parameter_data["default"] = _prompt_data_to_dict(prompt_default)
             result[name] = prompt_parameter_data
         elif _is_model_parameter(schema):
-            model_parameter_data: dict[str, Any] = {
-                "type": "model",
-                "description": schema.get("description"),
-            }
+            model_parameter_data = clean_nones(
+                {
+                    "type": "model",
+                    "description": schema.get("description"),
+                }
+            )
             model_default = schema.get("default")
             if model_default is not None:
                 model_parameter_data["default"] = model_default
@@ -448,11 +453,13 @@ def serialize_eval_parameters(parameters: EvalParameters) -> dict[str, Any]:
             }
         else:
             schema_json = _serialize_pydantic_parameter_schema(schema)
-            data_parameter_data: dict[str, Any] = {
-                "type": "data",
-                "schema": schema_json,
-                "description": schema_json.get("description"),
-            }
+            data_parameter_data = clean_nones(
+                {
+                    "type": "data",
+                    "schema": schema_json,
+                    "description": schema_json.get("description"),
+                }
+            )
             if "default" in schema_json:
                 data_parameter_data["default"] = schema_json["default"]
             result[name] = data_parameter_data
