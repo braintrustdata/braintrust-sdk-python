@@ -1,10 +1,11 @@
 """ADK-specific span creation, metadata extraction, stream handling, and output normalization."""
 
+import asyncio
 import contextvars
 import inspect
 import logging
 import time
-from contextlib import aclosing
+from contextlib import aclosing, contextmanager
 from functools import lru_cache
 from itertools import chain
 from typing import Any
@@ -22,6 +23,20 @@ def start_span(*args, **kwargs):
     internal.setdefault("instrumentation", _INSTRUMENTATION)
     kwargs["internal"] = internal
     return _bt_start_span(*args, **kwargs)
+
+
+@contextmanager
+def _start_stream_span(*args, **kwargs):
+    """Keep ADK stream cleanup signals from being logged as span failures."""
+    cleanup_signal = None
+    with start_span(*args, **kwargs) as span:
+        try:
+            yield span
+        except (GeneratorExit, asyncio.CancelledError) as exc:
+            cleanup_signal = exc
+
+    if cleanup_signal is not None:
+        raise cleanup_signal
 
 
 from braintrust.span_types import SpanTypeAttribute
@@ -353,7 +368,7 @@ def _create_thread_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) 
 
 async def _agent_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     async def _trace():
-        with start_span(
+        with _start_stream_span(
             name=f"agent_run [{instance.name}]",
             type=SpanTypeAttribute.TASK,
             metadata={"agent_name": instance.name},
@@ -374,7 +389,7 @@ async def _agent_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
 
 async def _flow_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     async def _trace():
-        with start_span(
+        with _start_stream_span(
             name="call_llm",
             type=SpanTypeAttribute.TASK,
             metadata={"flow_class": instance.__class__.__name__},
@@ -413,7 +428,7 @@ async def _flow_call_llm_async_wrapper(wrapped: Any, instance: Any, args: Any, k
 
         # Create span BEFORE execution so child spans (like mcp_tool) have proper parent
         # Start with generic name - we'll update it after we see the response
-        with start_span(
+        with _start_stream_span(
             name="llm_call",
             type=SpanTypeAttribute.LLM,
             input=captured_request,
@@ -477,7 +492,7 @@ async def _runner_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwar
     serialized_message = _serialize_content(new_message) if new_message else None
 
     async def _trace():
-        with start_span(
+        with _start_stream_span(
             name=f"invocation [{instance.app_name}]",
             type=SpanTypeAttribute.TASK,
             input={"new_message": serialized_message},

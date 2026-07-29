@@ -4126,6 +4126,22 @@ def test_span_exit_logs_exception_group_sub_exceptions(with_memory_logger):
     _assert_test_exception_group_contents(logs[0].get("error", ""))
 
 
+@pytest.mark.parametrize(
+    "exception_type",
+    [GeneratorExit, asyncio.CancelledError, KeyboardInterrupt, SystemExit],
+)
+def test_span_exit_logs_base_exceptions(with_memory_logger, exception_type):
+    init_test_logger(__name__)
+
+    with pytest.raises(exception_type):
+        with braintrust.current_logger().start_span(name="base-exception-span"):
+            raise exception_type
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert exception_type.__name__ in logs[0]["error"]
+
+
 def test_traced_logs_exception_group_sub_exceptions(with_memory_logger):
     """Verify sub-exceptions are captured when an ExceptionGroup propagates through @traced."""
     init_test_logger(__name__)

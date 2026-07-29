@@ -1,0 +1,172 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is the capital of France? Delegate
+      this to the specialist."}], "role": "user"}], "systemInstruction": {"parts":
+      [{"text": "You cannot answer questions yourself. For every request, immediately
+      call transfer_to_agent with agent_name=''capital_specialist''.\n\nYou are an
+      agent. Your internal name is \"coordinator\". The description about you is \"Routes
+      geography questions to the capital specialist without answering them.\".\n\n\nYou
+      have a list of other agents to transfer to:\n\n\nAgent name: capital_specialist\nAgent
+      description: The only agent allowed to answer geography questions.\n\n\nIf you
+      are the best to answer the question according to your description,\nyou can
+      answer it.\n\nIf another agent is better for answering the question according
+      to its\ndescription, call `transfer_to_agent` function to transfer the question
+      to that\nagent. When transferring, do not generate any text other than the function\ncall.\n\n**NOTE**:
+      the only available agents for `transfer_to_agent` function are\n`capital_specialist`.\n"}],
+      "role": "user"}, "tools": [{"functionDeclarations": [{"description": "Transfer
+      the query to another agent.\n\nUse this tool to hand off control to another
+      agent that is more suitable to\nanswer the user''s query according to the agent''s
+      description.\n\nArgs:\n  agent_name: the agent name to transfer to.", "name":
+      "transfer_to_agent", "parameters_json_schema": {"properties": {"agent_name":
+      {"title": "Agent Name", "type": "string", "enum": ["capital_specialist"]}},
+      "required": ["agent_name"], "title": "transfer_to_agentParams", "type": "object"}}]}],
+      "generationConfig": {}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1646'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"functionCall\": {\n              \"name\": \"transfer_to_agent\",\n
+        \             \"args\": {\n                \"agent_name\": \"capital_specialist\"\n
+        \             }\n            },\n            \"thoughtSignature\": \"CqwDARFNMg/j+9eaPm9CUpDwYKmqmHGZqfm7bYvgkuBJs+rzg1obPejEnFWaQf/v0ATSzFnaSan470RJspYICGrXp7jyuC/SAVL2v+vHaRvjXHkGq4Z4XxyohC0CJwuYNoxQZ0RAgNK9rkh0OXiv4FbyMOMed6ATAxYgDwV6ugRoDzdorj7x/lqQG1V9mWwK8viOhS0LQ76K48dIu7BMph5J2Jlr4EAO4JC8KhuAdWYE36PlLBQhz3KuS6AvWPwt8lmW4s0ZM+AwZZ6H1nU6hNlRTNUtiBVj5aU1qrbA/BoX/GUcqFfqHq+ymkK2mgW3HkPEgmv8Qry3UL1C+jzU1gfdL2ou2T8t8jZOzt9DO/wrINAhWx0Xx7w6NlfESCo1qQctLpXzGBgzkuzwVHAgJPP0eF38joQdN2VDH2cXZ2ao82Aq6uc/DU6CEASfoCq5aI5z4WELa4o9mzH3q+S6mc8dc81lTsFTz/4WN+G/3lp/KD9lUWE6eUTiettCwT+5x0kM5ymA3CT6iPf7Rz9NkmUqFUENjDrCngeZnN/muHqSUFIo7ZYCMdQ/Yn7i6ZQ=\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
+        function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        301,\n    \"candidatesTokenCount\": 22,\n    \"totalTokenCount\": 405,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 301\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 82,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"fgFqapXpHLSrsOIPsOff0Ag\"\n}\n"
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '1403'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Wed, 29 Jul 2026 13:34:55 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=832
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is the capital of France? Delegate
+      this to the specialist."}], "role": "user"}, {"parts": [{"text": "For context:"},
+      {"text": "[coordinator] called tool `transfer_to_agent` with parameters: {''agent_name'':
+      ''capital_specialist''}"}], "role": "user"}, {"parts": [{"text": "For context:"},
+      {"text": "[coordinator] `transfer_to_agent` tool returned result: {''result'':
+      None}"}], "role": "user"}], "systemInstruction": {"parts": [{"text": "Answer
+      geography questions accurately and in one short sentence.\n\nYou are an agent.
+      Your internal name is \"capital_specialist\". The description about you is \"The
+      only agent allowed to answer geography questions.\".\n\n\nYou have a list of
+      other agents to transfer to:\n\n\nAgent name: coordinator\nAgent description:
+      Routes geography questions to the capital specialist without answering them.\n\n\nIf
+      you are the best to answer the question according to your description,\nyou
+      can answer it.\n\nIf another agent is better for answering the question according
+      to its\ndescription, call `transfer_to_agent` function to transfer the question
+      to that\nagent. When transferring, do not generate any text other than the function\ncall.\n\n**NOTE**:
+      the only available agents for `transfer_to_agent` function are\n`coordinator`.\n\nIf
+      neither you nor the other agents are best for the question, transfer to your
+      parent agent coordinator.\n"}], "role": "user"}, "tools": [{"functionDeclarations":
+      [{"description": "Transfer the query to another agent.\n\nUse this tool to hand
+      off control to another agent that is more suitable to\nanswer the user''s query
+      according to the agent''s description.\n\nArgs:\n  agent_name: the agent name
+      to transfer to.", "name": "transfer_to_agent", "parameters_json_schema": {"properties":
+      {"agent_name": {"title": "Agent Name", "type": "string", "enum": ["coordinator"]}},
+      "required": ["agent_name"], "title": "transfer_to_agentParams", "type": "object"}}]}],
+      "generationConfig": {}}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1985'
+      content-type:
+      - application/json
+      host:
+      - generativelanguage.googleapis.com
+      user-agent:
+      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The capital of France is Paris.\",\n
+        \           \"thoughtSignature\": \"Cp0DARFNMg+zy0SfhDvFiWb+X7RwVYg2gND5/R8NYbIXVz2uXsKTzOu1zjMeMYCpJBlwGHeJAuWPG1X6+GKB35F2H9d1aJgdvCgjKC8iwXYjNDpkr3wPPmYZfzqB5xX7YvErtnJC3bLcDKaxtgfcrY+VgWhs5IW/ysrUXpiq+DJvX0RiwXgvmRg25sgGm/JRD8Q1hFQCFLwWrUAs8cg4fhSzHTfdSiP2t1WsmVOJrt7a7K6EiKjt88TAbrb8z7HTyxQtQJbNesMPIslrdIZGvGFSEy+no6KGNuN524eCH2/VYMvsQJJLxYYlYNoh6B7G6IkmfP64nqYbsiJcNxG4MJ3OvVsdLhMJsjBdtIfBsSF/lq14c1IZy2dj4rpa4JBmIityz3y1OSbFWcIeaGlaAmQjzpTu2XtdgeTfqopfPY8KLNN8ugzZgkpdOoq/RzOCebpgx9dUX6jr8xhlwbYBpbkfBapRWu5PKt2GkiKVUBUqWgT/RGh+rm4yLMyJ18nYwO0bDQVOdQNXeyRxuSIunvKi6xFCI1Jdheoa8iYfCTY=\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        352,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 439,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 352\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 80,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"fwFqapjNF4mkjrEP0rKCUQ\"\n}\n"
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '1197'
+      content-type:
+      - application/json; charset=UTF-8
+      date:
+      - Wed, 29 Jul 2026 13:34:56 GMT
+      server:
+      - scaffolding on HTTPServer2
+      server-timing:
+      - gfet4t7; dur=896
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-gemini-service-tier:
+      - standard
+      x-xss-protection:
+      - '0'
+    status:
+      code: 200
+      message: OK
+version: 1

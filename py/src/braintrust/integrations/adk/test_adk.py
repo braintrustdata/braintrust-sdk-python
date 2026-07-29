@@ -338,6 +338,65 @@ async def test_adk_braintrust_integration(memory_logger):
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
+async def test_adk_subagent_transfer_does_not_log_generator_exit(memory_logger):
+    """Successful LlmAgent delegation must not mark spans as failed during generator cleanup."""
+    assert not memory_logger.pop()
+
+    delegation_model = "gemini-2.5-flash"
+    specialist = Agent(
+        name="capital_specialist",
+        model=delegation_model,
+        description="The only agent allowed to answer geography questions.",
+        instruction="Answer geography questions accurately and in one short sentence.",
+    )
+    coordinator = Agent(
+        name="coordinator",
+        model=delegation_model,
+        description="Routes geography questions to the capital specialist without answering them.",
+        instruction=(
+            "You cannot answer questions yourself. For every request, immediately call "
+            "transfer_to_agent with agent_name='capital_specialist'."
+        ),
+        sub_agents=[specialist],
+    )
+
+    app_name = "delegation_app"
+    user_id = "test-user"
+    session_id = "test-session-delegation"
+    runner = await _create_runner(
+        coordinator,
+        app_name=app_name,
+        user_id=user_id,
+        session_id=session_id,
+    )
+    user_msg = types.Content(
+        role="user",
+        parts=[types.Part(text="What is the capital of France? Delegate this to the specialist.")],
+    )
+
+    events = [
+        event
+        async for event in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=user_msg,
+        )
+    ]
+
+    assert any(event.actions.transfer_to_agent == specialist.name for event in events)
+    final_responses = [event for event in events if event.is_final_response()]
+    assert final_responses
+    assert "paris" in final_responses[-1].content.parts[0].text.lower()
+
+    spans = memory_logger.pop()
+    assert spans
+    assert all("error" not in span for span in spans), [
+        (span["span_attributes"]["name"], span.get("error")) for span in spans if "error" in span
+    ]
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
 async def test_adk_nested_subagent_tool_calls_are_traced(memory_logger):
     assert not memory_logger.pop()
 
