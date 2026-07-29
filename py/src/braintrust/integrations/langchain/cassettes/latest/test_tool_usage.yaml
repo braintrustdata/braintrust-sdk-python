@@ -6,49 +6,49 @@ interactions:
       first number to operate on.","type":"number"},"number2":{"description":"The
       second number to operate on.","type":"number"}},"required":["operation","number1","number2"],"type":"object"}},"required":["input"],"type":"object"}}}],"top_p":1.0}'
     headers:
-      Accept:
+      accept:
       - application/json
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate, zstd
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '725'
-      Content-Type:
+      content-type:
       - application/json
-      Cookie:
-      - __cf_bm=R.jeaiBWNC_xqOEUC9UXOIAZA2H.kiGjGaoMEXiXYgU-1779202058.8184786-1.0.1.1-kmq2Z3HgDfKyVfwz61_rZkYNHuLgnoBlut73xkKzYRbqR3tZrk6nciqYomrjoeLOkZcePZZDf.nV6NskTLrTc71TXeAFZZDImx._YgvRXs3pDSSGHMjee.Zj.YxU5QFn
-      Host:
+      cookie:
+      - __cf_bm=hv47slwIwRfZDb2SDLjTq5j3hc6JvRcRVqd5FPVR2Ac-1785331837.805637-1.0.1.1-va9n6PdNTlNdNG1dcpMlZwEbQm.3UhKGBNFvk1gQX1GglFuXajLLFm965Tri.rhSuM4W3VXE3_dA_c8OLw9x15RULE13qmG4hwPqOSF84jUA8bjeNF4tLWmqZj_bBbsb
+      host:
       - api.openai.com
-      User-Agent:
+      user-agent:
       - OpenAI/Python 2.32.0
-      X-Stainless-Arch:
+      x-stainless-arch:
       - arm64
-      X-Stainless-Async:
+      x-stainless-async:
       - 'false'
-      X-Stainless-Lang:
+      x-stainless-lang:
       - python
-      X-Stainless-OS:
+      x-stainless-os:
       - MacOS
-      X-Stainless-Package-Version:
+      x-stainless-package-version:
       - 2.32.0
-      X-Stainless-Raw-Response:
+      x-stainless-raw-response:
       - 'true'
-      X-Stainless-Runtime:
-      - CPython
-      X-Stainless-Runtime-Version:
-      - 3.12.12
       x-stainless-retry-count:
       - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-DhG1MPFuWe5HKBVIDaGtHH6867tVH\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1779202060,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-E6yele7HmgDjte5zawdtkGNTv0cFs\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1785331839,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_rCMIv2o5ha2pUYX3PIJd3sCl\",\n            \"type\":
+        \           \"id\": \"call_CE5VyXmOU1p33Fokm4j3Cygj\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"calculator\",\n
         \             \"arguments\": \"{\\\"input\\\":{\\\"operation\\\":\\\"multiply\\\",\\\"number1\\\":3,\\\"number2\\\":12}}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -58,40 +58,42 @@ interactions:
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_8f0dac2a97\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_836208cd2a\"\n}\n"
     headers:
-      Access-Control-Expose-Headers:
+      access-control-expose-headers:
+      - X-Request-ID
       - CF-Ray
-      CF-Cache-Status:
-      - DYNAMIC
-      CF-Ray:
-      - 9fe3e5ed5b56b5e5-YYZ
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Tue, 19 May 2026 14:47:41 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
+      - CF-Ray
       alt-svc:
       - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a22c7abcbacf1707-YYZ
+      connection:
+      - keep-alive
       content-length:
       - '1133'
+      content-type:
+      - application/json
+      date:
+      - Wed, 29 Jul 2026 13:30:40 GMT
       openai-organization:
       - braintrust-data
       openai-processing-ms:
-      - '745'
+      - '1049'
       openai-project:
       - proj_vsCSXafhhByzWOThMrJcZiw9
       openai-version:
       - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -107,7 +109,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_909deb34ac274a4b9667b1c1c41c2475
+      - req_1b5d143e6bd9428e93a4979bcdc2f64b
     status:
       code: 200
       message: OK
