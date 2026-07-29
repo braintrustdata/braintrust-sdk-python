@@ -70,13 +70,13 @@ def dataset_api_server() -> Iterator[str]:
         thread.join()
 
 
-def _logged_in_state(base_url: str) -> BraintrustState:
+def _logged_in_state(base_url: str, *, org_name: str | None = "test org") -> BraintrustState:
     state = BraintrustState()
     state.logged_in = True
     state.app_url = base_url
     state.api_url = base_url
     state.org_id = "org-id"
-    state.org_name = "test org"
+    state.org_name = org_name
     return state
 
 
@@ -94,11 +94,21 @@ def _btql_request_body() -> dict[str, Any]:
         pytest.param({"dataset_id": "dataset-reference"}, id="id"),
     ],
 )
+@pytest.mark.parametrize(
+    ("org_name", "expected_query"),
+    [
+        pytest.param("test org", {"org_name": ["test org"]}, id="with-org"),
+        pytest.param(None, {}, id="without-org"),
+    ],
+)
 async def test_get_dataset_resolves_environment_to_pinned_version(
-    dataset_api_server: str, reference: dict[str, str]
+    dataset_api_server: str,
+    reference: dict[str, str],
+    org_name: str | None,
+    expected_query: dict[str, list[str]],
 ) -> None:
     dataset = await get_dataset(
-        _logged_in_state(dataset_api_server),
+        _logged_in_state(dataset_api_server, org_name=org_name),
         {
             **reference,
             "dataset_environment": "prod/stable",
@@ -110,7 +120,7 @@ async def test_get_dataset_resolves_environment_to_pinned_version(
     assert (
         "GET",
         "/environment-object/dataset/dataset-id/prod%2Fstable",
-        {"org_name": ["test org"]},
+        expected_query,
         None,
     ) in _DatasetAPIHandler.requests
     assert _btql_request_body()["version"] == "2"
