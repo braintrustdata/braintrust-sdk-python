@@ -115,6 +115,64 @@ class TestInit(TestCase):
         assert dataset_dict["id"] == "dataset-id-123"
         assert dataset_dict["version"] == "v2"
 
+    def test_init_dataset_prefers_version_over_environment(self):
+        state = MagicMock()
+        app_conn = state.app_conn.return_value
+        app_conn.post_json.return_value = {
+            "project": {"id": "project-id", "name": "project-name"},
+            "dataset": {"id": "dataset-id", "name": "dataset-name"},
+        }
+
+        dataset = braintrust.init_dataset(
+            state=state,
+            project="project-name",
+            name="dataset-name",
+            version="1",
+            environment="production",
+        )
+
+        assert dataset.id == "dataset-id"
+        app_conn.post_json.assert_called_once_with(
+            "api/dataset/register",
+            {
+                "project_name": "project-name",
+                "project_id": None,
+                "org_id": state.org_id,
+                "dataset_name": "dataset-name",
+            },
+        )
+
+    def test_init_dataset_uses_environment_without_version(self):
+        state = MagicMock()
+        app_conn = state.app_conn.return_value
+        app_conn.post_json.return_value = {
+            "project": {"id": "project-id", "name": "project-name"},
+            "dataset": {"id": "dataset-id", "name": "dataset-name"},
+        }
+        state.api_conn.return_value.get_json.return_value = {"object_version": "2"}
+
+        dataset = braintrust.init_dataset(
+            state=state,
+            project="project-name",
+            name="dataset-name",
+            environment="production",
+        )
+
+        assert dataset._get_state() is state
+        assert dataset._pinned_version == "2"
+        app_conn.post_json.assert_called_once_with(
+            "api/dataset/register",
+            {
+                "project_name": "project-name",
+                "project_id": None,
+                "org_id": state.org_id,
+                "dataset_name": "dataset-name",
+            },
+        )
+        state.api_conn.return_value.get_json.assert_called_once_with(
+            "environment-object/dataset/dataset-id/production"
+        )
+
     def test_init_with_repo_info_does_not_raise(self):
         """Test that passing repo_info to init() doesn't cause an UnboundLocalError.
 
