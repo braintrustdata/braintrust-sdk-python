@@ -637,12 +637,28 @@ def test_prompt_parameter_defaults_omit_none_values_from_dict():
     _assert_no_none_values(default)
 
 
-@pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
 def test_serialize_eval_parameters_omits_description_when_absent():
-    from pydantic import BaseModel
+    class _FakeField:
+        required = False
 
-    class TemplateParam(BaseModel):
-        value: str = "default template"
+    class TemplateParam:
+        __fields__ = {"value": _FakeField()}
+
+        @classmethod
+        def parse_obj(cls, value):
+            return value
+
+        @classmethod
+        def schema(cls):
+            return {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "type": "string",
+                        "default": "default template",
+                    }
+                },
+            }
 
     serialized = serialize_eval_parameters(
         {
