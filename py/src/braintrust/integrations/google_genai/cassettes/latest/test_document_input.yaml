@@ -17,37 +17,36 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.12.1 gl-python/3.14.6
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.12.1 gl-python/3.14.6
+      - google-genai-sdk/2.14.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"This document is a test PDF file containing
-        a few sentences. The text visible on the page says: \\\"This is a test PDF.
-        It contains only a few sentences.\\\"\"\n          }\n        ],\n        \"role\":
-        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n
-        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 265,\n    \"candidatesTokenCount\":
-        34,\n    \"totalTokenCount\": 299,\n    \"promptTokensDetails\": [\n      {\n
+        [\n          {\n            \"text\": \"The document is a test PDF that contains
+        only a few sentences.\"\n          }\n        ],\n        \"role\": \"model\"\n
+        \     },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n
+        \ \"usageMetadata\": {\n    \"promptTokenCount\": 265,\n    \"candidatesTokenCount\":
+        13,\n    \"totalTokenCount\": 278,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n      {\n
         \       \"modality\": \"DOCUMENT\",\n        \"tokenCount\": 258\n      }\n
         \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"kLpeasyVLuH3jrEPssWTsQU\"\n}\n"
+        \ \"responseId\": \"BAFqasyaH8-M39IP09XJUQ\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '777'
+      - '685'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 21 Jul 2026 00:17:22 GMT
+      - Wed, 29 Jul 2026 13:32:53 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1985
+      - gfet4t7; dur=967
       transfer-encoding:
       - chunked
       vary:

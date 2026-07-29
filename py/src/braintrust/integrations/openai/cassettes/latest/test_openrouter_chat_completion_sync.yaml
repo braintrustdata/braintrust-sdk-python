@@ -16,7 +16,7 @@ interactions:
       host:
       - openrouter.ai
       user-agent:
-      - OpenAI/Python 2.46.0
+      - OpenAI/Python 2.48.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.46.0
+      - 2.48.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,22 +39,22 @@ interactions:
     uri: https://openrouter.ai/api/v1/chat/completions
   response:
     body:
-      string: "\n         \n{\"id\":\"gen-1784591986-2JjS1klcFygCFnE550HT\",\"object\":\"chat.completion\",\"created\":1784591986,\"model\":\"openai/gpt-4o-mini\",\"provider\":\"OpenAI\",\"system_fingerprint\":\"fp_844ddd95ff\",\"service_tier\":null,\"choices\":[{\"index\":0,\"logprobs\":null,\"finish_reason\":\"stop\",\"native_finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"content\":\"4\",\"refusal\":null,\"reasoning\":null}}],\"usage\":{\"prompt_tokens\":20,\"completion_tokens\":1,\"total_tokens\":21,\"cost\":0.0000036,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0.0000036,\"upstream_inference_prompt_cost\":0.000003,\"upstream_inference_completions_cost\":6e-7},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"image_tokens\":0,\"audio_tokens\":0}}}"
+      string: "\n         \n{\"id\":\"gen-1785332343-tXpEdYntt5LUi4Yzwn5K\",\"object\":\"chat.completion\",\"created\":1785332343,\"model\":\"openai/gpt-4o-mini\",\"provider\":\"Azure\",\"system_fingerprint\":\"fp_27599ce29d\",\"service_tier\":null,\"choices\":[{\"index\":0,\"logprobs\":null,\"finish_reason\":\"stop\",\"native_finish_reason\":\"stop\",\"message\":{\"role\":\"assistant\",\"content\":\"4\",\"refusal\":null,\"reasoning\":null}}],\"usage\":{\"prompt_tokens\":20,\"completion_tokens\":2,\"total_tokens\":22,\"cost\":0.0000042,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0,\"video_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":0.0000042,\"upstream_inference_prompt_cost\":0.000003,\"upstream_inference_completions_cost\":0.0000012},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"image_tokens\":0,\"audio_tokens\":0}}}"
     headers:
       access-control-allow-origin:
       - '*'
       access-control-expose-headers:
       - X-Generation-Id,X-Provider-Name,cf-ray
       cf-ray:
-      - a1e5ebec191c2832-SJC
+      - a22c87098d7857af-YYZ
       connection:
       - keep-alive
       content-length:
-      - '805'
+      - '809'
       content-type:
       - application/json
       date:
-      - Mon, 20 Jul 2026 23:59:47 GMT
+      - Wed, 29 Jul 2026 13:39:04 GMT
       permissions-policy:
       - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
         "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
@@ -67,7 +67,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-generation-id:
-      - gen-1784591986-2JjS1klcFygCFnE550HT
+      - gen-1785332343-tXpEdYntt5LUi4Yzwn5K
     status:
       code: 200
       message: OK

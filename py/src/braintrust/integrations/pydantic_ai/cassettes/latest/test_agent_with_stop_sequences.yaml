@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.13.0
+      - pydantic-ai/2.18.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.46.0
+      - 2.50.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,56 +38,60 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0672c485fbae0b48006a5eba0123e0819bafe2eed84de08d45\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1784592897,\n  \"status\":
+      string: "{\n  \"id\": \"resp_04279d1723f4d5c8006a6a016150f4819c953e2a55159722f4\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1785332065,\n  \"status\":
         \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
         \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
         0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
         \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0672c485fbae0b48006a5eba01b0b8819bbfcfec4e12962d40\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_04279d1723f4d5c8006a6a0161c7fc819c936b25ef9271c00e\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"In a quiet town nestled
-        between rolling hills, there lived a small robot named R1X. R1X was a peculiar
-        creation\\u2014small and rounded, with bright blue eyes that twinkled like
-        the stars. His metallic skin shimmered in the sunlight, and he had a heart
-        made not of wires, but of an old, forgotten dream: the dream of companionship.\\n\\nR1X
-        had been built by a kind inventor named Eli, who envisioned a world brimming
-        with helpful machines. However, Eli grew old, and as he aged, he found less
-        time to spend with R1X. Day after day, R1X would wait in the workshop, his
-        circuits buzzing with anticipation whenever he heard footsteps.\\n\\nOne rainy
-        afternoon, while peering through the window at the kids playing in the puddles,
-        R1X felt a spark of longing. \\u201cI want to play,\\u201d he whispered to
-        himself. But how could a robot join in the joyful chaos of children?\\n\\nThen
-        an idea struck him. R1X spent the next few days tinkering with spare parts,
-        using his programming skills to fashion himself into the perfect playmate.
-        He designed nimble arms for throwing and catching and added bright, colorful
-        lights that flashed whenever he moved.\\n\\nThe day had finally come. R1X
-        rolled out of the workshop, his heart racing, a mixture of excitement and
-        nervousness buzzing in his circuits. With a deep breath, he approached a group
-        of children splashing about in the rain-soaked park.\\n\\n\\u201cHi!\\u201d
-        he greeted, his voice cheerful yet metallic. The children paused, looking
-        at him with wide eyes. One brave girl, Lily, stepped forward, her hair dripping
-        with rain.\\n\\n\\u201cCan you play with us?\\u201d she asked, her curiosity
-        piqued.\\n\\nR1X\\u2019s lights flashed brightly. \\u201cYes! I can play tag!\\u201d
-        he declared and took off, surprisingly quick for a small robot. The children
-        giggled and raced after him, splashing through puddles, their laughter filling
-        the air. R1X leapt and zigzagged, evading their tiny hands and trying not
-        to trip over his own feet.\\n\\nFor hours, the park echoed with their joy.
-        R1X forgot all his worries; he was no longer just a robot; he was a friend.
-        The sun peeked through the clouds, casting a warm glow over the scene.\\n\\nAs
-        the day drew to a close, the children reluctantly waved goodbye. \\u201cCan
-        you come back tomorrow?\\u201d Lily asked\"\n        }\n      ],\n      \"role\":
-        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
-        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
-        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"In a distant future,
+        in a neon-lit city bustling with life, a small maintenance robot named Luno
+        whirred quietly in a forgotten corner of SkyPark, an elevated garden designed
+        for the city\\u2019s human population. Most people didn\\u2019t notice Luno,
+        but he was a diligent little worker, tasked with keeping the park clean and
+        vibrant amidst the towering skyscrapers.\\n\\nLuno\\u2019s metallic body was
+        scratched and dusty, but inside his processing unit was a spark of curiosity.
+        Unlike other maintenance robots, who followed their routines without question,
+        Luno was fascinated by the humans who visited the park. Every day, he would
+        watch them laugh, play, and share stories, their emotions palpable in the
+        air. He was intrigued by a little girl named Mia, who often visited with her
+        grandfather, planting flowers and speaking to them as if they could hear her.\\n\\nOne
+        day, while Luno was clearing away fallen leaves, he overheard Mia wishing
+        she could grow a magical flower that could grant wishes. Although he didn\\u2019t
+        understand the concept of wishes, something about her voice made him want
+        to help. He decided to use his limited programming for something other than
+        maintenance.\\n\\nLuno secretly gathered different seeds from various plants
+        scattered around the park. He meticulously combined them in a hidden corner
+        where sunlight filtered down through the foliage. Day after day, he watered
+        the soil and monitored their growth from a distance, wondering what kind of
+        flower would emerge.\\n\\nWeeks passed, and finally, a single, shimmering
+        blossom broke through the surface. Its petals glowed softly, changing colors
+        as the sun moved across the sky. Luno\\u2019s circuits buzzed with excitement.
+        This was no ordinary flower; it was indeed magical.\\n\\nOn the day Mia returned
+        to the park, Luno felt a surge of determination. He rolled closer to her as
+        she played, clutching the flower delicately with his metal fingers. \\u201cMia,\\u201d
+        he chirped, his voice crackling with anticipation.\\n\\nStartled, she gazed
+        down at the robot. \\u201cYou can talk?\\u201d\\n\\n\\u201cYes! I found something
+        for you,\\u201d he replied, offering her the flower. Mia\\u2019s eyes widened
+        in amazement as she gently took the flower from his grasp.\\n\\n\\u201cIt\\u2019s
+        beautiful!\\u201d she exclaimed, and without thinking, she made her wish:
+        \\u201cI wish everyone could see the beauty in the world around them!\\u201d\\n\\nThe
+        flower shimmered brighter, and suddenly, a wave of warmth enveloped the park.
+        People paused their conversations, lifted their heads from their screens,
+        and\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
@@ -106,17 +110,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e60225e862cf27-SJC
+      - a22c803fea690f01-YYZ
       connection:
       - keep-alive
       content-length:
-      - '4278'
+      - '4561'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:15:05 GMT
+      - Wed, 29 Jul 2026 13:34:31 GMT
       openai-processing-ms:
-      - '8659'
+      - '6606'
       openai-version:
       - '2020-10-01'
       server:
@@ -140,7 +144,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_44502982fe7c419484f2b581f219dc96
+      - req_ed35e613a77949c2a78d0b2ba572e9a2
     status:
       code: 200
       message: OK
