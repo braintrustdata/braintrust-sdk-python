@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 8edae789624e11d2) -- do not modify"""
+"""Auto-generated file (content hash 57c09ca5a2b45493) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -64,6 +64,7 @@ from ._generated_types import (
     ObjectReferenceNullish,
     OnlineScoreConfig,
     Organization,
+    OrgAutomation,
     Permission,
     Project,
     ProjectAutomation,
@@ -183,6 +184,7 @@ __all__ = [
     "ObjectReference",
     "ObjectReferenceNullish",
     "OnlineScoreConfig",
+    "OrgAutomation",
     "Organization",
     "Permission",
     "Project",
