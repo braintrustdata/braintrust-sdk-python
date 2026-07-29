@@ -138,13 +138,24 @@ def _get_matrix_versions(prefix: str) -> tuple[str, ...]:
     return tuple(latest + rest)
 
 
-def _install_matrix_dep(session: nox.Session, prefix: str, version: str) -> None:
-    """Install the matrix dep for a provider at a specific version."""
+def _install_matrix_dep(session: nox.Session, prefix: str, version: str, constraint_group: str | None = None) -> None:
+    """Install a matrix dependency, optionally using pinned compatibility constraints."""
     matrix_entry = _MATRIX.get(prefix, {})
     key = "latest" if version == LATEST else version
     req = matrix_entry.get(key)
-    if req:
+    if not req:
+        return
+    if constraint_group is None:
         session.install(req, silent=SILENT_INSTALLS)
+        return
+
+    constraints = _PYPROJECT.get("dependency-groups", {}).get(constraint_group, [])
+    if not constraints or not all(isinstance(constraint, str) for constraint in constraints):
+        session.error(f"Constraint group {constraint_group!r} must contain only requirement strings")
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt") as constraint_file:
+        constraint_file.write("\n".join(constraints))
+        constraint_file.flush()
+        session.install(req, "-c", constraint_file.name, silent=SILENT_INSTALLS)
 
 
 # ---------------------------------------------------------------------------
@@ -334,7 +345,9 @@ CLAUDE_AGENT_SDK_VERSIONS = _get_matrix_versions("claude-agent-sdk")
 @nox.parametrize("version", CLAUDE_AGENT_SDK_VERSIONS, ids=CLAUDE_AGENT_SDK_VERSIONS)
 def test_claude_agent_sdk(session, version):
     _install_test_deps(session)
-    _install_matrix_dep(session, "claude-agent-sdk", version)
+    # Claude Agent SDK 0.1.10 calls Server.list_tools(), which MCP 2 removed.
+    constraint_group = "test-mcp-v1" if version == "0.1.10" else None
+    _install_matrix_dep(session, "claude-agent-sdk", version, constraint_group)
     _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py", version=version)
 
 
@@ -393,7 +406,9 @@ def test_agentscope(session, version):
     if version == LATEST and sys.version_info < (3, 11):
         session.skip("AgentScope 2.x requires Python 3.11+")
     _install_test_deps(session)
-    _install_matrix_dep(session, "agentscope", version)
+    # AgentScope 1.0.0 imports streamablehttp_client, which MCP 2 no longer exports.
+    constraint_group = "test-mcp-v1" if version == "1.0.0" else None
+    _install_matrix_dep(session, "agentscope", version, constraint_group)
     _install_group_locked(session, "test-agentscope")
     _run_tests(session, f"{INTEGRATION_DIR}/agentscope/test_agentscope.py", version=version)
 
@@ -421,7 +436,9 @@ PYDANTIC_AI_WRAP_OPENAI_VERSIONS = _get_matrix_versions("pydantic-ai-wrap-openai
 @nox.parametrize("version", PYDANTIC_AI_INTEGRATION_VERSIONS, ids=PYDANTIC_AI_INTEGRATION_VERSIONS)
 def test_pydantic_ai_integration(session, version):
     _install_test_deps(session)
-    _install_matrix_dep(session, "pydantic-ai-integration", version)
+    # Pydantic AI 1.10.0 imports opentelemetry._events, removed in opentelemetry-api 1.40.
+    constraint_group = "test-pydantic-ai-otel-events" if version == "1.10.0" else None
+    _install_matrix_dep(session, "pydantic-ai-integration", version, constraint_group)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_integration.py", version=version)
 
 
@@ -440,12 +457,9 @@ def test_pydantic_ai_logfire(session, version):
 def test_pydantic_ai_wrap_openai(session, version):
     """Test pydantic_ai with wrap_openai() approach - supports older versions."""
     _install_test_deps(session)
-    _install_matrix_dep(session, "pydantic-ai-wrap-openai", version)
-    # pydantic-ai 0.1.9 unconditionally imports ``from opentelemetry._events import Event``.
-    # The ``_events`` module was removed from ``opentelemetry-api`` in 1.40+, so a fresh
-    # resolution on newer opentelemetry releases picks a version that breaks import.
-    if version == "0.1.9":
-        session.install("opentelemetry-api<1.40", silent=SILENT_INSTALLS)
+    # These versions import opentelemetry._events, removed in opentelemetry-api 1.40.
+    constraint_group = "test-pydantic-ai-otel-events" if version in {"0.1.9", "1.0.1"} else None
+    _install_matrix_dep(session, "pydantic-ai-wrap-openai", version, constraint_group)
     _run_tests(session, f"{INTEGRATION_DIR}/pydantic_ai/test_pydantic_ai_wrap_openai.py", version=version)
 
 
