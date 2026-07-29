@@ -3256,6 +3256,10 @@ class InvokeFunctionInvokeFunction7(TypedDict):
     """
     Partial function definition to merge with the function being invoked. Fields are validated against the function type's schema at runtime. For facets: { preprocessor?, prompt?, model? }. For prompts: { model?, ... }.
     """
+    endpoint_name: NotRequired[str | None]
+    """
+    Name of the AI provider secret to pin this invocation to.
+    """
 
 
 class InvokeFunctionInvokeFunction8(
@@ -3527,12 +3531,14 @@ class PromptOptions(TypedDict):
     model: NotRequired[str | None]
     params: NotRequired[ModelParams | None]
     position: NotRequired[str | None]
+    endpoint_name: NotRequired[str | None]
 
 
 class PromptOptionsNullish(TypedDict):
     model: NotRequired[str | None]
     params: NotRequired[ModelParams | None]
     position: NotRequired[str | None]
+    endpoint_name: NotRequired[str | None]
 
 
 class ResponseFormatResponseFormat1(TypedDict):
@@ -4293,6 +4299,10 @@ class RunEval(TypedDict):
     Optional tags that will be added to the experiment.
     """
     mcp_auth: NotRequired[Mapping[str, RunEvalMcpAuth] | None]
+    endpoint_name: NotRequired[str | None]
+    """
+    Name of the AI provider secret to pin this run to.
+    """
 
 
 FunctionData: TypeAlias = (
