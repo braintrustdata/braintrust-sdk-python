@@ -8,7 +8,7 @@ from typing import cast
 import pytest
 from braintrust import logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler
-from braintrust.logger import flush
+from braintrust.logger import NOOP_SPAN, current_span, flush
 from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
@@ -155,6 +155,49 @@ def test_llm_calls(logger_memory_logger):
             },
         ],
     )
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_consecutive_async_invocations_are_separate_traces(logger_memory_logger):
+    test_logger, memory_logger = logger_memory_logger
+    assert not memory_logger.pop()
+
+    handler = BraintrustCallbackHandler(logger=test_logger)
+    prompt = ChatPromptTemplate.from_template("What is 1 + {number}?")
+    model = ChatOpenAI(model="gpt-4o-mini")
+    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
+
+    for i in range(2):
+        result = await chain.ainvoke(
+            {"number": str(i)},
+            config={"callbacks": [cast(BaseCallbackHandler, handler)], "run_name": f"run{i}"},
+        )
+        assert result.content
+        assert current_span() == NOOP_SPAN
+
+    with test_logger.start_span(name="parent") as parent_span:
+        result = await chain.ainvoke(
+            {"number": "2"},
+            config={"callbacks": [cast(BaseCallbackHandler, handler)], "run_name": "run2"},
+        )
+        assert result.content
+        assert current_span() == parent_span
+
+    spans = memory_logger.pop()
+    assert len(spans) == 10
+
+    langchain_spans = [span for span in spans if span["span_attributes"]["name"] != "parent"]
+    assert all(
+        span["context"]["span_origin"]["instrumentation"]["name"] == "langchain-auto" for span in langchain_spans
+    )
+
+    roots = [span for span in spans if span.get("span_parents") is None]
+    assert [span["span_attributes"]["name"] for span in roots] == ["run0", "run1", "parent"]
+    assert len({span["root_span_id"] for span in roots}) == 3
+
+    nested_run = next(span for span in spans if span["span_attributes"]["name"] == "run2")
+    assert nested_run["span_parents"] == [parent_span.span_id]
 
 
 @pytest.mark.vcr

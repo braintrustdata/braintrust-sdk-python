@@ -24,6 +24,12 @@ class ParentSpanIds:
     span_parents: list[str]
 
 
+@dataclass(frozen=True)
+class _SpanContextEntry:
+    span_object: Any
+    parent: "_SpanContextEntry | None"
+
+
 class ContextManager(ABC):
     """Abstract base class for managing span context in Braintrust.
 
@@ -77,29 +83,43 @@ class BraintrustContextManager(ContextManager):
     """Braintrust-only context manager using contextvars when OTEL is not available."""
 
     def __init__(self):
-        self._current_span: ContextVar[Any | None] = ContextVar("braintrust_current_span", default=None)
+        self._current_span: ContextVar[_SpanContextEntry | None] = ContextVar("braintrust_current_span", default=None)
+
+    def _get_active_entry(self) -> _SpanContextEntry | None:
+        entry = self._current_span.get()
+        # Async cleanup can end a span from a copied context without clearing
+        # the original context. Skip that stale span while preserving any active
+        # parent that preceded it.
+        while entry is not None and getattr(entry.span_object, "_logged_end_time", None) is not None:
+            entry = entry.parent
+        return entry
 
     def get_current_span_info(self) -> SpanInfo | None:
         """Get information about the currently active span."""
-        current_span = self._current_span.get()
-        if not current_span:
+        entry = self._get_active_entry()
+        if entry is None:
             return None
 
+        current_span = entry.span_object
         # Return SpanInfo for BT spans
         return SpanInfo(trace_id=current_span.root_span_id, span_id=current_span.span_id, span_object=current_span)
 
     def get_parent_span_ids(self) -> ParentSpanIds | None:
         """Get parent information for creating a new Braintrust span."""
-        current_span = self._current_span.get()
-        if not current_span:
+        entry = self._get_active_entry()
+        if entry is None:
             return None
 
+        current_span = entry.span_object
         # If current span is a BT span, use it as parent
         return ParentSpanIds(root_span_id=current_span.root_span_id, span_parents=[current_span.span_id])
 
     def set_current_span(self, span_object: Any) -> Any:
         """Set the current active span."""
-        return self._current_span.set(span_object)
+        entry = None
+        if span_object is not None:
+            entry = _SpanContextEntry(span_object=span_object, parent=self._get_active_entry())
+        return self._current_span.set(entry)
 
     def unset_current_span(self, context_token: Any = None) -> None:
         """Unset the current active span."""
