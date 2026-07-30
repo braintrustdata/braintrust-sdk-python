@@ -149,6 +149,8 @@ test-mcp-v1 = [
 
 test-pydantic-ai-otel-events = [
     "opentelemetry-api==1.39.1",
+    # genai-prices 0.1 returns fields that older Pydantic AI RequestUsage models cannot accept.
+    "genai-prices==0.0.73",
 ]
 
 test-strands = [
