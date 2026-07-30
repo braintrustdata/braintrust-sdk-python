@@ -174,6 +174,105 @@ class TestRetryRequestExceptionsAdapter:
         assert HangingConnectionHandler.request_count >= 2
 
 
+class TransientErrorStatusHandler(http.server.BaseHTTPRequestHandler):
+    """HTTP handler that returns a transient error status for the first N requests.
+
+    Simulates a load balancer/proxy hiccup (502/503/504) that completes with a normal
+    HTTP response rather than raising a connection-level exception -- this does not enter
+    the exception-handling retry path, only a status-code-aware one.
+    """
+
+    request_count = 0
+    fail_count = 1
+    error_status = 502
+
+    def log_message(self, format, *args):
+        pass
+
+    def do_GET(self):
+        TransientErrorStatusHandler.request_count += 1
+
+        if TransientErrorStatusHandler.request_count <= TransientErrorStatusHandler.fail_count:
+            self.send_response(TransientErrorStatusHandler.error_status)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<html>Bad Gateway</html>")
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status": "ok"}')
+
+
+@pytest.fixture
+def transient_error_server():
+    """Fixture that creates a server returning an error status for the first request."""
+    TransientErrorStatusHandler.request_count = 0
+    TransientErrorStatusHandler.fail_count = 1
+    TransientErrorStatusHandler.error_status = 502
+
+    server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), TransientErrorStatusHandler)
+    server.daemon_threads = True
+    port = server.server_address[1]
+
+    thread = threading.Thread(target=server.serve_forever)
+    thread.daemon = True
+    thread.start()
+
+    yield f"http://127.0.0.1:{port}"
+
+    server.shutdown()
+    server.server_close()
+
+
+class TestRetryOnHttpErrorStatus:
+    """Tests that the adapter retries completed responses with a transient error status.
+
+    Regression coverage for https://github.com/braintrustdata/braintrust-sdk-python/issues/639:
+    a request that completes with a non-2xx status returns a normal Response rather than
+    raising, so it must be retried by inspecting the status code, not just by catching
+    connection-level exceptions.
+    """
+
+    def test_adapter_retries_on_502(self, transient_error_server):
+        adapter = RetryRequestExceptionsAdapter(base_num_retries=3, backoff_factor=0.05)
+        session = requests.Session()
+        session.mount("http://", adapter)
+
+        resp = session.get(f"{transient_error_server}/experiment-comparison2")
+
+        assert resp.status_code == 200
+        assert resp.json() == {"status": "ok"}
+        assert TransientErrorStatusHandler.request_count == 2
+
+    def test_adapter_gives_up_after_base_num_retries(self, transient_error_server):
+        TransientErrorStatusHandler.fail_count = 100  # always fails
+
+        adapter = RetryRequestExceptionsAdapter(base_num_retries=2, backoff_factor=0.01)
+        session = requests.Session()
+        session.mount("http://", adapter)
+
+        resp = session.get(f"{transient_error_server}/experiment-comparison2")
+
+        # 1 initial attempt + 2 retries, then the caller gets the last error response back.
+        assert resp.status_code == 502
+        assert TransientErrorStatusHandler.request_count == 3
+
+    def test_adapter_does_not_retry_non_retryable_status(self, transient_error_server):
+        TransientErrorStatusHandler.fail_count = 100
+        TransientErrorStatusHandler.error_status = 404
+
+        adapter = RetryRequestExceptionsAdapter(base_num_retries=5, backoff_factor=0.01)
+        session = requests.Session()
+        session.mount("http://", adapter)
+
+        resp = session.get(f"{transient_error_server}/experiment-comparison2")
+
+        assert resp.status_code == 404
+        assert TransientErrorStatusHandler.request_count == 1
+
+
 class TestHTTPConnection:
     """Tests for HTTPConnection timeout configuration."""
 

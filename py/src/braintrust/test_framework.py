@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from braintrust.logger import BraintrustState
+from braintrust.util import AugmentedHTTPError
 
 from .framework import (
     Eval,
@@ -162,6 +163,34 @@ def test_experiment_summarize_resolves_explicit_comparison_name(with_memory_logg
             "base_experiment_id": "base-exp-id",
         },
     )
+
+
+def test_experiment_summarize_surfaces_scores_fetch_error(with_memory_logger, with_simulate_login):
+    """A failure to fetch experiment-comparison2 must be distinguishable from a genuine
+    empty-scores result, not silently collapsed into the same `scores == {}` shape.
+
+    See https://github.com/braintrustdata/braintrust-sdk-python/issues/639.
+    """
+    exp = init_test_exp("test-evaluator", "test-project")
+    mock_conn = MagicMock()
+
+    def get_json(path, args=None):
+        if path == "v1/experiment/base-exp-id":
+            return {"name": "base-exp"}
+        if path == "experiment-comparison2":
+            raise AugmentedHTTPError("<html>502 Bad Gateway</html>")
+        raise AssertionError(f"Unexpected get_json call: {path}, {args}")
+
+    mock_conn.get_json.side_effect = get_json
+
+    with patch.object(exp.state, "api_conn", return_value=mock_conn):
+        summary = exp.summarize(comparison_experiment_id="base-exp-id")
+
+    assert summary.scores == {}
+    assert summary.metrics == {}
+    assert summary.scores_fetch_error is not None
+    assert "502 Bad Gateway" in summary.scores_fetch_error
+    assert "WARNING" in str(summary)
 
 
 @pytest.mark.asyncio

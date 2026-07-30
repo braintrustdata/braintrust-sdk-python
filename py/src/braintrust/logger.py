@@ -728,16 +728,23 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
         _state._api_conn._reset()
 
 
+#: HTTP status codes that indicate a transient failure worth retrying, rather than a
+#: client error that will fail identically on every attempt.
+RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+
+
 class RetryRequestExceptionsAdapter(HTTPAdapter):
     """An HTTP adapter that automatically retries requests on connection exceptions.
 
     This adapter extends requests' HTTPAdapter to add retry logic for common network-related
-    exceptions including connection errors, timeouts, and other HTTP errors. It implements
-    an exponential backoff strategy between retries to avoid overwhelming servers during
-    intermittent connectivity issues.
+    exceptions including connection errors, timeouts, and other HTTP errors, as well as
+    responses that complete with a transient HTTP error status (see `RETRYABLE_STATUS_CODES`).
+    It implements an exponential backoff strategy between retries to avoid overwhelming
+    servers during intermittent connectivity issues.
 
     Attributes:
-        base_num_retries: Maximum number of retries before giving up and re-raising the exception.
+        base_num_retries: Maximum number of retries before giving up and re-raising the exception
+                          (or returning the last error response).
         backoff_factor: A multiplier used to determine the time to wait between retries.
                        The actual wait time is calculated as: backoff_factor * (2 ** retry_count).
         default_timeout_secs: Default timeout in seconds for requests that don't specify one.
@@ -770,6 +777,21 @@ class RetryRequestExceptionsAdapter(HTTPAdapter):
                 # downloading.
                 if not response.is_redirect and response.content:
                     pass
+                if response.status_code in RETRYABLE_STATUS_CODES and num_prev_retries < self.base_num_retries:
+                    # Unlike connection-level failures, a completed response with an error
+                    # status doesn't raise -- retry it here so transient 5xx/429 responses
+                    # get the same backoff treatment as network exceptions.
+                    sleep_s = self.backoff_factor * (2**num_prev_retries)
+                    print(
+                        "Retrying request after HTTP",
+                        response.status_code,
+                        "response",
+                        file=sys.stderr,
+                    )
+                    print("Sleeping for", sleep_s, "seconds", file=sys.stderr)
+                    time.sleep(sleep_s)
+                    num_prev_retries += 1
+                    continue
                 return response
             except (urllib3.exceptions.HTTPError, requests.exceptions.RequestException) as e:
                 if num_prev_retries < self.base_num_retries:
@@ -4362,6 +4384,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         score_summary = {}
         metric_summary = {}
         comparison_experiment_name = None
+        scores_fetch_error = None
         if summarize_scores:
             # Get the comparison experiment
             if comparison_experiment_id is None:
@@ -4385,6 +4408,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
                     },
                 )
             except Exception as e:
+                scores_fetch_error = str(e)
                 _logger.warning(
                     f"Failed to fetch experiment scores and metrics: {e}\n\nView complete results in Braintrust or run experiment.summarize() again."
                 )
@@ -4413,6 +4437,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
             comparison_experiment_name=comparison_experiment_name,
             scores=score_summary,
             metrics=metric_summary,
+            scores_fetch_error=scores_fetch_error,
         )
 
     def export(self) -> str:
@@ -6002,13 +6027,21 @@ class ExperimentSummary(SerializableDataClass):
     """Summary of the experiment's scores."""
     metrics: dict[str, MetricSummary]
     """Summary of the experiment's metrics."""
+    scores_fetch_error: str | None = None
+    """If set, fetching the score/metric summary from the server failed with this error, and
+    `scores`/`metrics` are empty as a result of that failure -- not because the experiment has
+    no scores. Callers that gate automation (e.g. CI) on `scores` should check this field before
+    treating an empty `scores` dict as "the experiment has no scores"."""
 
     def __str__(self):
         comparison_line = ""
         if self.comparison_experiment_name:
             comparison_line = f"""{self.experiment_name} compared to {self.comparison_experiment_name}:\n"""
+        fetch_error_line = ""
+        if self.scores_fetch_error:
+            fetch_error_line = f"WARNING: failed to fetch scores and metrics ({self.scores_fetch_error}). The summary below does not reflect the experiment's actual scores.\n\n"
         return (
-            f"""\n=========================SUMMARY=========================\n{comparison_line}"""
+            f"""\n=========================SUMMARY=========================\n{fetch_error_line}{comparison_line}"""
             + "\n".join([str(score) for score in self.scores.values()])
             + ("\n\n" if self.scores else "")
             + "\n".join([str(metric) for metric in self.metrics.values()])
