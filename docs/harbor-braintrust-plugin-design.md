@@ -471,7 +471,7 @@ Write `<job-dir>/braintrust-sync.json` with plugin version, job/project identity
 Suggested constructor:
 
 ```python
-BraintrustPlugin(
+HarborPlugin(
     project_name=None,
     project_id=None,
     experiment_prefix=None,
@@ -502,7 +502,7 @@ BraintrustPlugin(
 
 Constructor options should have `HARBOR_BRAINTRUST_*` environment fallbacks, with precedence `explicit option > environment > default`. Standard Braintrust variables continue to configure API key, organization, and app URL. Complex rule values should use JSON because Harbor only supports `--plugin-kwarg` when one plugin is supplied. Validate mutually exclusive identifiers, overlapping reward rules, globs, bounds, byte limits, and mode combinations before performing network I/O.
 
-Ship the integration in the Braintrust distribution under `py/src/braintrust/integrations/harbor/` and register `braintrust.integrations.harbor:BraintrustPlugin` in the `harbor.plugins` entry-point group. Harbor stays optional: importing Braintrust without Harbor installed must continue to work, and the integration must not raise Braintrust's minimum Python version. Test supported Harbor releases through a dedicated, explicitly pinned version matrix.
+Ship the integration in the Braintrust distribution under `py/src/braintrust/integrations/harbor/` and register `braintrust.integrations.harbor:HarborPlugin` in the `harbor.plugins` entry-point group. Harbor stays optional: importing Braintrust without Harbor installed must continue to work, and the integration must not raise Braintrust's minimum Python version. Test supported Harbor releases through a dedicated, explicitly pinned version matrix.
 
 Keep lifecycle orchestration, compatibility access, state reduction, dataset/eval conversion, ATIF conversion, reward handling, attachments, and identity generation behind clear internal boundaries. The internal file layout is an implementation choice rather than part of this design.
 

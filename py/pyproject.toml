@@ -42,6 +42,9 @@ braintrust = "braintrust.cli.__main__:main"
 [project.entry-points.pytest11]
 braintrust = "braintrust.wrappers.pytest_plugin.plugin"
 
+[project.entry-points."harbor.plugins"]
+braintrust = "braintrust.integrations.harbor:HarborPlugin"
+
 [project.optional-dependencies]
 cli = ["boto3", "python-dotenv", "uv", "starlette", "uvicorn"]
 # TODO: remove the doc extra in the next major version.
@@ -458,6 +461,9 @@ latest = "temporalio==1.31.0"
 "1.20.0" = "temporalio==1.20.0"
 "1.19.0" = "temporalio==1.19.0"
 
+[tool.braintrust.matrix.harbor]
+latest = "harbor==0.20.0"
+
 [tool.braintrust.matrix.pytest-matrix]
 # Canonical pytest pin. The matching entry in [dependency-groups].test is
 # kept in sync by py/scripts/sync-pytest-pin.py (enforced by pre-commit).
@@ -505,6 +511,7 @@ crewai = ["crewai"]
 dspy = ["dspy"]
 google_genai = ["google-genai"]
 huggingface_hub = ["huggingface-hub"]
+harbor = ["harbor"]
 instructor = ["instructor"]
 langchain = ["langchain-core", "deepagents"]
 litellm = ["litellm"]
@@ -527,6 +534,7 @@ cohere = "cohere"
 autoevals = "autoevals"
 braintrust-core = "braintrust_core"
 boto3 = "boto3"
+harbor = "harbor"
 botocore = "botocore"
 crewai = "crewai"
 dspy = "dspy"
