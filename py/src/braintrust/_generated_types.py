@@ -1632,6 +1632,34 @@ Permissions can be assigned to to objects on an individual basis, or grouped int
 """
 
 
+class PreprocessorSavedFunctionIdPreprocessorSavedFunctionId(TypedDict):
+    type: Literal['function']
+    id: str
+    version: NotRequired[str | None]
+    """
+    The version of the function
+    """
+
+
+class PreprocessorSavedFunctionIdPreprocessorSavedFunctionId1(TypedDict):
+    type: Literal['global']
+    name: str
+    function_type: NotRequired[Literal['preprocessor'] | None]
+    """
+    The type of global function. Defaults to 'preprocessor'.
+    """
+
+
+PreprocessorSavedFunctionId: TypeAlias = (
+    PreprocessorSavedFunctionIdPreprocessorSavedFunctionId
+    | PreprocessorSavedFunctionIdPreprocessorSavedFunctionId1
+    | None
+)
+"""
+For prompt-backed scorers: the preprocessor function to use for trace template variables. Set to null to disable preprocessing. If omitted, the traced project's default preprocessor will be used, falling back to the global 'thread' preprocessor.
+"""
+
+
 class ProjectAutomationConfigAction(TypedDict):
     type: Literal['webhook']
     """
@@ -3982,6 +4010,7 @@ class PromptData(TypedDict):
     prompt: NotRequired[PromptBlockDataNullish | None]
     options: NotRequired[PromptOptionsNullish | None]
     parser: NotRequired[PromptParserNullish | None]
+    preprocessor: NotRequired[PreprocessorSavedFunctionId | None]
     tool_functions: NotRequired[Sequence[SavedFunctionId] | None]
     template_format: NotRequired[Literal['mustache', 'nunjucks', 'none'] | None]
     mcp: NotRequired[Mapping[str, Any] | None]
@@ -3992,6 +4021,7 @@ class PromptDataNullish(TypedDict):
     prompt: NotRequired[PromptBlockDataNullish | None]
     options: NotRequired[PromptOptionsNullish | None]
     parser: NotRequired[PromptParserNullish | None]
+    preprocessor: NotRequired[PreprocessorSavedFunctionId | None]
     tool_functions: NotRequired[Sequence[SavedFunctionId] | None]
     template_format: NotRequired[Literal['mustache', 'nunjucks', 'none'] | None]
     mcp: NotRequired[Mapping[str, Any] | None]

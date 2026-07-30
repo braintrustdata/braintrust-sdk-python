@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 265d32c75b7526f2) -- do not modify"""
+"""Auto-generated file (content hash ecb294cff7f76552) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -66,6 +66,7 @@ from ._generated_types import (
     Organization,
     OrgAutomation,
     Permission,
+    PreprocessorSavedFunctionId,
     Project,
     ProjectAutomation,
     ProjectLogsEvent,
@@ -187,6 +188,7 @@ __all__ = [
     "OrgAutomation",
     "Organization",
     "Permission",
+    "PreprocessorSavedFunctionId",
     "Project",
     "ProjectAutomation",
     "ProjectLogsEvent",
