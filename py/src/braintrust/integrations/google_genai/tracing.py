@@ -527,8 +527,6 @@ def _extract_interaction_usage_metrics(usage: Any, metrics: dict[str, Any]) -> N
         metrics["prompt_cached_tokens"] = usage.total_cached_tokens
     if total_thought_tokens is not None:
         metrics["completion_reasoning_tokens"] = total_thought_tokens
-    if hasattr(usage, "total_tool_use_tokens") and usage.total_tool_use_tokens is not None:
-        metrics["tool_use_tokens"] = usage.total_tool_use_tokens
 
 
 def _extract_interaction_text(outputs: list[dict[str, Any]]) -> str | None:
@@ -599,6 +597,9 @@ def _extract_interaction_metadata(response: "Interaction") -> dict[str, Any]:
             "role": getattr(response, "role", None),
             "response_mime_type": getattr(response, "response_mime_type", None),
             "response_modalities": _materialize_interaction_value(getattr(response, "response_modalities", None)),
+            "total_tool_use_tokens": (
+                usage_serialized.get("total_tool_use_tokens") if isinstance(usage_serialized, dict) else None
+            ),
             "usage_by_modality": usage_by_modality,
         }
     )

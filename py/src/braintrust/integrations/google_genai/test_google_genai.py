@@ -1656,6 +1656,8 @@ def test_interactions_create_and_get(memory_logger):
         response.usage.total_output_tokens + response.usage.total_thought_tokens
     )
     assert create_span["metrics"]["tokens"] == response.usage.total_tokens
+    assert "tool_use_tokens" not in create_span["metrics"]
+    assert create_span["metadata"]["total_tool_use_tokens"] == response.usage.total_tool_use_tokens
 
     assert get_span["input"]["id"] == response.id
     assert get_span["metadata"]["interaction_id"] == response.id
