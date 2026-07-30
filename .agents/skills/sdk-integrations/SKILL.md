@@ -202,6 +202,8 @@ Only emit spec-listed keys:
 - `prompt_audio_tokens`, `completion_audio_tokens`, `completion_image_tokens` — audio/image models when provider reports
 - `start`, `end` — standard span timing
 
+Map provider modality breakdowns only to standardized metrics: input audio → `prompt_audio_tokens`, output audio → `completion_audio_tokens`, and output image → `completion_image_tokens`. These are subsets of prompt/completion usage, not additional tokens. Preserve unstandardized modality breakdowns as deliberately named provider metadata rather than inventing metric keys.
+
 For streaming, still produce one span per API call with accumulated `input`/`output`. Capture usage from stream metadata (e.g. OpenAI `stream_options.include_usage`) when surfaced.
 
 For reasoning models, capture the full output structure (reasoning summaries + message blocks) and include prior reasoning in `input` for multi-turn calls.
@@ -261,7 +263,7 @@ Assert on emitted spans (not just provider return values):
 
 For streaming, assert both the provider iterator/async-iterator still works AND the final span has aggregated `output` + stream-specific `metrics`.
 
-Cassettes live in `integrations/<provider>/cassettes/<version>/` (e.g. `cassettes/latest/`, `cassettes/0.48.0/`). Nox sets `BRAINTRUST_TEST_PACKAGE_VERSION` so cassettes land correctly. Do not add per-test `vcr_cassette_dir` / `cassette_library_dir` fixtures — `integrations/conftest.py` handles it. Re-record only when behavior intentionally changed. Sanitize cassettes when the provider returns binary bodies.
+Cassettes live in `integrations/<provider>/cassettes/<version>/` (e.g. `cassettes/latest/`, `cassettes/0.48.0/`). Nox sets `BRAINTRUST_TEST_PACKAGE_VERSION` so cassettes land correctly. Do not add per-test `vcr_cassette_dir` / `cassette_library_dir` fixtures — `integrations/conftest.py` handles it. Re-record only when behavior intentionally changed. Sanitize binary media in both request and response bodies so checked-in cassettes do not retain large base64 payloads.
 
 Confirm the exact session name from `noxfile.py` — don't assume it matches the folder.
 
