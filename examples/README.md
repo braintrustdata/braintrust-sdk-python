@@ -69,6 +69,7 @@ Unless noted otherwise, every example below uses `braintrust.auto_instrument()`.
 | `dspy/` | DSPy `ReAct` agent with two tools (LiteLLM token metrics propagate) |
 | `evals/` | The `Eval` framework — does **not** use `auto_instrument()` |
 | `google_genai/` | Google GenAI `generate_content` against Gemini |
+| `harbor/` | Native Harbor evaluation plugin — does **not** use `auto_instrument()` |
 | `langchain/` | LangChain `prompt | model` chain — global handler installed by `auto_instrument()` |
 | `langsmith/` | Migration helper for projects coming from LangSmith — uses `setup_langsmith()` |
 | `litellm/` | LiteLLM `completion` |
