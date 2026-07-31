@@ -109,6 +109,7 @@ from .util import (
     merge_dicts,
     response_raise_for_status,
 )
+from .version import VERSION
 from .xact_ids import prettify_xact
 
 
@@ -828,6 +829,9 @@ class HTTPConnection:
 
     def _reset(self, **retry_kwargs: Any) -> None:
         self.session = requests.Session()
+        # Identifies SDK-originated traffic so the backend can attribute object
+        # creation to the Python SDK.
+        self.session.headers.update({"User-Agent": f"braintrust-python/{VERSION}"})
 
         adapter = self.adapter
         if adapter is None:
