@@ -10,7 +10,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field, fields
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -84,8 +84,9 @@ class RuntimeState:
 
 def _seconds(value: Any, fallback: float) -> float:
     if isinstance(value, datetime):
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=timezone.utc)
+        # Harbor trial timestamps are timezone-aware, but job timestamps are
+        # currently naive local datetimes. datetime.timestamp() preserves both
+        # conventions; assigning UTC to a naive value shifts non-UTC jobs.
         return value.timestamp()
     return fallback
 
@@ -821,10 +822,13 @@ class HarborPlugin:
                 project_id=self.config.project_id,
                 set_current=False,
             )
+            now = datetime.now().timestamp()
+            summary_start, summary_end = _timing(job_result, now, now)
             summary = project_logger.start_span(
                 name="harbor.job.summary",
                 type="task",
                 id=f"harbor-job-summary-{self._runtime.snapshot.job_id}",
+                start_time=summary_start,
                 set_current=False,
                 input={"job_id": self._runtime.snapshot.job_id},
                 metadata={
@@ -839,7 +843,7 @@ class HarborPlugin:
                 internal={"instrumentation": _INSTRUMENTATION},
             )
             summary.log(output=job_result.stats.model_dump(mode="json", exclude_none=False))
-            summary.end(end_time=_seconds(getattr(job_result, "finished_at", None), datetime.now().timestamp()))
+            summary.end(end_time=summary_end)
         flush()
 
     def _persist_disabled_manifest(self) -> None:

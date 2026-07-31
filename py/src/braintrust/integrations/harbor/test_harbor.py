@@ -22,6 +22,7 @@ from braintrust.integrations.harbor.identity import (
     partition_key,
     semantic_agent_config,
 )
+from braintrust.integrations.harbor.plugin import _seconds, _timing
 from braintrust.integrations.harbor.rewards import classify_rewards, validate_classifications
 from braintrust.integrations.harbor.state import (
     TrialEvent,
@@ -34,6 +35,7 @@ from braintrust.integrations.harbor.state import (
 from harbor.models.job.lock import AgentSkillLock, TaskLock, TrialLock
 from harbor.models.trajectories.trajectory import Trajectory
 from harbor.models.trial.config import AgentConfig, EnvironmentConfig, TaskConfig, TrialConfig, VerifierConfig
+from harbor.models.trial.result import TimingInfo
 
 
 _ABSOLUTE_PATH_RE = re.compile(r"(?:/(?:Users|private|home)/[^\"\\\\\s]+|[A-Za-z]:\\\\[^\"\\\\\s]+)")
@@ -211,6 +213,23 @@ def test_ids_and_partition_are_deterministic_and_do_not_include_concurrency(tmp_
     assert semantic_agent_config(changed_concurrency, task_lock.skills) == semantic
 
 
+def test_harbor_naive_datetimes_use_the_host_timezone_and_timings_never_run_backward():
+    started_at = datetime(2026, 7, 31, 9, 57, 7)
+    finished_at = datetime(2026, 7, 31, 9, 57, 41)
+    timing = TimingInfo(started_at=started_at, finished_at=finished_at)
+
+    start, end = _timing(timing, 0, 0)
+
+    assert start == started_at.timestamp()
+    assert end == finished_at.timestamp()
+    assert end >= start
+    assert _seconds(started_at, 0) == started_at.timestamp()
+
+    backwards = TimingInfo(started_at=finished_at, finished_at=started_at)
+    backwards_start, backwards_end = _timing(backwards, 0, 0)
+    assert backwards_end == backwards_start
+
+
 def test_trial_reducer_retry_duplicate_backward_and_reconcile():
     state = TrialMachine("trial")
     state, _ = reduce_trial(state, TrialEvent(TrialEventKind.START))
@@ -249,8 +268,8 @@ def test_atif_import_round_trips_with_real_sdks(tmp_path):
         {
             "schema_version": "ATIF-v1.7",
             "agent": {
-                "name": "test-agent",
-                "version": "1",
+                "name": "terminus-2",
+                "version": "2.0.0",
                 "model_name": "openai/gpt-4o-mini",
                 "tool_definitions": [
                     {
@@ -271,7 +290,6 @@ def test_atif_import_round_trips_with_real_sdks(tmp_path):
                     "timestamp": "2026-01-01T00:00:01Z",
                     "source": "agent",
                     "message": "I'll calculate it.",
-                    "llm_call_count": 1,
                     "metrics": {"prompt_tokens": 10, "completion_tokens": 4, "cost_usd": 0.001},
                     "tool_calls": [
                         {
@@ -287,7 +305,6 @@ def test_atif_import_round_trips_with_real_sdks(tmp_path):
                     "timestamp": "2026-01-01T00:00:02Z",
                     "source": "agent",
                     "message": "The answer is 4.",
-                    "llm_call_count": 1,
                     "metrics": {"prompt_tokens": 15, "completion_tokens": 5},
                 },
             ],
@@ -299,6 +316,7 @@ def test_atif_import_round_trips_with_real_sdks(tmp_path):
     assert summary.schema_version == "ATIF-v1.7"
     assert summary.final_message == "The answer is 4."
     assert summary.warnings == ()
+    assert trajectory.steps[1].llm_call_count is None
     assert _usage_metrics(trajectory.steps[1].metrics.model_dump(mode="python")) == {
         "prompt_tokens": 10,
         "completion_tokens": 4,
@@ -350,6 +368,10 @@ def test_atif_import_round_trips_with_real_sdks(tmp_path):
 
     assert imported.imported_llm_spans == 2
     assert imported.imported_tool_spans == 1
+    assert imported.repairs == (
+        "step 2: inferred one model call from terminus-2 2.0.0 trajectory",
+        "step 3: inferred one model call from terminus-2 2.0.0 trajectory",
+    )
     assert [span["span_attributes"]["type"] for span in leaves] == ["llm", "tool", "llm"]
     assert leaves[0]["metadata"] == {
         "provider": "openai",

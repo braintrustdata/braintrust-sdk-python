@@ -71,6 +71,19 @@ def _provider(model: str | None) -> tuple[str | None, str | None]:
     return "unknown", model
 
 
+def _known_single_llm_step(agent: dict[str, Any], step: dict[str, Any], metrics: dict[str, int | float]) -> bool:
+    # Harbor 0.20's Terminus 2 producer creates one agent step immediately
+    # after each LLM interaction but omits ATIF-v1.7's llm_call_count field.
+    # Keep this exception producer/version-specific rather than inferring from
+    # token usage for arbitrary ATIF producers.
+    return (
+        agent.get("name") == "terminus-2"
+        and agent.get("version") == "2.0.0"
+        and step.get("llm_call_count") is None
+        and "tokens" in metrics
+    )
+
+
 def _valid_count(value: Any) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
@@ -279,6 +292,9 @@ def import_trajectory(
 
         llm_call_count = step.get("llm_call_count")
         metrics = _usage_metrics(step.get("metrics"))
+        if _known_single_llm_step(agent, step, metrics):
+            llm_call_count = 1
+            repairs.append(f"step {index + 1}: inferred one model call from terminus-2 2.0.0 trajectory")
         provider, model = _provider(step.get("model_name") or default_model)
         can_be_llm = (
             config.content_mode != "metadata"

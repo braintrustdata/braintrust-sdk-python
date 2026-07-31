@@ -331,6 +331,7 @@ An ATIF step may be an `llm` span only when it represents exactly one model call
 
 - `llm_call_count == 0` is deterministic work;
 - unknown or multiple calls are not one LLM call unless ATIF exposes each call;
+- a pinned, producer-specific compatibility adapter may repair an omitted count only when the tested producer guarantees one LLM call per agent step; record the repair on the eval root;
 - a streaming call without measurable time-to-first-token is downgraded;
 - redaction that removes required payload content also downgrades the leaf.
 
