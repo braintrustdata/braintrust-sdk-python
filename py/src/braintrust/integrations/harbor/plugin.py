@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from braintrust.logger import Attachment, flush, init, init_dataset, init_logger
+from braintrust.logger import Attachment, flush, init, init_dataset
 from exceptiongroup import ExceptionGroup
 
 from .atif import _INSTRUMENTATION, ATIFImportResult, import_trajectory, summarize_trajectory
@@ -263,7 +263,6 @@ class HarborPlugin:
         max_attachment_bytes: Any = _UNSET,
         max_total_attachment_bytes: Any = _UNSET,
         max_content_bytes: Any = _UNSET,
-        log_job_summary: Any = _UNSET,
         log_retry_attempts: Any = _UNSET,
         strict: Any = _UNSET,
         **kwargs: Any,
@@ -291,7 +290,6 @@ class HarborPlugin:
             "max_attachment_bytes": max_attachment_bytes,
             "max_total_attachment_bytes": max_total_attachment_bytes,
             "max_content_bytes": max_content_bytes,
-            "log_job_summary": log_job_summary,
             "log_retry_attempts": log_retry_attempts,
             "strict": strict,
             **kwargs,
@@ -356,7 +354,7 @@ class HarborPlugin:
         for name in set(self._trial_machines) - final_names:
             await self._dispatch(name, TrialEvent(TrialEventKind.OMIT))
         try:
-            await asyncio.to_thread(self._finalize, job_result)
+            await asyncio.to_thread(flush)
         except Exception as exc:
             failures.append(exc)
             self._errors.append(f"final flush: {exc}")
@@ -812,39 +810,6 @@ class HarborPlugin:
             ).value
         root.log(metadata=metadata)
         root.end(end_time=root_end)
-
-    def _finalize(self, job_result: Any) -> None:
-        if self._runtime is None:
-            return
-        if self.config.log_job_summary:
-            project_logger = init_logger(
-                project=self.config.project_name,
-                project_id=self.config.project_id,
-                set_current=False,
-            )
-            now = datetime.now().timestamp()
-            summary_start, summary_end = _timing(job_result, now, now)
-            summary = project_logger.start_span(
-                name="harbor.job.summary",
-                type="task",
-                id=f"harbor-job-summary-{self._runtime.snapshot.job_id}",
-                start_time=summary_start,
-                set_current=False,
-                input={"job_id": self._runtime.snapshot.job_id},
-                metadata={
-                    "harbor": {
-                        "job_id": self._runtime.snapshot.job_id,
-                        "experiments": [
-                            {"id": partition.experiment_id, "name": partition.name}
-                            for partition in self._runtime.partitions.values()
-                        ],
-                    }
-                },
-                internal={"instrumentation": _INSTRUMENTATION},
-            )
-            summary.log(output=job_result.stats.model_dump(mode="json", exclude_none=False))
-            summary.end(end_time=summary_end)
-        flush()
 
     def _persist_disabled_manifest(self) -> None:
         if self._snapshot is None:

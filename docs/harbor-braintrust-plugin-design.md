@@ -16,7 +16,7 @@ Harbor final trial             → Braintrust root eval span
 Harbor verifier rewards        → Braintrust scores or metrics
 Harbor verifier labels         → Braintrust classifications
 Harbor lifecycle + ATIF        → child spans
-Harbor JobResult               → final reconciliation + job summary
+Harbor JobResult               → final reconciliation
 ```
 
 ### Key decisions
@@ -57,7 +57,7 @@ Version 1 does not need to:
 
 | Harbor | Braintrust | Notes |
 |---|---|---|
-| Job | Shared metadata + optional project-log summary | A job may create several experiments. |
+| Job | Shared metadata on experiments and eval roots | A job may create several experiments. |
 | Resolved dataset/task set | Dataset | Scope is the exact logical task selection. |
 | Task | Dataset record | Deterministic ID and canonical task input. |
 | Eval group/variant | Experiment | Partition by dataset and semantic agent config. |
@@ -307,7 +307,7 @@ Version 1 should only read labels from known Harbor adapters or explicit `classi
 
 If `reward-details.json` exists, put a bounded summary in the scorer output and optionally attach the complete JSON. Do not create criterion-level or judge-LLM spans until Rewardkit has a stable, tested mapping.
 
-Harbor's job metrics, custom `metric.py`, and pass@k remain authoritative aggregate results. Do not create a synthetic eval row for aggregates. Optionally write one project-log trace, `harbor.job.summary`, containing exact Harbor aggregates and links to partition experiments.
+Harbor's job metrics, custom `metric.py`, and pass@k remain authoritative aggregate results. Do not create a synthetic eval row or project-log trace for aggregates.
 
 ## ATIF import
 
@@ -495,7 +495,6 @@ HarborPlugin(
     max_attachment_bytes=5_000_000,
     max_total_attachment_bytes=20_000_000,
     max_content_bytes=20_000,
-    log_job_summary=True,
     log_retry_attempts=False,
     strict=False,
 )
@@ -527,7 +526,7 @@ Do not mutate private fields or depend on queue, metrics, progress, existing-tri
 2. Validate config/auth and read resolved tasks, lock, and custom metadata.
 3. Normalize metadata, build partitions, sync datasets, and initialize experiments.
 4. Register all trial hooks with one thin dispatcher.
-5. Dispatch job `READY`; optionally start a project-log job trace.
+5. Dispatch job `READY`.
 
 Keep blocking SDK and filesystem work off Harbor's event loop. Preserve per-trial effect ordering while allowing independent trials to make progress concurrently.
 

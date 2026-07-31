@@ -103,7 +103,6 @@ class PluginConfig:
     max_attachment_bytes: int = 5_000_000
     max_total_attachment_bytes: int = 20_000_000
     max_content_bytes: int = 20_000
-    log_job_summary: bool = True
     log_retry_attempts: bool = False
     strict: bool = False
     redact_patterns: tuple[str, ...] = ()
@@ -119,7 +118,6 @@ class PluginConfig:
         for name in (
             "include_custom_metadata",
             "include_tracebacks",
-            "log_job_summary",
             "log_retry_attempts",
             "strict",
         ):
