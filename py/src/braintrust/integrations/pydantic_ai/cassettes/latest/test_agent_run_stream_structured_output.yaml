@@ -17,7 +17,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.18.0
+      - pydantic-ai/2.23.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.50.0
+      - 2.53.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -42,97 +42,97 @@ interactions:
     body:
       string: 'event: response.created
 
-        data: {"type":"response.created","response":{"id":"resp_0c3ea43c9cd2d933006a6a015646a4819e800b72dae23a8538","object":"response","created_at":1785332054,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
+        data: {"type":"response.created","response":{"id":"resp_089b4d9ea595992a006a7210f1f150819198f58771027e8b0a","object":"response","created_at":1785860337,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
         final response which ends this conversation","name":"final_result","output_schema":null,"parameters":{"properties":{"name":{"type":"string"},"price":{"type":"number"}},"required":["name","price"],"type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
 
 
         event: response.in_progress
 
-        data: {"type":"response.in_progress","response":{"id":"resp_0c3ea43c9cd2d933006a6a015646a4819e800b72dae23a8538","object":"response","created_at":1785332054,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
+        data: {"type":"response.in_progress","response":{"id":"resp_089b4d9ea595992a006a7210f1f150819198f58771027e8b0a","object":"response","created_at":1785860337,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
         final response which ends this conversation","name":"final_result","output_schema":null,"parameters":{"properties":{"name":{"type":"string"},"price":{"type":"number"}},"required":["name","price"],"type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","type":"function_call","status":"in_progress","arguments":"","call_id":"call_fU3RdJDii3cRaxTsRk0BQ8UQ","name":"final_result"},"output_index":0,"sequence_number":2}
+        data: {"type":"response.output_item.added","item":{"id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","type":"function_call","status":"in_progress","arguments":"","call_id":"call_cmcF8ZQB0WOREEcPvBqAjLrI","name":"final_result"},"output_index":0,"sequence_number":2}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"{\"","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"Loh9pnp8ysd8ED","output_index":0,"sequence_number":3}
+        data: {"type":"response.function_call_arguments.delta","delta":"{\"","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"A6LCF6S7LRcF2W","output_index":0,"sequence_number":3}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"name","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"Q7C9tXO0oJI2","output_index":0,"sequence_number":4}
+        data: {"type":"response.function_call_arguments.delta","delta":"name","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"iYsK10u6T05b","output_index":0,"sequence_number":4}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\":\"","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"cNp4DO7DowVLw","output_index":0,"sequence_number":5}
+        data: {"type":"response.function_call_arguments.delta","delta":"\":\"","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"t3p4nkwR0Nstv","output_index":0,"sequence_number":5}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"Wireless","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"EiptTmho","output_index":0,"sequence_number":6}
+        data: {"type":"response.function_call_arguments.delta","delta":"Wireless","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"r2IcmMTk","output_index":0,"sequence_number":6}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":" Mouse","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"jj0YfDmkQL","output_index":0,"sequence_number":7}
+        data: {"type":"response.function_call_arguments.delta","delta":" Mouse","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"ThRwqzTT3i","output_index":0,"sequence_number":7}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\",\"","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"ytviU43NwWMYo","output_index":0,"sequence_number":8}
+        data: {"type":"response.function_call_arguments.delta","delta":"\",\"","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"p4TE3H5uBOWrY","output_index":0,"sequence_number":8}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"price","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"fEgP1Are4nX","output_index":0,"sequence_number":9}
+        data: {"type":"response.function_call_arguments.delta","delta":"price","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"Wv3tuMjla0g","output_index":0,"sequence_number":9}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"\":","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"Iq2nIzUUaGijGs","output_index":0,"sequence_number":10}
+        data: {"type":"response.function_call_arguments.delta","delta":"\":","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"sLMuHRu0FddZyb","output_index":0,"sequence_number":10}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"29","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"1ABscHcLt54jVh","output_index":0,"sequence_number":11}
+        data: {"type":"response.function_call_arguments.delta","delta":"29","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"vn05mfvOAjvROS","output_index":0,"sequence_number":11}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":".","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"YgvPis4QbfKKbzx","output_index":0,"sequence_number":12}
+        data: {"type":"response.function_call_arguments.delta","delta":".","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"tvdv9aDvIJkoixd","output_index":0,"sequence_number":12}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"99","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"LDN1iuuFWYCRhl","output_index":0,"sequence_number":13}
+        data: {"type":"response.function_call_arguments.delta","delta":"99","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"sYtZF6Ve16ggke","output_index":0,"sequence_number":13}
 
 
         event: response.function_call_arguments.delta
 
-        data: {"type":"response.function_call_arguments.delta","delta":"}","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","obfuscation":"5OjAtv5PDu3i61W","output_index":0,"sequence_number":14}
+        data: {"type":"response.function_call_arguments.delta","delta":"}","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","obfuscation":"yImsSg3NPhtQAHH","output_index":0,"sequence_number":14}
 
 
         event: response.function_call_arguments.done
 
         data: {"type":"response.function_call_arguments.done","arguments":"{\"name\":\"Wireless
-        Mouse\",\"price\":29.99}","item_id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","output_index":0,"sequence_number":15}
+        Mouse\",\"price\":29.99}","item_id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","output_index":0,"sequence_number":15}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
-        Mouse\",\"price\":29.99}","call_id":"call_fU3RdJDii3cRaxTsRk0BQ8UQ","name":"final_result"},"output_index":0,"sequence_number":16}
+        data: {"type":"response.output_item.done","item":{"id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
+        Mouse\",\"price\":29.99}","call_id":"call_cmcF8ZQB0WOREEcPvBqAjLrI","name":"final_result"},"output_index":0,"sequence_number":16}
 
 
         event: response.completed
 
-        data: {"type":"response.completed","response":{"id":"resp_0c3ea43c9cd2d933006a6a015646a4819e800b72dae23a8538","object":"response","created_at":1785332054,"status":"completed","background":false,"completed_at":1785332054,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"fc_0c3ea43c9cd2d933006a6a0156b5a0819ea6f376864a1bed8f","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
-        Mouse\",\"price\":29.99}","call_id":"call_fU3RdJDii3cRaxTsRk0BQ8UQ","name":"final_result"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
+        data: {"type":"response.completed","response":{"id":"resp_089b4d9ea595992a006a7210f1f150819198f58771027e8b0a","object":"response","created_at":1785860337,"status":"completed","background":false,"completed_at":1785860339,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":200,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"fc_089b4d9ea595992a006a7210f290c8819189cb07c897aada61","type":"function_call","status":"completed","arguments":"{\"name\":\"Wireless
+        Mouse\",\"price\":29.99}","call_id":"call_cmcF8ZQB0WOREEcPvBqAjLrI","name":"final_result"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"required","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"function","description":"The
         final response which ends this conversation","name":"final_result","output_schema":null,"parameters":{"properties":{"name":{"type":"string"},"price":{"type":"number"}},"required":["name","price"],"type":"object","additionalProperties":false},"strict":true}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":{"input_tokens":63,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":13,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":76},"user":null,"metadata":{}},"sequence_number":17}
 
 
@@ -147,15 +147,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c7ffadd01fc7d-YYZ
+      - a25ee187ae1e37a1-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Wed, 29 Jul 2026 13:34:14 GMT
+      - Tue, 04 Aug 2026 16:18:58 GMT
       openai-processing-ms:
-      - '166'
+      - '230'
       openai-version:
       - '2020-10-01'
       server:
@@ -167,7 +167,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_9de70489b38743ea8d9601a80d1bb54e
+      - req_01575c89343c46cc927abca62fc0fdcf
     status:
       code: 200
       message: OK

@@ -16,86 +16,67 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.9.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations#stream
   response:
     body:
       string: 'event: conversation.response.started
 
-        data: {"type":"conversation.response.started","created_at":"2026-07-21T00:18:51.689447Z","conversation_id":"conv_019f820a2686718abe054b3299945f3b"}
+        data: {"type":"conversation.response.started","created_at":"2026-08-04T16:15:52.944933Z","conversation_id":"conv_019fcd8f5ad57046a1c88318367a5347"}
 
 
         event: tool.execution.started
 
-        data: {"type":"tool.execution.started","created_at":"2026-07-21T00:18:51.693090Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
+        data: {"type":"tool.execution.started","created_at":"2026-08-04T16:15:52.947894Z","output_index":0,"id":"tool_exec_019fcd8f5e73758798c8adfb3cda4e1e","model":"mistral-small-latest","name":"code_interpreter","arguments":"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.704848Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-08-04T16:15:52.949601Z","output_index":0,"id":"tool_exec_019fcd8f5e73758798c8adfb3cda4e1e","name":"code_interpreter","arguments":"{\"code","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.721667Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"\":
-        \"#","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-08-04T16:15:52.962481Z","output_index":0,"id":"tool_exec_019fcd8f5e73758798c8adfb3cda4e1e","name":"code_interpreter","arguments":"\":
+        \"","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.741743Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"
-        Calculate the","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-08-04T16:15:52.983228Z","output_index":0,"id":"tool_exec_019fcd8f5e73758798c8adfb3cda4e1e","name":"code_interpreter","arguments":"2","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.757384Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"
-        product of 2","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-08-04T16:15:53.000260Z","output_index":0,"id":"tool_exec_019fcd8f5e73758798c8adfb3cda4e1e","name":"code_interpreter","arguments":"1
+        * 2","function":"code_interpreter"}
 
 
         event: tool.execution.delta
 
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.773491Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"1
-        and 2","function":"code_interpreter"}
-
-
-        event: tool.execution.delta
-
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.790503Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"\\nresult
-        = ","function":"code_interpreter"}
-
-
-        event: tool.execution.delta
-
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.807604Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"21
-        * ","function":"code_interpreter"}
-
-
-        event: tool.execution.delta
-
-        data: {"type":"tool.execution.delta","created_at":"2026-07-21T00:18:51.824349Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","arguments":"2\\nresult\"}","function":"code_interpreter"}
+        data: {"type":"tool.execution.delta","created_at":"2026-08-04T16:15:53.029381Z","output_index":0,"id":"tool_exec_019fcd8f5e73758798c8adfb3cda4e1e","name":"code_interpreter","arguments":"\"}","function":"code_interpreter"}
 
 
         event: tool.execution.done
 
-        data: {"type":"tool.execution.done","created_at":"2026-07-21T00:18:54.362762Z","output_index":0,"id":"tool_exec_019f820a28ad7347bba32fd9b5c331d6","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"#
-        Calculate the product of 21 and 2\nresult = 21 * 2\nresult","code_output":"42\n"}}
+        data: {"type":"tool.execution.done","created_at":"2026-08-04T16:15:54.130020Z","output_index":0,"id":"tool_exec_019fcd8f5e73758798c8adfb3cda4e1e","name":"code_interpreter","function":"code_interpreter","info":{"result":[{"type":"text","text":"42\n"}],"code":"21
+        * 2","code_output":"42\n"}}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-07-21T00:18:54.548429Z","output_index":1,"id":"msg_019f820a33d472768663862bb033e8e1","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
+        data: {"type":"message.output.delta","created_at":"2026-08-04T16:15:54.382603Z","output_index":1,"id":"msg_019fcd8f640e730d8207dc3cc4fb2c47","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"4"}
 
 
         event: message.output.delta
 
-        data: {"type":"message.output.delta","created_at":"2026-07-21T00:18:54.566088Z","output_index":1,"id":"msg_019f820a33d472768663862bb033e8e1","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
+        data: {"type":"message.output.delta","created_at":"2026-08-04T16:15:54.400087Z","output_index":1,"id":"msg_019fcd8f640e730d8207dc3cc4fb2c47","content_index":0,"model":"mistral-small-latest","role":"assistant","content":"2"}
 
 
         event: conversation.response.done
 
-        data: {"type":"conversation.response.done","created_at":"2026-07-21T00:18:54.583465Z","usage":{"prompt_tokens":240,"completion_tokens":35,"total_tokens":280,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
+        data: {"type":"conversation.response.done","created_at":"2026-08-04T16:15:54.420286Z","usage":{"prompt_tokens":240,"completion_tokens":19,"total_tokens":264,"connector_tokens":5,"connectors":{"code_interpreter":1}}}
 
 
         '
@@ -107,15 +88,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e607dd08f5d56a-SJC
+      - a25edcfd9a27ddfa-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 21 Jul 2026 00:18:51 GMT
+      - Tue, 04 Aug 2026 16:15:53 GMT
       mistral-correlation-id:
-      - 019f820a-2677-7109-a199-35bc4fceddc2
+      - 019fcd8f-5ac1-7c4d-b517-559e6249a561
       server:
       - cloudflare
       strict-transport-security:
@@ -125,13 +106,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '555'
+      - '930'
       x-kong-proxy-latency:
-      - '11'
+      - '15'
       x-kong-request-id:
-      - 019f820a-2677-7109-a199-35bc4fceddc2
+      - 019fcd8f-5ac1-7c4d-b517-559e6249a561
       x-kong-upstream-latency:
-      - '556'
+      - '932'
     status:
       code: 200
       message: OK

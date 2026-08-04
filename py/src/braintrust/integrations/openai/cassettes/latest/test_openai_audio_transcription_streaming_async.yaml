@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS1jODEzMWU0M2FhMzY0NDg2NzkzZmE1MDgyMjE0NWIwNg0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tYzgxMzFlNDNh
-      YTM2NDQ4Njc5M2ZhNTA4MjIxNDViMDYNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWM4MTMxZTQzYWEzNjQ0ODY3OTNmYTUwODIyMTQ1YjA2
+      LS0zOTA4Y2I5ODIwZjhiZTBhM2Y2YzJjZDFkODlkNWM4Ng0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tMzkwOGNiOTgy
+      MGY4YmUwYTNmNmMyY2QxZDg5ZDVjODYNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTM5MDhjYjk4MjBmOGJlMGEzZjZjMmNkMWQ4OWQ1Yzg2
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tYzgxMzFlNDNhYTM2NDQ4Njc5M2ZhNTA4MjIxNDViMDYtLQ0K
+      Ci0tMzkwOGNiOTgyMGY4YmUwYTNmNmMyY2QxZDg5ZDVjODYtLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=c8131e43aa364486793fa50822145b06
+      - multipart/form-data; boundary=3908cb9820f8be0a3f6c2cd1d89d5c86
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 2.48.0
+      - AsyncOpenAI/Python 2.53.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.48.0
+      - 2.53.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -607,8 +607,9 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"In\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"sgesamt\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"Insgesamt\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":14,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":4}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"Pr\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\xF3st\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"ata\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"Pr\xF3stata.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -621,15 +622,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c86a35db5ab46-YYZ
+      - a25edaa0bcba8e83-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Wed, 29 Jul 2026 13:38:47 GMT
+      - Tue, 04 Aug 2026 16:14:15 GMT
       openai-processing-ms:
-      - '435'
+      - '351'
       openai-version:
       - '2020-10-01'
       server:
@@ -649,7 +650,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_4d0a2348fe5f4b949ba708b0bbe2b56c
+      - req_f9267be55999496296dc5f1a147fad03
     status:
       code: 200
       message: OK

@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.48.0
+      - OpenAI/Python 2.53.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.48.0
+      - 2.53.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,578 +38,271 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_0997dddad2315ad4006a6a01b1a510819f9b0938fb4ba698de\",\"object\":\"response\",\"created_at\":1785332145,\"status\":\"in_progress\",\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
-        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_0997dddad2315ad4006a6a01b1a510819f9b0938fb4ba698de\",\"object\":\"response\",\"created_at\":1785332145,\"status\":\"in_progress\",\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
-        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"ws_0997dddad2315ad4006a6a01b1ce58819fa7c8c913f47ef9f5\",\"type\":\"web_search_call\",\"status\":\"in_progress\",\"action\":{\"type\":\"search\"}},\"output_index\":0,\"sequence_number\":2}\n\nevent:
-        response.web_search_call.in_progress\ndata: {\"type\":\"response.web_search_call.in_progress\",\"item_id\":\"ws_0997dddad2315ad4006a6a01b1ce58819fa7c8c913f47ef9f5\",\"output_index\":0,\"sequence_number\":3}\n\nevent:
-        response.web_search_call.searching\ndata: {\"type\":\"response.web_search_call.searching\",\"item_id\":\"ws_0997dddad2315ad4006a6a01b1ce58819fa7c8c913f47ef9f5\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
-        response.web_search_call.completed\ndata: {\"type\":\"response.web_search_call.completed\",\"item_id\":\"ws_0997dddad2315ad4006a6a01b1ce58819fa7c8c913f47ef9f5\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
-        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"ws_0997dddad2315ad4006a6a01b1ce58819fa7c8c913f47ef9f5\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
+      string: "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_0cec619571ad0ca4006a720f17853481929a9739c8bea4ba8d\",\"object\":\"response\",\"created_at\":1785859863,\"status\":\"in_progress\",\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":0}\n\nevent:
+        response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_0cec619571ad0ca4006a720f17853481929a9739c8bea4ba8d\",\"object\":\"response\",\"created_at\":1785859863,\"status\":\"in_progress\",\"background\":false,\"completed_at\":null,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":0}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}},\"sequence_number\":1}\n\nevent:
+        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"ws_0cec619571ad0ca4006a720f17acac819282013bb7b6b22f98\",\"type\":\"web_search_call\",\"status\":\"in_progress\",\"action\":{\"type\":\"search\"}},\"output_index\":0,\"sequence_number\":2}\n\nevent:
+        response.web_search_call.in_progress\ndata: {\"type\":\"response.web_search_call.in_progress\",\"item_id\":\"ws_0cec619571ad0ca4006a720f17acac819282013bb7b6b22f98\",\"output_index\":0,\"sequence_number\":3}\n\nevent:
+        response.web_search_call.searching\ndata: {\"type\":\"response.web_search_call.searching\",\"item_id\":\"ws_0cec619571ad0ca4006a720f17acac819282013bb7b6b22f98\",\"output_index\":0,\"sequence_number\":4}\n\nevent:
+        response.web_search_call.completed\ndata: {\"type\":\"response.web_search_call.completed\",\"item_id\":\"ws_0cec619571ad0ca4006a720f17acac819282013bb7b6b22f98\",\"output_index\":0,\"sequence_number\":5}\n\nevent:
+        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"ws_0cec619571ad0ca4006a720f17acac819282013bb7b6b22f98\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
         the web for the latest weather in Paris and answer briefly.\"],\"query\":\"Search
         the web for the latest weather in Paris and answer briefly.\"}},\"output_index\":0,\"sequence_number\":6}\n\nevent:
-        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":7}\n\nevent:
-        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":8}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"As\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"6AiHm1RrkrytUi\",\"output_index\":1,\"sequence_number\":9}\n\nevent:
+        response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"item\":{\"id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"type\":\"message\",\"status\":\"in_progress\",\"content\":[],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":7}\n\nevent:
+        response.content_part.added\ndata: {\"type\":\"response.content_part.added\",\"content_index\":0,\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"\"},\"sequence_number\":8}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"As\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"DJEPdgodOiXMG8\",\"output_index\":1,\"sequence_number\":9}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        of\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"jDgi3Ec6QJN3f\",\"output_index\":1,\"sequence_number\":10}\n\nevent:
+        of\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"nYnNcfvqJKkO6\",\"output_index\":1,\"sequence_number\":10}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KiKhuJn8vlMzAQs\",\"output_index\":1,\"sequence_number\":11}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"3\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"3KCIaxhei8STBL5\",\"output_index\":1,\"sequence_number\":12}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"10fwTgOe4iVw1Pk\",\"output_index\":1,\"sequence_number\":13}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"35\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"cEWPiDjZuMCXFK\",\"output_index\":1,\"sequence_number\":14}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\u202F\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"drYb7o5E9opqeJv\",\"output_index\":1,\"sequence_number\":15}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"PM\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"m240BReR3wZzA1\",\"output_index\":1,\"sequence_number\":16}\n\nevent:
+        \",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"ijlBy4HxbZpvA7F\",\"output_index\":1,\"sequence_number\":11}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"6\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"XNmyF7CGRp9TL09\",\"output_index\":1,\"sequence_number\":12}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"dEBv11pcvmZz0vm\",\"output_index\":1,\"sequence_number\":13}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"11\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"zOBGVAJW8GmCDR\",\"output_index\":1,\"sequence_number\":14}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        C\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"obExkoTRWvvONl\",\"output_index\":1,\"sequence_number\":17}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"EST\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"Nf8s4O1U1Dnym\",\"output_index\":1,\"sequence_number\":18}\n\nevent:
+        PM\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"dzhHfk1RN3sJd\",\"output_index\":1,\"sequence_number\":15}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        on\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"guOLIEXVWmIcV\",\"output_index\":1,\"sequence_number\":19}\n\nevent:
+        C\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"0IbYKSxjxS49Pf\",\"output_index\":1,\"sequence_number\":16}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"EST\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"LMK44jSjqcTMi\",\"output_index\":1,\"sequence_number\":17}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Wednesday\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"Y4bs34\",\"output_index\":1,\"sequence_number\":20}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"LdQOOYljsk8C8Rt\",\"output_index\":1,\"sequence_number\":21}\n\nevent:
+        on\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"AZmn8ZJCioYPK\",\"output_index\":1,\"sequence_number\":18}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        July\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ZKN5vkh2h4N\",\"output_index\":1,\"sequence_number\":22}\n\nevent:
+        Tuesday\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"NH46hIgU\",\"output_index\":1,\"sequence_number\":19}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"qc07qtDYdBvFNsf\",\"output_index\":1,\"sequence_number\":20}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ZiGJpU3T07JALJQ\",\"output_index\":1,\"sequence_number\":23}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"29\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"4AwoLwLy0vVsPX\",\"output_index\":1,\"sequence_number\":24}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"GO1hCTTHzmyL7qu\",\"output_index\":1,\"sequence_number\":25}\n\nevent:
+        August\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"pxNt04Z6a\",\"output_index\":1,\"sequence_number\":21}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KwzcJWlwu7sWidr\",\"output_index\":1,\"sequence_number\":26}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"202\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"wgfYscw1CaWTa\",\"output_index\":1,\"sequence_number\":27}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"6\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"u2vn5FR3OKCwoeu\",\"output_index\":1,\"sequence_number\":28}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"8zLE5fEjWXloIMj\",\"output_index\":1,\"sequence_number\":29}\n\nevent:
+        \",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"wqIdimDxBdUgf9L\",\"output_index\":1,\"sequence_number\":22}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"4\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"gWyE2ZcpLwHi79a\",\"output_index\":1,\"sequence_number\":23}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"yYL0XlvU1A0R4kG\",\"output_index\":1,\"sequence_number\":24}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Paris\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"cJDxsCT63h\",\"output_index\":1,\"sequence_number\":30}\n\nevent:
+        \",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"iLfkXlZS5pv0CzR\",\"output_index\":1,\"sequence_number\":25}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"202\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"NhhsFfPrwjJ1B\",\"output_index\":1,\"sequence_number\":26}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"6\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"Cc82YVTt9byFF0p\",\"output_index\":1,\"sequence_number\":27}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"t2j6a529GFCkOCU\",\"output_index\":1,\"sequence_number\":28}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        is\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"pSXSqq6rf9E2M\",\"output_index\":1,\"sequence_number\":31}\n\nevent:
+        the\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"8h0XSofh2lSG\",\"output_index\":1,\"sequence_number\":29}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        experiencing\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"v8h\",\"output_index\":1,\"sequence_number\":32}\n\nevent:
+        weather\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"hFu267xi\",\"output_index\":1,\"sequence_number\":30}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        sunny\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"G2xlyGqKtu\",\"output_index\":1,\"sequence_number\":33}\n\nevent:
+        in\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"CuNshGRU0GSRv\",\"output_index\":1,\"sequence_number\":31}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        conditions\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"iY2XS\",\"output_index\":1,\"sequence_number\":34}\n\nevent:
+        Paris\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"2EaCjSrDs0\",\"output_index\":1,\"sequence_number\":32}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        with\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"YH9s8OX1GsI\",\"output_index\":1,\"sequence_number\":35}\n\nevent:
+        is\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"eu4Tz2k2kzyWB\",\"output_index\":1,\"sequence_number\":33}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        a\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"SW8QphSTHnMkOz\",\"output_index\":1,\"sequence_number\":36}\n\nevent:
+        sunny\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"ygxH34spzp\",\"output_index\":1,\"sequence_number\":34}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        temperature\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"yPg6\",\"output_index\":1,\"sequence_number\":37}\n\nevent:
+        with\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"7fdULOb3L74\",\"output_index\":1,\"sequence_number\":35}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        of\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"mfy0Y8S0JeCLK\",\"output_index\":1,\"sequence_number\":38}\n\nevent:
+        a\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"A1GAFlHRHiC4YF\",\"output_index\":1,\"sequence_number\":36}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"TVVgXCTPON1yeHe\",\"output_index\":1,\"sequence_number\":39}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"96\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"YqYj4w0ZIrFDnd\",\"output_index\":1,\"sequence_number\":40}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0F\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"HiKkVOg9pyxFrv\",\"output_index\":1,\"sequence_number\":41}\n\nevent:
+        temperature\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"Vafp\",\"output_index\":1,\"sequence_number\":37}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        (\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"nG109uOCWzvEmO\",\"output_index\":1,\"sequence_number\":42}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"36\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"8YYxAOxNGQKwEC\",\"output_index\":1,\"sequence_number\":43}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0C\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"SAf4bX1YAdpYYp\",\"output_index\":1,\"sequence_number\":44}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\").\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"h7Yh3EEGiaAQqN\",\"output_index\":1,\"sequence_number\":45}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"XJVA95Weg0bZLuR\",\"output_index\":1,\"sequence_number\":46}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"VAXLcVMvMNdw9xY\",\"output_index\":1,\"sequence_number\":47}\n\nevent:
+        of\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"s8Zf09xZFAmB3\",\"output_index\":1,\"sequence_number\":38}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        \",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"2dRvLROCondEO6g\",\"output_index\":1,\"sequence_number\":39}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"89\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"9UDtGVXwccrADZ\",\"output_index\":1,\"sequence_number\":40}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0F\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"cdxHacBPpOAFpd\",\"output_index\":1,\"sequence_number\":41}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        (\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"psFm1YOlcpQUwq\",\"output_index\":1,\"sequence_number\":42}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"32\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"sdX8PLHvDnIUGk\",\"output_index\":1,\"sequence_number\":43}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\xB0C\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"aOviqrlLLqZ3Tk\",\"output_index\":1,\"sequence_number\":44}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\").\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"1TmWzPlhV55D6m\",\"output_index\":1,\"sequence_number\":45}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"lK3DPqzPtyNCGrx\",\"output_index\":1,\"sequence_number\":46}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"CLeCjCNK6S39Lk7\",\"output_index\":1,\"sequence_number\":47}\n\nevent:
         response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"##
-        Weather for Paris, Paris, France:\\nCurrent Conditions: Sunny, 96\xB0F (36\xB0C)\\n\\nDaily
-        Forecast:\\n* Wednesday, July 29: Low: 70\xB0F (21\xB0C), High: 105\xB0F (40\xB0C),
-        Description: Very hot with sizzling sunshine; caution advised if outside for
-        extended periods of time\\n* Thursday, July 30: Low: 65\xB0F (19\xB0C), High:
-        89\xB0F (32\xB0C), Description: Occasional morning rain and drizzle; otherwise,
-        not as hot with clouds breaking for some sun\\n* Friday, July 31: Low: 63\xB0F
-        (17\xB0C), High: 88\xB0F (31\xB0C), Description: Very warm with clouds and
-        sunshine\\n* Saturday, August 1: Low: 60\xB0F (16\xB0C), High: 84\xB0F (29\xB0C),
-        Description: Very warm with clouds and sunshine\\n* Sunday, August 2: Low:
-        68\xB0F (20\xB0C), High: 90\xB0F (32\xB0C), Description: Hot with intervals
-        of clouds and sunshine; caution advised if doing strenuous activities outside\\n*
-        Monday, August 3: Low: 67\xB0F (20\xB0C), High: 93\xB0F (34\xB0C), Description:
-        Sweltering heat with intervals of clouds and sunshine\\n* Tuesday, August
-        4: Low: 63\xB0F (17\xB0C), High: 84\xB0F (29\xB0C), Description: Abundant
+        Weather for Paris, \xCEle-de-France, France:\\nCurrent Conditions: Sunny,
+        89\xB0F (32\xB0C)\\n\\nDaily Forecast:\\n* Tuesday, August 4: Low: 67\xB0F
+        (19\xB0C), High: 91\xB0F (33\xB0C), Description: Turning sunny and toasty
+        conditions; possible danger of dehydration and heatstroke while doing strenuous
+        activities\\n* Wednesday, August 5: Low: 59\xB0F (15\xB0C), High: 83\xB0F
+        (28\xB0C), Description: A couple of showers in the morning; otherwise, not
+        as hot with some sun\\n* Thursday, August 6: Low: 54\xB0F (12\xB0C), High:
+        77\xB0F (25\xB0C), Description: Partly sunny with a couple of thunderstorms,
+        especially late in the day\\n* Friday, August 7: Low: 58\xB0F (15\xB0C), High:
+        82\xB0F (28\xB0C), Description: Rather cloudy and very warm\\n* Saturday,
+        August 8: Low: 67\xB0F (19\xB0C), High: 88\xB0F (31\xB0C), Description: Very
+        warm with high thin cloudiness; caution advised if doing strenuous activities
+        outside\\n* Sunday, August 9: Low: 64\xB0F (18\xB0C), High: 88\xB0F (31\xB0C),
+        Description: Partly sunny and very warm with a shower in the area\\n* Monday,
+        August 10: Low: 62\xB0F (17\xB0C), High: 87\xB0F (30\xB0C), Description: Abundant
         sunshine and very warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning
-        for Thunderstorms in effect from Thursday, 12:00 AM CEST until Friday, 12:00
-        AM CEST.  Source: M\xE9t\xE9o-France, Moderate thunderstorm warning\\n\\nModerate
-        damages may occur, especially in vulnerable or in exposed areas and to people
-        who carry out weather-related activities.\\n\\nBe careful, keep informed of
-        the latest weather forecast., start time: Thursday, July 30, 00:00:00 UTC,
-        end time: Friday, July 31, 00:00:00 UTC\\n* Paris: Yellow Warning for Extreme
-        High Temperature in effect until Thursday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France,
-        Moderate high-temperature warning\\n\\nModerate damages may occur, especially
-        in vulnerable or in exposed areas and to people who carry out weather-related
-        activities.\\n\\nBe careful, keep informed of the latest weather forecast.,
-        start time: Wednesday, July 29, 06:40:00 UTC, end time: Thursday, July 30,
-        00:00:00 UTC\\n* Paris: Yellow Warning for Extreme High Temperature in effect
-        from Thursday, 12:00 AM CEST until Friday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France,
-        Moderate high-temperature warning\\n\\nModerate damages may occur, especially
-        in vulnerable or in exposed areas and to people who carry out weather-related
-        activities.\\n\\nBe careful, keep informed of the latest weather forecast.,
-        start time: Thursday, July 30, 00:00:00 UTC, end time: Friday, July 31, 00:00:00
-        UTC\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"\",\"output_index\":1,\"sequence_number\":48}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"5UOfhITMhKRToXB\",\"output_index\":1,\"sequence_number\":49}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"y8TnAWoLsfnGUGy\",\"output_index\":1,\"sequence_number\":50}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"A\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"AcgJhQUfkRMobAM\",\"output_index\":1,\"sequence_number\":51}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Yellow\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"1qq95YWQK\",\"output_index\":1,\"sequence_number\":52}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Warning\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"koKDH17m\",\"output_index\":1,\"sequence_number\":53}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        for\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"zzvLmATmBXNS\",\"output_index\":1,\"sequence_number\":54}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Extreme\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"LOa7kNGw\",\"output_index\":1,\"sequence_number\":55}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        High\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"oFsTkSS3XaD\",\"output_index\":1,\"sequence_number\":56}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Temperature\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"HevK\",\"output_index\":1,\"sequence_number\":57}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        is\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"L2Y6pRd53zupZ\",\"output_index\":1,\"sequence_number\":58}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        in\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ADSsSKM2rrrIe\",\"output_index\":1,\"sequence_number\":59}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        effect\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KGudn6AAL\",\"output_index\":1,\"sequence_number\":60}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        until\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"Rxzd5JHA0h\",\"output_index\":1,\"sequence_number\":61}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Thursday\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"H4qn4kA\",\"output_index\":1,\"sequence_number\":62}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"apajZ0UIJgE2HqJ\",\"output_index\":1,\"sequence_number\":63}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"zAXU4AadOZQJHuJ\",\"output_index\":1,\"sequence_number\":64}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"12\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ZSxneOXvmL0zMH\",\"output_index\":1,\"sequence_number\":65}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"OfCMizEpA3cT3Kv\",\"output_index\":1,\"sequence_number\":66}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"00\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"eHCn7IkpVdoKQK\",\"output_index\":1,\"sequence_number\":67}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\u202F\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"cybTJKIpknvOlIl\",\"output_index\":1,\"sequence_number\":68}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"AM\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"O6GUPMxxsbJ05N\",\"output_index\":1,\"sequence_number\":69}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        C\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"yyTxr7tGnT3HLf\",\"output_index\":1,\"sequence_number\":70}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"EST\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"vkvSPPpyHkITR\",\"output_index\":1,\"sequence_number\":71}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"XQzQn66ZNa65Cs5\",\"output_index\":1,\"sequence_number\":72}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"gP0VIoKoPBqMeu6\",\"output_index\":1,\"sequence_number\":73}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"Moder\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"qKrOxJkJfRM\",\"output_index\":1,\"sequence_number\":74}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"ate\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"QDtcJXZOvYGTz\",\"output_index\":1,\"sequence_number\":75}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        damages\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"MqBLq0oS\",\"output_index\":1,\"sequence_number\":76}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        may\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"OGZAi2ZxhCfe\",\"output_index\":1,\"sequence_number\":77}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        occur\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"j1NNyXp94i\",\"output_index\":1,\"sequence_number\":78}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"YKd71UWFB3Q3GVh\",\"output_index\":1,\"sequence_number\":79}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        especially\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"I4NNI\",\"output_index\":1,\"sequence_number\":80}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        in\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"B60mYyNYofy4x\",\"output_index\":1,\"sequence_number\":81}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        vulnerable\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"3YVUv\",\"output_index\":1,\"sequence_number\":82}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        or\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"nj3oMhX3RTG7V\",\"output_index\":1,\"sequence_number\":83}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        exposed\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ImlwyZ32\",\"output_index\":1,\"sequence_number\":84}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        areas\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"R07ssG4WD0\",\"output_index\":1,\"sequence_number\":85}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        and\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"CJ6DJ6cJf7IB\",\"output_index\":1,\"sequence_number\":86}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        to\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"B3QIPOVxRju5q\",\"output_index\":1,\"sequence_number\":87}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        people\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"rZ9prsc5S\",\"output_index\":1,\"sequence_number\":88}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        who\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"cY3tmX01I2Ns\",\"output_index\":1,\"sequence_number\":89}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        carry\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"MrdzF6BEaK\",\"output_index\":1,\"sequence_number\":90}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        out\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"sgiitqXSZs43\",\"output_index\":1,\"sequence_number\":91}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        weather\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"7uzT2twQ\",\"output_index\":1,\"sequence_number\":92}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"-related\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"wdQ1tOdl\",\"output_index\":1,\"sequence_number\":93}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        activities\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"Eezyx\",\"output_index\":1,\"sequence_number\":94}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"6mnG4jptqy9xY0h\",\"output_index\":1,\"sequence_number\":95}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ALhFSz3f9sBJelS\",\"output_index\":1,\"sequence_number\":96}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"Be\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"FVh36mRqs46BPE\",\"output_index\":1,\"sequence_number\":97}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        careful\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"jIiwZ9Mm\",\"output_index\":1,\"sequence_number\":98}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        and\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"VPCXzje8pIeF\",\"output_index\":1,\"sequence_number\":99}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        keep\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"xKT4JwUIMJ6\",\"output_index\":1,\"sequence_number\":100}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        informed\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"nZCEhfE\",\"output_index\":1,\"sequence_number\":101}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        of\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"nIp135l2eCaSd\",\"output_index\":1,\"sequence_number\":102}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        the\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"CzFrbe5P1TiD\",\"output_index\":1,\"sequence_number\":103}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        latest\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"HWfuVFEQV\",\"output_index\":1,\"sequence_number\":104}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        weather\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"es9HYq3I\",\"output_index\":1,\"sequence_number\":105}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        forecast\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"Y7knViS\",\"output_index\":1,\"sequence_number\":106}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"lgD4qU7pK6ZmZfU\",\"output_index\":1,\"sequence_number\":107}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"mPUC1KUG2GiNP7r\",\"output_index\":1,\"sequence_number\":108}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"4G\",\"output_index\":1,\"sequence_number\":109}\n\nevent:
-        response.output_text.annotation.added\ndata: {\"type\":\"response.output_text.annotation.added\",\"annotation\":{\"type\":\"url_citation\",\"end_index\":2880,\"start_index\":2770,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"},\"annotation_index\":0,\"content_index\":0,\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"output_index\":1,\"sequence_number\":110}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"vdwJ573pUyYJKF7\",\"output_index\":1,\"sequence_number\":111}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"EbOIkca1FzjXeTQ\",\"output_index\":1,\"sequence_number\":112}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"Additionally\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"W4Rc\",\"output_index\":1,\"sequence_number\":113}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"npxy2w3KmcEoXNG\",\"output_index\":1,\"sequence_number\":114}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        a\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"YtKIqxMF8mkTUa\",\"output_index\":1,\"sequence_number\":115}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Yellow\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KNowWyWtD\",\"output_index\":1,\"sequence_number\":116}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Warning\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"X9XySx12\",\"output_index\":1,\"sequence_number\":117}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        for\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"mJFwkqOEz2Sx\",\"output_index\":1,\"sequence_number\":118}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Thunder\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"bWX7R9Nv\",\"output_index\":1,\"sequence_number\":119}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"storms\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"pQXnl7nfVj\",\"output_index\":1,\"sequence_number\":120}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        is\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"UpQUywz53jJv1\",\"output_index\":1,\"sequence_number\":121}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        in\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"jwVheLsRgqiQP\",\"output_index\":1,\"sequence_number\":122}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        effect\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"dLlWaprcg\",\"output_index\":1,\"sequence_number\":123}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        from\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"9O0HrG5j5Lx\",\"output_index\":1,\"sequence_number\":124}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Thursday\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"VTa46Ph\",\"output_index\":1,\"sequence_number\":125}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"4qs3fv2PEYsXNxb\",\"output_index\":1,\"sequence_number\":126}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"A1LMctpyLmZQ9Fx\",\"output_index\":1,\"sequence_number\":127}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"12\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"sdwmOiDMxTA9HY\",\"output_index\":1,\"sequence_number\":128}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"CsWzDrzloXBz3hx\",\"output_index\":1,\"sequence_number\":129}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"00\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"IRJW2At6vw0z3n\",\"output_index\":1,\"sequence_number\":130}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\u202F\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"h0neasiPNmAMSrD\",\"output_index\":1,\"sequence_number\":131}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"AM\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"kgGic01X1ZLb0d\",\"output_index\":1,\"sequence_number\":132}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        C\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"t1tryXppzKc2MA\",\"output_index\":1,\"sequence_number\":133}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"EST\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"048xux58tDySZ\",\"output_index\":1,\"sequence_number\":134}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        until\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"DRhENjgXcd\",\"output_index\":1,\"sequence_number\":135}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        Friday\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"HAJAZUOIT\",\"output_index\":1,\"sequence_number\":136}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ALbMBZPYh4s701e\",\"output_index\":1,\"sequence_number\":137}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"AFzfFTkS7Je5odB\",\"output_index\":1,\"sequence_number\":138}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"12\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"kynK9UjywP6h1M\",\"output_index\":1,\"sequence_number\":139}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"82yqOVXP3z7iAEl\",\"output_index\":1,\"sequence_number\":140}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"00\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"41jeUV572T6FcC\",\"output_index\":1,\"sequence_number\":141}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\u202F\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"m0uiYh42yf5rGo9\",\"output_index\":1,\"sequence_number\":142}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"AM\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"EqmibXV0cLbajg\",\"output_index\":1,\"sequence_number\":143}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        C\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"hQ1gJfFor7OGTM\",\"output_index\":1,\"sequence_number\":144}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"EST\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"og0Dbiixy76IL\",\"output_index\":1,\"sequence_number\":145}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ZKQEMgryubObJ2U\",\"output_index\":1,\"sequence_number\":146}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"oNgFCmNB9XFARyb\",\"output_index\":1,\"sequence_number\":147}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"Moder\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"9zWgIAoHpXk\",\"output_index\":1,\"sequence_number\":148}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"ate\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"SaudDbzOUUugy\",\"output_index\":1,\"sequence_number\":149}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        thunderstorms\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"BO\",\"output_index\":1,\"sequence_number\":150}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        may\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"a2F4rf10qW4H\",\"output_index\":1,\"sequence_number\":151}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        occur\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"YNx9ybtI02\",\"output_index\":1,\"sequence_number\":152}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"1kS8Dgkdfkfp1Er\",\"output_index\":1,\"sequence_number\":153}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        potentially\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"sinh\",\"output_index\":1,\"sequence_number\":154}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        causing\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"E1EV29qa\",\"output_index\":1,\"sequence_number\":155}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        moderate\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"dMTAEWY\",\"output_index\":1,\"sequence_number\":156}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        damages\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"e98C7YQd\",\"output_index\":1,\"sequence_number\":157}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"kZe8Vk17cyQ3Uq6\",\"output_index\":1,\"sequence_number\":158}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        especially\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"O9XL2\",\"output_index\":1,\"sequence_number\":159}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        in\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"u7FDQTOohUcOL\",\"output_index\":1,\"sequence_number\":160}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        vulnerable\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"D7ajI\",\"output_index\":1,\"sequence_number\":161}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        or\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"GWNNVte6qwC3S\",\"output_index\":1,\"sequence_number\":162}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        exposed\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ryHIggvS\",\"output_index\":1,\"sequence_number\":163}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        areas\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"M7L16FIKEa\",\"output_index\":1,\"sequence_number\":164}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        and\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"JoQvtOeErqQA\",\"output_index\":1,\"sequence_number\":165}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        to\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"9TJ52q97m3QSW\",\"output_index\":1,\"sequence_number\":166}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        people\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"6aKCBZW24\",\"output_index\":1,\"sequence_number\":167}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        who\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"f572Ha7JYfTh\",\"output_index\":1,\"sequence_number\":168}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        carry\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KV3ikmpkZR\",\"output_index\":1,\"sequence_number\":169}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        out\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"XNmB8METt4kN\",\"output_index\":1,\"sequence_number\":170}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        weather\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"aHxt3JFI\",\"output_index\":1,\"sequence_number\":171}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"-related\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"1raKtRgl\",\"output_index\":1,\"sequence_number\":172}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        activities\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"mILoT\",\"output_index\":1,\"sequence_number\":173}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"hEwvq8BR4kVq1zx\",\"output_index\":1,\"sequence_number\":174}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"CceCvaZdG8hwdT1\",\"output_index\":1,\"sequence_number\":175}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"Be\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KBOI6ilpLmQmgu\",\"output_index\":1,\"sequence_number\":176}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        careful\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"0tuNBsoc\",\"output_index\":1,\"sequence_number\":177}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        and\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"TMfalqW90Qz1\",\"output_index\":1,\"sequence_number\":178}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        keep\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"1vu89Llhqri\",\"output_index\":1,\"sequence_number\":179}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        informed\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"MIDEIEu\",\"output_index\":1,\"sequence_number\":180}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        of\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"FoGnTgYOrGC5O\",\"output_index\":1,\"sequence_number\":181}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        the\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"NiDMcvWIInuf\",\"output_index\":1,\"sequence_number\":182}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        latest\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"x5iZguOcZ\",\"output_index\":1,\"sequence_number\":183}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        weather\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"0x8zJYUE\",\"output_index\":1,\"sequence_number\":184}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        forecast\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"22M5H4T\",\"output_index\":1,\"sequence_number\":185}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"yvcdY53bsgOotI5\",\"output_index\":1,\"sequence_number\":186}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"J7QOEowK3D7cQFV\",\"output_index\":1,\"sequence_number\":187}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KN\",\"output_index\":1,\"sequence_number\":188}\n\nevent:
-        response.output_text.annotation.added\ndata: {\"type\":\"response.output_text.annotation.added\",\"annotation\":{\"type\":\"url_citation\",\"end_index\":3343,\"start_index\":3233,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"},\"annotation_index\":1,\"content_index\":0,\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"output_index\":1,\"sequence_number\":189}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"wa78GQZblpEoTuw\",\"output_index\":1,\"sequence_number\":190}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"9jahdjsklVxwnHR\",\"output_index\":1,\"sequence_number\":191}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"Please\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ViIwMIqdM5\",\"output_index\":1,\"sequence_number\":192}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        exercise\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"l8SiA95\",\"output_index\":1,\"sequence_number\":193}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        caution\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"nabav3Tu\",\"output_index\":1,\"sequence_number\":194}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        during\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"g4NHDZNmw\",\"output_index\":1,\"sequence_number\":195}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        this\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"Cucnobr1PjN\",\"output_index\":1,\"sequence_number\":196}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        period\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"gy9SxPlRt\",\"output_index\":1,\"sequence_number\":197}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        of\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"JiRQe57N4qNmN\",\"output_index\":1,\"sequence_number\":198}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        extreme\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"A3WOawpC\",\"output_index\":1,\"sequence_number\":199}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        heat\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"qInCVSfjHjU\",\"output_index\":1,\"sequence_number\":200}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        and\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"NXFzHfhsb5Wm\",\"output_index\":1,\"sequence_number\":201}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        stay\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"iz3bmMw8MQa\",\"output_index\":1,\"sequence_number\":202}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        updated\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"fhS340SE\",\"output_index\":1,\"sequence_number\":203}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        with\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"3L5r1zwi25C\",\"output_index\":1,\"sequence_number\":204}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        local\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"DtvoCmv7tL\",\"output_index\":1,\"sequence_number\":205}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        weather\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"LGV08SL6\",\"output_index\":1,\"sequence_number\":206}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        reports\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"PTkNOWEC\",\"output_index\":1,\"sequence_number\":207}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"ACEST6g0Zg8qvc2\",\"output_index\":1,\"sequence_number\":208}\n\nevent:
-        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
-        \",\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"obfuscation\":\"KzQFrzJ0iySwWCr\",\"output_index\":1,\"sequence_number\":209}\n\nevent:
-        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"logprobs\":[],\"output_index\":1,\"sequence_number\":210,\"text\":\"As
-        of 3:35\u202FPM CEST on Wednesday, July 29, 2026, Paris is experiencing sunny
-        conditions with a temperature of 96\xB0F (36\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Sunny, 96\xB0F (36\xB0C)\\n\\nDaily Forecast:\\n*
-        Wednesday, July 29: Low: 70\xB0F (21\xB0C), High: 105\xB0F (40\xB0C), Description:
-        Very hot with sizzling sunshine; caution advised if outside for extended periods
-        of time\\n* Thursday, July 30: Low: 65\xB0F (19\xB0C), High: 89\xB0F (32\xB0C),
-        Description: Occasional morning rain and drizzle; otherwise, not as hot with
-        clouds breaking for some sun\\n* Friday, July 31: Low: 63\xB0F (17\xB0C),
-        High: 88\xB0F (31\xB0C), Description: Very warm with clouds and sunshine\\n*
-        Saturday, August 1: Low: 60\xB0F (16\xB0C), High: 84\xB0F (29\xB0C), Description:
-        Very warm with clouds and sunshine\\n* Sunday, August 2: Low: 68\xB0F (20\xB0C),
-        High: 90\xB0F (32\xB0C), Description: Hot with intervals of clouds and sunshine;
-        caution advised if doing strenuous activities outside\\n* Monday, August 3:
-        Low: 67\xB0F (20\xB0C), High: 93\xB0F (34\xB0C), Description: Sweltering heat
-        with intervals of clouds and sunshine\\n* Tuesday, August 4: Low: 63\xB0F
-        (17\xB0C), High: 84\xB0F (29\xB0C), Description: Abundant sunshine and very
-        warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning for Thunderstorms
-        in effect from Thursday, 12:00 AM CEST until Friday, 12:00 AM CEST.  Source:
-        M\xE9t\xE9o-France, Moderate thunderstorm warning\\n\\nModerate damages may
-        occur, especially in vulnerable or in exposed areas and to people who carry
-        out weather-related activities.\\n\\nBe careful, keep informed of the latest
-        weather forecast., start time: Thursday, July 30, 00:00:00 UTC, end time:
-        Friday, July 31, 00:00:00 UTC\\n* Paris: Yellow Warning for Extreme High Temperature
-        in effect until Thursday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Wednesday,
-        July 29, 06:40:00 UTC, end time: Thursday, July 30, 00:00:00 UTC\\n* Paris:
-        Yellow Warning for Extreme High Temperature in effect from Thursday, 12:00
-        AM CEST until Friday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Thursday,
-        July 30, 00:00:00 UTC, end time: Friday, July 31, 00:00:00 UTC\\n\\n\\nA Yellow
-        Warning for Extreme High Temperature is in effect until Thursday, 12:00\u202FAM
-        CEST. Moderate damages may occur, especially in vulnerable or exposed areas
-        and to people who carry out weather-related activities. Be careful and keep
-        informed of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nAdditionally,
-        a Yellow Warning for Thunderstorms is in effect from Thursday, 12:00\u202FAM
-        CEST until Friday, 12:00\u202FAM CEST. Moderate thunderstorms may occur, potentially
-        causing moderate damages, especially in vulnerable or exposed areas and to
-        people who carry out weather-related activities. Be careful and keep informed
-        of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nPlease
-        exercise caution during this period of extreme heat and stay updated with
-        local weather reports. \"}\n\nevent: response.content_part.done\ndata: {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[{\"type\":\"url_citation\",\"end_index\":2880,\"start_index\":2770,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"},{\"type\":\"url_citation\",\"end_index\":3343,\"start_index\":3233,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"}],\"logprobs\":[],\"text\":\"As
-        of 3:35\u202FPM CEST on Wednesday, July 29, 2026, Paris is experiencing sunny
-        conditions with a temperature of 96\xB0F (36\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Sunny, 96\xB0F (36\xB0C)\\n\\nDaily Forecast:\\n*
-        Wednesday, July 29: Low: 70\xB0F (21\xB0C), High: 105\xB0F (40\xB0C), Description:
-        Very hot with sizzling sunshine; caution advised if outside for extended periods
-        of time\\n* Thursday, July 30: Low: 65\xB0F (19\xB0C), High: 89\xB0F (32\xB0C),
-        Description: Occasional morning rain and drizzle; otherwise, not as hot with
-        clouds breaking for some sun\\n* Friday, July 31: Low: 63\xB0F (17\xB0C),
-        High: 88\xB0F (31\xB0C), Description: Very warm with clouds and sunshine\\n*
-        Saturday, August 1: Low: 60\xB0F (16\xB0C), High: 84\xB0F (29\xB0C), Description:
-        Very warm with clouds and sunshine\\n* Sunday, August 2: Low: 68\xB0F (20\xB0C),
-        High: 90\xB0F (32\xB0C), Description: Hot with intervals of clouds and sunshine;
-        caution advised if doing strenuous activities outside\\n* Monday, August 3:
-        Low: 67\xB0F (20\xB0C), High: 93\xB0F (34\xB0C), Description: Sweltering heat
-        with intervals of clouds and sunshine\\n* Tuesday, August 4: Low: 63\xB0F
-        (17\xB0C), High: 84\xB0F (29\xB0C), Description: Abundant sunshine and very
-        warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning for Thunderstorms
-        in effect from Thursday, 12:00 AM CEST until Friday, 12:00 AM CEST.  Source:
-        M\xE9t\xE9o-France, Moderate thunderstorm warning\\n\\nModerate damages may
-        occur, especially in vulnerable or in exposed areas and to people who carry
-        out weather-related activities.\\n\\nBe careful, keep informed of the latest
-        weather forecast., start time: Thursday, July 30, 00:00:00 UTC, end time:
-        Friday, July 31, 00:00:00 UTC\\n* Paris: Yellow Warning for Extreme High Temperature
-        in effect until Thursday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Wednesday,
-        July 29, 06:40:00 UTC, end time: Thursday, July 30, 00:00:00 UTC\\n* Paris:
-        Yellow Warning for Extreme High Temperature in effect from Thursday, 12:00
-        AM CEST until Friday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Thursday,
-        July 30, 00:00:00 UTC, end time: Friday, July 31, 00:00:00 UTC\\n\\n\\nA Yellow
-        Warning for Extreme High Temperature is in effect until Thursday, 12:00\u202FAM
-        CEST. Moderate damages may occur, especially in vulnerable or exposed areas
-        and to people who carry out weather-related activities. Be careful and keep
-        informed of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nAdditionally,
-        a Yellow Warning for Thunderstorms is in effect from Thursday, 12:00\u202FAM
-        CEST until Friday, 12:00\u202FAM CEST. Moderate thunderstorms may occur, potentially
-        causing moderate damages, especially in vulnerable or exposed areas and to
-        people who carry out weather-related activities. Be careful and keep informed
-        of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nPlease
-        exercise caution during this period of extreme heat and stay updated with
-        local weather reports. \"},\"sequence_number\":211}\n\nevent: response.output_item.done\ndata:
-        {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[{\"type\":\"url_citation\",\"end_index\":2880,\"start_index\":2770,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"},{\"type\":\"url_citation\",\"end_index\":3343,\"start_index\":3233,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"}],\"logprobs\":[],\"text\":\"As
-        of 3:35\u202FPM CEST on Wednesday, July 29, 2026, Paris is experiencing sunny
-        conditions with a temperature of 96\xB0F (36\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Sunny, 96\xB0F (36\xB0C)\\n\\nDaily Forecast:\\n*
-        Wednesday, July 29: Low: 70\xB0F (21\xB0C), High: 105\xB0F (40\xB0C), Description:
-        Very hot with sizzling sunshine; caution advised if outside for extended periods
-        of time\\n* Thursday, July 30: Low: 65\xB0F (19\xB0C), High: 89\xB0F (32\xB0C),
-        Description: Occasional morning rain and drizzle; otherwise, not as hot with
-        clouds breaking for some sun\\n* Friday, July 31: Low: 63\xB0F (17\xB0C),
-        High: 88\xB0F (31\xB0C), Description: Very warm with clouds and sunshine\\n*
-        Saturday, August 1: Low: 60\xB0F (16\xB0C), High: 84\xB0F (29\xB0C), Description:
-        Very warm with clouds and sunshine\\n* Sunday, August 2: Low: 68\xB0F (20\xB0C),
-        High: 90\xB0F (32\xB0C), Description: Hot with intervals of clouds and sunshine;
-        caution advised if doing strenuous activities outside\\n* Monday, August 3:
-        Low: 67\xB0F (20\xB0C), High: 93\xB0F (34\xB0C), Description: Sweltering heat
-        with intervals of clouds and sunshine\\n* Tuesday, August 4: Low: 63\xB0F
-        (17\xB0C), High: 84\xB0F (29\xB0C), Description: Abundant sunshine and very
-        warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning for Thunderstorms
-        in effect from Thursday, 12:00 AM CEST until Friday, 12:00 AM CEST.  Source:
-        M\xE9t\xE9o-France, Moderate thunderstorm warning\\n\\nModerate damages may
-        occur, especially in vulnerable or in exposed areas and to people who carry
-        out weather-related activities.\\n\\nBe careful, keep informed of the latest
-        weather forecast., start time: Thursday, July 30, 00:00:00 UTC, end time:
-        Friday, July 31, 00:00:00 UTC\\n* Paris: Yellow Warning for Extreme High Temperature
-        in effect until Thursday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Wednesday,
-        July 29, 06:40:00 UTC, end time: Thursday, July 30, 00:00:00 UTC\\n* Paris:
-        Yellow Warning for Extreme High Temperature in effect from Thursday, 12:00
-        AM CEST until Friday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Thursday,
-        July 30, 00:00:00 UTC, end time: Friday, July 31, 00:00:00 UTC\\n\\n\\nA Yellow
-        Warning for Extreme High Temperature is in effect until Thursday, 12:00\u202FAM
-        CEST. Moderate damages may occur, especially in vulnerable or exposed areas
-        and to people who carry out weather-related activities. Be careful and keep
-        informed of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nAdditionally,
-        a Yellow Warning for Thunderstorms is in effect from Thursday, 12:00\u202FAM
-        CEST until Friday, 12:00\u202FAM CEST. Moderate thunderstorms may occur, potentially
-        causing moderate damages, especially in vulnerable or exposed areas and to
-        people who carry out weather-related activities. Be careful and keep informed
-        of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nPlease
-        exercise caution during this period of extreme heat and stay updated with
-        local weather reports. \"}],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":212}\n\nevent:
-        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_0997dddad2315ad4006a6a01b1a510819f9b0938fb4ba698de\",\"object\":\"response\",\"created_at\":1785332145,\"status\":\"completed\",\"background\":false,\"completed_at\":1785332149,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[{\"id\":\"ws_0997dddad2315ad4006a6a01b1ce58819fa7c8c913f47ef9f5\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
+        for Extreme High Temperature in effect until Wednesday, 12:00 AM CEST.  Source:
+        M\xE9t\xE9o-France, Moderate high-temperature warning\\n\\nModerate damages
+        may occur, especially in vulnerable or in exposed areas and to people who
+        carry out weather-related activities.\\n\\nBe careful, keep informed of the
+        latest weather forecast., start time: Tuesday, August 4, 00:00:00 UTC, end
+        time: Wednesday, August 5, 00:00:00 UTC\\n\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"R\",\"output_index\":1,\"sequence_number\":48}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"wD9dnZA48oaHRJd\",\"output_index\":1,\"sequence_number\":49}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"\\n\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"MpV8EvGDfVnuiD4\",\"output_index\":1,\"sequence_number\":50}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"A\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"FNJBvZi8GGANZrw\",\"output_index\":1,\"sequence_number\":51}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        Yellow\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"4rGvq6W1G\",\"output_index\":1,\"sequence_number\":52}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        Warning\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"5zhwFtP6\",\"output_index\":1,\"sequence_number\":53}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        for\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"4ml02ZqmERIv\",\"output_index\":1,\"sequence_number\":54}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        Extreme\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"UpM96SK5\",\"output_index\":1,\"sequence_number\":55}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        High\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"ynpkvXxvdgV\",\"output_index\":1,\"sequence_number\":56}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        Temperature\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"y199\",\"output_index\":1,\"sequence_number\":57}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        is\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"pR6ioFVmKmh0f\",\"output_index\":1,\"sequence_number\":58}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        in\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"r8OOX7OJVcKSS\",\"output_index\":1,\"sequence_number\":59}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        effect\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"SoB9DMhnd\",\"output_index\":1,\"sequence_number\":60}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        until\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"aalUwSYxCH\",\"output_index\":1,\"sequence_number\":61}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        Wednesday\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"Py1T6f\",\"output_index\":1,\"sequence_number\":62}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\",\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"JHxTEb2crOlViUT\",\"output_index\":1,\"sequence_number\":63}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        \",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"ISk8erOXPSQvaKw\",\"output_index\":1,\"sequence_number\":64}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"12\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"TBPn2pG3i7rMdU\",\"output_index\":1,\"sequence_number\":65}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\":\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"m7eZXf4nlLppeFZ\",\"output_index\":1,\"sequence_number\":66}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"00\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"Fx6K1ZGaUQt1Ie\",\"output_index\":1,\"sequence_number\":67}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        AM\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"Ywu3kQvvUP74j\",\"output_index\":1,\"sequence_number\":68}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        C\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"WdpHaAZ8ClNNDh\",\"output_index\":1,\"sequence_number\":69}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"EST\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"e8Eem7oZNKM3o\",\"output_index\":1,\"sequence_number\":70}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"yz0h80Ahiscu8mh\",\"output_index\":1,\"sequence_number\":71}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        \",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"DqcSUaqCAalayz9\",\"output_index\":1,\"sequence_number\":72}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"It's\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"5s4ZU0shaFAo\",\"output_index\":1,\"sequence_number\":73}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        advisable\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"ocBomF\",\"output_index\":1,\"sequence_number\":74}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        to\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"Doonm0QSIxIh5\",\"output_index\":1,\"sequence_number\":75}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        stay\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"OLp5nnyoiLc\",\"output_index\":1,\"sequence_number\":76}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        hydrated\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"0JQxnFr\",\"output_index\":1,\"sequence_number\":77}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        and\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"0XeT6slrhByV\",\"output_index\":1,\"sequence_number\":78}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        avoid\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"M921zlI5Y2\",\"output_index\":1,\"sequence_number\":79}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        strenuous\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"wBBjIz\",\"output_index\":1,\"sequence_number\":80}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        activities\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"5GkHP\",\"output_index\":1,\"sequence_number\":81}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        during\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"sw6qPDhvM\",\"output_index\":1,\"sequence_number\":82}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        peak\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"lNeer0BAlia\",\"output_index\":1,\"sequence_number\":83}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        heat\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"10AzTGVADUR\",\"output_index\":1,\"sequence_number\":84}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\".\",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"6NNTICYujKgIJbh\",\"output_index\":1,\"sequence_number\":85}\n\nevent:
+        response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"content_index\":0,\"delta\":\"
+        \",\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"obfuscation\":\"Kznk4X6DfOG0xwj\",\"output_index\":1,\"sequence_number\":86}\n\nevent:
+        response.output_text.done\ndata: {\"type\":\"response.output_text.done\",\"content_index\":0,\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"logprobs\":[],\"output_index\":1,\"sequence_number\":87,\"text\":\"As
+        of 6:11 PM CEST on Tuesday, August 4, 2026, the weather in Paris is sunny
+        with a temperature of 89\xB0F (32\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France,
+        France:\\nCurrent Conditions: Sunny, 89\xB0F (32\xB0C)\\n\\nDaily Forecast:\\n*
+        Tuesday, August 4: Low: 67\xB0F (19\xB0C), High: 91\xB0F (33\xB0C), Description:
+        Turning sunny and toasty conditions; possible danger of dehydration and heatstroke
+        while doing strenuous activities\\n* Wednesday, August 5: Low: 59\xB0F (15\xB0C),
+        High: 83\xB0F (28\xB0C), Description: A couple of showers in the morning;
+        otherwise, not as hot with some sun\\n* Thursday, August 6: Low: 54\xB0F (12\xB0C),
+        High: 77\xB0F (25\xB0C), Description: Partly sunny with a couple of thunderstorms,
+        especially late in the day\\n* Friday, August 7: Low: 58\xB0F (15\xB0C), High:
+        82\xB0F (28\xB0C), Description: Rather cloudy and very warm\\n* Saturday,
+        August 8: Low: 67\xB0F (19\xB0C), High: 88\xB0F (31\xB0C), Description: Very
+        warm with high thin cloudiness; caution advised if doing strenuous activities
+        outside\\n* Sunday, August 9: Low: 64\xB0F (18\xB0C), High: 88\xB0F (31\xB0C),
+        Description: Partly sunny and very warm with a shower in the area\\n* Monday,
+        August 10: Low: 62\xB0F (17\xB0C), High: 87\xB0F (30\xB0C), Description: Abundant
+        sunshine and very warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning
+        for Extreme High Temperature in effect until Wednesday, 12:00 AM CEST.  Source:
+        M\xE9t\xE9o-France, Moderate high-temperature warning\\n\\nModerate damages
+        may occur, especially in vulnerable or in exposed areas and to people who
+        carry out weather-related activities.\\n\\nBe careful, keep informed of the
+        latest weather forecast., start time: Tuesday, August 4, 00:00:00 UTC, end
+        time: Wednesday, August 5, 00:00:00 UTC\\n\\n\\nA Yellow Warning for Extreme
+        High Temperature is in effect until Wednesday, 12:00 AM CEST. It's advisable
+        to stay hydrated and avoid strenuous activities during peak heat. \"}\n\nevent:
+        response.content_part.done\ndata: {\"type\":\"response.content_part.done\",\"content_index\":0,\"item_id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"output_index\":1,\"part\":{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
+        of 6:11 PM CEST on Tuesday, August 4, 2026, the weather in Paris is sunny
+        with a temperature of 89\xB0F (32\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France,
+        France:\\nCurrent Conditions: Sunny, 89\xB0F (32\xB0C)\\n\\nDaily Forecast:\\n*
+        Tuesday, August 4: Low: 67\xB0F (19\xB0C), High: 91\xB0F (33\xB0C), Description:
+        Turning sunny and toasty conditions; possible danger of dehydration and heatstroke
+        while doing strenuous activities\\n* Wednesday, August 5: Low: 59\xB0F (15\xB0C),
+        High: 83\xB0F (28\xB0C), Description: A couple of showers in the morning;
+        otherwise, not as hot with some sun\\n* Thursday, August 6: Low: 54\xB0F (12\xB0C),
+        High: 77\xB0F (25\xB0C), Description: Partly sunny with a couple of thunderstorms,
+        especially late in the day\\n* Friday, August 7: Low: 58\xB0F (15\xB0C), High:
+        82\xB0F (28\xB0C), Description: Rather cloudy and very warm\\n* Saturday,
+        August 8: Low: 67\xB0F (19\xB0C), High: 88\xB0F (31\xB0C), Description: Very
+        warm with high thin cloudiness; caution advised if doing strenuous activities
+        outside\\n* Sunday, August 9: Low: 64\xB0F (18\xB0C), High: 88\xB0F (31\xB0C),
+        Description: Partly sunny and very warm with a shower in the area\\n* Monday,
+        August 10: Low: 62\xB0F (17\xB0C), High: 87\xB0F (30\xB0C), Description: Abundant
+        sunshine and very warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning
+        for Extreme High Temperature in effect until Wednesday, 12:00 AM CEST.  Source:
+        M\xE9t\xE9o-France, Moderate high-temperature warning\\n\\nModerate damages
+        may occur, especially in vulnerable or in exposed areas and to people who
+        carry out weather-related activities.\\n\\nBe careful, keep informed of the
+        latest weather forecast., start time: Tuesday, August 4, 00:00:00 UTC, end
+        time: Wednesday, August 5, 00:00:00 UTC\\n\\n\\nA Yellow Warning for Extreme
+        High Temperature is in effect until Wednesday, 12:00 AM CEST. It's advisable
+        to stay hydrated and avoid strenuous activities during peak heat. \"},\"sequence_number\":88}\n\nevent:
+        response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"item\":{\"id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
+        of 6:11 PM CEST on Tuesday, August 4, 2026, the weather in Paris is sunny
+        with a temperature of 89\xB0F (32\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France,
+        France:\\nCurrent Conditions: Sunny, 89\xB0F (32\xB0C)\\n\\nDaily Forecast:\\n*
+        Tuesday, August 4: Low: 67\xB0F (19\xB0C), High: 91\xB0F (33\xB0C), Description:
+        Turning sunny and toasty conditions; possible danger of dehydration and heatstroke
+        while doing strenuous activities\\n* Wednesday, August 5: Low: 59\xB0F (15\xB0C),
+        High: 83\xB0F (28\xB0C), Description: A couple of showers in the morning;
+        otherwise, not as hot with some sun\\n* Thursday, August 6: Low: 54\xB0F (12\xB0C),
+        High: 77\xB0F (25\xB0C), Description: Partly sunny with a couple of thunderstorms,
+        especially late in the day\\n* Friday, August 7: Low: 58\xB0F (15\xB0C), High:
+        82\xB0F (28\xB0C), Description: Rather cloudy and very warm\\n* Saturday,
+        August 8: Low: 67\xB0F (19\xB0C), High: 88\xB0F (31\xB0C), Description: Very
+        warm with high thin cloudiness; caution advised if doing strenuous activities
+        outside\\n* Sunday, August 9: Low: 64\xB0F (18\xB0C), High: 88\xB0F (31\xB0C),
+        Description: Partly sunny and very warm with a shower in the area\\n* Monday,
+        August 10: Low: 62\xB0F (17\xB0C), High: 87\xB0F (30\xB0C), Description: Abundant
+        sunshine and very warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning
+        for Extreme High Temperature in effect until Wednesday, 12:00 AM CEST.  Source:
+        M\xE9t\xE9o-France, Moderate high-temperature warning\\n\\nModerate damages
+        may occur, especially in vulnerable or in exposed areas and to people who
+        carry out weather-related activities.\\n\\nBe careful, keep informed of the
+        latest weather forecast., start time: Tuesday, August 4, 00:00:00 UTC, end
+        time: Wednesday, August 5, 00:00:00 UTC\\n\\n\\nA Yellow Warning for Extreme
+        High Temperature is in effect until Wednesday, 12:00 AM CEST. It's advisable
+        to stay hydrated and avoid strenuous activities during peak heat. \"}],\"role\":\"assistant\"},\"output_index\":1,\"sequence_number\":89}\n\nevent:
+        response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_0cec619571ad0ca4006a720f17853481929a9739c8bea4ba8d\",\"object\":\"response\",\"created_at\":1785859863,\"status\":\"completed\",\"background\":false,\"completed_at\":1785859865,\"error\":null,\"frequency_penalty\":0.0,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":null,\"max_tool_calls\":null,\"model\":\"gpt-4.1-mini-2025-04-14\",\"moderation\":null,\"output\":[{\"id\":\"ws_0cec619571ad0ca4006a720f17acac819282013bb7b6b22f98\",\"type\":\"web_search_call\",\"status\":\"completed\",\"action\":{\"type\":\"search\",\"queries\":[\"Search
         the web for the latest weather in Paris and answer briefly.\"],\"query\":\"Search
-        the web for the latest weather in Paris and answer briefly.\"}},{\"id\":\"msg_0997dddad2315ad4006a6a01b2b368819fb16005f0eaf9c09f\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[{\"type\":\"url_citation\",\"end_index\":2880,\"start_index\":2770,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"},{\"type\":\"url_citation\",\"end_index\":3343,\"start_index\":3233,\"title\":\"M\xE9t\xE9o
-        Paris, \xCEle-de-France pour 7 jours | Pr\xE9visions m\xE9t\xE9orologiques
-        pour les 7 prochains jours\",\"url\":\"https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai\"}],\"logprobs\":[],\"text\":\"As
-        of 3:35\u202FPM CEST on Wednesday, July 29, 2026, Paris is experiencing sunny
-        conditions with a temperature of 96\xB0F (36\xB0C).\\n\\n## Weather for Paris,
-        Paris, France:\\nCurrent Conditions: Sunny, 96\xB0F (36\xB0C)\\n\\nDaily Forecast:\\n*
-        Wednesday, July 29: Low: 70\xB0F (21\xB0C), High: 105\xB0F (40\xB0C), Description:
-        Very hot with sizzling sunshine; caution advised if outside for extended periods
-        of time\\n* Thursday, July 30: Low: 65\xB0F (19\xB0C), High: 89\xB0F (32\xB0C),
-        Description: Occasional morning rain and drizzle; otherwise, not as hot with
-        clouds breaking for some sun\\n* Friday, July 31: Low: 63\xB0F (17\xB0C),
-        High: 88\xB0F (31\xB0C), Description: Very warm with clouds and sunshine\\n*
-        Saturday, August 1: Low: 60\xB0F (16\xB0C), High: 84\xB0F (29\xB0C), Description:
-        Very warm with clouds and sunshine\\n* Sunday, August 2: Low: 68\xB0F (20\xB0C),
-        High: 90\xB0F (32\xB0C), Description: Hot with intervals of clouds and sunshine;
-        caution advised if doing strenuous activities outside\\n* Monday, August 3:
-        Low: 67\xB0F (20\xB0C), High: 93\xB0F (34\xB0C), Description: Sweltering heat
-        with intervals of clouds and sunshine\\n* Tuesday, August 4: Low: 63\xB0F
-        (17\xB0C), High: 84\xB0F (29\xB0C), Description: Abundant sunshine and very
-        warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning for Thunderstorms
-        in effect from Thursday, 12:00 AM CEST until Friday, 12:00 AM CEST.  Source:
-        M\xE9t\xE9o-France, Moderate thunderstorm warning\\n\\nModerate damages may
-        occur, especially in vulnerable or in exposed areas and to people who carry
-        out weather-related activities.\\n\\nBe careful, keep informed of the latest
-        weather forecast., start time: Thursday, July 30, 00:00:00 UTC, end time:
-        Friday, July 31, 00:00:00 UTC\\n* Paris: Yellow Warning for Extreme High Temperature
-        in effect until Thursday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Wednesday,
-        July 29, 06:40:00 UTC, end time: Thursday, July 30, 00:00:00 UTC\\n* Paris:
-        Yellow Warning for Extreme High Temperature in effect from Thursday, 12:00
-        AM CEST until Friday, 12:00 AM CEST.  Source: M\xE9t\xE9o-France, Moderate
-        high-temperature warning\\n\\nModerate damages may occur, especially in vulnerable
-        or in exposed areas and to people who carry out weather-related activities.\\n\\nBe
-        careful, keep informed of the latest weather forecast., start time: Thursday,
-        July 30, 00:00:00 UTC, end time: Friday, July 31, 00:00:00 UTC\\n\\n\\nA Yellow
-        Warning for Extreme High Temperature is in effect until Thursday, 12:00\u202FAM
-        CEST. Moderate damages may occur, especially in vulnerable or exposed areas
-        and to people who carry out weather-related activities. Be careful and keep
-        informed of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nAdditionally,
-        a Yellow Warning for Thunderstorms is in effect from Thursday, 12:00\u202FAM
-        CEST until Friday, 12:00\u202FAM CEST. Moderate thunderstorms may occur, potentially
-        causing moderate damages, especially in vulnerable or exposed areas and to
-        people who carry out weather-related activities. Be careful and keep informed
-        of the latest weather forecast. ([meteo247.fr](https://www.meteo247.fr/france/ile-de-france/meteo-paris/previsions-7-jours?utm_source=openai))\\n\\nPlease
-        exercise caution during this period of extreme heat and stay updated with
-        local weather reports. \"}],\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":1}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":319,\"input_tokens_details\":{\"cache_write_tokens\":0,\"cached_tokens\":0},\"output_tokens\":883,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":1202},\"user\":null,\"metadata\":{}},\"sequence_number\":213}\n\n"
+        the web for the latest weather in Paris and answer briefly.\"}},{\"id\":\"msg_0cec619571ad0ca4006a720f1869208192bc0a226d68f888b6\",\"type\":\"message\",\"status\":\"completed\",\"content\":[{\"type\":\"output_text\",\"annotations\":[],\"logprobs\":[],\"text\":\"As
+        of 6:11 PM CEST on Tuesday, August 4, 2026, the weather in Paris is sunny
+        with a temperature of 89\xB0F (32\xB0C).\\n\\n## Weather for Paris, \xCEle-de-France,
+        France:\\nCurrent Conditions: Sunny, 89\xB0F (32\xB0C)\\n\\nDaily Forecast:\\n*
+        Tuesday, August 4: Low: 67\xB0F (19\xB0C), High: 91\xB0F (33\xB0C), Description:
+        Turning sunny and toasty conditions; possible danger of dehydration and heatstroke
+        while doing strenuous activities\\n* Wednesday, August 5: Low: 59\xB0F (15\xB0C),
+        High: 83\xB0F (28\xB0C), Description: A couple of showers in the morning;
+        otherwise, not as hot with some sun\\n* Thursday, August 6: Low: 54\xB0F (12\xB0C),
+        High: 77\xB0F (25\xB0C), Description: Partly sunny with a couple of thunderstorms,
+        especially late in the day\\n* Friday, August 7: Low: 58\xB0F (15\xB0C), High:
+        82\xB0F (28\xB0C), Description: Rather cloudy and very warm\\n* Saturday,
+        August 8: Low: 67\xB0F (19\xB0C), High: 88\xB0F (31\xB0C), Description: Very
+        warm with high thin cloudiness; caution advised if doing strenuous activities
+        outside\\n* Sunday, August 9: Low: 64\xB0F (18\xB0C), High: 88\xB0F (31\xB0C),
+        Description: Partly sunny and very warm with a shower in the area\\n* Monday,
+        August 10: Low: 62\xB0F (17\xB0C), High: 87\xB0F (30\xB0C), Description: Abundant
+        sunshine and very warm\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning
+        for Extreme High Temperature in effect until Wednesday, 12:00 AM CEST.  Source:
+        M\xE9t\xE9o-France, Moderate high-temperature warning\\n\\nModerate damages
+        may occur, especially in vulnerable or in exposed areas and to people who
+        carry out weather-related activities.\\n\\nBe careful, keep informed of the
+        latest weather forecast., start time: Tuesday, August 4, 00:00:00 UTC, end
+        time: Wednesday, August 5, 00:00:00 UTC\\n\\n\\nA Yellow Warning for Extreme
+        High Temperature is in effect until Wednesday, 12:00 AM CEST. It's advisable
+        to stay hydrated and avoid strenuous activities during peak heat. \"}],\"role\":\"assistant\"}],\"parallel_tool_calls\":true,\"presence_penalty\":0.0,\"previous_response_id\":null,\"prompt_cache_key\":null,\"prompt_cache_retention\":\"in_memory\",\"reasoning\":{\"context\":null,\"effort\":null,\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"},\"verbosity\":\"medium\"},\"tool_choice\":{\"type\":\"web_search_preview\"},\"tool_usage\":{\"image_gen\":{\"input_tokens\":0,\"input_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"output_tokens\":0,\"output_tokens_details\":{\"image_tokens\":0,\"text_tokens\":0},\"total_tokens\":0},\"web_search\":{\"num_requests\":1}},\"tools\":[{\"type\":\"web_search_preview\",\"search_content_types\":[\"text\"],\"search_context_size\":\"low\",\"user_location\":{\"type\":\"approximate\",\"city\":null,\"country\":\"US\",\"region\":null,\"timezone\":null}}],\"top_logprobs\":0,\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":319,\"input_tokens_details\":{\"cache_write_tokens\":0,\"cached_tokens\":0},\"output_tokens\":489,\"output_tokens_details\":{\"reasoning_tokens\":0},\"total_tokens\":808},\"user\":null,\"metadata\":{}},\"sequence_number\":90}\n\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -620,15 +313,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c8235cdcc36eb-YYZ
+      - a25ed5f29e4aebbd-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Wed, 29 Jul 2026 13:35:45 GMT
+      - Tue, 04 Aug 2026 16:11:03 GMT
       openai-processing-ms:
-      - '191'
+      - '183'
       openai-version:
       - '2020-10-01'
       server:
@@ -640,7 +333,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_59bacec40d624a559916c50faca980e3
+      - req_572adf5ade5d4f74897560e0b6e4df5d
     status:
       code: 200
       message: OK

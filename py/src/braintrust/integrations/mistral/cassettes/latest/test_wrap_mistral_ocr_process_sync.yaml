@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"mistral-ocr-latest","document":{"document_url":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg==","type":"document_url","document_name":"test.pdf"},"include_blocks":false}'
+    body: '{"model":"mistral-ocr-latest","document":{"document_url":"data:application/pdf;base64,JVBERi0xLjAKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqCjMgMCBvYmoKPDwvVHlwZS9QYWdlL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+ZW5kb2JqCnhyZWYKMCA0CjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDkKJUVPRg==","type":"document_url","document_name":"test.pdf"},"include_blocks":true}'
     headers:
       accept:
       - application/json
@@ -9,18 +9,18 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '553'
+      - '552'
       content-type:
       - application/json
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.9.0
     method: POST
     uri: https://api.mistral.ai/v1/ocr
   response:
     body:
-      string: '{"pages":[{"index":0,"markdown":"","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":93,"height":1023,"width":791},"confidence_scores":null,"blocks":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":292}}'
+      string: '{"pages":[{"index":0,"markdown":"","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":93,"height":1023,"width":791},"confidence_scores":null,"blocks":[]}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":292}}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -29,17 +29,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e608374fc5df0a-SJC
+      - a25edd542e5c3896-YYZ
       connection:
       - keep-alive
       content-length:
-      - '306'
+      - '304'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:19:05 GMT
+      - Tue, 04 Aug 2026 16:16:06 GMT
       mistral-correlation-id:
-      - 019f820a-5edf-70b7-9600-8351576c84db
+      - 019fcd8f-90dd-7e60-958b-4bc37a90d807
       server:
       - cloudflare
       strict-transport-security:
@@ -49,13 +49,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '50'
+      - '111'
       x-kong-proxy-latency:
-      - '10'
+      - '13'
       x-kong-request-id:
-      - 019f820a-5edf-70b7-9600-8351576c84db
+      - 019fcd8f-90dd-7e60-958b-4bc37a90d807
       x-kong-upstream-latency:
-      - '50'
+      - '112'
       x-ratelimit-limit-ocr-pages-minute:
       - '625'
       x-ratelimit-ocr-pages-query-cost:

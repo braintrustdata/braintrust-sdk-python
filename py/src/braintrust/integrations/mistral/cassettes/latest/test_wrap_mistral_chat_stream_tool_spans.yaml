@@ -17,16 +17,16 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.9.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"8a0778409bd74db68e4c388816a4c05a","object":"chat.completion.chunk","created":1784593126,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"21f3dfa6cf5b4b289290eeb7e9ee2970","object":"chat.completion.chunk","created":1785860146,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"8a0778409bd74db68e4c388816a4c05a","object":"chat.completion.chunk","created":1784593126,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"tool_calls":[{"id":"5c5DiyIrB","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
-        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmno"}
+        data: {"id":"21f3dfa6cf5b4b289290eeb7e9ee2970","object":"chat.completion.chunk","created":1785860146,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"tool_calls":[{"id":"2RMm4qg0M","type":"function","function":{"name":"get_weather","arguments":"{\"city\":
+        \"Paris\"}"},"index":0}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":88,"total_tokens":100,"completion_tokens":12,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"p":"abcde"}
 
 
         data: [DONE]
@@ -41,15 +41,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e607c1aa2ac79e-SJC
+      - a25edcdd1e1dab0c-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 21 Jul 2026 00:18:47 GMT
+      - Tue, 04 Aug 2026 16:15:47 GMT
       mistral-correlation-id:
-      - 019f820a-155a-7529-9da6-00bc75226350
+      - 019fcd8f-4670-7da9-a9be-fb17339ec5b5
       server:
       - cloudflare
       strict-transport-security:
@@ -59,13 +59,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '216'
+      - '423'
       x-kong-proxy-latency:
-      - '9'
+      - '14'
       x-kong-request-id:
-      - 019f820a-155a-7529-9da6-00bc75226350
+      - 019fcd8f-4670-7da9-a9be-fb17339ec5b5
       x-kong-upstream-latency:
-      - '217'
+      - '424'
       x-max-retry-attempts-reached:
       - 'false'
     status:

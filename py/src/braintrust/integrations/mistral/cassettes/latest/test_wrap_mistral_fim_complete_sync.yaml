@@ -16,13 +16,13 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.9.0
     method: POST
     uri: https://api.mistral.ai/v1/fim/completions
   response:
     body:
-      string: '{"id":"a87d0263b83f4a4083de8a228e528ea1","created":1784593149,"model":"codestral-latest","usage":{"prompt_tokens":22,"total_tokens":38,"completion_tokens":16,"prompt_tokens_details":{"cached_tokens":0}},"object":"chat.completion","choices":[{"index":0,"finish_reason":"length","message":{"role":"assistant","tool_calls":null,"content":"a
-        + b\n\n\ndef sub(a, b):\n    return a - b\n\n\n"}}]}'
+      string: '{"id":"beb5e090626a4bfcb9c307ed2367b020","created":1785860168,"model":"codestral-latest","usage":{"prompt_tokens":22,"total_tokens":27,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"object":"chat.completion","choices":[{"index":0,"finish_reason":"stop","message":{"role":"assistant","tool_calls":null,"content":"a
+        + b\n"}}]}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -31,17 +31,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e608518ec52ed1-SJC
+      - a25edd653df7cf1c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '390'
+      - '371'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:19:10 GMT
+      - Tue, 04 Aug 2026 16:16:08 GMT
       mistral-correlation-id:
-      - 019f820a-6f47-755c-943f-4c75377645c5
+      - 019fcd8f-9b7e-7567-aaf4-8f5fb4b0c329
       server:
       - cloudflare
       strict-transport-security:
@@ -51,13 +51,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '254'
+      - '135'
       x-kong-proxy-latency:
-      - '9'
+      - '13'
       x-kong-request-id:
-      - 019f820a-6f47-755c-943f-4c75377645c5
+      - 019fcd8f-9b7e-7567-aaf4-8f5fb4b0c329
       x-kong-upstream-latency:
-      - '255'
+      - '136'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-limit-req-minute:
@@ -67,9 +67,9 @@ interactions:
       x-ratelimit-remaining-req-minute:
       - '124'
       x-ratelimit-remaining-tokens-minute:
-      - '624962'
+      - '624973'
       x-ratelimit-tokens-query-cost:
-      - '38'
+      - '27'
     status:
       code: 200
       message: OK

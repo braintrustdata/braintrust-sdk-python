@@ -22,22 +22,12 @@ interactions:
       "required": ["agent_name"], "title": "transfer_to_agentParams", "type": "object"}}]}],
       "generationConfig": {}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '1646'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -45,41 +35,41 @@ interactions:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"transfer_to_agent\",\n
         \             \"args\": {\n                \"agent_name\": \"capital_specialist\"\n
-        \             }\n            },\n            \"thoughtSignature\": \"CqwDARFNMg/j+9eaPm9CUpDwYKmqmHGZqfm7bYvgkuBJs+rzg1obPejEnFWaQf/v0ATSzFnaSan470RJspYICGrXp7jyuC/SAVL2v+vHaRvjXHkGq4Z4XxyohC0CJwuYNoxQZ0RAgNK9rkh0OXiv4FbyMOMed6ATAxYgDwV6ugRoDzdorj7x/lqQG1V9mWwK8viOhS0LQ76K48dIu7BMph5J2Jlr4EAO4JC8KhuAdWYE36PlLBQhz3KuS6AvWPwt8lmW4s0ZM+AwZZ6H1nU6hNlRTNUtiBVj5aU1qrbA/BoX/GUcqFfqHq+ymkK2mgW3HkPEgmv8Qry3UL1C+jzU1gfdL2ou2T8t8jZOzt9DO/wrINAhWx0Xx7w6NlfESCo1qQctLpXzGBgzkuzwVHAgJPP0eF38joQdN2VDH2cXZ2ao82Aq6uc/DU6CEASfoCq5aI5z4WELa4o9mzH3q+S6mc8dc81lTsFTz/4WN+G/3lp/KD9lUWE6eUTiettCwT+5x0kM5ymA3CT6iPf7Rz9NkmUqFUENjDrCngeZnN/muHqSUFIo7ZYCMdQ/Yn7i6ZQ=\"\n
+        \             }\n            },\n            \"thoughtSignature\": \"CssEARFNMg8f4xgzpWotJfXGKfMybD8FHFhgejcQ2ckptf0mMdnmICEt3w2xcD/QiRtB+0mrvmVk0Iz5ifgpoPccRencGH/AvtatNZOVjOIUjr02U41nDS/bFB9vzme+9DUnvJxKL5rm2if08sAGeT5pkdL9OJb0wjjgiMmEm9Z0f8DWP9EnVabieDcuTFw/YGaAonVSX/GPVdgoak8AXtdeIoliisq4OCR8xbLlso6n9828niapXOuBoSJRSZEAsDOTsCLBrGJEWHduPYL9z64XmK4yJhmuiDRpIbA5xzCcCUlPzFQzGbeb7IyiyA3iYvQ/YY2qSNRgXo0hxHCIrrQJbzx/dG+pgzTLbHRCVELLs9IQfTmrwbn+KoZ8F6aUEJaUMO4y+T1/HGNUdYHovYys28uhdoTkAkQin0GtNHfS/Sc3Nj5v9uRezGyIz4deqh1VG3hl9HlvOI2hm8yvUNUF7aJ0G/scWFEBnxjiOFrqnZWnx2CghBib0wOkURxhE7JRuwh2T7laogu+JezvwRdQPWAu+TXTLN6Ufg2s4QdCjrmbs76cVbETQ3Xzs6xTBmY+EtRs2TikM0T5nATstykmUn7JBtOoPJR/ZoYMu/+Ry2VCQ73bSeKwQPk+VE3Pea1b9WjtrVYK3/fQkfiYeEGnFxn6q0/NjOGDUV+/VFheQjr6ch7RMEmlCx/rgCXPSPcbcG7CGVedC/STH5LN6Avq9eH0Rjx+L+FM6tZr7ADFSBtizj07e3DrSkWesHdC6FEN+LiLMbM5B9cpssE=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        301,\n    \"candidatesTokenCount\": 22,\n    \"totalTokenCount\": 405,\n    \"promptTokensDetails\":
+        301,\n    \"candidatesTokenCount\": 22,\n    \"totalTokenCount\": 437,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 301\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 82,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"fgFqapXpHLSrsOIPsOff0Ag\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 114,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"ORByapWZE5id-8YPiNLPEQ\"\n}\n"
     headers:
-      alt-svc:
+      Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '1403'
-      content-type:
+      Content-Type:
       - application/json; charset=UTF-8
-      date:
-      - Wed, 29 Jul 2026 13:34:55 GMT
-      server:
+      Date:
+      - Tue, 04 Aug 2026 16:15:54 GMT
+      Server:
       - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=832
-      transfer-encoding:
+      Server-Timing:
+      - gfet4t7; dur=1102
+      Transfer-Encoding:
       - chunked
-      vary:
+      Vary:
       - Origin
       - X-Origin
       - Referer
-      x-content-type-options:
+      X-Content-Type-Options:
       - nosniff
-      x-frame-options:
+      X-Frame-Options:
       - SAMEORIGIN
-      x-gemini-service-tier:
+      X-Gemini-Service-Tier:
       - standard
-      x-xss-protection:
+      X-XSS-Protection:
       - '0'
+      content-length:
+      - '1615'
     status:
       code: 200
       message: OK
@@ -110,62 +100,52 @@ interactions:
       "required": ["agent_name"], "title": "transfer_to_agentParams", "type": "object"}}]}],
       "generationConfig": {}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '1985'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.14.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"text\": \"The capital of France is Paris.\",\n
-        \           \"thoughtSignature\": \"Cp0DARFNMg+zy0SfhDvFiWb+X7RwVYg2gND5/R8NYbIXVz2uXsKTzOu1zjMeMYCpJBlwGHeJAuWPG1X6+GKB35F2H9d1aJgdvCgjKC8iwXYjNDpkr3wPPmYZfzqB5xX7YvErtnJC3bLcDKaxtgfcrY+VgWhs5IW/ysrUXpiq+DJvX0RiwXgvmRg25sgGm/JRD8Q1hFQCFLwWrUAs8cg4fhSzHTfdSiP2t1WsmVOJrt7a7K6EiKjt88TAbrb8z7HTyxQtQJbNesMPIslrdIZGvGFSEy+no6KGNuN524eCH2/VYMvsQJJLxYYlYNoh6B7G6IkmfP64nqYbsiJcNxG4MJ3OvVsdLhMJsjBdtIfBsSF/lq14c1IZy2dj4rpa4JBmIityz3y1OSbFWcIeaGlaAmQjzpTu2XtdgeTfqopfPY8KLNN8ugzZgkpdOoq/RzOCebpgx9dUX6jr8xhlwbYBpbkfBapRWu5PKt2GkiKVUBUqWgT/RGh+rm4yLMyJ18nYwO0bDQVOdQNXeyRxuSIunvKi6xFCI1Jdheoa8iYfCTY=\"\n
+        \           \"thoughtSignature\": \"CrcCARFNMg/Xhi27QQZDXC+CimrOMOt7qwl7xW0U6JVdXVJY7vuG5yuAS+5e/46W5IUCn91Upk65lPCj4eVLUlQPm1WJ5zTbQdri4zToJSZYB0hRUaHAH4Cb8sTQXhqtEGc8wpQt/ALa0SH+mG7+ArdbCahe3o4BUOhR39bzVQ9l3IX5JSlliYyei3rUllCjNLAjfI9my/zzCJHS5xc97ZRnZseqm2SdyyTV8/t0owkiAiKXNY/fBprXeG4o+So/nisTvSLc7GhbcDt9bsti4VtCcJYfEi84ye/12bxQbQnQVgxe59VHox6Q6iLuvTp0/v/lwA7fJXoDmID7Fkk59iFF8pGU+MyvViD0mdCmDDPbH0nu8xe8EYHgTczrRcJ/qjLOcvlCkaTWJonkoZGSXpc2T5uKzPBGHpo=\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        352,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 439,\n    \"promptTokensDetails\":
+        352,\n    \"candidatesTokenCount\": 7,\n    \"totalTokenCount\": 418,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 352\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 80,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"fwFqapjNF4mkjrEP0rKCUQ\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 59,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"OhByaqGdH_WijrEP6cOqeA\"\n}\n"
     headers:
-      alt-svc:
+      Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '1197'
-      content-type:
+      Content-Type:
       - application/json; charset=UTF-8
-      date:
-      - Wed, 29 Jul 2026 13:34:56 GMT
-      server:
+      Date:
+      - Tue, 04 Aug 2026 16:15:55 GMT
+      Server:
       - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=896
-      transfer-encoding:
+      Server-Timing:
+      - gfet4t7; dur=819
+      Transfer-Encoding:
       - chunked
-      vary:
+      Vary:
       - Origin
       - X-Origin
       - Referer
-      x-content-type-options:
+      X-Content-Type-Options:
       - nosniff
-      x-frame-options:
+      X-Frame-Options:
       - SAMEORIGIN
-      x-gemini-service-tier:
+      X-Gemini-Service-Tier:
       - standard
-      x-xss-protection:
+      X-XSS-Protection:
       - '0'
+      content-length:
+      - '1061'
     status:
       code: 200
       message: OK

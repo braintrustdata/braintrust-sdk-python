@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.46.0
+      - OpenAI/Python 2.53.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.46.0
+      - 2.53.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -35,17 +35,17 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.13.5
     method: POST
     uri: https://api.openai.com/v1/completions
   response:
     body:
-      string: "{\n  \"id\": \"cmpl-E3sOEh32GIVtUYYGxWkWkzWnSmaDS\",\n  \"object\":
-        \"text_completion\",\n  \"created\": 1784592766,\n  \"model\": \"gpt-3.5-turbo-instruct:20230824-v2\",\n
-        \ \"choices\": [\n    {\n      \"text\": \"\\n12 + 12 = 24\",\n      \"index\":
-        0,\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
-        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\":
-        8,\n    \"total_tokens\": 16\n  }\n}\n"
+      string: "{\n  \"id\": \"cmpl-E9C7o9aFDOVlhodUtHWqq1IE5VysX\",\n  \"object\":
+        \"text_completion\",\n  \"created\": 1785860268,\n  \"model\": \"gpt-3.5-turbo-instruct:20230824-v2\",\n
+        \ \"choices\": [\n    {\n      \"text\": \"\\n\\n12 + 12 is equal to 24.\",\n
+        \     \"index\": 0,\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 8,\n    \"completion_tokens\":
+        11,\n    \"total_tokens\": 19\n  }\n}\n"
     headers:
       access-control-allow-origin:
       - '*'
@@ -60,19 +60,19 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e5fef4bec5138a-SJC
+      - a25edfcdb92d9113-YYZ
       connection:
       - keep-alive
       content-length:
-      - '383'
+      - '397'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:12:46 GMT
+      - Tue, 04 Aug 2026 16:17:48 GMT
       openai-model:
       - gpt-3.5-turbo-instruct:20230824-v2
       openai-processing-ms:
-      - '207'
+      - '1191'
       openai-version:
       - '2020-10-01'
       server:
@@ -82,11 +82,11 @@ interactions:
       transfer-encoding:
       - chunked
       via:
-      - envoy-router-8587569f68-fztxl
+      - envoy-router-56c8c45476-lmdzp
       x-content-type-options:
       - nosniff
       x-engine-geography:
-      - US
+      - AU
       x-openai-proxy-wasm:
       - v0.1
       x-ratelimit-limit-requests:
@@ -94,15 +94,15 @@ interactions:
       x-ratelimit-limit-tokens:
       - '90000'
       x-ratelimit-remaining-requests:
-      - '3498'
+      - '3499'
       x-ratelimit-remaining-tokens:
-      - '89995'
+      - '89996'
       x-ratelimit-reset-requests:
       - 17ms
       x-ratelimit-reset-tokens:
       - 2ms
       x-request-id:
-      - req_e406820081d4412b8145a6cb0b58957f
+      - req_43d4eb8f989746679db141038afc14d5
     status:
       code: 200
       message: OK

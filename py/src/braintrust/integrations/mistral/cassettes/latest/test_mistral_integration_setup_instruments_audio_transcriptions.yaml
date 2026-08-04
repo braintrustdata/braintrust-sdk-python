@@ -1,12 +1,12 @@
 interactions:
 - request:
     body: !!binary |
-      LS03OGRmNmY1ZTVmNDc5MzEwZTRhZjIxZTY3ZTBlNDIzYw0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tNzhkZjZmNWU1
-      ZjQ3OTMxMGU0YWYyMWU2N2UwZTQyM2MNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQpmYWxzZQ0KLS03OGRmNmY1ZTVmNDc5MzEwZTRhZjIxZTY3ZTBlNDIz
-      Yw0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJkaWFyaXplIg0KDQpmYWxz
-      ZQ0KLS03OGRmNmY1ZTVmNDc5MzEwZTRhZjIxZTY3ZTBlNDIzYw0KQ29udGVudC1EaXNwb3NpdGlv
+      LS1lZWU3MTZiMjg2NmNmYTcxMzM0ZWZiYTcxZjM0ZmU2OQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tZWVlNzE2YjI4
+      NjZjZmE3MTMzNGVmYmE3MWYzNGZlNjkNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQpmYWxzZQ0KLS1lZWU3MTZiMjg2NmNmYTcxMzM0ZWZiYTcxZjM0ZmU2
+      OQ0KQ29udGVudC1EaXNwb3NpdGlvbjogZm9ybS1kYXRhOyBuYW1lPSJkaWFyaXplIg0KDQpmYWxz
+      ZQ0KLS1lZWU3MTZiMjg2NmNmYTcxMzM0ZWZiYTcxZjM0ZmU2OQ0KQ29udGVudC1EaXNwb3NpdGlv
       bjogZm9ybS1kYXRhOyBuYW1lPSJmaWxlIjsgZmlsZW5hbWU9InRlc3RfYXVkaW8ud2F2Ig0KQ29u
       dGVudC1UeXBlOiBhdWRpby93YXYNCg0KUklGRiR9AABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAAC
       ABAAZGF0YQB9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -570,8 +570,8 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0KLS03OGRmNmY1ZTVmNDc5MzEwZTRh
-      ZjIxZTY3ZTBlNDIzYy0tDQo=
+      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0KLS1lZWU3MTZiMjg2NmNmYTcxMzM0
+      ZWZiYTcxZjM0ZmU2OS0tDQo=
     headers:
       accept:
       - application/json
@@ -582,16 +582,16 @@ interactions:
       content-length:
       - '32507'
       content-type:
-      - multipart/form-data; boundary=78df6f5e5f479310e4af21e67e0e423c
+      - multipart/form-data; boundary=eee716b2866cfa71334efba71f34fe69
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.9.0
     method: POST
     uri: https://api.mistral.ai/v1/audio/transcriptions
   response:
     body:
-      string: '{"model":"voxtral-mini-latest","text":"","language":null,"segments":[],"usage":{"prompt_audio_seconds":1,"prompt_tokens":3,"total_tokens":379,"completion_tokens":1,"prompt_tokens_details":{"cached_tokens":1,"audio_tokens":375}},"finish_reason":null}'
+      string: '{"model":"voxtral-mini-latest","text":"","language":null,"segments":[],"usage":{"prompt_audio_seconds":1,"prompt_tokens":3,"total_tokens":379,"completion_tokens":1,"prompt_tokens_details":{"cached_tokens":1,"audio_tokens":375},"service_tier":"standard"},"finish_reason":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -600,17 +600,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e6087258daaf1b-SJC
+      - a25edd9d4ee6c4c7-YYZ
       connection:
       - keep-alive
       content-length:
-      - '249'
+      - '275'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:19:15 GMT
+      - Tue, 04 Aug 2026 16:16:17 GMT
       mistral-correlation-id:
-      - 019f820a-83d7-7135-a195-96e496c670ab
+      - 019fcd8f-bea0-7b15-bb8c-32750b293463
       server:
       - cloudflare
       strict-transport-security:
@@ -620,13 +620,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '89'
-      x-kong-proxy-latency:
-      - '12'
-      x-kong-request-id:
-      - 019f820a-83d7-7135-a195-96e496c670ab
-      x-kong-upstream-latency:
       - '90'
+      x-kong-proxy-latency:
+      - '17'
+      x-kong-request-id:
+      - 019fcd8f-bea0-7b15-bb8c-32750b293463
+      x-kong-upstream-latency:
+      - '91'
       x-max-retry-attempts-reached:
       - 'false'
       x-ratelimit-audio-seconds-query-cost:

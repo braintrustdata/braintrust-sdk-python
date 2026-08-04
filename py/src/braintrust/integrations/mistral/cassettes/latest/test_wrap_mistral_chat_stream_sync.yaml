@@ -16,18 +16,18 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.9.0
     method: POST
     uri: https://api.mistral.ai/v1/chat/completions#stream
   response:
     body:
-      string: 'data: {"id":"6c7fdf3361184920bd1c5949fdc90f82","object":"chat.completion.chunk","created":1784593127,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+      string: 'data: {"id":"b33b8bffce0c4169974d421ab833ef9c","object":"chat.completion.chunk","created":1785860147,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 
-        data: {"id":"6c7fdf3361184920bd1c5949fdc90f82","object":"chat.completion.chunk","created":1784593127,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}],"p":"abcdefghijklmnopqrstuv"}
+        data: {"id":"b33b8bffce0c4169974d421ab833ef9c","object":"chat.completion.chunk","created":1785860147,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"1"},"finish_reason":null}],"p":"abcde"}
 
 
-        data: {"id":"6c7fdf3361184920bd1c5949fdc90f82","object":"chat.completion.chunk","created":1784593127,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"0"},"finish_reason":"stop"}],"usage":{"prompt_tokens":28,"total_tokens":31,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0}},"p":"abcdefghijklmnopqrstuvwxyz0123"}
+        data: {"id":"b33b8bffce0c4169974d421ab833ef9c","object":"chat.completion.chunk","created":1785860147,"model":"mistral-small-latest","choices":[{"index":0,"delta":{"content":"0"},"finish_reason":"stop"}],"usage":{"prompt_tokens":28,"total_tokens":31,"completion_tokens":3,"prompt_tokens_details":{"cached_tokens":0},"service_tier":"standard"},"p":"abcdefghijklm"}
 
 
         data: [DONE]
@@ -42,15 +42,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e607c4988515ef-SJC
+      - a25edce15c2bebb6-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 21 Jul 2026 00:18:47 GMT
+      - Tue, 04 Aug 2026 16:15:48 GMT
       mistral-correlation-id:
-      - 019f820a-1732-73d8-affc-431e6dadde90
+      - 019fcd8f-490e-79e9-a077-425db1b649b6
       server:
       - cloudflare
       strict-transport-security:
@@ -60,13 +60,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '145'
+      - '467'
       x-kong-proxy-latency:
-      - '10'
+      - '13'
       x-kong-request-id:
-      - 019f820a-1732-73d8-affc-431e6dadde90
+      - 019fcd8f-490e-79e9-a077-425db1b649b6
       x-kong-upstream-latency:
-      - '147'
+      - '468'
       x-max-retry-attempts-reached:
       - 'false'
     status:

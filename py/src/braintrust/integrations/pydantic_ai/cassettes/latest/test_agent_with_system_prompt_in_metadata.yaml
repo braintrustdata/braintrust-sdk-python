@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.18.0
+      - pydantic-ai/2.23.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.50.0
+      - 2.53.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,36 +39,36 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0d9fde6dddf00e59006a6a013fffc481a09e0164e20dee14e1\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1785332032,\n  \"status\":
+      string: "{\n  \"id\": \"resp_022b10a497aca471006a7210d45bd0819ca8b7627729d7738d\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1785860308,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1785332032,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1785860309,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0d9fde6dddf00e59006a6a014079dc81a0b7f1421d8a2c6f34\",\n
+        \     \"id\": \"msg_022b10a497aca471006a7210d4ec50819c8ee93edf153e9c9b\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Ahoy matey! I be unable
-        t\\u2019 check the skies fer ye. But ye can consult a weather map or ask yer
-        lantern! What be ye needin\\u2019 t\\u2019 know, savvy?\"\n        }\n      ],\n
-        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
-        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
-        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
-        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Ahoy, matey! To be
+        givin' ye the weather report, I\\u2019d need to know where ye be sailin\\u2019!
+        But mark me words, ye can always check the skies or consult a trusty weather
+        map. What say ye?\"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
+        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
+        \   \"format\": {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n
+        \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
+        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 28,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 41,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 69\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 51,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 79\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -80,17 +80,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c7f6f99fdabee-YYZ
+      - a25ee0cedf1fac8a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2122'
+      - '2160'
       content-type:
       - application/json
       date:
-      - Wed, 29 Jul 2026 13:33:53 GMT
+      - Tue, 04 Aug 2026 16:18:29 GMT
       openai-processing-ms:
-      - '1020'
+      - '1201'
       openai-version:
       - '2020-10-01'
       server:
@@ -114,7 +114,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_d87ca3c1364d4139ab1c07f0238a703c
+      - req_b7c5f7df0ceb406fa25da4b00ca4ea06
     status:
       code: 200
       message: OK
