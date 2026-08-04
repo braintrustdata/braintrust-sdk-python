@@ -440,7 +440,7 @@ async def traced_audio_output_capture_frame(
     if getattr(instance, _PLAYBACK_HANDLER_ATTACHED_ATTR, False):
         if getattr(instance, _PLAYBACK_START_ATTR, None) is None:
             setattr(instance, _PLAYBACK_START_ATTR, time.time())
-        if BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(True):
+        if BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False):
             _capture_playback_audio(instance, args[0] if args else kwargs.get("frame"))
         else:
             _clear_playback_audio(instance)
@@ -680,7 +680,7 @@ def _pop_playback_audio(obj: Any) -> Attachment | None:
     audio = getattr(obj, _PLAYBACK_AUDIO_ATTR, None)
     metadata = getattr(obj, _PLAYBACK_AUDIO_METADATA_ATTR, None) or {}
     _clear_playback_audio(obj)
-    if not BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(True) or not audio:
+    if not BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False) or not audio:
         return None
     sample_rate = metadata.get("sample_rate")
     num_channels = metadata.get("num_channels")

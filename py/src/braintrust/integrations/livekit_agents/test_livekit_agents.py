@@ -225,7 +225,7 @@ async def test_livekit_agents_agent_audio_capture_respects_generic_env(monkeypat
 
     monkeypatch.delenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", raising=False)
     assert await tracing.traced_audio_output_capture_frame(capture_frame, output, (frame,), {}) is frame
-    assert bytes(getattr(output, tracing._PLAYBACK_AUDIO_ATTR)) == frame.data
+    assert getattr(output, tracing._PLAYBACK_AUDIO_ATTR, None) is None
 
     monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "false")
     assert await tracing.traced_audio_output_capture_frame(capture_frame, output, (frame,), {}) is frame
@@ -238,7 +238,8 @@ async def test_livekit_agents_agent_audio_capture_respects_generic_env(monkeypat
 
 @pytest.mark.asyncio
 @pytest.mark.vcr
-async def test_livekit_agents_agent_speaking_e2e(memory_logger, livekit_server):
+async def test_livekit_agents_agent_speaking_e2e(memory_logger, livekit_server, monkeypatch):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
     assert setup_livekit_agents()
 
     from livekit.agents import Agent, AgentSession
