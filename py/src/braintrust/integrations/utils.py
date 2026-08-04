@@ -529,6 +529,74 @@ def _prettify_response_params(params: dict[str, Any], *, drop_not_given: bool = 
     return ret
 
 
+def _extract_google_modality_token_count(details: Any, modality: str) -> int | float | None:
+    counts = []
+    for detail in details or []:
+        detail_modality = getattr(detail, "modality", None)
+        detail_modality = getattr(detail_modality, "value", detail_modality)
+        token_count = getattr(detail, "token_count", None)
+        if isinstance(detail_modality, str) and detail_modality.upper() == modality and token_count is not None:
+            counts.append(token_count)
+    return sum(counts) if counts else None
+
+
+def _extract_google_usage_metadata_metrics(usage_metadata: Any) -> dict[str, Any]:
+    """Normalize Google GenerateContent usage metadata into Braintrust metrics."""
+    if usage_metadata is None:
+        return {}
+
+    metrics: dict[str, Any] = {}
+    prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
+    tool_use_prompt_token_count = getattr(usage_metadata, "tool_use_prompt_token_count", None)
+    if prompt_token_count is not None or tool_use_prompt_token_count is not None:
+        metrics["prompt_tokens"] = (prompt_token_count or 0) + (tool_use_prompt_token_count or 0)
+
+    candidates_token_count = getattr(usage_metadata, "candidates_token_count", None)
+    thoughts_token_count = getattr(usage_metadata, "thoughts_token_count", None)
+    if candidates_token_count is not None or thoughts_token_count is not None:
+        metrics["completion_tokens"] = (candidates_token_count or 0) + (thoughts_token_count or 0)
+
+    total_token_count = getattr(usage_metadata, "total_token_count", None)
+    if total_token_count is not None:
+        metrics["tokens"] = total_token_count
+
+    cached_content_token_count = getattr(usage_metadata, "cached_content_token_count", None)
+    if cached_content_token_count is not None:
+        metrics["prompt_cached_tokens"] = cached_content_token_count
+
+    if thoughts_token_count is not None:
+        metrics["completion_reasoning_tokens"] = thoughts_token_count
+
+    prompt_audio_tokens = _extract_google_modality_token_count(
+        getattr(usage_metadata, "prompt_tokens_details", None), "AUDIO"
+    )
+    if prompt_audio_tokens is not None:
+        metrics["prompt_audio_tokens"] = prompt_audio_tokens
+
+    candidates_tokens_details = getattr(usage_metadata, "candidates_tokens_details", None)
+    completion_audio_tokens = _extract_google_modality_token_count(candidates_tokens_details, "AUDIO")
+    if completion_audio_tokens is not None:
+        metrics["completion_audio_tokens"] = completion_audio_tokens
+    completion_image_tokens = _extract_google_modality_token_count(candidates_tokens_details, "IMAGE")
+    if completion_image_tokens is not None:
+        metrics["completion_image_tokens"] = completion_image_tokens
+
+    return metrics
+
+
+def _extract_google_usage_metadata_provider_metadata(usage_metadata: Any) -> dict[str, Any] | None:
+    """Preserve Google usage breakdowns that do not map to standard metrics."""
+    if usage_metadata is None:
+        return None
+
+    usage_by_modality = {}
+    for name in ("cache_tokens_details", "tool_use_prompt_tokens_details"):
+        details = getattr(usage_metadata, name, None)
+        if details:
+            usage_by_modality[name] = details
+    return {"usage_by_modality": usage_by_modality} if usage_by_modality else None
+
+
 def _parse_openai_usage_metrics(
     usage: Any,
     *,

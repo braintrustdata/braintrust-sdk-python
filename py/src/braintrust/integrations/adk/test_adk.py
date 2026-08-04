@@ -15,6 +15,7 @@ ADK_VERSION = tuple(int(x) for x in pkg_version("google-adk").split(".")[:3])
 from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
+from google.adk.tools import google_search
 from google.genai import types
 from pydantic import BaseModel, Field
 
@@ -617,6 +618,54 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
             llm_str = str(llm_span["input"])
             assert b"\x89PNG".hex() not in llm_str, "Raw binary data should not be in LLM span input"
             assert "89504e47" not in llm_str.lower(), "Raw binary data (hex) should not be in LLM span input"
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_adk_usage_metadata_metrics(memory_logger):
+    """Google Search usage includes tool prompts and reasoning in normalized totals."""
+    assert not memory_logger.pop()
+
+    agent = Agent(
+        name="usage_metadata_agent",
+        model="gemini-2.5-flash",
+        instruction="Use Google Search to answer the user's question accurately and concisely.",
+        tools=[google_search],
+    )
+    app_name = "usage_metadata_app"
+    user_id = "test-user"
+    session_id = "test-session-usage-metadata"
+    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
+    user_msg = types.Content(
+        role="user",
+        parts=[types.Part(text="What is the current population of Tokyo, Japan? Answer in one sentence.")],
+    )
+
+    events = [event async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg)]
+    usage_metadata = next(
+        (event.usage_metadata for event in reversed(events) if getattr(event, "usage_metadata", None) is not None),
+        None,
+    )
+    assert usage_metadata is not None
+    assert usage_metadata.tool_use_prompt_token_count > 0
+    assert usage_metadata.thoughts_token_count > 0
+
+    spans = memory_logger.pop()
+    llm_spans = [row for row in spans if row["span_attributes"].get("type") == "llm"]
+    assert len(llm_spans) == 1
+    llm_span = llm_spans[0]
+    metrics = llm_span["metrics"]
+
+    assert metrics["prompt_tokens"] == (usage_metadata.prompt_token_count + usage_metadata.tool_use_prompt_token_count)
+    assert metrics["completion_tokens"] == (
+        usage_metadata.candidates_token_count + usage_metadata.thoughts_token_count
+    )
+    assert metrics["completion_reasoning_tokens"] == usage_metadata.thoughts_token_count
+    assert metrics["tokens"] == usage_metadata.total_token_count
+    assert metrics["tokens"] == metrics["prompt_tokens"] + metrics["completion_tokens"]
+    assert llm_span["metadata"]["usage_by_modality"]["tool_use_prompt_tokens_details"] == [
+        detail.model_dump(exclude_none=True) for detail in usage_metadata.tool_use_prompt_tokens_details
+    ]
 
 
 @pytest.mark.vcr
