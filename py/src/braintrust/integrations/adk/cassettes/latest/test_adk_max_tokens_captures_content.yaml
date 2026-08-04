@@ -6,64 +6,54 @@ interactions:
       "role": "user"}, "generationConfig": {"temperature": 0.7, "maxOutputTokens":
       50}}'
     headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '320'
-      content-type:
+      Content-Type:
       - application/json
-      host:
-      - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.11.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.11.0 gl-python/3.14.6 google-adk/2.5.0 gl-python/3.14.6
+      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The Salt-Kissed Sentinel of Serpent's
-        Tooth\\n\\nThe lighthouse stood on Serpent's Tooth, a jagged shard of rock
-        that jutted defiantly from the churning grey Atlantic. For over a century,
-        it had been a stoic sentinel,\"\n          }\n        ],\n        \"role\":
+        [\n          {\n            \"text\": \"The salt spray was a constant companion
+        to Elara, a fine mist that kissed her cheeks and tangled her auburn hair.
+        Her home, the Serpent\u2019s Tooth Lighthouse, was a sentinel of stark white
+        against the churning, slate-grey sea.\"\n          }\n        ],\n        \"role\":
         \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
         0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 32,\n    \"candidatesTokenCount\":
         50,\n    \"totalTokenCount\": 82,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 32\n      }\n    ],\n
         \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"1rpeaq22DJ_ljMcP0fCJ0Ak\"\n}\n"
+        \ \"responseId\": \"PBByaujdGcGY-8YP6NHU2AE\"\n}\n"
     headers:
-      alt-svc:
+      Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      content-length:
-      - '769'
-      content-type:
+      Content-Type:
       - application/json; charset=UTF-8
-      date:
-      - Tue, 21 Jul 2026 00:18:30 GMT
-      server:
+      Date:
+      - Tue, 04 Aug 2026 16:15:56 GMT
+      Server:
       - scaffolding on HTTPServer2
-      server-timing:
-      - gfet4t7; dur=545
-      transfer-encoding:
+      Server-Timing:
+      - gfet4t7; dur=454
+      Transfer-Encoding:
       - chunked
-      vary:
+      Vary:
       - Origin
       - X-Origin
       - Referer
-      x-content-type-options:
+      X-Content-Type-Options:
       - nosniff
-      x-frame-options:
+      X-Frame-Options:
       - SAMEORIGIN
-      x-gemini-service-tier:
+      X-Gemini-Service-Tier:
       - standard
-      x-xss-protection:
+      X-XSS-Protection:
       - '0'
+      content-length:
+      - '779'
     status:
       code: 200
       message: OK

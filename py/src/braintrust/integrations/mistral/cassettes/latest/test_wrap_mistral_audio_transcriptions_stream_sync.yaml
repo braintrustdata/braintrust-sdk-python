@@ -1,12 +1,12 @@
 interactions:
 - request:
     body: !!binary |
-      LS04Yjc1ZmZkNWFiMzViZGNmYmU3MWMxYTExYjdiZmI1YQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tOGI3NWZmZDVh
-      YjM1YmRjZmJlNzFjMWExMWI3YmZiNWENCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLThiNzVmZmQ1YWIzNWJkY2ZiZTcxYzFhMTFiN2JmYjVh
+      LS1kYzI3N2E3MWVhYmJkZGZlZjA1NWQxMjI1YTYyNzUxNg0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0Kdm94dHJhbC1taW5pLTI1MDcNCi0tZGMyNzdhNzFl
+      YWJiZGRmZWYwNTVkMTIyNWE2Mjc1MTYNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWRjMjc3YTcxZWFiYmRkZmVmMDU1ZDEyMjVhNjI3NTE2
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImRpYXJpemUiDQoNCmZhbHNl
-      DQotLThiNzVmZmQ1YWIzNWJkY2ZiZTcxYzFhMTFiN2JmYjVhDQpDb250ZW50LURpc3Bvc2l0aW9u
+      DQotLWRjMjc3YTcxZWFiYmRkZmVmMDU1ZDEyMjVhNjI3NTE2DQpDb250ZW50LURpc3Bvc2l0aW9u
       OiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0idGVzdF9hdWRpby53YXYiDQpDb250
       ZW50LVR5cGU6IGF1ZGlvL3dhdg0KDQpSSUZGJH0AAFdBVkVmbXQgEAAAAAEAAQCAPgAAAH0AAAIA
       EABkYXRhAH0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -570,8 +570,8 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQotLThiNzVmZmQ1YWIzNWJkY2ZiZTcx
-      YzFhMTFiN2JmYjVhLS0NCg==
+      AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADQotLWRjMjc3YTcxZWFiYmRkZmVmMDU1
+      ZDEyMjVhNjI3NTE2LS0NCg==
     headers:
       accept:
       - text/event-stream
@@ -582,18 +582,18 @@ interactions:
       content-length:
       - '32506'
       content-type:
-      - multipart/form-data; boundary=8b75ffd5ab35bdcfbe71c1a11b7bfb5a
+      - multipart/form-data; boundary=dc277a71eabbddfef055d1225a627516
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.9.0
     method: POST
     uri: https://api.mistral.ai/v1/audio/transcriptions#stream
   response:
     body:
       string: 'event: transcription.done
 
-        data: {"model":"voxtral-mini-latest","text":"","language":null,"segments":[],"usage":{"prompt_audio_seconds":1,"prompt_tokens":3,"total_tokens":379,"completion_tokens":1,"prompt_tokens_details":{"cached_tokens":1,"audio_tokens":375}},"finish_reason":null,"type":"transcription.done"}
+        data: {"model":"voxtral-mini-latest","text":"","language":null,"segments":[],"usage":{"prompt_audio_seconds":1,"prompt_tokens":3,"total_tokens":379,"completion_tokens":1,"prompt_tokens_details":{"cached_tokens":1,"audio_tokens":375},"service_tier":"standard"},"finish_reason":null,"type":"transcription.done"}
 
 
         '
@@ -605,15 +605,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e608631c6e2271-SJC
+      - a25edd77faa4ac1b-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 21 Jul 2026 00:19:12 GMT
+      - Tue, 04 Aug 2026 16:16:11 GMT
       mistral-correlation-id:
-      - 019f820a-7a4b-7190-81bc-ad8e6c3dd9f9
+      - 019fcd8f-a76f-780c-b905-f61a15e642e5
       server:
       - cloudflare
       strict-transport-security:
@@ -623,13 +623,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '82'
+      - '43'
       x-kong-proxy-latency:
-      - '10'
+      - '15'
       x-kong-request-id:
-      - 019f820a-7a4b-7190-81bc-ad8e6c3dd9f9
+      - 019fcd8f-a76f-780c-b905-f61a15e642e5
       x-kong-upstream-latency:
-      - '83'
+      - '47'
     status:
       code: 200
       message: OK
