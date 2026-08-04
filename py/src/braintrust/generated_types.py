@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash ecb294cff7f76552) -- do not modify"""
+"""Auto-generated file (content hash b5293fdfa9d04ebc) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -119,6 +119,7 @@ from ._generated_types import (
     ViewData,
     ViewDataSearch,
     ViewOptions,
+    WindowedAutomationConfig,
 )
 
 
@@ -241,4 +242,5 @@ __all__ = [
     "ViewData",
     "ViewDataSearch",
     "ViewOptions",
+    "WindowedAutomationConfig",
 ]

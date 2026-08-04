@@ -2855,6 +2855,146 @@ Options for the view in the app
 """
 
 
+class WindowedAutomationConfigThresholdCalculationOutput(TypedDict):
+    type: Literal['scalar']
+    value_column: str
+    """
+    The numeric result column produced by the query
+    """
+
+
+class WindowedAutomationConfigThresholdCalculation(TypedDict):
+    type: Literal['btql']
+    btql_query: str
+    """
+    A project-scoped BTQL or SQL query without runtime-owned evaluation time bounds
+    """
+    output: WindowedAutomationConfigThresholdCalculationOutput
+
+
+class WindowedAutomationConfigThresholdPolicyCondition(TypedDict):
+    type: Literal['threshold']
+    operator: Literal['lt', 'lte', 'gt', 'gte', 'eq', 'neq']
+    threshold: float
+
+
+class WindowedAutomationConfigThresholdPolicy(TypedDict):
+    condition: WindowedAutomationConfigThresholdPolicyCondition
+    pending_seconds: int
+    """
+    How long the condition must remain breached before firing
+    """
+    no_data_behavior: Literal['keep_last', 'resolve', 'alert']
+    """
+    How the lifecycle changes when the calculation returns no data
+    """
+    renotify_interval_seconds: NotRequired[int | None]
+    """
+    Optional reminder interval while the automation is firing
+    """
+    notify_on_recovery: NotRequired[bool | None]
+    """
+    Whether to deliver actions when a firing automation recovers
+    """
+
+
+class WindowedAutomationConfigThreshold(TypedDict):
+    calculation: WindowedAutomationConfigThresholdCalculation
+    """
+    The calculation evaluated for each window
+    """
+    policy: WindowedAutomationConfigThresholdPolicy
+    """
+    The lifecycle policy applied to each calculation result
+    """
+
+
+class WindowedAutomationConfigWindowSchedule(TypedDict):
+    type: Literal['interval']
+    evaluation_interval_seconds: int
+    """
+    How often the automation runs
+    """
+
+
+class WindowedAutomationConfigWindowSchedule1(TypedDict):
+    type: Literal['cron']
+    cron_expression: str
+    """
+    A standard five-field cron expression (minute hour day-of-month month day-of-week) controlling when the automation runs
+    """
+    timezone: NotRequired[str | None]
+    """
+    IANA timezone used to interpret the cron expression (defaults to UTC)
+    """
+
+
+class WindowedAutomationConfigWindow(TypedDict):
+    window_seconds: int
+    """
+    How much recent data each scheduled run covers
+    """
+    schedule: (
+        WindowedAutomationConfigWindowSchedule | WindowedAutomationConfigWindowSchedule1
+    )
+    """
+    How often the windowed automation runs: at a fixed interval or on a cron schedule
+    """
+    evaluation_delay_seconds: int
+    """
+    How far behind the present each evaluation window ends
+    """
+
+
+class WindowedAutomationConfigActions(TypedDict):
+    type: Literal['webhook']
+    """
+    The type of action to take
+    """
+    url: str
+    """
+    The webhook URL to send the request to
+    """
+
+
+class WindowedAutomationConfigActions1(TypedDict):
+    type: Literal['slack']
+    """
+    The type of action to take
+    """
+    workspace_id: str
+    """
+    The Slack workspace ID to post to
+    """
+    channel: str
+    """
+    The Slack channel ID to post to
+    """
+    message_template: NotRequired[str | None]
+    """
+    Custom message template for the alert
+    """
+
+
+class WindowedAutomationConfig(TypedDict):
+    event_type: Literal['windowed']
+    """
+    The type of automation.
+    """
+    status: NotRequired[AutomationStatus | None]
+    threshold: NotRequired[WindowedAutomationConfigThreshold | None]
+    """
+    Optional calculation and lifecycle policy that gate scheduled delivery
+    """
+    window: WindowedAutomationConfigWindow
+    actions: Sequence[
+        WindowedAutomationConfigActions | WindowedAutomationConfigActions1
+    ]
+    """
+    The delivery actions to run on each schedule or threshold lifecycle transition
+    """
+
+
 class Acl(TypedDict):
     id: str
     """
@@ -3862,6 +4002,7 @@ class ProjectAutomation(TypedDict):
         | ProjectAutomationConfig2
         | ProjectAutomationConfig3
         | ProjectAutomationConfig4
+        | WindowedAutomationConfig
         | TopicAutomationConfig
         | TopicDigestAutomationConfig
     )
