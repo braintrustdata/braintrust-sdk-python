@@ -8,7 +8,7 @@ import time
 
 import pytest
 import requests
-from braintrust.logger import HTTPConnection, RetryRequestExceptionsAdapter
+from braintrust.api._transport import HTTPConnection, RetryRequestExceptionsAdapter
 
 
 class HangingConnectionHandler(http.server.BaseHTTPRequestHandler):
@@ -172,6 +172,50 @@ class TestRetryRequestExceptionsAdapter:
         assert resp.status_code == 200
         assert elapsed < 10.0, f"Request took too long: {elapsed:.2f}s"
         assert HangingConnectionHandler.request_count >= 2
+
+    def test_adapter_fully_buffers_streaming_responses(self):
+        """The legacy adapter eagerly downloads response bodies even with stream=True."""
+        import concurrent.futures
+
+        headers_sent = threading.Event()
+        release_body = threading.Event()
+
+        class DelayedBodyHandler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, format, *args):
+                pass
+
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-Length", "2")
+                self.end_headers()
+                self.wfile.flush()
+                headers_sent.set()
+                release_body.wait(timeout=5)
+                self.wfile.write(b"ok")
+
+        server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), DelayedBodyHandler)
+        server.daemon_threads = True
+        port = server.server_address[1]
+        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+        server_thread.start()
+
+        try:
+            session = requests.Session()
+            session.mount("http://", RetryRequestExceptionsAdapter())
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                response_future = executor.submit(session.get, f"http://127.0.0.1:{port}", stream=True)
+                assert headers_sent.wait(timeout=2)
+                assert not response_future.done()
+
+                release_body.set()
+                response = response_future.result(timeout=2)
+
+            assert response.content == b"ok"
+        finally:
+            release_body.set()
+            server.shutdown()
+            server.server_close()
 
 
 class TestHTTPConnection:
