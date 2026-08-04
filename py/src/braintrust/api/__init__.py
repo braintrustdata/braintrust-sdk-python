@@ -1,3 +1,23 @@
 """Braintrust API client package."""
 
-__all__: list[str] = []
+from .errors import (
+    BraintrustAPIError,
+    BraintrustHTTPError,
+    BraintrustResponseError,
+    BraintrustRetryExhaustedError,
+    BraintrustTransportError,
+    BraintrustTransportRetryExhaustedError,
+)
+from .policies import RetryMode, RetryPolicy
+
+
+__all__ = [
+    "BraintrustAPIError",
+    "BraintrustHTTPError",
+    "BraintrustResponseError",
+    "BraintrustRetryExhaustedError",
+    "BraintrustTransportError",
+    "BraintrustTransportRetryExhaustedError",
+    "RetryMode",
+    "RetryPolicy",
+]
