@@ -15,6 +15,8 @@ from braintrust.integrations.utils import (
     _attachment_filename_for_mime_type,
     _camel_to_snake,
     _extract_audio_output,
+    _extract_google_usage_metadata_metrics,
+    _extract_google_usage_metadata_provider_metadata,
     _infer_audio_mime_type,
     _is_supported_metric_value,
     _log_and_end_span,
@@ -229,6 +231,16 @@ def test_try_to_dict_returns_original_when_no_conversion_is_possible():
     result = _try_to_dict(obj)
 
     assert result is obj
+
+
+def test_extract_google_usage_metadata_preserves_zero_and_omits_unreported_values():
+    class UsageMetadata:
+        prompt_token_count = 0
+
+    usage_metadata = UsageMetadata()
+
+    assert _extract_google_usage_metadata_metrics(usage_metadata) == {"prompt_tokens": 0}
+    assert _extract_google_usage_metadata_provider_metadata(usage_metadata) is None
 
 
 def test_parse_openai_usage_metrics_handles_nested_token_details():

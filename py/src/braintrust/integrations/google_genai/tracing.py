@@ -8,7 +8,11 @@ import time
 from collections.abc import Awaitable, Callable, Iterable
 from typing import TYPE_CHECKING, Any, TypeAlias
 
-from braintrust.integrations.utils import _materialize_attachment
+from braintrust.integrations.utils import (
+    _extract_google_usage_metadata_metrics,
+    _extract_google_usage_metadata_provider_metadata,
+    _materialize_attachment,
+)
 from braintrust.logger import (
     NOOP_SPAN,
     _state,
@@ -331,61 +335,11 @@ def _prepare_interaction_id_traced_call(
 # ---------------------------------------------------------------------------
 
 
-def _extract_modality_token_count(details: Any, modality: str) -> int | float | None:
-    counts = []
-    for detail in details or []:
-        detail_modality = getattr(detail, "modality", None)
-        detail_modality = getattr(detail_modality, "value", detail_modality)
-        token_count = getattr(detail, "token_count", None)
-        if isinstance(detail_modality, str) and detail_modality.upper() == modality and token_count is not None:
-            counts.append(token_count)
-    return sum(counts) if counts else None
-
-
-def _extract_usage_metadata_metrics(
-    usage_metadata: "GenerateContentResponseUsageMetadata", metrics: dict[str, Any]
-) -> None:
-    prompt_token_count = getattr(usage_metadata, "prompt_token_count", None)
-    tool_use_prompt_token_count = getattr(usage_metadata, "tool_use_prompt_token_count", None)
-    if prompt_token_count is not None or tool_use_prompt_token_count is not None:
-        metrics["prompt_tokens"] = (prompt_token_count or 0) + (tool_use_prompt_token_count or 0)
-
-    candidates_token_count = getattr(usage_metadata, "candidates_token_count", None)
-    thoughts_token_count = getattr(usage_metadata, "thoughts_token_count", None)
-    if candidates_token_count is not None or thoughts_token_count is not None:
-        metrics["completion_tokens"] = (candidates_token_count or 0) + (thoughts_token_count or 0)
-
-    if hasattr(usage_metadata, "total_token_count"):
-        metrics["tokens"] = usage_metadata.total_token_count
-    if hasattr(usage_metadata, "cached_content_token_count"):
-        metrics["prompt_cached_tokens"] = usage_metadata.cached_content_token_count
-    if thoughts_token_count is not None:
-        metrics["completion_reasoning_tokens"] = thoughts_token_count
-
-    prompt_audio_tokens = _extract_modality_token_count(
-        getattr(usage_metadata, "prompt_tokens_details", None), "AUDIO"
-    )
-    if prompt_audio_tokens is not None:
-        metrics["prompt_audio_tokens"] = prompt_audio_tokens
-
-    candidates_tokens_details = getattr(usage_metadata, "candidates_tokens_details", None)
-    completion_audio_tokens = _extract_modality_token_count(candidates_tokens_details, "AUDIO")
-    if completion_audio_tokens is not None:
-        metrics["completion_audio_tokens"] = completion_audio_tokens
-    completion_image_tokens = _extract_modality_token_count(candidates_tokens_details, "IMAGE")
-    if completion_image_tokens is not None:
-        metrics["completion_image_tokens"] = completion_image_tokens
-
-
 def _extract_usage_metadata_provider_metadata(
     usage_metadata: "GenerateContentResponseUsageMetadata",
 ) -> dict[str, Any] | None:
-    usage_by_modality = {}
-    for name in ("cache_tokens_details", "tool_use_prompt_tokens_details"):
-        details = getattr(usage_metadata, name, None)
-        if details:
-            usage_by_modality[name] = _materialize_interaction_value(details)
-    return {"usage_by_modality": usage_by_modality} if usage_by_modality else None
+    metadata = _extract_google_usage_metadata_provider_metadata(usage_metadata)
+    return _materialize_interaction_value(metadata) if metadata is not None else None
 
 
 def _extract_generate_content_metrics(response: "GenerateContentResponse", start: float) -> dict[str, Any]:
@@ -397,7 +351,7 @@ def _extract_generate_content_metrics(response: "GenerateContentResponse", start
     )
 
     if hasattr(response, "usage_metadata") and response.usage_metadata:
-        _extract_usage_metadata_metrics(response.usage_metadata, metrics)
+        metrics.update(_extract_google_usage_metadata_metrics(response.usage_metadata))
 
     return clean_nones(dict(metrics))
 
@@ -756,7 +710,7 @@ def _aggregate_generate_content_chunks(
 
     if usage_metadata:
         aggregated["usage_metadata"] = usage_metadata
-        _extract_usage_metadata_metrics(usage_metadata, metrics)
+        metrics.update(_extract_google_usage_metadata_metrics(usage_metadata))
 
     if text:
         aggregated["text"] = text

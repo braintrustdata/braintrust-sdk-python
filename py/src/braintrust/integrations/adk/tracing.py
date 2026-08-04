@@ -11,7 +11,11 @@ from itertools import chain
 from typing import Any
 
 from braintrust.bt_json import bt_safe_deep_copy
-from braintrust.integrations.utils import _materialize_attachment
+from braintrust.integrations.utils import (
+    _extract_google_usage_metadata_metrics,
+    _extract_google_usage_metadata_provider_metadata,
+    _materialize_attachment,
+)
 from braintrust.logger import start_span as _bt_start_span
 
 
@@ -172,7 +176,7 @@ def _capture_config(config: Any) -> dict[str, Any] | Any:
     return captured or config
 
 
-def _extract_metrics(response: Any) -> dict[str, float] | None:
+def _extract_metrics(response: Any) -> dict[str, Any] | None:
     """Extract token usage metrics from Google GenAI response."""
     if not response:
         return None
@@ -181,26 +185,7 @@ def _extract_metrics(response: Any) -> dict[str, float] | None:
     if not usage_metadata:
         return None
 
-    metrics: dict[str, float] = {}
-
-    # Core token counts
-    if hasattr(usage_metadata, "prompt_token_count") and usage_metadata.prompt_token_count is not None:
-        metrics["prompt_tokens"] = float(usage_metadata.prompt_token_count)
-
-    if hasattr(usage_metadata, "candidates_token_count") and usage_metadata.candidates_token_count is not None:
-        metrics["completion_tokens"] = float(usage_metadata.candidates_token_count)
-
-    if hasattr(usage_metadata, "total_token_count") and usage_metadata.total_token_count is not None:
-        metrics["tokens"] = float(usage_metadata.total_token_count)
-
-    # Cached token metrics
-    if hasattr(usage_metadata, "cached_content_token_count") and usage_metadata.cached_content_token_count is not None:
-        metrics["prompt_cached_tokens"] = float(usage_metadata.cached_content_token_count)
-
-    # Reasoning token metrics (thoughts_token_count)
-    if hasattr(usage_metadata, "thoughts_token_count") and usage_metadata.thoughts_token_count is not None:
-        metrics["completion_reasoning_tokens"] = float(usage_metadata.thoughts_token_count)
-
+    metrics = _extract_google_usage_metadata_metrics(usage_metadata)
     return metrics if metrics else None
 
 
@@ -474,8 +459,14 @@ async def _flow_call_llm_async_wrapper(wrapped: Any, instance: Any, args: Any, k
                     span_attributes={"llm_call_type": call_type},
                 )
 
-                # Log output and metrics (span.log will handle serialization)
-                llm_span.log(output=output, metrics=metrics)
+                # Log output, metrics, and provider-specific usage details.
+                llm_span.log(
+                    output=output,
+                    metrics=metrics,
+                    metadata=_extract_google_usage_metadata_provider_metadata(
+                        getattr(last_event, "usage_metadata", None)
+                    ),
+                )
 
     async with aclosing(_trace()) as agen:
         async for event in agen:
