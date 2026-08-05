@@ -124,8 +124,11 @@ def test_braintrust_span_processor_merges_span_origin_with_context_json_set_afte
 
     memory_exporter = InMemorySpanExporter()
     provider = TracerProvider()
-    processor = BraintrustSpanProcessor(api_key="test-api-key", parent="project_name:test")
-    processor._processor = SimpleSpanProcessor(memory_exporter)
+    processor = BraintrustSpanProcessor(
+        api_key="test-api-key",
+        parent="project_name:test",
+        SpanProcessor=lambda _exporter: SimpleSpanProcessor(memory_exporter),
+    )
     provider.add_span_processor(processor)
     tracer = provider.get_tracer("test_tracer")
 
@@ -142,6 +145,43 @@ def test_braintrust_span_processor_merges_span_origin_with_context_json_set_afte
         assert context["span_origin"]["instrumentation"]["name"] == "braintrust-python-otel"
         assert "braintrust.environment.type" not in spans[0].attributes
         assert "braintrust.environment.name" not in spans[0].attributes
+    finally:
+        provider.shutdown()
+
+
+def test_braintrust_span_processor_filters_before_adding_span_origin():
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import BraintrustSpanProcessor
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    memory_exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    processor = BraintrustSpanProcessor(
+        api_key="test-api-key",
+        parent="project_name:test",
+        filter_ai_spans=True,
+        SpanProcessor=lambda _exporter: SimpleSpanProcessor(memory_exporter),
+    )
+    provider.add_span_processor(processor)
+    tracer = provider.get_tracer("test_tracer")
+
+    try:
+        with tracer.start_as_current_span("GET /health") as span:
+            span.set_attribute("http.route", "/health")
+        with tracer.start_as_current_span("SELECT users") as span:
+            span.set_attribute("db.system", "postgresql")
+        with tracer.start_as_current_span("chat") as span:
+            span.set_attribute("gen_ai.operation.name", "chat")
+
+        provider.force_flush()
+        spans = memory_exporter.get_finished_spans()
+        assert [span.name for span in spans] == ["chat"]
+        context = json.loads(spans[0].attributes["braintrust.context_json"])
+        assert context["span_origin"]["instrumentation"]["name"] == "braintrust-python-otel"
     finally:
         provider.shutdown()
 
