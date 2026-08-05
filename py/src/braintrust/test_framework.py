@@ -4,7 +4,8 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-from braintrust.logger import BraintrustState
+from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMetadata
+from braintrust.util import LazyValue
 
 from .framework import (
     Eval,
@@ -23,6 +24,208 @@ from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login
 
 
 HAS_PYDANTIC = importlib.util.find_spec("pydantic") is not None
+
+
+def make_dataset(dataset_id, row):
+    project_metadata = ObjectMetadata(id="test-project", name="test-project", full_info={})
+    dataset_metadata = ObjectMetadata(id=dataset_id, name="test-dataset", full_info={})
+    dataset = Dataset(
+        lazy_metadata=LazyValue(
+            lambda: ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata),
+            use_mutex=False,
+        ),
+        state=BraintrustState(),
+    )
+    return dataset, patch.object(dataset, "_refetch", return_value=[row])
+
+
+def progress_event():
+    return {
+        "format": "code",
+        "output_type": "completion",
+        "event": "progress",
+        "data": "0.5",
+    }
+
+
+def test_eval_case_from_dict_preserves_valid_origin():
+    origin = {
+        "object_type": "project_logs",
+        "object_id": "source-project",
+        "id": "source-row",
+        "_xact_id": "source-xact",
+        "created": "2026-06-01T00:00:00.000Z",
+    }
+
+    assert EvalCase.from_dict({"input": 1, "origin": origin}).origin == origin
+
+
+@pytest.mark.asyncio
+async def test_run_evaluator_preserves_inline_origin_for_span_progress_and_result(
+    with_memory_logger, with_simulate_login
+):
+    origin = {
+        "object_type": "project_logs",
+        "object_id": "source-project",
+        "id": "source-row",
+        "_xact_id": "source-xact",
+        "created": "2026-06-01T00:00:00.000Z",
+    }
+    streamed_events = []
+
+    def task(input_value, hooks):
+        hooks.report_progress(progress_event())
+        return input_value * 2
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[{"input": 1, "origin": origin}],
+        task=task,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+    )
+    exp = init_test_exp("test-evaluator", "test-project")
+
+    result = await run_evaluator(
+        experiment=exp,
+        evaluator=evaluator,
+        position=None,
+        filters=[],
+        stream=streamed_events.append,
+    )
+
+    assert result.results[0].origin == origin
+    assert streamed_events[0]["origin"] == origin
+    root_spans = [log for log in with_memory_logger.pop() if not log["span_parents"]]
+    assert root_spans[0]["origin"] == origin
+
+
+@pytest.mark.asyncio
+async def test_dataset_row_origin_precedes_preserved_source_origin():
+    source_origin = {
+        "object_type": "project_logs",
+        "object_id": "source-project",
+        "id": "source-row",
+        "_xact_id": "source-xact",
+        "created": "2026-06-01T00:00:00.000Z",
+    }
+    row = {
+        "input": 1,
+        "id": "dataset-row",
+        "_xact_id": "dataset-xact",
+        "created": "2026-06-02T00:00:00.000Z",
+        "origin": source_origin,
+    }
+    dataset, patched_refetch = make_dataset("active-dataset", row)
+    streamed_events = []
+
+    def task(input_value, hooks):
+        hooks.report_progress(progress_event())
+        return input_value * 2
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=dataset,
+        task=task,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+    )
+
+    with patched_refetch:
+        result = await run_evaluator(
+            experiment=None,
+            evaluator=evaluator,
+            position=None,
+            filters=[],
+            stream=streamed_events.append,
+        )
+
+    expected_origin = {
+        "object_type": "dataset",
+        "object_id": "active-dataset",
+        "id": "dataset-row",
+        "_xact_id": "dataset-xact",
+        "created": "2026-06-02T00:00:00.000Z",
+    }
+    assert result.results[0].origin == expected_origin
+    assert streamed_events[0]["origin"] == expected_origin
+
+
+@pytest.mark.asyncio
+async def test_incomplete_dataset_row_origin_falls_back_to_preserved_source_origin():
+    source_origin = {
+        "object_type": "project_logs",
+        "object_id": "source-project",
+        "id": "source-row",
+        "_xact_id": "source-xact",
+        "created": "2026-06-01T00:00:00.000Z",
+    }
+    row = {
+        "input": 1,
+        "id": "dataset-row",
+        "created": "2026-06-02T00:00:00.000Z",
+        "origin": source_origin,
+    }
+    dataset, patched_refetch = make_dataset("active-dataset", row)
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=dataset,
+        task=lambda input_value: input_value * 2,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    with patched_refetch:
+        result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    assert result.results[0].origin == source_origin
+
+
+@pytest.mark.asyncio
+async def test_invalid_inline_origin_is_ignored_for_span_progress_and_result(with_memory_logger, with_simulate_login):
+    invalid_origin = {
+        "object_type": "dataset",
+        "object_id": "source-dataset",
+        "id": 123,
+    }
+    streamed_events = []
+
+    def task(input_value, hooks):
+        hooks.report_progress(progress_event())
+        return input_value * 2
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[{"input": 1, "origin": invalid_origin}],
+        task=task,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+    )
+    exp = init_test_exp("test-evaluator", "test-project")
+
+    result = await run_evaluator(
+        experiment=exp,
+        evaluator=evaluator,
+        position=None,
+        filters=[],
+        stream=streamed_events.append,
+    )
+
+    assert result.results[0].origin is None
+    assert "origin" not in streamed_events[0]
+    root_spans = [log for log in with_memory_logger.pop() if not log["span_parents"]]
+    assert "origin" not in root_spans[0]
 
 
 @pytest.mark.asyncio
