@@ -19,6 +19,7 @@ from .mistral import MistralIntegration
 from .openai import OpenAIIntegration
 from .openai_agents import OpenAIAgentsIntegration
 from .openrouter import OpenRouterIntegration
+from .pipecat import PipecatIntegration
 from .pydantic_ai import PydanticAIIntegration
 from .strands import StrandsIntegration
 from .temporal import TemporalIntegration
@@ -46,6 +47,7 @@ __all__ = [
     "OpenAIIntegration",
     "OpenAIAgentsIntegration",
     "OpenRouterIntegration",
+    "PipecatIntegration",
     "PydanticAIIntegration",
     "StrandsIntegration",
     "TemporalIntegration",

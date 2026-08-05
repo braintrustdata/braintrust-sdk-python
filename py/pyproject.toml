@@ -184,6 +184,12 @@ test-livekit-agents = [
     "opentelemetry-sdk<1.39",
 ]
 
+test-pipecat = [
+    {include-group = "test"},
+    # pipecat-ai 1.3.0 imports websockets but does not install it transitively.
+    "websockets==15.0.1",
+]
+
 test-crewai = [
     {include-group = "test"},
     # CrewAI's no-network smoke test forces the LiteLLM fallback path via
@@ -363,6 +369,10 @@ latest = "litellm==1.95.0"
 latest = "livekit-agents==1.6.8"
 "1.3.1" = "livekit-agents==1.3.1"
 
+[tool.braintrust.matrix.pipecat-ai]
+latest = "pipecat-ai==1.4.0"
+"1.3.0" = "pipecat-ai==1.3.0"
+
 [tool.braintrust.matrix.claude-agent-sdk]
 latest = "claude-agent-sdk==0.2.129"
 "0.1.10" = "claude-agent-sdk==0.1.10"
@@ -514,6 +524,7 @@ mistral = ["mistralai"]
 openai = ["openai"]
 openai_agents = ["openai-agents"]
 openrouter = ["openrouter"]
+pipecat = ["pipecat-ai"]
 pydantic_ai = ["pydantic-ai-integration", "pydantic-ai-wrap-openai"]
 strands = ["strands-agents"]
 
@@ -539,5 +550,6 @@ huggingface-hub = "huggingface_hub"
 openai = "openai"
 openai-agents = "agents"
 openrouter = "openrouter"
+pipecat-ai = "pipecat"
 strands-agents = "strands"
 temporalio = "temporalio"

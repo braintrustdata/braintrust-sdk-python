@@ -25,6 +25,7 @@ from braintrust.integrations.utils import (
     _merge_timing_and_usage_metrics,
     _parse_openai_usage_metrics,
     _prettify_response_params,
+    _resolve_audio_attachment_options,
     _ResolvedAttachment,
     _serialize_response_format,
     _timing_metrics,
@@ -441,6 +442,23 @@ def test_infer_audio_mime_type_prefers_response_headers():
     response = unittest.mock.Mock(response=raw_response)
 
     assert _infer_audio_mime_type(response, response_format="wav") == "audio/mpeg"
+
+
+@pytest.mark.parametrize(
+    ("options", "expected"),
+    [
+        ({}, (True, False)),
+        ({"capture_audio_attachments": False}, (False, False)),
+        ({"capture_audio_attachments": True}, (True, True)),
+        ({"capture_audio_attachments": False, "capture_user_audio_attachments": True}, (True, False)),
+        ({"capture_audio_attachments": True, "capture_agent_audio_attachments": False}, (True, False)),
+    ],
+)
+def test_resolve_audio_attachment_options_uses_generic_env_with_explicit_precedence(monkeypatch, options, expected):
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", "true")
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "false")
+
+    assert _resolve_audio_attachment_options(**options) == expected
 
 
 def test_extract_audio_output_materializes_attachment_from_binary_response():

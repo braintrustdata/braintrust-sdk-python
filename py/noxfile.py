@@ -385,6 +385,29 @@ def test_livekit_agents(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/livekit_agents/test_livekit_agents.py", version=version, env=env)
 
 
+PIPECAT_VERSIONS = _get_matrix_versions("pipecat-ai")
+
+
+@nox.session()
+@nox.parametrize("version", PIPECAT_VERSIONS, ids=PIPECAT_VERSIONS)
+def test_pipecat(session, version):
+    if sys.version_info < (3, 11):
+        session.skip("Pipecat AI 1.x requires Python 3.11+")
+    if sys.version_info >= (3, 14):
+        session.skip("Pipecat AI's onnxruntime dependency does not ship Python 3.14 wheels")
+    _install_test_deps(session)
+    _install_group_locked(session, "test-pipecat")
+    _install_matrix_dep(session, "pipecat-ai", version)
+    # Pipecat imports NLTK, whose safe-import finder rejects dependencies
+    # loaded from Nox's virtualenv when it is beneath the current directory.
+    _run_tests(
+        session,
+        f"{INTEGRATION_DIR}/pipecat/test_pipecat.py",
+        version=version,
+        run_from_temp_dir=True,
+    )
+
+
 STRANDS_VERSIONS = _get_matrix_versions("strands-agents")
 
 
@@ -794,7 +817,15 @@ def _run_core_tests(session):
     )
 
 
-def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None, version=None):
+def _run_tests(
+    session,
+    test_path,
+    ignore_path="",
+    ignore_paths=None,
+    env=None,
+    version=None,
+    run_from_temp_dir=False,
+):
     """Run tests against a wheel or the source code. Paths should be relative and start with braintrust."""
     env = env.copy() if env else {}
     if version:
@@ -811,7 +842,12 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None, 
         paths_to_ignore.extend(ignore_paths)
 
     if not wheel_flag:
-        # Run the tests in the src directory
+        # Run the tests in the src directory.
+        source_test_path = f"src/{test_path}"
+        source_ignore_paths = [f"src/{path}" for path in paths_to_ignore]
+        if run_from_temp_dir:
+            source_test_path = os.path.abspath(source_test_path)
+            source_ignore_paths = [os.path.abspath(path) for path in source_ignore_paths]
         test_args = [
             "pytest",
             # Disable the braintrust pytest plugin (registered via pytest11 entry
@@ -819,11 +855,14 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None, 
             # and the source tree both contain braintrust/conftest.py.
             "-p",
             "no:braintrust",
-            f"src/{test_path}",
+            source_test_path,
         ]
-        for path in paths_to_ignore:
-            test_args.append(f"--ignore=src/{path}")
-        session.run(*test_args, *common_args, *pytest_posargs, env=env)
+        test_args.extend(f"--ignore={path}" for path in source_ignore_paths)
+        if run_from_temp_dir:
+            with tempfile.TemporaryDirectory() as tmp, session.chdir(tmp):
+                session.run(*test_args, *common_args, *pytest_posargs, env=env)
+        else:
+            session.run(*test_args, *common_args, *pytest_posargs, env=env)
         return
 
     # Running the tests from the wheel involves a bit of gymnastics to ensure we don't import
