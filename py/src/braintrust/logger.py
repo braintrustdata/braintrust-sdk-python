@@ -3146,9 +3146,19 @@ class ObjectFetcher(ABC, Generic[TMapping]):
     def id(self) -> str: ...
 
     def _refetch(self, batch_size: int | None = None) -> list[TMapping]:
-        state = self._get_state()
         limit = batch_size if batch_size is not None else DEFAULT_FETCH_BATCH_SIZE
+        internal_limit = (self._internal_btql or {}).get("limit")
+        total_limit = (
+            internal_limit
+            if isinstance(internal_limit, int) and not isinstance(internal_limit, bool) and internal_limit >= 0
+            else None
+        )
         if self._fetched_data is None:
+            if total_limit == 0:
+                self._fetched_data = []
+                return self._fetched_data
+
+            state = self._get_state()
             cursor = None
             data = None
             iterations = 0
@@ -3187,6 +3197,9 @@ class ObjectFetcher(ABC, Generic[TMapping]):
                 response_raise_for_status(resp)
                 resp_json = resp.json()
                 data = (data or []) + cast(list[TMapping], resp_json["data"])
+                if total_limit is not None and len(data) >= total_limit:
+                    data = data[:total_limit]
+                    break
                 if not resp_json.get("cursor", None):
                     break
                 cursor = resp_json.get("cursor", None)
