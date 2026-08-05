@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Sequence
 from typing import Any, Literal, TypedDict, TypeVar, overload
 
@@ -228,6 +229,122 @@ def invoke(
         return BraintrustStream(SSEClient(resp))
     else:
         return resp.json()
+
+
+@overload
+async def invoke_async(
+    # the permutations of arguments for a function id
+    function_id: str | None = None,
+    version: str | None = None,
+    prompt_session_id: str | None = None,
+    prompt_session_function_id: str | None = None,
+    project_name: str | None = None,
+    project_id: str | None = None,
+    slug: str | None = None,
+    global_function: str | None = None,
+    function_type: FunctionTypeEnum | None = None,
+    # arguments to the function
+    input: Any = None,
+    messages: Sequence[Any] | None = None,
+    metadata: Metadata | None = None,
+    tags: Sequence[str] | None = None,
+    parent: Exportable | str | None = None,
+    stream: Literal[False] | None = None,
+    mode: ModeType | None = None,
+    strict: bool | None = None,
+    overrides: dict[str, Any] | None = None,
+    org_name: str | None = None,
+    api_key: str | None = None,
+    app_url: str | None = None,
+    force_login: bool = False,
+) -> T: ...
+
+
+@overload
+async def invoke_async(
+    # the permutations of arguments for a function id
+    function_id: str | None = None,
+    version: str | None = None,
+    prompt_session_id: str | None = None,
+    prompt_session_function_id: str | None = None,
+    project_name: str | None = None,
+    project_id: str | None = None,
+    slug: str | None = None,
+    global_function: str | None = None,
+    function_type: FunctionTypeEnum | None = None,
+    # arguments to the function
+    input: Any = None,
+    messages: Sequence[Any] | None = None,
+    metadata: Metadata | None = None,
+    tags: Sequence[str] | None = None,
+    parent: Exportable | str | None = None,
+    stream: Literal[True] = True,
+    mode: ModeType | None = None,
+    strict: bool | None = None,
+    overrides: dict[str, Any] | None = None,
+    org_name: str | None = None,
+    api_key: str | None = None,
+    app_url: str | None = None,
+    force_login: bool = False,
+) -> BraintrustStream: ...
+
+
+async def invoke_async(
+    # the permutations of arguments for a function id
+    function_id: str | None = None,
+    version: str | None = None,
+    prompt_session_id: str | None = None,
+    prompt_session_function_id: str | None = None,
+    project_name: str | None = None,
+    project_id: str | None = None,
+    slug: str | None = None,
+    global_function: str | None = None,
+    function_type: FunctionTypeEnum | None = None,
+    # arguments to the function
+    input: Any = None,
+    messages: Sequence[Any] | None = None,
+    metadata: Metadata | None = None,
+    tags: Sequence[str] | None = None,
+    parent: Exportable | str | None = None,
+    stream: bool = False,
+    mode: ModeType | None = None,
+    strict: bool | None = None,
+    overrides: dict[str, Any] | None = None,
+    org_name: str | None = None,
+    api_key: str | None = None,
+    app_url: str | None = None,
+    force_login: bool = False,
+) -> BraintrustStream | T:
+    """Asynchronously invoke a Braintrust function without blocking the event loop.
+
+    When ``stream=True``, the returned ``BraintrustStream`` supports ``async for``
+    and ``final_value_async()``.
+    """
+    return await asyncio.to_thread(
+        invoke,
+        function_id=function_id,
+        version=version,
+        prompt_session_id=prompt_session_id,
+        prompt_session_function_id=prompt_session_function_id,
+        project_name=project_name,
+        project_id=project_id,
+        slug=slug,
+        global_function=global_function,
+        function_type=function_type,
+        input=input,
+        messages=messages,
+        metadata=metadata,
+        tags=tags,
+        parent=parent,
+        stream=stream,
+        mode=mode,
+        strict=strict,
+        overrides=overrides,
+        org_name=org_name,
+        api_key=api_key,
+        app_url=app_url,
+        force_login=force_login,
+    )
 
 
 def init_function(project_name: str, slug: str, version: str | None = None):
