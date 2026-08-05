@@ -1599,8 +1599,14 @@ async def _run_evaluator_internal_impl(
             experiment.dataset if experiment else evaluator.data if isinstance(evaluator.data, Dataset) else None
         )
 
-        dataset_origin = (
-            cast(
+        if (
+            event_dataset
+            and isinstance(datum.id, str)
+            and datum.id
+            and isinstance(datum._xact_id, str)
+            and datum._xact_id
+        ):
+            origin = cast(
                 ObjectReference,
                 {
                     "object_type": "dataset",
@@ -1610,14 +1616,8 @@ async def _run_evaluator_internal_impl(
                     **({"created": datum.created} if isinstance(datum.created, str) else {}),
                 },
             )
-            if event_dataset
-            and isinstance(datum.id, str)
-            and datum.id
-            and isinstance(datum._xact_id, str)
-            and datum._xact_id
-            else None
-        )
-        origin = dataset_origin or _validated_object_reference(datum.origin)
+        else:
+            origin = _validated_object_reference(datum.origin)
         base_event = dict(
             name="eval",
             span_attributes={"type": SpanTypeAttribute.EVAL},
