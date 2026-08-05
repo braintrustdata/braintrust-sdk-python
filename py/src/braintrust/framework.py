@@ -20,10 +20,12 @@ from typing import (
     Protocol,
     TypedDict,
     TypeVar,
+    cast,
 )
 
 from tqdm.asyncio import tqdm as async_tqdm
 from tqdm.auto import tqdm as std_tqdm
+from typing_extensions import NotRequired
 
 from .generated_types import FunctionFormat, FunctionOutputType, ObjectReference
 from .git_fields import GitMetadataSettings, RepoInfo
@@ -90,6 +92,7 @@ class EvalCase(SerializableDataClass, Generic[Input, Expected]):
     id: str | None = None
     _xact_id: str | None = None
     created: str | None = None
+    origin: ObjectReference | None = None
 
 
 # Inheritance doesn't quite work for dataclasses, so we redefine the fields
@@ -107,6 +110,7 @@ class EvalResult(SerializableDataClass, Generic[Input, Output, Expected]):
     tags: list[str] | None = None
     error: Exception | None = None
     exc_info: str | None = None
+    origin: ObjectReference | None = None
 
 
 class TaskProgressEvent(TypedDict):
@@ -135,7 +139,7 @@ class SSEProgressEvent(TaskProgressEvent):
 
     id: str
     object_type: str
-    origin: ObjectReference
+    origin: NotRequired[ObjectReference]
     name: str
 
 
@@ -1372,6 +1376,40 @@ def _get_persisted_base_experiment_id(experiment: Experiment) -> str | None:
     return base_experiment_id if isinstance(base_experiment_id, str) and base_experiment_id else None
 
 
+_OBJECT_REFERENCE_TYPES = frozenset({"project_logs", "experiment", "dataset", "prompt", "function", "prompt_session"})
+
+
+def _validated_object_reference(value: Any) -> ObjectReference | None:
+    if not isinstance(value, Mapping):
+        return None
+
+    object_type = value.get("object_type")
+    object_id = value.get("object_id")
+    row_id = value.get("id")
+    if (
+        not isinstance(object_type, str)
+        or object_type not in _OBJECT_REFERENCE_TYPES
+        or not isinstance(object_id, str)
+        or not isinstance(row_id, str)
+    ):
+        return None
+
+    validated: dict[str, Any] = {
+        "object_type": object_type,
+        "object_id": object_id,
+        "id": row_id,
+    }
+    for optional_field in ("_xact_id", "created"):
+        if optional_field not in value:
+            continue
+        optional_value = value[optional_field]
+        if optional_value is not None and not isinstance(optional_value, str):
+            return None
+        validated[optional_field] = optional_value
+
+    return cast(ObjectReference, validated)
+
+
 async def run_evaluator(
     experiment: Experiment | None,
     evaluator: Evaluator[Input, Output, Expected],
@@ -1561,24 +1599,32 @@ async def _run_evaluator_internal_impl(
             experiment.dataset if experiment else evaluator.data if isinstance(evaluator.data, Dataset) else None
         )
 
-        origin = (
-            {
-                "object_type": "dataset",
-                "object_id": event_dataset.id,
-                "id": datum.id,
-                "created": datum.created,
-                "_xact_id": datum._xact_id,
-            }
-            if event_dataset and datum.id and datum._xact_id
-            else None
-        )
+        if (
+            event_dataset
+            and isinstance(datum.id, str)
+            and datum.id
+            and isinstance(datum._xact_id, str)
+            and datum._xact_id
+        ):
+            origin = cast(
+                ObjectReference,
+                {
+                    "object_type": "dataset",
+                    "object_id": event_dataset.id,
+                    "id": datum.id,
+                    "_xact_id": datum._xact_id,
+                    **({"created": datum.created} if isinstance(datum.created, str) else {}),
+                },
+            )
+        else:
+            origin = _validated_object_reference(datum.origin)
         base_event = dict(
             name="eval",
             span_attributes={"type": SpanTypeAttribute.EVAL},
             input=datum.input,
             expected=datum.expected,
             tags=tags,
-            origin=origin,
+            **({"origin": origin} if origin is not None else {}),
         )
 
         if experiment:
@@ -1593,11 +1639,15 @@ async def _run_evaluator_internal_impl(
                 def report_progress(event: TaskProgressEvent):
                     if not stream:
                         return
-                    stream(
-                        SSEProgressEvent(
-                            id=root_span.id, origin=origin, name=evaluator.eval_name, object_type="task", **event
-                        )
+                    progress = SSEProgressEvent(
+                        id=root_span.id,
+                        name=evaluator.eval_name,
+                        object_type="task",
+                        **event,
                     )
+                    if origin is not None:
+                        progress["origin"] = origin
+                    stream(progress)
 
                 hooks = DictEvalHooks(
                     metadata,
@@ -1786,6 +1836,7 @@ async def _run_evaluator_internal_impl(
             classifications=classifications or None,
             error=error,
             exc_info=exc_info,
+            origin=origin,
         )
 
     data_iterator = evaluator.data
