@@ -3826,6 +3826,7 @@ def test_dataset_internal_btql_limit_caps_total_results():
     dataset = braintrust.init_dataset(
         project="python-sdk-vcr-tests",
         name="test-dataset-internal-btql-total-limit",
+        api_key="sk-dummy-for-vcr-replay",
         use_output=False,
         _internal_btql={"limit": 1},
     )
