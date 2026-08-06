@@ -351,6 +351,22 @@ def test_claude_agent_sdk(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py", version=version)
 
 
+CURSOR_SDK_VERSIONS = _get_matrix_versions("cursor-sdk")
+
+
+@nox.session()
+@nox.parametrize("version", CURSOR_SDK_VERSIONS, ids=CURSOR_SDK_VERSIONS)
+def test_cursor_sdk(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "cursor-sdk", version)
+    # Characterization coverage enables likely downstream provider
+    # instrumentation and verifies that Cursor's subprocess bridge does not
+    # emit provider-owned Python spans for its internal model requests.
+    _install_matrix_dep(session, "openai", LATEST)
+    _install_matrix_dep(session, "anthropic", LATEST)
+    _run_tests(session, f"{INTEGRATION_DIR}/cursor_sdk/test_cursor_sdk.py", version=version)
+
+
 # Pin 2.4.0 to cover the 2.4 -> 2.5 breaking change to internals we leverage for instrumentation.
 AGNO_VERSIONS = _get_matrix_versions("agno")
 

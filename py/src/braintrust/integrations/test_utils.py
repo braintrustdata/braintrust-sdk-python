@@ -50,6 +50,7 @@ def autoinstrument_test_context(
     integration: str | None = None,
     use_vcr: bool = True,
     cassettes_dir: Path | None = None,
+    vcr_config: dict | None = None,
 ):
     """Context manager for auto_instrument tests.
 
@@ -63,6 +64,9 @@ def autoinstrument_test_context(
 
     Use ``cassettes_dir`` to override with an explicit path (takes
     precedence over ``integration``).
+
+    Use ``vcr_config`` for providers that need request scrubbing or matching
+    beyond :func:`get_vcr_config`, such as the Cursor SDK's loopback bridge.
 
     Use ``use_vcr=False`` for tests that replay provider traffic through a
     non-VCR mechanism, such as the Claude Agent SDK subprocess cassette
@@ -87,7 +91,7 @@ def autoinstrument_test_context(
             yield memory_logger
             return
 
-        my_vcr = vcr.VCR(**get_vcr_config())
+        my_vcr = vcr.VCR(**(vcr_config if vcr_config is not None else get_vcr_config()))
         with my_vcr.use_cassette(str(cassette_path)):
             yield memory_logger
 
