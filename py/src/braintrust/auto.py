@@ -11,6 +11,7 @@ from braintrust.integrations import (
     ADKIntegration,
     AgentScopeIntegration,
     AgnoIntegration,
+    AISDKIntegration,
     AnthropicIntegration,
     AutoGenIntegration,
     BedrockRuntimeIntegration,
@@ -58,6 +59,7 @@ def auto_instrument(
     openai: bool = True,
     anthropic: bool = True,
     litellm: bool = True,
+    ai_sdk: bool = True,
     pydantic_ai: bool = True,
     google_genai: bool = True,
     instructor: bool = True,
@@ -94,6 +96,7 @@ def auto_instrument(
         openai: Enable OpenAI instrumentation (default: True)
         anthropic: Enable Anthropic instrumentation (default: True)
         litellm: Enable LiteLLM instrumentation (default: True)
+        ai_sdk: Enable Vercel AI SDK for Python instrumentation (default: True)
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
         instructor: Enable Instructor (structured-output) instrumentation (default: True)
@@ -169,6 +172,8 @@ def auto_instrument(
         results["anthropic"] = _instrument_integration(AnthropicIntegration)
     if litellm:
         results["litellm"] = _instrument_integration(LiteLLMIntegration)
+    if ai_sdk:
+        results["ai_sdk"] = _instrument_integration(AISDKIntegration)
     if pydantic_ai:
         results["pydantic_ai"] = _instrument_integration(PydanticAIIntegration)
     if google_genai:
