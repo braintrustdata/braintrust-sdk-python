@@ -20,6 +20,10 @@ from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
 PROJECT_NAME = "test-cursor-sdk"
 TEST_MODEL = "composer-2.5"
+_REQUIRES_SYNC_BRIDGE = pytest.mark.skipif(
+    os.name == "nt",
+    reason="cursor-sdk's sync bridge uses os.get_blocking(), which is unavailable on Windows",
+)
 
 
 @pytest.fixture
@@ -69,11 +73,13 @@ def test_setup_cursor_sdk_is_idempotent():
     assert setup_cursor_sdk(project=PROJECT_NAME)
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_auto_instrument_cursor_sdk_subprocess():
     verify_autoinstrument_script("test_auto_cursor_sdk.py", timeout=45)
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_characterize_no_downstream_provider_spans(memory_logger, tmp_path):
     """Cursor's bridge owns provider calls, so no Python provider LLM leaf exists."""
@@ -100,6 +106,7 @@ def test_characterize_no_downstream_provider_spans(memory_logger, tmp_path):
     assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_sync_wait_traces_cursor_owned_model_turn(memory_logger, tmp_path):
     import cursor_sdk
@@ -159,6 +166,7 @@ def test_sync_wait_traces_cursor_owned_model_turn(memory_logger, tmp_path):
     assert set(task_span.get("metrics", {})) <= allowed_metrics
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.parametrize("consumer", ["messages", "stream", "events", "iteration", "iter_text", "text"])
 @pytest.mark.vcr
 def test_sync_consumption_paths_finalize_once(memory_logger, tmp_path, consumer):
@@ -194,6 +202,7 @@ def test_sync_consumption_paths_finalize_once(memory_logger, tmp_path, consumer)
     assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_agent_prompt_one_shot(memory_logger, tmp_path):
     import cursor_sdk
@@ -217,6 +226,7 @@ def test_agent_prompt_one_shot(memory_logger, tmp_path):
     assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_resume_send_observe_finalizes_trace(memory_logger, tmp_path):
     import cursor_sdk
@@ -339,6 +349,7 @@ async def test_async_consumption_paths_finalize_once(memory_logger, tmp_path, co
     assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_send_error_propagates_and_logs_parent_error(memory_logger, tmp_path):
     import cursor_sdk
@@ -364,6 +375,7 @@ def test_send_error_propagates_and_logs_parent_error(memory_logger, tmp_path):
     assert spans[0].get("error")
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_multimodal_input_materializes_attachment(memory_logger, tmp_path):
     import cursor_sdk
@@ -395,6 +407,7 @@ def test_multimodal_input_materializes_attachment(memory_logger, tmp_path):
     assert image_url.reference["filename"] == "image.png"
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_custom_tool_dispatch_traces_under_the_agents_run(memory_logger, tmp_path):
     """Cursor calls custom tools by POSTing into the SDK's loopback callback server.
@@ -450,6 +463,7 @@ def test_custom_tool_dispatch_traces_under_the_agents_run(memory_logger, tmp_pat
     assert task_span["span_id"] not in tool_span.span_parents
 
 
+@_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
 def test_builtin_tool_events_create_one_tool_span(memory_logger, tmp_path):
     import cursor_sdk
