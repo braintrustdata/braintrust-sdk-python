@@ -30,6 +30,19 @@ class JobMachine:
     warnings: tuple[str, ...] = ()
 
 
+def can_reconcile(state: JobMachine) -> bool:
+    """Report whether reconciliation may start, keeping the rule with the transitions.
+
+    DISABLED and FAILED both reach RECONCILE illegally, so callers must ask rather
+    than enumerate terminal statuses at each site.
+    """
+    return state.status == JobStatus.ACTIVE
+
+
+def accepts_trial_events(state: JobMachine) -> bool:
+    return state.status in {JobStatus.ACTIVE, JobStatus.RECONCILING}
+
+
 def reduce_job(state: JobMachine, event: JobEvent, *, strict: bool = False) -> JobMachine:
     transitions = {
         (JobStatus.NEW, JobEvent.INITIALIZE): JobStatus.INITIALIZING,

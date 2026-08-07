@@ -149,8 +149,12 @@ class PluginConfig:
             raise ValueError("dataset_name requires dataset_mode='sync'")
         if self.trajectory_mode not in {"atif", "summary", "native"}:
             raise ValueError("trajectory_mode must be 'atif', 'summary', or 'native'")
+        # 'full' is 'messages' plus fields the instrumentation contract explicitly
+        # allows. No such field exists yet, so the two capture the same payload.
         if self.content_mode not in {"metadata", "messages", "full"}:
             raise ValueError("content_mode must be 'metadata', 'messages', or 'full'")
+        if self.log_retry_attempts:
+            raise ValueError("log_retry_attempts=True is not implemented; only the final attempt is logged")
         if self.invalid_score_policy not in {"metric", "drop", "error"}:
             raise ValueError("invalid_score_policy must be 'metric', 'drop', or 'error'")
         if self.attachments not in {"none", "verifier-details", "all"}:

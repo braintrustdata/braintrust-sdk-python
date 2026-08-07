@@ -46,6 +46,8 @@ from .state import (
     TrialEventKind,
     TrialMachine,
     TrialStatus,
+    accepts_trial_events,
+    can_reconcile,
     reduce_job,
     reduce_trial,
 )
@@ -131,25 +133,43 @@ def _rewards(result: Any) -> dict[str, Any]:
     return dict(raw or {})
 
 
-def _read_json_summary(paths: list[Path], max_bytes: int) -> tuple[Any, list[str]]:
-    summaries: list[Any] = []
+def _by_step(items: list[tuple[str | None, Any]], default_key: str, *, keep_single_name: bool = True) -> Any:
+    """Collapse per-step values into one metadata value, or None when there are none.
+
+    ``keep_single_name`` decides what a single value from a *named* step becomes.
+    Trajectory metadata keeps the label, because which step produced the totals is
+    part of the answer; the eval-root output drops it, because a single-step trial's
+    answer should read as the answer rather than as a one-entry map.
+    """
+    if not items:
+        return None
+    if len(items) == 1 and (items[0][0] is None or not keep_single_name):
+        return items[0][1]
+    return {name or default_key: value for name, value in items}
+
+
+def _step_label(step_name: str | None, path: Path) -> str:
+    return path.name if step_name is None else f"{step_name}/{path.name}"
+
+
+def _read_json_summary(entries: list[tuple[str | None, Path]], max_bytes: int) -> tuple[Any, list[str]]:
+    summaries: list[tuple[str | None, Any]] = []
     warnings: list[str] = []
-    for path in paths:
+    for step_name, path in entries:
+        label = _step_label(step_name, path)
         try:
             size = path.stat().st_size
             with path.open("rb") as file_obj:
                 data = file_obj.read(min(size, max_bytes) + 1)
             if len(data) > max_bytes:
-                warnings.append(f"{path.name} omitted: size limit")
+                warnings.append(f"{label} omitted: size limit")
                 continue
-            summaries.append(json.loads(data))
+            summaries.append((step_name, json.loads(data)))
         except FileNotFoundError:
             continue
         except (OSError, json.JSONDecodeError) as exc:
-            warnings.append(f"could not read {path.name}: {exc}")
-    if not summaries:
-        return None, warnings
-    return summaries[0] if len(summaries) == 1 else summaries, warnings
+            warnings.append(f"could not read {label}: {exc}")
+    return _by_step(summaries, "manifest"), warnings
 
 
 def _artifact_attachments(result: Any, config: PluginConfig) -> tuple[dict[str, Attachment], list[str]]:
@@ -158,7 +178,7 @@ def _artifact_attachments(result: Any, config: PluginConfig) -> tuple[dict[str, 
     attachments: dict[str, Attachment] = {}
     warnings: list[str] = []
     total = 0
-    for manifest_path in artifact_manifest_paths(result):
+    for step_name, manifest_path in artifact_manifest_paths(result):
         root = manifest_path.parent.resolve()
         if not root.exists():
             continue
@@ -173,17 +193,20 @@ def _artifact_attachments(result: Any, config: PluginConfig) -> tuple[dict[str, 
                 continue
             if not any(fnmatch.fnmatchcase(relative, pattern) for pattern in config.artifact_include):
                 continue
+            # Each step has its own artifacts root, so the relative path alone
+            # collides whenever two steps collect the same file name.
+            key = relative if step_name is None else f"{step_name}/{relative}"
             try:
                 size = resolved.stat().st_size
                 if size > config.max_attachment_bytes or total + size > config.max_total_attachment_bytes:
-                    warnings.append(f"artifact {relative} omitted: attachment size limit")
+                    warnings.append(f"artifact {key} omitted: attachment size limit")
                     continue
                 data = resolved.read_bytes()
             except OSError as exc:
-                warnings.append(f"artifact {relative} omitted: {exc}")
+                warnings.append(f"artifact {key} omitted: {exc}")
                 continue
             total += len(data)
-            attachments[relative] = Attachment(
+            attachments[key] = Attachment(
                 data=data,
                 filename=resolved.name,
                 content_type="application/octet-stream",
@@ -191,27 +214,32 @@ def _artifact_attachments(result: Any, config: PluginConfig) -> tuple[dict[str, 
     return attachments, warnings
 
 
-def _attachment(paths: list[Path], config: PluginConfig) -> tuple[Attachment | None, Any, list[str]]:
+def _attachment(
+    entries: list[tuple[str | None, Path]], config: PluginConfig
+) -> tuple[Attachment | None, Any, list[str]]:
     if config.attachments == "none":
         return None, None, []
     total = 0
-    complete: list[Any] = []
+    complete: list[tuple[str | None, Any]] = []
     warnings: list[str] = []
-    for path in paths:
+    filename = "details.json"
+    for step_name, path in entries:
+        label = _step_label(step_name, path)
+        filename = path.name
         try:
             data = path.read_bytes()
         except FileNotFoundError:
             continue
         except OSError as exc:
-            warnings.append(f"could not read {path.name}: {exc}")
+            warnings.append(f"could not read {label}: {exc}")
             continue
         if len(data) > config.max_attachment_bytes or total + len(data) > config.max_total_attachment_bytes:
-            warnings.append(f"{path.name} omitted: attachment size limit")
+            warnings.append(f"{label} omitted: attachment size limit")
             continue
         try:
             parsed = json.loads(data)
         except json.JSONDecodeError:
-            warnings.append(f"{path.name} is not valid JSON")
+            warnings.append(f"{label} is not valid JSON")
             continue
         normalized = normalize_json(
             parsed,
@@ -220,17 +248,18 @@ def _attachment(paths: list[Path], config: PluginConfig) -> tuple[Attachment | N
             max_depth=20,
         )
         warnings.extend(normalized.warnings)
-        complete.append(normalized.value)
+        complete.append((step_name, normalized.value))
         total += len(data)
-    if not complete:
+    summary = _by_step(complete, "details")
+    if summary is None:
         return None, None, warnings
-    summary = complete[0] if len(complete) == 1 else complete
     attachment_data = (canonical_json(summary) + "\n").encode()
-    if len(attachment_data) > config.max_total_attachment_bytes:
-        warnings.append("reward-details.json omitted after redaction: total size limit")
+    # One serialized payload is bounded by the per-file limit, not the job total.
+    if len(attachment_data) > config.max_attachment_bytes:
+        warnings.append(f"{filename} omitted after redaction: attachment size limit")
         return None, summary, warnings
     return (
-        Attachment(data=attachment_data, filename="reward-details.json", content_type="application/json"),
+        Attachment(data=attachment_data, filename=filename, content_type="application/json"),
         summary,
         warnings,
     )
@@ -333,6 +362,16 @@ class HarborPlugin:
     async def on_job_end(self, job_result: Any) -> None:
         if self._runtime is None:
             return
+        if not can_reconcile(self._job_machine):
+            # Initialization failed after the runtime was built. Reconciling now
+            # would write a full experiment while the manifest reports the sync as
+            # disabled, and RECONCILE out of a terminal status is not legal.
+            logger.warning(
+                "Skipping Braintrust reconciliation while %s: %s",
+                self._job_machine.status.value,
+                self._disabled_reason or "job is not active",
+            )
+            return
         self._job_machine = reduce_job(self._job_machine, JobEvent.RECONCILE, strict=self.config.strict)
         final_names = {result.trial_name for result in job_result.trial_results}
         failures: list[BaseException] = []
@@ -366,6 +405,10 @@ class HarborPlugin:
             self._errors.append(f"manifest persistence: {exc}")
             logger.warning("Could not persist Harbor Braintrust sync manifest", exc_info=True)
         if failures and self.config.strict:
+            # Harbor isolates finalizers, so raising here cannot fail the run; log
+            # at error level so a strict sync failure is not invisible. Direct
+            # callers such as backfill still observe the exception.
+            logger.error("Braintrust Harbor synchronization failed: %s", "; ".join(self._errors))
             raise ExceptionGroup("Braintrust Harbor synchronization failed", failures)
 
     def _disable(self, message: str) -> None:
@@ -415,7 +458,7 @@ class HarborPlugin:
             job.add_hook(harbor_event, callback)
 
     async def _dispatch(self, identity: str, event: TrialEvent) -> None:
-        if self._job_machine.status.value not in {"active", "reconciling"} and event.kind not in {
+        if not accepts_trial_events(self._job_machine) and event.kind not in {
             TrialEventKind.FINAL_RESULT,
             TrialEventKind.SYNCED,
             TrialEventKind.SYNC_FAILED,
@@ -443,7 +486,7 @@ class HarborPlugin:
             source_tasks.setdefault(plan.task.source, {})[plan.task.logical_key] = plan.task
 
         for source, task_map in source_tasks.items():
-            scope = dataset_scope(source, sorted(task_map))
+            scope = dataset_scope(source)
             binding = DatasetBinding(scope)
             datasets[scope] = binding
             if self.config.dataset_mode != "sync":
@@ -451,10 +494,8 @@ class HarborPlugin:
             try:
                 if self.config.dataset_name and len(source_tasks) == 1:
                     name = self.config.dataset_name
-                elif self.config.dataset_name:
-                    name = f"{self.config.dataset_name} · {source} · {scope.rsplit(':', 1)[-1]}"
                 else:
-                    name = dataset_display_name(source, sorted(task_map))
+                    name = dataset_display_name(source, prefix=self.config.dataset_name or "harbor")
                 dataset = init_dataset(
                     project=self.config.project_name,
                     project_id=self.config.project_id,
@@ -494,7 +535,7 @@ class HarborPlugin:
         partitions: dict[str, Partition] = {}
         partition_by_trial: dict[str, Partition] = {}
         for plan in snapshot.plans:
-            scope = dataset_scope(plan.task.source, sorted(source_tasks[plan.task.source]))
+            scope = dataset_scope(plan.task.source)
             semantic = semantic_agent_config(
                 plan.trial_config.agent, list(getattr(plan.trial_lock, "skills", []) or [])
             )
@@ -719,15 +760,24 @@ class HarborPlugin:
         repairs = [repair for _, imported in atif_results for repair in imported.repairs]
         metadata["harbor"]["warnings"].extend(trajectory_warnings)
         metadata["harbor"]["trajectory"] = {
+            # Report the mode so trajectory_mode="native", which deliberately skips
+            # ATIF because the agent is instrumented elsewhere, is distinguishable
+            # from a trajectory that could not be read.
+            "mode": self.config.trajectory_mode,
             "present": bool(atif_results),
             "schema_version": next(
                 (imported.schema_version for _, imported in atif_results if imported.schema_version), None
             ),
             "repairs": repairs,
         }
-        if atif_results and atif_results[0][1].root_extra and self.config.include_custom_metadata:
+        # A multi-step trial has one trajectory per step, each with its own final
+        # message and its own aggregate token and cost totals.
+        raw_extra = _by_step(
+            [(name, imported.root_extra) for name, imported in atif_results if imported.root_extra], "trajectory"
+        )
+        if raw_extra is not None and self.config.include_custom_metadata:
             normalized_extra = normalize_json(
-                atif_results[0][1].root_extra,
+                raw_extra,
                 max_bytes=self.config.max_custom_metadata_bytes,
                 redact_patterns=self.config.redact_patterns,
             )
@@ -736,15 +786,17 @@ class HarborPlugin:
 
         output = _answer_from_metadata(result)
         if output is None:
-            final_messages = [
-                (name, imported.final_message) for name, imported in atif_results if imported.final_message is not None
-            ]
-            if len(final_messages) == 1:
-                output = final_messages[0][1]
-            elif final_messages:
-                output = {name or "final": message for name, message in final_messages}
-            else:
-                output = {"status": "completed" if error is None else "error"}
+            output = _by_step(
+                [
+                    (name, imported.final_message)
+                    for name, imported in atif_results
+                    if imported.final_message is not None
+                ],
+                "final",
+                keep_single_name=False,
+            )
+        if output is None:
+            output = {"status": "completed" if error is None else "error"}
         output = normalize_json(
             output, max_bytes=self.config.max_content_bytes, redact_patterns=self.config.redact_patterns
         ).value
@@ -756,6 +808,17 @@ class HarborPlugin:
 
         details_attachment, details_summary, detail_warnings = _attachment(reward_details_paths(result), self.config)
         metadata["harbor"]["warnings"].extend(detail_warnings)
+        # The summary is the same for every score, so bound it once rather than
+        # re-normalizing a payload up to max_attachment_bytes per scorer span.
+        bounded_details = (
+            None
+            if details_summary is None
+            else normalize_json(
+                details_summary,
+                max_bytes=self.config.max_content_bytes,
+                redact_patterns=self.config.redact_patterns,
+            ).value
+        )
         for score in conversion.scores:
             scorer = root.start_span(
                 name=score.name,
@@ -768,10 +831,8 @@ class HarborPlugin:
                 internal={"instrumentation": _INSTRUMENTATION},
             )
             scorer_output: dict[str, Any] = {"score": score.value, "raw_reward": score.raw_value}
-            if details_summary is not None:
-                scorer_output["reward_details_summary"] = normalize_json(
-                    details_summary, max_bytes=self.config.max_content_bytes
-                ).value
+            if bounded_details is not None:
+                scorer_output["reward_details_summary"] = bounded_details
             if details_attachment is not None:
                 scorer_output["reward_details"] = details_attachment
             scorer.log(output=scorer_output, scores={score.name: score.value})

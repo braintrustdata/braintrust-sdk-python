@@ -5,11 +5,15 @@
 # pylint: disable=import-error
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from .identity import logical_task_key
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -170,28 +174,28 @@ def trial_directory(result: Any) -> Path:
     return Path(config.trials_dir) / result.trial_name
 
 
+def _step_paths(result: Any, *parts: str) -> list[tuple[str | None, Path]]:
+    """Resolve one per-step file, encoding Harbor's on-disk step layout once.
+
+    The step name travels with the path so callers can attribute a file to the step
+    that produced it; it is None for a single-phase trial, which has no steps/ level.
+    """
+    base = trial_directory(result)
+    if result.step_results:
+        return [(step.step_name, base.joinpath("steps", step.step_name, *parts)) for step in result.step_results]
+    return [(None, base.joinpath(*parts))]
+
+
 def trajectory_paths(result: Any) -> list[tuple[str | None, Path]]:
-    base = trial_directory(result)
-    if result.step_results:
-        return [
-            (step.step_name, base / "steps" / step.step_name / "agent" / "trajectory.json")
-            for step in result.step_results
-        ]
-    return [(None, base / "agent" / "trajectory.json")]
+    return _step_paths(result, "agent", "trajectory.json")
 
 
-def reward_details_paths(result: Any) -> list[Path]:
-    base = trial_directory(result)
-    if result.step_results:
-        return [base / "steps" / step.step_name / "verifier" / "reward-details.json" for step in result.step_results]
-    return [base / "verifier" / "reward-details.json"]
+def reward_details_paths(result: Any) -> list[tuple[str | None, Path]]:
+    return _step_paths(result, "verifier", "reward-details.json")
 
 
-def artifact_manifest_paths(result: Any) -> list[Path]:
-    base = trial_directory(result)
-    if result.step_results:
-        return [base / "steps" / step.step_name / "artifacts" / "manifest.json" for step in result.step_results]
-    return [base / "artifacts" / "manifest.json"]
+def artifact_manifest_paths(result: Any) -> list[tuple[str | None, Path]]:
+    return _step_paths(result, "artifacts", "manifest.json")
 
 
 def load_backfill_snapshot(job_dir: str | Path) -> tuple[JobSnapshot, Any]:
@@ -219,14 +223,19 @@ def load_backfill_snapshot(job_dir: str | Path) -> tuple[JobSnapshot, Any]:
             trial_result.config.trials_dir = directory
             results.append(trial_result)
         except Exception:
+            logger.warning("Skipping unreadable Harbor trial result %s", result_path, exc_info=True)
             continue
     if not results and job_result.trial_results:
         results = list(job_result.trial_results)
     job_result.trial_results = results
 
-    lock_by_digest: dict[str, list[Any]] = {}
+    # TrialResult.task_checksum is a task-directory hash while TaskLock.digest is
+    # a content digest, so the two are not comparable. Correlate on task name and
+    # accept no lock rather than attributing an unrelated trial's lock, whose task
+    # identity and skills would silently collapse distinct tasks and partitions.
+    lock_by_name: dict[str, list[Any]] = {}
     for item in lock.trials:
-        lock_by_digest.setdefault(item.task.digest, []).append(item)
+        lock_by_name.setdefault(item.task.name, []).append(item)
     attempts: dict[tuple[str, str], int] = {}
     plans: list[TrialPlan] = []
     for result in results:
@@ -234,10 +243,10 @@ def load_backfill_snapshot(job_dir: str | Path) -> tuple[JobSnapshot, Any]:
         if trial_lock_path.exists():
             trial_lock = TrialLock.model_validate_json(trial_lock_path.read_text())
         else:
-            candidates = lock_by_digest.get(f"sha256:{result.task_checksum}", []) or lock_by_digest.get(
-                result.task_checksum, []
-            )
-            trial_lock = candidates[0] if candidates else lock.trials[0]
+            candidates = lock_by_name.get(result.task_name) or []
+            trial_lock = candidates.pop(0) if candidates else None
+            if trial_lock is None:
+                logger.warning("No job lock entry matches Harbor task %r; continuing without it", result.task_name)
         task_dir = None
         try:
             candidate = result.config.task.get_task_id().get_local_path()

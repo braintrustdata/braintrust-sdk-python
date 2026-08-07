@@ -128,13 +128,15 @@ Dataset sync is enabled by default because it enables task-level comparison, pro
 
 ### Dataset scope and records
 
-Use one dataset per Harbor source and exact logical task selection:
+Use one dataset per Harbor source:
 
 ```text
-harbor · <source> · tasks-<sorted-logical-task-keys-hash-8>
+harbor · <source>
 ```
 
-Hash logical keys, not content. A content change then creates a new version of the same logical dataset; a different selected subset uses a different dataset and cannot prune another run's records.
+Do not hash the selected task subset into dataset identity. The resolved task set changes whenever a job runs a subset of the source's tasks, and whenever backfill cannot read one trial's result file. Because that scope also feeds record IDs, partition keys, and the experiment name, hashing it moves all four at once, so a rerun or a partial backfill forks a new dataset and experiment instead of reconciling the existing ones.
+
+Records are keyed per logical task, so a narrower run upserts a subset of rows. Nothing prunes rows the run did not resolve, and a task content change creates a new version of the same logical dataset.
 
 Choose a logical task key in this order:
 
@@ -370,7 +372,9 @@ For missing ATIF timestamps, use valid values within the agent phase, clamp outl
 | `messages` | Canonical model messages and tool inputs/results. Default. |
 | `full` | `messages` plus fields explicitly allowed by the instrumentation contract. |
 
-All modes support byte limits, sensitive-key filtering, regex redaction, and reasoning exclusion. A policy must not leave an `llm` or `tool` label on a materially incomplete payload.
+All modes support byte limits, sensitive-key filtering, regex redaction, and reasoning exclusion. A policy must not leave an `llm` or `tool` label on a materially incomplete payload, and every truncation or removal must surface as an eval-root warning: a silently truncated payload is indistinguishable from a faithful one.
+
+Absolute-path removal applies to host-side metadata, not to trajectory content. Trajectory payloads are written inside the task sandbox, so their absolute paths name container files the agent actually operated on; removing them erases the substance of filesystem tool calls. Sensitive-key filtering likewise skips numeric values, which cannot be credentials and which carry token budgets that must remain part of agent identity.
 
 Convert inline media to Braintrust attachment references in place. If conversion/upload fails, preserve the original payload unless privacy policy requires removal; in that case downgrade the leaf rather than partially rewriting it.
 
@@ -499,6 +503,8 @@ HarborPlugin(
     strict=False,
 )
 ```
+
+An option whose behavior is not implemented must be rejected during validation rather than accepted as a silent no-op: `log_retry_attempts=True` is rejected, because only the final attempt of a retried trial is logged, and `dataset_mode="existing"` is rejected for the same reason. `content_mode="full"` is not in that category — it is fully implemented over an extension set that is currently empty, so it captures exactly what `messages` captures until the instrumentation contract allows an additional field.
 
 Constructor options should have `HARBOR_BRAINTRUST_*` environment fallbacks, with precedence `explicit option > environment > default`. Standard Braintrust variables continue to configure API key, organization, and app URL. Complex rule values should use JSON because Harbor only supports `--plugin-kwarg` when one plugin is supplied. Validate mutually exclusive identifiers, overlapping reward rules, globs, bounds, byte limits, and mode combinations before performing network I/O.
 

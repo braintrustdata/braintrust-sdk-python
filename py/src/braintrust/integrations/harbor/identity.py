@@ -14,12 +14,56 @@ PLUGIN_NAMESPACE = UUID("67ea9f8a-e42a-5f31-96d8-85bcf27ca4c9")
 _SECRET_KEY = re.compile(r"(?:api[_-]?key|token|secret|password|credential|authorization|cookie)", re.IGNORECASE)
 _ABSOLUTE_WINDOWS_PATH = re.compile(r"^[a-zA-Z]:[\\/]")
 _TEMPLATE = re.compile(r"^\$\{[A-Za-z_][A-Za-z0-9_]*(?::-[^}]*)?\}$")
+_KEY_SEGMENT = re.compile(r"[^0-9A-Za-z]+|(?<=[a-z0-9])(?=[A-Z])")
+# Keys built from a counting or budgeting word are measurements, not credentials.
+# "max_tokens" and "total_tokens" match the secret pattern as substrings, and
+# redacting them both destroys usage metadata and collapses agent configurations
+# that differ only by a token budget into one partition.
+_COUNTER_SEGMENTS = frozenset(
+    {
+        "average",
+        "avg",
+        "budget",
+        "cache",
+        "cached",
+        "completion",
+        "count",
+        "counts",
+        "input",
+        "limit",
+        "max",
+        "maximum",
+        "min",
+        "minimum",
+        "num",
+        "output",
+        "per",
+        "prompt",
+        "reasoning",
+        "remaining",
+        "size",
+        "sum",
+        "total",
+        "usage",
+        "used",
+        "window",
+    }
+)
 
 
 @dataclass(frozen=True)
 class NormalizedValue:
     value: Any
     warnings: tuple[str, ...] = ()
+
+    @property
+    def complete(self) -> bool:
+        """Report whether the value survived normalization intact.
+
+        Every warning this module emits names data it dropped, truncated, or
+        replaced, so the absence of warnings is the completeness signal.
+        """
+        return not self.warnings
 
 
 def canonical_json(value: Any) -> str:
@@ -50,6 +94,20 @@ def _is_absolute_path(value: str) -> bool:
     return value.startswith(("/", "~/", "file://")) or bool(_ABSOLUTE_WINDOWS_PATH.match(value))
 
 
+def _key_segments(key: str) -> set[str]:
+    return {segment.lower() for segment in _KEY_SEGMENT.split(key) if segment}
+
+
+def _is_secret_key(key: str, value: Any) -> bool:
+    """Report whether a key names a credential whose value must not be logged."""
+    if value is None or isinstance(value, (bool, int, float)):
+        # A number is never a credential, so redacting it can only lose data.
+        return False
+    if not _SECRET_KEY.search(key):
+        return False
+    return _key_segments(key).isdisjoint(_COUNTER_SEGMENTS)
+
+
 def _json_size(value: Any) -> int:
     try:
         return len(canonical_json(value).encode("utf-8"))
@@ -63,8 +121,14 @@ def normalize_json(
     max_bytes: int,
     redact_patterns: tuple[str, ...] = (),
     max_depth: int = 8,
+    redact_absolute_paths: bool = True,
 ) -> NormalizedValue:
-    """Normalize untrusted metadata while preserving JSON types and nulls."""
+    """Normalize untrusted metadata while preserving JSON types and nulls.
+
+    Set ``redact_absolute_paths=False`` for payloads produced inside the task
+    sandbox: their absolute paths are container paths the agent actually operated
+    on, so redacting them erases the substance of filesystem tool calls.
+    """
     warnings: list[str] = []
     compiled_patterns = tuple(re.compile(pattern) for pattern in redact_patterns)
 
@@ -72,14 +136,15 @@ def normalize_json(
         if depth > max_depth:
             warnings.append(f"dropped {path}: depth limit")
             return "[DROPPED: depth limit]"
-        if key is not None and _SECRET_KEY.search(key):
+        if key is not None and _is_secret_key(key, item):
             if isinstance(item, str) and _TEMPLATE.match(item):
                 return item
+            warnings.append(f"redacted {path}: sensitive key")
             return "[REDACTED]"
         if item is None or isinstance(item, (bool, int, float)):
             return item
         if isinstance(item, str):
-            if _is_absolute_path(item):
+            if redact_absolute_paths and _is_absolute_path(item):
                 warnings.append(f"dropped {path}: absolute path")
                 return "[REDACTED PATH]"
             result = item
@@ -88,7 +153,7 @@ def normalize_json(
             return result
         if isinstance(item, PurePath):
             raw = str(item)
-            if item.is_absolute() or _is_absolute_path(raw):
+            if redact_absolute_paths and (item.is_absolute() or _is_absolute_path(raw)):
                 warnings.append(f"dropped {path}: absolute path")
                 return "[REDACTED PATH]"
             return item.as_posix()
@@ -114,18 +179,37 @@ def normalize_json(
     if _json_size(normalized) <= max_bytes:
         return NormalizedValue(normalized, tuple(warnings))
 
-    warnings.append(f"dropped metadata: exceeded {max_bytes} bytes")
+    # Fitting a container to a byte budget needs each entry's serialized size, not
+    # a fresh serialization of every prefix: the payload is serialized again on its
+    # way to Braintrust, so measuring it here more than once is pure overhead.
+    # Canonical JSON adds two braces or brackets plus one separator between
+    # entries, and one colon per object key, so entry sizes accumulate exactly.
+    warnings.append(f"truncated value: exceeded {max_bytes} bytes")
     if isinstance(normalized, dict):
         bounded: dict[str, Any] = {}
+        total = 2
         for key in sorted(normalized):
-            candidate = {**bounded, key: normalized[key]}
-            if _json_size(candidate) > max_bytes:
+            entry = _json_size(key) + 1 + _json_size(normalized[key]) + (1 if bounded else 0)
+            if total + entry > max_bytes:
                 warnings.append(f"dropped {key}: size limit")
                 continue
+            total += entry
             bounded[key] = normalized[key]
         normalized = bounded
     elif isinstance(normalized, str):
         normalized = normalized.encode("utf-8")[:max_bytes].decode("utf-8", errors="ignore")
+    elif isinstance(normalized, list):
+        # Keep the leading elements so an oversized list stays a list. Replacing
+        # the whole value with a placeholder string would change its JSON type.
+        total = 2
+        kept = 0
+        for index, item in enumerate(normalized):
+            total += _json_size(item) + (1 if index else 0)
+            if total > max_bytes:
+                warnings.append(f"dropped [{index}:]: size limit")
+                break
+            kept = index + 1
+        normalized = normalized[:kept]
     else:
         normalized = "[DROPPED: size limit]"
     return NormalizedValue(normalized, tuple(warnings))
@@ -162,14 +246,17 @@ def logical_task_key(task_config: Any, task_lock: Any | None = None) -> str:
     return f"local:{source or 'adhoc'}:{name}"
 
 
-def dataset_scope(source: str, logical_keys: list[str]) -> str:
-    key_hash = stable_hash(sorted(logical_keys))[:8]
-    return f"{source}:tasks-{key_hash}"
+def dataset_scope(source: str) -> str:
+    """Scope a dataset by task source alone.
+
+    See "Dataset scope and records" in docs/harbor-braintrust-plugin-design.md for
+    why the resolved task subset is deliberately excluded from identity.
+    """
+    return f"{source}:tasks"
 
 
-def dataset_display_name(source: str, logical_keys: list[str]) -> str:
-    scope = dataset_scope(source, logical_keys)
-    return f"harbor · {source} · {scope.rsplit(':', 1)[-1]}"
+def dataset_display_name(source: str, prefix: str = "harbor") -> str:
+    return f"{prefix} · {source}"
 
 
 def semantic_agent_config(agent: Any, skills: list[Any]) -> dict[str, Any]:
@@ -177,7 +264,7 @@ def semantic_agent_config(agent: Any, skills: list[Any]) -> dict[str, Any]:
         result: dict[str, str] = {}
         for key, value in (raw or {}).items():
             value = str(value)
-            if _SECRET_KEY.search(str(key)):
+            if _is_secret_key(str(key), value):
                 result[str(key)] = value if _TEMPLATE.match(value) else f"${{{key}}}"
             else:
                 result[str(key)] = value
