@@ -9,6 +9,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install Python build dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends --yes libbz2-dev liblzma-dev libreadline-dev
     - name: Set up mise
       uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
       with:
