@@ -249,8 +249,12 @@ def logical_task_key(task_config: Any, task_lock: Any | None = None) -> str:
 def dataset_scope(source: str) -> str:
     """Scope a dataset by task source alone.
 
-    See "Dataset scope and records" in docs/harbor-braintrust-plugin-design.md for
-    why the resolved task subset is deliberately excluded from identity.
+    The resolved task subset is deliberately excluded. It changes whenever a job
+    runs a subset of the source's tasks, or whenever backfill cannot read one
+    trial's result, and because this scope also feeds record IDs, partition keys,
+    and the experiment name, including it would fork a new dataset and experiment
+    instead of reconciling the existing ones. Records are keyed per logical task,
+    so a narrower run upserts a subset of rows.
     """
     return f"{source}:tasks"
 
