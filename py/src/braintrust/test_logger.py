@@ -3696,6 +3696,28 @@ class TestDatasetInternalBtql(TestCase):
         # Verify that other _internal_btql fields are also present
         self.assertEqual(query_json["where"], {"op": "eq", "left": "foo", "right": "bar"})
 
+    def test_dataset_internal_btql_zero_limit_skips_fetch(self):
+        from braintrust.logger import Dataset, LazyValue, ObjectMetadata, ProjectDatasetMetadata
+
+        project_metadata = ObjectMetadata(id="test-project", name="test-project", full_info={})
+        dataset_metadata = ObjectMetadata(id="test-dataset", name="test-dataset", full_info={})
+        compute_metadata = MagicMock(
+            return_value=ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata)
+        )
+        mock_state = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": [], "cursor": "unexpected-cursor"}
+        mock_state.api_conn.return_value.post.return_value = mock_response
+        dataset = Dataset(
+            lazy_metadata=LazyValue(compute_metadata, use_mutex=False),
+            _internal_btql={"limit": 0},
+            state=mock_state,
+        )
+
+        self.assertEqual(list(dataset), [])
+        compute_metadata.assert_not_called()
+        mock_state.api_conn.assert_not_called()
+
     @patch("braintrust.logger.BraintrustState")
     def test_dataset_default_limit_when_not_specified(self, mock_state_class):
         """Test that DEFAULT_FETCH_BATCH_SIZE is used when no custom limit is specified."""
@@ -3797,6 +3819,22 @@ class TestDatasetInternalBtql(TestCase):
 
         # Verify that the custom batch_size is used
         self.assertEqual(query_json["limit"], custom_batch_size)
+
+
+@pytest.mark.vcr
+def test_dataset_internal_btql_limit_caps_total_results():
+    dataset = braintrust.init_dataset(
+        project="python-sdk-vcr-tests",
+        name="test-dataset-internal-btql-total-limit",
+        api_key="sk-dummy-for-vcr-replay",
+        use_output=False,
+        _internal_btql={"limit": 1},
+    )
+    dataset.insert(id="internal-btql-limit-record-1", input="first", expected="first")
+    dataset.insert(id="internal-btql-limit-record-2", input="second", expected="second")
+    dataset.flush()
+
+    assert len(list(dataset)) == 1
 
 
 def test_attachment_identity_preserved_through_bt_safe_deep_copy():

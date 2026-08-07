@@ -147,6 +147,21 @@ class TestBraintrustEnv:
         monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "false")
         assert BraintrustEnv.OTEL_COMPAT.get(True) is False
 
+    @pytest.mark.parametrize(
+        ("env_var", "setting"),
+        [
+            ("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", BraintrustEnv.CAPTURE_USER_AUDIO_ATTACHMENTS),
+            ("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS),
+        ],
+    )
+    def test_audio_capture_settings_are_generic_booleans(self, monkeypatch, env_var, setting):
+        monkeypatch.delenv(env_var, raising=False)
+        assert setting.get(False) is False
+        monkeypatch.setenv(env_var, "true")
+        assert setting.get(False) is True
+        monkeypatch.setenv(env_var, "false")
+        assert setting.get(True) is False
+
 
 class TestIdConfig:
     # LEGACY_IDS is lazily resolved from the current environment on each

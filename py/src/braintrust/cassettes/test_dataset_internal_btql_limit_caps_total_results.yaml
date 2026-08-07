@@ -1,0 +1,580 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/apikey/login
+  response:
+    body:
+      string: '{"org_info":[{"id":"f5883013-b5c1-438d-9044-5182b4682337","name":"abhi-test-org","api_url":"https://api.braintrust.dev","git_metadata":{"collect":"some","fields":["commit","branch","tag","dirty","author_name","author_email","commit_message","commit_time"]},"is_universal_api":null,"proxy_url":"https://api.braintrust.dev","realtime_url":"wss://realtime.braintrustapi.com"}]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5,
+        Content-Type, Date, X-Api-Version
+      Access-Control-Allow-Methods:
+      - GET,OPTIONS,PATCH,DELETE,POST,PUT
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '374'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-YmMyZTM0NWYtYzJmZS00MzQyLThlOTItOTViMTgwMmUyNzg5''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 05 Aug 2026 14:55:30 GMT
+      Etag:
+      - '"13kwty4qcjgae"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/apikey/login
+      X-Nonce:
+      - YmMyZTM0NWYtYzJmZS00MzQyLThlOTItOTViMTgwMmUyNzg5
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::p2wth-1785941730640-7c7991ba6747
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"project_name": "python-sdk-vcr-tests", "project_id": null, "org_id":
+      "f5883013-b5c1-438d-9044-5182b4682337", "dataset_name": "test-dataset-internal-btql-total-limit"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '168'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/dataset/register
+  response:
+    body:
+      string: '{"project":{"id":"5740905a-baf8-4edf-b634-8aa62ea149d3","org_id":"f5883013-b5c1-438d-9044-5182b4682337","name":"python-sdk-vcr-tests","description":null,"created":"2026-08-05T14:55:31.022Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null},"dataset":{"id":"93e21c91-a4a1-441f-9ba5-91331b414da4","project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","name":"test-dataset-internal-btql-total-limit","description":null,"created":"2026-08-05T14:55:31.022Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","tags":null,"metadata":null,"url_slug":"test-dataset-internal-btql-total-limit"},"found_existing":false}'
+    headers:
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '656'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-ZTZjODczYWQtN2Y3OS00OWQ2LThiNzItMmM3M2E0MmEwMGNk''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 05 Aug 2026 14:55:31 GMT
+      Etag:
+      - '"12sv3og5gzpi8"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/dataset/register
+      X-Nonce:
+      - ZTZjODczYWQtN2Y3OS00OWQ2LThiNzItMmM3M2E0MmEwMGNk
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::xn7p5-1785941730906-ade6974e689c
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.braintrust.dev/version
+  response:
+    body:
+      string: '{"version":"2.9.0","date_version":"20260730","ff_version":42,"commit":"752127a4257d43c647e4f26fca64445645b9a982","deployment_mode":"lambda","deployment_type":"custom","brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"brainstore_export_enabled":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","memprof","usage"]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 05 Aug 2026 14:55:31 GMT
+      Via:
+      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 8e6145785e47042f882be946f6c05880.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - nP5Yi5R8JpBCfrXan9JJG9r1N2L14jQ1-zOVH-AaCkUpUCoOjxUCSg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a734ee3-4ae6d8fd1361006d0a7a678c;Parent=71d1c6d6ad287dc5;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '557'
+      etag:
+      - W/"22d-ctakgszqYQZk3xpUQtT3XtS3QV4"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - BolDlH1JoAMEJbg=
+      x-amzn-Remapped-content-length:
+      - '557'
+      x-amzn-RequestId:
+      - d1977231-4402-423f-aaa3-26879c5f8257
+      x-bt-internal-trace-id:
+      - 6a734ee3000000003adf69420fe9bf21
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"rows": [{"created": "2026-08-05T14:55:30.472778+00:00", "dataset_id":
+      "93e21c91-a4a1-441f-9ba5-91331b414da4", "expected": "first", "id": "internal-btql-limit-record-1",
+      "input": "first", "tags": null},{"created": "2026-08-05T14:55:30.473043+00:00",
+      "dataset_id": "93e21c91-a4a1-441f-9ba5-91331b414da4", "expected": "second",
+      "id": "internal-btql-limit-record-2", "input": "second", "tags": null}], "api_version":
+      2}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '417'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"ids":["internal-btql-limit-record-1","internal-btql-limit-record-2"],"xact_id":"1000197635730255173"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 05 Aug 2026 14:55:32 GMT
+      Via:
+      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 71eaa9eb77c2eecb57c03cdcdad1cf76.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - 3Q1Ri4YPhZs10OPexGrLj3oZpnEyruxPHgHfhYdt-w4op8YZCOPZnA==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a734ee3-6c9750aa4626ef89322574f2;Parent=64344bf0f42f2bd2;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '103'
+      etag:
+      - W/"67-slrO8h6R7bzoArJaQMDL+SPIzYk"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - BolDnHiqIAMEDlg=
+      x-amzn-RequestId:
+      - bb6ca664-bf55-422e-9f3b-d776b45d5a7d
+      x-bt-internal-trace-id:
+      - 6a734ee3000000001f5cc1b071725c11
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query": {"select": [{"op": "star"}], "from": {"op": "function", "name":
+      {"op": "ident", "name": ["dataset"]}, "args": [{"op": "literal", "value": "93e21c91-a4a1-441f-9ba5-91331b414da4"}]},
+      "cursor": null, "limit": 1}, "use_columnstore": false, "brainstore_realtime":
+      true, "query_source": "py_sdk_object_fetcher_dataset"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '323'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/btql
+  response:
+    body:
+      string: '{"data":[{"_pagination_key":"p07670561327966126081","_xact_id":"1000197635730255173","audit_data":[{"_xact_id":"1000197635730255173","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"created":"2026-08-05T14:55:30.473Z","dataset_id":"93e21c91-a4a1-441f-9ba5-91331b414da4","expected":"second","facets":null,"id":"internal-btql-limit-record-2","input":"second","is_root":true,"metadata":null,"origin":null,"project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","root_span_id":"6a9a2a70-7597-48c7-affc-375126066bc2","span_id":"6a9a2a70-7597-48c7-affc-375126066bc2","tags":null}],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
+        stable, time-ordered key that can be used to paginate over dataset events.
+        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
+        transaction id of an event is unique to the network operation that processed
+        the event insertion. Transaction ids are monotonically increasing over time
+        and can be used to retrieve a versioned snapshot of the dataset (see the `version`
+        parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
+        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
+        classification identifier","type":"string"},"label":{"description":"Original
+        label of the classification item, which is useful for search and indexing
+        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
+        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
+        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
+        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
+        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"created":{"description":"The
+        timestamp the dataset event was created","format":"date-time","type":"string"},"dataset_id":{"description":"Unique
+        identifier for the dataset","format":"uuid","type":"string"},"expected":{"description":"The
+        output of your application, including post-processing (an arbitrary, JSON
+        serializable object)"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
+        unique identifier for the dataset event. If you don''t provide one, Braintrust
+        will generate one for you","type":"string"},"input":{"description":"The argument
+        that uniquely define an input case (an arbitrary, JSON serializable object)"},"is_root":{"description":"Whether
+        this span is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
+        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
+        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
+        ID of the original event.","type":["string","null"]},"created":{"description":"Created
+        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
+        of the original event.","type":"string"},"object_id":{"description":"ID of
+        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
+        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"project_id":{"description":"Unique
+        identifier for the project that the dataset belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
+        unique identifier for the trace this dataset event belongs to","type":"string"},"span_id":{"description":"A
+        unique identifier used to link different dataset events together as part of
+        a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
+        for full details on tracing","type":"string"},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"cursor":"anNO4y1FAAE","realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":1356,"actual_xact_id":"1000197635730255173"},"freshness_state":{"last_processed_xact_id":null,"last_considered_xact_id":"1000197635730255173"},"warnings":[]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Aug 2026 14:55:32 GMT
+      Via:
+      - 1.1 8250156022879efefd7a589c8ba8c706.cloudfront.net (CloudFront), 1.1 0e761f7a5b2481acd893422a702c9fa8.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - a9P0CyqWFCX1nbieSCP2r9FWONXVEP4r2RuFfMu_60I6KH3ewQC2-A==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a734ee4-19a429a8006a9c7703caf496;Parent=4a2aaa6030920b78;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - private, no-cache
+      content-length:
+      - '5300'
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - BolDvFo2IAMEvtQ=
+      x-amzn-RequestId:
+      - 642cf8b4-67d2-4084-9499-5be8b5441123
+      x-bt-api-duration-ms:
+      - '121'
+      x-bt-brainstore-duration-ms:
+      - '79'
+      x-bt-cursor:
+      - anNO4y1FAAE
+      x-bt-internal-trace-id:
+      - 6a734ee40000000005540f09408671f8
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query": {"select": [{"op": "star"}], "from": {"op": "function", "name":
+      {"op": "ident", "name": ["dataset"]}, "args": [{"op": "literal", "value": "93e21c91-a4a1-441f-9ba5-91331b414da4"}]},
+      "cursor": "anNO4y1FAAE", "limit": 1}, "use_columnstore": false, "brainstore_realtime":
+      true, "query_source": "py_sdk_object_fetcher_dataset"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '332'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/btql
+  response:
+    body:
+      string: '{"data":[{"_pagination_key":"p07670561327966126080","_xact_id":"1000197635730255173","audit_data":[{"_xact_id":"1000197635730255173","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"created":"2026-08-05T14:55:30.472Z","dataset_id":"93e21c91-a4a1-441f-9ba5-91331b414da4","expected":"first","facets":null,"id":"internal-btql-limit-record-1","input":"first","is_root":true,"metadata":null,"origin":null,"project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","root_span_id":"a540f0e9-c6e3-4e32-bff3-9b382db1f1be","span_id":"a540f0e9-c6e3-4e32-bff3-9b382db1f1be","tags":null}],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
+        stable, time-ordered key that can be used to paginate over dataset events.
+        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
+        transaction id of an event is unique to the network operation that processed
+        the event insertion. Transaction ids are monotonically increasing over time
+        and can be used to retrieve a versioned snapshot of the dataset (see the `version`
+        parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
+        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
+        classification identifier","type":"string"},"label":{"description":"Original
+        label of the classification item, which is useful for search and indexing
+        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
+        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
+        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
+        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
+        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"created":{"description":"The
+        timestamp the dataset event was created","format":"date-time","type":"string"},"dataset_id":{"description":"Unique
+        identifier for the dataset","format":"uuid","type":"string"},"expected":{"description":"The
+        output of your application, including post-processing (an arbitrary, JSON
+        serializable object)"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
+        unique identifier for the dataset event. If you don''t provide one, Braintrust
+        will generate one for you","type":"string"},"input":{"description":"The argument
+        that uniquely define an input case (an arbitrary, JSON serializable object)"},"is_root":{"description":"Whether
+        this span is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
+        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
+        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
+        ID of the original event.","type":["string","null"]},"created":{"description":"Created
+        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
+        of the original event.","type":"string"},"object_id":{"description":"ID of
+        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
+        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"project_id":{"description":"Unique
+        identifier for the project that the dataset belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
+        unique identifier for the trace this dataset event belongs to","type":"string"},"span_id":{"description":"A
+        unique identifier used to link different dataset events together as part of
+        a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
+        for full details on tracing","type":"string"},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"cursor":"anNO4y1FAAA","realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":1356,"actual_xact_id":"1000197635730255173"},"freshness_state":{"last_processed_xact_id":null,"last_considered_xact_id":"1000197635730255173"},"warnings":[]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Aug 2026 14:55:32 GMT
+      Via:
+      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 cdd327922be1fd75b18f2ae0982269cc.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - p8i4xVqYm9RbA0FjIvFUo7PEYMQLp_haerqQT7wrHTIm_i7bPCy1kA==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a734ee4-53a6e2be76ca6ad941fffd56;Parent=5d0127a9aa8cff18;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - private, no-cache
+      content-length:
+      - '5298'
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - BolDyF6moAMER_Q=
+      x-amzn-RequestId:
+      - 2c872d8c-963c-470c-954b-da5fb2ead97a
+      x-bt-api-duration-ms:
+      - '231'
+      x-bt-brainstore-duration-ms:
+      - '184'
+      x-bt-cursor:
+      - anNO4y1FAAA
+      x-bt-internal-trace-id:
+      - 6a734ee40000000044a5247423f04fb1
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"query": {"select": [{"op": "star"}], "from": {"op": "function", "name":
+      {"op": "ident", "name": ["dataset"]}, "args": [{"op": "literal", "value": "93e21c91-a4a1-441f-9ba5-91331b414da4"}]},
+      "cursor": "anNO4y1FAAA", "limit": 1}, "use_columnstore": false, "brainstore_realtime":
+      true, "query_source": "py_sdk_object_fetcher_dataset"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '332'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/btql
+  response:
+    body:
+      string: '{"data":[],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
+        stable, time-ordered key that can be used to paginate over dataset events.
+        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
+        transaction id of an event is unique to the network operation that processed
+        the event insertion. Transaction ids are monotonically increasing over time
+        and can be used to retrieve a versioned snapshot of the dataset (see the `version`
+        parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
+        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
+        classification identifier","type":"string"},"label":{"description":"Original
+        label of the classification item, which is useful for search and indexing
+        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
+        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
+        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
+        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
+        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"created":{"description":"The
+        timestamp the dataset event was created","format":"date-time","type":"string"},"dataset_id":{"description":"Unique
+        identifier for the dataset","format":"uuid","type":"string"},"expected":{"description":"The
+        output of your application, including post-processing (an arbitrary, JSON
+        serializable object)"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
+        unique identifier for the dataset event. If you don''t provide one, Braintrust
+        will generate one for you","type":"string"},"input":{"description":"The argument
+        that uniquely define an input case (an arbitrary, JSON serializable object)"},"is_root":{"description":"Whether
+        this span is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
+        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
+        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
+        ID of the original event.","type":["string","null"]},"created":{"description":"Created
+        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
+        of the original event.","type":"string"},"object_id":{"description":"ID of
+        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
+        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"project_id":{"description":"Unique
+        identifier for the project that the dataset belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
+        unique identifier for the trace this dataset event belongs to","type":"string"},"span_id":{"description":"A
+        unique identifier used to link different dataset events together as part of
+        a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
+        for full details on tracing","type":"string"},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":1356,"actual_xact_id":"1000197635730255173"},"freshness_state":{"last_processed_xact_id":null,"last_considered_xact_id":"1000197635730255173"},"warnings":[]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Aug 2026 14:55:33 GMT
+      Via:
+      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 5fef2688877996791689cf17ab2832d0.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - OUOs4hNWapakRzFf7h224KR47hCmaRRMs3qEEVcnZER4dP8VbidQgg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a734ee4-51f9e72509d68cc95c0b2cd5;Parent=7f72df8695b1d063;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - private, no-cache
+      content-length:
+      - '4662'
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - BolD2Fb1oAMEW-Q=
+      x-amzn-RequestId:
+      - b295f072-8be4-4466-ada4-d3e5f30dcd50
+      x-bt-api-duration-ms:
+      - '127'
+      x-bt-brainstore-duration-ms:
+      - '75'
+      x-bt-internal-trace-id:
+      - 6a734ee5000000001aab8ad265e6a1d3
+    status:
+      code: 200
+      message: OK
+version: 1

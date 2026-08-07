@@ -1,9 +1,11 @@
 """Tests for the invoke module, particularly init_function."""
 
+import inspect
 import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from braintrust import invoke_async
 from braintrust.functions.invoke import init_function, invoke
 from braintrust.logger import TEST_API_KEY, _internal_get_global_state, _internal_reset_global_state
 
@@ -88,6 +90,10 @@ def _invoke_with_messages(messages):
     return json.loads(data.decode("utf-8"))
 
 
+def test_invoke_async_signature_matches_invoke():
+    assert inspect.signature(invoke_async).parameters == inspect.signature(invoke).parameters
+
+
 def test_invoke_serializes_openai_messages():
     openai_chat = pytest.importorskip("openai.types.chat")
     msg = openai_chat.ChatCompletionMessage(role="assistant", content="The answer is X.")
@@ -143,6 +149,25 @@ def test_invoke_encodes_body_as_utf8_bytes(monkeypatch):
         slug="test-fn",
         input={"text": f"result {em_dash} excellent"},
         parent="",  # skip span-parent lookup; no extra HTTP call needed
+        api_key=TEST_API_KEY,
+    )
+    assert result["output"] == f"result {em_dash} excellent"
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+async def test_invoke_async_encodes_body_as_utf8_bytes(monkeypatch):
+    """The async API returns the same decoded response as invoke()."""
+    monkeypatch.delenv("BRAINTRUST_PROXY_URL", raising=False)
+    monkeypatch.delenv("BRAINTRUST_API_URL", raising=False)
+    _internal_reset_global_state()
+
+    em_dash = "\u2014"
+    result = await invoke_async(
+        project_name="test-project",
+        slug="test-fn",
+        input={"text": f"result {em_dash} excellent"},
+        parent="",
         api_key=TEST_API_KEY,
     )
     assert result["output"] == f"result {em_dash} excellent"

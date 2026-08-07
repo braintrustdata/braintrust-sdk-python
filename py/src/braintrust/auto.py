@@ -29,6 +29,7 @@ from braintrust.integrations import (
     OpenAIAgentsIntegration,
     OpenAIIntegration,
     OpenRouterIntegration,
+    PipecatIntegration,
     PydanticAIIntegration,
     StrandsIntegration,
     TemporalIntegration,
@@ -78,6 +79,7 @@ def auto_instrument(
     strands: bool = True,
     temporal: bool = True,
     livekit_agents: bool = True,
+    pipecat: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -113,6 +115,7 @@ def auto_instrument(
         strands: Enable Strands Agents instrumentation (default: True)
         temporal: Enable Temporal instrumentation (default: True)
         livekit_agents: Enable LiveKit Agents instrumentation (default: True)
+        pipecat: Enable Pipecat AI instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -208,6 +211,8 @@ def auto_instrument(
         results["temporal"] = _instrument_integration(TemporalIntegration)
     if livekit_agents:
         results["livekit_agents"] = _instrument_integration(LiveKitAgentsIntegration)
+    if pipecat:
+        results["pipecat"] = _instrument_integration(PipecatIntegration)
 
     return results
 

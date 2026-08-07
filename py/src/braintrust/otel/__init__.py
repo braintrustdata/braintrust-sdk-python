@@ -92,6 +92,29 @@ def _with_span_origin_attributes(span, environment):
     return _SpanWithAttributes(span, attributes)
 
 
+class _SpanOriginProcessor:
+    """Add Braintrust span origin attributes after any upstream filtering."""
+
+    def __init__(self, processor, environment):
+        self._processor = processor
+        self._environment = environment
+
+    def on_start(self, span, parent_context=None):
+        self._processor.on_start(span, parent_context)
+
+    def on_end(self, span):
+        self._processor.on_end(_with_span_origin_attributes(span, self._environment))
+
+    def _on_ending(self, span):
+        _forward_on_ending(self._processor, span)
+
+    def shutdown(self):
+        self._processor.shutdown()
+
+    def force_flush(self, timeout_millis=30000):
+        return self._processor.force_flush(timeout_millis)
+
+
 class AISpanProcessor:
     """
     A span processor that filters spans to only export filtered telemetry.
@@ -355,14 +378,13 @@ class BraintrustSpanProcessor:
         if SpanProcessor is None:
             SpanProcessor = BatchSpanProcessor
 
-        # Always create a BatchSpanProcessor first
-        processor = SpanProcessor(self._exporter)
+        # Add provenance downstream so filtering decisions use the span's original attributes.
+        processor = _SpanOriginProcessor(SpanProcessor(self._exporter), self._environment)
 
         if filter_ai_spans:
-            # Wrap the BatchSpanProcessor with filtering
+            # Wrap the origin-injecting processor so filtering runs first.
             self._processor = AISpanProcessor(processor, custom_filter=custom_filter)
         else:
-            # Use BatchSpanProcessor directly
             self._processor = processor
 
     def on_start(self, span, parent_context=None):
@@ -418,7 +440,7 @@ class BraintrustSpanProcessor:
     def on_end(self, span):
         """Forward span end events to the inner processor."""
         self._exporter.initialize()
-        self._processor.on_end(_with_span_origin_attributes(span, self._environment))
+        self._processor.on_end(span)
 
     def _on_ending(self, span):
         """Forward pre-end hook when the wrapped processor supports it."""

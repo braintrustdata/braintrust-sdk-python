@@ -14,6 +14,7 @@ from typing import TypedDict
 
 import pytest
 from braintrust.framework import EvalAsync, EvalCase, EvalResultWithSummary
+from braintrust.generated_types import ObjectReference
 from braintrust.score import Score
 
 
@@ -118,3 +119,25 @@ async def test_eval_divergent_output_and_expected():
     assert result.results[0].output == ModelOutput(answer="4", confidence=0.99)
     assert isinstance(result.results[0].expected, frozenset)
     assert result.results[0].scores.get("match") == 1.0
+
+
+@pytest.mark.asyncio
+async def test_eval_origin_types():
+    """EvalCase, dictionary inputs, and EvalResult expose row origins."""
+    origin: ObjectReference = {
+        "object_type": "project_logs",
+        "object_id": "source-project",
+        "id": "source-row",
+    }
+
+    eval_case = EvalCase(input="case", origin=origin)
+    assert eval_case.origin == origin
+
+    result = await EvalAsync(
+        "test-origin-types",
+        data=[{"input": "dictionary", "origin": origin}],
+        task=lambda input_value: input_value,
+        scores=[],
+        no_send_logs=True,
+    )
+    assert result.results[0].origin == origin
