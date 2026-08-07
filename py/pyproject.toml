@@ -463,6 +463,11 @@ latest = "temporalio==1.31.0"
 
 [tool.braintrust.matrix.harbor]
 latest = "harbor==0.20.0"
+# 0.16.0 is the oldest supported release: it is the first with
+# TrialEvent.AGENT_END, which the lifecycle state machine subscribes to. Harbor
+# gained its plugin system in 0.13.2, so 0.13.2-0.15.0 can load the plugin but
+# cannot report the end of the agent phase.
+"0.16.0" = "harbor==0.16.0"
 
 [tool.braintrust.matrix.pytest-matrix]
 # Canonical pytest pin. The matching entry in [dependency-groups].test is

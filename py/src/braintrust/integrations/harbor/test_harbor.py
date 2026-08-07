@@ -3,6 +3,7 @@
 # pylint: disable=import-error
 
 import asyncio
+import inspect
 import json
 import os
 import re
@@ -112,6 +113,32 @@ def test_config_environment_fallback_and_explicit_precedence():
                 os.environ.pop(name, None)
             else:
                 os.environ[name] = value
+
+
+def test_harbor_resolves_the_plugin_through_its_entry_point():
+    # Users select this plugin with `--plugin braintrust`, which Harbor resolves
+    # through the harbor.plugins entry-point group. Nothing else in the test suite
+    # exercises the packaging metadata, so a broken entry point would otherwise
+    # only surface as "plugin not found" for a real user.
+    from harbor.cli.plugin_registry import PLUGIN_ENTRY_POINT_GROUP, resolve_plugin_import_path
+
+    assert PLUGIN_ENTRY_POINT_GROUP == "harbor.plugins"
+    assert resolve_plugin_import_path("braintrust") == "braintrust.integrations.harbor:HarborPlugin"
+
+
+def test_plugin_implements_the_harbor_lifecycle_protocol():
+    # The oldest supported Harbor release is pinned in [tool.braintrust.matrix.harbor].
+    # AGENT_END is the API that sets that floor: it arrived in 0.16.0, and the
+    # lifecycle state machine subscribes to every event in this mapping, so a
+    # missing member disables the whole plugin at registration time.
+    from harbor.trial.hooks import TrialEvent as HarborTrialEvent
+
+    for name in ("START", "ENVIRONMENT_START", "AGENT_START", "AGENT_END", "VERIFICATION_START", "END", "CANCEL"):
+        assert hasattr(HarborTrialEvent, name), name
+
+    plugin = HarborPlugin(project_name="unused")
+    assert inspect.iscoroutinefunction(plugin.on_job_start)
+    assert inspect.iscoroutinefunction(plugin.on_job_end)
 
 
 def test_config_rejects_overlapping_reward_patterns_and_invalid_bounds():
