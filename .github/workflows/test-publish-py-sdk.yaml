@@ -37,7 +37,7 @@ jobs:
       target_branch: ${{ steps.validate.outputs.target_branch }}
       version: ${{ steps.validate.outputs.version }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.ref }}
           fetch-depth: 0
@@ -86,7 +86,7 @@ jobs:
       VERSION: ${{ needs.validate.outputs.version }}
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.COMMIT_SHA }}
           fetch-depth: 0
@@ -155,7 +155,7 @@ jobs:
           retention-days: 5
       - name: Publish to TestPyPI
         if: env.DRY_RUN != 'true' && (env.RELEASE_TYPE != 'canary' || (steps.should_publish.outputs.should_publish == 'true' && steps.ci_status.outputs.should_publish == 'true'))
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: py/dist/
@@ -226,7 +226,7 @@ jobs:
     steps:
       - name: Post to Slack on dry run success
         if: needs.validate.outputs.dry_run == 'true'
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -244,7 +244,7 @@ jobs:
                   text: "${{ format('*Mode:* dry run\n*Release type:* {0}\n*Version:* {1}\n*Ref:* {2}\n*Commit:* {3}\n\n<{4}/{5}/actions/runs/{6}|View Run>', needs.validate.outputs.release_type, needs.validate.outputs.version, github.event.inputs.ref, needs.validate.outputs.commit_sha, github.server_url, github.repository, github.run_id) }}"
       - name: Post to Slack on prerelease success
         if: needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.release_type == 'prerelease'
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -262,7 +262,7 @@ jobs:
                   text: "${{ format('*Version:* {0}\n*Ref:* {1}\n*Install:* `pip install -i https://test.pypi.org/simple/ braintrust=={0}`\n*Package:* <https://test.pypi.org/project/braintrust/|braintrust (TestPyPI)>\n\n<{2}/{3}/actions/runs/{4}|View Run>', needs.build-and-publish.outputs.version, github.event.inputs.ref, github.server_url, github.repository, github.run_id) }}"
       - name: Post to Slack on canary success
         if: needs.validate.outputs.dry_run != 'true' && needs.validate.outputs.release_type == 'canary'
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -286,7 +286,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Post to Slack on intentional skip
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -310,7 +310,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Post to Slack on failure
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}

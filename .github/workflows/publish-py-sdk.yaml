@@ -45,7 +45,7 @@ jobs:
       release_type: ${{ steps.validate.outputs.release_type }}
       version: ${{ steps.validate.outputs.version }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || (github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref) }}
           fetch-depth: 0
@@ -86,7 +86,7 @@ jobs:
       VERSION: ${{ needs.validate.outputs.version }}
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.COMMIT_SHA }}
           fetch-depth: 0
@@ -108,7 +108,7 @@ jobs:
           path: py/dist/
           retention-days: 5
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: py/dist/
 
@@ -163,7 +163,7 @@ jobs:
       VERSION: ${{ needs.validate.outputs.version }}
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.COMMIT_SHA }}
           fetch-depth: 0
@@ -186,7 +186,7 @@ jobs:
           retention-days: 5
       - name: Publish to PyPI
         if: env.DRY_RUN != 'true'
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: py/dist/
 
@@ -237,7 +237,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Post to Slack on success
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -261,7 +261,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Post to Slack on failure
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
