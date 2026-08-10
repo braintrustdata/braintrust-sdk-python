@@ -68,6 +68,7 @@ from .framework2 import *
 from .functions.invoke import *
 from .functions.stream import *
 from .generated_types import *
+from .integrations.ai_sdk import setup_ai_sdk as setup_ai_sdk
 from .integrations.anthropic import wrap_anthropic as wrap_anthropic
 from .integrations.instructor import wrap_instructor as wrap_instructor
 from .integrations.litellm import wrap_litellm as wrap_litellm
