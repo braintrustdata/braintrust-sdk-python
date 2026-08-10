@@ -1,0 +1,662 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/apikey/login
+  response:
+    body:
+      string: '{"org_info":[{"id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"Braintrust
+        SDKs","api_url":"https://api.braintrust.dev","git_metadata":{"collect":"some","fields":["commit","branch","tag","dirty","author_name","author_email","commit_message","commit_time"]},"is_universal_api":null,"proxy_url":"https://api.braintrust.dev","realtime_url":"wss://realtime.braintrustapi.com"}]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5,
+        Content-Type, Date, X-Api-Version
+      Access-Control-Allow-Methods:
+      - GET,OPTIONS,PATCH,DELETE,POST,PUT
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '376'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-YjY0MzQwZDEtZWFkZC00YjlhLWJhNDMtYjQxYmI3NWY1MDhj''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 10 Aug 2026 15:14:16 GMT
+      Etag:
+      - '"13vsc5ye8flag"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Bt-Was-Udf-Cached:
+      - 'true'
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/apikey/login
+      X-Nonce:
+      - YjY0MzQwZDEtZWFkZC00YjlhLWJhNDMtYjQxYmI3NWY1MDhj
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::9q69z-1786374856109-0775da92bc39
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"ancestor_commits":["af25aa5dc6b2f7daf031f1f1d26d98ae70871c45"],"experiment_name":"test-git-metadata-base-v2","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","project_id":null,"project_name":"python-sdk-vcr-tests","public":false,"repo_info":{"author_email":"git-regression@braintrust.dev","author_name":"Braintrust
+      Git Regression","branch":"main","commit":"e3feac8b65efbdfc911e83cf3e6204853b6a2d8c","commit_message":"Deterministic
+      base commit","commit_time":"2024-02-01T12:00:00+00:00","dirty":false,"git_diff":null,"tag":"git-regression-base"},"update":true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '592'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/experiment/register
+  response:
+    body:
+      string: '{"project":{"id":"8b2277cd-df50-4245-b4a0-057a6ce318a9","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-vcr-tests","description":null,"created":"2026-08-10T15:11:32.568Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null},"experiment":{"id":"21a09505-aa26-44f3-b233-fe7ee9f38add","project_id":"8b2277cd-df50-4245-b4a0-057a6ce318a9","name":"test-git-metadata-base-v2","description":null,"created":"2026-08-10T15:12:33.800Z","repo_info":{"commit":"e3feac8b65efbdfc911e83cf3e6204853b6a2d8c","branch":"main","tag":"git-regression-base","dirty":false,"author_name":"Braintrust
+        Git Regression","author_email":"git-regression@braintrust.dev","commit_message":"Deterministic
+        base commit","commit_time":"2024-02-01T12:00:00+00:00"},"commit":"e3feac8b65efbdfc911e83cf3e6204853b6a2d8c","base_exp_id":null,"deleted_at":null,"dataset_id":null,"dataset_version":null,"internal_metadata":null,"parameters_id":null,"parameters_version":null,"public":false,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","metadata":null,"tags":null}}'
+    headers:
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-NDVhMzRjOGMtZGFjNi00NTg0LWI3NWQtZGY1MDA4MzUwYmQz''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 10 Aug 2026 15:14:16 GMT
+      Etag:
+      - W/"cag931vw7jtq"
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      Transfer-Encoding:
+      - chunked
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/experiment/register
+      X-Nonce:
+      - NDVhMzRjOGMtZGFjNi00NTg0LWI3NWQtZGY1MDA4MzUwYmQz
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::mmzkq-1786374856625-be06ebfc2f2f
+      content-length:
+      - '1070'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.braintrust.dev/version
+  response:
+    body:
+      string: '{"version":"2.10.0","date_version":"20260808","ff_version":44,"commit":"84828c4e229f601fc6e91542ed217ff194f184fa","deployment_mode":"lambda","deployment_type":"custom","brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"brainstore_export_enabled":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","memprof","usage"]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 10 Aug 2026 15:14:16 GMT
+      Via:
+      - 1.1 7f51f788f893911f0cd6b09d9ab21c4a.cloudfront.net (CloudFront), 1.1 a7af18c87ffc07d74544efce5f2b0f9c.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - 7EFy58deuw4TrZSmze6EhBAu6oKStH3Phwwk09jWnqfiWcyBwYH-yg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a79eac8-021bdac46025f62533259380;Parent=06b20d091dbab419;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '558'
+      etag:
+      - W/"22e-GdcVWuguVZQBIHdVwatLfQwEG2o"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - B5GfdHf3oAMEqug=
+      x-amzn-Remapped-content-length:
+      - '558'
+      x-amzn-RequestId:
+      - f4ab591a-d904-48e5-b2a9-f4179c93fcde
+      x-bt-internal-trace-id:
+      - 6a79eac8000000006301f846d092ad79
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"api_version":2,"rows":[{"experiment_id":"21a09505-aa26-44f3-b233-fe7ee9f38add","id":"10000000-0000-4000-8000-000000000001","input":{"case":"base"},"metadata":{"git_regression_case":"base"},"metrics":{},"output":{"status":"recorded"},"span_attributes":{"exec_counter":1,"name":"git-metadata-regression","type":"eval"},"span_parents":null}]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '943'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"ids":["10000000-0000-4000-8000-000000000001"],"xact_id":"1000197664115603136"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 10 Aug 2026 15:14:17 GMT
+      Via:
+      - 1.1 b8bc0bb1dae1ba3e17c1d9845e9f70c4.cloudfront.net (CloudFront), 1.1 bc9d715161855640c4738aa7390d934e.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - aOHKYfGK48jyWZ3lWeHN69t-lLicNdfkyocDc9dejxr5kcTve2qJLg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a79eac9-07a32f452f7ef7a45aa465a8;Parent=569e7c50a817eda0;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '80'
+      etag:
+      - W/"50-8QtL3rdkofnaieJXZ6uF51awGyU"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - B5GffGI6IAMEXxw=
+      x-amzn-RequestId:
+      - cb65b241-e776-4a0b-abb5-94a60d85c69e
+      x-bt-internal-trace-id:
+      - 6a79eac9000000000658b07fd4608542
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"ancestor_commits":["e3feac8b65efbdfc911e83cf3e6204853b6a2d8c","af25aa5dc6b2f7daf031f1f1d26d98ae70871c45"],"experiment_name":"test-git-metadata-feature-v2","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","project_id":null,"project_name":"python-sdk-vcr-tests","public":false,"repo_info":{"author_email":"git-regression@braintrust.dev","author_name":"Braintrust
+      Git Regression","branch":"feature/git-metadata-regression","commit":"52fc9a56dafc7af027641fb796d9a888e012066b","commit_message":"Deterministic
+      feature commit","commit_time":"2024-02-02T12:00:00+00:00","dirty":true,"git_diff":null,"tag":"git-regression-feature"},"update":true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '671'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/experiment/register
+  response:
+    body:
+      string: '{"project":{"id":"8b2277cd-df50-4245-b4a0-057a6ce318a9","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-vcr-tests","description":null,"created":"2026-08-10T15:11:32.568Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null},"experiment":{"id":"7b05ec26-59e6-431d-b6d9-6909482a35ab","project_id":"8b2277cd-df50-4245-b4a0-057a6ce318a9","name":"test-git-metadata-feature-v2","description":null,"created":"2026-08-10T15:12:35.019Z","repo_info":{"commit":"52fc9a56dafc7af027641fb796d9a888e012066b","branch":"feature/git-metadata-regression","tag":"git-regression-feature","dirty":true,"author_name":"Braintrust
+        Git Regression","author_email":"git-regression@braintrust.dev","commit_message":"Deterministic
+        feature commit","commit_time":"2024-02-02T12:00:00+00:00"},"commit":"52fc9a56dafc7af027641fb796d9a888e012066b","base_exp_id":"21a09505-aa26-44f3-b233-fe7ee9f38add","deleted_at":null,"dataset_id":null,"dataset_version":null,"internal_metadata":null,"parameters_id":null,"parameters_version":null,"public":false,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","metadata":null,"tags":null}}'
+    headers:
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-NzcyZTZiNmQtMGE5OC00YWRmLTkzMzgtYzM5NTQzYWQwMDFm''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 10 Aug 2026 15:14:17 GMT
+      Etag:
+      - W/"j5275fm1f6vn"
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      Transfer-Encoding:
+      - chunked
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/experiment/register
+      X-Nonce:
+      - NzcyZTZiNmQtMGE5OC00YWRmLTkzMzgtYzM5NTQzYWQwMDFm
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::j2mvk-1786374857798-d8add06fcf07
+      content-length:
+      - '1139'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"api_version":2,"rows":[{"experiment_id":"7b05ec26-59e6-431d-b6d9-6909482a35ab","id":"10000000-0000-4000-8000-000000000002","input":{"case":"feature-dirty"},"metadata":{"git_regression_case":"feature-dirty"},"metrics":{},"output":{"status":"recorded"},"span_attributes":{"exec_counter":2,"name":"git-metadata-regression","type":"eval"},"span_parents":null}]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '961'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/logs3
+  response:
+    body:
+      string: '{"ids":["10000000-0000-4000-8000-000000000002"],"xact_id":"1000197664115673194"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 10 Aug 2026 15:14:18 GMT
+      Via:
+      - 1.1 76283331d5eee8cee95c8c29a2095f48.cloudfront.net (CloudFront), 1.1 70fd8dd903406754b301439f9111e256.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - KXksJjKa7YyH1eU4Y16StI_rw4zPCIG6efjxSXwXm1PFcOhJ7BeGhQ==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a79eaca-3c07bd5e034fc31665d51641;Parent=1ba5bd6b13204bfb;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '80'
+      etag:
+      - W/"50-s87k1m2YoL255wuKo1rv2ETMVwM"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - B5GfpFQ8IAMEBxw=
+      x-amzn-RequestId:
+      - b6c3c3f4-9830-4f9c-9c18-a001f3bda038
+      x-bt-internal-trace-id:
+      - 6a79eaca000000007350e63e04d9e93a
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"brainstore_realtime":true,"query":{"cursor":null,"from":{"args":[{"op":"literal","value":"7b05ec26-59e6-431d-b6d9-6909482a35ab"}],"name":{"name":["experiment"],"op":"ident"},"op":"function"},"limit":1000,"select":[{"op":"star"}]},"query_source":"py_sdk_object_fetcher_experiment","use_columnstore":false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '332'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/btql
+  response:
+    body:
+      string: '{"data":[{"_pagination_key":"p07672421594721550336","_xact_id":"1000197664115673194","audit_data":[{"_xact_id":"1000197664108932421","audit_data":{"action":"upsert"},"metadata":{},"source":"api"},{"_xact_id":"1000197664115673194","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"/Users/abhijeetprasad/.superset/worktrees/698022ff-26ce-4bd5-ac6d-5978cac9c633/abhi-git-python-dep/py/.nox/test_core/lib/python3.14/site-packages/_pytest/python.py","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust-python-logger"},"name":"braintrust.sdk.python","version":"0.32.0"}},"created":"2026-08-10T15:14:17.543Z","error":null,"expected":null,"experiment_id":"7b05ec26-59e6-431d-b6d9-6909482a35ab","facets":null,"id":"10000000-0000-4000-8000-000000000002","input":{"case":"feature-dirty"},"is_root":true,"metadata":{"git_regression_case":"feature-dirty"},"metrics":{"end":1786374857.5446882,"start":1786374857.54395},"origin":null,"output":{"status":"recorded"},"project_id":"8b2277cd-df50-4245-b4a0-057a6ce318a9","root_span_id":"30b2567a7f669f951986feaeb954696f","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":2,"name":"git-metadata-regression","type":"eval"},"span_id":"c8635e1f15a33d62","span_parents":null,"tags":null}],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
+        stable, time-ordered key that can be used to paginate over experiment events.
+        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
+        transaction id of an event is unique to the network operation that processed
+        the event insertion. Transaction ids are monotonically increasing over time
+        and can be used to retrieve a versioned snapshot of the experiment (see the
+        `version` parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
+        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
+        classification identifier","type":"string"},"label":{"description":"Original
+        label of the classification item, which is useful for search and indexing
+        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
+        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
+        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
+        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
+        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"context":{"anyOf":[{"additionalProperties":{},"properties":{"caller_filename":{"description":"Name
+        of the file in code where the experiment event was created","type":["string","null"]},"caller_functionname":{"description":"The
+        function in code which created the experiment event","type":["string","null"]},"caller_lineno":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"created":{"description":"The
+        timestamp the experiment event was created","format":"date-time","type":"string"},"error":{"description":"The
+        error that occurred, if any."},"expected":{"description":"The ground truth
+        value (an arbitrary, JSON serializable object) that you''d compare to `output`
+        to determine if your `output` value is correct or not. Braintrust currently
+        does not compare `output` to `expected` for you, since there are so many different
+        ways to do that correctly. Instead, these values are just used to help you
+        navigate your experiments while digging into analyses. However, we may later
+        use these values to re-score outputs or fine-tune your models"},"experiment_id":{"description":"Unique
+        identifier for the experiment","format":"uuid","type":"string"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
+        unique identifier for the experiment event. If you don''t provide one, Braintrust
+        will generate one for you","type":"string"},"input":{"description":"The arguments
+        that uniquely define a test case (an arbitrary, JSON serializable object).
+        Later on, Braintrust will use the `input` to know whether two test cases are
+        the same between experiments, so they should not contain experiment-specific
+        state. A simple rule of thumb is that if you run the same experiment twice,
+        the `input` should be identical"},"is_root":{"description":"Whether this span
+        is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
+        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"metrics":{"anyOf":[{"additionalProperties":{"type":"number"},"properties":{"caller_filename":{"description":"This
+        metric is deprecated"},"caller_functionname":{"description":"This metric is
+        deprecated"},"caller_lineno":{"description":"This metric is deprecated"},"completion_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"end":{"description":"A
+        unix timestamp recording when the section of code which produced the experiment
+        event finished","type":["number","null"]},"prompt_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"start":{"description":"A
+        unix timestamp recording when the section of code which produced the experiment
+        event started","type":["number","null"]},"tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
+        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
+        ID of the original event.","type":["string","null"]},"created":{"description":"Created
+        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
+        of the original event.","type":"string"},"object_id":{"description":"ID of
+        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
+        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"output":{"description":"The
+        output of your application, including post-processing (an arbitrary, JSON
+        serializable object), that allows you to determine whether the result is correct
+        or not. For example, in an app that generates SQL queries, the `output` should
+        be the _result_ of the SQL query generated by the model, not the query itself,
+        because there may be multiple valid queries that answer a single question"},"project_id":{"description":"Unique
+        identifier for the project that the experiment belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
+        unique identifier for the trace this experiment event belongs to","type":"string"},"scores":{"anyOf":[{"additionalProperties":{"anyOf":[{"maximum":1,"minimum":0,"type":"number"},{"type":"null"}]},"properties":{},"type":"object"},{"type":"null"}]},"span_attributes":{"anyOf":[{"additionalProperties":{},"description":"Human-identifying
+        attributes of the span, such as name, type, etc.","properties":{"name":{"description":"Name
+        of the span, for display purposes only","type":["string","null"]},"purpose":{"anyOf":[{"enum":["scorer"],"type":"string"},{"type":"null"}]},"type":{"anyOf":[{"enum":["llm","score","function","eval","task","tool","automation","facet","preprocessor","classifier","review"],"type":"string"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"span_id":{"description":"A
+        unique identifier used to link different experiment events together as part
+        of a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
+        for full details on tracing","type":"string"},"span_parents":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"cursor":"annqykhqAAA","realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":2330,"actual_xact_id":"1000197664115673194"},"freshness_state":{"last_processed_xact_id":"1000197664108932421","last_considered_xact_id":"1000197664115673194"},"warnings":[]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 10 Aug 2026 15:14:18 GMT
+      Via:
+      - 1.1 7f51f788f893911f0cd6b09d9ab21c4a.cloudfront.net (CloudFront), 1.1 4f3eaee3896fb5ad2377261bd0d773c8.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - LfIA4zVZxsPTc95tdW7IpsuOz-VKiq8OeJmHa8EcxE73qeChOKMaaA==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a79eaca-125e559661b5bc0647b2ff6f;Parent=13eadb93e54ff07a;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - private, no-cache
+      content-length:
+      - '9266'
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - B5GfrGyNIAMEEhg=
+      x-amzn-RequestId:
+      - 1871d17c-f861-4fe0-87b0-bfbf2fe4a96e
+      x-bt-api-duration-ms:
+      - '204'
+      x-bt-brainstore-duration-ms:
+      - '155'
+      x-bt-cursor:
+      - annqykhqAAA
+      x-bt-internal-trace-id:
+      - 6a79eaca000000002fec996d6eb6decf
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"brainstore_realtime":true,"query":{"cursor":"annqykhqAAA","from":{"args":[{"op":"literal","value":"7b05ec26-59e6-431d-b6d9-6909482a35ab"}],"name":{"name":["experiment"],"op":"ident"},"op":"function"},"limit":1000,"select":[{"op":"star"}]},"query_source":"py_sdk_object_fetcher_experiment","use_columnstore":false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '341'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/btql
+  response:
+    body:
+      string: '{"data":[],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
+        stable, time-ordered key that can be used to paginate over experiment events.
+        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
+        transaction id of an event is unique to the network operation that processed
+        the event insertion. Transaction ids are monotonically increasing over time
+        and can be used to retrieve a versioned snapshot of the experiment (see the
+        `version` parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
+        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
+        classification identifier","type":"string"},"label":{"description":"Original
+        label of the classification item, which is useful for search and indexing
+        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
+        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
+        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
+        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
+        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"context":{"anyOf":[{"additionalProperties":{},"properties":{"caller_filename":{"description":"Name
+        of the file in code where the experiment event was created","type":["string","null"]},"caller_functionname":{"description":"The
+        function in code which created the experiment event","type":["string","null"]},"caller_lineno":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"created":{"description":"The
+        timestamp the experiment event was created","format":"date-time","type":"string"},"error":{"description":"The
+        error that occurred, if any."},"expected":{"description":"The ground truth
+        value (an arbitrary, JSON serializable object) that you''d compare to `output`
+        to determine if your `output` value is correct or not. Braintrust currently
+        does not compare `output` to `expected` for you, since there are so many different
+        ways to do that correctly. Instead, these values are just used to help you
+        navigate your experiments while digging into analyses. However, we may later
+        use these values to re-score outputs or fine-tune your models"},"experiment_id":{"description":"Unique
+        identifier for the experiment","format":"uuid","type":"string"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
+        unique identifier for the experiment event. If you don''t provide one, Braintrust
+        will generate one for you","type":"string"},"input":{"description":"The arguments
+        that uniquely define a test case (an arbitrary, JSON serializable object).
+        Later on, Braintrust will use the `input` to know whether two test cases are
+        the same between experiments, so they should not contain experiment-specific
+        state. A simple rule of thumb is that if you run the same experiment twice,
+        the `input` should be identical"},"is_root":{"description":"Whether this span
+        is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
+        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"metrics":{"anyOf":[{"additionalProperties":{"type":"number"},"properties":{"caller_filename":{"description":"This
+        metric is deprecated"},"caller_functionname":{"description":"This metric is
+        deprecated"},"caller_lineno":{"description":"This metric is deprecated"},"completion_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"end":{"description":"A
+        unix timestamp recording when the section of code which produced the experiment
+        event finished","type":["number","null"]},"prompt_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"start":{"description":"A
+        unix timestamp recording when the section of code which produced the experiment
+        event started","type":["number","null"]},"tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
+        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
+        ID of the original event.","type":["string","null"]},"created":{"description":"Created
+        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
+        of the original event.","type":"string"},"object_id":{"description":"ID of
+        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
+        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"output":{"description":"The
+        output of your application, including post-processing (an arbitrary, JSON
+        serializable object), that allows you to determine whether the result is correct
+        or not. For example, in an app that generates SQL queries, the `output` should
+        be the _result_ of the SQL query generated by the model, not the query itself,
+        because there may be multiple valid queries that answer a single question"},"project_id":{"description":"Unique
+        identifier for the project that the experiment belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
+        unique identifier for the trace this experiment event belongs to","type":"string"},"scores":{"anyOf":[{"additionalProperties":{"anyOf":[{"maximum":1,"minimum":0,"type":"number"},{"type":"null"}]},"properties":{},"type":"object"},{"type":"null"}]},"span_attributes":{"anyOf":[{"additionalProperties":{},"description":"Human-identifying
+        attributes of the span, such as name, type, etc.","properties":{"name":{"description":"Name
+        of the span, for display purposes only","type":["string","null"]},"purpose":{"anyOf":[{"enum":["scorer"],"type":"string"},{"type":"null"}]},"type":{"anyOf":[{"enum":["llm","score","function","eval","task","tool","automation","facet","preprocessor","classifier","review"],"type":"string"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"span_id":{"description":"A
+        unique identifier used to link different experiment events together as part
+        of a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
+        for full details on tracing","type":"string"},"span_parents":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":2330,"actual_xact_id":"1000197664115673194"},"freshness_state":{"last_processed_xact_id":"1000197664108932421","last_considered_xact_id":"1000197664115673194"},"warnings":[]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 10 Aug 2026 15:14:18 GMT
+      Via:
+      - 1.1 76283331d5eee8cee95c8c29a2095f48.cloudfront.net (CloudFront), 1.1 bc9d715161855640c4738aa7390d934e.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - VxqYgBxn9TeK-IPw66N27vRtbQA-ics2iHApaeO833j4qB8Hs7DaCg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a79eaca-561b52663497aa626244bb33;Parent=454bb788ddf17bb4;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - private, no-cache
+      content-length:
+      - '7771'
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - B5GfvHNAIAMEhVw=
+      x-amzn-RequestId:
+      - d1bb8ed4-c0d7-4494-964d-74168f17e900
+      x-bt-api-duration-ms:
+      - '264'
+      x-bt-brainstore-duration-ms:
+      - '194'
+      x-bt-internal-trace-id:
+      - 6a79eaca00000000638990b0bfc546e6
+    status:
+      code: 200
+      message: OK
+version: 1
