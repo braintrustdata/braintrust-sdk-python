@@ -10,9 +10,38 @@
             "hooks": null,
             "subtype": "initialize"
           },
-          "request_id": "req_1_91cbe10f",
+          "request_id": "req_1_794c4fca",
           "type": "control_request"
         }
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "hook_event": "SessionStart",
+        "hook_id": "05a1ba74-ad3b-4b34-9e16-d8dbbe9167c6",
+        "hook_name": "SessionStart:startup",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "hook_started",
+        "type": "system",
+        "uuid": "c0140f79-9c3a-49a8-8ef1-4a640c506632"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "exit_code": 0,
+        "hook_event": "SessionStart",
+        "hook_id": "05a1ba74-ad3b-4b34-9e16-d8dbbe9167c6",
+        "hook_name": "SessionStart:startup",
+        "outcome": "success",
+        "output": "",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "stderr": "",
+        "stdout": "",
+        "subtype": "hook_response",
+        "type": "system",
+        "uuid": "99fbd7ea-4740-4a2c-8e8a-56658098dedd"
       }
     },
     {
@@ -29,7 +58,7 @@
                 "description": "Anthropic's agentic coding tool",
                 "name": "claude-code",
                 "title": "Claude Code",
-                "version": "2.1.142",
+                "version": "2.1.221",
                 "websiteUrl": "https://claude.com/claude-code"
               },
               "protocolVersion": "2025-11-25"
@@ -38,7 +67,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "d753d656-161a-47fc-ac6c-9c8b4bca9012",
+        "request_id": "9f9d12b4-d9cd-41db-bb82-8a4710788d87",
         "type": "control_request"
       }
     },
@@ -48,7 +77,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "d753d656-161a-47fc-ac6c-9c8b4bca9012",
+            "request_id": "9f9d12b4-d9cd-41db-bb82-8a4710788d87",
             "response": {
               "mcp_response": {
                 "id": 0,
@@ -75,12 +104,12 @@
       "op": "read",
       "payload": {
         "response": {
-          "request_id": "req_1_91cbe10f",
+          "request_id": "req_1_794c4fca",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
               "apiProvider": "firstParty",
-              "tokenSource": "none"
+              "tokenSource": "claude.ai"
             },
             "agents": [],
             "available_output_styles": [],
@@ -98,7 +127,7 @@
         "kind": "json",
         "value": {
           "message": {
-            "content": "What is 15 multiplied by 7? Then subtract 5 from the result.",
+            "content": "What is 15 multiplied by 7? Then subtract 5 from the result. You must use the calculator MCP tool for both operations in order; do not calculate directly.",
             "role": "user"
           },
           "parent_tool_use_id": null,
@@ -118,7 +147,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "c3a54215-23ed-47a6-865e-29f8f069e3c4",
+        "request_id": "d63c1596-7777-4da7-a7cb-cc3495765b1c",
         "type": "control_request"
       }
     },
@@ -128,67 +157,11 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "c3a54215-23ed-47a6-865e-29f8f069e3c4",
+            "request_id": "d63c1596-7777-4da7-a7cb-cc3495765b1c",
             "response": {
               "mcp_response": {
                 "jsonrpc": "2.0",
                 "result": {}
-              }
-            },
-            "subtype": "success"
-          },
-          "type": "control_response"
-        }
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
-        "request": {
-          "message": {
-            "id": 0,
-            "jsonrpc": "2.0",
-            "method": "initialize",
-            "params": {
-              "capabilities": {},
-              "clientInfo": {
-                "description": "Anthropic's agentic coding tool",
-                "name": "claude-code",
-                "title": "Claude Code",
-                "version": "2.1.142",
-                "websiteUrl": "https://claude.com/claude-code"
-              },
-              "protocolVersion": "2025-11-25"
-            }
-          },
-          "server_name": "calculator",
-          "subtype": "mcp_message"
-        },
-        "request_id": "f82268a6-bd01-41dc-aab9-14c0a8a9977b",
-        "type": "control_request"
-      }
-    },
-    {
-      "op": "write",
-      "payload": {
-        "kind": "json",
-        "value": {
-          "response": {
-            "request_id": "f82268a6-bd01-41dc-aab9-14c0a8a9977b",
-            "response": {
-              "mcp_response": {
-                "id": 0,
-                "jsonrpc": "2.0",
-                "result": {
-                  "capabilities": {
-                    "tools": {}
-                  },
-                  "protocolVersion": "2024-11-05",
-                  "serverInfo": {
-                    "name": "calculator",
-                    "version": "1.0.0"
-                  }
-                }
               }
             },
             "subtype": "success"
@@ -209,7 +182,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "d8fbcfa4-d04e-45d6-a393-07d6e0b02b8c",
+        "request_id": "4d80ea33-22c0-4440-84c5-d65239844f09",
         "type": "control_request"
       }
     },
@@ -219,7 +192,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "d8fbcfa4-d04e-45d6-a393-07d6e0b02b8c",
+            "request_id": "4d80ea33-22c0-4440-84c5-d65239844f09",
             "response": {
               "mcp_response": {
                 "id": 1,
@@ -271,40 +244,6 @@
     {
       "op": "read",
       "payload": {
-        "request": {
-          "message": {
-            "jsonrpc": "2.0",
-            "method": "notifications/initialized"
-          },
-          "server_name": "calculator",
-          "subtype": "mcp_message"
-        },
-        "request_id": "17eeac60-91df-4fd0-9328-41962c081c53",
-        "type": "control_request"
-      }
-    },
-    {
-      "op": "write",
-      "payload": {
-        "kind": "json",
-        "value": {
-          "response": {
-            "request_id": "17eeac60-91df-4fd0-9328-41962c081c53",
-            "response": {
-              "mcp_response": {
-                "jsonrpc": "2.0",
-                "result": {}
-              }
-            },
-            "subtype": "success"
-          },
-          "type": "control_response"
-        }
-      }
-    },
-    {
-      "op": "read",
-      "payload": {
         "agents": [
           "claude",
           "Explore",
@@ -314,14 +253,16 @@
         ],
         "analytics_disabled": false,
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.142",
+        "capabilities": [
+          "interrupt_receipt_v1",
+          "interrupt_cancel_queued_v1",
+          "msg_lifecycle_v1"
+        ],
+        "claude_code_version": "2.1.221",
         "cwd": "<REDACTED_CWD>",
+        "fast_mode_disabled_reason": "sdk_opt_in_required",
         "fast_mode_state": "off",
         "mcp_servers": [
-          {
-            "name": "braintrust",
-            "status": "connected"
-          },
           {
             "name": "linear-server",
             "status": "connected"
@@ -341,78 +282,107 @@
           {
             "name": "rust-analyzer-lsp",
             "path": "<REDACTED_PATH>",
-            "source": "rust-analyzer-lsp@claude-plugins-official"
+            "source": "rust-analyzer-lsp@claude-plugins-official",
+            "version": "1.0.0"
           }
         ],
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
+        "product_feedback_disabled": false,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
         "skills": [
-          "create-braintrust-demo",
           "braintrust",
+          "create-braintrust-demo",
+          "commit-message",
+          "sdk-benchmarking",
+          "sdk-ci-triage",
           "sdk-dependency-updates",
           "sdk-integrations",
           "sdk-vcr-workflows",
-          "sdk-ci-triage",
-          "commit-message",
-          "sdk-benchmarking",
+          "design-sync",
+          "dataviz",
           "update-config",
+          "verify",
           "debug",
+          "code-review",
           "simplify",
           "batch",
           "fewer-permission-prompts",
-          "loop",
-          "claude-api"
-        ],
-        "slash_commands": [
-          "create-braintrust-demo",
-          "braintrust",
-          "sdk-dependency-updates",
-          "sdk-integrations",
-          "sdk-vcr-workflows",
-          "sdk-ci-triage",
-          "commit-message",
-          "sdk-benchmarking",
-          "update-config",
-          "debug",
-          "simplify",
-          "batch",
-          "fewer-permission-prompts",
+          "doctor",
           "loop",
           "claude-api",
+          "run",
+          "run-skill-generator"
+        ],
+        "slash_commands": [
+          "braintrust",
+          "create-braintrust-demo",
+          "commit-message",
+          "sdk-benchmarking",
+          "sdk-ci-triage",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "design-sync",
+          "dataviz",
+          "update-config",
+          "verify",
+          "debug",
+          "code-review",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "doctor",
+          "loop",
+          "claude-api",
+          "run",
+          "run-skill-generator",
+          "agents",
+          "autocompact",
           "clear",
+          "color",
           "compact",
+          "config",
           "context",
+          "effort",
+          "fast",
           "heapdump",
           "init",
+          "mcp",
+          "import",
+          "model",
+          "__remote-workflow",
+          "workflow-launch-exec",
+          "reload-skills",
+          "rename",
           "review",
           "security-review",
           "usage",
           "insights",
+          "recap",
           "goal",
+          "design",
+          "design-consent",
+          "design-revoke",
           "team-onboarding"
         ],
         "subtype": "init",
         "tools": [
           "Task",
-          "AskUserQuestion",
           "Bash",
           "CronCreate",
           "CronDelete",
           "CronList",
+          "DesignSync",
           "Edit",
-          "EnterPlanMode",
           "EnterWorktree",
-          "ExitPlanMode",
           "ExitWorktree",
-          "Glob",
-          "Grep",
-          "ListMcpResourcesTool",
           "LSP",
           "Monitor",
           "NotebookEdit",
           "PushNotification",
           "Read",
-          "ReadMcpResourceTool",
+          "ReportFindings",
           "ScheduleWakeup",
+          "SendMessage",
           "Skill",
           "TaskCreate",
           "TaskGet",
@@ -424,23 +394,19 @@
           "WebFetch",
           "WebSearch",
           "Write",
-          "mcp__braintrust__generate_permalink",
-          "mcp__braintrust__infer_schema",
-          "mcp__braintrust__list_recent_objects",
-          "mcp__braintrust__resolve_object",
-          "mcp__braintrust__search_docs",
-          "mcp__braintrust__sql_query",
-          "mcp__braintrust__summarize_experiment",
           "mcp__calculator__calculator",
           "mcp__linear-server__create_attachment",
           "mcp__linear-server__create_attachment_from_upload",
+          "mcp__linear-server__create_initiative_label",
           "mcp__linear-server__create_issue_label",
           "mcp__linear-server__delete_attachment",
           "mcp__linear-server__delete_comment",
           "mcp__linear-server__delete_customer",
           "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_diff_comment",
           "mcp__linear-server__delete_status_update",
           "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_agent_skill",
           "mcp__linear-server__get_attachment",
           "mcp__linear-server__get_diff",
           "mcp__linear-server__get_diff_threads",
@@ -450,14 +416,19 @@
           "mcp__linear-server__get_issue_status",
           "mcp__linear-server__get_milestone",
           "mcp__linear-server__get_project",
+          "mcp__linear-server__get_release",
+          "mcp__linear-server__get_release_note",
           "mcp__linear-server__get_status_updates",
           "mcp__linear-server__get_team",
           "mcp__linear-server__get_user",
+          "mcp__linear-server__get_workspace",
+          "mcp__linear-server__list_agent_skills",
           "mcp__linear-server__list_comments",
           "mcp__linear-server__list_customers",
           "mcp__linear-server__list_cycles",
           "mcp__linear-server__list_diffs",
           "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiative_labels",
           "mcp__linear-server__list_initiatives",
           "mcp__linear-server__list_issue_labels",
           "mcp__linear-server__list_issue_statuses",
@@ -465,22 +436,257 @@
           "mcp__linear-server__list_milestones",
           "mcp__linear-server__list_project_labels",
           "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_release_notes",
+          "mcp__linear-server__list_release_pipelines",
+          "mcp__linear-server__list_releases",
           "mcp__linear-server__list_teams",
           "mcp__linear-server__list_users",
+          "mcp__linear-server__merge_diff",
           "mcp__linear-server__prepare_attachment_upload",
+          "mcp__linear-server__resolve_diff_thread",
           "mcp__linear-server__save_comment",
           "mcp__linear-server__save_customer",
           "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_diff_comment",
           "mcp__linear-server__save_document",
           "mcp__linear-server__save_initiative",
           "mcp__linear-server__save_issue",
           "mcp__linear-server__save_milestone",
           "mcp__linear-server__save_project",
+          "mcp__linear-server__save_release",
+          "mcp__linear-server__save_release_note",
           "mcp__linear-server__save_status_update",
-          "mcp__linear-server__search_documentation"
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__submit_diff_review"
         ],
         "type": "system",
-        "uuid": "3f6cb2af-f837-4c20-9c65-d3533b01be5f"
+        "uuid": "32015a3b-3d26-45d7-a838-2540b983c020"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "status": "requesting",
+        "subtype": "status",
+        "type": "system",
+        "uuid": "8d6bdf95-0c47-42dd-b8da-a9cfcb785a34"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "message": {
+            "content": [],
+            "diagnostics": null,
+            "id": "msg_011CduQFwRB6kQFY7QFEMHPW",
+            "model": "claude-haiku-4-5-20251001",
+            "role": "assistant",
+            "stop_details": null,
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 7968
+              },
+              "cache_creation_input_tokens": 7968,
+              "cache_read_input_tokens": 9310,
+              "inference_geo": "not_available",
+              "input_tokens": 10,
+              "output_tokens": 3,
+              "service_tier": "standard"
+            }
+          },
+          "type": "message_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "ttft_ms": 816,
+        "type": "stream_event",
+        "uuid": "3e953d71-4588-4419-be70-564bdc20ec4f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "thinking": "",
+            "type": "thinking"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "a88bc887-6945-4f4d-8fca-2da2e63c84ab"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 4,
+        "estimated_tokens_delta": 4,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "01b3a4cc-d953-4206-9a19-3a7288b4b145"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "The user wants",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "a530b614-2d2b-4d60-b814-b28f5a889336"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 6,
+        "estimated_tokens_delta": 2,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "6de4f574-ebc4-4471-b1cc-bcbcd5722091"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": " me to:",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "2a9d62ef-d3e8-4b6e-aaee-986a5d608659"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 45,
+        "estimated_tokens_delta": 39,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "9d47372a-6441-4f73-8064-b490f708755c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "\n1. Multiply 15 by 7 using the calculator MCP tool\n2. Subtract 5 from the result using the calculator MCP tool\n3. I should use the tool for both operations,",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "8b25aac8-1136-4689-9f04-1d7f4ad59fd1"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 78,
+        "estimated_tokens_delta": 33,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "73c00dd4-7ac2-4ff9-a3ed-0b39aa100e0b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": " not calculate directly\n\nFirst, I need to load the calculator tool schema using ToolSearch since it's in the deferred tools list.",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "7817d2f5-ee20-440c-a4aa-96d50b9e0e79"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "684398ad-9f77-4665-9e02-9e0a5522dc3b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 140,
+        "estimated_tokens_delta": 62,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "ff3b2ffc-ed62-4aba-9286-e01dce30ca46"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "type": "signature_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "853d12ad-c026-4c4a-bfd5-3eea031633c6"
       }
     },
     {
@@ -490,13 +696,13 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The user is asking me to:\n1. Calculate 15 multiplied by 7\n2. Subtract 5 from the result\n\nI have a calculator tool available (mcp__calculator__calculator) that can help with this. Let me use it.\n\nFirst, I'll multiply 15 by 7:\n15 * 7 = 105\n\nThen I'll subtract 5 from 105:\n105 - 5 = 100\n\nLet me use the calculator tool to do this.",
+              "thinking": "The user wants me to:\n1. Multiply 15 by 7 using the calculator MCP tool\n2. Subtract 5 from the result using the calculator MCP tool\n3. I should use the tool for both operations, not calculate directly\n\nFirst, I need to load the calculator tool schema using ToolSearch since it's in the deferred tools list.",
               "type": "thinking"
             }
           ],
           "context_management": null,
           "diagnostics": null,
-          "id": "msg_01DwPD3GgcGBZcg5NdzSNXsU",
+          "id": "msg_011CduQFwRB6kQFY7QFEMHPW",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -506,21 +712,229 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 44678
+              "ephemeral_5m_input_tokens": 7968
             },
-            "cache_creation_input_tokens": 44678,
-            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 7968,
+            "cache_read_input_tokens": 9310,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 7,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "request_id": "req_011CbC7Voev5n1eRQF6cEwLi",
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
+        "request_id": "req_011CduQFvvekwx92jXZasRZd",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:24.845Z",
         "type": "assistant",
-        "uuid": "e5f9f36e-a79f-43e3-b661-4c5986930b41"
+        "uuid": "5409dfb1-af92-4059-a056-ddec102a84b7"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 0,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "eb5fc07e-59c3-4edc-9e5c-6cbfa9966aa5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "text": "",
+            "type": "text"
+          },
+          "index": 1,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "56a7ff73-c13a-41b7-b7fe-31f1e1817777"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": "I'll use the calculator MCP tool to perform these operations. First, let me load the tool schema.",
+            "type": "text_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "741334b2-1547-4c70-a7be-7af4a5e4a374"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "text": "I'll use the calculator MCP tool to perform these operations. First, let me load the tool schema.",
+              "type": "text"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CduQFwRB6kQFY7QFEMHPW",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 7968
+            },
+            "cache_creation_input_tokens": 7968,
+            "cache_read_input_tokens": 9310,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CduQFvvekwx92jXZasRZd",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:24.849Z",
+        "type": "assistant",
+        "uuid": "f0443f52-e96a-4855-8cf9-4349dcc2a262"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 1,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "a4101812-d39f-4299-8412-54268a6e843f"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "caller": {
+              "type": "direct"
+            },
+            "id": "toolu_01TZAKVGw1q3H5Hi1gZfbgqw",
+            "input": {},
+            "name": "ToolSearch",
+            "type": "tool_use"
+          },
+          "index": 2,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "05a6379e-230a-4a82-9c4e-21ed6497b08e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "",
+            "type": "input_json_delta"
+          },
+          "index": 2,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "40d4337c-9aa6-4371-adfe-5b20a5a3e979"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "{\"query\": \"select",
+            "type": "input_json_delta"
+          },
+          "index": 2,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "e4fe3025-e5d2-48f4-a286-220b9f69e540"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": ":mcp__calculator__calculator",
+            "type": "input_json_delta"
+          },
+          "index": 2,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "80a79c35-3a15-4dd2-bea5-ff07f9a87ab4"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "\", \"max_results\": 1",
+            "type": "input_json_delta"
+          },
+          "index": 2,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "d70f2123-b900-4ba3-a934-382bbb8cdb95"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "}",
+            "type": "input_json_delta"
+          },
+          "index": 2,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "e53e9ea8-e82c-4a68-a8b2-8a40a88f4dd6"
       }
     },
     {
@@ -532,7 +946,494 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01LpaCWLeKNFQ8yoWYMEjid1",
+              "id": "toolu_01TZAKVGw1q3H5Hi1gZfbgqw",
+              "input": {
+                "max_results": 1,
+                "query": "select:mcp__calculator__calculator"
+              },
+              "name": "ToolSearch",
+              "type": "tool_use"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CduQFwRB6kQFY7QFEMHPW",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 7968
+            },
+            "cache_creation_input_tokens": 7968,
+            "cache_read_input_tokens": 9310,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CduQFvvekwx92jXZasRZd",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:25.212Z",
+        "type": "assistant",
+        "uuid": "f48ee775-6d44-4c92-9d3e-4d7f31668a16"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 2,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "f51f2591-26ff-489a-be9b-1fccd48303a1"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "context_management": {
+            "applied_edits": []
+          },
+          "delta": {
+            "stop_details": null,
+            "stop_reason": "tool_use",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "cache_creation_input_tokens": 7968,
+            "cache_read_input_tokens": 9310,
+            "input_tokens": 10,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 7968
+                },
+                "cache_creation_input_tokens": 7968,
+                "cache_read_input_tokens": 9310,
+                "input_tokens": 10,
+                "output_tokens": 191,
+                "type": "message"
+              }
+            ],
+            "output_tokens": 191,
+            "output_tokens_details": {
+              "thinking_tokens": 86
+            }
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "780d05dc-30e0-440e-b02a-885c99c3827b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "type": "message_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "33021dbe-97c1-493b-8f42-637fc3b305f2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "content": [
+                {
+                  "tool_name": "mcp__calculator__calculator",
+                  "type": "tool_reference"
+                }
+              ],
+              "tool_use_id": "toolu_01TZAKVGw1q3H5Hi1gZfbgqw",
+              "type": "tool_result"
+            }
+          ],
+          "role": "user"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:25.408Z",
+        "tool_use_result": {
+          "matches": [
+            "mcp__calculator__calculator"
+          ],
+          "query": "select:mcp__calculator__calculator",
+          "total_deferred_tools": 83
+        },
+        "type": "user",
+        "uuid": "60601c87-63d1-48aa-8414-cd5b7f2542e9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "status": "requesting",
+        "subtype": "status",
+        "type": "system",
+        "uuid": "929e97ec-dfe0-4b35-b62a-83c027c342f6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "message": {
+            "content": [],
+            "diagnostics": null,
+            "id": "msg_011CduQG7FGUZDLiEcbc2WK2",
+            "model": "claude-haiku-4-5-20251001",
+            "role": "assistant",
+            "stop_details": null,
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 348
+              },
+              "cache_creation_input_tokens": 348,
+              "cache_read_input_tokens": 17278,
+              "inference_geo": "not_available",
+              "input_tokens": 10,
+              "output_tokens": 1,
+              "service_tier": "standard"
+            }
+          },
+          "type": "message_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "ttft_ms": 607,
+        "type": "stream_event",
+        "uuid": "13c31e0c-8b6c-4432-ae92-5d3b70e78797"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "thinking": "",
+            "type": "thinking"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "a012b715-b4d0-4aab-9ec9-462a8fd58de0"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 1,
+        "estimated_tokens_delta": 1,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "91664dc5-f7f3-4452-8417-526c1bac2573"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "Good",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "cedbb695-9792-42df-9bbc-bee243c836ea"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 35,
+        "estimated_tokens_delta": 34,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "24fa4699-fbb0-4c72-be89-7a257258dfd6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": ", now I have the calculator tool schema. Let me perform the operations:\n1. First: multiply 15 by 7\n2. Then: subtract 5 from the result",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "1578667d-fb43-4b03-9d55-09d512aee91b"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 43,
+        "estimated_tokens_delta": 8,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "ea32b5c5-05b6-4cc6-967e-a42a6b887294"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "\n\nLet me do the first operation.",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "b61b7ad9-4020-4b51-b47f-2d0057539285"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 106,
+        "estimated_tokens_delta": 63,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "106bbe6a-3e3e-452d-bc56-75282dc16d45"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "type": "signature_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "1c21a0ef-fa76-46ac-8586-445945a2baa3"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Good, now I have the calculator tool schema. Let me perform the operations:\n1. First: multiply 15 by 7\n2. Then: subtract 5 from the result\n\nLet me do the first operation.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CduQG7FGUZDLiEcbc2WK2",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 348
+            },
+            "cache_creation_input_tokens": 348,
+            "cache_read_input_tokens": 17278,
+            "inference_geo": "not_available",
+            "input_tokens": 10,
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CduQG6imELH3EhZWHohj3",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:26.761Z",
+        "type": "assistant",
+        "uuid": "d570b5ed-a05d-43d6-91f0-0367ebce2ad5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 0,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "6192e5bc-d31a-4eda-899a-a1d6aae973ff"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "caller": {
+              "type": "direct"
+            },
+            "id": "toolu_0111F8QYQdeiTkpRGntVoBsk",
+            "input": {},
+            "name": "mcp__calculator__calculator",
+            "type": "tool_use"
+          },
+          "index": 1,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "875440c1-1bcb-44ae-9c79-e3a6c1e73534"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "c03f0514-0585-4c23-ae79-1e5d2c0dd6a6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "{\"operation\": \"multiply",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "9a18a8a8-8438-4239-9b67-19a249fc4b79"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "\", \"a\": 15",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "d64760c3-354f-404f-9e4d-3f35d841206c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": ", \"b\": 7",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "d6a866aa-0736-47ff-85bc-413bae65d55a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "}",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "9a3644ad-8a71-4bf1-a93b-37f4da1d4c04"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "caller": {
+                "type": "direct"
+              },
+              "id": "toolu_0111F8QYQdeiTkpRGntVoBsk",
               "input": {
                 "a": 15,
                 "b": 7,
@@ -544,7 +1445,7 @@
           ],
           "context_management": null,
           "diagnostics": null,
-          "id": "msg_01DwPD3GgcGBZcg5NdzSNXsU",
+          "id": "msg_011CduQG7FGUZDLiEcbc2WK2",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -554,21 +1455,29 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 44678
+              "ephemeral_5m_input_tokens": 348
             },
-            "cache_creation_input_tokens": 44678,
-            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 348,
+            "cache_read_input_tokens": 17278,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 7,
+            "output_tokens": 1,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "request_id": "req_011CbC7Voev5n1eRQF6cEwLi",
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
+        "request_id": "req_011CduQG6imELH3EhZWHohj3",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:26.851Z",
+        "tool_use_meta": [
+          {
+            "display_name": "Calculator",
+            "id": "toolu_0111F8QYQdeiTkpRGntVoBsk",
+            "server_display_name": "calculator"
+          }
+        ],
         "type": "assistant",
-        "uuid": "a31d2a29-2c3d-46a5-a359-fffe0f07333e"
+        "uuid": "de7e544e-327a-4c3f-9402-35083af790c9"
       }
     },
     {
@@ -581,7 +1490,7 @@
             "method": "tools/call",
             "params": {
               "_meta": {
-                "claudecode/toolUseId": "toolu_01LpaCWLeKNFQ8yoWYMEjid1",
+                "claudecode/toolUseId": "toolu_0111F8QYQdeiTkpRGntVoBsk",
                 "progressToken": 2
               },
               "arguments": {
@@ -595,7 +1504,7 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "9aaa0bf1-3ff0-42e9-abc2-fb668f1f26da",
+        "request_id": "eb8f6e07-a846-48d4-9155-4d9d5317f258",
         "type": "control_request"
       }
     },
@@ -605,7 +1514,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "9aaa0bf1-3ff0-42e9-abc2-fb668f1f26da",
+            "request_id": "eb8f6e07-a846-48d4-9155-4d9d5317f258",
             "response": {
               "mcp_response": {
                 "id": 2,
@@ -629,6 +1538,73 @@
     {
       "op": "read",
       "payload": {
+        "event": {
+          "index": 1,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "1d5cc096-d827-4fb7-9231-a05cc00ad7a8"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "context_management": {
+            "applied_edits": []
+          },
+          "delta": {
+            "stop_details": null,
+            "stop_reason": "tool_use",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "cache_creation_input_tokens": 348,
+            "cache_read_input_tokens": 17278,
+            "input_tokens": 10,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 348
+                },
+                "cache_creation_input_tokens": 348,
+                "cache_read_input_tokens": 17278,
+                "input_tokens": 10,
+                "output_tokens": 146,
+                "type": "message"
+              }
+            ],
+            "output_tokens": 146,
+            "output_tokens_details": {
+              "thinking_tokens": 53
+            }
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "e8b5bb24-6e56-4e80-b332-ce2ddc172e78"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "type": "message_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "d8e68b25-6eec-445f-a65d-0a6523538713"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
         "message": {
           "content": [
             {
@@ -638,15 +1614,15 @@
                   "type": "text"
                 }
               ],
-              "tool_use_id": "toolu_01LpaCWLeKNFQ8yoWYMEjid1",
+              "tool_use_id": "toolu_0111F8QYQdeiTkpRGntVoBsk",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
         "parent_tool_use_id": null,
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
-        "timestamp": "2026-05-19T14:49:21.682Z",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:27.020Z",
         "tool_use_result": [
           {
             "text": "The result of multiply(15, 7) is 105",
@@ -654,7 +1630,318 @@
           }
         ],
         "type": "user",
-        "uuid": "9686c823-1472-4980-9221-8fd4abed53a6"
+        "uuid": "b81d57c4-e64f-40e8-9315-d6cdf55edf88"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "status": "requesting",
+        "subtype": "status",
+        "type": "system",
+        "uuid": "ee544430-4ecc-42b1-bd83-f442853ecae2"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "message": {
+            "content": [],
+            "diagnostics": null,
+            "id": "msg_011CduQGEByr7wexPetXQzBy",
+            "model": "claude-haiku-4-5-20251001",
+            "role": "assistant",
+            "stop_details": null,
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 180
+              },
+              "cache_creation_input_tokens": 180,
+              "cache_read_input_tokens": 17626,
+              "inference_geo": "not_available",
+              "input_tokens": 8,
+              "output_tokens": 3,
+              "service_tier": "standard"
+            }
+          },
+          "type": "message_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "ttft_ms": 631,
+        "type": "stream_event",
+        "uuid": "f99dce0e-dee8-48c1-a488-e32e8a8180c9"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "thinking": "",
+            "type": "thinking"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "a632071e-370a-4960-bd37-9cf955015fa6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 2,
+        "estimated_tokens_delta": 2,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "bdb16e44-085d-4e33-bd56-0a12f8a8e47d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "Great! ",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "76b57ac6-838b-476d-9dd8-11c1f3e840d5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 14,
+        "estimated_tokens_delta": 12,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "4f7631ff-d0e5-4073-b562-4dc1a77e76f5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "15 \u00d7 7 = 105. Now I need to subtract 5 from 105.",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "f72124b1-acbf-424d-ae20-1f55a4ad0ada"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 78,
+        "estimated_tokens_delta": 64,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "35233214-6619-4631-bd03-e401713e80b7"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "type": "signature_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "a2b23cbc-4c80-4f2f-9ae0-e485257d1cb5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "message": {
+          "content": [
+            {
+              "signature": "<REDACTED_SIGNATURE>",
+              "thinking": "Great! 15 \u00d7 7 = 105. Now I need to subtract 5 from 105.",
+              "type": "thinking"
+            }
+          ],
+          "context_management": null,
+          "diagnostics": null,
+          "id": "msg_011CduQGEByr7wexPetXQzBy",
+          "model": "claude-haiku-4-5-20251001",
+          "role": "assistant",
+          "stop_details": null,
+          "stop_reason": null,
+          "stop_sequence": null,
+          "type": "message",
+          "usage": {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 180
+            },
+            "cache_creation_input_tokens": 180,
+            "cache_read_input_tokens": 17626,
+            "inference_geo": "not_available",
+            "input_tokens": 8,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "parent_tool_use_id": null,
+        "request_id": "req_011CduQGDU56gpe4GQ6gNg9W",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:27.987Z",
+        "type": "assistant",
+        "uuid": "c0cf1d8f-4458-4b8d-a741-036177d60008"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 0,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "174244c6-d10c-41cb-b9c2-36d7c65d33c6"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "caller": {
+              "type": "direct"
+            },
+            "id": "toolu_012zmqkutjE5saqvVoGSY7ux",
+            "input": {},
+            "name": "mcp__calculator__calculator",
+            "type": "tool_use"
+          },
+          "index": 1,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "efa4991e-a66a-400f-bcd5-7e7051c50c03"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "758e2e14-ca03-4275-aca2-66c028f83750"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "{\"operation\": \"subtract",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "92e61dca-c159-46b6-b710-03ec4c67be12"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "\", \"a\": 105",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "1f6906a7-60c6-4e57-9daf-08a8ac52b73c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": ", \"b\": 5",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "9d48574e-6ee1-4ef7-8bc5-7b61b83e44b4"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "partial_json": "}",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "c5673224-fdfc-4763-b2a6-c5dfc73b0e01"
       }
     },
     {
@@ -666,7 +1953,7 @@
               "caller": {
                 "type": "direct"
               },
-              "id": "toolu_01U4sNYME2jBLMUUZ6TvtJEF",
+              "id": "toolu_012zmqkutjE5saqvVoGSY7ux",
               "input": {
                 "a": 105,
                 "b": 5,
@@ -678,7 +1965,7 @@
           ],
           "context_management": null,
           "diagnostics": null,
-          "id": "msg_01DwPD3GgcGBZcg5NdzSNXsU",
+          "id": "msg_011CduQGEByr7wexPetXQzBy",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -688,21 +1975,29 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 44678
+              "ephemeral_5m_input_tokens": 180
             },
-            "cache_creation_input_tokens": 44678,
-            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 180,
+            "cache_read_input_tokens": 17626,
             "inference_geo": "not_available",
-            "input_tokens": 10,
-            "output_tokens": 7,
+            "input_tokens": 8,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "request_id": "req_011CbC7Voev5n1eRQF6cEwLi",
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
+        "request_id": "req_011CduQGDU56gpe4GQ6gNg9W",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:28.175Z",
+        "tool_use_meta": [
+          {
+            "display_name": "Calculator",
+            "id": "toolu_012zmqkutjE5saqvVoGSY7ux",
+            "server_display_name": "calculator"
+          }
+        ],
         "type": "assistant",
-        "uuid": "a1e7184e-f26d-4e83-b6fc-7e58da27a09a"
+        "uuid": "200081e4-8758-4aac-88f9-6caef64e93bc"
       }
     },
     {
@@ -715,7 +2010,7 @@
             "method": "tools/call",
             "params": {
               "_meta": {
-                "claudecode/toolUseId": "toolu_01U4sNYME2jBLMUUZ6TvtJEF",
+                "claudecode/toolUseId": "toolu_012zmqkutjE5saqvVoGSY7ux",
                 "progressToken": 3
               },
               "arguments": {
@@ -729,8 +2024,21 @@
           "server_name": "calculator",
           "subtype": "mcp_message"
         },
-        "request_id": "463385a9-9b81-4699-9927-ba68cc9fd6b7",
+        "request_id": "4569a707-fb5b-4ea3-b98a-58fa86247e55",
         "type": "control_request"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 1,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "1a50f292-9fb7-433a-867e-e3a8b7f46933"
       }
     },
     {
@@ -739,7 +2047,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "463385a9-9b81-4699-9927-ba68cc9fd6b7",
+            "request_id": "4569a707-fb5b-4ea3-b98a-58fa86247e55",
             "response": {
               "mcp_response": {
                 "id": 3,
@@ -763,6 +2071,60 @@
     {
       "op": "read",
       "payload": {
+        "event": {
+          "context_management": {
+            "applied_edits": []
+          },
+          "delta": {
+            "stop_details": null,
+            "stop_reason": "tool_use",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "cache_creation_input_tokens": 180,
+            "cache_read_input_tokens": 17626,
+            "input_tokens": 8,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 180
+                },
+                "cache_creation_input_tokens": 180,
+                "cache_read_input_tokens": 17626,
+                "input_tokens": 8,
+                "output_tokens": 123,
+                "type": "message"
+              }
+            ],
+            "output_tokens": 123,
+            "output_tokens_details": {
+              "thinking_tokens": 30
+            }
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "a1467955-83cb-4a9b-bc92-fb3f4b4cfe3a"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "type": "message_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "64e4b58c-7d48-4734-aba1-b707be5a586d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
         "message": {
           "content": [
             {
@@ -772,15 +2134,15 @@
                   "type": "text"
                 }
               ],
-              "tool_use_id": "toolu_01U4sNYME2jBLMUUZ6TvtJEF",
+              "tool_use_id": "toolu_012zmqkutjE5saqvVoGSY7ux",
               "type": "tool_result"
             }
           ],
           "role": "user"
         },
         "parent_tool_use_id": null,
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
-        "timestamp": "2026-05-19T14:49:21.932Z",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:28.369Z",
         "tool_use_result": [
           {
             "text": "The result of subtract(105, 5) is 100",
@@ -788,7 +2150,186 @@
           }
         ],
         "type": "user",
-        "uuid": "a46afcd5-6f13-4214-8606-956d47d0ec17"
+        "uuid": "691fdbf0-caeb-4986-ad50-d78682902591"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "status": "requesting",
+        "subtype": "status",
+        "type": "system",
+        "uuid": "877c6ec9-b329-40d1-9304-38479e47299c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "message": {
+            "content": [],
+            "diagnostics": null,
+            "id": "msg_011CduQGKpK8BTWTkAWknSwM",
+            "model": "claude-haiku-4-5-20251001",
+            "role": "assistant",
+            "stop_details": null,
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 155
+              },
+              "cache_creation_input_tokens": 155,
+              "cache_read_input_tokens": 17806,
+              "inference_geo": "not_available",
+              "input_tokens": 8,
+              "output_tokens": 3,
+              "service_tier": "standard"
+            }
+          },
+          "type": "message_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "ttft_ms": 584,
+        "type": "stream_event",
+        "uuid": "3c255cfa-119c-4e69-b3ed-b89db0748904"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "thinking": "",
+            "type": "thinking"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "ba0159d5-9fe7-48d3-ba8a-ca192eec81aa"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 3,
+        "estimated_tokens_delta": 3,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "1521c929-8893-4889-bf95-be82dd5f4b62"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": "Perfect! The",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "31b1fac0-fb16-4d56-8c32-a90e25a0e82e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 6,
+        "estimated_tokens_delta": 3,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "c329c4ec-0000-4256-b40a-ee24ba1733dd"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": " calculator",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "c0acc88a-0ccc-4dd4-9f5a-b4e2c78d159d"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 29,
+        "estimated_tokens_delta": 23,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "c939db1c-079b-4983-a29f-404e65cc7ad5"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "estimated_tokens": null,
+            "thinking": " tool performed both operations:\n1. 15 \u00d7 7 = 105\n2. 105 - 5 = 100\n\nThe final answer is 100.",
+            "type": "thinking_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "5894b5d8-7eec-409d-99b0-b931d8c79d0e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 93,
+        "estimated_tokens_delta": 64,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "e7109084-6bcd-43f3-89aa-1fa347ca969c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "signature": "<REDACTED_SIGNATURE>",
+            "type": "signature_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "b7e5f969-2638-41dd-b537-eb8ca8ec245f"
       }
     },
     {
@@ -798,13 +2339,13 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "Great! The calculations are done:\n- 15 \u00d7 7 = 105\n- 105 - 5 = 100\n\nSo the final answer is 100.",
+              "thinking": "Perfect! The calculator tool performed both operations:\n1. 15 \u00d7 7 = 105\n2. 105 - 5 = 100\n\nThe final answer is 100.",
               "type": "thinking"
             }
           ],
           "context_management": null,
           "diagnostics": null,
-          "id": "msg_01BLdFiureh3DEprWKdGE6fx",
+          "id": "msg_011CduQGKpK8BTWTkAWknSwM",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -814,21 +2355,86 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 386
+              "ephemeral_5m_input_tokens": 155
             },
-            "cache_creation_input_tokens": 386,
-            "cache_read_input_tokens": 44678,
+            "cache_creation_input_tokens": 155,
+            "cache_read_input_tokens": 17806,
             "inference_geo": "not_available",
             "input_tokens": 8,
-            "output_tokens": 4,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "request_id": "req_011CbC7WA7UT5q2NP34LvCiy",
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
+        "request_id": "req_011CduQGKG58kTSqHFwxnN8x",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:29.382Z",
         "type": "assistant",
-        "uuid": "e5c6b9b1-f044-42ff-9b19-5eb6420a2366"
+        "uuid": "0942fb7e-76bd-4cbc-9f2e-00345affdd3e"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 0,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "0517efcc-7570-405e-b07e-3785c2fa8dcf"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "content_block": {
+            "text": "",
+            "type": "text"
+          },
+          "index": 1,
+          "type": "content_block_start"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "6417b417-f237-4b3c-8e66-139af6f04879"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": "Perfect! Here are",
+            "type": "text_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "8885b6bd-b739-4d25-a1e5-f84d46d61601"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "delta": {
+            "text": " the results:\n\n1. **15 \u00d7 7 = 105**\n2. **105 - 5 = 100**\n\n**Final answer: 100**",
+            "type": "text_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "833cba4c-8fce-4ecd-b105-145526f17fa6"
       }
     },
     {
@@ -837,13 +2443,13 @@
         "message": {
           "content": [
             {
-              "text": "The answer is **100**.\n\nHere's the breakdown:\n- 15 \u00d7 7 = **105**\n- 105 - 5 = **100**",
+              "text": "Perfect! Here are the results:\n\n1. **15 \u00d7 7 = 105**\n2. **105 - 5 = 100**\n\n**Final answer: 100**",
               "type": "text"
             }
           ],
           "context_management": null,
           "diagnostics": null,
-          "id": "msg_01BLdFiureh3DEprWKdGE6fx",
+          "id": "msg_011CduQGKpK8BTWTkAWknSwM",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -853,76 +2459,149 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 386
+              "ephemeral_5m_input_tokens": 155
             },
-            "cache_creation_input_tokens": 386,
-            "cache_read_input_tokens": 44678,
+            "cache_creation_input_tokens": 155,
+            "cache_read_input_tokens": 17806,
             "inference_geo": "not_available",
             "input_tokens": 8,
-            "output_tokens": 4,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "request_id": "req_011CbC7WA7UT5q2NP34LvCiy",
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
+        "request_id": "req_011CduQGKG58kTSqHFwxnN8x",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "timestamp": "2026-08-10T16:42:29.512Z",
         "type": "assistant",
-        "uuid": "3bb1fe67-4dda-4205-8a71-dbb3ae522cba"
+        "uuid": "70b20ed5-8be7-4a99-9f03-910cdcd34276"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "index": 1,
+          "type": "content_block_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "49ceb2d3-0e8e-47c1-adec-90aadd02d4b0"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "context_management": {
+            "applied_edits": []
+          },
+          "delta": {
+            "stop_details": null,
+            "stop_reason": "end_turn",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "cache_creation_input_tokens": 155,
+            "cache_read_input_tokens": 17806,
+            "input_tokens": 8,
+            "iterations": [
+              {
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 0,
+                  "ephemeral_5m_input_tokens": 155
+                },
+                "cache_creation_input_tokens": 155,
+                "cache_read_input_tokens": 17806,
+                "input_tokens": 8,
+                "output_tokens": 97,
+                "type": "message"
+              }
+            ],
+            "output_tokens": 97,
+            "output_tokens_details": {
+              "thinking_tokens": 48
+            }
+          }
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "ae7be1a7-e0ca-4b05-be8d-42050b28697c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "event": {
+          "type": "message_stop"
+        },
+        "parent_tool_use_id": null,
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
+        "type": "stream_event",
+        "uuid": "7df3afbe-83a2-4b86-b00b-045976e4d26c"
       }
     },
     {
       "op": "read",
       "payload": {
         "api_error_status": null,
-        "duration_api_ms": 8108,
-        "duration_ms": 6876,
+        "duration_api_ms": 6033,
+        "duration_ms": 6883,
+        "fast_mode_disabled_reason": "sdk_opt_in_required",
         "fast_mode_state": "off",
         "is_error": false,
         "modelUsage": {
           "claude-haiku-4-5-20251001": {
-            "cacheCreationInputTokens": 45064,
-            "cacheReadInputTokens": 44678,
+            "cacheCreationInputTokens": 8651,
+            "cacheReadInputTokens": 62020,
+            "canonicalModel": "claude-haiku-4-5",
             "contextWindow": 200000,
-            "costUSD": 0.0631868,
-            "inputTokens": 474,
+            "costUSD": 0.01983675,
+            "inputTokens": 36,
             "maxOutputTokens": 32000,
-            "outputTokens": 383,
+            "outputTokens": 557,
+            "provider": "firstParty",
             "webSearchRequests": 0
           }
         },
-        "num_turns": 3,
+        "num_turns": 4,
         "permission_denials": [],
-        "result": "The answer is **100**.\n\nHere's the breakdown:\n- 15 \u00d7 7 = **105**\n- 105 - 5 = **100**",
-        "session_id": "bb4c779d-c1e5-47ef-a8f4-c29a8a4e7653",
+        "result": "Perfect! Here are the results:\n\n1. **15 \u00d7 7 = 105**\n2. **105 - 5 = 100**\n\n**Final answer: 100**",
+        "session_id": "8bbeb10f-494b-4b32-a328-2848a37aaec4",
         "stop_reason": "end_turn",
         "subtype": "success",
         "terminal_reason": "completed",
-        "total_cost_usd": 0.0631868,
-        "ttft_ms": 3047,
+        "time_to_request_ms": 160,
+        "total_cost_usd": 0.01983675,
+        "ttft_ms": 2024,
+        "ttft_stream_ms": 976,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 45064
+            "ephemeral_5m_input_tokens": 8651
           },
-          "cache_creation_input_tokens": 45064,
-          "cache_read_input_tokens": 44678,
-          "inference_geo": "",
-          "input_tokens": 18,
+          "cache_creation_input_tokens": 8651,
+          "cache_read_input_tokens": 62020,
+          "inference_geo": "not_available",
+          "input_tokens": 36,
           "iterations": [
             {
               "cache_creation": {
                 "ephemeral_1h_input_tokens": 0,
-                "ephemeral_5m_input_tokens": 386
+                "ephemeral_5m_input_tokens": 155
               },
-              "cache_creation_input_tokens": 386,
-              "cache_read_input_tokens": 44678,
+              "cache_creation_input_tokens": 155,
+              "cache_read_input_tokens": 17806,
               "input_tokens": 8,
-              "output_tokens": 89,
+              "output_tokens": 97,
               "type": "message"
             }
           ],
-          "output_tokens": 372,
+          "output_tokens": 557,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
@@ -930,9 +2609,9 @@
           "service_tier": "standard",
           "speed": "standard"
         },
-        "uuid": "9a3c05b4-09cd-4551-acec-5884b1de2410"
+        "uuid": "d1f074b0-f459-467d-965b-4331da777be6"
       }
     }
   ],
-  "sdk_version": "0.2.82"
+  "sdk_version": "0.2.129"
 }

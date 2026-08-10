@@ -53,11 +53,18 @@ def _set_numeric_metric(metrics: dict[str, float], name: str, value: Any) -> Non
         metrics[name] = float(value)
 
 
-def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any]]:
+def extract_anthropic_usage(
+    usage: Any,
+    *,
+    include_output: bool = True,
+    include_legacy_cache_creation: bool = True,
+) -> tuple[dict[str, float], dict[str, Any]]:
     """Extract normalized metrics and allowlisted metadata from Anthropic usage.
 
     Numeric usage fields are converted into Braintrust metrics. Allowlisted
     non-numeric fields are attached as span metadata with a ``usage_`` prefix.
+    Anthropic's per-TTL cache creation breakdown supersedes the legacy aggregate
+    metric, and totals are emitted only when completion usage is known.
     """
     usage = _try_to_dict(usage)
     if usage is None:
@@ -66,6 +73,10 @@ def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any
     metrics: dict[str, float] = {}
     metadata: dict[str, Any] = {}
     for source_name, metric_name in _ANTHROPIC_USAGE_METRIC_FIELDS:
+        if metric_name == "completion_tokens" and not include_output:
+            continue
+        if metric_name == "prompt_cache_creation_tokens" and not include_legacy_cache_creation:
+            continue
         _set_numeric_metric(metrics, metric_name, usage.get(source_name))
 
     cache_creation = _try_to_dict(usage.get("cache_creation"))
@@ -77,22 +88,36 @@ def extract_anthropic_usage(usage: Any) -> tuple[dict[str, float], dict[str, Any
                 metrics[metric_name] = float(value)
                 cache_creation_breakdown.append(float(value))
 
+    if cache_creation_breakdown:
+        metrics.pop("prompt_cache_creation_tokens", None)
+
     server_tool_use = _try_to_dict(usage.get("server_tool_use"))
     if server_tool_use is not None:
         for source_name, value in server_tool_use.items():
             _set_numeric_metric(metrics, f"server_tool_use_{source_name}", value)
 
-    if "prompt_cache_creation_tokens" not in metrics and cache_creation_breakdown:
-        metrics["prompt_cache_creation_tokens"] = sum(cache_creation_breakdown)
-
-    if metrics:
+    has_prompt_usage = any(
+        metric_name in metrics
+        for metric_name in (
+            "prompt_tokens",
+            "prompt_cached_tokens",
+            "prompt_cache_creation_tokens",
+            "prompt_cache_creation_5m_tokens",
+            "prompt_cache_creation_1h_tokens",
+        )
+    )
+    if has_prompt_usage:
+        effective_cache_creation_tokens = (
+            sum(cache_creation_breakdown)
+            if cache_creation_breakdown
+            else metrics.get("prompt_cache_creation_tokens", 0)
+        )
         total_prompt_tokens = (
-            metrics.get("prompt_tokens", 0)
-            + metrics.get("prompt_cached_tokens", 0)
-            + metrics.get("prompt_cache_creation_tokens", 0)
+            metrics.get("prompt_tokens", 0) + metrics.get("prompt_cached_tokens", 0) + effective_cache_creation_tokens
         )
         metrics["prompt_tokens"] = total_prompt_tokens
-        metrics["tokens"] = total_prompt_tokens + metrics.get("completion_tokens", 0)
+        if "completion_tokens" in metrics:
+            metrics["tokens"] = total_prompt_tokens + metrics["completion_tokens"]
 
     for name, value in usage.items():
         if name in _ANTHROPIC_USAGE_METADATA_FIELDS and value is not None:

@@ -376,7 +376,6 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
         "prompt_tokens": 21.0,
         "completion_tokens": 7.0,
         "prompt_cached_tokens": 3.0,
-        "prompt_cache_creation_tokens": 7.0,
         "prompt_cache_creation_5m_tokens": 2.0,
         "prompt_cache_creation_1h_tokens": 5.0,
         "server_tool_use_web_search_requests": 2.0,
@@ -410,7 +409,7 @@ def test_anthropic_messages_create_prompt_cache_5m_metrics(memory_logger):
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert span["output"]["role"] == response.role
-    assert span["metrics"]["prompt_cache_creation_tokens"] == response.usage.cache_creation_input_tokens
+    assert "prompt_cache_creation_tokens" not in span["metrics"]
     assert (
         span["metrics"]["prompt_cache_creation_5m_tokens"] == response.usage.cache_creation.ephemeral_5m_input_tokens
     )
@@ -442,7 +441,7 @@ def test_anthropic_messages_create_prompt_cache_1h_metrics(memory_logger):
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert span["output"]["role"] == response.role
-    assert span["metrics"]["prompt_cache_creation_tokens"] == response.usage.cache_creation_input_tokens
+    assert "prompt_cache_creation_tokens" not in span["metrics"]
     assert (
         span["metrics"]["prompt_cache_creation_5m_tokens"] == response.usage.cache_creation.ephemeral_5m_input_tokens
     )
@@ -851,7 +850,7 @@ async def test_anthropic_messages_streaming_async(memory_logger):
     assert metrics["completion_tokens"] == usage.output_tokens
     assert metrics["tokens"] == usage.input_tokens + usage.output_tokens
     assert metrics["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+    _assert_cache_creation_metrics(metrics, usage)
     assert log["metadata"]["model"] == MODEL
     assert log["metadata"]["max_tokens"] == 1024
 
@@ -933,7 +932,7 @@ def test_anthropic_messages_streaming_sync(memory_logger):
     assert log["metrics"]["completion_tokens"] == usage.output_tokens
     assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
     assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    assert log["metrics"]["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+    _assert_cache_creation_metrics(log["metrics"], usage)
 
 
 @pytest.mark.vcr
@@ -973,7 +972,7 @@ def test_anthropic_messages_streaming_sync_text_stream(memory_logger):
     assert log["metrics"]["completion_tokens"] == usage.output_tokens
     assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
     assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    assert log["metrics"]["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+    _assert_cache_creation_metrics(log["metrics"], usage)
 
 
 @pytest.mark.vcr
@@ -1014,7 +1013,7 @@ async def test_anthropic_messages_streaming_async_text_stream(memory_logger):
     assert log["metrics"]["completion_tokens"] == usage.output_tokens
     assert log["metrics"]["tokens"] == usage.input_tokens + usage.output_tokens
     assert log["metrics"]["prompt_cached_tokens"] == usage.cache_read_input_tokens
-    assert log["metrics"]["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+    _assert_cache_creation_metrics(log["metrics"], usage)
 
 
 @pytest.mark.vcr
@@ -1117,6 +1116,30 @@ def test_anthropic_messages_sync_server_tool_spans(memory_logger):
     }
     assert tool_span["span_parents"] == [llm_span["span_id"]]
     assert tool_span["root_span_id"] == llm_span["root_span_id"]
+
+
+def _assert_cache_creation_metrics(metrics, usage):
+    cache_creation = getattr(usage, "cache_creation", None)
+    if cache_creation is None:
+        assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+        return
+
+    if isinstance(cache_creation, dict):
+        ephemeral_5m = cache_creation.get("ephemeral_5m_input_tokens")
+        ephemeral_1h = cache_creation.get("ephemeral_1h_input_tokens")
+    else:
+        ephemeral_5m = getattr(cache_creation, "ephemeral_5m_input_tokens", None)
+        ephemeral_1h = getattr(cache_creation, "ephemeral_1h_input_tokens", None)
+
+    if ephemeral_5m is None and ephemeral_1h is None:
+        assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+        return
+
+    assert "prompt_cache_creation_tokens" not in metrics
+    if ephemeral_5m is not None:
+        assert metrics["prompt_cache_creation_5m_tokens"] == ephemeral_5m
+    if ephemeral_1h is not None:
+        assert metrics["prompt_cache_creation_1h_tokens"] == ephemeral_1h
 
 
 def _assert_metrics_are_valid(metrics, start, end):
@@ -1467,7 +1490,7 @@ def test_setup_creates_spans(memory_logger):
         usage.input_tokens + usage.cache_read_input_tokens + usage.cache_creation_input_tokens
     )
     assert metrics["completion_tokens"] == usage.output_tokens
-    assert metrics["prompt_cache_creation_tokens"] == usage.cache_creation_input_tokens
+    assert "prompt_cache_creation_tokens" not in metrics
     assert metrics["prompt_cache_creation_5m_tokens"] == ephemeral_5m
     assert metrics["prompt_cache_creation_1h_tokens"] == ephemeral_1h
     assert "service_tier" not in metrics
@@ -1498,7 +1521,7 @@ def test_extract_anthropic_usage_preserves_nested_numeric_fields():
     assert metrics["prompt_tokens"] == 15
     assert metrics["completion_tokens"] == 12
     assert metrics["tokens"] == 27
-    assert metrics["prompt_cache_creation_tokens"] == 7
+    assert "prompt_cache_creation_tokens" not in metrics
     assert metrics["prompt_cache_creation_5m_tokens"] == 3
     assert metrics["prompt_cache_creation_1h_tokens"] == 4
     assert metrics["server_tool_use_web_search_requests"] == 2

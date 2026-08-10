@@ -3,6 +3,7 @@ import collections
 import contextvars
 import dataclasses
 import json
+import math
 import threading
 import time
 from collections.abc import AsyncGenerator, AsyncIterable
@@ -575,6 +576,91 @@ def _message_starts_subagent_tool(message: Any) -> bool:
     return False
 
 
+def _token_count(value: Any) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not math.isfinite(value) or value < 0 or int(value) != value:
+        return None
+    return int(value)
+
+
+def _copy_usage(usage: Any) -> dict[str, Any] | None:
+    if usage is None:
+        return None
+    if not isinstance(usage, dict):
+        try:
+            usage = vars(usage)
+        except TypeError:
+            return None
+
+    copied: dict[str, Any] = {}
+    for key in (
+        "input_tokens",
+        "output_tokens",
+        "cache_read_input_tokens",
+        "cache_creation_input_tokens",
+    ):
+        value = _token_count(usage.get(key))
+        if value is not None:
+            copied[key] = value
+
+    cache_creation = usage.get("cache_creation")
+    if cache_creation is not None and not isinstance(cache_creation, dict):
+        try:
+            cache_creation = vars(cache_creation)
+        except TypeError:
+            cache_creation = None
+    if isinstance(cache_creation, dict):
+        copied_cache_creation = {}
+        for key in ("ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens"):
+            value = _token_count(cache_creation.get(key))
+            if value is not None:
+                copied_cache_creation[key] = value
+        if copied_cache_creation:
+            copied["cache_creation"] = copied_cache_creation
+
+    return copied or None
+
+
+def _merge_usage(base: dict[str, Any] | None, override: dict[str, Any] | None) -> dict[str, Any] | None:
+    if base is None or override is None:
+        return override or base
+    merged = {**base, **override}
+    base_cache = base.get("cache_creation")
+    override_cache = override.get("cache_creation")
+    if isinstance(base_cache, dict) or isinstance(override_cache, dict):
+        merged["cache_creation"] = {
+            **(base_cache if isinstance(base_cache, dict) else {}),
+            **(override_cache if isinstance(override_cache, dict) else {}),
+        }
+    return merged
+
+
+def _aggregate_model_usage(model_usage: Any) -> dict[str, int] | None:
+    """Aggregate the SDK's all-agent model usage into Anthropic usage fields."""
+    if not isinstance(model_usage, dict):
+        return None
+
+    field_names = {
+        "inputTokens": "input_tokens",
+        "outputTokens": "output_tokens",
+        "cacheReadInputTokens": "cache_read_input_tokens",
+        "cacheCreationInputTokens": "cache_creation_input_tokens",
+    }
+    totals: dict[str, int] = {}
+    for raw_usage in model_usage.values():
+        if not isinstance(raw_usage, dict):
+            try:
+                raw_usage = vars(raw_usage)
+            except TypeError:
+                continue
+        for source_name, target_name in field_names.items():
+            value = _token_count(raw_usage.get(source_name))
+            if value is not None:
+                totals[target_name] = totals.get(target_name, 0) + value
+    return totals or None
+
+
 @dataclasses.dataclass
 class _AgentContext:
     """Per-subagent-context state, keyed by parent_tool_use_id (None = orchestrator)."""
@@ -582,6 +668,7 @@ class _AgentContext:
     llm_span: Any | None = None
     llm_parent_export: str | None = None
     llm_output: list[dict[str, Any]] | None = None
+    llm_message_id: str | None = None
     next_llm_start: float | None = None
     task_span: Any | None = None
     task_confirmed: bool = False
@@ -596,6 +683,7 @@ class ContextTracker:
         prompt: Any,
         query_start_time: float | None = None,
         captured_messages: list[dict[str, Any]] | None = None,
+        include_partial_messages: bool = False,
     ) -> None:
         self._root_span = root_span
         self._root_span_export = root_span.export()
@@ -610,6 +698,11 @@ class ContextTracker:
         self._final_results: list[dict[str, Any]] = []
         self._result_output: Any | None = None
         self._task_events: list[dict[str, Any]] = []
+        self._include_partial_messages = include_partial_messages
+        self._active_partial_message_id_by_parent: dict[str | None, str] = {}
+        self._latest_partial_message_id_by_parent: dict[str | None, str] = {}
+        self._usage_by_message_id: dict[str, dict[str, Any]] = {}
+        self._final_output_usage_message_ids: set[str] = set()
 
         _thread_local.tool_span_tracker = self._tool_tracker
 
@@ -617,9 +710,8 @@ class ContextTracker:
 
     def add(self, message: Any) -> None:
         """Consume one SDK message and update spans accordingly."""
-        if self._captured_messages is not None:
-            if self._captured_messages:
-                self._root_span.log(input=self._captured_messages)
+        if self._captured_messages:
+            self._root_span.log(input=self._captured_messages)
             self._captured_messages = None
 
         message_type = type(message).__name__
@@ -629,6 +721,8 @@ class ContextTracker:
             self._handle_user(message)
         elif message_type == MessageClassName.RESULT:
             self._handle_result(message)
+        elif message_type == "StreamEvent":
+            self._handle_stream_event(message)
         elif message_type in SYSTEM_MESSAGE_TYPES:
             self._handle_system(message)
 
@@ -657,6 +751,10 @@ class ContextTracker:
                 ctx.task_span = None
         self._task_order.clear()
         self._tool_tracker.cleanup_all()
+        self._active_partial_message_id_by_parent.clear()
+        self._latest_partial_message_id_by_parent.clear()
+        self._usage_by_message_id.clear()
+        self._final_output_usage_message_ids.clear()
         if getattr(_thread_local, "tool_span_tracker", None) is self._tool_tracker:
             delattr(_thread_local, "tool_span_tracker")
 
@@ -747,14 +845,45 @@ class ContextTracker:
             resolved_key = user_parent if user_parent is not None else self._active_key
             self._get_context(resolved_key).next_llm_start = time.time()
 
+    def _handle_stream_event(self, message: Any) -> None:
+        event = getattr(message, "event", None)
+        if not isinstance(event, dict):
+            return
+        parent_tool_use_id = getattr(message, "parent_tool_use_id", None)
+        event_type = event.get("type")
+        if event_type == "message_start":
+            raw_message = event.get("message")
+            if not isinstance(raw_message, dict):
+                return
+            message_id = raw_message.get("id")
+            if not isinstance(message_id, str):
+                return
+            self._active_partial_message_id_by_parent[parent_tool_use_id] = message_id
+            self._latest_partial_message_id_by_parent[parent_tool_use_id] = message_id
+            usage = _copy_usage(raw_message.get("usage"))
+            if usage:
+                self._usage_by_message_id[message_id] = usage
+            return
+
+        message_id = self._active_partial_message_id_by_parent.get(parent_tool_use_id)
+        if message_id is None:
+            return
+        if event_type == "message_delta":
+            update = _copy_usage(event.get("usage"))
+            if update:
+                usage = _merge_usage(self._usage_by_message_id.get(message_id), update) or {}
+                self._usage_by_message_id[message_id] = usage
+                if "output_tokens" in update:
+                    self._final_output_usage_message_ids.add(message_id)
+                    ctx = self._contexts.get(parent_tool_use_id)
+                    if ctx is not None and ctx.llm_span is not None and ctx.llm_message_id == message_id:
+                        metrics, _ = extract_anthropic_usage(usage)
+                        ctx.llm_span.log(metrics=metrics or None)
+        elif event_type == "message_stop":
+            self._active_partial_message_id_by_parent.pop(parent_tool_use_id, None)
+
     def _handle_result(self, message: Any) -> None:
         self._active_key = None
-        if hasattr(message, "usage"):
-            usage_metrics, usage_metadata = extract_anthropic_usage(message.usage)
-            ctx = self._get_context(None)
-            if ctx.llm_span and (usage_metrics or usage_metadata):
-                ctx.llm_span.log(metrics=usage_metrics or None, metadata=usage_metadata or None)
-
         result_value = getattr(message, "result", None)
         if result_value is not None:
             self._result_output = result_value
@@ -771,8 +900,16 @@ class ContextTracker:
             }.items()
             if v is not None
         }
-        if result_metadata:
-            self._root_span.log(metadata=result_metadata)
+        result_metrics: dict[str, float] = {}
+        if not self._include_partial_messages:
+            raw_usage = getattr(message, "usage", None)
+            _, usage_metadata = extract_anthropic_usage(raw_usage)
+            result_metadata.update(usage_metadata)
+            aggregate_usage = _aggregate_model_usage(getattr(message, "model_usage", None))
+            usage = aggregate_usage or _copy_usage(raw_usage)
+            result_metrics, _ = extract_anthropic_usage(usage)
+        if result_metadata or result_metrics:
+            self._root_span.log(metadata=result_metadata or None, metrics=result_metrics or None)
 
         if getattr(message, "is_error", None) is True:
             error_text = (
@@ -838,13 +975,22 @@ class ContextTracker:
         parent_export: str | None,
         ctx: _AgentContext,
     ) -> tuple[dict[str, Any] | None, bool]:
-        """Start a new LLM span or extend the existing one via merge."""
+        """Start one LLM span per provider message ID and merge its snapshots."""
         current_message = _serialize_assistant_message(message)
+        message_id = getattr(message, "message_id", None)
+        if not isinstance(message_id, str):
+            message_id = self._latest_partial_message_id_by_parent.get(getattr(message, "parent_tool_use_id", None))
+        same_provider_message = (
+            isinstance(message_id, str)
+            and message_id == ctx.llm_message_id
+            or message_id is None
+            and ctx.llm_message_id is None
+            and ctx.next_llm_start is None
+        )
 
-        # Merge path.
         if (
             ctx.llm_span
-            and ctx.next_llm_start is None
+            and same_provider_message
             and ctx.llm_parent_export == parent_export
             and current_message is not None
         ):
@@ -855,9 +1001,9 @@ class ContextTracker:
             if merged is not None:
                 ctx.llm_output = [merged]
                 ctx.llm_span.log(output=ctx.llm_output)
+            self._log_assistant_usage(message, ctx, message_id)
             return merged, True
 
-        # New span path.
         resolved_start = ctx.next_llm_start or time.time()
         first_token_time = time.time()
 
@@ -876,8 +1022,30 @@ class ContextTracker:
         ctx.llm_span = span
         ctx.llm_parent_export = parent_export
         ctx.llm_output = [final_content] if final_content is not None else None
+        ctx.llm_message_id = message_id if isinstance(message_id, str) else None
         ctx.next_llm_start = None
+        self._log_assistant_usage(message, ctx, ctx.llm_message_id)
         return final_content, False
+
+    def _log_assistant_usage(
+        self,
+        message: Any,
+        ctx: _AgentContext,
+        message_id: str | None,
+    ) -> None:
+        if ctx.llm_span is None or not self._include_partial_messages:
+            return
+        raw_message_usage = getattr(message, "usage", None)
+        usage = _merge_usage(
+            _copy_usage(raw_message_usage),
+            self._usage_by_message_id.get(message_id) if message_id else None,
+        )
+        if not usage:
+            return
+        has_final_output = message_id in self._final_output_usage_message_ids if message_id else False
+        metrics, _ = extract_anthropic_usage(usage, include_output=has_final_output)
+        _, metadata = extract_anthropic_usage(raw_message_usage, include_output=False)
+        ctx.llm_span.log(metrics=metrics or None, metadata=metadata or None)
 
     def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:
         """Handle TaskStarted / TaskProgress / TaskNotification system messages."""
@@ -925,6 +1093,7 @@ class RequestTracker:
         prompt: Any,
         query_start_time: float | None = None,
         captured_messages: list[dict[str, Any]] | None = None,
+        include_partial_messages: bool = False,
     ) -> None:
         self._root_span = start_span(
             name=CLAUDE_AGENT_TASK_SPAN_NAME,
@@ -937,6 +1106,7 @@ class RequestTracker:
             prompt=prompt,
             query_start_time=query_start_time,
             captured_messages=captured_messages,
+            include_partial_messages=include_partial_messages,
         )
         self._pretraced_message_types: collections.deque[str] = collections.deque()
         self._finished = False
@@ -1100,6 +1270,10 @@ def _prepare_prompt_for_tracing(prompt: Any) -> tuple[Any, str | None, list[dict
     return prompt, str(prompt), None
 
 
+def _include_partial_messages(options: Any) -> bool:
+    return getattr(options, "include_partial_messages", False) is True
+
+
 async def _stream_messages_with_tracing(
     generator: AsyncIterable[Any],
     *,
@@ -1138,10 +1312,15 @@ def _create_query_wrapper_function(original_query: Any) -> Any:
             kwargs = dict(kwargs)
             kwargs["prompt"] = prompt
 
+        options = kwargs.get("options")
+        if options is None and len(args) > 1:
+            options = args[1]
+
         request_tracker = RequestTracker(
             prompt=traced_prompt,
             query_start_time=query_start_time,
             captured_messages=captured_messages,
+            include_partial_messages=_include_partial_messages(options),
         )
         generator = _bind_request_tracker_to_query(original_query(*args, **kwargs), request_tracker)
 
@@ -1160,7 +1339,8 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
 
     class WrappedClaudeSDKClient(Wrapper):
         def __init__(self, *args: Any, **kwargs: Any):
-            # Create the original client instance
+            options = args[0] if args else kwargs.get("options")
+            self.__include_partial_messages = _include_partial_messages(options)
             client = original_client_class(*args, **kwargs)
             super().__init__(client)
             self.__client = client
@@ -1201,6 +1381,18 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 hook_callbacks[callback_id] = wrapped_callback
                 self.__instrumented_hook_callbacks.add(marker)
 
+        def __prepare_request_prompt(
+            self, args: tuple[Any, ...], kwargs: dict[str, Any]
+        ) -> tuple[tuple[Any, ...], dict[str, Any]]:
+            self.__query_start_time = time.time()
+            prompt = args[0] if args else kwargs.get("prompt")
+            prompt, self.__last_prompt, self.__captured_messages = _prepare_prompt_for_tracing(prompt)
+            if args:
+                return (prompt, *args[1:]), kwargs
+            prepared_kwargs = dict(kwargs)
+            prepared_kwargs["prompt"] = prompt
+            return args, prepared_kwargs
+
         def __start_request_tracker(self) -> RequestTracker:
             if self.__request_tracker is not None:
                 self.__finish_request_tracker()
@@ -1209,6 +1401,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 prompt=self.__last_prompt,
                 query_start_time=self.__query_start_time,
                 captured_messages=self.__captured_messages,
+                include_partial_messages=self.__include_partial_messages,
             )
             query = getattr(self.__client, "_query", None)
             _install_query_message_tracing(query)
@@ -1228,25 +1421,28 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             self.__request_tracker = None
 
         async def connect(self, *args: Any, **kwargs: Any) -> Any:
-            result = await self.__client.connect(*args, **kwargs)
-            _install_query_message_tracing(getattr(self.__client, "_query", None))
+            prompt = args[0] if args else kwargs.get("prompt")
+            if prompt is not None:
+                args, kwargs = self.__prepare_request_prompt(args, kwargs)
+                self.__start_request_tracker()
+            try:
+                result = await self.__client.connect(*args, **kwargs)
+            except Exception as exc:
+                if self.__request_tracker is not None:
+                    self.__request_tracker.log_error(exc)
+                self.__finish_request_tracker()
+                raise
+
+            query = getattr(self.__client, "_query", None)
+            _install_query_message_tracing(query)
+            if query is not None and self.__request_tracker is not None:
+                query._braintrust_request_tracker = self.__request_tracker
             self.__instrument_hook_callbacks()
             return result
 
         async def query(self, *args: Any, **kwargs: Any) -> Any:
             """Wrap query to capture the prompt and start time for tracing."""
-            # Capture the time when query is called (when LLM call starts)
-            self.__query_start_time = time.time()
-
-            # Capture the prompt for use in receive_response
-            prompt = args[0] if args else kwargs.get("prompt")
-            prompt, self.__last_prompt, self.__captured_messages = _prepare_prompt_for_tracing(prompt)
-
-            if args:
-                args = (prompt,) + args[1:]
-            else:
-                kwargs["prompt"] = prompt
-
+            args, kwargs = self.__prepare_request_prompt(args, kwargs)
             self.__instrument_hook_callbacks()
             self.__start_request_tracker()
 
