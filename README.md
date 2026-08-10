@@ -61,6 +61,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [Mistral](py/src/braintrust/integrations/mistral/) | Yes | `mistralai>=1.12.4` |
 | [LiteLLM](py/src/braintrust/integrations/litellm/) | Yes | `litellm>=1.74.0` |
 | [OpenRouter](py/src/braintrust/integrations/openrouter/) | Yes | `openrouter>=0.6.0` |
+| [Vercel AI SDK for Python](py/src/braintrust/integrations/ai_sdk/) | Yes | `ai>=0.4.0` |
 | [Google GenAI](py/src/braintrust/integrations/google_genai/) | Yes | `google-genai>=1.30.0` |
 | [Bedrock Runtime](py/src/braintrust/integrations/bedrock_runtime/) | Yes | `boto3>=1.34.116` |
 | [HuggingFace Hub](py/src/braintrust/integrations/huggingface_hub/) | Yes | `huggingface-hub>=0.32.0` |
@@ -81,6 +82,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [LiveKit Agents](py/src/braintrust/integrations/livekit_agents/) | Yes | `livekit-agents>=1.3.1` |
 | [Pipecat](py/src/braintrust/integrations/pipecat/) | Yes | `pipecat-ai>=1.3.0` |
 | [Temporal](py/src/braintrust/integrations/temporal/) | Yes | `temporalio>=1.19.0` |
+| [Harbor](py/src/braintrust/integrations/harbor/) | No (Harbor plugin) | `harbor>=0.16.0` |
 | [pytest plugin](py/src/braintrust/wrappers/pytest_plugin/README.md) | No | `pytest>=8` |
 
 ## Documentation
