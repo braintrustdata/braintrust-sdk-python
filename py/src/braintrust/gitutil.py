@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import shutil
 import subprocess
 import threading
 from functools import lru_cache as _cache
@@ -8,33 +9,75 @@ from functools import lru_cache as _cache
 from .git_fields import GitMetadataSettings, RepoInfo
 
 
-# https://stackoverflow.com/questions/48399498/git-executable-not-found-in-python
-os.environ["GIT_PYTHON_REFRESH"] = "quiet"
-try:
-    import git
-except ImportError:
-    git = None
-
 _logger = logging.getLogger("braintrust.gitutil")
 _gitlock = threading.RLock()
 
 
 @_cache(1)
-def _current_repo():
-    if git is None:
-        # If the git module is not available, we can't do anything.
-        return None
+def _git_executable():
+    """Resolve `git` from PATH, ignoring any copy in the current directory.
 
+    Handing subprocess an absolute path avoids the current-directory-first executable
+    search Windows performs at spawn time, where a `git.exe` committed to a repository
+    would otherwise shadow the real one. `shutil.which()` searches the current
+    directory on Windows as well, so a relative hit is rejected rather than used.
+    """
+    resolved = shutil.which("git")
+    if resolved is not None and not os.path.isabs(resolved):
+        _logger.warning("Ignoring 'git' resolved from the current directory: %s", resolved)
+        return None
+    return resolved
+
+
+def _git_output(args, cwd=None):
+    git = _git_executable()
+    if git is None:
+        raise FileNotFoundError("Could not find a 'git' executable on PATH")
+
+    result = subprocess.run(
+        [git, *args],
+        cwd=cwd,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    output = result.stdout
+    if output.endswith(b"\n"):
+        output = output[:-1]
+    return output.decode("utf-8", errors="surrogateescape")
+
+
+def _normalize_git_iso_datetime(value):
+    return value[:-1] + "+00:00" if value.endswith("Z") else value
+
+
+def _is_dirty(repo_path):
+    diff_args = ["--abbrev=40", "--full-index", "--raw"]
+    if _git_output(["diff", "--cached", *diff_args], cwd=repo_path):
+        return True
+    return bool(_git_output(["diff", *diff_args], cwd=repo_path))
+
+
+@_cache(1)
+def _current_repo():
     try:
-        return git.Repo(search_parent_directories=True)
-    except git.exc.InvalidGitRepositoryError:
+        return _git_output(["rev-parse", "--show-toplevel"]).strip()
+    except (OSError, subprocess.CalledProcessError):
+        try:
+            if _git_output(["rev-parse", "--is-bare-repository"]).strip() == "true":
+                return _git_output(["rev-parse", "--absolute-git-dir"]).strip()
+        except (OSError, subprocess.CalledProcessError):
+            pass
         return None
 
 
 @_cache(1)
 def _get_base_branch(remote=None):
-    repo = _current_repo()
-    remote = repo.remote(**({} if remote is None else {"name": remote})).name
+    repo_path = _current_repo()
+    remote = remote or "origin"
+    remotes = set(_git_output(["remote"], cwd=repo_path).splitlines())
+    if remote not in remotes:
+        raise ValueError(f"Remote named '{remote}' didn't exist")
 
     # NOTE: This should potentially be configuration that we derive from the project,
     # instead of spending a second or two computing it each time we run an experiment.
@@ -42,7 +85,9 @@ def _get_base_branch(remote=None):
     # To speed this up in the short term, we pick from a list of common names
     # and only fall back to the remote origin if required.
     COMMON_BASE_BRANCHES = ["main", "master", "develop"]
-    repo_branches = {b.name for b in repo.branches}
+    repo_branches = set(
+        _git_output(["for-each-ref", "--format=%(refname:short)", "refs/heads/"], cwd=repo_path).splitlines()
+    )
     if sum(b in repo_branches for b in COMMON_BASE_BRANCHES) == 1:
         for b in COMMON_BASE_BRANCHES:
             if b in repo_branches:
@@ -50,7 +95,7 @@ def _get_base_branch(remote=None):
         raise RuntimeError("Impossible")
 
     try:
-        s = subprocess.check_output(["git", "remote", "show", "origin"]).decode()
+        s = _git_output(["remote", "show", "origin"], cwd=repo_path)
         match = re.search(r"\s*HEAD branch:\s*(.*)$", s, re.MULTILINE)
         if match is None:
             raise RuntimeError("Could not find HEAD branch in remote " + remote)
@@ -71,46 +116,35 @@ def _get_base_branch_ancestor(remote=None):
         return None
 
     try:
-        head = "HEAD" if _current_repo().is_dirty() else "HEAD^"
-        return subprocess.check_output(["git", "merge-base", head, f"{remote_name}/{base_branch}"]).decode().strip()
-    except (subprocess.CalledProcessError, git.GitCommandError) as e:
+        repo_path = _current_repo()
+        head = "HEAD" if _is_dirty(repo_path) else "HEAD^"
+        return _git_output(["merge-base", head, f"{remote_name}/{base_branch}"], cwd=repo_path).strip()
+    except subprocess.CalledProcessError as e:
         # _logger.warning(f"Could not find a common ancestor with {remote_name}/{base_branch}")
         return None
 
 
 def get_past_n_ancestors(n=1000, remote=None):
     with _gitlock:
-        repo = _current_repo()
-        if repo is None:
+        repo_path = _current_repo()
+        if repo_path is None or n <= 0:
             return
 
         ancestor_output = _get_base_branch_ancestor()
         if ancestor_output is None:
             return
-        ancestor = repo.commit(ancestor_output)
-        count = 0
-        for _ in range(n):
-            if count >= n:
-                break
-            yield ancestor.hexsha
-            count += 1
-            try:
-                if ancestor.parents:
-                    ancestor = ancestor.parents[0]
-                else:
-                    break
-            except ValueError:
-                # Since parents are fetched on-demand, this can happen if the
-                # downloaded repo does not have information for this commit's
-                # parent.
-                break
+        try:
+            output = _git_output(["rev-list", "--first-parent", f"--max-count={n}", ancestor_output], cwd=repo_path)
+        except subprocess.CalledProcessError:
+            return
+        yield from output.splitlines()
 
 
 def attempt(op):
     try:
         return op()
     # OSError covers FileNotFoundError, FileExistsError, etc.
-    except (TypeError, ValueError, OSError, git.GitCommandError):
+    except (TypeError, ValueError, OSError, subprocess.CalledProcessError):
         return None
 
 
@@ -137,8 +171,8 @@ def get_repo_info(settings: GitMetadataSettings | None = None):
 
 def repo_info():
     with _gitlock:
-        repo = _current_repo()
-        if repo is None:
+        repo_path = _current_repo()
+        if repo_path is None:
             return None
 
         commit = None
@@ -150,19 +184,25 @@ def repo_info():
         branch = None
         git_diff = None
 
-        dirty = attempt(lambda: repo.is_dirty())
+        dirty = attempt(lambda: _is_dirty(repo_path))
 
-        commit = attempt(lambda: repo.head.commit.hexsha.strip())
-        commit_message = attempt(lambda: repo.head.commit.message.strip())
-        commit_time = attempt(lambda: repo.head.commit.committed_datetime.isoformat())
-        author_name = attempt(lambda: repo.head.commit.author.name.strip())
-        author_email = attempt(lambda: repo.head.commit.author.email.strip())
-        tag = attempt(lambda: repo.git.describe("--tags", "--exact-match", "--always"))
+        commit = attempt(lambda: _git_output(["rev-parse", "HEAD"], cwd=repo_path).strip())
+        commit_message = attempt(lambda: _git_output(["log", "-1", "--format=%B", "HEAD"], cwd=repo_path).strip())
+        commit_time = attempt(
+            lambda: _normalize_git_iso_datetime(
+                _git_output(["log", "-1", "--format=%cI", "HEAD"], cwd=repo_path).strip()
+            )
+        )
+        author_name = attempt(lambda: _git_output(["log", "-1", "--format=%an", "HEAD"], cwd=repo_path).strip())
+        author_email = attempt(lambda: _git_output(["log", "-1", "--format=%ae", "HEAD"], cwd=repo_path).strip())
+        tag = attempt(lambda: _git_output(["describe", "--tags", "--exact-match", "--always"], cwd=repo_path).strip())
 
-        branch = attempt(lambda: repo.active_branch.name)
+        branch = attempt(lambda: _git_output(["symbolic-ref", "--quiet", "--short", "HEAD"], cwd=repo_path).strip())
 
         if dirty:
-            git_diff = attempt(lambda: truncate_to_byte_limit(repo.git.diff("HEAD", no_ext_diff=True)))
+            git_diff = attempt(
+                lambda: truncate_to_byte_limit(_git_output(["diff", "--no-ext-diff", "HEAD"], cwd=repo_path))
+            )
 
         return RepoInfo(
             commit=commit,
