@@ -680,6 +680,19 @@ def test_temporal(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/temporal")
 
 
+HARBOR_VERSIONS = _get_matrix_versions("harbor")
+
+
+@nox.session()
+@nox.parametrize("version", HARBOR_VERSIONS, ids=HARBOR_VERSIONS)
+def test_harbor(session, version):
+    if Version(platform.python_version()) < Version("3.12"):
+        session.skip("Harbor requires Python 3.12+")
+    _install_test_deps(session)
+    _install_matrix_dep(session, "harbor", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/harbor", version=version)
+
+
 PYTEST_VERSIONS = _get_matrix_versions("pytest-matrix")
 
 
