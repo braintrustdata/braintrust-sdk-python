@@ -21,21 +21,21 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.16.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.16.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
       string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"functionCall\":
         {\"name\": \"get_weather\",\"args\": {\"location\": \"Paris, France\"}},\"thoughtSignature\":
-        \"CiQBEU0yD2MsprqbQcW1lWisFInZrJ3PjgZu8XAVQUBlzzseaMIKXgERTTIPnaFBo4NnkFQXD5DQmuErcuhoiI5HkSNX/BXv2zqLuB468/Yvygi0OhPiHnP+BBNEr2VQfk2po7c8K0HcW3eD5wD/VA8XrHwNNaulYB6AccV2layykQFA1FgK9gEBEU0yD0N/J1joBn87EXI/y7VRXctdFLgOksmYyeLENOJr/gJxrK49jcrilzpsrbpCB0Tj62AV9zojV5+8kv9zaSYGfaOqAlbnxE+0fOAzgaE8ZO/9+xHNNHRrAMOw+EsjgfQS8nLfDeM3ZPc+qYrxsrpZEJcs0XkFNVzjLqDXKzMW5tcLIHFJkXnpuAs6LBPu1z3LrSxWleMKqTGJM7oAMEx1B71jnMG4FIudXhUMIgWZAbzopmIvKCBl39lvEp6wlSxvDoXzp93fH8aHBBYnWOijzzgULcp1SSMMi6auPvCR0l9n9wSIjM7doXVOfYGY0eiIdUcKZgERTTIPhWQ3s+HJcK6yZFNZ4KXAflPRYBGVBmKB5uim/31ItTkzP4CpaZCcqjE1kyIxD0FG+dwloCeH7zqhOxwz7CGijtFWolUBf0KAkKc7JGMZojvrq2QqkeFvrqxAjkj1EPUiKA==\"}],\"role\":
+        \"CiQBEU0yD982HkZaOklgnJdL77KaWokgkH+3abt14zy7FYAeq6IKXgERTTIPSxVdIdWriNAi2VUpBg3y9cOLLqFx6MG5H193hZ+39I3v6ieAUzySvHbtxQ5Jb+vdg3NH0NJj52/xig3Poinoj/7MDV57zbBRMwV04GZ92N8eK/EqlBb0Ye0K/QEBEU0yD3c6bFWOzGu9rsXMTgpQpqA+hQBuHRKJz/M25kZND0B7jIafGVqt8TNTATZFdLepewxPEEcPsI6gYWp9DXAbVlcjgDTOnuyUYTl1R8/3J8p2jOcbpp3bzdrROk3igqYaUEbUd8UM16u3qXSALR2vpjBXDaad0mbgWb2ilb0LgNm8iOiS2KWdJbhzHbUPd2J1GtbMYWpWwEkKjO/YDW+PcHtEr81hfVwof5ND07MBBpiONvPM5WQbQ+6p0eq8/V2zFjC+IllG/u0ENzV/pfDYBMtnFL52vB6NFJxCA+WWm08tZ4bHlVJsBkd0JlQUBhQGlgJ5KIotoNBzCl8BEU0yD63radGXL4C+tIQ66GtQmlDt/HZelva37CotXT97CEaBMsw++LxmAc45yT0IUJCOh2XebcB0vZJvUZn0uD0HeZD7FpaRNfbVA6zHKvbtgmqTav0QPL4AIDemQw==\"}],\"role\":
         \"model\"},\"finishReason\": \"STOP\",\"index\": 0,\"finishMessage\": \"Model
         generated function call(s).\"}],\"usageMetadata\": {\"promptTokenCount\":
-        104,\"candidatesTokenCount\": 17,\"totalTokenCount\": 204,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 104}],\"thoughtsTokenCount\": 83,\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"PBByauGzNM-d-8YPgYK5wQw\"}\r\n\r\n"
+        104,\"candidatesTokenCount\": 17,\"totalTokenCount\": 205,\"promptTokensDetails\":
+        [{\"modality\": \"TEXT\",\"tokenCount\": 104}],\"thoughtsTokenCount\": 84,\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"nQB6auvfFuaUjrEPnafB-A8\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -44,11 +44,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Tue, 04 Aug 2026 16:15:57 GMT
+      - Mon, 10 Aug 2026 16:47:26 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=775
+      - gfet4t7; dur=908
       transfer-encoding:
       - chunked
       vary:
@@ -67,7 +67,7 @@ interactions:
 - request:
     body: '{"contents": [{"parts": [{"text": "What is the weather like in Paris, France?"}],
       "role": "user"}, {"parts": [{"functionCall": {"args": {"location": "Paris, France"},
-      "name": "get_weather"}, "thoughtSignature": "CiQBEU0yD2MsprqbQcW1lWisFInZrJ3PjgZu8XAVQUBlzzseaMIKXgERTTIPnaFBo4NnkFQXD5DQmuErcuhoiI5HkSNX_BXv2zqLuB468_Yvygi0OhPiHnP-BBNEr2VQfk2po7c8K0HcW3eD5wD_VA8XrHwNNaulYB6AccV2layykQFA1FgK9gEBEU0yD0N_J1joBn87EXI_y7VRXctdFLgOksmYyeLENOJr_gJxrK49jcrilzpsrbpCB0Tj62AV9zojV5-8kv9zaSYGfaOqAlbnxE-0fOAzgaE8ZO_9-xHNNHRrAMOw-EsjgfQS8nLfDeM3ZPc-qYrxsrpZEJcs0XkFNVzjLqDXKzMW5tcLIHFJkXnpuAs6LBPu1z3LrSxWleMKqTGJM7oAMEx1B71jnMG4FIudXhUMIgWZAbzopmIvKCBl39lvEp6wlSxvDoXzp93fH8aHBBYnWOijzzgULcp1SSMMi6auPvCR0l9n9wSIjM7doXVOfYGY0eiIdUcKZgERTTIPhWQ3s-HJcK6yZFNZ4KXAflPRYBGVBmKB5uim_31ItTkzP4CpaZCcqjE1kyIxD0FG-dwloCeH7zqhOxwz7CGijtFWolUBf0KAkKc7JGMZojvrq2QqkeFvrqxAjkj1EPUiKA=="}],
+      "name": "get_weather"}, "thoughtSignature": "CiQBEU0yD982HkZaOklgnJdL77KaWokgkH-3abt14zy7FYAeq6IKXgERTTIPSxVdIdWriNAi2VUpBg3y9cOLLqFx6MG5H193hZ-39I3v6ieAUzySvHbtxQ5Jb-vdg3NH0NJj52_xig3Poinoj_7MDV57zbBRMwV04GZ92N8eK_EqlBb0Ye0K_QEBEU0yD3c6bFWOzGu9rsXMTgpQpqA-hQBuHRKJz_M25kZND0B7jIafGVqt8TNTATZFdLepewxPEEcPsI6gYWp9DXAbVlcjgDTOnuyUYTl1R8_3J8p2jOcbpp3bzdrROk3igqYaUEbUd8UM16u3qXSALR2vpjBXDaad0mbgWb2ilb0LgNm8iOiS2KWdJbhzHbUPd2J1GtbMYWpWwEkKjO_YDW-PcHtEr81hfVwof5ND07MBBpiONvPM5WQbQ-6p0eq8_V2zFjC-IllG_u0ENzV_pfDYBMtnFL52vB6NFJxCA-WWm08tZ4bHlVJsBkd0JlQUBhQGlgJ5KIotoNBzCl8BEU0yD63radGXL4C-tIQ66GtQmlDt_HZelva37CotXT97CEaBMsw--LxmAc45yT0IUJCOh2XebcB0vZJvUZn0uD0HeZD7FpaRNfbVA6zHKvbtgmqTav0QPL4AIDemQw=="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "get_weather", "response":
       {"result": "22 degrees celsius and sunny in Paris, France"}}}], "role": "user"}],
       "tools": [{"functionDeclarations": [{"description": "Get the current weather
@@ -90,24 +90,24 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.16.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.16.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The\"}],\"role\":
-        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 228,\"candidatesTokenCount\":
-        1,\"totalTokenCount\": 229,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        228}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\":
-        \"PRByasflJ8X9jrEPmYPb4Q4\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
-        {\"parts\": [{\"text\": \" weather in Paris, France is 22 degrees Celsius
-        and sunny.\"}],\"role\": \"model\"},\"finishReason\": \"STOP\",\"index\":
-        0}],\"usageMetadata\": {\"promptTokenCount\": 228,\"candidatesTokenCount\":
-        15,\"totalTokenCount\": 243,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        228}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\":
-        \"PRByasflJ8X9jrEPmYPb4Q4\"}\r\n\r\n"
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
+        weather in Paris\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
+        {\"promptTokenCount\": 229,\"candidatesTokenCount\": 4,\"totalTokenCount\":
+        233,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 229}],\"serviceTier\":
+        \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\": \"ngB6asXTG7ql1MkPmMOk0QE\"}\r\n\r\ndata:
+        {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \", France is 22 degrees
+        Celsius and sunny.\"}],\"role\": \"model\"},\"finishReason\": \"STOP\",\"index\":
+        0}],\"usageMetadata\": {\"promptTokenCount\": 229,\"candidatesTokenCount\":
+        15,\"totalTokenCount\": 244,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        229}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash\",\"responseId\":
+        \"ngB6asXTG7ql1MkPmMOk0QE\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -116,11 +116,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Tue, 04 Aug 2026 16:15:57 GMT
+      - Mon, 10 Aug 2026 16:47:26 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=341
+      - gfet4t7; dur=616
       transfer-encoding:
       - chunked
       vary:

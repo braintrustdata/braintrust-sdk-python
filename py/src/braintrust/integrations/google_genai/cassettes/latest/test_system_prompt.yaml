@@ -18,40 +18,38 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.16.0 gl-python/3.14.6
+      - google-genai-sdk/2.17.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.16.0 gl-python/3.14.6
+      - google-genai-sdk/2.17.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Ahoy there, matey!  The weather, ye
-        ask? Well, let me cast me spyglass o'er the horizon!\\n\\nRight now, the skies
-        be lookin' a wee bit... *blustery*. The winds be pickin' up, enough to fill
-        a mainsail and send a few stray gulls squawkin'. It ain't a full-blown squall,
-        mind ye, but I'd be keepin' a weather eye on it if I were ye.\\n\\nThe sea
-        be a bit choppy, with waves rollin' in like a drunken sailor. Nothin' to fear
-        fer a seasoned sea dog, but if ye be new to the waves, ye might feel a bit
-        o'\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"MAX_TOKENS\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n
-        \   \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 151,\n    \"totalTokenCount\":
-        170,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 19\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"QBByaqnMNKC9sOIP-KvquQw\"\n}\n"
+        [\n          {\n            \"text\": \"Ahoy there, matey! The skies be lookin'
+        a bit blustery today, with a chance o' squalls rollin' in from the west. Best
+        batten down the hatches and keep a weather eye on the horizon! The wind be
+        pickin' up, and the waves might get a bit choppy. But fear not, a true pirate
+        can handle a bit o' rough seas!\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n
+        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\":
+        83,\n    \"totalTokenCount\": 102,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"oQB6aoHHLuC4jrEP05K38AY\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1052'
+      - '851'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 04 Aug 2026 16:16:01 GMT
+      - Mon, 10 Aug 2026 16:47:30 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1150
+      - gfet4t7; dur=767
       transfer-encoding:
       - chunked
       vary:
