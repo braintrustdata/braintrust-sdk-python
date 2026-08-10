@@ -237,6 +237,7 @@ lint = [
     # can find mutually compatible transitive deps.
     "agentscope<2",
     "agno",
+    "ai>=0.4.0; python_version>='3.12'",
     "anthropic",
     "autogen-agentchat",
     "autogen-ext[openai]",
@@ -339,6 +340,10 @@ conflicts = [
 # ---------------------------------------------------------------------------
 
 [tool.braintrust.matrix]
+
+[tool.braintrust.matrix.ai-sdk]
+latest = "ai[openai]==0.4.2"
+"0.4.0" = "ai[openai]==0.4.0"
 
 [tool.braintrust.matrix.openai]
 latest = "openai==2.53.0"
@@ -510,6 +515,7 @@ latest = "botocore==1.43.63"
 # ---------------------------------------------------------------------------
 [tool.braintrust.cassette-dirs]
 adk = ["google-adk"]
+ai_sdk = ["ai-sdk"]
 agentscope = ["agentscope"]
 agno = ["agno"]
 autogen = ["autogen-agentchat"]
@@ -536,6 +542,7 @@ pydantic_ai = ["pydantic-ai-integration", "pydantic-ai-wrap-openai"]
 strands = ["strands-agents"]
 
 [tool.braintrust.vendor-packages]
+ai-sdk = "ai"
 agno = "agno"
 agentscope = "agentscope"
 autogen-agentchat = "autogen_agentchat"

@@ -218,6 +218,21 @@ _VENDOR_IMPORT_NAMES = tuple(_VENDOR_TABLE.values())
 # Version matrices — derived from dependency groups in pyproject.toml
 # ---------------------------------------------------------------------------
 
+AI_SDK_VERSIONS = _get_matrix_versions("ai-sdk")
+
+
+@nox.session()
+@nox.parametrize("version", AI_SDK_VERSIONS, ids=AI_SDK_VERSIONS)
+def test_ai_sdk(session, version):
+    """Test the Vercel AI SDK for Python telemetry integration."""
+    if sys.version_info < (3, 12):
+        session.skip("Vercel AI SDK for Python requires Python 3.12+")
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", LATEST)
+    _install_matrix_dep(session, "ai-sdk", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/ai_sdk/test_ai_sdk.py", version=version)
+
+
 ANTHROPIC_VERSIONS = _get_matrix_versions("anthropic")
 
 
@@ -773,24 +788,28 @@ def pylint(session):
 def _install_test_deps(session):
     # Choose the way we'll install braintrust ... wheel or source.
     install_wheel = "--wheel" in session.posargs
-    bt = _get_braintrust_wheel() if install_wheel else "."
 
-    # Install braintrust itself (wheel or editable source).
-    session.install(bt)
+    # Install braintrust itself. Source installs are editable so that
+    # site-packages resolves to src/ instead of holding a copy. A copy goes
+    # stale as soon as the session venv is reused (``nox -R``), and anything
+    # that imports braintrust outside of pytest -- notably the subprocesses
+    # spawned by ``verify_autoinstrument_script`` -- picks up site-packages
+    # rather than the source tree, so it would silently exercise the code from
+    # whenever the venv was last built.
+    session.install(*([_get_braintrust_wheel()] if install_wheel else ["-e", "."]))
 
     # Install base test deps (pytest, pytest-asyncio, pytest-vcr) from the
     # lockfile so transitive deps are pinned and reproducible.
     _install_group_locked(session, "test")
 
-    # Sanity check we have installed braintrust (and that it is from a wheel if needed)
-    session.run("python", "-c", "import braintrust")
-    if install_wheel:
-        lines = [
-            "import sys, braintrust as b",
-            "print(f'Using braintrust from: {b.__file__}')",
-            "sys.exit(0 if 'site-packages' in b.__file__ else 1)",
-        ]
-        session.run("python", "-c", ";".join(lines))
+    # Sanity check braintrust imports from where this mode expects it:
+    # site-packages for a wheel, the source tree for an editable install.
+    lines = [
+        "import sys, braintrust as b",
+        "print(f'Using braintrust from: {b.__file__}')",
+        f"sys.exit(0 if {install_wheel} == ('site-packages' in b.__file__) else 1)",
+    ]
+    session.run("python", "-c", ";".join(lines))
 
 
 def _get_braintrust_wheel():

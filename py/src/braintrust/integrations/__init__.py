@@ -1,6 +1,7 @@
 from .adk import ADKIntegration
 from .agentscope import AgentScopeIntegration
 from .agno import AgnoIntegration
+from .ai_sdk import AISDKIntegration
 from .anthropic import AnthropicIntegration
 from .autogen import AutoGenIntegration
 from .bedrock_runtime import BedrockRuntimeIntegration
@@ -30,6 +31,7 @@ __all__ = [
     "ADKIntegration",
     "AgentScopeIntegration",
     "AgnoIntegration",
+    "AISDKIntegration",
     "AnthropicIntegration",
     "AutoGenIntegration",
     "BedrockRuntimeIntegration",

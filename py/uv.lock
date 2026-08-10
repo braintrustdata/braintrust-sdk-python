@@ -103,6 +103,21 @@ wheels = [
 ]
 
 [[package]]
+name = "ai"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx", marker = "python_full_version >= '3.12'" },
+    { name = "modelsdotdev", marker = "python_full_version >= '3.12'" },
+    { name = "pydantic", marker = "python_full_version >= '3.12'" },
+    { name = "typing-extensions", marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4d/e2/134605bd59c7c45a483c61572bf87dd887271ec82f3a1faf091ad91c73a0/ai-0.4.2.tar.gz", hash = "sha256:1c07429e1653d83a3b1b293bea3b2eb301c93e31439e3bca5e81fab87dc8d5a2", size = 1178023, upload-time = "2026-08-05T16:54:32.543Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/8a/7f7e48978ae40215f260e19517161b153b32ad6afc22df06a8bc8c1fcbb2/ai-0.4.2-py3-none-any.whl", hash = "sha256:55bd0d35213e202fd60632b788c29f3556e86ab8face1d9216ccdb224a1b21f0", size = 179861, upload-time = "2026-08-05T16:54:30.889Z" },
+]
+
+[[package]]
 name = "aiofile"
 version = "3.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -727,6 +742,7 @@ dev = [
 lint = [
     { name = "agentscope" },
     { name = "agno" },
+    { name = "ai", marker = "python_full_version >= '3.12'" },
     { name = "anthropic" },
     { name = "autoevals" },
     { name = "autogen-agentchat" },
@@ -943,6 +959,7 @@ dev = [
 lint = [
     { name = "agentscope", specifier = "<2" },
     { name = "agno" },
+    { name = "ai", marker = "python_full_version >= '3.12'", specifier = ">=0.4.0" },
     { name = "anthropic" },
     { name = "autoevals" },
     { name = "autogen-agentchat" },
@@ -3935,6 +3952,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d5/e0/9d3e8bcfa73357f997ea297148d16ac243d1a228838334179a9199b713ff/mistralai-2.9.1.tar.gz", hash = "sha256:5b3983c6fddc81b898f1dd5a61a96a59a0e18069c54940cac9b5220dd6b66486", size = 534224, upload-time = "2026-08-04T16:23:45.027Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ff/6e/11d537beb67fd7dc0f1028c4a9f4f8230c6328abf6e2f2c9d0447ea0e4a4/mistralai-2.9.1-py3-none-any.whl", hash = "sha256:6f83177b8c4fdffdd2a054cf9d96fc7c0d7a474e856ecd1f0b7070344128516b", size = 1270991, upload-time = "2026-08-04T16:23:43.001Z" },
+]
+
+[[package]]
+name = "modelsdotdev"
+version = "0.20260610.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/56/1505bb4d88d8c30261a2402c28ef9a7c8898bd428259ce9857931fc00603/modelsdotdev-0.20260610.0.tar.gz", hash = "sha256:f5e2d4e4c9b0a361d3e15d85e2c0fbacc787a7bdc66905807626953f3e22df9a", size = 815116, upload-time = "2026-06-10T16:38:42.015Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/78/0b/8cc67217511c8cbb4f997095b9abe7742627b412a1baf021a5991739a20a/modelsdotdev-0.20260610.0-py3-none-any.whl", hash = "sha256:d2595fcd3845d10b67b341d1f68b6cf25f573e89bf6f3a1e00bf81a816b909b4", size = 821929, upload-time = "2026-06-10T16:38:40.748Z" },
 ]
 
 [[package]]
