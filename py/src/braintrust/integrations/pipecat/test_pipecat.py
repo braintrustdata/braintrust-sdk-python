@@ -269,7 +269,6 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger):
     assert llm_span["metrics"]["tokens"] >= llm_span["metrics"]["completion_tokens"]
 
 
-@pytest.mark.vcr
 def test_setup_and_wrap_pipeline_worker_are_idempotent():
     Pipeline = _import("pipecat.pipeline.pipeline.Pipeline")
     PipelineWorker = _import("pipecat.pipeline.worker.PipelineWorker")

@@ -17,19 +17,19 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.16.0 gl-python/3.14.6
+      - google-genai-sdk/2.17.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.16.0 gl-python/3.14.6
+      - google-genai-sdk/2.17.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"As of early 2026, the population\"\n
-        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\":
-        {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n
-        \ align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
+        [\n          {\n            \"text\": \"The current population of Tokyo, Japan,
+        varies depending on the\"\n          }\n        ],\n        \"role\": \"model\"\n
+        \     },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\":
+        {\n        \"searchEntryPoint\": {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container
+        {\\n  align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
         Google Sans, Roboto, sans-serif;\\n  font-size: 14px;\\n  line-height: 20px;\\n
         \ padding: 8px 12px;\\n}\\n.chip {\\n  display: inline-block;\\n  border:
         solid 1px;\\n  border-radius: 16px;\\n  min-width: 14px;\\n  padding: 5px
@@ -91,31 +91,35 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFPUWrkeXBBIY00r3vOOVEWSwrfYdiaEGFn3aWJwyyZU0kueZ53v7DwZz32PLX0ZXahExavbptN7_LfJ_BWa1Y11SJWWaw08lMfbaV3yIv7-_u8_5LuPVMJnU_LRaUSfbXs1pYAVLSbB96V6vENT3dW8nHWpHHIZA2PKGBzn0ZpG6WbT-uy_iwP0mvWHQJXtQBtCNTwK7a3Og==\\\"\\u003eTokyo
-        population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHn5LGAzY6tA62Cl9P9nwsCX4hbP9r7OEMhyMntXpL-T-ns1SPsL7D8aLvHpHT22XjyP74AkJRdyviWEOhHswDctPzTsROL7Ya6tCNpL6XT__AxOR6JkinuVn9v4u-nYZfPafAj39nrQZUJjNM6Zx6LWll1okV86OTycGYdnylC4bR-3tn4ItFW6HOgp_eGakadcrj5_7cjEoOQs94-sA==\\\"\\u003ecurrent
-        population of Tokyo\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH084wNbchMdLUbFxCnwEdrqpQuoByDJDQjzePANPbb1_TZV-OS7Kq3di-hL9XD8cWjukmsf1e1ehDulOz2-RQi9OGOT1y6ik3mlU37iCAvmhgDbDoH0W0i6G1UKJy7Rxgi9xsbx_JyJLm4KqKleswrAm7JGf_ussWH6zRwYJyRZ7clO67A_DT6pH-MuR-mvg4EECbGJ3Qq\\\"\\u003eTokyo
+        population 2026\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEL4iWqqz6nON_vCd6nGOR4YdfsvR2mcQ8EcC8deBDHdjLlg0Z7n6v2tAv8BN2XQUBWs0dcNlJ2sikzsLkpJNddvVXwf9i7UZhKbc7bfhwtSgZLbw4nY_mMEnDZdf_ybPTmnDLrQ5NFqWwe5N5ClQicvXtWTzcdACqiXkxeuJPSUonSVtmbqLzzheiXIoZygwX5vWKiiQDYQhJa9OZITao4hAhV\\\"\\u003ecurrent
+        population of Tokyo Japan\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHLOZ1IYd_dBWbsNXFixbTC7fS_eN2-d85qL2adFuqhToEq52-QpevG8ini4GmFBDbCBnGQkbznIqkDPFBBivDqkSjrI9VqjbiUma2UCzCoYqsY62c0lTpmHuoAeLhUZ_thwZtkj0VWPFsZap2XllViS9JRD-jGxV4A6gZKP-i2okSWFndwCOtUEnj-pGtZouFrDT_ns_8U\\\"\\u003eTokyo
+        population 2025\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEqcPnEn2MNAmoVyz8_iVZ_-ijsyUffWCyypqImLARA9nBMnVe1dZOgl21TBMu32kBIBbUkAJpy-2-A3RSrYbzhlc_pgq3QzCkwZAcavMdsGtLClv9y-Pf8ufXr0EhQcq9zgjZNjl2trIJG0jItBVGv7159ZC95gMLhkJZZUpuwtC-SdLQbGx95oOMMBd5lJC0YYabqsxde\\\"\\u003eTokyo
+        population 2024\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
         \       },\n        \"webSearchQueries\": [\n          \"current population
-        of Tokyo\",\n          \"Tokyo population 2026\"\n        ]\n      }\n    }\n
-        \ ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\":
-        35,\n    \"totalTokenCount\": 472,\n    \"promptTokensDetails\": [\n      {\n
+        of Tokyo Japan\",\n          \"Tokyo population 2026\",\n          \"Tokyo
+        population 2025\",\n          \"Tokyo population 2024\"\n        ]\n      }\n
+        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\":
+        55,\n    \"totalTokenCount\": 460,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n      }\n    ],\n
-        \   \"toolUsePromptTokenCount\": 88,\n    \"toolUsePromptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 88\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 338,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"ZBByauOYNci4sOIP04nsmQs\"\n}\n"
+        \   \"toolUsePromptTokenCount\": 82,\n    \"toolUsePromptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 82\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 312,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"yAB6arK9Js-k1MkPy_LzkAQ\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '6483'
+      - '7296'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 04 Aug 2026 16:16:39 GMT
+      - Mon, 10 Aug 2026 16:48:12 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=2964
+      - gfet4t7; dur=3802
       transfer-encoding:
       - chunked
       vary:
