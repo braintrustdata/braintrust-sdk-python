@@ -18,6 +18,7 @@ from braintrust.integrations import (
     ClaudeAgentSDKIntegration,
     CohereIntegration,
     CrewAIIntegration,
+    CursorSDKIntegration,
     DSPyIntegration,
     GoogleGenAIIntegration,
     HuggingFaceHubIntegration,
@@ -69,6 +70,7 @@ def auto_instrument(
     agno: bool = True,
     agentscope: bool = True,
     claude_agent_sdk: bool = True,
+    cursor_sdk: bool = True,
     dspy: bool = True,
     adk: bool = True,
     langchain: bool = True,
@@ -106,6 +108,7 @@ def auto_instrument(
         agno: Enable Agno instrumentation (default: True)
         agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
+        cursor_sdk: Enable Cursor SDK instrumentation (default: True)
         dspy: Enable DSPy instrumentation (default: True)
         adk: Enable Google ADK instrumentation (default: True)
         langchain: Enable LangChain instrumentation (default: True)
@@ -192,6 +195,8 @@ def auto_instrument(
         results["agentscope"] = _instrument_integration(AgentScopeIntegration)
     if claude_agent_sdk:
         results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
+    if cursor_sdk:
+        results["cursor_sdk"] = _instrument_integration(CursorSDKIntegration)
     if dspy:
         results["dspy"] = _instrument_integration(DSPyIntegration)
     if adk:

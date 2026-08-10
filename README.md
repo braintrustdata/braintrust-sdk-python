@@ -72,6 +72,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [DSPy](py/src/braintrust/integrations/dspy/) | Yes | `dspy>=2.6.0` |
 | [OpenAI Agents](py/src/braintrust/integrations/openai_agents/) | Yes | `openai-agents>=0.0.19` |
 | [Claude Agent SDK](py/src/braintrust/integrations/claude_agent_sdk/) | Yes | `claude_agent_sdk>=0.1.10` |
+| [Cursor SDK](py/src/braintrust/integrations/cursor_sdk/) | Yes | `cursor-sdk>=1.0.25` |
 | [AutoGen](py/src/braintrust/integrations/autogen/) | Yes | `autogen-agentchat>=0.7.0` |
 | [CrewAI](py/src/braintrust/integrations/crewai/) | Yes | `crewai>=1.13.0` |
 | [Strands](py/src/braintrust/integrations/strands/) | Yes | `strands-agents>=1.20.0` |

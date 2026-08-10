@@ -382,6 +382,12 @@ latest = "pipecat-ai==1.4.0"
 latest = "claude-agent-sdk==0.2.129"
 "0.1.10" = "claude-agent-sdk==0.1.10"
 
+[tool.braintrust.matrix.cursor-sdk]
+# 1.0.25 fixes bridge callback tokens that could be parsed as CLI flags while
+# retaining per-turn usage, sync/async consumption, multimodal, and custom tools.
+latest = "cursor-sdk==1.0.26"
+"1.0.25" = "cursor-sdk==1.0.25"
+
 [tool.braintrust.matrix.agno]
 latest = "agno==2.8.6"
 "2.4.0" = "agno==2.4.0"
@@ -517,6 +523,7 @@ anthropic = ["anthropic"]
 bedrock_runtime = ["boto3", "botocore"]
 cohere = ["cohere"]
 claude_agent_sdk = ["claude-agent-sdk"]
+cursor_sdk = ["cursor-sdk"]
 crewai = ["crewai"]
 dspy = ["dspy"]
 google_genai = ["google-genai"]
@@ -547,6 +554,7 @@ braintrust-core = "braintrust_core"
 boto3 = "boto3"
 botocore = "botocore"
 crewai = "crewai"
+cursor-sdk = "cursor_sdk"
 dspy = "dspy"
 google-adk = "google.adk"
 google-genai = "google.genai"

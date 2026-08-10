@@ -8,6 +8,7 @@ from .bedrock_runtime import BedrockRuntimeIntegration
 from .claude_agent_sdk import ClaudeAgentSDKIntegration
 from .cohere import CohereIntegration
 from .crewai import CrewAIIntegration
+from .cursor_sdk import CursorSDKIntegration
 from .dspy import DSPyIntegration
 from .google_genai import GoogleGenAIIntegration
 from .huggingface_hub import HuggingFaceHubIntegration
@@ -37,6 +38,7 @@ __all__ = [
     "ClaudeAgentSDKIntegration",
     "CohereIntegration",
     "CrewAIIntegration",
+    "CursorSDKIntegration",
     "DSPyIntegration",
     "GoogleGenAIIntegration",
     "HuggingFaceHubIntegration",
