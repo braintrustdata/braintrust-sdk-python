@@ -11,6 +11,7 @@ import braintrust
 import pytest
 from braintrust import (
     auto_instrument,
+    setup_ai_sdk,
     setup_pydantic_ai,
     wrap_anthropic,
     wrap_litellm,
@@ -25,6 +26,7 @@ _PUBLIC_SYMBOLS = [
     ("wrap_litellm", wrap_litellm),
     ("wrap_openai", wrap_openai),
     ("wrap_openrouter", wrap_openrouter),
+    ("setup_ai_sdk", setup_ai_sdk),
     ("setup_pydantic_ai", setup_pydantic_ai),
 ]
 

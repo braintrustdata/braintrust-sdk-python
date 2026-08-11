@@ -1,12 +1,12 @@
 import asyncio
 import contextlib
-import io
 import json
 import time
-import wave
 from contextvars import ContextVar
 from typing import Any
 
+from braintrust.env import BraintrustEnv
+from braintrust.integrations.utils import _pcm_to_wav
 from braintrust.logger import (
     NOOP_SPAN,
     Attachment,
@@ -440,7 +440,10 @@ async def traced_audio_output_capture_frame(
     if getattr(instance, _PLAYBACK_HANDLER_ATTACHED_ATTR, False):
         if getattr(instance, _PLAYBACK_START_ATTR, None) is None:
             setattr(instance, _PLAYBACK_START_ATTR, time.time())
-        _capture_playback_audio(instance, args[0] if args else kwargs.get("frame"))
+        if BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False):
+            _capture_playback_audio(instance, args[0] if args else kwargs.get("frame"))
+        else:
+            _clear_playback_audio(instance)
     return await wrapped(*args, **kwargs)
 
 
@@ -677,7 +680,7 @@ def _pop_playback_audio(obj: Any) -> Attachment | None:
     audio = getattr(obj, _PLAYBACK_AUDIO_ATTR, None)
     metadata = getattr(obj, _PLAYBACK_AUDIO_METADATA_ATTR, None) or {}
     _clear_playback_audio(obj)
-    if not audio:
+    if not BraintrustEnv.CAPTURE_AGENT_AUDIO_ATTACHMENTS.get(False) or not audio:
         return None
     sample_rate = metadata.get("sample_rate")
     num_channels = metadata.get("num_channels")
@@ -693,17 +696,6 @@ def _pop_playback_audio(obj: Any) -> Attachment | None:
         filename=f"agent_speaking{suffix}.pcm",
         content_type="audio/pcm",
     )
-
-
-def _pcm_to_wav(audio: bytes, *, sample_rate: int, num_channels: int) -> bytes:
-    buffer = io.BytesIO()
-    with wave.open(buffer, "wb") as wav_file:
-        writer: Any = wav_file
-        writer.setnchannels(num_channels)  # pylint: disable=no-member
-        writer.setsampwidth(2)  # pylint: disable=no-member
-        writer.setframerate(sample_rate)  # pylint: disable=no-member
-        writer.writeframes(audio)  # pylint: disable=no-member
-    return buffer.getvalue()
 
 
 _AGENT_TURN_METADATA_FIELDS = (

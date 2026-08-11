@@ -1,0 +1,271 @@
+interactions:
+- request:
+    body: '{"options": {"model": {"id": "composer-2.5"}, "apiKey": "<REDACTED>", "local":
+      {"cwd": "<WORKSPACE>"}}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '277'
+      content-type:
+      - application/json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/CreateAgent
+  response:
+    body:
+      string: '{"agentId":"agent-24e9e5e8-a921-4b13-aa72-7e5a999f3287","model":{"id":"composer-2.5"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '86'
+      content-type:
+      - application/json
+      date:
+      - Wed, 05 Aug 2026 21:00:55 GMT
+      keep-alive:
+      - timeout=5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!binary |
+      AAAAAN17ImFnZW50SWQiOiAiYWdlbnQtMjRlOWU1ZTgtYTkyMS00YjEzLWFhNzItN2U1YTk5OWYz
+      Mjg3IiwgIm1lc3NhZ2UiOiB7InRleHQiOiAiQnJpZWZseSBkZXNjcmliZSB0aGlzIGltYWdlLiIs
+      ICJpbWFnZXMiOiBbeyJkYXRhIjogeyJkYXRhIjogIjxCQVNFNjRfREFUQT4iLCAibWltZVR5cGUi
+      OiAiaW1hZ2UvcG5nIn19XX0sICJvcHRpb25zIjogeyJhcGlLZXkiOiAiPFJFREFDVEVEPiJ9fQ==
+    headers:
+      accept:
+      - application/connect+json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '364'
+      content-type:
+      - application/connect+json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/Send
+  response:
+    body:
+      string: !!binary |
+        AAAAAMh7InNka01lc3NhZ2UiOnsidHlwZSI6InN0YXR1cyIsIm1lc3NhZ2UiOnsidHlwZSI6InN0
+        YXR1cyIsImFnZW50X2lkIjoiYWdlbnQtMjRlOWU1ZTgtYTkyMS00YjEzLWFhNzItN2U1YTk5OWYz
+        Mjg3IiwicnVuX2lkIjoicnVuLTg5OWU0MDc5LTZjZDctNDc4OS04ODI0LTVlMDBhYzBhNzM0ZCIs
+        InN0YXR1cyI6IlJVTk5JTkcifX0sIm9mZnNldCI6IjEifQAAAADZeyJzZGtNZXNzYWdlIjp7InR5
+        cGUiOiJ0aGlua2luZyIsIm1lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwiYWdlbnRfaWQiOiJh
+        Z2VudC0yNGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJydW5faWQiOiJydW4t
+        ODk5ZTQwNzktNmNkNy00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwidGV4dCI6IkkgbmVlZCB0byBk
+        ZXNjcmliZSB0aGUifX0sIm9mZnNldCI6IjIifQAAAADTeyJzZGtNZXNzYWdlIjp7InR5cGUiOiJ0
+        aGlua2luZyIsIm1lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwiYWdlbnRfaWQiOiJhZ2VudC0y
+        NGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJydW5faWQiOiJydW4tODk5ZTQw
+        NzktNmNkNy00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwidGV4dCI6IiBhdHRhY2hlZCBpbWFnZS4i
+        fX0sIm9mZnNldCI6IjMifQAAAADceyJzZGtNZXNzYWdlIjp7InR5cGUiOiJ0aGlua2luZyIsIm1l
+        c3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwiYWdlbnRfaWQiOiJhZ2VudC0yNGU5ZTVlOC1hOTIx
+        LTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJydW5faWQiOiJydW4tODk5ZTQwNzktNmNkNy00Nzg5
+        LTg4MjQtNWUwMGFjMGE3MzRkIiwidGV4dCI6IlxuXG5UaGUgaW1hZ2UgaXMgYSBzb2xpZCwifX0s
+        Im9mZnNldCI6IjQifQAAAADYeyJzZGtNZXNzYWdlIjp7InR5cGUiOiJ0aGlua2luZyIsIm1lc3Nh
+        Z2UiOnsidHlwZSI6InRoaW5raW5nIiwiYWdlbnRfaWQiOiJhZ2VudC0yNGU5ZTVlOC1hOTIxLTRi
+        MTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJydW5faWQiOiJydW4tODk5ZTQwNzktNmNkNy00Nzg5LTg4
+        MjQtNWUwMGFjMGE3MzRkIiwidGV4dCI6IiB1bmlmb3JtIGJsYWNrIHNxdWFyZSJ9fSwib2Zmc2V0
+        IjoiNSJ9AAAAANx7InNka01lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwibWVzc2FnZSI6eyJ0
+        eXBlIjoidGhpbmtpbmciLCJhZ2VudF9pZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIxMy1hYTcy
+        LTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3OS02Y2Q3LTQ3ODktODgyNC01ZTAw
+        YWMwYTczNGQiLCJ0ZXh0IjoiIHdpdGggbm8gdmlzaWJsZSBkZXRhaWxzLCJ9fSwib2Zmc2V0Ijoi
+        NiJ9AAAAANd7InNka01lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwibWVzc2FnZSI6eyJ0eXBl
+        IjoidGhpbmtpbmciLCJhZ2VudF9pZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIxMy1hYTcyLTdl
+        NWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3OS02Y2Q3LTQ3ODktODgyNC01ZTAwYWMw
+        YTczNGQiLCJ0ZXh0IjoiIHBhdHRlcm5zLCBvciBvdGhlciAifX0sIm9mZnNldCI6IjcifQAAAADK
+        eyJzZGtNZXNzYWdlIjp7InR5cGUiOiJ0aGlua2luZyIsIm1lc3NhZ2UiOnsidHlwZSI6InRoaW5r
+        aW5nIiwiYWdlbnRfaWQiOiJhZ2VudC0yNGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMy
+        ODciLCJydW5faWQiOiJydW4tODk5ZTQwNzktNmNkNy00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwi
+        dGV4dCI6ImNvbG9ycy4ifX0sIm9mZnNldCI6IjgifQAAAADeeyJzZGtNZXNzYWdlIjp7InR5cGUi
+        OiJ0aGlua2luZyIsIm1lc3NhZ2UiOnsidHlwZSI6InRoaW5raW5nIiwiYWdlbnRfaWQiOiJhZ2Vu
+        dC0yNGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJydW5faWQiOiJydW4tODk5
+        ZTQwNzktNmNkNy00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwidGV4dCI6IiIsInRoaW5raW5nX2R1
+        cmF0aW9uX21zIjoyMzh9fSwib2Zmc2V0IjoiOSJ9AAAAAQR7InNka01lc3NhZ2UiOnsidHlwZSI6
+        ImFzc2lzdGFudCIsIm1lc3NhZ2UiOnsidHlwZSI6ImFzc2lzdGFudCIsImFnZW50X2lkIjoiYWdl
+        bnQtMjRlOWU1ZTgtYTkyMS00YjEzLWFhNzItN2U1YTk5OWYzMjg3IiwicnVuX2lkIjoicnVuLTg5
+        OWU0MDc5LTZjZDctNDc4OS04ODI0LTVlMDBhYzBhNzM0ZCIsIm1lc3NhZ2UiOnsicm9sZSI6ImFz
+        c2lzdGFudCIsImNvbnRlbnQiOlt7InR5cGUiOiJ0ZXh0IiwidGV4dCI6IlRoZSJ9XX19fSwib2Zm
+        c2V0IjoiMTAifQAAAAESeyJzZGtNZXNzYWdlIjp7InR5cGUiOiJhc3Npc3RhbnQiLCJtZXNzYWdl
+        Ijp7InR5cGUiOiJhc3Npc3RhbnQiLCJhZ2VudF9pZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIx
+        My1hYTcyLTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3OS02Y2Q3LTQ3ODktODgy
+        NC01ZTAwYWMwYTczNGQiLCJtZXNzYWdlIjp7InJvbGUiOiJhc3Npc3RhbnQiLCJjb250ZW50Ijpb
+        eyJ0eXBlIjoidGV4dCIsInRleHQiOiIgaW1hZ2UgaXMgYSBzb2xpZCJ9XX19fSwib2Zmc2V0Ijoi
+        MTEifQAAAAEHeyJzZGtNZXNzYWdlIjp7InR5cGUiOiJhc3Npc3RhbnQiLCJtZXNzYWdlIjp7InR5
+        cGUiOiJhc3Npc3RhbnQiLCJhZ2VudF9pZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIxMy1hYTcy
+        LTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3OS02Y2Q3LTQ3ODktODgyNC01ZTAw
+        YWMwYTczNGQiLCJtZXNzYWdlIjp7InJvbGUiOiJhc3Npc3RhbnQiLCJjb250ZW50IjpbeyJ0eXBl
+        IjoidGV4dCIsInRleHQiOiIgYmxhY2sifV19fX0sIm9mZnNldCI6IjEyIn0AAAABGHsic2RrTWVz
+        c2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50IiwibWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50Iiwi
+        YWdlbnRfaWQiOiJhZ2VudC0yNGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJy
+        dW5faWQiOiJydW4tODk5ZTQwNzktNmNkNy00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwibWVzc2Fn
+        ZSI6eyJyb2xlIjoiYXNzaXN0YW50IiwiY29udGVudCI6W3sidHlwZSI6InRleHQiLCJ0ZXh0Ijoi
+        IHNxdWFyZSB3aXRoIG5vIHZpc2libGUifV19fX0sIm9mZnNldCI6IjEzIn0AAAABE3sic2RrTWVz
+        c2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50IiwibWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50Iiwi
+        YWdlbnRfaWQiOiJhZ2VudC0yNGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJy
+        dW5faWQiOiJydW4tODk5ZTQwNzktNmNkNy00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwibWVzc2Fn
+        ZSI6eyJyb2xlIjoiYXNzaXN0YW50IiwiY29udGVudCI6W3sidHlwZSI6InRleHQiLCJ0ZXh0Ijoi
+        IGRldGFpbHMsIHBhdHRlcm5zIn1dfX19LCJvZmZzZXQiOiIxNCJ9AAAAAQV7InNka01lc3NhZ2Ui
+        OnsidHlwZSI6ImFzc2lzdGFudCIsIm1lc3NhZ2UiOnsidHlwZSI6ImFzc2lzdGFudCIsImFnZW50
+        X2lkIjoiYWdlbnQtMjRlOWU1ZTgtYTkyMS00YjEzLWFhNzItN2U1YTk5OWYzMjg3IiwicnVuX2lk
+        IjoicnVuLTg5OWU0MDc5LTZjZDctNDc4OS04ODI0LTVlMDBhYzBhNzM0ZCIsIm1lc3NhZ2UiOnsi
+        cm9sZSI6ImFzc2lzdGFudCIsImNvbnRlbnQiOlt7InR5cGUiOiJ0ZXh0IiwidGV4dCI6Iiwgb3Ii
+        fV19fX0sIm9mZnNldCI6IjE1In0AAAABB3sic2RrTWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50
+        IiwibWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50IiwiYWdlbnRfaWQiOiJhZ2VudC0yNGU5ZTVl
+        OC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJydW5faWQiOiJydW4tODk5ZTQwNzktNmNk
+        Ny00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwibWVzc2FnZSI6eyJyb2xlIjoiYXNzaXN0YW50Iiwi
+        Y29udGVudCI6W3sidHlwZSI6InRleHQiLCJ0ZXh0IjoiIG90aGVyIn1dfX19LCJvZmZzZXQiOiIx
+        NiJ9AAAAAQh7InNka01lc3NhZ2UiOnsidHlwZSI6ImFzc2lzdGFudCIsIm1lc3NhZ2UiOnsidHlw
+        ZSI6ImFzc2lzdGFudCIsImFnZW50X2lkIjoiYWdlbnQtMjRlOWU1ZTgtYTkyMS00YjEzLWFhNzIt
+        N2U1YTk5OWYzMjg3IiwicnVuX2lkIjoicnVuLTg5OWU0MDc5LTZjZDctNDc4OS04ODI0LTVlMDBh
+        YzBhNzM0ZCIsIm1lc3NhZ2UiOnsicm9sZSI6ImFzc2lzdGFudCIsImNvbnRlbnQiOlt7InR5cGUi
+        OiJ0ZXh0IiwidGV4dCI6IiBjb2xvcnMifV19fX0sIm9mZnNldCI6IjE3In0AAAABBXsic2RrTWVz
+        c2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50IiwibWVzc2FnZSI6eyJ0eXBlIjoiYXNzaXN0YW50Iiwi
+        YWdlbnRfaWQiOiJhZ2VudC0yNGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMyODciLCJy
+        dW5faWQiOiJydW4tODk5ZTQwNzktNmNkNy00Nzg5LTg4MjQtNWUwMGFjMGE3MzRkIiwibWVzc2Fn
+        ZSI6eyJyb2xlIjoiYXNzaXN0YW50IiwiY29udGVudCI6W3sidHlwZSI6InRleHQiLCJ0ZXh0Ijoi
+        IOKAlCJ9XX19fSwib2Zmc2V0IjoiMTgifQAAAAEGeyJzZGtNZXNzYWdlIjp7InR5cGUiOiJhc3Np
+        c3RhbnQiLCJtZXNzYWdlIjp7InR5cGUiOiJhc3Npc3RhbnQiLCJhZ2VudF9pZCI6ImFnZW50LTI0
+        ZTllNWU4LWE5MjEtNGIxMy1hYTcyLTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3
+        OS02Y2Q3LTQ3ODktODgyNC01ZTAwYWMwYTczNGQiLCJtZXNzYWdlIjp7InJvbGUiOiJhc3Npc3Rh
+        bnQiLCJjb250ZW50IjpbeyJ0eXBlIjoidGV4dCIsInRleHQiOiIganVzdCJ9XX19fSwib2Zmc2V0
+        IjoiMTkifQAAAAELeyJzZGtNZXNzYWdlIjp7InR5cGUiOiJhc3Npc3RhbnQiLCJtZXNzYWdlIjp7
+        InR5cGUiOiJhc3Npc3RhbnQiLCJhZ2VudF9pZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIxMy1h
+        YTcyLTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3OS02Y2Q3LTQ3ODktODgyNC01
+        ZTAwYWMwYTczNGQiLCJtZXNzYWdlIjp7InJvbGUiOiJhc3Npc3RhbnQiLCJjb250ZW50IjpbeyJ0
+        eXBlIjoidGV4dCIsInRleHQiOiIgYSB1bmlmb3JtIn1dfX19LCJvZmZzZXQiOiIyMCJ9AAAAAQd7
+        InNka01lc3NhZ2UiOnsidHlwZSI6ImFzc2lzdGFudCIsIm1lc3NhZ2UiOnsidHlwZSI6ImFzc2lz
+        dGFudCIsImFnZW50X2lkIjoiYWdlbnQtMjRlOWU1ZTgtYTkyMS00YjEzLWFhNzItN2U1YTk5OWYz
+        Mjg3IiwicnVuX2lkIjoicnVuLTg5OWU0MDc5LTZjZDctNDc4OS04ODI0LTVlMDBhYzBhNzM0ZCIs
+        Im1lc3NhZ2UiOnsicm9sZSI6ImFzc2lzdGFudCIsImNvbnRlbnQiOlt7InR5cGUiOiJ0ZXh0Iiwi
+        dGV4dCI6IiBibGFjayJ9XX19fSwib2Zmc2V0IjoiMjEifQAAAAEIeyJzZGtNZXNzYWdlIjp7InR5
+        cGUiOiJhc3Npc3RhbnQiLCJtZXNzYWdlIjp7InR5cGUiOiJhc3Npc3RhbnQiLCJhZ2VudF9pZCI6
+        ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIxMy1hYTcyLTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1
+        bi04OTllNDA3OS02Y2Q3LTQ3ODktODgyNC01ZTAwYWMwYTczNGQiLCJtZXNzYWdlIjp7InJvbGUi
+        OiJhc3Npc3RhbnQiLCJjb250ZW50IjpbeyJ0eXBlIjoidGV4dCIsInRleHQiOiIgZmllbGQuIn1d
+        fX19LCJvZmZzZXQiOiIyMiJ9AAAAASV7InNka01lc3NhZ2UiOnsidHlwZSI6InVzYWdlIiwibWVz
+        c2FnZSI6eyJ0eXBlIjoidXNhZ2UiLCJhZ2VudF9pZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIx
+        My1hYTcyLTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3OS02Y2Q3LTQ3ODktODgy
+        NC01ZTAwYWMwYTczNGQiLCJ1c2FnZSI6eyJpbnB1dFRva2VucyI6MTE0NTMsIm91dHB1dFRva2Vu
+        cyI6MTA2LCJjYWNoZVJlYWRUb2tlbnMiOjgzODQsImNhY2hlV3JpdGVUb2tlbnMiOjAsInRvdGFs
+        VG9rZW5zIjoxOTk0M319fSwib2Zmc2V0IjoiMjMifQAAAADKeyJzZGtNZXNzYWdlIjp7InR5cGUi
+        OiJzdGF0dXMiLCJtZXNzYWdlIjp7InR5cGUiOiJzdGF0dXMiLCJhZ2VudF9pZCI6ImFnZW50LTI0
+        ZTllNWU4LWE5MjEtNGIxMy1hYTcyLTdlNWE5OTlmMzI4NyIsInJ1bl9pZCI6InJ1bi04OTllNDA3
+        OS02Y2Q3LTQ3ODktODgyNC01ZTAwYWMwYTczNGQiLCJzdGF0dXMiOiJGSU5JU0hFRCJ9fSwib2Zm
+        c2V0IjoiMjQifQAAAAKIeyJyZXN1bHQiOnsiYWdlbnRJZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEt
+        NGIxMy1hYTcyLTdlNWE5OTlmMzI4NyIsInJ1bklkIjoicnVuLTg5OWU0MDc5LTZjZDctNDc4OS04
+        ODI0LTVlMDBhYzBhNzM0ZCIsInN0YXR1cyI6IlJVTl9MSUZFQ1lDTEVfU1RBVFVTX0ZJTklTSEVE
+        IiwicmVzdWx0Ijp7InJ1bklkIjoicnVuLTg5OWU0MDc5LTZjZDctNDc4OS04ODI0LTVlMDBhYzBh
+        NzM0ZCIsImFnZW50SWQiOiJhZ2VudC0yNGU5ZTVlOC1hOTIxLTRiMTMtYWE3Mi03ZTVhOTk5ZjMy
+        ODciLCJzdGF0dXMiOiJSVU5fTElGRUNZQ0xFX1NUQVRVU19GSU5JU0hFRCIsInJlc3VsdCI6IlRo
+        ZSBpbWFnZSBpcyBhIHNvbGlkIGJsYWNrIHNxdWFyZSB3aXRoIG5vIHZpc2libGUgZGV0YWlscywg
+        cGF0dGVybnMsIG9yIG90aGVyIGNvbG9ycyDigJQganVzdCBhIHVuaWZvcm0gYmxhY2sgZmllbGQu
+        IiwibW9kZWwiOnsiaWQiOiJjb21wb3Nlci0yLjUifSwiZHVyYXRpb25NcyI6IjU0MDAiLCJjcmVh
+        dGVkQXQiOiIyMDI2LTA4LTA1VDIxOjAwOjU1LjY3NFoiLCJ1c2FnZSI6eyJpbnB1dFRva2VucyI6
+        IjExNDUzIiwib3V0cHV0VG9rZW5zIjoiMTA2IiwiY2FjaGVSZWFkVG9rZW5zIjoiODM4NCIsInRv
+        dGFsVG9rZW5zIjoiMTk5NDMifX19LCJvZmZzZXQiOiIyNSJ9AAAAAIJ7ImRvbmUiOnsiYWdlbnRJ
+        ZCI6ImFnZW50LTI0ZTllNWU4LWE5MjEtNGIxMy1hYTcyLTdlNWE5OTlmMzI4NyIsInJ1bklkIjoi
+        cnVuLTg5OWU0MDc5LTZjZDctNDc4OS04ODI0LTVlMDBhYzBhNzM0ZCJ9LCJvZmZzZXQiOiIyNiJ9
+        AgAAAAJ7fQ==
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/connect+json
+      date:
+      - Wed, 05 Aug 2026 21:00:57 GMT
+      keep-alive:
+      - timeout=5
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"agentId": "agent-24e9e5e8-a921-4b13-aa72-7e5a999f3287"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '57'
+      content-type:
+      - application/json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkAgentService/CloseAgent
+  response:
+    body:
+      string: '{}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '2'
+      content-type:
+      - application/json
+      date:
+      - Wed, 05 Aug 2026 21:01:01 GMT
+      keep-alive:
+      - timeout=5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"graceSeconds": 0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connect-protocol-version:
+      - '1'
+      connection:
+      - keep-alive
+      content-length:
+      - '19'
+      content-type:
+      - application/json
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: http://cursor-sdk-bridge/sdk.v1.SdkBridgeControlService/Shutdown
+  response:
+    body:
+      string: '{}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '2'
+      content-type:
+      - application/json
+      date:
+      - Wed, 05 Aug 2026 21:01:01 GMT
+      keep-alive:
+      - timeout=5
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -5,11 +5,12 @@ A Braintrust stream is a wrapper around a generator of `BraintrustStreamChunk`,
 with utility methods to make them easy to log and convert into various formats.
 """
 
+import asyncio
 import dataclasses
 import json
-from collections.abc import Generator, Iterable
+from collections.abc import AsyncIterator, Generator, Iterable, Iterator
 from itertools import tee
-from typing import Literal
+from typing import Literal, cast
 
 from sseclient import SSEClient
 
@@ -82,12 +83,21 @@ class BraintrustInvokeError(ValueError):
 BraintrustStreamChunk = (
     BraintrustTextChunk | BraintrustJsonChunk | BraintrustErrorChunk | BraintrustConsoleChunk | BraintrustProgressChunk
 )
+_STREAM_END = object()
+_UNSET = object()
+
+
+def _next_or_end(stream: Iterator[BraintrustStreamChunk]) -> BraintrustStreamChunk | object:
+    try:
+        return next(stream)
+    except StopIteration:
+        return _STREAM_END
 
 
 class BraintrustStream:
     """
     A Braintrust stream. This is a wrapper around a generator of `BraintrustStreamChunk`,
-    with utility methods to make them easy to log and convert into various formats.
+    with synchronous and asynchronous iteration utilities for logging and conversion.
     """
 
     def __init__(self, base_stream: SSEClient | list[BraintrustStreamChunk]):
@@ -101,7 +111,9 @@ class BraintrustStream:
             self.stream: Iterable[BraintrustStreamChunk] = self._parse_sse_stream(base_stream)
         else:
             self.stream = base_stream
-        self._memoized_final_value = None
+        self._async_iterator: Iterator[BraintrustStreamChunk] | None = None
+        self._pending_async_read: asyncio.Task[BraintrustStreamChunk | object] | None = None
+        self._memoized_final_value = _UNSET
 
     def _parse_sse_stream(self, sse_client: SSEClient) -> Generator[BraintrustStreamChunk, None, None]:
         """
@@ -149,6 +161,8 @@ class BraintrustStream:
         """
         current_stream = self.stream
         self.stream, new_stream = tee(current_stream)
+        if self._async_iterator is not None:
+            self._async_iterator = iter(self.stream)
         return BraintrustStream(new_stream)
 
     def final_value(self):
@@ -163,9 +177,13 @@ class BraintrustStream:
         Returns:
             The final value of the stream.
         """
-        if self._memoized_final_value is None:
+        if self._memoized_final_value is _UNSET:
             self._memoized_final_value = parse_stream(self)
         return self._memoized_final_value
+
+    async def final_value_async(self):
+        """Consume the stream asynchronously and return its combined final value."""
+        return await asyncio.to_thread(self.final_value)
 
     def __iter__(self):
         """
@@ -175,6 +193,33 @@ class BraintrustStream:
             BraintrustStreamChunk: The next chunk in the stream.
         """
         yield from self.stream
+
+    def __aiter__(self) -> AsyncIterator[BraintrustStreamChunk]:
+        return self
+
+    async def __anext__(self) -> BraintrustStreamChunk:
+        if self._async_iterator is None:
+            self._async_iterator = iter(self.stream)
+            self.stream = self._async_iterator
+        if self._pending_async_read is None:
+            self._pending_async_read = asyncio.create_task(asyncio.to_thread(_next_or_end, self._async_iterator))
+
+        pending_read = self._pending_async_read
+        try:
+            chunk = await asyncio.shield(pending_read)
+        except asyncio.CancelledError:
+            if pending_read.cancelled():
+                self._pending_async_read = None
+            raise
+        except BaseException:
+            self._pending_async_read = None
+            raise
+        else:
+            self._pending_async_read = None
+
+        if chunk is _STREAM_END:
+            raise StopAsyncIteration
+        return cast(BraintrustStreamChunk, chunk)
 
 
 def parse_stream(stream: BraintrustStream):

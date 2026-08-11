@@ -218,6 +218,21 @@ _VENDOR_IMPORT_NAMES = tuple(_VENDOR_TABLE.values())
 # Version matrices — derived from dependency groups in pyproject.toml
 # ---------------------------------------------------------------------------
 
+AI_SDK_VERSIONS = _get_matrix_versions("ai-sdk")
+
+
+@nox.session()
+@nox.parametrize("version", AI_SDK_VERSIONS, ids=AI_SDK_VERSIONS)
+def test_ai_sdk(session, version):
+    """Test the Vercel AI SDK for Python telemetry integration."""
+    if sys.version_info < (3, 12):
+        session.skip("Vercel AI SDK for Python requires Python 3.12+")
+    _install_test_deps(session)
+    _install_matrix_dep(session, "openai", LATEST)
+    _install_matrix_dep(session, "ai-sdk", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/ai_sdk/test_ai_sdk.py", version=version)
+
+
 ANTHROPIC_VERSIONS = _get_matrix_versions("anthropic")
 
 
@@ -351,6 +366,22 @@ def test_claude_agent_sdk(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/claude_agent_sdk/test_claude_agent_sdk.py", version=version)
 
 
+CURSOR_SDK_VERSIONS = _get_matrix_versions("cursor-sdk")
+
+
+@nox.session()
+@nox.parametrize("version", CURSOR_SDK_VERSIONS, ids=CURSOR_SDK_VERSIONS)
+def test_cursor_sdk(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "cursor-sdk", version)
+    # Characterization coverage enables likely downstream provider
+    # instrumentation and verifies that Cursor's subprocess bridge does not
+    # emit provider-owned Python spans for its internal model requests.
+    _install_matrix_dep(session, "openai", LATEST)
+    _install_matrix_dep(session, "anthropic", LATEST)
+    _run_tests(session, f"{INTEGRATION_DIR}/cursor_sdk/test_cursor_sdk.py", version=version)
+
+
 # Pin 2.4.0 to cover the 2.4 -> 2.5 breaking change to internals we leverage for instrumentation.
 AGNO_VERSIONS = _get_matrix_versions("agno")
 
@@ -383,6 +414,29 @@ def test_livekit_agents(session, version):
         "PATH": f"{livekit_server_dir}{os.pathsep}{os.environ.get('PATH', '')}",
     }
     _run_tests(session, f"{INTEGRATION_DIR}/livekit_agents/test_livekit_agents.py", version=version, env=env)
+
+
+PIPECAT_VERSIONS = _get_matrix_versions("pipecat-ai")
+
+
+@nox.session()
+@nox.parametrize("version", PIPECAT_VERSIONS, ids=PIPECAT_VERSIONS)
+def test_pipecat(session, version):
+    if sys.version_info < (3, 11):
+        session.skip("Pipecat AI 1.x requires Python 3.11+")
+    if sys.version_info >= (3, 14):
+        session.skip("Pipecat AI's onnxruntime dependency does not ship Python 3.14 wheels")
+    _install_test_deps(session)
+    _install_group_locked(session, "test-pipecat")
+    _install_matrix_dep(session, "pipecat-ai", version)
+    # Pipecat imports NLTK, whose safe-import finder rejects dependencies
+    # loaded from Nox's virtualenv when it is beneath the current directory.
+    _run_tests(
+        session,
+        f"{INTEGRATION_DIR}/pipecat/test_pipecat.py",
+        version=version,
+        run_from_temp_dir=True,
+    )
 
 
 STRANDS_VERSIONS = _get_matrix_versions("strands-agents")
@@ -626,6 +680,19 @@ def test_temporal(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/temporal")
 
 
+HARBOR_VERSIONS = _get_matrix_versions("harbor")
+
+
+@nox.session()
+@nox.parametrize("version", HARBOR_VERSIONS, ids=HARBOR_VERSIONS)
+def test_harbor(session, version):
+    if Version(platform.python_version()) < Version("3.12"):
+        session.skip("Harbor requires Python 3.12+")
+    _install_test_deps(session)
+    _install_matrix_dep(session, "harbor", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/harbor", version=version)
+
+
 PYTEST_VERSIONS = _get_matrix_versions("pytest-matrix")
 
 
@@ -734,24 +801,28 @@ def pylint(session):
 def _install_test_deps(session):
     # Choose the way we'll install braintrust ... wheel or source.
     install_wheel = "--wheel" in session.posargs
-    bt = _get_braintrust_wheel() if install_wheel else "."
 
-    # Install braintrust itself (wheel or editable source).
-    session.install(bt)
+    # Install braintrust itself. Source installs are editable so that
+    # site-packages resolves to src/ instead of holding a copy. A copy goes
+    # stale as soon as the session venv is reused (``nox -R``), and anything
+    # that imports braintrust outside of pytest -- notably the subprocesses
+    # spawned by ``verify_autoinstrument_script`` -- picks up site-packages
+    # rather than the source tree, so it would silently exercise the code from
+    # whenever the venv was last built.
+    session.install(*([_get_braintrust_wheel()] if install_wheel else ["-e", "."]))
 
     # Install base test deps (pytest, pytest-asyncio, pytest-vcr) from the
     # lockfile so transitive deps are pinned and reproducible.
     _install_group_locked(session, "test")
 
-    # Sanity check we have installed braintrust (and that it is from a wheel if needed)
-    session.run("python", "-c", "import braintrust")
-    if install_wheel:
-        lines = [
-            "import sys, braintrust as b",
-            "print(f'Using braintrust from: {b.__file__}')",
-            "sys.exit(0 if 'site-packages' in b.__file__ else 1)",
-        ]
-        session.run("python", "-c", ";".join(lines))
+    # Sanity check braintrust imports from where this mode expects it:
+    # site-packages for a wheel, the source tree for an editable install.
+    lines = [
+        "import sys, braintrust as b",
+        "print(f'Using braintrust from: {b.__file__}')",
+        f"sys.exit(0 if {install_wheel} == ('site-packages' in b.__file__) else 1)",
+    ]
+    session.run("python", "-c", ";".join(lines))
 
 
 def _get_braintrust_wheel():
@@ -794,7 +865,15 @@ def _run_core_tests(session):
     )
 
 
-def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None, version=None):
+def _run_tests(
+    session,
+    test_path,
+    ignore_path="",
+    ignore_paths=None,
+    env=None,
+    version=None,
+    run_from_temp_dir=False,
+):
     """Run tests against a wheel or the source code. Paths should be relative and start with braintrust."""
     env = env.copy() if env else {}
     if version:
@@ -811,7 +890,12 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None, 
         paths_to_ignore.extend(ignore_paths)
 
     if not wheel_flag:
-        # Run the tests in the src directory
+        # Run the tests in the src directory.
+        source_test_path = f"src/{test_path}"
+        source_ignore_paths = [f"src/{path}" for path in paths_to_ignore]
+        if run_from_temp_dir:
+            source_test_path = os.path.abspath(source_test_path)
+            source_ignore_paths = [os.path.abspath(path) for path in source_ignore_paths]
         test_args = [
             "pytest",
             # Disable the braintrust pytest plugin (registered via pytest11 entry
@@ -819,11 +903,14 @@ def _run_tests(session, test_path, ignore_path="", ignore_paths=None, env=None, 
             # and the source tree both contain braintrust/conftest.py.
             "-p",
             "no:braintrust",
-            f"src/{test_path}",
+            source_test_path,
         ]
-        for path in paths_to_ignore:
-            test_args.append(f"--ignore=src/{path}")
-        session.run(*test_args, *common_args, *pytest_posargs, env=env)
+        test_args.extend(f"--ignore={path}" for path in source_ignore_paths)
+        if run_from_temp_dir:
+            with tempfile.TemporaryDirectory() as tmp, session.chdir(tmp):
+                session.run(*test_args, *common_args, *pytest_posargs, env=env)
+        else:
+            session.run(*test_args, *common_args, *pytest_posargs, env=env)
         return
 
     # Running the tests from the wheel involves a bit of gymnastics to ensure we don't import

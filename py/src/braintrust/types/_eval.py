@@ -10,6 +10,8 @@ from typing import Any, Generic, TypeVar
 
 from typing_extensions import NotRequired, TypedDict
 
+from ..generated_types import ObjectReference
+
 
 Input = TypeVar("Input")
 Expected = TypeVar("Expected")
@@ -30,6 +32,8 @@ class EvalCaseDictNoOutput(Generic[Input], TypedDict):
 
     id: NotRequired[str | None]
     _xact_id: NotRequired[str | None]
+    created: NotRequired[str | None]
+    origin: NotRequired[ObjectReference | None]
 
 
 class EvalCaseDict(Generic[Input, Expected], EvalCaseDictNoOutput[Input]):
@@ -51,3 +55,5 @@ class ExperimentDatasetEvent(TypedDict):
     input: Any | None
     expected: Any | None
     tags: Sequence[str] | None
+    created: NotRequired[str | None]
+    origin: NotRequired[ObjectReference | None]
