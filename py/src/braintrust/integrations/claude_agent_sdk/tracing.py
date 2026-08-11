@@ -60,10 +60,6 @@ class _ActiveToolSpan:
     parent_tool_use_id: str | None = None
     handler_active: bool = False
 
-    @property
-    def has_span(self) -> bool:
-        return True
-
     def activate(self) -> None:
         self.handler_active = True
         self.span.set_current()
@@ -77,21 +73,6 @@ class _ActiveToolSpan:
 
         self.handler_active = False
         self.span.unset_current()
-
-
-class _NoopActiveToolSpan:
-    @property
-    def has_span(self) -> bool:
-        return False
-
-    def log_error(self, exc: Exception) -> None:
-        del exc
-
-    def release(self) -> None:
-        return
-
-
-_NOOP_ACTIVE_TOOL_SPAN = _NoopActiveToolSpan()
 
 
 def _parse_tool_name(tool_name: Any) -> ParsedToolName:
@@ -274,8 +255,11 @@ def _wrap_tool_handler(handler: Any, tool_name: Any) -> Any:
         return handler
 
     async def wrapped_handler(args: Any) -> Any:
-        active_tool_span = _activate_tool_span_for_handler(tool_name, args)
-        if not active_tool_span.has_span:
+        tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
+        active_tool_span = (
+            tool_span_tracker.acquire_span_for_handler(tool_name, args) if tool_span_tracker is not None else None
+        )
+        if active_tool_span is None and tool_span_tracker is None:
             with start_span(
                 name=str(tool_name),
                 span_attributes={"type": SpanTypeAttribute.TOOL},
@@ -284,6 +268,14 @@ def _wrap_tool_handler(handler: Any, tool_name: Any) -> Any:
                 result = await handler(args)
                 span.log(output=result)
                 return result
+
+        if active_tool_span is None:
+            # The SDK executes local MCP handlers independently of application
+            # stream consumption. If the handler wins that race, the active
+            # request's canonical tool span will be created when the matching
+            # AssistantMessage is consumed. Creating a fallback here would log
+            # the same execution twice and place the fallback in a root trace.
+            return await handler(args)
 
         try:
             return await handler(args)
@@ -509,14 +501,6 @@ def _match_tool_span_for_handler(candidates: list[_ActiveToolSpan], args: Any) -
             return active_tool_span
 
     return candidates[0]
-
-
-def _activate_tool_span_for_handler(tool_name: Any, args: Any) -> _ActiveToolSpan | _NoopActiveToolSpan:
-    tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
-    if tool_span_tracker is None:
-        return _NOOP_ACTIVE_TOOL_SPAN
-
-    return tool_span_tracker.acquire_span_for_handler(tool_name, args) or _NOOP_ACTIVE_TOOL_SPAN
 
 
 def _msg_field(message: Any, field: str) -> Any:

@@ -32,6 +32,7 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
     ToolSpanTracker,
     _build_llm_input,
     _create_client_wrapper_class,
+    _create_query_wrapper_function,
     _create_tool_wrapper_class,
     _parse_tool_name,
     _serialize_content_blocks,
@@ -1505,9 +1506,122 @@ def _make_fake_sdk_mcp_tool_class():
     return FakeSdkMcpTool
 
 
+class _ControlledMessageStream:
+    """Pull-based message stream for testing producer/consumer ordering."""
+
+    def __init__(self):
+        self._queue: asyncio.Queue[Any | None] = asyncio.Queue()
+
+    def push(self, message: Any) -> None:
+        self._queue.put_nowait(message)
+
+    def finish(self) -> None:
+        self._queue.put_nowait(None)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        message = await self._queue.get()
+        if message is None:
+            raise StopAsyncIteration
+        return message
+
+
 def _clear_tool_span_tracker() -> None:
     if hasattr(_thread_local, "tool_span_tracker"):
         delattr(_thread_local, "tool_span_tracker")
+
+
+@pytest.mark.asyncio
+async def test_tool_handler_before_tool_use_message_does_not_create_duplicate_span(memory_logger):
+    """An MCP handler may run before the app consumes its tool_use message."""
+    assert not memory_logger.pop()
+
+    controlled_stream = _ControlledMessageStream()
+    wrapped_query = _create_query_wrapper_function(lambda *args, **kwargs: controlled_stream)
+    wrapped_tool_class = _create_tool_wrapper_class(_make_fake_sdk_mcp_tool_class())
+
+    async def get_metadata_handler(args):
+        return {"content": [{"type": "text", "text": f"value for {args['field']}"}]}
+
+    get_metadata_tool = wrapped_tool_class(
+        name="get_metadata",
+        description="Get one metadata field",
+        input_schema={"type": "object"},
+        handler=get_metadata_handler,
+    )
+
+    query = wrapped_query(prompt="Delegate metadata checking to a subagent.")
+    pull = query.__anext__
+    agent_tool_use_id = "call-agent"
+    metadata_tool_use_id = "call-get-metadata"
+    tool_input = {"field": "industry"}
+
+    controlled_stream.push(
+        AssistantMessage(
+            content=[ToolUseBlock(id=agent_tool_use_id, name="Agent", input={"prompt": "Check metadata."})]
+        )
+    )
+    await pull()
+    controlled_stream.push(
+        TaskStartedMessage(
+            subtype="task_started",
+            data={},
+            task_id="task-1",
+            description="Metadata checker",
+            uuid="task-uuid",
+            session_id="session-123",
+            tool_use_id=agent_tool_use_id,
+        )
+    )
+    await pull()
+
+    # The SDK executes local MCP handlers independently of application stream
+    # consumption, so this can happen before the matching AssistantMessage is
+    # pulled from the query iterator.
+    await get_metadata_tool.handler(tool_input)
+
+    controlled_stream.push(
+        AssistantMessage(
+            content=[
+                ToolUseBlock(
+                    id=metadata_tool_use_id,
+                    name="mcp__metadata__get_metadata",
+                    input=tool_input,
+                )
+            ],
+            parent_tool_use_id=agent_tool_use_id,
+        )
+    )
+    await pull()
+    controlled_stream.push(
+        UserMessage(
+            content=[ToolResultBlock(tool_use_id=metadata_tool_use_id, content=[TextBlock("value for industry")])],
+            parent_tool_use_id=agent_tool_use_id,
+        )
+    )
+    await pull()
+    controlled_stream.push(ResultMessage())
+    await pull()
+    controlled_stream.finish()
+    async for _ in query:
+        pass
+
+    spans = memory_logger.pop()
+    root_span = find_span_by_name(spans, "Claude Agent")
+    tool_spans = [
+        span
+        for span in find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+        if span["span_attributes"]["name"] == "get_metadata"
+    ]
+
+    assert len(tool_spans) == 1, "One MCP execution should produce exactly one tool span"
+    tool_span = tool_spans[0]
+    llm_span_ids = {span["span_id"] for span in find_spans_by_type(spans, SpanTypeAttribute.LLM)}
+    assert tool_span["root_span_id"] == root_span["root_span_id"]
+    assert any(parent_id in llm_span_ids for parent_id in tool_span["span_parents"])
+    assert tool_span["metadata"]["gen_ai.tool.call.id"] == metadata_tool_use_id
 
 
 @pytest.mark.asyncio
