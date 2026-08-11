@@ -31,6 +31,7 @@ from braintrust.integrations.utils import (
     _log_and_end_span,
     _log_error_and_end_span,
     _normalize_chat_messages,
+    _tensor_shape,
     _timing_metrics,
 )
 from braintrust.logger import start_span as _bt_start_span
@@ -313,22 +314,17 @@ def _feature_extraction_output(result: Any) -> dict[str, Any] | None:
     if result is None:
         return None
 
-    shape = getattr(result, "shape", None)
-    if shape is not None:
-        try:
-            dims = len(shape)
-            if dims == 1:
-                return {"embedding_length": int(shape[0])}
-            if dims == 2:
-                return {"embedding_count": int(shape[0]), "embedding_length": int(shape[1])}
-            if dims >= 3:
-                return {
-                    "embedding_batch_count": int(shape[0]),
-                    "embedding_count": int(shape[1]),
-                    "embedding_length": int(shape[-1]),
-                }
-        except (TypeError, ValueError):
-            pass
+    shape = _tensor_shape(result)
+    if shape:
+        if len(shape) == 1:
+            return {"embedding_length": shape[0]}
+        if len(shape) == 2:
+            return {"embedding_count": shape[0], "embedding_length": shape[1]}
+        return {
+            "embedding_batch_count": shape[0],
+            "embedding_count": shape[1],
+            "embedding_length": shape[-1],
+        }
 
     if isinstance(result, list):
         if not result:

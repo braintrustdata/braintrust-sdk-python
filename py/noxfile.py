@@ -669,6 +669,27 @@ def test_huggingface_hub(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/huggingface_hub/test_huggingface_hub.py", version=version)
 
 
+TRANSFORMERS_VERSIONS = _get_matrix_versions("transformers")
+
+
+@nox.session()
+@nox.parametrize("version", TRANSFORMERS_VERSIONS, ids=TRANSFORMERS_VERSIONS)
+def test_transformers(session, version):
+    """Test local Hugging Face Transformers pipeline instrumentation."""
+    # The 4.42.0 floor pins tokenizers 0.19, whose wheels stop at Python 3.12.
+    if version != LATEST and sys.version_info >= (3, 13):
+        session.skip(f"Transformers {version} does not support Python 3.13+")
+    _install_test_deps(session)
+    _install_matrix_dep(session, "transformers", version)
+    _install_group_locked(session, "test-transformers")
+    _run_tests(
+        session,
+        f"{INTEGRATION_DIR}/transformers/test_transformers.py",
+        version=version,
+        env={"HF_HUB_DISABLE_PROGRESS_BARS": "1"},
+    )
+
+
 TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")
 
 

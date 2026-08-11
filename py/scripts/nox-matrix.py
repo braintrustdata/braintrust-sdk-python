@@ -93,6 +93,12 @@ def main() -> None:
         help="Exclude a nox session from shard assignment. May be passed multiple times.",
     )
     parser.add_argument(
+        "--exclude-session-prefix",
+        action="append",
+        default=[],
+        help="Exclude nox sessions whose names start with this prefix. May be passed multiple times.",
+    )
+    parser.add_argument(
         "--exclude-static-checks",
         action="store_true",
         default=False,
@@ -129,7 +135,12 @@ def main() -> None:
     excluded_sessions = set(args.exclude_session)
     if args.exclude_static_checks:
         excluded_sessions.update(STATIC_CHECK_SESSIONS)
-    all_sessions = [session for session in all_sessions if session not in excluded_sessions]
+    all_sessions = [
+        session
+        for session in all_sessions
+        if session not in excluded_sessions
+        and not any(session.startswith(prefix) for prefix in args.exclude_session_prefix)
+    ]
     weights, default_weight = load_weights(weights_file)
     shard_assignments = assign_shards(all_sessions, args.num_shards, weights, default_weight)
 

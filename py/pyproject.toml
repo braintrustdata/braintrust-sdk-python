@@ -218,6 +218,14 @@ test-huggingface-hub = [
     "aiohttp",
 ]
 
+test-transformers = [
+    {include-group = "test"},
+    # Local pipeline execution is intentionally isolated from other provider
+    # sessions because PyTorch is a large optional runtime dependency.
+    "torch",
+    "sentencepiece",
+]
+
 test-cli = [
     {include-group = "test"},
     "httpx==0.28.1",
@@ -297,6 +305,18 @@ dev = [
     "pyperf==2.10.0",
 ]
 
+
+# ---------------------------------------------------------------------------
+# UV package sources
+# ---------------------------------------------------------------------------
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 # ---------------------------------------------------------------------------
 # UV conflicts — auxiliary session groups that pin different versions of the
@@ -477,6 +497,10 @@ latest = "mistralai==2.9.1"
 latest = "huggingface-hub==1.27.0"
 "0.32.0" = "huggingface-hub==0.32.0"
 
+[tool.braintrust.matrix.transformers]
+latest = "transformers==5.15.0"
+"4.42.0" = "transformers==4.42.0"
+
 [tool.braintrust.matrix.temporalio]
 latest = "temporalio==1.31.0"
 "1.20.0" = "temporalio==1.20.0"
@@ -581,3 +605,4 @@ openrouter = "openrouter"
 pipecat-ai = "pipecat"
 strands-agents = "strands"
 temporalio = "temporalio"
+transformers = "transformers"

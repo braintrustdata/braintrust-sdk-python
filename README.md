@@ -65,6 +65,7 @@ BRAINTRUST_API_KEY=<YOUR_API_KEY> braintrust eval tutorial_eval.py
 | [Google GenAI](py/src/braintrust/integrations/google_genai/) | Yes | `google-genai>=1.30.0` |
 | [Bedrock Runtime](py/src/braintrust/integrations/bedrock_runtime/) | Yes | `boto3>=1.34.116` |
 | [HuggingFace Hub](py/src/braintrust/integrations/huggingface_hub/) | Yes | `huggingface-hub>=0.32.0` |
+| [Hugging Face Transformers](py/src/braintrust/integrations/transformers/) | Yes | `transformers>=4.42.0` |
 | [Google ADK](py/src/braintrust/integrations/adk/) | Yes | `google-adk>=1.14.1` |
 | [Pydantic AI](py/src/braintrust/integrations/pydantic_ai/) | Yes | `pydantic_ai>=1.10.0` |
 | [LangChain](py/src/braintrust/integrations/langchain/) | Yes | `langchain-core>=0.3.28` |
