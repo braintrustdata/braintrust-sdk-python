@@ -1,6 +1,7 @@
 """Legacy and policy-aware HTTP transport primitives for the Braintrust SDK."""
 
 import datetime
+import http.cookiejar
 import logging
 import sys
 import time
@@ -26,6 +27,11 @@ from .policies import RetryMode, RetryPolicy
 
 
 logger = logging.getLogger(__name__)
+
+
+class _RejectCookiesPolicy(http.cookiejar.DefaultCookiePolicy):
+    def set_ok(self, cookie: Any, request: Any) -> bool:
+        return False
 
 
 class RetryRequestExceptionsAdapter(HTTPAdapter):
@@ -189,6 +195,7 @@ class Transport:
         session: requests.Session | None = None,
         adapter: HTTPAdapter | None = None,
         enable_sdk_retries: bool | None = None,
+        persist_cookies: bool = True,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         wall_clock: Callable[[], float] = time.time,
@@ -196,6 +203,8 @@ class Transport:
         custom_transport = session is not None or adapter is not None
         self._owns_session = session is None
         self.session = session if session is not None else requests.Session()
+        if not persist_cookies and self._owns_session:
+            self.session.cookies.set_policy(_RejectCookiesPolicy())
         self._sdk_retries_enabled = not custom_transport if enable_sdk_retries is None else enable_sdk_retries
         if adapter is not None:
             self.session.mount("http://", adapter)

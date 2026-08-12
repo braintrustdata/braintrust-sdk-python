@@ -41,8 +41,11 @@ from braintrust.functions.stream import BraintrustStream
 from requests.adapters import HTTPAdapter
 
 from . import context, id_gen
-from .api._transport import HTTPConnection
+from .api._routing import EndpointRouter, normalize_proxy_url
+from .api._transport import HTTPConnection, Transport
 from .api._transport import RetryRequestExceptionsAdapter as RetryRequestExceptionsAdapter
+from .api.client import BraintrustClient
+from .api.errors import BraintrustHTTPError
 from .bt_json import bt_dumps, bt_safe_deep_copy
 from .db_fields import (
     AUDIT_METADATA_FIELD,
@@ -53,7 +56,8 @@ from .db_fields import (
     TRANSACTION_ID_FIELD,
     VALID_SOURCES,
 )
-from .env import BraintrustEnv
+from .env import DEFAULT_APP_URL as _DEFAULT_APP_URL
+from .env import BraintrustEnv, resolve_app_url, resolve_org_name
 from .generated_types import (
     AttachmentReference,
     AttachmentStatus,
@@ -168,8 +172,7 @@ TMutableMapping = TypeVar("TMutableMapping", bound=MutableMapping[str, Any])
 
 
 TEST_API_KEY = "___TEST_API_KEY__"
-
-DEFAULT_APP_URL = "https://www.braintrust.dev"
+DEFAULT_APP_URL = _DEFAULT_APP_URL
 
 
 def _get_exporter():
@@ -429,18 +432,6 @@ class _NoopSpan(Span):
 NOOP_SPAN: Span = _NoopSpan()
 NOOP_SPAN_PERMALINK = "https://www.braintrust.dev/noop-span"
 
-_V1_PROXY_SUFFIX = "/v1/proxy"
-
-
-def _normalize_proxy_conn_url(proxy_url: str) -> str:
-    # proxy_url may point at the universal proxy (`{api_url}/v1/proxy`) for
-    # EU/self-hosted orgs, but proxy_conn only targets Braintrust API endpoints
-    # (e.g. function/invoke, function/sandbox-list) served at the API host root.
-    # Drop the suffix so these requests resolve on all data planes.
-    if proxy_url.endswith(_V1_PROXY_SUFFIX):
-        return proxy_url[: -len(_V1_PROXY_SUFFIX)]
-    return proxy_url
-
 
 class BraintrustState:
     def __init__(self):
@@ -467,6 +458,7 @@ class BraintrustState:
         # Context manager is dynamically selected based on current environment
         self._context_manager = None
         self._context_manager_lock = threading.Lock()
+        self._client_lock = threading.RLock()
 
         def default_get_api_conn():
             self.login()
@@ -532,12 +524,14 @@ class BraintrustState:
         self.org_name: str | None = None
         self.api_url: str | None = None
         self.proxy_url: str | None = None
+        self.is_universal_api: bool = False
         self.logged_in: bool = False
         self.git_metadata_settings: GitMetadataSettings | None = None
 
         self._app_conn: HTTPConnection | None = None
         self._api_conn: HTTPConnection | None = None
         self._proxy_conn: HTTPConnection | None = None
+        self._client: BraintrustClient | None = None
         self._user_info: Mapping[str, Any] | None = None
 
     def reset_parent_state(self):
@@ -614,6 +608,7 @@ class BraintrustState:
                     "_context_manager",
                     "_last_otel_setting",
                     "_context_manager_lock",
+                    "_client_lock",
                 )
             }
         )
@@ -625,28 +620,40 @@ class BraintrustState:
         org_name: str | None = None,
         force_login: bool = False,
     ) -> None:
-        if not force_login and self.logged_in:
-            # We have already logged in. If any provided login inputs disagree
-            # with our existing settings, raise an Exception warning the user to
-            # try again with `force_login=True`.
-            def check_updated_param(varname, arg, orig):
-                if arg is not None and orig is not None and arg != orig:
-                    raise Exception(
-                        f"Re-logging in with different {varname} ({arg}) than original ({orig}). To force re-login, pass `force_login=True`"
-                    )
+        with self._client_lock:
+            if not force_login and self.logged_in:
+                # We have already logged in. If any provided login inputs disagree
+                # with our existing settings, raise an Exception warning the user to
+                # try again with `force_login=True`.
+                def check_updated_param(varname, arg, orig):
+                    if arg is not None and orig is not None and arg != orig:
+                        raise Exception(
+                            f"Re-logging in with different {varname} ({arg}) than original ({orig}). To force re-login, pass `force_login=True`"
+                        )
 
-            sanitized_api_key = HTTPConnection.sanitize_token(api_key) if api_key else None
-            check_updated_param("app_url", app_url, self.app_url)
-            check_updated_param("api_key", sanitized_api_key, self.login_token)
-            check_updated_param("org_name", org_name, self.org_name)
-            return
+                sanitized_api_key = HTTPConnection.sanitize_token(api_key) if api_key else None
+                check_updated_param("app_url", app_url, self.app_url)
+                check_updated_param("api_key", sanitized_api_key, self.login_token)
+                check_updated_param("org_name", org_name, self.org_name)
+                return
 
-        state = login_to_state(
-            app_url=app_url,
-            api_key=api_key,
-            org_name=org_name,
-        )
-        self.copy_state(state)
+            state = login_to_state(
+                app_url=app_url,
+                api_key=api_key,
+                org_name=org_name,
+            )
+            self.copy_state(state)
+
+    def api_client(self) -> BraintrustClient:
+        """Return the lazily bootstrapped resource client."""
+
+        if self._client is None:
+            with self._client_lock:
+                if self._client is None:
+                    self.login()
+        if self._client is None:
+            raise RuntimeError("Braintrust API client was not initialized during login")
+        return self._client
 
     def app_conn(self):
         if not self._app_conn:
@@ -669,7 +676,7 @@ class BraintrustState:
         if not self._proxy_conn:
             if not self.proxy_url:
                 raise RuntimeError("Must initialize proxy_url before requesting proxy_conn")
-            self._proxy_conn = HTTPConnection(_normalize_proxy_conn_url(self.proxy_url), adapter=_http_adapter)
+            self._proxy_conn = HTTPConnection(normalize_proxy_url(self.proxy_url), adapter=_http_adapter)
         return self._proxy_conn
 
     def user_info(self) -> Mapping[str, Any]:
@@ -2160,9 +2167,9 @@ def login_to_state(
     state.app_public_url = app_public_url
     state.org_name = org_name
 
-    conn = None
     if api_key == TEST_API_KEY:
-        # a small hook for pseudo-logins
+        # A small hook for pseudo-logins. It still constructs the facade so
+        # concurrent lazy access follows the same state lifecycle as real login.
         test_org_info = [
             {
                 "id": "test-org-id",
@@ -2172,52 +2179,57 @@ def login_to_state(
             }
         ]
         _check_org_info(state, test_org_info, org_name)
+        router = EndpointRouter(app_url=state.app_url, api_url=state.api_url, proxy_url=state.proxy_url)
+        state._client = BraintrustClient.from_transport(
+            transport=Transport(adapter=_http_adapter),
+            router=router,
+            api_key=TEST_API_KEY,
+            org_id=cast(str, state.org_id),
+            org_name=cast(str, state.org_name),
+        )
         state.login_token = TEST_API_KEY
         state.logged_in = True
         return state
-    elif api_key is not None:
-        app_conn = HTTPConnection(state.app_url, adapter=_http_adapter)
-        app_conn.set_token(api_key)
-        resp = app_conn.post("api/apikey/login")
-        if not resp.ok:
-            masked_api_key = mask_api_key(api_key)
-            raise ValueError(f"Invalid API key {masked_api_key}: [{resp.status_code}] {resp.text}")
-        info = resp.json()
 
-        _check_org_info(state, info["org_info"], org_name)
-
-        if not state.api_url:
-            if org_name:
-                raise ValueError(
-                    f"Unable to log into organization '{org_name}'."
-                    " Are you sure this credential is scoped to the organization?"
-                )
-            else:
-                raise ValueError("Unable to log into any organization with the provided credential.")
-
-        conn = state.api_conn()
-        conn.set_token(api_key)
-
-    if not conn:
+    if api_key is None:
         raise ValueError(
             "Could not login to Braintrust. You may need to set BRAINTRUST_API_KEY in your environment "
             "or nearest .env.braintrust file."
         )
 
-    # make_long_lived() allows the connection to retry if it breaks, which we're okay with after
-    # this point because we know the connection _can_ successfully ping.
+    try:
+        client = BraintrustClient(api_key=api_key, org_name=org_name, app_url=state.app_url, adapter=_http_adapter)
+    except BraintrustHTTPError as exc:
+        masked_api_key = mask_api_key(api_key)
+        raise ValueError(f"Invalid API key {masked_api_key}: [{exc.status_code}] {exc.response_body}") from exc
+
+    organization = client.login_result.organization
+    state._client = client
+    state.org_id = client.org_id
+    state.org_name = client.org_name
+    state.api_url = client.router.api_url
+    state.proxy_url = client.router.proxy_url
+    state.is_universal_api = client.router.is_universal_api
+    state.git_metadata_settings = (
+        GitMetadataSettings(**organization.git_metadata) if organization.git_metadata else None
+    )
+
+    # Keep un-migrated call sites on isolated legacy sessions. Their mutable
+    # adapters and session headers must not affect the policy-aware client.
+    conn = state.api_conn()
+    conn.set_token(api_key)
     conn.make_long_lived()
 
-    # Same for the app conn, which we know is valid because we have
-    # successfully logged in.
-    state.app_conn().make_long_lived()
+    app_connection = state.app_conn()
+    app_connection.set_token(api_key)
+    app_connection.make_long_lived()
 
-    # Set the same token in the API
-    state.app_conn().set_token(conn.token)
     if state.proxy_url:
-        state.proxy_conn().set_token(conn.token)
-        state.proxy_conn().make_long_lived()
-    state.login_token = conn.token
+        proxy_connection = state.proxy_conn()
+        proxy_connection.set_token(api_key)
+        proxy_connection.make_long_lived()
+
+    state.login_token = HTTPConnection.sanitize_token(api_key)
     state.logged_in = True
 
     # Replace the global logger's api_conn with this one.
@@ -2861,8 +2873,9 @@ def _check_org_info(state, org_info, org_name):
         if org_name is None or orgs["name"] == org_name:
             state.org_id = orgs["id"]
             state.org_name = orgs["name"]
-            state.api_url = os.environ.get("BRAINTRUST_API_URL", orgs["api_url"])
-            state.proxy_url = os.environ.get("BRAINTRUST_PROXY_URL", orgs["proxy_url"])
+            state.api_url = BraintrustEnv.API_URL.get(orgs.get("api_url"))
+            state.proxy_url = BraintrustEnv.PROXY_URL.get(orgs.get("proxy_url"))
+            state.is_universal_api = bool(orgs.get("is_universal_api", False))
             state.git_metadata_settings = (
                 GitMetadataSettings(**orgs["git_metadata"]) if orgs.get("git_metadata") else None
             )
@@ -6001,15 +6014,11 @@ def get_prompt_versions(project_id: str, prompt_id: str) -> list[str]:
 
 
 def _get_app_url(app_url: str | None = None) -> str:
-    if app_url:
-        return app_url
-    return os.getenv("BRAINTRUST_APP_URL", DEFAULT_APP_URL)
+    return resolve_app_url(app_url)
 
 
 def _get_org_name(org_name: str | None = None) -> str | None:
-    if org_name:
-        return org_name
-    return os.getenv("BRAINTRUST_ORG_NAME")
+    return resolve_org_name(org_name)
 
 
 def _get_error_link(msg="") -> str:

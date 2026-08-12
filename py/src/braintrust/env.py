@@ -17,6 +17,23 @@ EnvValue = bool | float | int | str
 _Parser = Callable[[str], EnvValue | None]
 BRAINTRUST_ENV_FILE = ".env.braintrust"
 BRAINTRUST_ENV_SEARCH_PARENT_LIMIT = 64
+DEFAULT_APP_URL = "https://www.braintrust.dev"
+
+
+def resolve_app_url(app_url: str | None = None) -> str:
+    """Resolve an explicit or environment-configured Braintrust app URL."""
+
+    if app_url:
+        return app_url
+    return os.getenv("BRAINTRUST_APP_URL", DEFAULT_APP_URL)
+
+
+def resolve_org_name(org_name: str | None = None) -> str | None:
+    """Resolve an explicit or environment-configured organization name."""
+
+    if org_name:
+        return org_name
+    return os.getenv("BRAINTRUST_ORG_NAME")
 
 
 def parse_float(value: str) -> float | None:
@@ -197,6 +214,8 @@ class _LegacyUuidIdsField:
 
 class BraintrustEnv:
     API_KEY = EnvVar("BRAINTRUST_API_KEY", EnvParser.STRING)
+    API_URL = EnvVar("BRAINTRUST_API_URL", EnvParser.STRING)
+    PROXY_URL = EnvVar("BRAINTRUST_PROXY_URL", EnvParser.STRING)
     HTTP_TIMEOUT = EnvVar("BRAINTRUST_HTTP_TIMEOUT", EnvParser.FLOAT)
     SYNC_FLUSH = EnvVar("BRAINTRUST_SYNC_FLUSH", EnvParser.BOOL)
     MAX_REQUEST_SIZE = EnvVar("BRAINTRUST_MAX_REQUEST_SIZE", EnvParser.INT)
