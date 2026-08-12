@@ -2269,6 +2269,8 @@ def summarize(summarize_scores: bool = True, comparison_experiment_id: str | Non
     """
     Summarize the current experiment, including the scores (compared to the closest reference experiment) and metadata.
 
+    Summary retrieval failures are raised after retries are exhausted.
+
     :param summarize_scores: Whether to summarize the scores. If False, only the metadata will be returned.
     :param comparison_experiment_id: The experiment to compare against. If None, the most recent experiment on the comparison_commit will be used.
     :returns: `ExperimentSummary`
@@ -4204,26 +4206,18 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         )
 
     def fetch_base_experiment(self) -> ExperimentIdentifier | None:
-        state = self._get_state()
-        conn = state.app_conn()
-
-        resp = conn.post("/api/base_experiment/get_id", json={"id": self.id})
-        if resp.status_code == 400:
-            # No base experiment
+        base = self._get_state().api_client().experiments.get_base(self.id)
+        if base is None:
             return None
-
-        response_raise_for_status(resp)
-        base = resp.json()
-        if base:
-            return ExperimentIdentifier(id=base["base_exp_id"], name=base["base_exp_name"])
-        else:
-            return None
+        return ExperimentIdentifier(id=base.id, name=base.name)
 
     def summarize(
         self, summarize_scores: bool = True, comparison_experiment_id: str | None = None
     ) -> "ExperimentSummary":
         """
         Summarize the experiment, including the scores (compared to the closest reference experiment) and metadata.
+
+        Summary retrieval failures are raised after retries are exhausted.
 
         :param summarize_scores: Whether to summarize the scores. If False, only the metadata will be returned.
         :param comparison_experiment_id: The experiment to compare against. If None, the most recent experiment on the origin's main branch will be used.
@@ -4237,10 +4231,10 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         project_url = f"{state.app_public_url}/app/{encode_uri_component(state.org_name)}/p/{encode_uri_component(self.project.name)}"
         experiment_url = f"{project_url}/experiments/{encode_uri_component(self.name)}"
 
-        score_summary = {}
-        metric_summary = {}
         comparison_experiment_name = None
-        if summarize_scores:
+        if not summarize_scores:
+            comparison: SummaryResult = SummarySkipped(reason="Score summarization was disabled")
+        else:
             # Get the comparison experiment
             if comparison_experiment_id is None:
                 base_experiment = self.fetch_base_experiment()
@@ -4248,38 +4242,43 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
                     comparison_experiment_id = base_experiment.id
                     comparison_experiment_name = base_experiment.name
             else:
-                try:
-                    comparison_experiment = state.api_conn().get_json(f"v1/experiment/{comparison_experiment_id}")
-                    comparison_experiment_name = comparison_experiment.get("name")
-                except Exception:
-                    pass
+                comparison_experiment = state.api_client().experiments.get(comparison_experiment_id)
+                comparison_experiment_name = comparison_experiment.name
 
-            try:
-                summary_items = state.api_conn().get_json(
-                    "experiment-comparison2",
-                    args={
-                        "experiment_id": self.id,
-                        "base_experiment_id": comparison_experiment_id,
-                    },
-                )
-            except Exception as e:
-                _logger.warning(
-                    f"Failed to fetch experiment scores and metrics: {e}\n\nView complete results in Braintrust or run experiment.summarize() again."
-                )
-                summary_items = {}
+            summary_items = state.api_client().experiments.compare(
+                self.id,
+                base_experiment_id=comparison_experiment_id,
+            )
 
-            score_items = summary_items.get("scores", {})
-            metric_items = summary_items.get("metrics", {})
-
+            score_items = summary_items.scores
+            metric_items = summary_items.metrics
             longest_score_name = max(len(k) for k in score_items.keys()) if score_items else 0
             score_summary = {
-                k: ScoreSummary(_longest_score_name=longest_score_name, **v) for (k, v) in score_items.items()
+                k: ScoreSummary(
+                    name=v.name,
+                    score=v.score,
+                    improvements=v.improvements,
+                    regressions=v.regressions,
+                    diff=v.diff,
+                    _longest_score_name=longest_score_name,
+                )
+                for (k, v) in score_items.items()
             }
 
             longest_metric_name = max(len(k) for k in metric_items.keys()) if metric_items else 0
             metric_summary = {
-                k: MetricSummary(_longest_metric_name=longest_metric_name, **v) for (k, v) in metric_items.items()
+                k: MetricSummary(
+                    name=v.name,
+                    metric=v.metric,
+                    unit=v.unit,
+                    improvements=v.improvements,
+                    regressions=v.regressions,
+                    diff=v.diff,
+                    _longest_metric_name=longest_metric_name,
+                )
+                for (k, v) in metric_items.items()
             }
+            comparison = SummarySuccess(scores=score_summary, metrics=metric_summary)
 
         return ExperimentSummary(
             project_name=self.project.name,
@@ -4289,8 +4288,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
             project_url=project_url,
             experiment_url=experiment_url,
             comparison_experiment_name=comparison_experiment_name,
-            scores=score_summary,
-            metrics=metric_summary,
+            comparison=comparison,
         )
 
     def export(self) -> str:
@@ -5858,9 +5856,29 @@ class MetricSummary(SerializableDataClass):
         )
 
 
+@dataclasses.dataclass(frozen=True)
+class SummarySuccess(SerializableDataClass):
+    """A successfully retrieved experiment comparison."""
+
+    scores: dict[str, ScoreSummary]
+    metrics: dict[str, MetricSummary]
+    status: Literal["success"] = dataclasses.field(default="success", init=False)
+
+
+@dataclasses.dataclass(frozen=True)
+class SummarySkipped(SerializableDataClass):
+    """An experiment comparison that was intentionally skipped."""
+
+    reason: str
+    status: Literal["skipped"] = dataclasses.field(default="skipped", init=False)
+
+
+SummaryResult = SummarySuccess | SummarySkipped
+
+
 @dataclasses.dataclass
 class ExperimentSummary(SerializableDataClass):
-    """Summary of an experiment's scores and metadata."""
+    """Summary of an experiment's comparison and metadata."""
 
     project_name: str
     """Name of the project that the experiment belongs to."""
@@ -5876,29 +5894,29 @@ class ExperimentSummary(SerializableDataClass):
     """URL to the experiment's page in the Braintrust app."""
     comparison_experiment_name: str | None
     """The experiment scores are baselined against."""
-    scores: dict[str, ScoreSummary]
-    """Summary of the experiment's scores."""
-    metrics: dict[str, MetricSummary]
-    """Summary of the experiment's metrics."""
+    comparison: SummaryResult
+    """Result of retrieving the experiment comparison."""
 
     def __str__(self):
         comparison_line = ""
         if self.comparison_experiment_name:
             comparison_line = f"""{self.experiment_name} compared to {self.comparison_experiment_name}:\n"""
-        return (
-            f"""\n=========================SUMMARY=========================\n{comparison_line}"""
-            + "\n".join([str(score) for score in self.scores.values()])
-            + ("\n\n" if self.scores else "")
-            + "\n".join([str(metric) for metric in self.metrics.values()])
-            + ("\n\n" if self.metrics else "")
-            + (
-                textwrap.dedent(
-                    f"""\
-        See results for {self.experiment_name} at {self.experiment_url}"""
-                )
-                if self.experiment_url is not None
-                else ""
+        if isinstance(self.comparison, SummarySkipped):
+            result = f"Summary skipped: {self.comparison.reason}\n\n"
+        else:
+            result = (
+                "\n".join([str(score) for score in self.comparison.scores.values()])
+                + ("\n\n" if self.comparison.scores else "")
+                + "\n".join([str(metric) for metric in self.comparison.metrics.values()])
+                + ("\n\n" if self.comparison.metrics else "")
             )
+        return f"""\n=========================SUMMARY=========================\n{comparison_line}{result}""" + (
+            textwrap.dedent(
+                f"""\
+        See results for {self.experiment_name} at {self.experiment_url}"""
+            )
+            if self.experiment_url is not None
+            else ""
         )
 
 

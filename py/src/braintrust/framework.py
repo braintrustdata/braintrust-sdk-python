@@ -37,6 +37,7 @@ from .logger import (
     Metadata,
     ScoreSummary,
     Span,
+    SummarySuccess,
     parent_context,
     start_span,
     stringify_exception,
@@ -829,6 +830,7 @@ async def EvalAsync(
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
 
+    Summary retrieval failures fail the evaluation after retries are exhausted.
     Use this function over `Eval()` when you are running in an async context, including in a Jupyter notebook.
 
     Example:
@@ -957,6 +959,7 @@ def Eval(
     """
     A function you can use to define an evaluator. This is a convenience wrapper around the `Evaluator` class.
 
+    Summary retrieval failures fail the evaluation after retries are exhausted.
     For callers running in an async context, use `EvalAsync()` instead.
 
     Example:
@@ -1947,8 +1950,7 @@ def build_local_summary(
         project_url=None,
         experiment_url=None,
         comparison_experiment_name=None,
-        scores=avg_scores,
-        metrics={},
+        comparison=SummarySuccess(scores=avg_scores, metrics={}),
     )
 
 

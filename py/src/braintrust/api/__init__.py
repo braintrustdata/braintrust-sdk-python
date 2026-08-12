@@ -14,7 +14,14 @@ from .errors import (
     BraintrustTransportError,
     BraintrustTransportRetryExhaustedError,
 )
-from .experiments import ExperimentsAPI
+from .experiments import (
+    BaseExperiment,
+    ExperimentComparison,
+    ExperimentMetric,
+    ExperimentRecord,
+    ExperimentsAPI,
+    ExperimentScore,
+)
 from .functions import FunctionsAPI
 from .policies import RetryMode, RetryPolicy
 from .projects import ProjectsAPI
@@ -25,6 +32,7 @@ from .queries import QueriesAPI
 __all__ = [
     "AttachmentsAPI",
     "AuthAPI",
+    "BaseExperiment",
     "BraintrustAPIError",
     "BraintrustClient",
     "BraintrustHTTPError",
@@ -35,6 +43,10 @@ __all__ = [
     "ClientContext",
     "DatasetsAPI",
     "EndpointRouter",
+    "ExperimentComparison",
+    "ExperimentMetric",
+    "ExperimentRecord",
+    "ExperimentScore",
     "ExperimentsAPI",
     "FunctionsAPI",
     "LoginResult",

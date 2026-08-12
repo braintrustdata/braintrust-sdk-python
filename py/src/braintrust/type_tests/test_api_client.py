@@ -2,7 +2,14 @@
 
 from typing import TYPE_CHECKING
 
-from braintrust.api import BraintrustClient, EndpointRouter, RequestTarget
+from braintrust.api import (
+    BaseExperiment,
+    BraintrustClient,
+    EndpointRouter,
+    ExperimentComparison,
+    ExperimentRecord,
+    RequestTarget,
+)
 
 
 if TYPE_CHECKING:
@@ -16,6 +23,11 @@ if TYPE_CHECKING:
     org_id: str = client.org_id
     org_name: str = client.org_name
     api_url: str | None = client_with_overrides.router.api_url
+    experiment: ExperimentRecord = client.experiments.get("experiment-id")
+    base_experiment: BaseExperiment | None = client.experiments.get_base("experiment-id")
+    comparison: ExperimentComparison = client.experiments.compare(
+        "experiment-id", base_experiment_id="base-experiment-id"
+    )
 
 
 def test_api_client_public_types() -> None:
@@ -23,3 +35,6 @@ def test_api_client_public_types() -> None:
 
     assert router.resolve(RequestTarget.API, "ping") == "https://api.example.com/ping"
     assert BraintrustClient.__name__ == "BraintrustClient"
+    assert ExperimentRecord.__name__ == "ExperimentRecord"
+    assert BaseExperiment.__name__ == "BaseExperiment"
+    assert ExperimentComparison.__name__ == "ExperimentComparison"

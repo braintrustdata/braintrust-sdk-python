@@ -4,7 +4,15 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMetadata
+from braintrust.logger import (
+    BraintrustState,
+    Dataset,
+    ExperimentSummary,
+    ObjectMetadata,
+    ProjectDatasetMetadata,
+    SummarySkipped,
+    SummarySuccess,
+)
 from braintrust.util import LazyValue
 
 from .framework import (
@@ -24,6 +32,25 @@ from .test_helpers import init_test_exp, with_memory_logger, with_simulate_login
 
 
 HAS_PYDANTIC = importlib.util.find_spec("pydantic") is not None
+
+
+def test_eval_result_serializes_structured_summary():
+    summary = ExperimentSummary(
+        project_name="test-project",
+        project_id="project-id",
+        experiment_id="experiment-id",
+        experiment_name="test-evaluator",
+        project_url="https://example.com/project",
+        experiment_url="https://example.com/experiment",
+        comparison_experiment_name=None,
+        comparison=SummarySkipped(reason="disabled"),
+    )
+
+    serialized = EvalResultWithSummary(summary=summary, results=[]).as_dict()["summary"]
+
+    assert serialized["comparison"] == {"reason": "disabled", "status": "skipped"}
+    assert "scores" not in serialized
+    assert "metrics" not in serialized
 
 
 def make_dataset(dataset_id, row):
@@ -222,8 +249,9 @@ async def test_run_evaluator_basic():
 
     # Verify summary
     assert result.summary.project_name == "test-project"
-    assert "exact_match" in result.summary.scores
-    assert result.summary.scores["exact_match"].score == 1.0
+    assert isinstance(result.summary.comparison, SummarySuccess)
+    assert "exact_match" in result.summary.comparison.scores
+    assert result.summary.comparison.scores["exact_match"].score == 1.0
 
 
 @pytest.mark.asyncio
@@ -282,33 +310,6 @@ async def test_run_evaluator_forwards_persisted_base_experiment_id_to_summary(wi
     exp.summarize.assert_called_once_with(
         summarize_scores=True,
         comparison_experiment_id="base-exp-id",
-    )
-
-
-def test_experiment_summarize_resolves_explicit_comparison_name(with_memory_logger, with_simulate_login):
-    exp = init_test_exp("test-evaluator", "test-project")
-    mock_conn = MagicMock()
-
-    def get_json(path, args=None):
-        if path == "v1/experiment/base-exp-id":
-            return {"name": "base-exp"}
-        if path == "experiment-comparison2":
-            return {"scores": {}, "metrics": {}}
-        raise AssertionError(f"Unexpected get_json call: {path}, {args}")
-
-    mock_conn.get_json.side_effect = get_json
-
-    with patch.object(exp.state, "api_conn", return_value=mock_conn):
-        summary = exp.summarize(comparison_experiment_id="base-exp-id")
-
-    assert summary.comparison_experiment_name == "base-exp"
-    mock_conn.get_json.assert_any_call("v1/experiment/base-exp-id")
-    mock_conn.get_json.assert_any_call(
-        "experiment-comparison2",
-        args={
-            "experiment_id": "test-evaluator",
-            "base_experiment_id": "base-exp-id",
-        },
     )
 
 
@@ -439,9 +440,10 @@ async def test_run_evaluator_with_many_scorers():
             assert eval_result.scores[scorer_name] == 1.0
 
     assert result.summary.project_name == "test-project"
+    assert isinstance(result.summary.comparison, SummarySuccess)
     for scorer_name in scorer_names:
-        assert scorer_name in result.summary.scores
-        assert result.summary.scores[scorer_name].score == 1.0
+        assert scorer_name in result.summary.comparison.scores
+        assert result.summary.comparison.scores[scorer_name].score == 1.0
 
 
 @pytest.mark.asyncio
@@ -480,8 +482,9 @@ async def test_run_evaluator_normalizes_list_of_dict_scores():
         assert eval_result.scores["summary_only"] == 1.0
 
     assert result.summary.project_name == "test-project"
-    assert result.summary.scores["per_result"].score == 1.0
-    assert result.summary.scores["summary_only"].score == 1.0
+    assert isinstance(result.summary.comparison, SummarySuccess)
+    assert result.summary.comparison.scores["per_result"].score == 1.0
+    assert result.summary.comparison.scores["summary_only"].score == 1.0
 
 
 @pytest.mark.asyncio
@@ -750,6 +753,7 @@ async def test_scorer_spans_have_purpose_attribute(with_memory_logger, with_simu
         scores=[purpose_scorer],
         experiment_name="test-scorer-purpose",
         metadata=None,
+        summarize_scores=False,
     )
 
     # Create experiment so spans get logged
@@ -910,6 +914,7 @@ async def test_classifier_spans_are_logged(with_memory_logger, with_simulate_log
         ],
         experiment_name="test-classifier-span",
         metadata=None,
+        summarize_scores=False,
     )
 
     exp = init_test_exp("test-classifier-span", "test-project")
@@ -966,8 +971,9 @@ async def test_eval_no_send_logs_true(with_memory_logger, simple_scorer):
     # Verify it builds a local summary (no experiment_url means local run)
     assert result.summary.project_name == "test-no-logs"
     assert result.summary.experiment_url is None
-    assert result.summary.scores["exact_match"].score == 1.0
-    assert result.summary.scores["simple_scorer"].score == 0.8
+    assert isinstance(result.summary.comparison, SummarySuccess)
+    assert result.summary.comparison.scores["exact_match"].score == 1.0
+    assert result.summary.comparison.scores["simple_scorer"].score == 0.8
 
     # Most importantly: verify that no logs were sent (should be empty)
     logs = with_memory_logger.pop()
@@ -996,7 +1002,8 @@ async def test_eval_no_send_logs_with_none_score(with_memory_logger):
     )
 
     # Should not crash and should calculate average from non-None scores only
-    assert result.summary.scores["conditional"].score == 1.0  # Only the second score counts
+    assert isinstance(result.summary.comparison, SummarySuccess)
+    assert result.summary.comparison.scores["conditional"].score == 1.0  # Only the second score counts
 
 
 @pytest.mark.asyncio
