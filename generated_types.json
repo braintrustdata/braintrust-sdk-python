@@ -5102,6 +5102,9 @@
           "null"
         ],
         "properties": {
+          "status": {
+            "$ref": "#/components/schemas/AutomationStatus"
+          },
           "sampling_rate": {
             "type": "number",
             "minimum": 0,
@@ -5484,6 +5487,9 @@
                     ],
                     "description": "The type of automation."
                   },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
                   "btql_filter": {
                     "type": "string",
                     "description": "BTQL filter to identify rows for the automation rule"
@@ -5509,6 +5515,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -5537,6 +5549,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -5817,6 +5835,9 @@
                     ],
                     "description": "The type of automation."
                   },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
                   "environment_filter": {
                     "type": "array",
                     "items": {
@@ -5839,6 +5860,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -5867,6 +5894,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -8462,6 +8495,12 @@
               "message_template": {
                 "type": "string",
                 "description": "Custom message template for the alert"
+              },
+              "formatting_prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 10000,
+                "description": "Instructions for Loop to format content sent to this destination"
               }
             },
             "required": [
@@ -9305,6 +9344,16 @@
             ],
             "description": "The type of automation."
           },
+          "product_origin": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "patterns"
+            ],
+            "description": "The product surface that created and manages the automation"
+          },
           "status": {
             "$ref": "#/components/schemas/AutomationStatus"
           },
@@ -9510,6 +9559,65 @@
               "evaluation_delay_seconds"
             ]
           },
+          "loop": {
+            "type": "object",
+            "properties": {
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 10000,
+                "description": "Instructions for the Loop agent"
+              },
+              "include_trigger_input": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to include the automation trigger payload as input"
+              },
+              "agent_slug": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The Loop agent to run"
+              },
+              "auto_approve_tools": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "default": [],
+                "description": "Write tools that may run without interactive approval"
+              },
+              "harness": {
+                "type": "string",
+                "enum": [
+                  "native",
+                  "codex",
+                  "claude-code"
+                ]
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reasoning_effort": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "minimal",
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              }
+            },
+            "required": [
+              "prompt",
+              "agent_slug"
+            ],
+            "description": "Optional Loop agent to run for each triggered window"
+          },
           "actions": {
             "type": "array",
             "items": {
@@ -9527,6 +9635,12 @@
                     "url": {
                       "type": "string",
                       "description": "The webhook URL to send the request to"
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Instructions for Loop to format content sent to this destination"
                     }
                   },
                   "required": [
@@ -9555,6 +9669,12 @@
                     "message_template": {
                       "type": "string",
                       "description": "Custom message template for the alert"
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Instructions for Loop to format content sent to this destination"
                     }
                   },
                   "required": [
@@ -9566,15 +9686,14 @@
               ],
               "description": "A delivery action available to an automation"
             },
-            "minItems": 1,
             "maxItems": 20,
-            "description": "The delivery actions to run on each schedule or threshold lifecycle transition"
+            "default": [],
+            "description": "Delivery actions exposed to Loop as tools, or run directly when Loop is not configured"
           }
         },
         "required": [
           "event_type",
-          "window",
-          "actions"
+          "window"
         ]
       }
     },

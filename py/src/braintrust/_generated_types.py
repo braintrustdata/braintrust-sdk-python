@@ -1670,6 +1670,10 @@ class ProjectAutomationConfigAction(TypedDict):
     """
     The webhook URL to send the request to
     """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
 
 
 class ProjectAutomationConfigAction1(TypedDict):
@@ -1689,6 +1693,10 @@ class ProjectAutomationConfigAction1(TypedDict):
     """
     Custom message template for the alert
     """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
 
 
 class ProjectAutomationConfig(TypedDict):
@@ -1696,6 +1704,7 @@ class ProjectAutomationConfig(TypedDict):
     """
     The type of automation.
     """
+    status: NotRequired[AutomationStatus | None]
     btql_filter: str
     """
     BTQL filter to identify rows for the automation rule
@@ -1787,6 +1796,10 @@ class ProjectAutomationConfig4Action(TypedDict):
     """
     The webhook URL to send the request to
     """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
 
 
 class ProjectAutomationConfig4Action1(TypedDict):
@@ -1806,6 +1819,10 @@ class ProjectAutomationConfig4Action1(TypedDict):
     """
     Custom message template for the alert
     """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
 
 
 class ProjectAutomationConfig4(TypedDict):
@@ -1813,6 +1830,7 @@ class ProjectAutomationConfig4(TypedDict):
     """
     The type of automation.
     """
+    status: NotRequired[AutomationStatus | None]
     environment_filter: NotRequired[Sequence[str] | None]
     """
     Optional list of environment slugs to filter by
@@ -2606,6 +2624,10 @@ class TopicDigestAutomationConfigAction(TypedDict):
     """
     Custom message template for the alert
     """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
 
 
 class TopicDigestAutomationConfig(TypedDict):
@@ -2947,6 +2969,30 @@ class WindowedAutomationConfigWindow(TypedDict):
     """
 
 
+class WindowedAutomationConfigLoop(TypedDict):
+    prompt: str
+    """
+    Instructions for the Loop agent
+    """
+    include_trigger_input: NotRequired[bool | None]
+    """
+    Whether to include the automation trigger payload as input
+    """
+    agent_slug: str
+    """
+    The Loop agent to run
+    """
+    auto_approve_tools: NotRequired[Sequence[str] | None]
+    """
+    Write tools that may run without interactive approval
+    """
+    harness: NotRequired[Literal['native', 'codex', 'claude-code'] | None]
+    model: NotRequired[str | None]
+    reasoning_effort: NotRequired[
+        Literal['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']
+    ]
+
+
 class WindowedAutomationConfigActions(TypedDict):
     type: Literal['webhook']
     """
@@ -2955,6 +3001,10 @@ class WindowedAutomationConfigActions(TypedDict):
     url: str
     """
     The webhook URL to send the request to
+    """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
     """
 
 
@@ -2975,6 +3025,10 @@ class WindowedAutomationConfigActions1(TypedDict):
     """
     Custom message template for the alert
     """
+    formatting_prompt: NotRequired[str | None]
+    """
+    Instructions for Loop to format content sent to this destination
+    """
 
 
 class WindowedAutomationConfig(TypedDict):
@@ -2982,17 +3036,25 @@ class WindowedAutomationConfig(TypedDict):
     """
     The type of automation.
     """
+    product_origin: NotRequired[Literal['patterns'] | None]
+    """
+    The product surface that created and manages the automation
+    """
     status: NotRequired[AutomationStatus | None]
     threshold: NotRequired[WindowedAutomationConfigThreshold | None]
     """
     Optional calculation and lifecycle policy that gate scheduled delivery
     """
     window: WindowedAutomationConfigWindow
-    actions: Sequence[
-        WindowedAutomationConfigActions | WindowedAutomationConfigActions1
+    loop: NotRequired[WindowedAutomationConfigLoop | None]
+    """
+    Optional Loop agent to run for each triggered window
+    """
+    actions: NotRequired[
+        Sequence[WindowedAutomationConfigActions | WindowedAutomationConfigActions1]
     ]
     """
-    The delivery actions to run on each schedule or threshold lifecycle transition
+    Delivery actions exposed to Loop as tools, or run directly when Loop is not configured
     """
 
 
@@ -3500,6 +3562,7 @@ ModelParams: TypeAlias = (
 
 
 class OnlineScoreConfig(TypedDict):
+    status: NotRequired[AutomationStatus | None]
     sampling_rate: float
     """
     The sampling rate for online scoring
