@@ -209,6 +209,10 @@ class AsyncScoringStateAsyncScoringState(TypedDict):
     function_ids: Sequence[Any]
     skip_logging: NotRequired[bool | None]
     triggered_functions: NotRequired[Mapping[str, Any] | None]
+    last_triggered_xact_id: NotRequired[str | float | None]
+    """
+    The xact_id of the last non-score change to this row (excludes scorer score merges)
+    """
 
 
 class AsyncScoringStateAsyncScoringState1(TypedDict):

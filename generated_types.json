@@ -705,6 +705,20 @@
                 "additionalProperties": {
                   "$ref": "#/components/schemas/TriggeredFunctionState"
                 }
+              },
+              "last_triggered_xact_id": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The xact_id of the last non-score change to this row (excludes scorer score merges)"
               }
             },
             "required": [
