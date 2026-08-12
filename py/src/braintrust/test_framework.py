@@ -227,6 +227,30 @@ async def test_run_evaluator_basic():
 
 
 @pytest.mark.asyncio
+async def test_eval_case_id_and_tags_are_passed_to_scorers():
+    scorer_args = None
+
+    def scorer(input_value, output, expected, *, id=None, tags=None):
+        nonlocal scorer_args
+        scorer_args = {"id": id, "tags": tags}
+        return 1
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[EvalCase(id="dataset-row-id", input=1, expected=2, tags=["dataset-tag"])],
+        task=lambda input_value: input_value * 2,
+        scores=[scorer],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    assert scorer_args == {"id": "dataset-row-id", "tags": ["dataset-tag"]}
+
+
+@pytest.mark.asyncio
 async def test_run_evaluator_forwards_base_experiment_id_to_summary(with_memory_logger, with_simulate_login):
     def exact_match(input_value, output, expected):
         return 1.0 if output == expected else 0.0
