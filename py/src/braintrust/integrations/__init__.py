@@ -25,6 +25,7 @@ from .pipecat import PipecatIntegration
 from .pydantic_ai import PydanticAIIntegration
 from .strands import StrandsIntegration
 from .temporal import TemporalIntegration
+from .transformers import TransformersIntegration
 
 
 __all__ = [
@@ -55,4 +56,5 @@ __all__ = [
     "PydanticAIIntegration",
     "StrandsIntegration",
     "TemporalIntegration",
+    "TransformersIntegration",
 ]

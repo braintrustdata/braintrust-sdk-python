@@ -110,6 +110,17 @@ def _is_supported_metric_value(value: Any) -> bool:
     return isinstance(value, Real) and not isinstance(value, bool)
 
 
+def _tensor_shape(result: object) -> list[int] | None:
+    """Read tensor dimensions from runtime shape metadata without inspecting values."""
+    shape = getattr(result, "shape", None)
+    if shape is None:
+        return None
+    try:
+        return [int(dimension) for dimension in shape]
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def _attachment_filename_for_mime_type(mime_type: str, *, prefix: str = "file") -> str:
     """Return a stable filename for *mime_type* using *prefix*.
 

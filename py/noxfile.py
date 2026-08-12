@@ -99,12 +99,19 @@ def _ensure_livekit_server(session: nox.Session) -> str:
     return str(install_dir.resolve())
 
 
-def _install_group_locked(session: nox.Session, *group_names: str) -> None:
+def _install_group_locked(
+    session: nox.Session,
+    *group_names: str,
+    indexes: tuple[str, ...] = (),
+) -> None:
     """Install deps from one or more dependency groups using the lockfile.
 
     Runs ``uv export --only-group <name>`` for each group, merges the output,
-    and installs the pre-resolved pins into the session venv.  This gives
+    and installs the pre-resolved pins into the session venv. This gives
     reproducible installs without ad-hoc resolution at install time.
+
+    ``indexes`` names explicit ``[[tool.uv.index]]`` entries that must remain
+    available while installing exported requirements.
     """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         req_file = f.name
@@ -122,7 +129,21 @@ def _install_group_locked(session: nox.Session, *group_names: str) -> None:
         for name in group_names:
             cmd.extend(["--only-group", name])
         session.run_install(*cmd, silent=SILENT_INSTALLS)
-        session.install("-r", req_file, silent=SILENT_INSTALLS)
+        install_args = ["-r", req_file]
+        configured_indexes = {
+            index.get("name"): index.get("url") for index in _PYPROJECT.get("tool", {}).get("uv", {}).get("index", [])
+        }
+        for index_name in indexes:
+            index_url = configured_indexes.get(index_name)
+            if not index_url:
+                session.error(f"Unknown [[tool.uv.index]] name: {index_name!r}")
+            install_args.extend(("--index", index_url))
+        if indexes:
+            # Exported requirements are fully pinned, so it is safe to search
+            # all configured indexes for each exact version. Without this,
+            # uv may stop at PyTorch's index for unrelated packages.
+            install_args.extend(("--index-strategy", "unsafe-best-match"))
+        session.install(*install_args, silent=SILENT_INSTALLS)
     finally:
         os.unlink(req_file)
 
@@ -667,6 +688,27 @@ def test_huggingface_hub(session, version):
     # an install_requires dep of ``huggingface_hub`` upstream.
     _install_group_locked(session, "test-huggingface-hub")
     _run_tests(session, f"{INTEGRATION_DIR}/huggingface_hub/test_huggingface_hub.py", version=version)
+
+
+TRANSFORMERS_VERSIONS = _get_matrix_versions("transformers")
+
+
+@nox.session()
+@nox.parametrize("version", TRANSFORMERS_VERSIONS, ids=TRANSFORMERS_VERSIONS)
+def test_transformers(session, version):
+    """Test local Hugging Face Transformers pipeline instrumentation."""
+    # The 4.42.0 floor pins tokenizers 0.19, whose wheels stop at Python 3.12.
+    if version != LATEST and sys.version_info >= (3, 13):
+        session.skip(f"Transformers {version} does not support Python 3.13+")
+    _install_test_deps(session)
+    _install_matrix_dep(session, "transformers", version)
+    _install_group_locked(session, "test-transformers", indexes=("pytorch-cpu",))
+    _run_tests(
+        session,
+        f"{INTEGRATION_DIR}/transformers/test_transformers.py",
+        version=version,
+        env={"HF_HUB_DISABLE_PROGRESS_BARS": "1"},
+    )
 
 
 TEMPORAL_VERSIONS = _get_matrix_versions("temporalio")

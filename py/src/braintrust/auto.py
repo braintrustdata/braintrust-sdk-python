@@ -35,6 +35,7 @@ from braintrust.integrations import (
     PydanticAIIntegration,
     StrandsIntegration,
     TemporalIntegration,
+    TransformersIntegration,
 )
 from braintrust.integrations.base import BaseIntegration
 
@@ -67,6 +68,7 @@ def auto_instrument(
     openrouter: bool = True,
     mistral: bool = True,
     huggingface_hub: bool = True,
+    transformers: bool = True,
     agno: bool = True,
     agentscope: bool = True,
     claude_agent_sdk: bool = True,
@@ -105,6 +107,7 @@ def auto_instrument(
         openrouter: Enable OpenRouter instrumentation (default: True)
         mistral: Enable Mistral instrumentation (default: True)
         huggingface_hub: Enable HuggingFace Hub instrumentation (default: True)
+        transformers: Enable local Hugging Face Transformers pipeline instrumentation (default: True)
         agno: Enable Agno instrumentation (default: True)
         agentscope: Enable AgentScope instrumentation (default: True)
         claude_agent_sdk: Enable Claude Agent SDK instrumentation (default: True)
@@ -189,6 +192,8 @@ def auto_instrument(
         results["mistral"] = _instrument_integration(MistralIntegration)
     if huggingface_hub:
         results["huggingface_hub"] = _instrument_integration(HuggingFaceHubIntegration)
+    if transformers:
+        results["transformers"] = _instrument_integration(TransformersIntegration)
     if agno:
         results["agno"] = _instrument_integration(AgnoIntegration)
     if agentscope:
