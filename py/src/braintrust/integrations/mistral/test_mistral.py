@@ -242,6 +242,7 @@ def test_wrap_mistral_chat_complete_sync(memory_logger):
     end = time.time()
 
     assert "4" in str(response.choices[0].message.content)
+    assert response.usage.prompt_tokens_details["cached_tokens"] == 0
 
     spans = memory_logger.pop()
     assert len(spans) == 1
@@ -251,6 +252,7 @@ def test_wrap_mistral_chat_complete_sync(memory_logger):
     assert span["metadata"]["provider"] == "mistral"
     assert span["metadata"]["model"] == CHAT_MODEL
     assert "4" in str(span["output"])
+    assert span["metrics"]["prompt_cached_tokens"] == 0
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
@@ -558,8 +560,13 @@ def test_wrap_mistral_agents_stream_tool_spans(memory_logger):
             chunks = list(stream)
 
     assert chunks
+    usage = next(chunk.data.usage for chunk in reversed(chunks) if getattr(chunk.data, "usage", None) is not None)
+    assert usage.prompt_tokens_details["cached_tokens"] == 80
+
     spans = memory_logger.pop()
-    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    assert len(llm_spans) == 1
+    assert llm_spans[0]["metrics"]["prompt_cached_tokens"] == 80
     assert len(find_spans_by_type(spans, SpanTypeAttribute.TOOL)) == 1
 
 
