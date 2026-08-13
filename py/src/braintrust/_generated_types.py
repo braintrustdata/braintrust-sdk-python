@@ -2285,6 +2285,10 @@ class RunEvalData2(TypedDict):
     data: Sequence[Any]
 
 
+class RunEvalData3(TypedDict):
+    experiment_name: str
+
+
 class TaskTask(TypedDict):
     function_id: str
     """
@@ -4480,7 +4484,7 @@ class RunEval(TypedDict):
     """
     Unique identifier for the project to run the eval in
     """
-    data: RunEvalData | RunEvalData1 | RunEvalData2
+    data: RunEvalData | RunEvalData1 | RunEvalData2 | RunEvalData3
     """
     The dataset to use
     """
