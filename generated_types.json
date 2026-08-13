@@ -799,14 +799,7 @@
             ]
           },
           "preprocessor": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NullableSavedFunctionId"
-              },
-              {
-                "description": "The preprocessor function to use for facet extraction. If not provided, the project default preprocessor will be used, falling back to the global 'thread' preprocessor."
-              }
-            ]
+            "$ref": "#/components/schemas/FacetPreprocessorId"
           },
           "facets": {
             "type": "array",
@@ -3168,14 +3161,7 @@
             ]
           },
           "preprocessor": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NullableSavedFunctionId"
-              },
-              {
-                "description": "The preprocessor function to use for facet extraction. If not provided, the project default preprocessor will be used, falling back to the global 'thread' preprocessor."
-              }
-            ]
+            "$ref": "#/components/schemas/FacetPreprocessorId"
           },
           "prompt": {
             "type": "string",
@@ -3199,6 +3185,80 @@
           "prompt"
         ],
         "title": "facet"
+      },
+      "FacetPreprocessorId": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "function"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string",
+                "description": "The version of the function"
+              }
+            },
+            "required": [
+              "type",
+              "id"
+            ],
+            "title": "function"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "global"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "function_type": {
+                "$ref": "#/components/schemas/FunctionTypeEnum"
+              }
+            },
+            "required": [
+              "type",
+              "name"
+            ],
+            "title": "global"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "inline"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The complete JavaScript preprocessor implementation, including its handler."
+              }
+            },
+            "required": [
+              "type",
+              "code"
+            ],
+            "title": "preprocessor_inline"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "The saved, global, or inline preprocessor to use for facet extraction. If not provided, the project default preprocessor will be used, falling back to the global 'thread' preprocessor."
       },
       "Function": {
         "type": "object",
@@ -5951,6 +6011,72 @@
           "config"
         ]
       },
+      "ProjectGroup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the project group"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique id for the organization that the project group belongs under\n\nIt is forbidden to change the org after creating a project group"
+          },
+          "user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Identifies the user who created the project group"
+          },
+          "created": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of project group creation"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the project group"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Textual description of the project group"
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of project group deletion, or null if the project group is still active"
+          },
+          "member_projects": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 10000,
+            "description": "Sorted ids of active projects in this project group"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "name",
+          "member_projects"
+        ],
+        "description": "A project group is a collection of projects which can inherit access from project-group ACLs"
+      },
       "ProjectLogsEvent": {
         "type": "object",
         "properties": {
@@ -8637,7 +8763,8 @@
             "type": "string",
             "enum": [
               "hdbscan",
-              "kmeans"
+              "kmeans",
+              "community"
             ]
           },
           "dimension_reduction": {
@@ -8892,6 +9019,13 @@
             "type": "string",
             "description": "Name of the view"
           },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Textual description of the view"
+          },
           "created": {
             "type": [
               "string",
@@ -8899,6 +9033,14 @@
             ],
             "format": "date-time",
             "description": "Date of view creation"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Date of last view update"
           },
           "view_data": {
             "$ref": "#/components/schemas/ViewData"
