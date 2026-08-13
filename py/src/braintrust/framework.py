@@ -211,13 +211,16 @@ class EvalHooks(abc.ABC, Generic[Expected]):
 
 class EvalScorerArgs(SerializableDataClass, Generic[Input, Output, Expected]):
     """
-    Arguments passed to an evaluator scorer. This includes the input, expected output, actual output, and metadata.
+    Arguments passed to an evaluator scorer. This includes the input, expected output, actual output, metadata,
+    tags, and evaluation case ID.
     """
 
     input: Input
     output: Output
     expected: Expected | None = None
     metadata: Metadata | None = None
+    id: str | None = None
+    tags: Sequence[str] | None = None
 
 
 OneOrMoreScores = float | int | bool | None | ScoreLike | Sequence[ScoreLike]
@@ -1748,6 +1751,8 @@ async def _run_evaluator_internal_impl(
                     "metadata": metadata,
                     "output": output,
                     "trace": trace,
+                    "id": datum.id,
+                    "tags": tags,
                 }
                 score_promises = [
                     asyncio.create_task(await_or_run_scorer(root_span, score, name, **scorer_kwargs))
