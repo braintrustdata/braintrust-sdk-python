@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 223c6db3c25381f8) -- do not modify"""
+"""Auto-generated file (content hash 776b6c295e852681) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -37,6 +37,7 @@ from ._generated_types import (
     ExtendedSavedFunctionId,
     ExternalAttachmentReference,
     FacetData,
+    FacetPreprocessorId,
     Function,
     FunctionData,
     FunctionFormat,
@@ -69,6 +70,7 @@ from ._generated_types import (
     PreprocessorSavedFunctionId,
     Project,
     ProjectAutomation,
+    ProjectGroup,
     ProjectLogsEvent,
     ProjectScore,
     ProjectScoreCategories,
@@ -160,6 +162,7 @@ __all__ = [
     "ExtendedSavedFunctionId",
     "ExternalAttachmentReference",
     "FacetData",
+    "FacetPreprocessorId",
     "Function",
     "FunctionData",
     "FunctionFormat",
@@ -192,6 +195,7 @@ __all__ = [
     "PreprocessorSavedFunctionId",
     "Project",
     "ProjectAutomation",
+    "ProjectGroup",
     "ProjectLogsEvent",
     "ProjectScore",
     "ProjectScoreCategories",

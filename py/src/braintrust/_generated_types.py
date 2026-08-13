@@ -230,23 +230,6 @@ Whether the automation is active or paused.
 """
 
 
-class PreprocessorPreprocessor(TypedDict):
-    type: Literal['function']
-    id: str
-    version: NotRequired[str | None]
-    """
-    The version of the function
-    """
-
-
-class PreprocessorPreprocessor2(TypedDict):
-    pass
-
-
-class PreprocessorPreprocessor3(PreprocessorPreprocessor, PreprocessorPreprocessor2):
-    pass
-
-
 class BatchedFacetDataFacet(TypedDict):
     name: str
     """
@@ -811,7 +794,7 @@ class ExternalAttachmentReference(TypedDict):
     """
 
 
-class Preprocessor1Preprocessor1(TypedDict):
+class FacetPreprocessorIdFacetPreprocessorId(TypedDict):
     type: Literal['function']
     id: str
     version: NotRequired[str | None]
@@ -820,14 +803,12 @@ class Preprocessor1Preprocessor1(TypedDict):
     """
 
 
-class Preprocessor1Preprocessor12(TypedDict):
-    pass
-
-
-class Preprocessor1Preprocessor13(
-    Preprocessor1Preprocessor1, Preprocessor1Preprocessor12
-):
-    pass
+class FacetPreprocessorIdFacetPreprocessorId2(TypedDict):
+    type: Literal['inline']
+    code: str
+    """
+    The complete JavaScript preprocessor implementation, including its handler.
+    """
 
 
 class FunctionOrigin(TypedDict):
@@ -1845,6 +1826,43 @@ class ProjectAutomationConfig4(TypedDict):
     """
 
 
+class ProjectGroup(TypedDict):
+    id: str
+    """
+    Unique identifier for the project group
+    """
+    org_id: str
+    """
+    Unique id for the organization that the project group belongs under
+
+    It is forbidden to change the org after creating a project group
+    """
+    user_id: NotRequired[str | None]
+    """
+    Identifies the user who created the project group
+    """
+    created: NotRequired[str | None]
+    """
+    Date of project group creation
+    """
+    name: str
+    """
+    Name of the project group
+    """
+    description: NotRequired[str | None]
+    """
+    Textual description of the project group
+    """
+    deleted_at: NotRequired[str | None]
+    """
+    Date of project group deletion, or null if the project group is still active
+    """
+    member_projects: Sequence[str]
+    """
+    Sorted ids of active projects in this project group
+    """
+
+
 class ProjectLogsEventMetadata(TypedDict):
     model: NotRequired[str | None]
     """
@@ -2697,7 +2715,7 @@ class TopicMapFunctionAutomation(TypedDict):
 
 
 class TopicMapGenerationSettings(TypedDict):
-    algorithm: Literal['hdbscan', 'kmeans']
+    algorithm: Literal['hdbscan', 'kmeans', 'community']
     dimension_reduction: Literal['umap', 'pca', 'none']
     sample_size: NotRequired[int | None]
     n_clusters: NotRequired[int | None]
@@ -3163,19 +3181,6 @@ class AttachmentStatus(TypedDict):
     """
 
 
-class PreprocessorPreprocessor1(TypedDict):
-    type: Literal['global']
-    name: str
-    function_type: NotRequired[FunctionTypeEnum | None]
-
-
-class PreprocessorPreprocessor4(PreprocessorPreprocessor1, PreprocessorPreprocessor2):
-    pass
-
-
-Preprocessor: TypeAlias = PreprocessorPreprocessor3 | PreprocessorPreprocessor4
-
-
 ChatCompletionContentPart: TypeAlias = (
     ChatCompletionContentPartTextWithTitle
     | ChatCompletionContentPartImageWithTitle
@@ -3385,40 +3390,21 @@ ExtendedSavedFunctionId: TypeAlias = (
 )
 
 
-class Preprocessor1Preprocessor11(TypedDict):
+class FacetPreprocessorIdFacetPreprocessorId1(TypedDict):
     type: Literal['global']
     name: str
     function_type: NotRequired[FunctionTypeEnum | None]
 
 
-class Preprocessor1Preprocessor14(
-    Preprocessor1Preprocessor11, Preprocessor1Preprocessor12
-):
-    pass
-
-
-Preprocessor1: TypeAlias = Preprocessor1Preprocessor13 | Preprocessor1Preprocessor14
-
-
-class FacetData(TypedDict):
-    type: Literal['facet']
-    preprocessor: NotRequired[Preprocessor1 | None]
-    prompt: str
-    """
-    The prompt to use for LLM extraction. The preprocessed text will be provided as context.
-    """
-    model: NotRequired[str | None]
-    """
-    The model to use for facet extraction
-    """
-    embedding_model: NotRequired[str | None]
-    """
-    The embedding model to use for vectorizing facet results.
-    """
-    no_match_pattern: NotRequired[str | None]
-    """
-    Regex pattern to identify outputs that do not match the facet. If the output matches, the facet will be saved as 'no_match'
-    """
+FacetPreprocessorId: TypeAlias = (
+    FacetPreprocessorIdFacetPreprocessorId
+    | FacetPreprocessorIdFacetPreprocessorId1
+    | FacetPreprocessorIdFacetPreprocessorId2
+    | None
+)
+"""
+The saved, global, or inline preprocessor to use for facet extraction. If not provided, the project default preprocessor will be used, falling back to the global 'thread' preprocessor.
+"""
 
 
 class FunctionDataFunctionData3(TypedDict):
@@ -3909,7 +3895,7 @@ class BatchedFacetDataTopicMap(TypedDict):
 
 class BatchedFacetData(TypedDict):
     type: Literal['batched_facet']
-    preprocessor: NotRequired[Preprocessor | None]
+    preprocessor: NotRequired[FacetPreprocessorId | None]
     facets: Sequence[BatchedFacetDataFacet]
     topic_maps: NotRequired[Mapping[str, Sequence[BatchedFacetDataTopicMap]] | None]
     """
@@ -4011,6 +3997,27 @@ class ExperimentEvent(TypedDict):
     classifications: NotRequired[Mapping[str, Any] | None]
     """
     Classifications for this event (dictionary from classification name to items)
+    """
+
+
+class FacetData(TypedDict):
+    type: Literal['facet']
+    preprocessor: NotRequired[FacetPreprocessorId | None]
+    prompt: str
+    """
+    The prompt to use for LLM extraction. The preprocessed text will be provided as context.
+    """
+    model: NotRequired[str | None]
+    """
+    The model to use for facet extraction
+    """
+    embedding_model: NotRequired[str | None]
+    """
+    The embedding model to use for vectorizing facet results.
+    """
+    no_match_pattern: NotRequired[str | None]
+    """
+    Regex pattern to identify outputs that do not match the facet. If the output matches, the facet will be saved as 'no_match'
     """
 
 
@@ -4311,9 +4318,17 @@ class View(TypedDict):
     """
     Name of the view
     """
+    description: NotRequired[str | None]
+    """
+    Textual description of the view
+    """
     created: NotRequired[str | None]
     """
     Date of view creation
+    """
+    updated_at: NotRequired[str | None]
+    """
+    Date of last view update
     """
     view_data: NotRequired[ViewData | None]
     options: NotRequired[ViewOptions | None]
