@@ -220,10 +220,11 @@ LIVEKIT_SERVER_SHA256 = {
 }
 ERROR_CODES = tuple(range(1, 256))
 INTERNAL_TEST_FLAGS = {"--wheel", "--disable-vcr"}
-GENERATED_LINT_EXCLUDES = {
+GENERATED_LINT_EXCLUDES = (
     "src/braintrust/_generated_types.py",
     "src/braintrust/generated_types.py",
-}
+    "src/braintrust/api/_generated/",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -756,6 +757,14 @@ def test_core(session):
 
 
 @nox.session()
+def test_api_codegen(session):
+    """Test the pinned OpenAPI validator and deterministic model generator."""
+    _install_test_deps(session)
+    _install_group_locked(session, "api-codegen")
+    session.run("pytest", "-p", "no:braintrust", "tests/api_codegen", *session.posargs)
+
+
+@nox.session()
 def test_braintrust_core(session):
     # Some tests do specific things if braintrust_core is installed, so run our
     # common tests with it installed. Testing the latest (aka the last ever version)
@@ -823,7 +832,7 @@ def pylint(session):
     _install_group_locked(session, "test", "lint")
 
     result = session.run("git", "ls-files", "**/*.py", silent=True, log=False)
-    files = [path for path in result.strip().splitlines() if path not in GENERATED_LINT_EXCLUDES]
+    files = [path for path in result.strip().splitlines() if not path.startswith(GENERATED_LINT_EXCLUDES)]
     # Also lint repo-root examples/ — they live outside py/ but rely on the
     # same `lint` dependency-group, so we cover them in the same invocation.
     examples_result = session.run("git", "-C", "../examples", "ls-files", "**/*.py", silent=True, log=False)
@@ -831,9 +840,11 @@ def pylint(session):
     if not files:
         return
     # scripts/ may use APIs only available in the latest pinned Python version
-    # (e.g. datetime.UTC requires 3.11+); skip them on older versions.
+    # (e.g. datetime.UTC requires 3.11+); skip them on older versions. tests/api_codegen/ imports
+    # from scripts/, so it has to go with them -- pylint reports an unresolvable import once
+    # scripts/ is out of the analyzed set.
     if _PINNED_PYTHON and sys.version_info[:2] < _PINNED_PYTHON:
-        files = [f for f in files if not f.startswith("scripts/")]
+        files = [f for f in files if not f.startswith(("scripts/", "tests/api_codegen/"))]
     # The lint group skips crewai to avoid vulnerable transitive chromadb
     # versions, so skip the matching example too.
     files = [f for f in files if not f.startswith("../examples/crewai/")]

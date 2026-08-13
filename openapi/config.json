@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "spec": {
+    "repository": "braintrustdata/braintrust-openapi",
+    "path": "openapi/spec.json",
+    "commit": "9daf27f19d9e0340304d7a3e7d0edb28380b94c6",
+    "sha256": "5ec753c0263c0c44cd04f741edfc7e8bad491cc25a2113d029e84edc076520f0"
+  },
+  "tools": {
+    "datamodel-code-generator": "0.72.4",
+    "ruff": "0.15.21",
+    "python": "3.14"
+  },
+  "model_generator": {
+    "flags": [
+      "--input-file-type=openapi",
+      "--output-model-type=typing.TypedDict",
+      "--target-python-version=3.10",
+      "--use-union-operator",
+      "--enum-field-as-literal=all",
+      "--use-generic-container-types",
+      "--use-field-description",
+      "--strict-nullable",
+      "--parent-scoped-naming",
+      "--no-use-closed-typed-dict",
+      "--disable-future-imports",
+      "--formatters=ruff-format"
+    ]
+  },
+  "endpoint_generator": {
+    "schema_version": 1,
+    "skip_tags": {
+      "Proxy": {
+        "reason": "Proxy endpoints stream provider-specific payloads and remain on the specialized proxy path.",
+        "operation_ids": [
+          "proxychatCompletions",
+          "proxycompletions",
+          "proxyauto",
+          "proxyembeddings",
+          "proxycredentials",
+          "proxy{path+}"
+        ]
+      }
+    },
+    "supported_success_statuses": [
+      "200",
+      "201",
+      "202",
+      "204"
+    ],
+    "supported_request_media_types": [
+      "application/json"
+    ],
+    "supported_response_media_types": [
+      "application/json",
+      "text/plain"
+    ]
+  }
+}
