@@ -39,6 +39,10 @@ _BASE64_RE = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
 _TOKEN_NAME_MAP = {
     "total_tokens": "tokens",
 }
+_TOKEN_DETAIL_PREFIX_MAP = {
+    "prompt_tokens_details": "prompt",
+    "completion_tokens_details": "completion",
+}
 _CHAT_METADATA_KEYS = (
     "model",
     "temperature",
@@ -419,9 +423,16 @@ def _parse_usage_metrics(usage: Any) -> dict[str, float]:
 
     metrics = {}
     for key, value in usage_data.items():
-        if not _is_supported_metric_value(value):
+        if _is_supported_metric_value(value):
+            metrics[_TOKEN_NAME_MAP.get(key, _camel_to_snake(key))] = float(value)
             continue
-        metrics[_TOKEN_NAME_MAP.get(key, _camel_to_snake(key))] = float(value)
+
+        prefix = _TOKEN_DETAIL_PREFIX_MAP.get(key)
+        if prefix is None or not isinstance(value, dict):
+            continue
+        for nested_key, nested_value in value.items():
+            if _is_supported_metric_value(nested_value):
+                metrics[f"{prefix}_{_camel_to_snake(nested_key)}"] = float(nested_value)
 
     if "tokens" not in metrics and "prompt_tokens" in metrics and "completion_tokens" in metrics:
         metrics["tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
