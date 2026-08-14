@@ -8473,7 +8473,7 @@
                 "type": "null"
               }
             ],
-            "description": "Execution scope for topic automation. Defaults to span-level execution."
+            "description": "Execution scope for topic automation."
           },
           "data_scope": {
             "$ref": "#/components/schemas/TopicAutomationDataScope"
@@ -8689,7 +8689,17 @@
           },
           "source_facet": {
             "type": "string",
-            "description": "The facet field name to use as input for classification"
+            "description": "Materialized facet field name used when source_facet_function is absent"
+          },
+          "source_facet_function": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SavedFunctionId"
+              },
+              {
+                "description": "The stable function reference for the source facet"
+              }
+            ]
           },
           "embedding_model": {
             "type": "string",
