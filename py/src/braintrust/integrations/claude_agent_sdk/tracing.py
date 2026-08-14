@@ -1,5 +1,6 @@
 import asyncio
 import collections
+import contextvars
 import dataclasses
 import json
 import threading
@@ -40,6 +41,14 @@ from braintrust.span_types import SpanTypeAttribute
 
 
 _thread_local = threading.local()
+_request_tracker_context: contextvars.ContextVar[Any | None] = contextvars.ContextVar(
+    "braintrust_claude_agent_sdk_request_tracker",
+    default=None,
+)
+_tool_span_tracker_context: contextvars.ContextVar[Any | None] = contextvars.ContextVar(
+    "braintrust_claude_agent_sdk_tool_span_tracker",
+    default=None,
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -255,8 +264,14 @@ def _wrap_tool_handler(handler: Any, tool_name: Any) -> Any:
         return handler
 
     async def wrapped_handler(args: Any) -> Any:
-        tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
+        tool_span_tracker = _tool_span_tracker_context.get()
         if tool_span_tracker is None:
+            tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
+
+        active_tool_span = (
+            tool_span_tracker.acquire_span_for_handler(tool_name, args) if tool_span_tracker is not None else None
+        )
+        if active_tool_span is None:
             with start_span(
                 name=str(tool_name),
                 span_attributes={"type": SpanTypeAttribute.TOOL},
@@ -265,18 +280,6 @@ def _wrap_tool_handler(handler: Any, tool_name: Any) -> Any:
                 result = await handler(args)
                 span.log(output=result)
                 return result
-
-        active_tool_span = tool_span_tracker.acquire_span_for_handler(tool_name, args)
-        if active_tool_span is None:
-            # A request tracker exists, so the raw SDK message observer normally
-            # creates the canonical span before MCP dispatch. If instrumentation
-            # cannot match it, avoid creating a duplicate fallback span and park
-            # any error for the eventual canonical span.
-            try:
-                return await handler(args)
-            except Exception as exc:
-                tool_span_tracker.record_handler_error(tool_name, args, exc)
-                raise
 
         try:
             return await handler(args)
@@ -307,8 +310,6 @@ class ToolSpanTracker:
         # SDK MCP handlers receive the bare display name while stream messages
         # use names like ``mcp__server__tool``, so both sides key by display name.
         self._dispatch_queues: dict[tuple[str, str], collections.deque[str]] = {}
-        self._pending_handler_errors: dict[tuple[str, str], collections.deque[str]] = {}
-        self._closed = False
 
     def start_tool_spans(self, message: Any, llm_span_export: str | None) -> None:
         if llm_span_export is None or not hasattr(message, "content"):
@@ -360,12 +361,6 @@ class ToolSpanTracker:
             dispatch_key = _make_dispatch_key(parsed_tool_name.display_name, tool_input)
             self._dispatch_queues.setdefault(dispatch_key, collections.deque()).append(tool_use_id)
 
-            pending_errors = self._pending_handler_errors.get(dispatch_key)
-            if pending_errors:
-                tool_span.log(error=pending_errors.popleft())
-                if not pending_errors:
-                    del self._pending_handler_errors[dispatch_key]
-
     def finish_tool_spans(self, message: Any) -> None:
         if not hasattr(message, "content"):
             return
@@ -403,8 +398,6 @@ class ToolSpanTracker:
         """Close all remaining active spans. Called at end-of-stream."""
         for tool_use_id in list(self._active_spans):
             self._end_tool_span(tool_use_id, end_time=end_time)
-        self._closed = True
-        self._pending_handler_errors.clear()
 
     @property
     def has_active_spans(self) -> bool:
@@ -431,23 +424,6 @@ class ToolSpanTracker:
 
         matched_span.activate()
         return matched_span
-
-    def record_handler_error(self, tool_name: Any, args: Any, exc: Exception) -> None:
-        """Log a late handler error now, or park it until its canonical span arrives."""
-        active_tool_span = self.acquire_span_for_handler(tool_name, args)
-        if active_tool_span is not None:
-            try:
-                active_tool_span.log_error(exc)
-            finally:
-                active_tool_span.release()
-            return
-
-        if self._closed:
-            return
-
-        parsed_tool_name = _parse_tool_name(tool_name)
-        dispatch_key = _make_dispatch_key(parsed_tool_name.display_name, args)
-        self._pending_handler_errors.setdefault(dispatch_key, collections.deque()).append(str(exc))
 
     def _match_via_dispatch_queue(
         self, display_name: str, args: Any, candidates: list[_ActiveToolSpan]
@@ -964,7 +940,6 @@ class RequestTracker:
         )
         self._pretraced_message_types: collections.deque[str] = collections.deque()
         self._finished = False
-        _thread_local.request_tracker = self
 
     def add_message(self, message: Any) -> None:
         message_type = type(message).__name__
@@ -977,6 +952,8 @@ class RequestTracker:
         """Trace one raw SDK message before it is queued for application consumption."""
         if self._finished or not isinstance(data, dict):
             return
+
+        _tool_span_tracker_context.set(self._context_tracker._tool_tracker)
 
         try:
             from claude_agent_sdk._internal.message_parser import parse_message
@@ -1031,8 +1008,6 @@ class RequestTracker:
         self._root_span.end()
         self._finished = True
         self._pretraced_message_types.clear()
-        if getattr(_thread_local, "request_tracker", None) is self:
-            delattr(_thread_local, "request_tracker")
 
     def _hook_parent_export(self, tool_use_id: str | None) -> str:
         tool_export = self._context_tracker.get_tool_span_export(tool_use_id)
@@ -1060,8 +1035,6 @@ class _TracingMessageSendStream:
 
     async def send(self, value: Any) -> None:
         request_tracker = getattr(self._query, "_braintrust_request_tracker", None)
-        if request_tracker is None:
-            request_tracker = getattr(_thread_local, "request_tracker", None)
         if request_tracker is not None:
             request_tracker.add_raw_message(value)
         await self._send_stream.send(value)
@@ -1080,9 +1053,31 @@ def _install_query_message_tracing(query: Any) -> None:
 
 
 def _wrap_query_read_messages(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
-    """Install raw message observation before the SDK reader starts."""
+    """Install request-context-aware raw message observation on this SDK reader."""
+    request_tracker = _request_tracker_context.get()
+    if request_tracker is not None:
+        instance._braintrust_request_tracker = request_tracker
     _install_query_message_tracing(instance)
     return wrapped(*args, **kwargs)
+
+
+async def _bind_request_tracker_to_query(
+    generator: AsyncIterable[Any], request_tracker: RequestTracker
+) -> AsyncGenerator[Any, None]:
+    """Bind the query reader during startup without retaining a ContextVar token across yields."""
+    iterator = generator.__aiter__()
+    token = _request_tracker_context.set(request_tracker)
+    try:
+        try:
+            first_message = await anext(iterator)
+        except StopAsyncIteration:
+            return
+    finally:
+        _request_tracker_context.reset(token)
+
+    yield first_message
+    async for message in iterator:
+        yield message
 
 
 def _prepare_prompt_for_tracing(prompt: Any) -> tuple[Any, str | None, list[dict[str, Any]] | None]:
@@ -1148,9 +1143,10 @@ def _create_query_wrapper_function(original_query: Any) -> Any:
             query_start_time=query_start_time,
             captured_messages=captured_messages,
         )
+        generator = _bind_request_tracker_to_query(original_query(*args, **kwargs), request_tracker)
 
         async for message in _stream_messages_with_tracing(
-            original_query(*args, **kwargs),
+            generator,
             request_tracker=request_tracker,
             finish_request_tracker=request_tracker.finish,
         ):

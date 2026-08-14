@@ -219,6 +219,8 @@ class ClaudeAgentSdkCassetteTransport(Transport):
         prompt: str | Any,
         options: ClaudeAgentOptions,
         record_mode: str | None = None,
+        pause_before_sdk_messages: bool = False,
+        pause_before_mcp_tool_calls: bool = False,
     ) -> None:
         _require_sdk()
         self._cassette_name = cassette_name
@@ -234,6 +236,9 @@ class ClaudeAgentSdkCassetteTransport(Transport):
         self._cursor_lock = anyio.Lock()
         self._cursor_changed = anyio.Event()
         self._mcp_tool_call_read = anyio.Event()
+        self._mcp_tool_call_gate = anyio.Event() if pause_before_mcp_tool_calls else None
+        self._sdk_message_blocked = anyio.Event() if pause_before_sdk_messages else None
+        self._sdk_message_gate = anyio.Event() if pause_before_sdk_messages else None
         self._control_request_ids: dict[str, str] = {}
 
     async def connect(self) -> None:
@@ -282,6 +287,10 @@ class ClaudeAgentSdkCassetteTransport(Transport):
                 self._events.append({"op": "read", "payload": message})
                 if _is_mcp_tool_call(message):
                     self._mcp_tool_call_read.set()
+                    if self._mcp_tool_call_gate is not None:
+                        await self._mcp_tool_call_gate.wait()
+                if self._sdk_message_gate is not None:
+                    await self._wait_before_sdk_message(message)
                 yield message
             return
 
@@ -289,7 +298,12 @@ class ClaudeAgentSdkCassetteTransport(Transport):
             event = await self._wait_for_event("read", allow_eof=True)
             if event is None:
                 return
-            yield self._remap_read_message(event["payload"])
+            message = self._remap_read_message(event["payload"])
+            if _is_mcp_tool_call(message) and self._mcp_tool_call_gate is not None:
+                await self._mcp_tool_call_gate.wait()
+            if self._sdk_message_gate is not None:
+                await self._wait_before_sdk_message(message)
+            yield message
 
     async def close(self) -> None:
         self._ready = False
@@ -313,10 +327,31 @@ class ClaudeAgentSdkCassetteTransport(Transport):
         """Wait until replay delivers a local MCP ``tools/call`` request."""
         await self._mcp_tool_call_read.wait()
 
+    def release_mcp_tool_calls(self) -> None:
+        assert self._mcp_tool_call_gate is not None
+        self._mcp_tool_call_gate.set()
+
+    async def wait_until_sdk_message_blocked(self) -> None:
+        assert self._sdk_message_blocked is not None
+        await self._sdk_message_blocked.wait()
+
+    def release_sdk_messages(self) -> None:
+        assert self._sdk_message_gate is not None
+        self._sdk_message_gate.set()
+
     async def end_input(self) -> None:
         if self._recording:
             assert self._delegate is not None
             await self._delegate.end_input()
+
+    async def _wait_before_sdk_message(self, message: Any) -> None:
+        assert self._sdk_message_gate is not None
+        assert self._sdk_message_blocked is not None
+        message_type = message.get("type") if isinstance(message, dict) else None
+        if message_type in {"control_response", "control_request", "control_cancel_request"}:
+            return
+        self._sdk_message_blocked.set()
+        await self._sdk_message_gate.wait()
 
     def _should_replay(self) -> bool:
         if self._record_mode == "all":
@@ -396,10 +431,14 @@ def make_cassette_transport(
     prompt: str | Any,
     options: "ClaudeAgentOptions",
     record_mode: str | None = None,
+    pause_before_sdk_messages: bool = False,
+    pause_before_mcp_tool_calls: bool = False,
 ) -> ClaudeAgentSdkCassetteTransport:
     return ClaudeAgentSdkCassetteTransport(
         cassette_name=cassette_name,
         prompt=prompt,
         options=options,
         record_mode=record_mode,
+        pause_before_sdk_messages=pause_before_sdk_messages,
+        pause_before_mcp_tool_calls=pause_before_mcp_tool_calls,
     )
