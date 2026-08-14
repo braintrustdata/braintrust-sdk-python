@@ -1,0 +1,80 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Look at this sequence: 2, 6, 12,
+      20, 30. What is the pattern and what would be the formula for the nth term?\n"}],"model":"o4-mini","reasoning_effort":"medium"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '199'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ECrtDoEsWx1AcgF0pI6EYTSr6m3U3\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1786735795,\n  \"model\": \"o4-mini-2025-04-16\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The terms 2, 6, 12, 20, 30,\u2026 are
+        the so-called \u201Cpronic\u201D or \u201Coblong\u201D numbers, i.e.  \\n1\xB72,
+        2\xB73, 3\xB74, 4\xB75, 5\xB76, \u2026  \\n\\nEquivalently the differences
+        go 4, 6, 8, 10,\u2026 = 2\xB72, 2\xB73, 2\xB74, 2\xB75,\u2026 so one shows
+        by induction that\\n\\n\u2003a\u2081 = 2,  \\n\u2003a\u2099 = a\u2099\u208B\u2081
+        + 2n  \\n\\nand hence in closed\u2010form  \\n\\n\u2003a\u2099 = n(n + 1).\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 41,\n    \"completion_tokens\":
+        876,\n    \"total_tokens\": 917,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 704,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      connection:
+      - keep-alive
+      content-length:
+      - '1115'
+      content-type:
+      - application/json
+      date:
+      - Fri, 14 Aug 2026 19:30:03 GMT
+      openai-processing-ms:
+      - '7870'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999970'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1
