@@ -131,29 +131,6 @@ jobs:
           dir="$HOME/.cache/braintrust/livekit-server"
           mkdir -p "$dir"
           echo "BRAINTRUST_LIVEKIT_SERVER_DIR=$dir" >> "$GITHUB_ENV"
-      - name: Run nox tests (shard ${{ matrix.shard }}/6)
-        shell: bash
-        run: |
-          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 6 \
-            --exclude-static-checks \
-            --exclude-session-prefix test_transformers
-
-  transformers-py:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      # Serialize jobs so later Python versions can restore the model cache
-      # saved by the first job instead of downloading the same models in parallel.
-      max-parallel: 1
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup Python environment
-        uses: ./.github/actions/setup-python-env
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: Cache Hugging Face models
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -161,10 +138,11 @@ jobs:
           key: huggingface-transformers-${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-${{ hashFiles('py/src/braintrust/integrations/transformers/test_transformers.py') }}
           restore-keys: |
             huggingface-transformers-${{ runner.os }}-${{ runner.arch }}-
-      - name: Test Transformers integration
+      - name: Run nox tests (shard ${{ matrix.shard }}/6)
         shell: bash
         run: |
-          mise exec -- uv run --project ./py nox -f ./py/noxfile.py -s test_transformers
+          mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 6 \
+            --exclude-static-checks
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
@@ -203,7 +181,6 @@ jobs:
       - static_checks
       - smoke
       - nox
-      - transformers-py
       - adk-py
       - langchain-py
       - upload-wheel
@@ -230,7 +207,6 @@ jobs:
           check_result "static_checks" "${{ needs.static_checks.result }}"
           check_result "smoke" "${{ needs.smoke.result }}"
           check_result "nox" "${{ needs.nox.result }}"
-          check_result "transformers-py" "${{ needs['transformers-py'].result }}"
           check_result "adk-py" "${{ needs['adk-py'].result }}"
           check_result "langchain-py" "${{ needs['langchain-py'].result }}"
           check_result "upload-wheel" "${{ needs['upload-wheel'].result }}"
