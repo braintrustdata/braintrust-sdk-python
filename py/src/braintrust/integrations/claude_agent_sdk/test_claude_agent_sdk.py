@@ -1,6 +1,7 @@
 """Tests for the Claude Agent SDK wrapper."""
 
 import asyncio
+import contextvars
 import dataclasses
 import sys
 import types
@@ -77,15 +78,57 @@ def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = Fa
         claude_agent_sdk.query = original_query
 
 
+def _make_calculator_options(handler: Any) -> Any:
+    calculator_tool = claude_agent_sdk.SdkMcpTool(
+        name="calculator",
+        description="Performs basic arithmetic operations",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "type": "string",
+                    "enum": ["add", "subtract", "multiply", "divide"],
+                    "description": "The arithmetic operation to perform",
+                },
+                "a": {"type": "number", "description": "First number"},
+                "b": {"type": "number", "description": "Second number"},
+            },
+            "required": ["operation", "a", "b"],
+        },
+        handler=handler,
+    )
+    return claude_agent_sdk.ClaudeAgentOptions(
+        model=TEST_MODEL,
+        permission_mode="bypassPermissions",
+        mcp_servers={
+            "calculator": claude_agent_sdk.create_sdk_mcp_server(
+                name="calculator",
+                version="1.0.0",
+                tools=[calculator_tool],
+            )
+        },
+    )
+
+
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
 async def test_calculator_with_multiple_operations(memory_logger):
-    """Test claude_agent.py example - calculator with multiple operations."""
+    """Local MCP handlers racing stream consumption reuse the canonical tool spans."""
     assert not memory_logger.pop()
 
     with _patched_claude_sdk(wrap_client=True, wrap_tool_class=True):
         # Create calculator tool
+        handler_started = asyncio.Event()
+
         async def calculator_handler(args):
+            handler_started.set()
+            nested_span = start_span(
+                name=f"nested_calculator_{args['operation']}",
+                type=SpanTypeAttribute.FUNCTION,
+            )
+            nested_span.log(input=args)
+            nested_span.end()
+
             operation = args["operation"]
             a = args["a"]
             b = args["b"]
@@ -113,36 +156,7 @@ async def test_calculator_with_multiple_operations(memory_logger):
                 "content": [{"type": "text", "text": f"The result of {operation}({a}, {b}) is {result}"}],
             }
 
-        calculator_tool = claude_agent_sdk.SdkMcpTool(
-            name="calculator",
-            description="Performs basic arithmetic operations",
-            input_schema={
-                "type": "object",
-                "properties": {
-                    "operation": {
-                        "type": "string",
-                        "enum": ["add", "subtract", "multiply", "divide"],
-                        "description": "The arithmetic operation to perform",
-                    },
-                    "a": {"type": "number", "description": "First number"},
-                    "b": {"type": "number", "description": "Second number"},
-                },
-                "required": ["operation", "a", "b"],
-            },
-            handler=calculator_handler,
-        )
-
-        options = claude_agent_sdk.ClaudeAgentOptions(
-            model=TEST_MODEL,
-            permission_mode="bypassPermissions",
-            mcp_servers={
-                "calculator": claude_agent_sdk.create_sdk_mcp_server(
-                    name="calculator",
-                    version="1.0.0",
-                    tools=[calculator_tool],
-                )
-            },
-        )
+        options = _make_calculator_options(calculator_handler)
         transport = make_cassette_transport(
             cassette_name="test_calculator_with_multiple_operations",
             prompt="",
@@ -152,6 +166,13 @@ async def test_calculator_with_multiple_operations(memory_logger):
         result_message = None
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query("What is 15 multiplied by 7? Then subtract 5 from the result.")
+
+            # Deterministically let local MCP dispatch race ahead of application
+            # consumption of the AssistantMessage containing its tool_use block.
+            # Before the regression fix, this creates an orphan fallback span.
+            await asyncio.wait_for(transport.wait_for_mcp_tool_call(), timeout=1)
+            await asyncio.wait_for(handler_started.wait(), timeout=1)
+
             async for message in client.receive_response():
                 if type(message).__name__ == "ResultMessage":
                     result_message = message
@@ -207,11 +228,16 @@ async def test_calculator_with_multiple_operations(memory_logger):
             if "usage_inference_geo" in llm_span.get("metadata", {})
         )
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) == 2, "Each local MCP call should create exactly one canonical tool span"
     for tool_span in tool_spans:
         assert tool_span["span_attributes"]["name"] == "calculator"
         assert tool_span["input"] is not None
         assert tool_span["output"] is not None
+        assert tool_span.get("metadata", {}).get("gen_ai.tool.call.id")
         assert any(parent_id in llm_span_ids for parent_id in tool_span["span_parents"])
+
+        nested_span = find_span_by_name(spans, f"nested_calculator_{tool_span['input']['operation']}")
+        assert tool_span["span_id"] in nested_span["span_parents"]
 
     # Descendants share the task's trace (``root_span_id``); direct children
     # reference the task's ``span_id`` in ``span_parents``.
@@ -224,6 +250,81 @@ async def test_calculator_with_multiple_operations(memory_logger):
     for tool_span in tool_spans:
         assert tool_span["root_span_id"] == task_root_span_id
         assert any(parent_id in llm_span_ids for parent_id in tool_span["span_parents"])
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_local_mcp_handler_uses_its_own_tracker_with_concurrent_client(memory_logger):
+    assert not memory_logger.pop()
+
+    with _patched_claude_sdk(wrap_client=True, wrap_tool_class=True):
+        handler_started = asyncio.Event()
+
+        async def calculator_handler(args):
+            handler_started.set()
+            nested_span = start_span(name="nested_concurrent_calculator", type=SpanTypeAttribute.FUNCTION)
+            nested_span.log(input=args)
+            nested_span.end()
+
+            operation = args["operation"]
+            result = args["a"] * args["b"] if operation == "multiply" else args["a"] - args["b"]
+            return {
+                "content": [
+                    {"type": "text", "text": f"The result of {operation}({args['a']}, {args['b']}) is {result}"}
+                ]
+            }
+
+        calculator_options = _make_calculator_options(calculator_handler)
+        other_options = claude_agent_sdk.ClaudeAgentOptions(
+            model="claude-3-5-haiku-20241022",
+            permission_mode="bypassPermissions",
+        )
+        calculator_transport = make_cassette_transport(
+            cassette_name="test_calculator_with_multiple_operations",
+            prompt="",
+            options=calculator_options,
+            pause_before_mcp_tool_calls=True,
+        )
+        other_transport = make_cassette_transport(
+            cassette_name="test_auto_claude_agent_sdk",
+            prompt="",
+            options=other_options,
+            pause_before_sdk_messages=True,
+        )
+
+        async with (
+            claude_agent_sdk.ClaudeSDKClient(
+                options=calculator_options,
+                transport=calculator_transport,
+            ) as calculator_client,
+            claude_agent_sdk.ClaudeSDKClient(options=other_options, transport=other_transport) as other_client,
+        ):
+            await calculator_client.query("What is 15 multiplied by 7? Then subtract 5 from the result.")
+            await asyncio.wait_for(calculator_transport.wait_for_mcp_tool_call(), timeout=1)
+
+            await other_client.query("Say hi")
+            await asyncio.wait_for(other_transport.wait_until_sdk_message_blocked(), timeout=1)
+
+            calculator_transport.release_mcp_tool_calls()
+            await asyncio.wait_for(handler_started.wait(), timeout=1)
+            async for _ in calculator_client.receive_response():
+                pass
+
+            other_transport.release_sdk_messages()
+            async for _ in other_client.receive_response():
+                pass
+
+    spans = memory_logger.pop()
+    calculator_spans = [
+        span
+        for span in find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+        if span["span_attributes"]["name"] == "calculator"
+    ]
+    nested_span = find_span_by_name(spans, "nested_concurrent_calculator")
+
+    assert len(calculator_spans) == 2
+    multiply_span = next(span for span in calculator_spans if span["input"]["operation"] == "multiply")
+    assert multiply_span["span_id"] in nested_span["span_parents"]
 
 
 def _make_message(content: str) -> dict:
@@ -2235,6 +2336,138 @@ async def test_setup_claude_agent_sdk_query_repro_import_before_setup(memory_log
     assert task_spans[0]["input"] == "Say hi"
     assert task_spans[0]["output"] is not None
     assert len(llm_spans) == 1
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_concurrent_query_helpers_keep_raw_messages_request_scoped(memory_logger):
+    assert not memory_logger.pop()
+
+    async def user_prompt_hook(input_data: Any, tool_use_id: str | None, context: Any) -> dict[str, Any]:
+        del input_data, tool_use_id, context
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit",
+                "additionalContext": "Remember the answer should stay concise.",
+            }
+        }
+
+    first_prompt = "Say hi"
+    second_prompt = "Say hello in one short sentence."
+    first_options = claude_agent_sdk.ClaudeAgentOptions(
+        model="claude-3-5-haiku-20241022",
+        permission_mode="bypassPermissions",
+    )
+    second_options = claude_agent_sdk.ClaudeAgentOptions(
+        model=TEST_MODEL,
+        permission_mode="bypassPermissions",
+        hooks={
+            "UserPromptSubmit": [
+                claude_agent_sdk.HookMatcher(hooks=[user_prompt_hook]),
+            ],
+        },
+    )
+    first_transport = make_cassette_transport(
+        cassette_name="test_auto_claude_agent_sdk",
+        prompt="",
+        options=first_options,
+        pause_before_sdk_messages=True,
+    )
+    second_transport = make_cassette_transport(
+        cassette_name="test_user_prompt_submit_hook_creates_function_span",
+        prompt="",
+        options=second_options,
+        pause_before_sdk_messages=True,
+    )
+
+    async def consume(prompt: str, options: Any, transport: Any) -> str:
+        async def prompt_stream():
+            yield {
+                "type": "user",
+                "session_id": "default",
+                "message": {"role": "user", "content": prompt},
+                "parent_tool_use_id": None,
+            }
+
+        result = None
+        async for message in claude_agent_sdk.query(prompt=prompt_stream(), options=options, transport=transport):
+            if type(message).__name__ == "ResultMessage":
+                result = getattr(message, "result", None)
+        assert isinstance(result, str)
+        return result
+
+    with _patched_claude_sdk():
+        assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+
+        first_task = asyncio.create_task(consume(first_prompt, first_options, first_transport))
+        await asyncio.wait_for(first_transport.wait_until_sdk_message_blocked(), timeout=1)
+
+        second_task = asyncio.create_task(consume(second_prompt, second_options, second_transport))
+        await asyncio.wait_for(second_transport.wait_until_sdk_message_blocked(), timeout=1)
+
+        first_transport.release_sdk_messages()
+        first_result = await asyncio.wait_for(first_task, timeout=1)
+        second_transport.release_sdk_messages()
+        second_result = await asyncio.wait_for(second_task, timeout=1)
+
+    spans = memory_logger.pop()
+    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    assert len(task_spans) == 2
+
+    task_spans_by_prompt = {span["input"][0]["message"]["content"]: span for span in task_spans}
+    first_task_span = task_spans_by_prompt[first_prompt]
+    second_task_span = task_spans_by_prompt[second_prompt]
+
+    def text_outputs(root_span_id: str) -> list[str]:
+        texts = []
+        for span in llm_spans:
+            if span["root_span_id"] != root_span_id:
+                continue
+            for message in span.get("output") or []:
+                for block in message.get("content") or []:
+                    text = block.get("text")
+                    if isinstance(text, str):
+                        texts.append(text)
+        return texts
+
+    assert text_outputs(first_task_span["root_span_id"]) == [first_result]
+    assert text_outputs(second_task_span["root_span_id"]) == [second_result]
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_query_helper_can_close_from_different_task(memory_logger):
+    assert not memory_logger.pop()
+
+    options = claude_agent_sdk.ClaudeAgentOptions(
+        model="claude-3-5-haiku-20241022",
+        permission_mode="bypassPermissions",
+    )
+    transport = make_cassette_transport(
+        cassette_name="test_auto_claude_agent_sdk",
+        prompt="",
+        options=options,
+    )
+
+    async def prompt_stream():
+        yield {
+            "type": "user",
+            "session_id": "default",
+            "message": {"role": "user", "content": "Say hi"},
+            "parent_tool_use_id": None,
+        }
+
+    with _patched_claude_sdk():
+        assert setup_claude_agent_sdk(project=PROJECT_NAME, api_key=logger.TEST_API_KEY)
+        messages = claude_agent_sdk.query(prompt=prompt_stream(), options=options, transport=transport)
+        await anext(messages)
+        close_task = contextvars.Context().run(asyncio.create_task, messages.aclose())
+        await close_task
+
+    task_spans = find_spans_by_type(memory_logger.pop(), SpanTypeAttribute.TASK)
+    assert len(task_spans) == 1
+    assert task_spans[0]["input"][0]["message"]["content"] == "Say hi"
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")

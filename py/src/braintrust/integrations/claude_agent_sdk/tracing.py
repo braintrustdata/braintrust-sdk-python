@@ -1,5 +1,6 @@
 import asyncio
 import collections
+import contextvars
 import dataclasses
 import json
 import threading
@@ -40,6 +41,14 @@ from braintrust.span_types import SpanTypeAttribute
 
 
 _thread_local = threading.local()
+_request_tracker_context: contextvars.ContextVar[Any | None] = contextvars.ContextVar(
+    "braintrust_claude_agent_sdk_request_tracker",
+    default=None,
+)
+_tool_span_tracker_context: contextvars.ContextVar[Any | None] = contextvars.ContextVar(
+    "braintrust_claude_agent_sdk_tool_span_tracker",
+    default=None,
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -60,10 +69,6 @@ class _ActiveToolSpan:
     parent_tool_use_id: str | None = None
     handler_active: bool = False
 
-    @property
-    def has_span(self) -> bool:
-        return True
-
     def activate(self) -> None:
         self.handler_active = True
         self.span.set_current()
@@ -77,21 +82,6 @@ class _ActiveToolSpan:
 
         self.handler_active = False
         self.span.unset_current()
-
-
-class _NoopActiveToolSpan:
-    @property
-    def has_span(self) -> bool:
-        return False
-
-    def log_error(self, exc: Exception) -> None:
-        del exc
-
-    def release(self) -> None:
-        return
-
-
-_NOOP_ACTIVE_TOOL_SPAN = _NoopActiveToolSpan()
 
 
 def _parse_tool_name(tool_name: Any) -> ParsedToolName:
@@ -274,8 +264,14 @@ def _wrap_tool_handler(handler: Any, tool_name: Any) -> Any:
         return handler
 
     async def wrapped_handler(args: Any) -> Any:
-        active_tool_span = _activate_tool_span_for_handler(tool_name, args)
-        if not active_tool_span.has_span:
+        tool_span_tracker = _tool_span_tracker_context.get()
+        if tool_span_tracker is None:
+            tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
+
+        active_tool_span = (
+            tool_span_tracker.acquire_span_for_handler(tool_name, args) if tool_span_tracker is not None else None
+        )
+        if active_tool_span is None:
             with start_span(
                 name=str(tool_name),
                 span_attributes={"type": SpanTypeAttribute.TOOL},
@@ -310,9 +306,9 @@ class ToolSpanTracker:
     def __init__(self):
         self._active_spans: dict[str, _ActiveToolSpan] = {}
         self._completed_span_exports: dict[str, str] = {}
-        # Per-(tool_name, input_signature) FIFO queue of tool_use_ids.
-        # Used by acquire_span_for_handler to disambiguate identical concurrent
-        # tool calls (same name + same input) from sibling subagents.
+        # Per-(display_name, input_signature) FIFO queue of tool_use_ids.
+        # SDK MCP handlers receive the bare display name while stream messages
+        # use names like ``mcp__server__tool``, so both sides key by display name.
         self._dispatch_queues: dict[tuple[str, str], collections.deque[str]] = {}
 
     def start_tool_spans(self, message: Any, llm_span_export: str | None) -> None:
@@ -362,7 +358,7 @@ class ToolSpanTracker:
                 tool_use_id=tool_use_id,
                 parent_tool_use_id=message_parent_tool_use_id,
             )
-            dispatch_key = _make_dispatch_key(parsed_tool_name.raw_name, tool_input)
+            dispatch_key = _make_dispatch_key(parsed_tool_name.display_name, tool_input)
             self._dispatch_queues.setdefault(dispatch_key, collections.deque()).append(tool_use_id)
 
     def finish_tool_spans(self, message: Any) -> None:
@@ -420,7 +416,7 @@ class ToolSpanTracker:
             and (active_tool_span.raw_name in candidate_names or active_tool_span.display_name in candidate_names)
         ]
 
-        matched_span = self._match_via_dispatch_queue(parsed_tool_name.raw_name, args, candidates)
+        matched_span = self._match_via_dispatch_queue(parsed_tool_name.display_name, args, candidates)
         if matched_span is None:
             matched_span = _match_tool_span_for_handler(candidates, args)
         if matched_span is None:
@@ -430,11 +426,11 @@ class ToolSpanTracker:
         return matched_span
 
     def _match_via_dispatch_queue(
-        self, raw_name: str, args: Any, candidates: list[_ActiveToolSpan]
+        self, display_name: str, args: Any, candidates: list[_ActiveToolSpan]
     ) -> _ActiveToolSpan | None:
         """Use the dispatch queue to match by tool_use_id when multiple identical
         candidates exist (same name + same input from different subagents)."""
-        dispatch_key = _make_dispatch_key(raw_name, args)
+        dispatch_key = _make_dispatch_key(display_name, args)
         queue = self._dispatch_queues.get(dispatch_key)
         if not queue:
             return None
@@ -461,7 +457,7 @@ class ToolSpanTracker:
         self._completed_span_exports[tool_use_id] = active_tool_span.span.export()
 
         # Remove from dispatch queue so stale entries don't accumulate.
-        dispatch_key = _make_dispatch_key(active_tool_span.raw_name, active_tool_span.input)
+        dispatch_key = _make_dispatch_key(active_tool_span.display_name, active_tool_span.input)
         queue = self._dispatch_queues.get(dispatch_key)
         if queue:
             try:
@@ -509,14 +505,6 @@ def _match_tool_span_for_handler(candidates: list[_ActiveToolSpan], args: Any) -
             return active_tool_span
 
     return candidates[0]
-
-
-def _activate_tool_span_for_handler(tool_name: Any, args: Any) -> _ActiveToolSpan | _NoopActiveToolSpan:
-    tool_span_tracker = getattr(_thread_local, "tool_span_tracker", None)
-    if tool_span_tracker is None:
-        return _NOOP_ACTIVE_TOOL_SPAN
-
-    return tool_span_tracker.acquire_span_for_handler(tool_name, args) or _NOOP_ACTIVE_TOOL_SPAN
 
 
 def _msg_field(message: Any, field: str) -> Any:
@@ -669,7 +657,7 @@ class ContextTracker:
                 ctx.task_span = None
         self._task_order.clear()
         self._tool_tracker.cleanup_all()
-        if hasattr(_thread_local, "tool_span_tracker"):
+        if getattr(_thread_local, "tool_span_tracker", None) is self._tool_tracker:
             delattr(_thread_local, "tool_span_tracker")
 
     def get_tool_span_export(self, tool_use_id: str | None) -> str | None:
@@ -950,10 +938,36 @@ class RequestTracker:
             query_start_time=query_start_time,
             captured_messages=captured_messages,
         )
+        self._pretraced_message_types: collections.deque[str] = collections.deque()
         self._finished = False
 
     def add_message(self, message: Any) -> None:
+        message_type = type(message).__name__
+        if self._pretraced_message_types and self._pretraced_message_types[0] == message_type:
+            self._pretraced_message_types.popleft()
+            return
         self._context_tracker.add(message)
+
+    def add_raw_message(self, data: Any) -> None:
+        """Trace one raw SDK message before it is queued for application consumption."""
+        if self._finished or not isinstance(data, dict):
+            return
+
+        _tool_span_tracker_context.set(self._context_tracker._tool_tracker)
+
+        try:
+            from claude_agent_sdk._internal.message_parser import parse_message
+
+            message = parse_message(data)
+            if message is None:
+                return
+            self._context_tracker.add(message)
+        except Exception:
+            # Provider message parsing and instrumentation must not interrupt
+            # the SDK's reader task.
+            return
+
+        self._pretraced_message_types.append(type(message).__name__)
 
     def log_error(self, exc: Exception) -> None:
         self._root_span.log(error=str(exc))
@@ -993,6 +1007,7 @@ class RequestTracker:
         self._context_tracker.cleanup()
         self._root_span.end()
         self._finished = True
+        self._pretraced_message_types.clear()
 
     def _hook_parent_export(self, tool_use_id: str | None) -> str:
         tool_export = self._context_tracker.get_tool_span_export(tool_use_id)
@@ -1008,6 +1023,61 @@ class RequestTracker:
             return task_export
 
         return self._root_span.export()
+
+
+class _TracingMessageSendStream:
+    """Observe raw SDK messages before the provider queues them for consumers."""
+
+    def __init__(self, send_stream: Any, query: Any) -> None:
+        self._send_stream = send_stream
+        self._query = query
+        self._braintrust_wrapped = True
+
+    async def send(self, value: Any) -> None:
+        request_tracker = getattr(self._query, "_braintrust_request_tracker", None)
+        if request_tracker is not None:
+            request_tracker.add_raw_message(value)
+        await self._send_stream.send(value)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._send_stream, name)
+
+
+def _install_query_message_tracing(query: Any) -> None:
+    if query is None:
+        return
+    send_stream = getattr(query, "_message_send", None)
+    if send_stream is None or getattr(send_stream, "_braintrust_wrapped", False):
+        return
+    query._message_send = _TracingMessageSendStream(send_stream, query)
+
+
+def _wrap_query_read_messages(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
+    """Install request-context-aware raw message observation on this SDK reader."""
+    request_tracker = _request_tracker_context.get()
+    if request_tracker is not None:
+        instance._braintrust_request_tracker = request_tracker
+    _install_query_message_tracing(instance)
+    return wrapped(*args, **kwargs)
+
+
+async def _bind_request_tracker_to_query(
+    generator: AsyncIterable[Any], request_tracker: RequestTracker
+) -> AsyncGenerator[Any, None]:
+    """Bind the query reader during startup without retaining a ContextVar token across yields."""
+    iterator = generator.__aiter__()
+    token = _request_tracker_context.set(request_tracker)
+    try:
+        try:
+            first_message = await anext(iterator)
+        except StopAsyncIteration:
+            return
+    finally:
+        _request_tracker_context.reset(token)
+
+    yield first_message
+    async for message in iterator:
+        yield message
 
 
 def _prepare_prompt_for_tracing(prompt: Any) -> tuple[Any, str | None, list[dict[str, Any]] | None]:
@@ -1073,9 +1143,10 @@ def _create_query_wrapper_function(original_query: Any) -> Any:
             query_start_time=query_start_time,
             captured_messages=captured_messages,
         )
+        generator = _bind_request_tracker_to_query(original_query(*args, **kwargs), request_tracker)
 
         async for message in _stream_messages_with_tracing(
-            original_query(*args, **kwargs),
+            generator,
             request_tracker=request_tracker,
             finish_request_tracker=request_tracker.finish,
         ):
@@ -1139,6 +1210,10 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
                 query_start_time=self.__query_start_time,
                 captured_messages=self.__captured_messages,
             )
+            query = getattr(self.__client, "_query", None)
+            _install_query_message_tracing(query)
+            if query is not None:
+                query._braintrust_request_tracker = self.__request_tracker
             return self.__request_tracker
 
         def __finish_request_tracker(self, *, log_output: bool = False) -> None:
@@ -1146,11 +1221,15 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
             if request_tracker is None:
                 return
 
+            query = getattr(self.__client, "_query", None)
+            if query is not None and getattr(query, "_braintrust_request_tracker", None) is request_tracker:
+                delattr(query, "_braintrust_request_tracker")
             request_tracker.finish(log_output=log_output)
             self.__request_tracker = None
 
         async def connect(self, *args: Any, **kwargs: Any) -> Any:
             result = await self.__client.connect(*args, **kwargs)
+            _install_query_message_tracing(getattr(self.__client, "_query", None))
             self.__instrument_hook_callbacks()
             return result
 
@@ -1193,6 +1272,7 @@ def _create_client_wrapper_class(original_client_class: Any) -> Any:
 
         async def __aenter__(self) -> "WrappedClaudeSDKClient":
             await self.__client.__aenter__()
+            _install_query_message_tracing(getattr(self.__client, "_query", None))
             self.__instrument_hook_callbacks()
             return self
 

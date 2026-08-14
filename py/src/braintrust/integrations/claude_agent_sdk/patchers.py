@@ -1,8 +1,23 @@
-"""Claude Agent SDK patchers — replacement patchers for ClaudeSDKClient, query, and SdkMcpTool."""
+"""Claude Agent SDK patchers for message reading, clients, queries, and SDK MCP tools."""
 
-from braintrust.integrations.base import ClassReplacementPatcher
+from braintrust.integrations.base import ClassReplacementPatcher, FunctionWrapperPatcher
 
-from .tracing import _create_client_wrapper_class, _create_query_wrapper_function, _create_tool_wrapper_class
+from .tracing import (
+    _create_client_wrapper_class,
+    _create_query_wrapper_function,
+    _create_tool_wrapper_class,
+    _wrap_query_read_messages,
+)
+
+
+class ClaudeSDKMessageReaderPatcher(FunctionWrapperPatcher):
+    """Observe SDK messages before local MCP control requests can dispatch."""
+
+    name = "claude_agent_sdk.message_reader"
+    target_module = "claude_agent_sdk._internal.query"
+    target_path = "Query._read_messages"
+    wrapper = staticmethod(_wrap_query_read_messages)
+    priority = 50
 
 
 class ClaudeSDKClientPatcher(ClassReplacementPatcher):

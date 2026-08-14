@@ -2,7 +2,12 @@
 
 from braintrust.integrations.base import BaseIntegration
 
-from .patchers import ClaudeSDKClientPatcher, ClaudeSDKQueryPatcher, SdkMcpToolPatcher
+from .patchers import (
+    ClaudeSDKClientPatcher,
+    ClaudeSDKMessageReaderPatcher,
+    ClaudeSDKQueryPatcher,
+    SdkMcpToolPatcher,
+)
 
 
 class ClaudeAgentSDKIntegration(BaseIntegration):
@@ -11,4 +16,9 @@ class ClaudeAgentSDKIntegration(BaseIntegration):
     name = "claude_agent_sdk"
     import_names = ("claude_agent_sdk",)
     min_version = "0.1.10"
-    patchers = (ClaudeSDKClientPatcher, ClaudeSDKQueryPatcher, SdkMcpToolPatcher)
+    patchers = (
+        ClaudeSDKMessageReaderPatcher,
+        ClaudeSDKClientPatcher,
+        ClaudeSDKQueryPatcher,
+        SdkMcpToolPatcher,
+    )
