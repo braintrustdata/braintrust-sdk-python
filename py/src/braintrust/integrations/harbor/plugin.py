@@ -56,6 +56,7 @@ from .state import (
 logger = logging.getLogger(__name__)
 _PLUGIN_VERSION = "1"
 _MANIFEST_VERSION = 1
+_DEFAULT_PROJECT = "Harbor"
 
 
 @dataclass
@@ -82,6 +83,11 @@ class RuntimeState:
     partition_by_trial: dict[str, Partition]
     datasets: dict[str, DatasetBinding]
     partitions: dict[str, Partition]
+
+
+def _resolve_project(config: PluginConfig) -> tuple[str | None, str | None]:
+    project_name = config.project_name or (_DEFAULT_PROJECT if config.project_id is None else None)
+    return project_name, config.project_id
 
 
 def _seconds(value: Any, fallback: float) -> float:
@@ -479,6 +485,7 @@ class HarborPlugin:
     def _initialize(self, snapshot: JobSnapshot) -> RuntimeState:
         previous = self._load_manifest(snapshot.job_dir)
         self._manifest = previous
+        project_name, project_id = _resolve_project(self.config)
         plan_by_trial = {plan.trial_name: plan for plan in snapshot.plans}
         datasets: dict[str, DatasetBinding] = {}
         source_tasks: dict[str, dict[str, Any]] = {}
@@ -497,8 +504,8 @@ class HarborPlugin:
                 else:
                     name = dataset_display_name(source, prefix=self.config.dataset_name or "harbor")
                 dataset = init_dataset(
-                    project=self.config.project_name,
-                    project_id=self.config.project_id,
+                    project=project_name,
+                    project_id=project_id,
                     name=name,
                     use_output=False,
                     metadata={"harbor": {"source": source, "scope": scope, "schema_version": _PLUGIN_VERSION}},
@@ -560,8 +567,8 @@ class HarborPlugin:
                 }
                 dataset = datasets[scope].dataset
                 experiment = init(
-                    project=self.config.project_name,
-                    project_id=self.config.project_id,
+                    project=project_name,
+                    project_id=project_id,
                     experiment=name,
                     update=True,
                     dataset=dataset,
@@ -875,11 +882,12 @@ class HarborPlugin:
     def _persist_disabled_manifest(self) -> None:
         if self._snapshot is None:
             return
+        project_name, project_id = _resolve_project(self.config)
         manifest = {
             "manifest_version": _MANIFEST_VERSION,
             "plugin_version": _PLUGIN_VERSION,
             "job_id": self._snapshot.job_id,
-            "project": {"name": self.config.project_name, "id": self.config.project_id},
+            "project": {"name": project_name, "id": project_id},
             "datasets": {},
             "experiments": {},
             "trials": {},
@@ -908,11 +916,12 @@ class HarborPlugin:
         if self._runtime is None:
             return
         snapshot = self._runtime.snapshot
+        project_name, project_id = _resolve_project(self.config)
         manifest = {
             "manifest_version": _MANIFEST_VERSION,
             "plugin_version": _PLUGIN_VERSION,
             "job_id": snapshot.job_id,
-            "project": {"name": self.config.project_name, "id": self.config.project_id},
+            "project": {"name": project_name, "id": project_id},
             "datasets": {
                 scope: {
                     "id": binding.dataset.id if binding.dataset is not None else None,

@@ -31,6 +31,7 @@ from braintrust.integrations.harbor.plugin import (
     RuntimeState,
     _artifact_attachments,
     _attachment,
+    _resolve_project,
     _seconds,
     _timing,
 )
@@ -113,6 +114,15 @@ def test_config_environment_fallback_and_explicit_precedence():
                 os.environ.pop(name, None)
             else:
                 os.environ[name] = value
+
+
+def test_plugin_defaults_project_to_harbor():
+    assert _resolve_project(PluginConfig.from_options()) == ("Harbor", None)
+    assert _resolve_project(PluginConfig.from_options(project_name="explicit-project")) == (
+        "explicit-project",
+        None,
+    )
+    assert _resolve_project(PluginConfig.from_options(project_id="project-id")) == (None, "project-id")
 
 
 def test_harbor_resolves_the_plugin_through_its_entry_point():
