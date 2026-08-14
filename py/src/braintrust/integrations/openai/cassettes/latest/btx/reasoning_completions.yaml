@@ -1,0 +1,78 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Look at this sequence: 2, 6, 12,
+      20, 30. What is the pattern and what would be the formula for the nth term?\n"}],"model":"o4-mini","reasoning_effort":"medium"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '199'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ECrs6kqMBMp3PWZK6E2pPAARUXMAR\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1786735726,\n  \"model\": \"o4-mini-2025-04-16\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Each term is the product of two consecutive
+        integers.  In fact for n=1,2,3,\u2026 you get\\n\\na\u2081=1\xB72=2,  \\na\u2082=2\xB73=6,
+        \ \\na\u2083=3\xB74=12,  \\na\u2084=4\xB75=20,  \\na\u2085=5\xB76=30,\u2026\\n\\nSo
+        the nth term is  \\na\u2099 = n\xB7(n + 1)  \\n\\nEquivalently, a\u2099 =
+        n\xB2 + n.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        41,\n    \"completion_tokens\": 449,\n    \"total_tokens\": 490,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 320,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      connection:
+      - keep-alive
+      content-length:
+      - '1022'
+      content-type:
+      - application/json
+      date:
+      - Fri, 14 Aug 2026 19:28:50 GMT
+      openai-processing-ms:
+      - '3441'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999972'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1

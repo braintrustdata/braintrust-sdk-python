@@ -1,0 +1,82 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Look at this sequence: 2, 6, 12,
+      20, 30. What is the pattern and what would be the formula for the nth term?\n"}],"model":"o4-mini","reasoning_effort":"medium"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '199'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-ECrtSDJsX8y8zz1RLupVS9AJ6Kbq7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1786735810,\n  \"model\": \"o4-mini-2025-04-16\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The five terms are  \\r\\n 2, 6, 12,
+        20, 30  \\r\\nTheir successive differences are  \\r\\n 6\u22122=4, 12\u22126=6,
+        20\u221212=8, 30\u221220=10  \\r\\nso the differences go up by 2 each time.
+        \ Hence it\u2019s a quadratic sequence.  In fact one checks  \\r\\n  \\r\\n
+        a\u2099 = n\xB2 + n  \\r\\n  \\r\\ngives  \\r\\n a\u2081 = 1 + 1 = 2  \\r\\n
+        a\u2082 = 4 + 2 = 6  \\r\\n a\u2083 = 9 + 3 = 12  \\r\\n a\u2084 = 16 + 4
+        = 20  \\r\\n a\u2085 = 25 + 5 = 30  \\r\\n  \\r\\nEquivalently, these are
+        the \u201Cpronic\u201D numbers n(n + 1).\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 41,\n    \"completion_tokens\":
+        642,\n    \"total_tokens\": 683,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 448,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": null\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      connection:
+      - keep-alive
+      content-length:
+      - '1234'
+      content-type:
+      - application/json
+      date:
+      - Fri, 14 Aug 2026 19:30:16 GMT
+      openai-processing-ms:
+      - '5857'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999970'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+    status:
+      code: 200
+      message: OK
+version: 1
