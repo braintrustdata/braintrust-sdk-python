@@ -2680,6 +2680,42 @@ class TopicDigestAutomationConfig(TypedDict):
     """
 
 
+class SourceFacetFunctionSourceFacetFunction(TypedDict):
+    type: Literal['function']
+    id: str
+    version: NotRequired[str | None]
+    """
+    The version of the function
+    """
+
+
+class SourceFacetFunctionSourceFacetFunction1(TypedDict):
+    type: Literal['global']
+    name: str
+    function_type: NotRequired[FunctionTypeEnum | None]
+
+
+class SourceFacetFunctionSourceFacetFunction2(TypedDict):
+    pass
+
+
+class SourceFacetFunctionSourceFacetFunction3(
+    SourceFacetFunctionSourceFacetFunction, SourceFacetFunctionSourceFacetFunction2
+):
+    pass
+
+
+class SourceFacetFunctionSourceFacetFunction4(
+    SourceFacetFunctionSourceFacetFunction1, SourceFacetFunctionSourceFacetFunction2
+):
+    pass
+
+
+SourceFacetFunction: TypeAlias = (
+    SourceFacetFunctionSourceFacetFunction3 | SourceFacetFunctionSourceFacetFunction4
+)
+
+
 class Function1Function1(TypedDict):
     type: Literal['function']
     id: str
@@ -3812,7 +3848,7 @@ class TopicAutomationConfig(TypedDict):
     """
     scope: NotRequired[SpanScope | TraceScope | GroupScope | None]
     """
-    Execution scope for topic automation. Defaults to span-level execution.
+    Execution scope for topic automation.
     """
     data_scope: NotRequired[TopicAutomationDataScope | None]
     btql_filter: NotRequired[str | None]
@@ -3839,8 +3875,9 @@ class TopicMapData(TypedDict):
     type: Literal['topic_map']
     source_facet: str
     """
-    The facet field name to use as input for classification
+    Materialized facet field name used when source_facet_function is absent
     """
+    source_facet_function: NotRequired[SourceFacetFunction | None]
     embedding_model: str
     """
     The embedding model to use for embedding facet values
