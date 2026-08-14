@@ -34,27 +34,23 @@ uv run harbor run \
   --jobs-dir jobs \
   --env-file ../../.env \
   --plugin braintrust \
-  --plugin-kwarg project_name=example-harbor \
   --yes
 ```
 
 The agent solves the task in `task/`, and Harbor's verifier emits a normalized `reward` plus an `answer_length` metric. The plugin creates `jobs/braintrust-harbor-example/braintrust-sync.json` after synchronization.
 
-Harbor also accepts plugin options through `HARBOR_BRAINTRUST_*` variables. For example, setting this in `.env` removes the need for the `project_name` plugin argument:
+By default, the plugin uses `Harbor` as the Braintrust project name. Override it with `--plugin-kwarg project_name=example-harbor` or through `.env`:
 
 ```dotenv
 HARBOR_BRAINTRUST_PROJECT=example-harbor
 ```
-
-Then omit `--plugin-kwarg project_name=example-harbor` from the command.
 
 ## Backfill an existing job
 
 To synchronize the persisted job again without rerunning the agent or verifier:
 
 ```bash
-uv run --env-file ../../.env python backfill.py jobs/braintrust-harbor-example \
-  --project example-harbor
+uv run --env-file ../../.env python backfill.py jobs/braintrust-harbor-example
 ```
 
-Backfill uses the same deterministic dataset, experiment, and span identities, so it reconciles the existing Braintrust data instead of creating duplicate rows.
+Backfill uses the same `Harbor` project default as the initial sync. It also uses the same deterministic dataset, experiment, and span identities, so it reconciles the existing Braintrust data instead of creating duplicate rows.

@@ -11,7 +11,10 @@ from braintrust.integrations.harbor import backfill_job
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("job_dir", type=Path, help="Persisted Harbor job directory")
-    parser.add_argument("--project", help="Braintrust project name (otherwise read from the environment)")
+    parser.add_argument(
+        "--project",
+        help="Braintrust project override (otherwise use the environment or the Harbor project)",
+    )
     args = parser.parse_args()
 
     options = {"project_name": args.project} if args.project else {}
