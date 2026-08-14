@@ -80,12 +80,22 @@ def _patched_claude_sdk(*, wrap_client: bool = False, wrap_tool_class: bool = Fa
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
 async def test_calculator_with_multiple_operations(memory_logger):
-    """Test claude_agent.py example - calculator with multiple operations."""
+    """Local MCP handlers racing stream consumption reuse the canonical tool spans."""
     assert not memory_logger.pop()
 
     with _patched_claude_sdk(wrap_client=True, wrap_tool_class=True):
         # Create calculator tool
+        handler_started = asyncio.Event()
+
         async def calculator_handler(args):
+            handler_started.set()
+            nested_span = start_span(
+                name=f"nested_calculator_{args['operation']}",
+                type=SpanTypeAttribute.FUNCTION,
+            )
+            nested_span.log(input=args)
+            nested_span.end()
+
             operation = args["operation"]
             a = args["a"]
             b = args["b"]
@@ -152,6 +162,13 @@ async def test_calculator_with_multiple_operations(memory_logger):
         result_message = None
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query("What is 15 multiplied by 7? Then subtract 5 from the result.")
+
+            # Deterministically let local MCP dispatch race ahead of application
+            # consumption of the AssistantMessage containing its tool_use block.
+            # Before the regression fix, this creates an orphan fallback span.
+            await asyncio.wait_for(transport.wait_for_mcp_tool_call(), timeout=1)
+            await asyncio.wait_for(handler_started.wait(), timeout=1)
+
             async for message in client.receive_response():
                 if type(message).__name__ == "ResultMessage":
                     result_message = message
@@ -207,11 +224,16 @@ async def test_calculator_with_multiple_operations(memory_logger):
             if "usage_inference_geo" in llm_span.get("metadata", {})
         )
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
+    assert len(tool_spans) == 2, "Each local MCP call should create exactly one canonical tool span"
     for tool_span in tool_spans:
         assert tool_span["span_attributes"]["name"] == "calculator"
         assert tool_span["input"] is not None
         assert tool_span["output"] is not None
+        assert tool_span.get("metadata", {}).get("gen_ai.tool.call.id")
         assert any(parent_id in llm_span_ids for parent_id in tool_span["span_parents"])
+
+        nested_span = find_span_by_name(spans, f"nested_calculator_{tool_span['input']['operation']}")
+        assert tool_span["span_id"] in nested_span["span_parents"]
 
     # Descendants share the task's trace (``root_span_id``); direct children
     # reference the task's ``span_id`` in ``span_parents``.

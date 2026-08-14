@@ -203,6 +203,12 @@ _SENSITIVE_QUERY_PARAM_RE = re.compile(
 )
 
 
+def _is_mcp_tool_call(message: Any) -> bool:
+    request = message.get("request") if isinstance(message, dict) else None
+    mcp_message = request.get("message") if isinstance(request, dict) else None
+    return isinstance(mcp_message, dict) and mcp_message.get("method") == "tools/call"
+
+
 class ClaudeAgentSdkCassetteTransport(Transport):
     """Record or replay the SDK<->CLI JSON protocol at the transport layer."""
 
@@ -227,6 +233,7 @@ class ClaudeAgentSdkCassetteTransport(Transport):
         self._ready = False
         self._cursor_lock = anyio.Lock()
         self._cursor_changed = anyio.Event()
+        self._mcp_tool_call_read = anyio.Event()
         self._control_request_ids: dict[str, str] = {}
 
     async def connect(self) -> None:
@@ -273,6 +280,8 @@ class ClaudeAgentSdkCassetteTransport(Transport):
             assert self._delegate is not None
             async for message in self._delegate.read_messages():
                 self._events.append({"op": "read", "payload": message})
+                if _is_mcp_tool_call(message):
+                    self._mcp_tool_call_read.set()
                 yield message
             return
 
@@ -300,6 +309,10 @@ class ClaudeAgentSdkCassetteTransport(Transport):
     def is_ready(self) -> bool:
         return self._ready
 
+    async def wait_for_mcp_tool_call(self) -> None:
+        """Wait until replay delivers a local MCP ``tools/call`` request."""
+        await self._mcp_tool_call_read.wait()
+
     async def end_input(self) -> None:
         if self._recording:
             assert self._delegate is not None
@@ -326,6 +339,8 @@ class ClaudeAgentSdkCassetteTransport(Transport):
                     old_event = self._cursor_changed
                     self._cursor_changed = anyio.Event()
                     old_event.set()
+                    if op == "read" and _is_mcp_tool_call(event["payload"]):
+                        self._mcp_tool_call_read.set()
                     return event
 
                 waiter = self._cursor_changed
