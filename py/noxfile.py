@@ -366,6 +366,9 @@ LITELLM_VERSIONS = _get_matrix_versions("litellm")
 @nox.session()
 @nox.parametrize("version", LITELLM_VERSIONS, ids=LITELLM_VERSIONS)
 def test_litellm(session, version):
+    # LiteLLM 1.97.0 leaves Pydantic forward references unresolved on Python 3.10.
+    if version == LATEST and sys.version_info < (3, 11):
+        session.skip("Latest LiteLLM is currently broken on Python 3.10")
     _install_test_deps(session)
     # Auxiliary deps (openai upper-bounded, fastapi, orjson) are locked in the lockfile.
     _install_group_locked(session, "test-litellm")
@@ -571,6 +574,10 @@ DSPY_VERSIONS = _get_matrix_versions("dspy")
 @nox.session()
 @nox.parametrize("version", DSPY_VERSIONS, ids=DSPY_VERSIONS)
 def test_dspy(session, version):
+    # DSPy latest preinstalls our latest LiteLLM pin, which is currently broken
+    # on Python 3.10 due to unresolved Pydantic forward references.
+    if version == LATEST and sys.version_info < (3, 11):
+        session.skip("DSPy latest currently resolves a LiteLLM version broken on Python 3.10")
     _install_test_deps(session)
     if version == LATEST:
         # DSPy only lower-bounds LiteLLM, whose 1.92.0 release lacks Windows
