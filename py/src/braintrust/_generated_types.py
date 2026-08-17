@@ -1618,7 +1618,7 @@ Permissions can be assigned to to objects on an individual basis, or grouped int
 """
 
 
-class PreprocessorSavedFunctionIdPreprocessorSavedFunctionId(TypedDict):
+class PreprocessorIdPreprocessorId(TypedDict):
     type: Literal['function']
     id: str
     version: NotRequired[str | None]
@@ -1627,7 +1627,7 @@ class PreprocessorSavedFunctionIdPreprocessorSavedFunctionId(TypedDict):
     """
 
 
-class PreprocessorSavedFunctionIdPreprocessorSavedFunctionId1(TypedDict):
+class PreprocessorIdPreprocessorId1(TypedDict):
     type: Literal['global']
     name: str
     function_type: NotRequired[Literal['preprocessor'] | None]
@@ -1636,13 +1636,22 @@ class PreprocessorSavedFunctionIdPreprocessorSavedFunctionId1(TypedDict):
     """
 
 
-PreprocessorSavedFunctionId: TypeAlias = (
-    PreprocessorSavedFunctionIdPreprocessorSavedFunctionId
-    | PreprocessorSavedFunctionIdPreprocessorSavedFunctionId1
+class PreprocessorIdPreprocessorId2(TypedDict):
+    type: Literal['inline']
+    code: str
+    """
+    The complete JavaScript preprocessor implementation, including its handler.
+    """
+
+
+PreprocessorId: TypeAlias = (
+    PreprocessorIdPreprocessorId
+    | PreprocessorIdPreprocessorId1
+    | PreprocessorIdPreprocessorId2
     | None
 )
 """
-For prompt-backed functions: the preprocessor function to use for trace template variables. Set to null to disable preprocessing. If omitted, the traced project's default preprocessor will be used, falling back to the global 'thread' preprocessor.
+For prompt-backed functions: the saved, global, or inline preprocessor to use for trace template variables. Set to null to disable preprocessing. If omitted, the traced project's default preprocessor will be used, falling back to the global 'thread' preprocessor.
 """
 
 
@@ -4267,7 +4276,7 @@ class PromptData(TypedDict):
     prompt: NotRequired[PromptBlockDataNullish | None]
     options: NotRequired[PromptOptionsNullish | None]
     parser: NotRequired[PromptParserNullish | None]
-    preprocessor: NotRequired[PreprocessorSavedFunctionId | None]
+    preprocessor: NotRequired[PreprocessorId | None]
     tool_functions: NotRequired[Sequence[SavedFunctionId] | None]
     template_format: NotRequired[Literal['mustache', 'nunjucks', 'none'] | None]
     mcp: NotRequired[Mapping[str, Any] | None]
@@ -4278,7 +4287,7 @@ class PromptDataNullish(TypedDict):
     prompt: NotRequired[PromptBlockDataNullish | None]
     options: NotRequired[PromptOptionsNullish | None]
     parser: NotRequired[PromptParserNullish | None]
-    preprocessor: NotRequired[PreprocessorSavedFunctionId | None]
+    preprocessor: NotRequired[PreprocessorId | None]
     tool_functions: NotRequired[Sequence[SavedFunctionId] | None]
     template_format: NotRequired[Literal['mustache', 'nunjucks', 'none'] | None]
     mcp: NotRequired[Mapping[str, Any] | None]
