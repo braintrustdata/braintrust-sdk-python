@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
-from ..env import BraintrustEnv
+from ..env import BraintrustEnv, resolve_org_name
 from ._routing import EndpointRouter, RequestTarget
 from ._transport import HTTPConnection, Transport
 from .policies import RetryMode
@@ -55,22 +55,34 @@ class OrganizationInfo:
 
 @dataclass(frozen=True)
 class LoginResult:
-    """Selected organization and the complete login response."""
+    """Selected organization, resolved routing, and the complete login response."""
 
     organization: OrganizationInfo
+    api_url: str
+    proxy_url: str | None
     response: Mapping[str, Any]
 
 
 class AuthAPI:
     """Authenticate an API key and configure an endpoint router."""
 
-    def __init__(self, transport: Transport, router: EndpointRouter):
+    def __init__(
+        self,
+        transport: Transport,
+        router: EndpointRouter,
+        api_key: str,
+        *,
+        api_url: str | None = None,
+        proxy_url: str | None = None,
+    ):
         self._transport = transport
         self._router = router
+        self._api_key = HTTPConnection.sanitize_token(api_key)
+        self._api_url = api_url
+        self._proxy_url = proxy_url
 
     def login(
         self,
-        api_key: str,
         *,
         org_name: str | None = None,
         api_url: str | None = None,
@@ -78,11 +90,10 @@ class AuthAPI:
     ) -> LoginResult:
         """Log in, select an organization, and apply routing override precedence."""
 
-        api_key = HTTPConnection.sanitize_token(api_key)
         response = self._transport.request_json(
             "POST",
             self._router.resolve(RequestTarget.APP, "/api/apikey/login"),
-            headers={"Authorization": f"Bearer {api_key}"},
+            headers={"Authorization": f"Bearer {self._api_key}"},
             retry_mode=RetryMode.SAFE_READ,
         )
         if not isinstance(response, Mapping):
@@ -92,10 +103,11 @@ class AuthAPI:
             raise ValueError("API-key login response did not include an organization list")
 
         organizations = [OrganizationInfo.from_dict(org) for org in raw_orgs if isinstance(org, Mapping)]
+        org_name = resolve_org_name(org_name)
         organization = self._select_organization(organizations, org_name)
 
-        resolved_api_url = api_url or BraintrustEnv.API_URL.get(organization.api_url)
-        resolved_proxy_url = proxy_url or BraintrustEnv.PROXY_URL.get(organization.proxy_url)
+        resolved_api_url = api_url or self._api_url or BraintrustEnv.API_URL.get(organization.api_url)
+        resolved_proxy_url = proxy_url or self._proxy_url or BraintrustEnv.PROXY_URL.get(organization.proxy_url)
         if not resolved_api_url:
             if org_name:
                 raise ValueError(
@@ -109,7 +121,12 @@ class AuthAPI:
             proxy_url=resolved_proxy_url,
             is_universal_api=organization.is_universal_api,
         )
-        return LoginResult(organization=organization, response=MappingProxyType(dict(response)))
+        return LoginResult(
+            organization=organization,
+            api_url=resolved_api_url,
+            proxy_url=resolved_proxy_url,
+            response=MappingProxyType(dict(response)),
+        )
 
     @staticmethod
     def _select_organization(organizations: Sequence[OrganizationInfo], org_name: str | None) -> OrganizationInfo:

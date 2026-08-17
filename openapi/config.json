@@ -21,7 +21,7 @@
       "--use-generic-container-types",
       "--use-field-description",
       "--strict-nullable",
-      "--parent-scoped-naming",
+      "--naming-strategy=primary-first",
       "--no-use-closed-typed-dict",
       "--disable-future-imports",
       "--formatters=ruff-format"
@@ -29,19 +29,12 @@
   },
   "endpoint_generator": {
     "schema_version": 1,
-    "skip_tags": {
-      "Proxy": {
-        "reason": "Proxy endpoints stream provider-specific payloads and remain on the specialized proxy path.",
-        "operation_ids": [
-          "proxychatCompletions",
-          "proxycompletions",
-          "proxyauto",
-          "proxyembeddings",
-          "proxycredentials",
-          "proxy{path+}"
-        ]
-      }
-    },
+    "generated_tags": [
+      "Projects"
+    ],
+    "idempotent_writes": [
+      "postProject"
+    ],
     "supported_success_statuses": [
       "200",
       "201",
@@ -52,8 +45,7 @@
       "application/json"
     ],
     "supported_response_media_types": [
-      "application/json",
-      "text/plain"
+      "application/json"
     ]
   }
 }

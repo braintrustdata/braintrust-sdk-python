@@ -18,7 +18,7 @@ from ..env import BraintrustEnv
 from ..util import _urljoin, response_raise_for_status
 from .errors import (
     BraintrustHTTPError,
-    BraintrustResponseError,
+    BraintrustJSONDecodeError,
     BraintrustRetryExhaustedError,
     BraintrustTransportError,
     BraintrustTransportRetryExhaustedError,
@@ -359,10 +359,14 @@ class Transport:
 
     def request_json(self, method: str, url: str, **kwargs: Any) -> Any:
         response = self.request(method, url, **kwargs)
+        return self.decode_json_response(response, method=method, url=url)
+
+    def decode_json_response(self, response: requests.Response, *, method: str, url: str) -> Any:
+        """Decode a completed response while preserving transport error details."""
         try:
             return response.json()
         except ValueError as exc:
-            error = BraintrustResponseError(
+            error = BraintrustJSONDecodeError(
                 method=method.upper(),
                 url=response.url or url,
                 status_code=response.status_code,

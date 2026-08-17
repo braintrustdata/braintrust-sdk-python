@@ -1,7 +1,11 @@
-"""Public REST API types.
+"""Public types for the synchronous Braintrust REST API."""
 
-No generated REST models are public yet. Types are added here deliberately as resource wrappers are
-published; the private ``braintrust.api._generated`` package is not a compatibility surface.
-"""
+from .._generated.models.projects import CreateProject, GetProjectResponse, PatchProject, Project
 
-__all__: list[str] = []
+
+__all__ = [
+    "CreateProject",
+    "GetProjectResponse",
+    "PatchProject",
+    "Project",
+]

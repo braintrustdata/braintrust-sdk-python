@@ -1,23 +1,19 @@
-import contextlib
 import datetime
-import http.server
 import io
-import socketserver
-import threading
-import time
 from email.utils import format_datetime
 
 import pytest
 import requests
 from braintrust.api import (
     BraintrustHTTPError,
-    BraintrustResponseError,
+    BraintrustJSONDecodeError,
     BraintrustRetryExhaustedError,
     BraintrustTransportError,
     BraintrustTransportRetryExhaustedError,
     RetryMode,
     RetryPolicy,
 )
+from braintrust.api._test_server import scripted_server
 from braintrust.api._transport import Transport
 from braintrust.util import AugmentedHTTPError
 from requests.adapters import HTTPAdapter
@@ -40,61 +36,6 @@ class FakeClock:
         self.sleeps.append(delay)
         self.monotonic_time += delay
         self.wall_time += delay
-
-
-@contextlib.contextmanager
-def scripted_server(script):
-    class ScriptedHandler(http.server.BaseHTTPRequestHandler):
-        request_count = 0
-        requests = []
-
-        def log_message(self, format, *args):
-            pass
-
-        def do_GET(self):
-            self._handle()
-
-        def do_POST(self):
-            self._handle()
-
-        def _handle(self):
-            request_number = type(self).request_count
-            type(self).request_count += 1
-            content_length = int(self.headers.get("Content-Length", "0"))
-            body = self.rfile.read(content_length) if content_length else b""
-            type(self).requests.append((self.command, self.path, body))
-            action = script[min(request_number, len(script) - 1)]
-
-            if action == "close":
-                self.connection.close()
-                return
-
-            if action[0] == "sleep":
-                _, delay, status, headers, response_body = action
-                time.sleep(delay)
-            else:
-                status, headers, response_body = action
-
-            self.send_response(status)
-            for name, value in headers.items():
-                self.send_header(name, value)
-            self.send_header("Content-Length", str(len(response_body)))
-            self.end_headers()
-            try:
-                self.wfile.write(response_body)
-            except BrokenPipeError:
-                pass
-
-    server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), ScriptedHandler)
-    server.daemon_threads = True
-    thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
-    thread.start()
-
-    try:
-        yield f"http://127.0.0.1:{server.server_address[1]}", ScriptedHandler
-    finally:
-        server.shutdown()
-        server.server_close()
 
 
 def make_transport(clock=None, adapter=None):
@@ -329,7 +270,7 @@ def test_safe_read_timeout_leaves_room_for_retry():
 
 def test_invalid_json_is_not_retried_and_preserves_response_context():
     with scripted_server([(200, {"Content-Type": "application/json"}, b"not json")]) as (url, handler):
-        with pytest.raises(BraintrustResponseError) as exc_info:
+        with pytest.raises(BraintrustJSONDecodeError) as exc_info:
             make_transport().request_json("GET", url, retry_mode=RetryMode.SAFE_READ)
 
     assert exc_info.value.status_code == 200

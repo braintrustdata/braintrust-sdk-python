@@ -100,8 +100,8 @@ class BraintrustTransportRetryExhaustedError(BraintrustTransportError):
     """Transport exceptions exhausted the operation's retry policy."""
 
 
-class BraintrustResponseError(BraintrustAPIError):
-    """A successful HTTP response could not be decoded."""
+class BraintrustJSONDecodeError(BraintrustAPIError):
+    """A successful HTTP response could not be decoded as JSON."""
 
     method: str
     url: str
@@ -119,6 +119,7 @@ class BraintrustResponseError(BraintrustAPIError):
         response_body: str,
         response_headers: Mapping[str, str],
         attempts: int,
+        message: str | None = None,
     ):
         self.method = method
         self.url = url
@@ -132,4 +133,4 @@ class BraintrustResponseError(BraintrustAPIError):
             }
         )
         self.attempts = attempts
-        super().__init__(f"Could not decode the response from {method} {url} as JSON")
+        super().__init__(message or f"Could not decode the response from {method} {url} as JSON")

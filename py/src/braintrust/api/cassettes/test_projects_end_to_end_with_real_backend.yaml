@@ -1,0 +1,396 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/apikey/login
+  response:
+    body:
+      string: '{"org_info":[{"id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"Braintrust
+        SDKs","api_url":"https://api.braintrust.dev","git_metadata":{"collect":"some","fields":["commit","branch","tag","dirty","author_name","author_email","commit_message","commit_time"]},"is_universal_api":null,"proxy_url":"https://api.braintrust.dev","realtime_url":"wss://realtime.braintrustapi.com"}]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5,
+        Content-Type, Date, X-Api-Version
+      Access-Control-Allow-Methods:
+      - GET,OPTIONS,PATCH,DELETE,POST,PUT
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '376'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-MzEzZmE3Y2ItOWJiYS00OWU1LWI4OTMtOGQ4NjA2Y2Y1YjUz''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 14 Aug 2026 20:02:21 GMT
+      Etag:
+      - '"13vsc5ye8flag"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/apikey/login
+      X-Nonce:
+      - MzEzZmE3Y2ItOWJiYS00OWU1LWI4OTMtOGQ4NjA2Y2Y1YjUz
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::ffbhm-1786737740734-013b054d8dac
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"name": "python-sdk-generated-projects-vcr", "description": "created by
+      the Python SDK VCR test", "org_name": "Braintrust SDKs"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '129'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/project
+  response:
+    body:
+      string: '{"id":"613b27b8-da58-4796-8993-d79cff1afad3","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-generated-projects-vcr","description":"created
+        by the Python SDK VCR test","created":"2026-08-14T20:02:21.300Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 14 Aug 2026 20:02:21 GMT
+      Via:
+      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 70fd8dd903406754b301439f9111e256.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - n1ay16d0BJ_cvkNZS4W6Y20Die9bsM173_DAV567vyqX1oigpIlaog==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a7f744d-25501c3c04858339782f8fde;Parent=575c5e29d6a53b1d;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '307'
+      etag:
+      - W/"133-J+BLvuGtfyn2Lj4IWFVWVsqLqNc"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CG8cIH6YIAMEu8g=
+      x-amzn-RequestId:
+      - 654f58b9-9d16-4c57-8616-1ee0dd15ab61
+      x-bt-internal-trace-id:
+      - 6a7f744d0000000049c801445f2ae4ab
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.braintrust.dev/v1/project?project_name=python-sdk-generated-projects-vcr&org_name=Braintrust%20SDKs
+  response:
+    body:
+      string: '{"objects":[{"id":"613b27b8-da58-4796-8993-d79cff1afad3","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-generated-projects-vcr","description":"created
+        by the Python SDK VCR test","created":"2026-08-14T20:02:21.300Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 14 Aug 2026 20:02:21 GMT
+      Via:
+      - 1.1 8250156022879efefd7a589c8ba8c706.cloudfront.net (CloudFront), 1.1 7293b56f3a0eb541aadcbcaa0146d528.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - f6M-kbi-SL_TPm4YD0yvWJNKubVVNE58UQd8H5TxFGv5gGRnDayRFw==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a7f744d-7a079b485298fbba1d379bfe;Parent=67d61fbe4ef2b858;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '321'
+      etag:
+      - W/"141-Q/vI9D3l1GEcxigmhdgU4QDoPr4"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CG8cMH0EIAMEE6Q=
+      x-amzn-RequestId:
+      - 15063a57-e16a-432c-92ae-7a4115044629
+      x-bt-internal-trace-id:
+      - 6a7f744d0000000006fc9365f6b00acb
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.braintrust.dev/v1/project/613b27b8-da58-4796-8993-d79cff1afad3
+  response:
+    body:
+      string: '{"id":"613b27b8-da58-4796-8993-d79cff1afad3","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-generated-projects-vcr","description":"created
+        by the Python SDK VCR test","created":"2026-08-14T20:02:21.300Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 14 Aug 2026 20:02:21 GMT
+      Via:
+      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 36c050103b969d83a8b90ba7cba12542.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - -Ow0f7p7F48nNhJdla7V0_UyJ5iIwurCIqdE0YDDUIv2A79IDow36Q==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a7f744d-07e24fb532e649db2a93f9e3;Parent=67ee5e76f1f143bc;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '307'
+      etag:
+      - W/"133-J+BLvuGtfyn2Lj4IWFVWVsqLqNc"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CG8cPEbBIAMEv3Q=
+      x-amzn-RequestId:
+      - e77b6c34-4374-4175-9b33-210fe5c99104
+      x-bt-internal-trace-id:
+      - 6a7f744d000000007bd2cb96555aa91a
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"description": "updated by the Python SDK VCR test"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '53'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: PATCH
+    uri: https://api.braintrust.dev/v1/project/613b27b8-da58-4796-8993-d79cff1afad3
+  response:
+    body:
+      string: '{"id":"613b27b8-da58-4796-8993-d79cff1afad3","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-generated-projects-vcr","description":"updated
+        by the Python SDK VCR test","created":"2026-08-14T20:02:21.300Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 14 Aug 2026 20:02:22 GMT
+      Via:
+      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 6889869bf680fe34cca722f0a05e1106.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - sWBfxSN30owXXvYuOuBahaAAhqIi_IHRWJuI-ddXXt0qN-_sY7nQhg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a7f744e-12cd753c03328c487a650ab6;Parent=1d830992c5b5174a;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '307'
+      etag:
+      - W/"133-LM8/56xANPuebOLm3mEY13c/1pY"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CG8cRHASIAMEgcA=
+      x-amzn-RequestId:
+      - 224f1f09-1d4f-4ebe-8d7b-fdfdbc1cad5e
+      x-bt-internal-trace-id:
+      - 6a7f744e000000000fe9bcac73f7625a
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: DELETE
+    uri: https://api.braintrust.dev/v1/project/613b27b8-da58-4796-8993-d79cff1afad3
+  response:
+    body:
+      string: '{"id":"613b27b8-da58-4796-8993-d79cff1afad3","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-generated-projects-vcr","description":"updated
+        by the Python SDK VCR test","created":"2026-08-14T20:02:21.300Z","deleted_at":"2026-08-14T20:02:22.434Z","user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 14 Aug 2026 20:02:22 GMT
+      Via:
+      - 1.1 561ea23d1fbb47b35216fa7040bfaa74.cloudfront.net (CloudFront), 1.1 10f12ad63ad88e4e38e4e73deb3e9570.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - TwX8S5DWN5Guvm0GuA7T-IIBL9AIcEARmMjJT1b484o_aVc-XsU8wg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a7f744e-4b99ebd85091eeed2c28e93f;Parent=36e67096fb7d4942;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '329'
+      etag:
+      - W/"149-ZEM0N6DPDhpdgarT6R15u2oVDag"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CG8cUGQboAMEv7Q=
+      x-amzn-RequestId:
+      - ff2c1211-e5b7-40ac-ab3f-3aa36933ef0b
+      x-bt-internal-trace-id:
+      - 6a7f744e0000000015b1866d584ef16c
+    status:
+      code: 200
+      message: OK
+version: 1
