@@ -110,6 +110,9 @@ test = [
 test-openai-http2 = [
     {include-group = "test"},
     "h2==4.4.1",
+    # OpenAI 3 no longer installs httpx transitively, but this session exercises
+    # the integration's HTTP/2 behavior with an explicit httpx transport.
+    "httpx==0.28.1",
 ]
 
 test-openai-ddtrace = [

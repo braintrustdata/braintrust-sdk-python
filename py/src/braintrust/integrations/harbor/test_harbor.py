@@ -52,7 +52,7 @@ from harbor.models.job.lock import AgentSkillLock, JobLock, TaskLock, TrialLock
 from harbor.models.job.result import JobResult, JobStats
 from harbor.models.task.id import LocalTaskId
 from harbor.models.trajectories.trajectory import Trajectory
-from harbor.models.trial.config import AgentConfig, EnvironmentConfig, TaskConfig, TrialConfig, VerifierConfig
+from harbor.models.trial.config import AgentConfig, EnvironmentConfig, TaskConfig, TrialConfig
 from harbor.models.trial.result import AgentInfo, StepResult, TimingInfo, TrialResult
 
 
@@ -360,7 +360,7 @@ def test_ids_and_partition_are_deterministic_and_do_not_include_concurrency(tmp_
             )
         ],
         environment=EnvironmentConfig(),
-        verifier=VerifierConfig(),
+        verifier={},
     )
     semantic = semantic_agent_config(task_config.agent, task_lock.skills)
     key = logical_task_key(task_config, task_lock)
@@ -494,7 +494,7 @@ def test_backfill_matches_trial_locks_by_task_name(tmp_path):
         task=TaskLock(name="task-a", type="local", digest="sha256:" + "a" * 64, source="suite"),
         agent=AgentConfig(name="agent", model_name="provider/model"),
         environment=EnvironmentConfig(),
-        verifier=VerifierConfig(),
+        verifier={},
     )
     (tmp_path / "config.json").write_text(JobConfig(job_name="job").model_dump_json())
     (tmp_path / "lock.json").write_text(

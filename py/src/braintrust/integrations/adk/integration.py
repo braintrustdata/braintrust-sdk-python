@@ -6,6 +6,7 @@ from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
     AgentRunAsyncPatcher,
+    AgentRunPatcher,
     FlowRunAsyncPatcher,
     McpToolPatcher,
     RunnerRunPatcher,
@@ -25,6 +26,7 @@ class ADKIntegration(BaseIntegration):
     min_version = "1.14.1"
     patchers = (
         ThreadBridgePatcher,
+        AgentRunPatcher,
         AgentRunAsyncPatcher,
         RunnerRunPatcher,
         FlowRunAsyncPatcher,
