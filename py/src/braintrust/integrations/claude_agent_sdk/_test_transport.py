@@ -86,6 +86,8 @@ def _normalize_for_match(value: Any) -> Any:
         return [_normalize_for_match(item) for item in value]
     if isinstance(value, dict):
         normalized = {key: _normalize_for_match(item) for key, item in value.items()}
+        if normalized.get("type") == "user" and isinstance(normalized.get("session_id"), str):
+            normalized["session_id"] = "SESSION_ID"
         if normalized.get("type") == "control_request" and isinstance(normalized.get("request_id"), str):
             normalized["request_id"] = "CONTROL_REQUEST_ID"
         return normalized
@@ -116,8 +118,13 @@ def _compact_initialize_message_for_storage(value: dict[str, Any]) -> dict[str, 
         return value
 
     compact_result: dict[str, Any] = {}
-    if "account" in result:
-        compact_result["account"] = result["account"]
+    account = result.get("account")
+    if isinstance(account, dict):
+        compact_result["account"] = {
+            key: account[key]
+            for key in ("apiKeySource", "apiProvider", "subscriptionType", "tokenSource")
+            if key in account
+        }
 
     for key in ("available_output_styles", "commands", "models", "agents"):
         if key in result:
@@ -185,7 +192,7 @@ def _sanitize_url_string(value: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query, doseq=True), parts.fragment))
 
 
-_PATH_RE = re.compile(r"(?:(?:/Users|/home)/[^\s\"']+|[A-Za-z]:\\\\[^\s\"']+)")
+_PATH_RE = re.compile(r"(?:(?:/Users|/home|/private/(?:tmp|var)|/tmp)/[^\s\"']+|[A-Za-z]:\\\\[^\s\"']+)")
 _AUTH_BEARER_RE = re.compile(r"Bearer\s+[A-Za-z0-9._-]+")
 _API_KEY_RE = re.compile(r"\bsk-[A-Za-z0-9_-]+\b")
 _SENSITIVE_FIELDS = {

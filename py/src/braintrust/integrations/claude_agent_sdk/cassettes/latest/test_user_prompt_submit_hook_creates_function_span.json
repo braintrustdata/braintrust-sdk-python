@@ -19,7 +19,7 @@
             },
             "subtype": "initialize"
           },
-          "request_id": "req_1_c065fa36",
+          "request_id": "req_1_03b62051",
           "type": "control_request"
         }
       }
@@ -27,13 +27,42 @@
     {
       "op": "read",
       "payload": {
+        "hook_event": "SessionStart",
+        "hook_id": "aeb6c325-0578-441b-bcb6-44dbbe309c5e",
+        "hook_name": "SessionStart:startup",
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "subtype": "hook_started",
+        "type": "system",
+        "uuid": "c5aa4b0c-3d65-4cc4-8fbf-0621207f4321"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "exit_code": 0,
+        "hook_event": "SessionStart",
+        "hook_id": "aeb6c325-0578-441b-bcb6-44dbbe309c5e",
+        "hook_name": "SessionStart:startup",
+        "outcome": "success",
+        "output": "",
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "stderr": "",
+        "stdout": "",
+        "subtype": "hook_response",
+        "type": "system",
+        "uuid": "5e70c37a-81ca-4c65-9652-74f1c50d43b7"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
         "response": {
-          "request_id": "req_1_c065fa36",
+          "request_id": "req_1_03b62051",
           "response": {
             "account": {
               "apiKeySource": "ANTHROPIC_API_KEY",
               "apiProvider": "firstParty",
-              "tokenSource": "none"
+              "tokenSource": "claude.ai"
             },
             "agents": [],
             "available_output_styles": [],
@@ -70,13 +99,14 @@
             "hook_event_name": "UserPromptSubmit",
             "permission_mode": "bypassPermissions",
             "prompt": "Say hello in one short sentence.",
-            "session_id": "c6b8f60e-80a7-4b13-b770-331510ea4fd0",
-            "transcript_path": "<REDACTED_PATH>"
+            "prompt_id": "48396d1a-48d3-423e-a548-7c2a31c5b992",
+            "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+            "transcript_path": "TRANSCRIPT_0"
           },
           "subtype": "hook_callback",
-          "tool_use_id": "100c74a3-aa55-4aff-b89d-8ec48528a3b7"
+          "tool_use_id": "59895247-9216-4468-b76f-c6ce1f562728"
         },
-        "request_id": "37567e48-5d59-4333-b1bd-090c7fdca6d7",
+        "request_id": "5345f1f1-1317-4afd-8861-b654134a7493",
         "type": "control_request"
       }
     },
@@ -86,7 +116,7 @@
         "kind": "json",
         "value": {
           "response": {
-            "request_id": "37567e48-5d59-4333-b1bd-090c7fdca6d7",
+            "request_id": "5345f1f1-1317-4afd-8861-b654134a7493",
             "response": {
               "hookSpecificOutput": {
                 "additionalContext": "Remember the answer should stay concise.",
@@ -111,14 +141,16 @@
         ],
         "analytics_disabled": false,
         "apiKeySource": "ANTHROPIC_API_KEY",
-        "claude_code_version": "2.1.142",
+        "capabilities": [
+          "interrupt_receipt_v1",
+          "interrupt_cancel_queued_v1",
+          "msg_lifecycle_v1"
+        ],
+        "claude_code_version": "2.1.221",
         "cwd": "<REDACTED_CWD>",
+        "fast_mode_disabled_reason": "sdk_opt_in_required",
         "fast_mode_state": "off",
         "mcp_servers": [
-          {
-            "name": "braintrust",
-            "status": "connected"
-          },
           {
             "name": "linear-server",
             "status": "connected"
@@ -134,78 +166,107 @@
           {
             "name": "rust-analyzer-lsp",
             "path": "<REDACTED_PATH>",
-            "source": "rust-analyzer-lsp@claude-plugins-official"
+            "source": "rust-analyzer-lsp@claude-plugins-official",
+            "version": "1.0.0"
           }
         ],
-        "session_id": "c6b8f60e-80a7-4b13-b770-331510ea4fd0",
+        "product_feedback_disabled": false,
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
         "skills": [
-          "create-braintrust-demo",
           "braintrust",
+          "create-braintrust-demo",
+          "commit-message",
+          "sdk-benchmarking",
+          "sdk-ci-triage",
           "sdk-dependency-updates",
           "sdk-integrations",
           "sdk-vcr-workflows",
-          "sdk-ci-triage",
-          "commit-message",
-          "sdk-benchmarking",
+          "design-sync",
+          "dataviz",
           "update-config",
+          "verify",
           "debug",
+          "code-review",
           "simplify",
           "batch",
           "fewer-permission-prompts",
-          "loop",
-          "claude-api"
-        ],
-        "slash_commands": [
-          "create-braintrust-demo",
-          "braintrust",
-          "sdk-dependency-updates",
-          "sdk-integrations",
-          "sdk-vcr-workflows",
-          "sdk-ci-triage",
-          "commit-message",
-          "sdk-benchmarking",
-          "update-config",
-          "debug",
-          "simplify",
-          "batch",
-          "fewer-permission-prompts",
+          "doctor",
           "loop",
           "claude-api",
+          "run",
+          "run-skill-generator"
+        ],
+        "slash_commands": [
+          "braintrust",
+          "create-braintrust-demo",
+          "commit-message",
+          "sdk-benchmarking",
+          "sdk-ci-triage",
+          "sdk-dependency-updates",
+          "sdk-integrations",
+          "sdk-vcr-workflows",
+          "design-sync",
+          "dataviz",
+          "update-config",
+          "verify",
+          "debug",
+          "code-review",
+          "simplify",
+          "batch",
+          "fewer-permission-prompts",
+          "doctor",
+          "loop",
+          "claude-api",
+          "run",
+          "run-skill-generator",
+          "agents",
+          "autocompact",
           "clear",
+          "color",
           "compact",
+          "config",
           "context",
+          "effort",
+          "fast",
           "heapdump",
           "init",
+          "mcp",
+          "import",
+          "model",
+          "__remote-workflow",
+          "workflow-launch-exec",
+          "reload-skills",
+          "rename",
           "review",
           "security-review",
           "usage",
           "insights",
+          "recap",
           "goal",
+          "design",
+          "design-consent",
+          "design-revoke",
           "team-onboarding"
         ],
         "subtype": "init",
         "tools": [
           "Task",
-          "AskUserQuestion",
           "Bash",
           "CronCreate",
           "CronDelete",
           "CronList",
+          "DesignSync",
           "Edit",
-          "EnterPlanMode",
           "EnterWorktree",
-          "ExitPlanMode",
           "ExitWorktree",
-          "Glob",
-          "Grep",
-          "ListMcpResourcesTool",
           "LSP",
           "Monitor",
           "NotebookEdit",
           "PushNotification",
           "Read",
-          "ReadMcpResourceTool",
+          "ReportFindings",
           "ScheduleWakeup",
+          "SendMessage",
           "Skill",
           "TaskCreate",
           "TaskGet",
@@ -217,22 +278,18 @@
           "WebFetch",
           "WebSearch",
           "Write",
-          "mcp__braintrust__generate_permalink",
-          "mcp__braintrust__infer_schema",
-          "mcp__braintrust__list_recent_objects",
-          "mcp__braintrust__resolve_object",
-          "mcp__braintrust__search_docs",
-          "mcp__braintrust__sql_query",
-          "mcp__braintrust__summarize_experiment",
           "mcp__linear-server__create_attachment",
           "mcp__linear-server__create_attachment_from_upload",
+          "mcp__linear-server__create_initiative_label",
           "mcp__linear-server__create_issue_label",
           "mcp__linear-server__delete_attachment",
           "mcp__linear-server__delete_comment",
           "mcp__linear-server__delete_customer",
           "mcp__linear-server__delete_customer_need",
+          "mcp__linear-server__delete_diff_comment",
           "mcp__linear-server__delete_status_update",
           "mcp__linear-server__extract_images",
+          "mcp__linear-server__get_agent_skill",
           "mcp__linear-server__get_attachment",
           "mcp__linear-server__get_diff",
           "mcp__linear-server__get_diff_threads",
@@ -242,14 +299,19 @@
           "mcp__linear-server__get_issue_status",
           "mcp__linear-server__get_milestone",
           "mcp__linear-server__get_project",
+          "mcp__linear-server__get_release",
+          "mcp__linear-server__get_release_note",
           "mcp__linear-server__get_status_updates",
           "mcp__linear-server__get_team",
           "mcp__linear-server__get_user",
+          "mcp__linear-server__get_workspace",
+          "mcp__linear-server__list_agent_skills",
           "mcp__linear-server__list_comments",
           "mcp__linear-server__list_customers",
           "mcp__linear-server__list_cycles",
           "mcp__linear-server__list_diffs",
           "mcp__linear-server__list_documents",
+          "mcp__linear-server__list_initiative_labels",
           "mcp__linear-server__list_initiatives",
           "mcp__linear-server__list_issue_labels",
           "mcp__linear-server__list_issue_statuses",
@@ -257,22 +319,75 @@
           "mcp__linear-server__list_milestones",
           "mcp__linear-server__list_project_labels",
           "mcp__linear-server__list_projects",
+          "mcp__linear-server__list_release_notes",
+          "mcp__linear-server__list_release_pipelines",
+          "mcp__linear-server__list_releases",
           "mcp__linear-server__list_teams",
           "mcp__linear-server__list_users",
+          "mcp__linear-server__merge_diff",
           "mcp__linear-server__prepare_attachment_upload",
+          "mcp__linear-server__resolve_diff_thread",
           "mcp__linear-server__save_comment",
           "mcp__linear-server__save_customer",
           "mcp__linear-server__save_customer_need",
+          "mcp__linear-server__save_diff_comment",
           "mcp__linear-server__save_document",
           "mcp__linear-server__save_initiative",
           "mcp__linear-server__save_issue",
           "mcp__linear-server__save_milestone",
           "mcp__linear-server__save_project",
+          "mcp__linear-server__save_release",
+          "mcp__linear-server__save_release_note",
           "mcp__linear-server__save_status_update",
-          "mcp__linear-server__search_documentation"
+          "mcp__linear-server__search_documentation",
+          "mcp__linear-server__submit_diff_review"
         ],
         "type": "system",
-        "uuid": "f17dade9-e2b7-4428-b8c8-204e8d49dacf"
+        "uuid": "96637df0-4ce5-454d-8ef2-f208ee618002"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 3,
+        "estimated_tokens_delta": 3,
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "99ff8068-7b8d-4698-a4c9-d414a3d503fb"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 8,
+        "estimated_tokens_delta": 5,
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "d6381bd8-a359-484e-a557-5e9677cd8b5c"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 35,
+        "estimated_tokens_delta": 27,
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "06f2594b-c573-4b25-8c1c-ffd7054b9bbc"
+      }
+    },
+    {
+      "op": "read",
+      "payload": {
+        "estimated_tokens": 97,
+        "estimated_tokens_delta": 62,
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "subtype": "thinking_tokens",
+        "type": "system",
+        "uuid": "7ec9dcd5-c15f-47df-be84-5cb3ef671ed0"
       }
     },
     {
@@ -282,13 +397,13 @@
           "content": [
             {
               "signature": "<REDACTED_SIGNATURE>",
-              "thinking": "The user is asking me to say hello in one short sentence. This is a very simple request. I should provide a brief greeting.",
+              "thinking": "The user is asking me to say hello in one short sentence. This is a simple greeting request. I should respond briefly and courteously.",
               "type": "thinking"
             }
           ],
           "context_management": null,
           "diagnostics": null,
-          "id": "msg_01PBVTQmKiV2TW6SwGDr93cc",
+          "id": "msg_011CduPywRUPsNNJnSqm4CBT",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -298,21 +413,22 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 44572
+              "ephemeral_5m_input_tokens": 7957
             },
-            "cache_creation_input_tokens": 44572,
-            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 7957,
+            "cache_read_input_tokens": 9310,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 7,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "request_id": "req_011CbC7WRWBU7Lg6co2KK6k9",
-        "session_id": "c6b8f60e-80a7-4b13-b770-331510ea4fd0",
+        "request_id": "req_011CduPyvvTbwELYfY2MCf9W",
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "timestamp": "2026-08-10T16:38:47.080Z",
         "type": "assistant",
-        "uuid": "1f66b247-77c6-490b-bcc5-52282c23a736"
+        "uuid": "3f8cbdd9-8fb0-44c5-a0c4-5e0e42c56216"
       }
     },
     {
@@ -321,13 +437,13 @@
         "message": {
           "content": [
             {
-              "text": "Hello! I'm ready to help you with Braintrust SDK development or other tasks.",
+              "text": "Hello! I'm Claude, and I'm ready to help you with your Braintrust SDK work.",
               "type": "text"
             }
           ],
           "context_management": null,
           "diagnostics": null,
-          "id": "msg_01PBVTQmKiV2TW6SwGDr93cc",
+          "id": "msg_011CduPywRUPsNNJnSqm4CBT",
           "model": "claude-haiku-4-5-20251001",
           "role": "assistant",
           "stop_details": null,
@@ -337,76 +453,82 @@
           "usage": {
             "cache_creation": {
               "ephemeral_1h_input_tokens": 0,
-              "ephemeral_5m_input_tokens": 44572
+              "ephemeral_5m_input_tokens": 7957
             },
-            "cache_creation_input_tokens": 44572,
-            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 7957,
+            "cache_read_input_tokens": 9310,
             "inference_geo": "not_available",
             "input_tokens": 10,
-            "output_tokens": 7,
+            "output_tokens": 3,
             "service_tier": "standard"
           }
         },
         "parent_tool_use_id": null,
-        "request_id": "req_011CbC7WRWBU7Lg6co2KK6k9",
-        "session_id": "c6b8f60e-80a7-4b13-b770-331510ea4fd0",
+        "request_id": "req_011CduPyvvTbwELYfY2MCf9W",
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
+        "timestamp": "2026-08-10T16:38:47.084Z",
         "type": "assistant",
-        "uuid": "467d8d4b-0ed5-4d28-91e2-a4802d75498a"
+        "uuid": "f41ed6fb-5cd0-4c77-a157-e66cd5f9aaae"
       }
     },
     {
       "op": "read",
       "payload": {
         "api_error_status": null,
-        "duration_api_ms": 3996,
-        "duration_ms": 2960,
+        "duration_api_ms": 1149,
+        "duration_ms": 1437,
+        "fast_mode_disabled_reason": "sdk_opt_in_required",
         "fast_mode_state": "off",
         "is_error": false,
         "modelUsage": {
           "claude-haiku-4-5-20251001": {
-            "cacheCreationInputTokens": 44572,
-            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 7957,
+            "cacheReadInputTokens": 9310,
+            "canonicalModel": "claude-haiku-4-5",
             "contextWindow": 200000,
-            "costUSD": 0.056518,
-            "inputTokens": 453,
+            "costUSD": 0.01119725,
+            "inputTokens": 10,
             "maxOutputTokens": 32000,
-            "outputTokens": 70,
+            "outputTokens": 62,
+            "provider": "firstParty",
             "webSearchRequests": 0
           }
         },
         "num_turns": 1,
         "permission_denials": [],
-        "result": "Hello! I'm ready to help you with Braintrust SDK development or other tasks.",
-        "session_id": "c6b8f60e-80a7-4b13-b770-331510ea4fd0",
+        "result": "Hello! I'm Claude, and I'm ready to help you with your Braintrust SDK work.",
+        "session_id": "9f08ea13-a7ed-4b10-991e-bfdcb8860166",
         "stop_reason": "end_turn",
         "subtype": "success",
         "terminal_reason": "completed",
-        "total_cost_usd": 0.056518,
-        "ttft_ms": 2900,
+        "time_to_request_ms": 114,
+        "total_cost_usd": 0.01119725,
+        "ttft_ms": 1248,
+        "ttft_stream_ms": 883,
         "type": "result",
         "usage": {
           "cache_creation": {
             "ephemeral_1h_input_tokens": 0,
-            "ephemeral_5m_input_tokens": 44572
+            "ephemeral_5m_input_tokens": 7957
           },
-          "cache_creation_input_tokens": 44572,
-          "cache_read_input_tokens": 0,
-          "inference_geo": "",
+          "cache_creation_input_tokens": 7957,
+          "cache_read_input_tokens": 9310,
+          "inference_geo": "not_available",
           "input_tokens": 10,
           "iterations": [
             {
               "cache_creation": {
                 "ephemeral_1h_input_tokens": 0,
-                "ephemeral_5m_input_tokens": 44572
+                "ephemeral_5m_input_tokens": 7957
               },
-              "cache_creation_input_tokens": 44572,
-              "cache_read_input_tokens": 0,
+              "cache_creation_input_tokens": 7957,
+              "cache_read_input_tokens": 9310,
               "input_tokens": 10,
-              "output_tokens": 57,
+              "output_tokens": 62,
               "type": "message"
             }
           ],
-          "output_tokens": 57,
+          "output_tokens": 62,
           "server_tool_use": {
             "web_fetch_requests": 0,
             "web_search_requests": 0
@@ -414,9 +536,9 @@
           "service_tier": "standard",
           "speed": "standard"
         },
-        "uuid": "de0dea47-6c17-4191-9685-06725bcc8834"
+        "uuid": "28a477a9-740d-47d6-8688-5b681936d62f"
       }
     }
   ],
-  "sdk_version": "0.2.82"
+  "sdk_version": "0.2.129"
 }

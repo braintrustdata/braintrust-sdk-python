@@ -2,6 +2,7 @@
 
 import asyncio
 import contextvars
+import copy
 import dataclasses
 import sys
 import types
@@ -31,8 +32,10 @@ from braintrust.integrations.claude_agent_sdk._test_transport import make_casset
 from braintrust.integrations.claude_agent_sdk.tracing import (
     ContextTracker,
     ToolSpanTracker,
+    _aggregate_model_usage,
     _build_llm_input,
     _create_client_wrapper_class,
+    _create_query_wrapper_function,
     _create_tool_wrapper_class,
     _parse_tool_name,
     _serialize_content_blocks,
@@ -49,6 +52,16 @@ from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_
 PROJECT_NAME = "test-claude-agent-sdk"
 TEST_MODEL = "claude-haiku-4-5-20251001"
 REPO_ROOT = Path(__file__).resolve().parents[5]  # py/src/braintrust/integrations/claude_agent_sdk -> repo root
+
+
+async def _concise_user_prompt_hook(input_data: Any, tool_use_id: str | None, context: Any) -> dict[str, Any]:
+    del input_data, tool_use_id, context
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": "Remember the answer should stay concise.",
+        }
+    }
 
 
 @pytest.fixture
@@ -100,6 +113,7 @@ def _make_calculator_options(handler: Any) -> Any:
     return claude_agent_sdk.ClaudeAgentOptions(
         model=TEST_MODEL,
         permission_mode="bypassPermissions",
+        include_partial_messages=True,
         mcp_servers={
             "calculator": claude_agent_sdk.create_sdk_mcp_server(
                 name="calculator",
@@ -164,8 +178,13 @@ async def test_calculator_with_multiple_operations(memory_logger):
         )
 
         result_message = None
+        received_messages: list[Any] = []
+        message_snapshots: list[dict[str, Any]] = []
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query("What is 15 multiplied by 7? Then subtract 5 from the result.")
+            await client.query(
+                "What is 15 multiplied by 7? Then subtract 5 from the result. "
+                "You must use the calculator MCP tool for both operations in order; do not calculate directly."
+            )
 
             # Deterministically let local MCP dispatch race ahead of application
             # consumption of the AssistantMessage containing its tool_use block.
@@ -174,8 +193,14 @@ async def test_calculator_with_multiple_operations(memory_logger):
             await asyncio.wait_for(handler_started.wait(), timeout=1)
 
             async for message in client.receive_response():
+                received_messages.append(message)
+                message_snapshots.append(copy.deepcopy(vars(message)))
                 if type(message).__name__ == "ResultMessage":
                     result_message = message
+
+        assert options.include_partial_messages is True
+        assert options.hooks is None
+        assert [vars(message) for message in received_messages] == message_snapshots
 
     spans = memory_logger.pop()
 
@@ -208,8 +233,39 @@ async def test_calculator_with_multiple_operations(memory_logger):
     llm_span_ids = {span["span_id"] for span in llm_spans}
     _assert_llm_spans_have_time_to_first_token(llm_spans)
 
-    llm_spans_with_metrics = [s for s in llm_spans if "prompt_tokens" in s.get("metrics", {})]
-    assert len(llm_spans_with_metrics) >= 1, "At least one LLM span should have token metrics"
+    expected_partial_usage = _final_partial_usage(received_messages)
+    if expected_partial_usage:
+        ordered_llm_spans = sorted(llm_spans, key=lambda span: span["metrics"]["start"])
+        assert len(ordered_llm_spans) == len(expected_partial_usage)
+        for llm_span, usage in zip(ordered_llm_spans, expected_partial_usage, strict=True):
+            assert llm_span["metrics"] | _metrics_from_exact_anthropic_usage(usage) == llm_span["metrics"]
+    elif _sdk_version_at_least("0.1.11"):
+        expected_usage_by_message_id: dict[str, dict[str, Any]] = {}
+        for message in received_messages:
+            message_id = getattr(message, "message_id", None)
+            usage = _copy_numeric_usage(getattr(message, "usage", None))
+            if isinstance(message_id, str) and usage:
+                expected_usage_by_message_id[message_id] = usage
+
+        expected_usage = list(expected_usage_by_message_id.values())
+        assert expected_usage, "Cassette must contain per-request assistant usage"
+        ordered_llm_spans = sorted(llm_spans, key=lambda span: span["metrics"]["start"])
+        assert len(ordered_llm_spans) == len(expected_usage)
+        for llm_span, usage in zip(ordered_llm_spans, expected_usage, strict=True):
+            expected_metrics = _metrics_from_exact_anthropic_usage(usage)
+            for unreliable_metric in ("completion_tokens", "tokens"):
+                expected_metrics.pop(unreliable_metric, None)
+            assert llm_span["metrics"] | expected_metrics == llm_span["metrics"]
+            assert "completion_tokens" not in llm_span["metrics"]
+            assert "tokens" not in llm_span["metrics"]
+            if "cache_creation" in usage:
+                assert "prompt_cache_creation_tokens" not in llm_span["metrics"]
+
+    assert not {
+        "prompt_tokens",
+        "completion_tokens",
+        "tokens",
+    }.intersection(task_span.get("metrics", {}))
 
     for llm_span in llm_spans:
         assert llm_span["span_attributes"]["name"] == "anthropic.messages.create"
@@ -220,7 +276,8 @@ async def test_calculator_with_multiple_operations(memory_logger):
         for metric_name in ("prompt_tokens", "completion_tokens", "tokens"):
             if metric_name in llm_span.get("metrics", {}):
                 assert llm_span["metrics"][metric_name] > 0
-    assert any(llm_span.get("metadata", {}).get("usage_service_tier") == "standard" for llm_span in llm_spans)
+    if _sdk_version_at_least("0.1.11"):
+        assert any(llm_span.get("metadata", {}).get("usage_service_tier") == "standard" for llm_span in llm_spans)
     if any("usage_inference_geo" in llm_span.get("metadata", {}) for llm_span in llm_spans):
         assert all(
             isinstance(llm_span.get("metadata", {}).get("usage_inference_geo"), str)
@@ -228,9 +285,10 @@ async def test_calculator_with_multiple_operations(memory_logger):
             if "usage_inference_geo" in llm_span.get("metadata", {})
         )
     tool_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.TOOL]
-    assert len(tool_spans) == 2, "Each local MCP call should create exactly one canonical tool span"
-    for tool_span in tool_spans:
-        assert tool_span["span_attributes"]["name"] == "calculator"
+    calculator_spans = [span for span in tool_spans if span["span_attributes"]["name"] == "calculator"]
+    assert len(calculator_spans) == 2, f"Expected both calculator operations, got {len(calculator_spans)}"
+    assert len(llm_spans) >= 2, f"Expected multiple provider requests, got {len(llm_spans)}"
+    for tool_span in calculator_spans:
         assert tool_span["input"] is not None
         assert tool_span["output"] is not None
         assert tool_span.get("metadata", {}).get("gen_ai.tool.call.id")
@@ -299,7 +357,10 @@ async def test_local_mcp_handler_uses_its_own_tracker_with_concurrent_client(mem
             ) as calculator_client,
             claude_agent_sdk.ClaudeSDKClient(options=other_options, transport=other_transport) as other_client,
         ):
-            await calculator_client.query("What is 15 multiplied by 7? Then subtract 5 from the result.")
+            await calculator_client.query(
+                "What is 15 multiplied by 7? Then subtract 5 from the result. "
+                "You must use the calculator MCP tool for both operations in order; do not calculate directly."
+            )
             await asyncio.wait_for(calculator_transport.wait_for_mcp_tool_call(), timeout=1)
 
             await other_client.query("Say hi")
@@ -327,6 +388,98 @@ async def test_local_mcp_handler_uses_its_own_tracker_with_concurrent_client(mem
     assert multiply_span["span_id"] in nested_span["span_parents"]
 
 
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_query_helper_keeps_options_untouched_and_logs_aggregate_task_usage(memory_logger):
+    if not _sdk_version_at_least("0.1.11"):
+        pytest.skip("The 0.1.10 query() transport lifecycle is incompatible with the client cassette")
+    assert not memory_logger.pop()
+    prompt = "Say hello in one short sentence."
+
+    hooks = {"UserPromptSubmit": [claude_agent_sdk.HookMatcher(hooks=[_concise_user_prompt_hook])]}
+    options = claude_agent_sdk.ClaudeAgentOptions(
+        model=TEST_MODEL,
+        permission_mode="bypassPermissions",
+        hooks=hooks,
+    )
+    transport = make_cassette_transport(
+        cassette_name="test_user_prompt_submit_hook_creates_function_span",
+        prompt="",
+        options=options,
+    )
+    wrapped_query = _create_query_wrapper_function(claude_agent_sdk.query)
+    received_messages = [
+        message
+        async for message in wrapped_query(
+            prompt=prompt,
+            options=options,
+            transport=transport,
+        )
+    ]
+
+    assert options.hooks is hooks
+    assert received_messages
+    assert type(received_messages[-1]).__name__ == "ResultMessage"
+
+    spans = memory_logger.pop()
+    task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    assert len(llm_spans) == 1
+    assert not {
+        "prompt_tokens",
+        "completion_tokens",
+        "tokens",
+        "prompt_cached_tokens",
+        "prompt_cache_creation_tokens",
+        "prompt_cache_creation_5m_tokens",
+        "prompt_cache_creation_1h_tokens",
+    }.intersection(llm_spans[0].get("metrics", {}))
+
+    result_message = received_messages[-1]
+    expected_metrics = _metrics_from_result_message(result_message)
+    assert task_span["metrics"] | expected_metrics == task_span["metrics"]
+    _, expected_usage_metadata = extract_anthropic_usage(result_message.usage)
+    assert task_span["metadata"] | expected_usage_metadata == task_span["metadata"]
+
+
+@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
+@pytest.mark.asyncio
+async def test_connect_with_prompt_logs_aggregate_task_usage(memory_logger):
+    if not _sdk_version_at_least("0.1.11"):
+        pytest.skip("Transcript usage is not exposed by the older SDK cassette")
+    assert not memory_logger.pop()
+    prompt = "Say hello in one short sentence."
+
+    options = claude_agent_sdk.ClaudeAgentOptions(
+        model=TEST_MODEL,
+        permission_mode="bypassPermissions",
+        hooks={"UserPromptSubmit": [claude_agent_sdk.HookMatcher(hooks=[_concise_user_prompt_hook])]},
+    )
+    transport = make_cassette_transport(
+        cassette_name="test_user_prompt_submit_hook_creates_function_span",
+        prompt="",
+        options=options,
+    )
+
+    with _patched_claude_sdk(wrap_client=True):
+        client = claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport)
+        try:
+            await client.connect(prompt)
+            await asyncio.sleep(0.05)
+            received_messages = [message async for message in client.receive_response()]
+        finally:
+            await client.disconnect()
+
+    spans = memory_logger.pop()
+    task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
+    assert len(llm_spans) == 1
+    assert not {"prompt_tokens", "completion_tokens", "tokens"}.intersection(llm_spans[0].get("metrics", {}))
+    result_message = received_messages[-1]
+    expected_metrics = _metrics_from_result_message(result_message)
+    assert task_span["metrics"] | expected_metrics == task_span["metrics"]
+
+
 def _make_message(content: str) -> dict:
     """Create a streaming format message dict."""
     return {"type": "user", "message": {"role": "user", "content": content}}
@@ -344,6 +497,99 @@ def _assert_llm_spans_have_time_to_first_token(llm_spans: list[dict[str, Any]]) 
     for llm_span in llm_spans:
         assert "time_to_first_token" in llm_span.get("metrics", {})
         assert llm_span["metrics"]["time_to_first_token"] >= 0
+
+
+def _copy_numeric_usage(usage: Any) -> dict[str, Any]:
+    if not isinstance(usage, dict):
+        return {}
+
+    copied = {
+        key: value
+        for key in (
+            "input_tokens",
+            "output_tokens",
+            "cache_read_input_tokens",
+            "cache_creation_input_tokens",
+        )
+        if isinstance((value := usage.get(key)), int) and not isinstance(value, bool) and value >= 0
+    }
+    cache_creation = usage.get("cache_creation")
+    if isinstance(cache_creation, dict):
+        copied_cache_creation = {
+            key: value
+            for key in ("ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens")
+            if isinstance((value := cache_creation.get(key)), int) and not isinstance(value, bool) and value >= 0
+        }
+        if copied_cache_creation:
+            copied["cache_creation"] = copied_cache_creation
+    return copied
+
+
+def _metrics_from_result_message(message: Any) -> dict[str, float]:
+    usage = _aggregate_model_usage(getattr(message, "model_usage", None)) or _copy_numeric_usage(message.usage)
+    metrics, _ = extract_anthropic_usage(usage)
+    return metrics
+
+
+def _metrics_from_exact_anthropic_usage(usage: dict[str, Any]) -> dict[str, float]:
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens")
+    cache_read_tokens = usage.get("cache_read_input_tokens", 0)
+    aggregate_cache_creation = usage.get("cache_creation_input_tokens", 0)
+    cache_creation = usage.get("cache_creation") or {}
+    cache_creation_5m = cache_creation.get("ephemeral_5m_input_tokens")
+    cache_creation_1h = cache_creation.get("ephemeral_1h_input_tokens")
+    has_cache_creation_breakdown = cache_creation_5m is not None or cache_creation_1h is not None
+    effective_cache_creation = (
+        (cache_creation_5m or 0) + (cache_creation_1h or 0)
+        if has_cache_creation_breakdown
+        else aggregate_cache_creation
+    )
+    prompt_tokens = input_tokens + cache_read_tokens + effective_cache_creation
+    metrics: dict[str, float] = {
+        "prompt_tokens": float(prompt_tokens),
+        "prompt_cached_tokens": float(cache_read_tokens),
+    }
+    if has_cache_creation_breakdown:
+        if cache_creation_5m is not None:
+            metrics["prompt_cache_creation_5m_tokens"] = float(cache_creation_5m)
+        if cache_creation_1h is not None:
+            metrics["prompt_cache_creation_1h_tokens"] = float(cache_creation_1h)
+    else:
+        metrics["prompt_cache_creation_tokens"] = float(aggregate_cache_creation)
+    if output_tokens is not None:
+        metrics["completion_tokens"] = float(output_tokens)
+        metrics["tokens"] = float(prompt_tokens + output_tokens)
+    return metrics
+
+
+def _final_partial_usage(messages: list[Any]) -> list[dict[str, Any]]:
+    active_message_by_parent: dict[str | None, str] = {}
+    usage_by_message_id: dict[str, dict[str, Any]] = {}
+    message_order: list[str] = []
+
+    for message in messages:
+        if type(message).__name__ != "StreamEvent":
+            continue
+        event = getattr(message, "event", None)
+        if not isinstance(event, dict):
+            continue
+        parent_tool_use_id = getattr(message, "parent_tool_use_id", None)
+        if event.get("type") == "message_start":
+            raw_message = event.get("message")
+            message_id = raw_message.get("id") if isinstance(raw_message, dict) else None
+            if isinstance(message_id, str):
+                active_message_by_parent[parent_tool_use_id] = message_id
+                usage_by_message_id[message_id] = _copy_numeric_usage(raw_message.get("usage"))
+                message_order.append(message_id)
+        elif event.get("type") == "message_delta":
+            message_id = active_message_by_parent.get(parent_tool_use_id)
+            if message_id is not None:
+                usage_by_message_id[message_id].update(_copy_numeric_usage(event.get("usage")))
+        elif event.get("type") == "message_stop":
+            active_message_by_parent.pop(parent_tool_use_id, None)
+
+    return [usage_by_message_id[message_id] for message_id in message_order]
 
 
 def _sdk_cassette_name(base: str, *, min_version: str) -> str:
@@ -515,6 +761,7 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
                 "hook_event_name": input_data.get("hook_event_name"),
                 "prompt": input_data.get("prompt"),
                 "tool_use_id": tool_use_id,
+                "transcript_path": input_data.get("transcript_path"),
             }
         )
         return {
@@ -540,13 +787,15 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
             options=options,
         )
 
+        received_messages: list[Any] = []
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(prompt)
             async for message in client.receive_response():
+                received_messages.append(message)
                 if type(message).__name__ == "ResultMessage":
                     break
 
-    assert hook_invocations, "Expected the UserPromptSubmit hook to be invoked"
+    assert len(hook_invocations) == 1, "Expected the caller's UserPromptSubmit hook exactly once"
 
     spans = memory_logger.pop()
     task_span = find_span_by_name(find_spans_by_type(spans, SpanTypeAttribute.TASK), "Claude Agent")
@@ -567,6 +816,11 @@ async def test_user_prompt_submit_hook_creates_function_span(memory_logger):
     assert hook_span["input"]["prompt"] == prompt
     assert hook_span["output"]["hookSpecificOutput"]["hookEventName"] == "UserPromptSubmit"
     assert llm_spans, "Expected at least one LLM span for the Claude response"
+    for llm_span in llm_spans:
+        assert not {"prompt_tokens", "completion_tokens", "tokens"}.intersection(llm_span.get("metrics", {}))
+    result_message = received_messages[-1]
+    expected_metrics = _metrics_from_result_message(result_message)
+    assert task_span["metrics"] | expected_metrics == task_span["metrics"]
     assert any(
         isinstance(llm_span.get("input"), list)
         and llm_span["input"]
@@ -858,6 +1112,7 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
             options=options,
         )
 
+        received_messages: list[Any] = []
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(
                 "Launch two bundled general-purpose subagents for two independent tasks. "
@@ -866,10 +1121,13 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
                 "'alpha:<version> | <owner>'. "
                 "The second delegated subagent must use Bash and Read on release_notes_beta.md and return only "
                 "'beta:<version> | <owner>'. "
+                "If either agent runs in the background, use TaskOutput with block=true to wait for each result. "
+                "Do not finish while either task is still running. "
                 "After both delegated agents finish, reply with exactly two lines in that same order. "
                 "Do not answer directly without using both subagents."
             )
             async for message in client.receive_response():
+                received_messages.append(message)
                 if type(message).__name__ == "ResultMessage":
                     break
 
@@ -881,6 +1139,12 @@ async def test_multiple_bundled_subagents_keep_outer_orchestration_separate(memo
     root_task_span = find_span_by_name(task_spans, "Claude Agent")
     subagent_spans = [s for s in task_spans if s["span_attributes"]["name"] != "Claude Agent"]
     assert len(subagent_spans) >= 2, f"Expected at least two delegated task spans, got {len(subagent_spans)}"
+
+    for llm_span in llm_spans:
+        assert not {"prompt_tokens", "completion_tokens", "tokens"}.intersection(llm_span.get("metrics", {}))
+    result_message = received_messages[-1]
+    expected_metrics = _metrics_from_result_message(result_message)
+    assert root_task_span["metrics"] | expected_metrics == root_task_span["metrics"]
 
     outer_llm_spans = [llm_span for llm_span in llm_spans if root_task_span["span_id"] in llm_span["span_parents"]]
     assert outer_llm_spans, "Expected outer orchestration LLM spans under the root task"
@@ -2019,6 +2283,32 @@ def test_extract_anthropic_usage_normalizes_claude_result_message_usage():
         "tokens": 10.0,
     }
     assert metadata == {}
+
+
+def test_aggregate_model_usage_includes_all_agents_and_ignores_invalid_fields():
+    usage = _aggregate_model_usage(
+        {
+            "claude-opus": {
+                "inputTokens": 5,
+                "outputTokens": 3,
+                "cacheReadInputTokens": 11,
+                "cacheCreationInputTokens": 2,
+            },
+            "claude-haiku": types.SimpleNamespace(
+                inputTokens=7,
+                outputTokens=4,
+                cacheReadInputTokens=None,
+                cacheCreationInputTokens=-1,
+            ),
+        }
+    )
+
+    assert usage == {
+        "input_tokens": 12,
+        "output_tokens": 7,
+        "cache_read_input_tokens": 11,
+        "cache_creation_input_tokens": 2,
+    }
 
 
 @pytest.mark.parametrize(
