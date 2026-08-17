@@ -287,10 +287,15 @@ lint = [
     "llama-index-embeddings-openai",
 ]
 
-# -- Build deps ----------------------------------------------------------------
+# -- Build and code-generation deps --------------------------------------------
 
 build = [
     "setuptools>=82.0.1",
+]
+
+api-codegen = [
+    "datamodel-code-generator==0.72.4",
+    "ruff==0.15.21",
 ]
 
 # -- Dev deps (superset for local development) ---------------------------------
@@ -298,6 +303,7 @@ build = [
 dev = [
     {include-group = "test"},
     {include-group = "build"},
+    {include-group = "api-codegen"},
     "nox==2026.2.9",
     "pre-commit==4.6.0",
     "pylint==4.0.5",

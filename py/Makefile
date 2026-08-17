@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev test-core check-stale-cassettes sync-pytest-pin _check-git-clean bench bench-compare
+.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev test-core check-stale-cassettes sync-pytest-pin fetch-openapi-spec generate-api-client check-api-client-codegen test-api-codegen _check-git-clean bench bench-compare
 
 clean:
 	rm -rf build dist
@@ -35,6 +35,18 @@ check-stale-cassettes:
 
 sync-pytest-pin:
 	$(PYTHON) scripts/sync-pytest-pin.py
+
+fetch-openapi-spec:
+	$(PYTHON) scripts/fetch-openapi-spec.py
+
+generate-api-client:
+	uv run --no-default-groups --group api-codegen python scripts/generate-api-client.py
+
+check-api-client-codegen:
+	uv run --no-default-groups --group api-codegen python scripts/generate-api-client.py --check
+
+test-api-codegen:
+	uv run nox -s test_api_codegen
 
 bench:
 	$(PYTHON) -m benchmarks $(BENCH_ARGS)
@@ -78,6 +90,10 @@ help:
 	@echo "  bench-compare       - Compare two benchmark results (BENCH_BASE=... BENCH_NEW=...)"
 	@echo "  build               - Build Python package"
 	@echo "  check-stale-cassettes - Detect orphaned cassette version directories"
+	@echo "  fetch-openapi-spec  - Fetch the hash-verified pinned OpenAPI spec"
+	@echo "  generate-api-client - Generate private REST API models from the pinned spec"
+	@echo "  check-api-client-codegen - Check committed REST API models for drift"
+	@echo "  test-api-codegen    - Run OpenAPI validator and generator tests"
 	@echo "  sync-pytest-pin     - Sync [dependency-groups].test pytest pin from matrix"
 	@echo "  clean               - Remove build artifacts"
 	@echo "  help                - Show this help message"

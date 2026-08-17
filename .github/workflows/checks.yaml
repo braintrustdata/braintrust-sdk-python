@@ -32,6 +32,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: bash scripts/ensure-pinned-actions.sh
 
+  api-codegen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+      - name: Test generator and check committed output
+        run: |
+          mise exec -- make -C py test-api-codegen check-api-client-codegen
+
   static_checks:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -142,7 +153,8 @@ jobs:
         shell: bash
         run: |
           mise exec python@${{ matrix.python-version }} -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 6 \
-            --exclude-static-checks
+            --exclude-static-checks \
+            --exclude-session test_api_codegen
 
   adk-py:
     uses: ./.github/workflows/adk-py-test.yaml
@@ -178,6 +190,7 @@ jobs:
     needs:
       - lint
       - ensure-pinned-actions
+      - api-codegen
       - static_checks
       - smoke
       - nox
@@ -204,6 +217,7 @@ jobs:
 
           check_result "lint" "${{ needs.lint.result }}"
           check_result "ensure-pinned-actions" "${{ needs['ensure-pinned-actions'].result }}"
+          check_result "api-codegen" "${{ needs['api-codegen'].result }}"
           check_result "static_checks" "${{ needs.static_checks.result }}"
           check_result "smoke" "${{ needs.smoke.result }}"
           check_result "nox" "${{ needs.nox.result }}"

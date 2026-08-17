@@ -31,6 +31,7 @@ jobs:
         run: |
           mise exec python@3.10 -- python ./py/scripts/nox-matrix.py ${{ matrix.shard }} 4 \
             --exclude-static-checks \
+            --exclude-session test_api_codegen \
             --output-durations measured-durations-${{ matrix.shard }}.json
       - name: Upload measured durations
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

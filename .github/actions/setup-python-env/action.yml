@@ -3,8 +3,9 @@ description: "Checkout, configure mise, and install dev dependencies for a given
 
 inputs:
   python-version:
-    description: "Python version to install (e.g. 3.12)"
-    required: true
+    description: "Python version to install (e.g. 3.12). Defaults to the .tool-versions pin."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -20,8 +21,8 @@ runs:
       with:
         cache: true
         experimental: true
-        install_args: python@${{ inputs.python-version }}
+        install_args: ${{ inputs.python-version && format('python@{0}', inputs.python-version) || '' }}
     - name: Install dependencies
       shell: bash
       run: |
-        mise exec python@${{ inputs.python-version }} -- make -C py install-dev
+        mise exec ${{ inputs.python-version && format('python@{0}', inputs.python-version) || '' }} -- make -C py install-dev
