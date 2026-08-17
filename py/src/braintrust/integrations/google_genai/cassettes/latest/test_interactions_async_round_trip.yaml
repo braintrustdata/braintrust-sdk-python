@@ -17,26 +17,26 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 2.924.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.17.0 gl-python/3.14.6
+      - google-genai-sdk/2.18.1 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
-      string: '{"id":"v1_ChcyZ0I2YXRYSkN2MlYtOFlQbzlyTHFBWRIXMmdCNmF0WEpDdjJWLThZUG85ckxxQVk","status":"completed","usage":{"total_tokens":31,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":15},"created":"2026-08-10T16:48:26Z","updated":"2026-08-10T16:48:26Z","service_tier":"standard","steps":[{"signature":"Cl8BEU0yD41Ua1Qyxbj0XPqNW+MiucTtr7VUPugaHIFDumuER2OvrEYnw64AD4cj7vkBxB83oVGr4wrXD9nmqMbDNJJZ3Sfmr9M4MpHIOvCShTzpKvOnYAd8nyOCzRnHLQ==","type":"thought"},{"content":[{"text":"The
+      string: '{"id":"v1_ChdKeldEYXY2NUc4aTlqckVQbXBlTnlBTRIXSnpXRGF2NjVHOGk5anJFUG1wZU55QU0","status":"completed","usage":{"total_tokens":40,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":24},"created":"2026-08-17T16:21:59Z","updated":"2026-08-17T16:21:59Z","service_tier":"standard","steps":[{"signature":"CpMBARFNMg/Axx6PmkTzKR6CAkexc5GRRG3VD/a5GKQ047CyYdyvndyoI9ZQA/raEokrxKTzznUGc9f0S+/8mVvYKVmR7wpuqRkG8OC8epEQuPeICW/UV4gmmHRL9+1e0oxNSUbPzLnA6Xd868D6fFeJw2A3Zt33RWEkSwm+yptGpOHHrp3V8kRztf9YK5X3Hl7fqeLM","type":"thought"},{"content":[{"text":"The
         capital of Italy is **Rome**.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '724'
+      - '792'
       content-type:
       - application/json
       date:
-      - Mon, 10 Aug 2026 16:48:26 GMT
+      - Mon, 17 Aug 2026 16:21:59 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=1222
+      - gfet4t7; dur=1113
       transfer-encoding:
       - chunked
       vary:
@@ -68,26 +68,28 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 2.924.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.17.0 gl-python/3.14.6
+      - google-genai-sdk/2.18.1 gl-python/3.14.6
     method: GET
-    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChcyZ0I2YXRYSkN2MlYtOFlQbzlyTHFBWRIXMmdCNmF0WEpDdjJWLThZUG85ckxxQVk?stream=false&include_input=true
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdKeldEYXY2NUc4aTlqckVQbXBlTnlBTRIXSnpXRGF2NjVHOGk5anJFUG1wZU55QU0?stream=false&include_input=true
   response:
     body:
-      string: '{"id":"v1_ChcyZ0I2YXRYSkN2MlYtOFlQbzlyTHFBWRIXMmdCNmF0WEpDdjJWLThZUG85ckxxQVk","status":"completed","usage":{"total_tokens":31,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":15},"created":"2026-08-10T16:48:26Z","updated":"2026-08-10T16:48:26Z","service_tier":"standard","steps":[{"signature":"Cl8BEU0yD41Ua1Qyxbj0XPqNW+MiucTtr7VUPugaHIFDumuER2OvrEYnw64AD4cj7vkBxB83oVGr4wrXD9nmqMbDNJJZ3Sfmr9M4MpHIOvCShTzpKvOnYAd8nyOCzRnHLQ==","type":"thought"},{"content":[{"text":"The
-        capital of Italy is **Rome**.","type":"text"}],"type":"model_output"}],"object":"interaction","model":"gemini-2.5-flash"}'
+      string: '{"id":"v1_ChdKeldEYXY2NUc4aTlqckVQbXBlTnlBTRIXSnpXRGF2NjVHOGk5anJFUG1wZU55QU0","status":"completed","usage":{"total_tokens":40,"total_input_tokens":8,"input_tokens_by_modality":[{"modality":"text","tokens":8}],"total_cached_tokens":0,"total_output_tokens":8,"total_tool_use_tokens":0,"total_thought_tokens":24},"created":"2026-08-17T16:21:59Z","updated":"2026-08-17T16:21:59Z","service_tier":"standard","steps":[{"type":"user_input","content":[{"text":"What
+        is the capital of Italy?","type":"text"}]},{"signature":"CpMBARFNMg/Axx6PmkTzKR6CAkexc5GRRG3VD/a5GKQ047CyYdyvndyoI9ZQA/raEokrxKTzznUGc9f0S+/8mVvYKVmR7wpuqRkG8OC8epEQuPeICW/UV4gmmHRL9+1e0oxNSUbPzLnA6Xd868D6fFeJw2A3Zt33RWEkSwm+yptGpOHHrp3V8kRztf9YK5X3Hl7fqeLM","type":"thought"},{"content":[{"text":"The
+        capital of Italy is **Rome**.","type":"text"}],"type":"model_output"}],"object":"interaction","input":[{"type":"user_input","content":[{"text":"What
+        is the capital of Italy?","type":"text"}]}],"model":"gemini-2.5-flash"}'
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '724'
+      - '980'
       content-type:
       - application/json
       date:
-      - Mon, 10 Aug 2026 16:48:27 GMT
+      - Mon, 17 Aug 2026 16:22:00 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=150
+      - gfet4t7; dur=154
       transfer-encoding:
       - chunked
       vary:
@@ -119,9 +121,9 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 2.924.0 v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.17.0 gl-python/3.14.6
+      - google-genai-sdk/2.18.1 gl-python/3.14.6
     method: DELETE
-    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChcyZ0I2YXRYSkN2MlYtOFlQbzlyTHFBWRIXMmdCNmF0WEpDdjJWLThZUG85ckxxQVk
+    uri: https://generativelanguage.googleapis.com/v1beta/interactions/v1_ChdKeldEYXY2NUc4aTlqckVQbXBlTnlBTRIXSnpXRGF2NjVHOGk5anJFUG1wZU55QU0
   response:
     body:
       string: '{}'
@@ -133,11 +135,11 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 10 Aug 2026 16:48:27 GMT
+      - Mon, 17 Aug 2026 16:22:00 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=151
+      - gfet4t7; dur=193
       transfer-encoding:
       - chunked
       vary:

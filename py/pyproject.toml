@@ -110,6 +110,9 @@ test = [
 test-openai-http2 = [
     {include-group = "test"},
     "h2==4.4.1",
+    # OpenAI 3 no longer installs httpx transitively, but this session exercises
+    # the integration's HTTP/2 behavior with an explicit httpx transport.
+    "httpx==0.28.1",
 ]
 
 test-openai-ddtrace = [
@@ -374,13 +377,13 @@ latest = "ai[openai]==0.4.2"
 "0.4.0" = "ai[openai]==0.4.0"
 
 [tool.braintrust.matrix.openai]
-latest = "openai==2.53.0"
+latest = "openai==3.1.0"
 "1.92.0" = "openai==1.92.0"
 "1.77.0" = "openai==1.77.0"
 "1.71.0" = "openai==1.71.0"
 
 [tool.braintrust.matrix.anthropic]
-latest = "anthropic==0.121.0"
+latest = "anthropic==0.122.0"
 "0.48.0" = "anthropic==0.48.0"
 
 [tool.braintrust.matrix.cohere]
@@ -388,18 +391,18 @@ latest = "cohere==7.0.8"
 "5.0.0" = "cohere==5.0.0"
 
 [tool.braintrust.matrix.openai-agents]
-latest = "openai-agents==0.19.4"
+latest = "openai-agents==0.21.1"
 "0.13.6" = "openai-agents==0.13.6"
 "0.0.19" = "openai-agents==0.0.19"
 
 [tool.braintrust.matrix.litellm]
 # 1.92.0 only publishes Linux wheels through CPython 3.13, but the test
 # matrix also covers Windows and CPython 3.14.
-latest = "litellm==1.96.0"
+latest = "litellm==1.97.0"
 "1.74.0" = "litellm==1.74.0"
 
 [tool.braintrust.matrix.livekit-agents]
-latest = "livekit-agents==1.6.9"
+latest = "livekit-agents==1.6.10"
 "1.3.1" = "livekit-agents==1.3.1"
 
 [tool.braintrust.matrix.pipecat-ai]
@@ -407,17 +410,17 @@ latest = "pipecat-ai==1.7.0"
 "1.3.0" = "pipecat-ai==1.3.0"
 
 [tool.braintrust.matrix.claude-agent-sdk]
-latest = "claude-agent-sdk==0.2.134"
+latest = "claude-agent-sdk==0.2.139"
 "0.1.10" = "claude-agent-sdk==0.1.10"
 
 [tool.braintrust.matrix.cursor-sdk]
 # 1.0.25 fixes bridge callback tokens that could be parsed as CLI flags while
 # retaining per-turn usage, sync/async consumption, multimodal, and custom tools.
-latest = "cursor-sdk==1.0.27"
+latest = "cursor-sdk==1.0.28"
 "1.0.25" = "cursor-sdk==1.0.25"
 
 [tool.braintrust.matrix.agno]
-latest = "agno==2.8.7"
+latest = "agno==2.9.0"
 "2.4.0" = "agno==2.4.0"
 "2.1.0" = "agno==2.1.0"
 
@@ -434,15 +437,15 @@ latest = "autogen-ext[openai]==0.7.5"
 "0.7.0" = "autogen-ext[openai]==0.7.0"
 
 [tool.braintrust.matrix.strands-agents]
-latest = "strands-agents==1.51.0"
+latest = "strands-agents==1.52.0"
 "1.20.0" = "strands-agents==1.20.0"
 
 [tool.braintrust.matrix.pydantic-ai-integration]
-latest = "pydantic-ai==2.27.0"
+latest = "pydantic-ai==2.31.0"
 "1.10.0" = "pydantic-ai==1.10.0"
 
 [tool.braintrust.matrix.pydantic-ai-wrap-openai]
-latest = "pydantic-ai==2.27.0"
+latest = "pydantic-ai==2.31.0"
 "1.0.1" = "pydantic-ai==1.0.1"
 "0.1.9" = "pydantic-ai==0.1.9"
 
@@ -455,7 +458,7 @@ latest = "instructor==1.15.4"
 "1.11.0" = "instructor==1.11.0"
 
 [tool.braintrust.matrix.google-genai]
-latest = "google-genai==2.17.0"
+latest = "google-genai==2.18.1"
 "1.75.0" = "google-genai==1.75.0"
 "1.30.0" = "google-genai==1.30.0"
 
@@ -464,22 +467,22 @@ latest = "dspy==3.3.0"
 "2.6.0" = "dspy==2.6.0"
 
 [tool.braintrust.matrix.deepagents]
-latest = "deepagents==0.7.5"
+latest = "deepagents==0.7.6"
 "0.6.0" = "deepagents==0.6.0"
 
 [tool.braintrust.matrix.crewai]
 # 1.13.0 is the first release with the full causal-id surface (event_id /
 # parent_event_id / started_event_id on BaseEvent) plus the ``usage`` field on
 # LLMCallCompletedEvent that the Braintrust CrewAI integration depends on.
-latest = "crewai==1.15.14"
+latest = "crewai==1.15.16"
 "1.13.0" = "crewai==1.13.0"
 
 [tool.braintrust.matrix.google-adk]
-latest = "google-adk[mcp]==2.6.3"
+latest = "google-adk[mcp]==2.7.0"
 "1.14.1" = "google-adk[mcp]==1.14.1"
 
 [tool.braintrust.matrix.langchain-core]
-latest = "langchain-core==1.5.3"
+latest = "langchain-core==1.5.5"
 "0.3.28" = "langchain-core==0.3.28"
 
 [tool.braintrust.matrix.llama-index-core]
@@ -487,11 +490,11 @@ latest = "llama-index-core==0.14.23"
 "0.13.0" = "llama-index-core==0.13.0"
 
 [tool.braintrust.matrix.openrouter]
-latest = "openrouter==1.1.39"
+latest = "openrouter==1.1.58"
 "0.6.0" = "openrouter==0.6.0"
 
 [tool.braintrust.matrix.mistralai]
-latest = "mistralai==2.9.1"
+latest = "mistralai==2.9.3"
 "1.12.4" = "mistralai==1.12.4"
 
 [tool.braintrust.matrix.huggingface-hub]
@@ -512,7 +515,7 @@ latest = "temporalio==1.31.0"
 "1.19.0" = "temporalio==1.19.0"
 
 [tool.braintrust.matrix.harbor]
-latest = "harbor==0.20.0"
+latest = "harbor==0.21.0"
 # 0.16.0 is the oldest supported release: it is the first with
 # TrialEvent.AGENT_END, which the lifecycle state machine subscribes to. Harbor
 # gained its plugin system in 0.13.2, so 0.13.2-0.15.0 can load the plugin but
@@ -529,11 +532,11 @@ latest = "pytest==9.1.1"
 latest = "braintrust-core==0.0.59"
 
 [tool.braintrust.matrix.boto3]
-latest = "boto3==1.43.67"
+latest = "boto3==1.43.72"
 "1.34.116" = "boto3==1.34.116"
 
 [tool.braintrust.matrix.botocore]
-latest = "botocore==1.43.67"
+latest = "botocore==1.43.72"
 "1.34.116" = "botocore==1.34.116"
 
 # ---------------------------------------------------------------------------

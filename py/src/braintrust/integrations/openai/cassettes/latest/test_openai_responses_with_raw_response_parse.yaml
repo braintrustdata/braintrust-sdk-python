@@ -5,7 +5,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.53.0
+      - OpenAI/Python 3.1.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -40,19 +40,19 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_005e5eda12315f43006a720f630268819d9d417f08e8ef408c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1785859939,\n  \"status\":
+      string: "{\n  \"id\": \"resp_05638f6ea67500e2006a83382d7ce4819cb6ca9a8996e786fa\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1786984493,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1785859942,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1786984494,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_005e5eda12315f43006a720f657f10819d9129b068923d35d4\",\n
+        \     \"id\": \"msg_05638f6ea67500e2006a83382dcc08819c91df79faa9f39fdd\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
-        + 12 equals 24 because adding the same number (12) to itself doubles the value,
-        resulting in 24.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        plus 12 equals 24 because when you combine the two numbers, you are essentially
+        adding their total values.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
         \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
         \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
@@ -74,8 +74,8 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 36,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 95\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 33,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 92\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -87,17 +87,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25ed7ca6d2bebb8-YYZ
+      - a2ca16bbdda0aac2-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2615'
+      - '2625'
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:12:22 GMT
+      - Mon, 17 Aug 2026 16:34:54 GMT
       openai-processing-ms:
-      - '3114'
+      - '854'
       openai-version:
       - '2020-10-01'
       server:
@@ -115,13 +115,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999922'
+      - '149999920'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_0f22233e47f84315b485dc2cc7e1888b
+      - req_d62ee87dfc864412bca7879b868b0fc1
     status:
       code: 200
       message: OK
@@ -131,7 +131,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -141,7 +141,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.53.0
+      - OpenAI/Python 3.1.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -151,7 +151,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -166,21 +166,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_01569d17c835ed3b006a720f67d98c81918be98975678e39c4\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1785859943,\n  \"status\":
+      string: "{\n  \"id\": \"resp_07e32eb60513a11b006a83382e8680819ea84a75e001e3e093\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1786984494,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1785859945,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1786984495,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_01569d17c835ed3b006a720f6884d48191898ff754eb573346\",\n
+        \     \"id\": \"msg_07e32eb60513a11b006a83382f0eec819e90d1bab7f7388f97\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
-        plus 12 equals 24 because when you combine two groups of twelve, you get a
-        total of twenty-four.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"Adding
+        12 and 12 together gives you 24.\\\"}\"\n        }\n      ],\n      \"role\":
+        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -200,8 +199,8 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 34,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 93\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 22,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 81\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -213,17 +212,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25ed7defbe5982f-YYZ
+      - a2ca16c2390fac3f-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2615'
+      - '2555'
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:12:25 GMT
+      - Mon, 17 Aug 2026 16:34:55 GMT
       openai-processing-ms:
-      - '1718'
+      - '1004'
       openai-version:
       - '2020-10-01'
       server:
@@ -241,13 +240,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999922'
+      - '149999920'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_97fbcff0337241b8b058cc59986e7fa3
+      - req_1f6d76bdd5764df494e88a513dfdf450
     status:
       code: 200
       message: OK

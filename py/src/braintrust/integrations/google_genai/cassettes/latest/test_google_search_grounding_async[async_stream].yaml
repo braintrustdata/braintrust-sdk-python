@@ -17,15 +17,15 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.17.0 gl-python/3.14.6
+      - google-genai-sdk/2.18.1 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.17.0 gl-python/3.14.6
+      - google-genai-sdk/2.18.1 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
-        estimated population of Tokyo Metropolis is approximately \"}],\"role\": \"model\"},\"finishReason\":
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"As
+        of 2025, the total population of Tokyo is 14,195,730. The\"}],\"role\": \"model\"},\"finishReason\":
         \"MAX_TOKENS\",\"index\": 0,\"groundingMetadata\": {\"searchEntryPoint\":
         {\"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n  align-items:
         center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family: Google
@@ -89,14 +89,17 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH5welf4b1eGa-BQNLAOHpiSt-jUrw0hxbN-UrJ1roBf-dIWykki31StkrbqRKBGtEuHAaog1H-LPIQLH4haJ2C_3WvweNoObQYBbv1-_AcmluiL0Wl7NS75Sx5j_R3vIUuEXAnC0bnysth2IIehbBEg9Hmz16kpuJdj2YqZh0DicJ47BxjcHALVJnn-b-hgNOMt7s4eFhYco2RNDrvR9zgwI9CgA==\\\"\\u003ecurrent
-        population of Tokyo Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"},\"webSearchQueries\":
-        [\"current population of Tokyo Japan\"]}}],\"usageMetadata\": {\"promptTokenCount\":
-        11,\"candidatesTokenCount\": 24,\"totalTokenCount\": 407,\"promptTokensDetails\":
-        [{\"modality\": \"TEXT\",\"tokenCount\": 11}],\"toolUsePromptTokenCount\":
-        56,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
-        56}],\"thoughtsTokenCount\": 316,\"serviceTier\": \"standard\"},\"modelVersion\":
-        \"gemini-2.5-flash\",\"responseId\": \"zAB6aqe4J8if1MkPv8O2kQQ\"}\r\n\r\n"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFCpDH8vnTIb2qGTfTjqh7gelBfKanyLodESsq-Oms4L4Z3ugcHHg5IC3rcTx3bJGQ4IogVzaV0R8sfJj46FBd0ToouwGCXBM5MvAjhITdrTOagkbmSGI74DvHrvpG_nqsC-UgZ8o1JcIN1oxVDDDIj6pfkrH78Z602_qEkbkdseeCGSgS0qWVc3K18PWFC7w4WWiNUBVmAlUMwRjN-EQ==\\\"\\u003ecurrent
+        population of Tokyo\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"},\"groundingChunks\":
+        [{\"web\": {\"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF0sycCV4xbUWgCmCEgokeGJQiR8dj0EDgt_fLoyiKgICiJpwViLMD4g7eq9C8JpEuGXixEwYvhZUJrZb_H4mkPZkMwzC9SXljwS2M7R_tLUYKUbjuhWbOc1d1CgkO_6zEmQhRpXidPo2h26XOjJw==\",\"title\":
+        \"wikipedia.org\"}}],\"groundingSupports\": [{\"segment\": {\"endIndex\":
+        56,\"text\": \"As of 2025, the total population of Tokyo is 14,195,730.\"},\"groundingChunkIndices\":
+        [0]}],\"webSearchQueries\": [\"current population of Tokyo\"]}}],\"usageMetadata\":
+        {\"promptTokenCount\": 11,\"candidatesTokenCount\": 42,\"totalTokenCount\":
+        444,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 11}],\"toolUsePromptTokenCount\":
+        77,\"toolUsePromptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        77}],\"thoughtsTokenCount\": 314,\"serviceTier\": \"standard\"},\"modelVersion\":
+        \"gemini-2.5-flash\",\"responseId\": \"GzWDaseSCr-rsOIP2KPYSA\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -105,11 +108,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 10 Aug 2026 16:48:15 GMT
+      - Mon, 17 Aug 2026 16:21:49 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=2785
+      - gfet4t7; dur=2726
       transfer-encoding:
       - chunked
       vary:

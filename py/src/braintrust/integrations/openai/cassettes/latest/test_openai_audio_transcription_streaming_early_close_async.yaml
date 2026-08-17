@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS1hZDlmYTJjMmMyNDJiYTc2NGNhMTJkOWZmODdhNjk2Nw0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tYWQ5ZmEyYzJj
-      MjQyYmE3NjRjYTEyZDlmZjg3YTY5NjcNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWFkOWZhMmMyYzI0MmJhNzY0Y2ExMmQ5ZmY4N2E2OTY3
+      LS02ZmI3MWU3MmMzZjgzNmIyYzk5NjljNjYyY2UzNzMxOA0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tNmZiNzFlNzJj
+      M2Y4MzZiMmM5OTY5YzY2MmNlMzczMTgNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTZmYjcxZTcyYzNmODM2YjJjOTk2OWM2NjJjZTM3MzE4
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,22 +569,22 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tYWQ5ZmEyYzJjMjQyYmE3NjRjYTEyZDlmZjg3YTY5NjctLQ0K
+      Ci0tNmZiNzFlNzJjM2Y4MzZiMmM5OTY5YzY2MmNlMzczMTgtLQ0K
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=ad9fa2c2c242ba764ca12d9ff87a6967
+      - multipart/form-data; boundary=6fb71e72c3f836b2c9969c662ce37318
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 2.53.0
+      - AsyncOpenAI/Python 3.1.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -607,10 +607,9 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"To\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\" jest\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"
-        pies\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"To jest pies.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\uC6A9\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\uC774\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"\uD558\uB2E4\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"\uC6A9\uC774\uD558\uB2E4.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -623,15 +622,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edaa47bfeac28-YYZ
+      - a2ca1c0eee96ac2d-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 04 Aug 2026 16:14:16 GMT
+      - Mon, 17 Aug 2026 16:38:31 GMT
       openai-processing-ms:
-      - '319'
+      - '300'
       openai-version:
       - '2020-10-01'
       server:
@@ -651,7 +650,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_48ffd48db820455daf7cf26868c22ab9
+      - req_906717d8e11a468d99c6a9c2df806b90
     status:
       code: 200
       message: OK

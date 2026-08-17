@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS01MjU5Yzk0OTE5NDNiZDg2ZDZhZDdjZDYxODY2YmNmZA0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tNTI1OWM5NDkx
-      OTQzYmQ4NmQ2YWQ3Y2Q2MTg2NmJjZmQNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTUyNTljOTQ5MTk0M2JkODZkNmFkN2NkNjE4NjZiY2Zk
+      LS1iYjViNzU3MDk4NzdjMDY1MDQ2NDVlMjliZjJkMmE3MQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tYmI1Yjc1NzA5
+      ODc3YzA2NTA0NjQ1ZTI5YmYyZDJhNzENCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWJiNWI3NTcwOTg3N2MwNjUwNDY0NWUyOWJmMmQyYTcx
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,22 +569,22 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tNTI1OWM5NDkxOTQzYmQ4NmQ2YWQ3Y2Q2MTg2NmJjZmQtLQ0K
+      Ci0tYmI1Yjc1NzA5ODc3YzA2NTA0NjQ1ZTI5YmYyZDJhNzEtLQ0K
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=5259c9491943bd86d6ad7cd61866bcfd
+      - multipart/form-data; boundary=bb5b75709877c06504645e29bf2d2a71
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.53.0
+      - OpenAI/Python 3.1.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -607,8 +607,10 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\\\"\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"Please\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"\\\"Please\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":14,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":4}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"Je\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\" t\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"'aime\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"Je
+        t'aime.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -621,15 +623,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25eda59cab3c48a-YYZ
+      - a2ca1bae89c7df5a-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 04 Aug 2026 16:14:05 GMT
+      - Mon, 17 Aug 2026 16:38:16 GMT
       openai-processing-ms:
-      - '769'
+      - '283'
       openai-version:
       - '2020-10-01'
       server:
@@ -649,7 +651,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_cea7b82866da4971a90503ee9d74edf7
+      - req_2a9cb22bfe124a0fb47354a64ff5f2c1
     status:
       code: 200
       message: OK

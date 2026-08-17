@@ -40,11 +40,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-E6yeEXgXomSq0fPGntpVyH1j0G4g1\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1785331806,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EDuMes7MSH1yqqutiKX2hhZZq7BXC\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1786983636,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_RsReVxcU88eCyqNAYhmpwcKC\",\n            \"type\":
+        \           \"id\": \"call_4iQA2jkcCfwVvmZHVh3axXxp\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
         \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -65,7 +65,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c79ea0803cbfd-YYZ
+      - a2ca01d09b14c45b-YYZ
       connection:
       - keep-alive
       content-length:
@@ -73,9 +73,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 29 Jul 2026 13:30:06 GMT
+      - Mon, 17 Aug 2026 16:20:37 GMT
       openai-processing-ms:
-      - '923'
+      - '513'
       openai-version:
       - '2020-10-01'
       server:
@@ -101,14 +101,14 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e803086a5b1a49d0a14adddc413ee177
+      - req_a4dfb0bc0718494db9a71677ab3c5599
     status:
       code: 200
       message: OK
 - request:
     body: '{"messages":[{"role":"developer","content":"Use the get_weather tool to
-      answer questions."},{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_RsReVxcU88eCyqNAYhmpwcKC","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
-      weather in Paris is 72F and sunny.","tool_call_id":"call_RsReVxcU88eCyqNAYhmpwcKC"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
+      answer questions."},{"role":"user","content":"What''s the weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_4iQA2jkcCfwVvmZHVh3axXxp","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_4iQA2jkcCfwVvmZHVh3axXxp"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Return
       the current weather for *city*.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}}]}'
     headers:
       accept:
@@ -147,14 +147,14 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-E6yeFB4ZuSeNOjrUdpHX2j4JWzMXq\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1785331807,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EDuMfLbmRpz7eRs7mSPrcc79FJEb8\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1786983637,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The weather in Paris is 72\xB0F and
-        sunny.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \"assistant\",\n        \"content\": \"The weather in Paris is currently 72\xB0F
+        and sunny.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
         \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
-        \ \"usage\": {\n    \"prompt_tokens\": 94,\n    \"completion_tokens\": 12,\n
-        \   \"total_tokens\": 106,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        \ \"usage\": {\n    \"prompt_tokens\": 94,\n    \"completion_tokens\": 13,\n
+        \   \"total_tokens\": 107,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
@@ -169,17 +169,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c79f0fdc3cbfd-YYZ
+      - a2ca01d59cd1c45b-YYZ
       connection:
       - keep-alive
       content-length:
-      - '848'
+      - '858'
       content-type:
       - application/json
       date:
-      - Wed, 29 Jul 2026 13:30:07 GMT
+      - Mon, 17 Aug 2026 16:20:38 GMT
       openai-processing-ms:
-      - '682'
+      - '578'
       openai-version:
       - '2020-10-01'
       server:
@@ -199,18 +199,18 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999967'
+      - '149999965'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_341205450ec24abc8ae0c27b39bb362d
+      - req_b6611cf55d8e47d4934f3af97d27e5e6
     status:
       code: 200
       message: OK
 - request:
-    body: '{"session_id":"34b0642c-ade2-442e-a707-e14311137bd7","run_id":"4ea39c1c-acfb-48bc-973f-c21e4d82a237","data":{"agent_id":"weather-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.8.4","type":"agent"}'
+    body: '{"session_id":"0c034f65-e393-436f-94fd-2009c3258005","run_id":"060e4c3e-9f6d-413e-86f5-179954bbebbd","data":{"agent_id":"weather-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.9.0","type":"agent"}'
     headers:
       accept:
       - '*/*'
@@ -225,12 +225,12 @@ interactions:
       host:
       - os-api.agno.com
       user-agent:
-      - agno/2.8.4
+      - agno/2.9.0
     method: POST
     uri: https://os-api.agno.com/telemetry/runs
   response:
     body:
-      string: '{"message":"Run creation acknowledged: 4ea39c1c-acfb-48bc-973f-c21e4d82a237","status":"success"}'
+      string: '{"message":"Run creation acknowledged: 060e4c3e-9f6d-413e-86f5-179954bbebbd","status":"success"}'
     headers:
       content-length:
       - '96'
@@ -241,7 +241,7 @@ interactions:
       cross-origin-resource-policy:
       - same-origin
       date:
-      - Wed, 29 Jul 2026 13:30:07 GMT
+      - Mon, 17 Aug 2026 16:20:38 GMT
       permissions-policy:
       - camera=(), microphone=(), geolocation=()
       referrer-policy:

@@ -18,7 +18,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - AsyncAnthropic/Python 0.121.0
+      - AsyncAnthropic/Python 0.122.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -30,7 +30,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 0.121.0
+      - 0.122.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -49,12 +49,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011CduPorPLBV7ciZsHftGmn","type":"message","role":"assistant","content":[],"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":18,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2,"service_tier":"standard","inference_geo":"not_available"}}         }
+        data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_011Ce8dK5vnnNWNRwxqzTZcp","type":"message","role":"assistant","content":[],"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":18,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"not_available"}}            }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}    }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}  }
 
 
         event: ping
@@ -64,22 +64,23 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"2"}        }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"2"}               }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0 }
+        data: {"type":"content_block_stop","index":0        }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null},"usage":{"input_tokens":18,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":5}              }
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null},"usage":{"input_tokens":18,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":5}
+        }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"               }
+        data: {"type":"message_stop"}
 
 
         '
@@ -91,25 +92,25 @@ interactions:
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-08-10T16:36:29Z'
+      - '2026-08-17T16:21:18Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-08-10T16:36:29Z'
+      - '2026-08-17T16:21:18Z'
       anthropic-ratelimit-requests-limit:
       - '20000'
       anthropic-ratelimit-requests-remaining:
       - '19999'
       anthropic-ratelimit-requests-reset:
-      - '2026-08-10T16:36:29Z'
+      - '2026-08-17T16:21:18Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-08-10T16:36:29Z'
+      - '2026-08-17T16:21:18Z'
       anthropic-workspace-id:
       - wrkspc_018bFG1FgNVWqx5pthtdGTzS
       cache-control:
@@ -117,25 +118,25 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2906b72ff404b56-YYZ
+      - a2ca02d3cdc0f337-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1168'
+      - '1155'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 10 Aug 2026 16:36:29 GMT
+      - Mon, 17 Aug 2026 16:21:18 GMT
       request-id:
-      - req_011CduPoqdwFVefj5FLpT3KD
+      - req_011Ce8dK5S2L6E8rT7odhYDN
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-74f35c1b9bc7fb84fb1a020c6cbb00e3-6652b421167ef12e-01
+      - 00-16c9aff0b56b9eb2eab32070a21e8989-d139f42f816b820e-01
       transfer-encoding:
       - chunked
       vary:
