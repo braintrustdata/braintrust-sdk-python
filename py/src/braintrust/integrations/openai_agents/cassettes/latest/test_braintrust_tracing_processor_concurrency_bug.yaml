@@ -1,12 +1,12 @@
 interactions:
 - request:
     body: '{"include":[],"input":[{"content":"Who are you?","role":"user"}],"instructions":"You
-      are agent B. Just respond with ''B'' and nothing else.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:e00315fe036342419adfd91fee9ab1de","tools":[]}'
+      are agent B. Just respond with ''B'' and nothing else.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:1b12956de2f3433db331871d02ea24c6","tools":[]}'
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.19.3
+      - Agents/Python 0.21.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,20 +39,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_077f80800225bbd9006a721036a4ec819c854a81f695c2039c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1785860150,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0153dc311c972a5d006a833a0cfdc0819e9ddb6efbfb34aa06\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1786984973,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1785860151,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1786984973,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are agent B. Just respond with 'B' and nothing else.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_077f80800225bbd9006a72103704f4819c96e367be1cef3c00\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_0153dc311c972a5d006a833a0d5728819eb389a06cfc4e528d\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"B\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:e00315fe036342419adfd91fee9ab1de\",\n  \"prompt_cache_retention\":
+        \"agents-sdk:run:1b12956de2f3433db331871d02ea24c6\",\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -78,7 +78,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edcf51de3a1e4-YYZ
+      - a2ca2270d8eb0426-YYZ
       connection:
       - keep-alive
       content-length:
@@ -86,9 +86,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:51 GMT
+      - Mon, 17 Aug 2026 16:42:53 GMT
       openai-processing-ms:
-      - '566'
+      - '515'
       openai-version:
       - '2020-10-01'
       server:
@@ -112,18 +112,18 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_4c249745dbad432f9a7cdf3b95ef38c5
+      - req_44ee4ce2d2734a78b6e0fe6384bb24fd
     status:
       code: 200
       message: OK
 - request:
     body: '{"include":[],"input":[{"content":"What''s your name?","role":"user"}],"instructions":"You
-      are agent A. Just respond with ''A'' and nothing else.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:393f62892bb9410084335ca08208beb8","tools":[]}'
+      are agent A. Just respond with ''A'' and nothing else.","model":"gpt-4o-mini","prompt_cache_key":"agents-sdk:run:938545074eca43089571bdab0584c4fc","tools":[]}'
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -133,7 +133,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - Agents/Python 0.19.3
+      - Agents/Python 0.21.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -143,7 +143,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -156,20 +156,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_09c9ff457e826d7a006a72103720b481919bfab32a9242b46b\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1785860151,\n  \"status\":
+      string: "{\n  \"id\": \"resp_084b0d8258333cc3006a833a0d7ef887d295c5effe17b35a01\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1786984973,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1785860151,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1786984973,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"You are agent A. Just respond with 'A' and nothing else.\",\n  \"max_output_tokens\":
         null,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
-        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_09c9ff457e826d7a006a7210379218819188a65a1c987d6b81\",\n
+        \ \"moderation\": null,\n  \"output\": [\n    {\n      \"id\": \"msg_084b0d8258333cc3006a833a0dd8ac87d29a6161fdd9499539\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"A\"\n        }\n      ],\n
         \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        \"agents-sdk:run:393f62892bb9410084335ca08208beb8\",\n  \"prompt_cache_retention\":
+        \"agents-sdk:run:938545074eca43089571bdab0584c4fc\",\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
         null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
         \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
@@ -195,7 +195,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edcf83a90c85f-YYZ
+      - a2ca2273ee3136b0-YYZ
       connection:
       - keep-alive
       content-length:
@@ -203,9 +203,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:51 GMT
+      - Mon, 17 Aug 2026 16:42:54 GMT
       openai-processing-ms:
-      - '585'
+      - '657'
       openai-version:
       - '2020-10-01'
       server:
@@ -229,7 +229,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_44c7a05a2a44458abb4beff1ff99f86a
+      - req_cec66b10ca894fc8a65a7a71fef5182c
     status:
       code: 200
       message: OK

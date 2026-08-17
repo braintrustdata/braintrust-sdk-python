@@ -4,9 +4,10 @@ interactions:
       "role": "user"}], "tools": [{"functionDeclarations": [{"description": "Get the
       current weather for a location.\n\nArgs:\n    location: The city and state,
       e.g. San Francisco, CA\n    unit: The unit of temperature (celsius or fahrenheit)",
-      "name": "get_weather", "parameters": {"properties": {"location": {"type": "STRING"},
-      "unit": {"default": "celsius", "type": "STRING"}}, "required": ["location"],
-      "type": "OBJECT"}}]}], "generationConfig": {"maxOutputTokens": 500}}'
+      "name": "get_weather", "parameters_json_schema": {"type": "object", "properties":
+      {"location": {"type": "string"}, "unit": {"type": "string", "default": "celsius"}},
+      "required": ["location"]}, "response_json_schema": {"type": "string"}}]}], "generationConfig":
+      {"maxOutputTokens": 500}}'
     headers:
       accept:
       - '*/*'
@@ -15,15 +16,15 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '551'
+      - '607'
       content-type:
       - application/json
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.18.1+afc gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.18.1+afc gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -31,27 +32,27 @@ interactions:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"get_weather\",\n
         \             \"args\": {\n                \"location\": \"Paris, France\"\n
-        \             }\n            },\n            \"thoughtSignature\": \"Cs8CARFNMg+M59vBKroRYLtxmJpRBMps4kF4qigaXBp3Bhwapf2ixcl38nr0FrhCCIXzpGGXFAofnaqPTG0pJaOFKU6L0aZuR3evRnmo6QR2GnKAOGa3r7PoVloJf7SuM1Np9kXE5mKgwh2G1zEaXxIS+m5Kl6yaI0bO7hywdcR1T5vPX/K9cjK5rMd6isBkl1A7xYuvs2koC1GP4DOrDdLtuJSIWkTKQVHH4W+gGUc4HB+lS+1mAZzcms+F3FJy4/PjyC8zXaoCNZZIJVP/lD/1aUeXt9Y4f8w024nSR+Q3L6LP7m6YBQTD1MIVxB14sG/kVAM7FoZgZqUQa1ebkftscrUFYCrWi7HpHA6ad/1H8PiLNSmvCosyFnExwSBJ/uBcvGt45CO5QQqzLfHa4WYXBWNCAB0aLugmISK/ki6gfE7QD+1b/LowOptfbb/Aa30=\"\n
+        \             }\n            },\n            \"thoughtSignature\": \"CoYDARFNMg+8+9yb25bUgVENXH19t1ORfMdDNJBxwBThvlnyepZnjLuFcuybn+OuPQ4i99rnTg2Ktn6ETsBnDhx+DXMW/Oq/+Lvud/6MTB2xOWbCLtbgLbPbEVzIBzvIr5QqHTBCiBSo7AQIdbbhTOaC+q6aW51El7rg12+WuusnK9nTZtrsFsFAwxF58UO4vFeiYNIkpWRYuY5wZOid+Kf9dKuSaPZu6qZ+4umPl4y6XN4S8UZ16uJlyYbkZINwUyAYJ7zSiYLfAOkZ3NcKlLh7kc3e8HcGKpQnjXDgl+BdPo/jGKbtnIqLTyM1AmQL3u+ZYcSS1QUathhcB5MVBMLSy/qwSYteRuSNQHSt2IsUrW3pY/qcIMopTYVuY/zHJyQaPqAsPn67KZsmkPREsD5rE5VnpLxn38B4PRBdRrHPgQcMO56FnkPjIokd7imvkztELlE2IkuZvSEAxYnJQ8gsvZz63KLG6y9YL4vvCZTvjgt8M0PQvY5yt5nV09Qt4FtA+Ex/gG+c\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        104,\n    \"candidatesTokenCount\": 17,\n    \"totalTokenCount\": 191,\n    \"promptTokensDetails\":
+        104,\n    \"candidatesTokenCount\": 17,\n    \"totalTokenCount\": 205,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 104\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 70,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"nAB6asCHAe73jrEP2cvI2Q8\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 84,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"9jSDapCGLNLfjrEPkqvbKQ\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1266'
+      - '1337'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 10 Aug 2026 16:47:24 GMT
+      - Mon, 17 Aug 2026 16:21:11 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=816
+      - gfet4t7; dur=810
       transfer-encoding:
       - chunked
       vary:
@@ -72,15 +73,16 @@ interactions:
 - request:
     body: '{"contents": [{"parts": [{"text": "What is the weather like in Paris, France?"}],
       "role": "user"}, {"parts": [{"functionCall": {"args": {"location": "Paris, France"},
-      "name": "get_weather"}, "thoughtSignature": "Cs8CARFNMg-M59vBKroRYLtxmJpRBMps4kF4qigaXBp3Bhwapf2ixcl38nr0FrhCCIXzpGGXFAofnaqPTG0pJaOFKU6L0aZuR3evRnmo6QR2GnKAOGa3r7PoVloJf7SuM1Np9kXE5mKgwh2G1zEaXxIS-m5Kl6yaI0bO7hywdcR1T5vPX_K9cjK5rMd6isBkl1A7xYuvs2koC1GP4DOrDdLtuJSIWkTKQVHH4W-gGUc4HB-lS-1mAZzcms-F3FJy4_PjyC8zXaoCNZZIJVP_lD_1aUeXt9Y4f8w024nSR-Q3L6LP7m6YBQTD1MIVxB14sG_kVAM7FoZgZqUQa1ebkftscrUFYCrWi7HpHA6ad_1H8PiLNSmvCosyFnExwSBJ_uBcvGt45CO5QQqzLfHa4WYXBWNCAB0aLugmISK_ki6gfE7QD-1b_LowOptfbb_Aa30="}],
+      "name": "get_weather"}, "thoughtSignature": "CoYDARFNMg-8-9yb25bUgVENXH19t1ORfMdDNJBxwBThvlnyepZnjLuFcuybn-OuPQ4i99rnTg2Ktn6ETsBnDhx-DXMW_Oq_-Lvud_6MTB2xOWbCLtbgLbPbEVzIBzvIr5QqHTBCiBSo7AQIdbbhTOaC-q6aW51El7rg12-WuusnK9nTZtrsFsFAwxF58UO4vFeiYNIkpWRYuY5wZOid-Kf9dKuSaPZu6qZ-4umPl4y6XN4S8UZ16uJlyYbkZINwUyAYJ7zSiYLfAOkZ3NcKlLh7kc3e8HcGKpQnjXDgl-BdPo_jGKbtnIqLTyM1AmQL3u-ZYcSS1QUathhcB5MVBMLSy_qwSYteRuSNQHSt2IsUrW3pY_qcIMopTYVuY_zHJyQaPqAsPn67KZsmkPREsD5rE5VnpLxn38B4PRBdRrHPgQcMO56FnkPjIokd7imvkztELlE2IkuZvSEAxYnJQ8gsvZz63KLG6y9YL4vvCZTvjgt8M0PQvY5yt5nV09Qt4FtA-Ex_gG-c"}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "get_weather", "response":
       {"result": "22 degrees celsius and sunny in Paris, France"}}}], "role": "user"}],
       "tools": [{"functionDeclarations": [{"description": "Get the current weather
       for a location.\n\nArgs:\n    location: The city and state, e.g. San Francisco,
       CA\n    unit: The unit of temperature (celsius or fahrenheit)", "name": "get_weather",
-      "parameters": {"properties": {"location": {"type": "STRING"}, "unit": {"default":
-      "celsius", "type": "STRING"}}, "required": ["location"], "type": "OBJECT"}}]}],
-      "generationConfig": {"maxOutputTokens": 500}}'
+      "parameters_json_schema": {"type": "object", "properties": {"location": {"type":
+      "string"}, "unit": {"type": "string", "default": "celsius"}}, "required": ["location"]},
+      "response_json_schema": {"type": "string"}}]}], "generationConfig": {"maxOutputTokens":
+      500}}'
     headers:
       accept:
       - '*/*'
@@ -89,15 +91,15 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1288'
+      - '1416'
       content-type:
       - application/json
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.18.1+afc gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.17.0+afc gl-python/3.14.6
+      - google-genai-sdk/2.18.1+afc gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -110,20 +112,20 @@ interactions:
         15,\n    \"totalTokenCount\": 160,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 145\n      }\n    ],\n
         \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
-        \ \"responseId\": \"nAB6aonHNLuc-8YP5J6AqQQ\"\n}\n"
+        \ \"responseId\": \"9zSDarmAKPbBsOIPsZe7UQ\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '607'
+      - '606'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 10 Aug 2026 16:47:25 GMT
+      - Mon, 17 Aug 2026 16:21:11 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=374
+      - gfet4t7; dur=415
       transfer-encoding:
       - chunked
       vary:

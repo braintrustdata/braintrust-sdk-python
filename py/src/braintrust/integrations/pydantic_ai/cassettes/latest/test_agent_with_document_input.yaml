@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.27.0
+      - pydantic-ai/2.31.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,19 +39,20 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_006c16c551484c8b006a7a019550ec8191826a9809fc9855f3\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1786380693,\n  \"status\":
+      string: "{\n  \"id\": \"resp_03796d9da643901b006a833a45986087d288ed0dc60d8756c5\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1786985030,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1786380694,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1786985030,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 150,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_006c16c551484c8b006a7a01961fa08191bcae94a0f4e28827\",\n
+        \     \"id\": \"msg_03796d9da643901b006a833a4659d087d2a767305017514fbf\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"The document appears
-        to be a simple test document titled \\\"Test Document.\\\" If you need more
-        specific information or details regarding its contents, please let me know!\"\n
+        [],\n          \"logprobs\": [],\n          \"text\": \"The document is labeled
+        as a \\\"Test Document,\\\" but without specific content provided, I can't
+        tell you more about its contents. If you can share more details or specific
+        text from the document, I'd be happy to help you analyze or summarize it!\"\n
         \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -67,8 +68,8 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 32,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 32,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 64\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 50,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 82\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -80,17 +81,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2908184dd95c8b2-YYZ
+      - a2ca23d2798736a1-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2137'
+      - '2213'
       content-type:
       - application/json
       date:
-      - Mon, 10 Aug 2026 16:51:34 GMT
+      - Mon, 17 Aug 2026 16:43:51 GMT
       openai-processing-ms:
-      - '1592'
+      - '1471'
       openai-version:
       - '2020-10-01'
       server:
@@ -114,7 +115,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_311eb590eaad4619a5e699967e9ee6e2
+      - req_0ebe9314f82f428e9f649f8668c37ffa
     status:
       code: 200
       message: OK

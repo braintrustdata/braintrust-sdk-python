@@ -8,33 +8,38 @@ interactions:
       Content-Type:
       - application/json
       user-agent:
-      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
+      - google-genai-sdk/2.18.1 gl-python/3.14.6 google-adk/2.7.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.16.0 gl-python/3.14.6 google-adk/2.6.2 gl-python/3.14.6
+      - google-genai-sdk/2.18.1 gl-python/3.14.6 google-adk/2.7.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"```json\\n{\\\"name\\\": \\\"Alice\\\",
-        \\\"age\\\": 30}\\n```\"\n          }\n        ],\n        \"role\": \"model\"\n
+        [\n          {\n            \"text\": \"I am a test agent that receives input
+        and processes it. I have received the following JSON object:\\n\\n```json\\n{\\\"name\\\":\\\"Alice\\\",\\\"age\\\":30}\\n```\\n\\nThis
+        JSON object contains two key-value pairs:\\n* `\\\"name\\\"`: `\\\"Alice\\\"`\\n*
+        `\\\"age\\\"`: `30`\\n\\nPlease let me know how you would like me to process
+        this input. For example, I could:\\n* Validate the data against a schema.\\n*
+        Extract specific values.\\n* Transform the data into another format.\\n* Perform
+        some other operation.\"\n          }\n        ],\n        \"role\": \"model\"\n
         \     },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n
         \ \"usageMetadata\": {\n    \"promptTokenCount\": 38,\n    \"candidatesTokenCount\":
-        18,\n    \"totalTokenCount\": 56,\n    \"promptTokensDetails\": [\n      {\n
+        118,\n    \"totalTokenCount\": 156,\n    \"promptTokensDetails\": [\n      {\n
         \       \"modality\": \"TEXT\",\n        \"tokenCount\": 38\n      }\n    ],\n
         \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"PhByavSyHtCzjrEPidOU2AQ\"\n}\n"
+        \ \"responseId\": \"9zeDaqvWDoq4sOIPyJ_JUQ\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Tue, 04 Aug 2026 16:15:58 GMT
+      - Mon, 17 Aug 2026 16:33:59 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=335
+      - gfet4t7; dur=726
       Transfer-Encoding:
       - chunked
       Vary:
@@ -50,7 +55,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '596'
+      - '1024'
     status:
       code: 200
       message: OK

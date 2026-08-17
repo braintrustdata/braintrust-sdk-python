@@ -9,7 +9,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -22,11 +22,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-E9C5W1EmWvsHR2pC9QNQOVm1q5BhE\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1785860126,\n  \"model\": \"gpt-4o-2024-08-06\",\n
+      string: "{\n  \"id\": \"chatcmpl-EDugvZwL4msql9gVCf2RfYPFhFDPR\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1786984893,\n  \"model\": \"gpt-4o-2024-08-06\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_XjXwW0WnyuKId6amPDZFPo45\",\n            \"type\":
+        \           \"id\": \"call_AQ9pdaktVOM3GbTTGmpiA8yJ\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
         \             \"arguments\": \"{\\\"location\\\":\\\"Paris, France\\\"}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -49,9 +49,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:26 GMT
+      - Mon, 17 Aug 2026 16:41:34 GMT
       openai-processing-ms:
-      - '456'
+      - '1629'
       openai-version:
       - '2020-10-01'
       server:
@@ -71,7 +71,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '9999'
       x-ratelimit-remaining-tokens:
-      - '29999986'
+      - '29999987'
       x-ratelimit-reset-requests:
       - 6ms
       x-ratelimit-reset-tokens:

@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS04MDJjMDg3YWM4Zjk4ZmY5NjBiYTQ5ZGU3ZmU5YmMzYQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tODAyYzA4N2Fj
-      OGY5OGZmOTYwYmE0OWRlN2ZlOWJjM2ENCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTgwMmMwODdhYzhmOThmZjk2MGJhNDlkZTdmZTliYzNh
+      LS03ODQ3NjQxYzgzZjU5N2M3NzcwZDI0MGM3ZjdiNDNlZQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tNzg0NzY0MWM4
+      M2Y1OTdjNzc3MGQyNDBjN2Y3YjQzZWUNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTc4NDc2NDFjODNmNTk3Yzc3NzBkMjQwYzdmN2I0M2Vl
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,22 +569,22 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tODAyYzA4N2FjOGY5OGZmOTYwYmE0OWRlN2ZlOWJjM2EtLQ0K
+      Ci0tNzg0NzY0MWM4M2Y1OTdjNzc3MGQyNDBjN2Y3YjQzZWUtLQ0K
     headers:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=802c087ac8f98ff960ba49de7fe9bc3a
+      - multipart/form-data; boundary=7847641c83f597c7770d240c7f7b43ee
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 2.53.0
+      - OpenAI/Python 3.1.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.1.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -607,9 +607,12 @@ interactions:
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\uC218\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"\uCC9C\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"\uB9CC\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"\uC218\uCC9C\uB9CC\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":15,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":5}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"T\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0119\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"sk\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"ni\u0119\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"
+        za\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\" tob\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0105\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.done\",\"text\":\"T\u0119skni\u0119 za tob\u0105.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":20,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":10}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -622,15 +625,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25eda564e1434dc-YYZ
+      - a2ca1ba9dc1864a6-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 04 Aug 2026 16:14:03 GMT
+      - Mon, 17 Aug 2026 16:38:15 GMT
       openai-processing-ms:
-      - '274'
+      - '387'
       openai-version:
       - '2020-10-01'
       server:
@@ -650,7 +653,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_7df16d689ce1456288fee7295fef3342
+      - req_98dd067990574149b871afe5579f1362
     status:
       code: 200
       message: OK

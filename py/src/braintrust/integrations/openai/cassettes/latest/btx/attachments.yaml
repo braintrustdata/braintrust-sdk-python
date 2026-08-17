@@ -6,7 +6,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -19,16 +19,15 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-ECrs5s1LzduSb4pAfTnW7GMMJdYfq\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1786735725,\n  \"model\": \"gpt-4o-2024-08-06\",\n
+      string: "{\n  \"id\": \"chatcmpl-EDugP6OGYrX4qiu4XgKPawgILmsTO\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1786984861,\n  \"model\": \"gpt-4o-2024-08-06\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"The first attachment is a solid red
-        square image. The second attachment, \\\"blank.pdf,\\\" contains no readable
-        content or images.\",\n        \"refusal\": null,\n        \"annotations\":
-        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
-        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 495,\n    \"completion_tokens\":
-        25,\n    \"total_tokens\": 520,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
-        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        square, and the second attachment is a blank PDF with no readable content.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        495,\n    \"completion_tokens\": 22,\n    \"total_tokens\": 517,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": \"fp_684acb85fd\"\n}\n"
@@ -40,13 +39,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '931'
+      - '914'
       content-type:
       - application/json
       date:
-      - Fri, 14 Aug 2026 19:28:46 GMT
+      - Mon, 17 Aug 2026 16:41:01 GMT
       openai-processing-ms:
-      - '815'
+      - '907'
       openai-version:
       - '2020-10-01'
       server:
@@ -70,7 +69,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '9999'
       x-ratelimit-remaining-tokens:
-      - '29998450'
+      - '29998451'
       x-ratelimit-reset-input-images:
       - 0s
       x-ratelimit-reset-requests:
