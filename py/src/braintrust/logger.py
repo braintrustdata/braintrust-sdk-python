@@ -1683,7 +1683,7 @@ def init_dataset(
     Create a new dataset in a specified project. If the project does not exist, it will be created.
 
     :param project_name: The name of the project to create the dataset in. Must specify at least one of `project_name` or `project_id`.
-    :param name: The name of the dataset to create. If not specified, a name will be generated automatically.
+    :param name: The name of the dataset to create. Defaults to `logs` if not specified.
     :param description: An optional description of the dataset.
     :param version: An optional version of the dataset (to read). If not specified, the latest version will be used.
     :param environment: The environment to load the dataset from. If both `version` and `environment` are provided, `version` takes precedence.
@@ -1711,18 +1711,20 @@ def init_dataset(
 
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
-        args = _populate_args(
-            {"project_name": project, "project_id": project_id, "org_id": state.org_id},
-            dataset_name=name,
+        api_client = state.api_client()
+        if project_id is not None:
+            resp_project = api_client.projects.get_project_id(project_id)
+        else:
+            resp_project = api_client.projects.post_project(body={"name": project, "org_name": state.org_name})
+        body = _populate_args(
+            {"project_id": resp_project["id"], "name": name or "logs"},
             description=description,
             metadata=metadata,
         )
-        response = state.app_conn().post_json("api/dataset/register", args)
-        resp_project = response["project"]
-        resp_dataset = response["dataset"]
+        resp_dataset = api_client.datasets.post_dataset(body=body)
         return ProjectDatasetMetadata(
-            project=ObjectMetadata(id=resp_project["id"], name=resp_project["name"], full_info=resp_project),
-            dataset=ObjectMetadata(id=resp_dataset["id"], name=resp_dataset["name"], full_info=resp_dataset),
+            project=ObjectMetadata(id=resp_project["id"], name=resp_project["name"], full_info=dict(resp_project)),
+            dataset=ObjectMetadata(id=resp_dataset["id"], name=resp_dataset["name"], full_info=dict(resp_dataset)),
         )
 
     return Dataset(
@@ -4963,6 +4965,41 @@ class Dataset(ObjectFetcher[DatasetEvent]):
             self._pinned_version = response["object_version"]
         return self.state
 
+    def _refetch(self, batch_size: int | None = None) -> list[DatasetEvent]:
+        if self._internal_btql:
+            return super()._refetch(batch_size=batch_size)
+        if self._fetched_data is not None:
+            return self._fetched_data
+
+        state = self._get_state()
+        limit = batch_size if batch_size is not None else DEFAULT_FETCH_BATCH_SIZE
+        cursor = None
+        data: list[DatasetEvent] = []
+        iterations = 0
+        while True:
+            body: dict[str, Any] = {"limit": limit}
+            if cursor is not None:
+                body["cursor"] = cursor
+            if self._pinned_version is not None:
+                body["version"] = self._pinned_version
+            response = state.api_client().datasets.post_dataset_id_fetch(self.id, body=body)
+            events = response.get("events")
+            if not isinstance(events, list):
+                raise ValueError(f"Expected a list in the response, got {type(events)}")
+            data.extend(cast(list[DatasetEvent], events))
+            cursor = response.get("cursor")
+            if not cursor:
+                break
+            iterations += 1
+            if iterations > MAX_BTQL_ITERATIONS:
+                raise RuntimeError("Too many dataset fetch iterations")
+
+        if self._mutate_record is not None:
+            self._fetched_data = [self._mutate_record(record) for record in data]
+        else:
+            self._fetched_data = data
+        return self._fetched_data
+
     def _validate_event(
         self,
         expected: Any | None = None,
@@ -5125,18 +5162,15 @@ class Dataset(ObjectFetcher[DatasetEvent]):
         # includes the new experiment.
         self.flush()
         state = self._get_state()
+        response = state.api_client().datasets.get_dataset_id_summarize(self.id, summarize_data=summarize_data)
+        raw_data_summary = response.get("data_summary")
+        data_summary = (
+            DataSummary(new_records=self.new_records, **raw_data_summary)
+            if isinstance(raw_data_summary, Mapping)
+            else None
+        )
         project_url = f"{state.app_public_url}/app/{encode_uri_component(state.org_name)}/p/{encode_uri_component(self.project.name)}"
         dataset_url = f"{project_url}/datasets/{encode_uri_component(self.name)}"
-
-        data_summary = None
-        if summarize_data:
-            data_summary_d = state.api_conn().get_json(
-                "dataset-summary",
-                args={
-                    "dataset_id": self.id,
-                },
-            )
-            data_summary = DataSummary(new_records=self.new_records, **data_summary_d)
 
         return DatasetSummary(
             project_name=self.project.name,

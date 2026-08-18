@@ -1,8 +1,20 @@
+import ast
 import copy
 import re
 
 import pytest
-from openapi_codegen import CodegenError, atomic_replace_tree, compare_generated, generate_tree
+from openapi_codegen import (
+    CONFIG_PATH,
+    GENERATED_ROOT,
+    SPEC_PATH,
+    CodegenError,
+    _snake_case,
+    atomic_replace_tree,
+    compare_generated,
+    generate_tree,
+    load_config,
+    read_and_verify_spec,
+)
 
 
 def _generate(tmp_path, name, config, spec):
@@ -28,6 +40,50 @@ def test_generation_selects_generated_tag_regardless_of_tag_order(tmp_path, code
     generated = _generate(tmp_path, "secondary-generated-tag", codegen_config, minimal_spec)
 
     assert "def get_widget(" in (generated / "widgets.py").read_text()
+
+
+def test_pinned_selected_spec_operations_match_generated_registries():
+    config = load_config(CONFIG_PATH)
+    spec = read_and_verify_spec(config, SPEC_PATH)
+    selected_tags = config["endpoint_generator"]["generated_tags"]
+
+    for tag in selected_tags:
+        expected = {
+            operation["operationId"]
+            for path_item in spec["paths"].values()
+            for method, operation in path_item.items()
+            if method != "options" and isinstance(operation, dict) and tag in operation.get("tags", [])
+        }
+        tree = ast.parse((GENERATED_ROOT / f"{_snake_case(tag)}.py").read_text())
+        registry = next(
+            node.value
+            for node in tree.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "OPERATIONS" for target in node.targets)
+        )
+        assert isinstance(registry, ast.Dict)
+        registry_operation_ids = {key.value for key in registry.keys if isinstance(key, ast.Constant)}
+        operation_modes = [
+            keyword.value.attr
+            for node in tree.body
+            if isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == "Operation"
+            for keyword in node.value.keywords
+            if keyword.arg == "retry_mode" and isinstance(keyword.value, ast.Attribute)
+        ]
+
+        assert registry_operation_ids == expected
+        assert set(operation_modes) <= {"NONE", "SAFE_READ", "IDEMPOTENT_WRITE"}
+        assert len(operation_modes) == len(expected)
+        assert len(registry_operation_ids) == sum(
+            isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == "Operation"
+            for node in tree.body
+        )
 
 
 def test_declarative_post_reads_use_safe_read_retry_mode(tmp_path, codegen_config, minimal_spec):
@@ -233,6 +289,29 @@ def test_stale_artifacts_are_reported_and_removed(tmp_path, codegen_config, mini
     assert compare_generated(regenerated, committed) == []
     assert not (committed / "endpoints.pyi").exists()
     assert not stale_package.exists()
+
+
+def test_leading_underscore_model_fields_preserve_wire_names(tmp_path, codegen_config, minimal_spec):
+    wire_names = (
+        "_array_delete",
+        "_is_merge",
+        "_merge_paths",
+        "_object_delete",
+        "_pagination_key",
+        "_parent_id",
+        "_xact_id",
+    )
+    widget = minimal_spec["components"]["schemas"]["Widget"]
+    widget["properties"].update({name: {"type": "string"} for name in wire_names})
+    widget["required"].append("_xact_id")
+
+    generated = _generate(tmp_path, "leading-underscore-fields", codegen_config, minimal_spec)
+    models = _models_text(generated)
+
+    for name in wire_names:
+        assert f"    {name}:" in models
+    assert "    _xact_id: str" in models
+    assert "field_" not in models
 
 
 def test_nullable_and_missing_fields_remain_distinct(tmp_path, codegen_config, minimal_spec):

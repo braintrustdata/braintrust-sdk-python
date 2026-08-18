@@ -10,7 +10,7 @@ import threading
 import time
 from collections.abc import AsyncGenerator
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import braintrust
 import exceptiongroup
@@ -3531,6 +3531,161 @@ class TestJSONAttachment(TestCase):
         self.assertEqual(event["input"]["data"], json_attachment.reference)
 
 
+class TestDatasetGeneratedAPI(TestCase):
+    def test_init_dataset_uses_generated_project_and_dataset_resources(self):
+        mock_state = MagicMock()
+        mock_state.org_name = "test-org"
+        api_client = mock_state.api_client.return_value
+        api_client.projects.post_project.return_value = {
+            "id": "test-project-id",
+            "name": "test-project",
+        }
+        api_client.datasets.post_dataset.return_value = {
+            "id": "test-dataset-id",
+            "project_id": "test-project-id",
+            "name": "test-dataset",
+        }
+
+        dataset = braintrust.init_dataset(
+            project="test-project",
+            name="test-dataset",
+            description="description",
+            metadata={"purpose": "test"},
+            use_output=False,
+            state=mock_state,
+        )
+
+        self.assertEqual(dataset.id, "test-dataset-id")
+        api_client.projects.post_project.assert_called_once_with(body={"name": "test-project", "org_name": "test-org"})
+        api_client.datasets.post_dataset.assert_called_once_with(
+            body={
+                "project_id": "test-project-id",
+                "name": "test-dataset",
+                "description": "description",
+                "metadata": {"purpose": "test"},
+            }
+        )
+        mock_state.app_conn.assert_not_called()
+
+    def test_init_dataset_without_name_uses_logs_name_with_generated_resources(self):
+        mock_state = MagicMock()
+        mock_state.org_name = "test-org"
+        api_client = mock_state.api_client.return_value
+        api_client.projects.post_project.return_value = {
+            "id": "test-project-id",
+            "name": "test-project",
+        }
+        api_client.datasets.post_dataset.return_value = {
+            "id": "test-dataset-id",
+            "project_id": "test-project-id",
+            "name": "logs",
+        }
+
+        dataset = braintrust.init_dataset(
+            project="test-project",
+            description="description",
+            use_output=False,
+            state=mock_state,
+        )
+
+        self.assertEqual(dataset.name, "logs")
+        api_client.projects.post_project.assert_called_once_with(body={"name": "test-project", "org_name": "test-org"})
+        api_client.datasets.post_dataset.assert_called_once_with(
+            body={"project_id": "test-project-id", "name": "logs", "description": "description"}
+        )
+        mock_state.app_conn.assert_not_called()
+
+    def test_init_dataset_looks_up_explicit_project_id(self):
+        mock_state = MagicMock()
+        api_client = mock_state.api_client.return_value
+        api_client.projects.get_project_id.return_value = {
+            "id": "test-project-id",
+            "name": "test-project",
+        }
+        api_client.datasets.post_dataset.return_value = {
+            "id": "test-dataset-id",
+            "project_id": "test-project-id",
+            "name": "test-dataset",
+        }
+
+        dataset = braintrust.init_dataset(
+            project="ignored-project-name",
+            project_id="test-project-id",
+            name="test-dataset",
+            use_output=False,
+            state=mock_state,
+        )
+
+        self.assertEqual(dataset.project.name, "test-project")
+        api_client.projects.get_project_id.assert_called_once_with("test-project-id")
+        api_client.projects.post_project.assert_not_called()
+
+    def test_dataset_fetch_uses_generated_resource(self):
+        mock_state = MagicMock()
+        api_client = mock_state.api_client.return_value
+        api_client.datasets.post_dataset_id_fetch.side_effect = [
+            {"events": [{"id": "row-1", "expected": "first"}], "cursor": "next"},
+            {"events": [{"id": "row-2", "expected": "second"}]},
+        ]
+        metadata = logger.ProjectDatasetMetadata(
+            project=logger.ObjectMetadata(id="test-project-id", name="test-project", full_info={}),
+            dataset=logger.ObjectMetadata(id="test-dataset-id", name="test-dataset", full_info={}),
+        )
+        dataset = logger.Dataset(
+            lazy_metadata=LazyValue(lambda: metadata, use_mutex=False),
+            version=123,
+            legacy=False,
+            state=mock_state,
+        )
+
+        self.assertEqual([row["id"] for row in dataset.fetch(batch_size=2)], ["row-1", "row-2"])
+        self.assertEqual(
+            api_client.datasets.post_dataset_id_fetch.call_args_list,
+            [
+                call("test-dataset-id", body={"limit": 2, "version": "123"}),
+                call("test-dataset-id", body={"limit": 2, "cursor": "next", "version": "123"}),
+            ],
+        )
+        mock_state.api_conn.assert_not_called()
+
+    def test_dataset_summary_uses_generated_resource_and_configured_public_url(self):
+        mock_state = MagicMock()
+        mock_state.app_public_url = "https://public.example.com"
+        mock_state.org_name = "test org"
+        mock_state.api_client.return_value.datasets.get_dataset_id_summarize.return_value = {
+            "project_name": "backend-project",
+            "dataset_name": "backend-dataset",
+            "project_url": "https://backend.example.com/project",
+            "dataset_url": "https://backend.example.com/dataset",
+            "data_summary": {"total_records": 3},
+        }
+        metadata = logger.ProjectDatasetMetadata(
+            project=logger.ObjectMetadata(id="test-project-id", name="test project", full_info={}),
+            dataset=logger.ObjectMetadata(id="test-dataset-id", name="test dataset", full_info={}),
+        )
+        dataset = logger.Dataset(
+            lazy_metadata=LazyValue(lambda: metadata, use_mutex=False),
+            legacy=False,
+            state=mock_state,
+        )
+        dataset.new_records = 1
+
+        summary = dataset.summarize()
+
+        self.assertEqual(summary.project_name, "test project")
+        self.assertEqual(summary.dataset_name, "test dataset")
+        self.assertEqual(summary.project_url, "https://public.example.com/app/test%20org/p/test%20project")
+        self.assertEqual(
+            summary.dataset_url,
+            "https://public.example.com/app/test%20org/p/test%20project/datasets/test%20dataset",
+        )
+        self.assertEqual(summary.data_summary, logger.DataSummary(new_records=1, total_records=3))
+        mock_state.api_client.return_value.datasets.get_dataset_id_summarize.assert_called_once_with(
+            "test-dataset-id", summarize_data=True
+        )
+        mock_state.api_conn.assert_not_called()
+
+
 class TestDatasetInternalBtql(TestCase):
     """Test that _internal_btql parameters (especially limit) are properly passed through to BTQL queries."""
 
@@ -3718,9 +3873,8 @@ class TestDatasetInternalBtql(TestCase):
         compute_metadata.assert_not_called()
         mock_state.api_conn.assert_not_called()
 
-    @patch("braintrust.logger.BraintrustState")
-    def test_dataset_default_limit_when_not_specified(self, mock_state_class):
-        """Test that DEFAULT_FETCH_BATCH_SIZE is used when no custom limit is specified."""
+    def test_dataset_default_limit_when_not_specified(self):
+        """Default dataset fetches use the generated API's standard batch size."""
         from braintrust.logger import (
             DEFAULT_FETCH_BATCH_SIZE,
             Dataset,
@@ -3729,21 +3883,8 @@ class TestDatasetInternalBtql(TestCase):
             ProjectDatasetMetadata,
         )
 
-        # Set up mock state
         mock_state = MagicMock()
-        mock_state_class.return_value = mock_state
-
-        # Mock the API connection and response
-        mock_api_conn = MagicMock()
-        mock_state.api_conn.return_value = mock_api_conn
-
-        # Mock response object
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "data": [],
-            "cursor": None,
-        }
-        mock_api_conn.post.return_value = mock_response
+        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.return_value = {"events": []}
 
         # Create dataset without custom limit
         project_metadata = ObjectMetadata(id="test-project", name="test-project", full_info={})
@@ -3759,39 +3900,20 @@ class TestDatasetInternalBtql(TestCase):
             state=mock_state,
         )
 
-        # Trigger a fetch which will make the BTQL query
         list(dataset.fetch())
 
-        # Verify the API was called
-        mock_api_conn.post.assert_called_once()
+        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.assert_called_once_with(
+            "test-dataset", body={"limit": DEFAULT_FETCH_BATCH_SIZE}
+        )
 
-        # Get the actual call arguments
-        call_args = mock_api_conn.post.call_args
-        query_json = call_args[1]["json"]["query"]
-
-        # Verify that the default limit is used
-        self.assertEqual(query_json["limit"], DEFAULT_FETCH_BATCH_SIZE)
-
-    @patch("braintrust.logger.BraintrustState")
-    def test_dataset_custom_batch_size_in_fetch(self, mock_state_class):
-        """Test that custom batch_size in fetch() is properly passed to BTQL query."""
+    def test_dataset_custom_batch_size_in_fetch(self):
+        """Custom batch sizes are forwarded to the generated fetch operation."""
         from braintrust.logger import Dataset, LazyValue, ObjectMetadata, ProjectDatasetMetadata
 
-        # Set up mock state
         mock_state = MagicMock()
-        mock_state_class.return_value = mock_state
-
-        # Mock the API connection and response
-        mock_api_conn = MagicMock()
-        mock_state.api_conn.return_value = mock_api_conn
-
-        # Mock response object
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "data": [{"id": "1", "input": "test1", "expected": "output1"}],
-            "cursor": None,
+        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.return_value = {
+            "events": [{"id": "1", "input": "test1", "expected": "output1"}]
         }
-        mock_api_conn.post.return_value = mock_response
 
         # Create dataset
         project_metadata = ObjectMetadata(id="test-project", name="test-project", full_info={})
@@ -3810,15 +3932,9 @@ class TestDatasetInternalBtql(TestCase):
         custom_batch_size = 250
         list(dataset.fetch(batch_size=custom_batch_size))
 
-        # Verify the API was called
-        mock_api_conn.post.assert_called_once()
-
-        # Get the actual call arguments
-        call_args = mock_api_conn.post.call_args
-        query_json = call_args[1]["json"]["query"]
-
-        # Verify that the custom batch_size is used
-        self.assertEqual(query_json["limit"], custom_batch_size)
+        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.assert_called_once_with(
+            "test-dataset", body={"limit": custom_batch_size}
+        )
 
 
 @pytest.mark.vcr
@@ -3826,7 +3942,7 @@ def test_dataset_internal_btql_limit_caps_total_results():
     dataset = braintrust.init_dataset(
         project="python-sdk-vcr-tests",
         name="test-dataset-internal-btql-total-limit",
-        api_key="sk-dummy-for-vcr-replay",
+        api_key=os.environ.get("BRAINTRUST_API_KEY", "sk-dummy-for-vcr-replay"),
         use_output=False,
         _internal_btql={"limit": 1},
     )

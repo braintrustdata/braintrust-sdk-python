@@ -4,7 +4,7 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 4b64219218b76122324149ec0bf037bf1254affc40f8acb2f27e0481937da4e1
+# Content SHA-256: 13bc46e7fff061668546a7e3b807764115580449165934413a88d381a2091675
 
 """Generated Projects REST operations and resource."""
 
@@ -12,8 +12,8 @@ from typing import cast
 
 from .._service import Operation, Parameter, ResourceAPI
 from ..policies import RetryMode
-from .models.common import EndingBefore, Ids, OrgName, ProjectName, StartingAfter
-from .models.projects import AppLimitParam, CreateProject, GetProjectResponse, PatchProject, Project, ProjectIdParam
+from .models.common import AppLimitParam, EndingBefore, Ids, OrgName, ProjectName, StartingAfter
+from .models.projects import CreateProject, GetProjectResponse, PatchProject, Project, ProjectIdParam
 
 
 POST_PROJECT = Operation(

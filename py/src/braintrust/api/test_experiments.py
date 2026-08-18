@@ -1,5 +1,3 @@
-import os
-
 import braintrust
 import pytest
 from braintrust.api._generated.experiments import OPERATIONS
@@ -35,18 +33,14 @@ def test_all_experiment_operations_have_complete_retry_classification():
     }
 
 
-def _api_key():
-    return os.environ.get("BRAINTRUST_API_KEY", "sk-dummy-for-vcr-replay")
-
-
 @pytest.mark.vcr
 @pytest.mark.parametrize("explicit_comparison", [False, True])
-def test_experiment_summarize_with_real_backend(explicit_comparison):
+def test_experiment_summarize_with_real_backend(explicit_comparison, api_key):
     project_name = "python-sdk-generated-experiments-vcr"
     base = braintrust.init(
         project=project_name,
         experiment="generated-experiments-base",
-        api_key=_api_key(),
+        api_key=api_key,
         update=True,
         set_current=False,
         repo_info=RepoInfo(),
@@ -54,7 +48,7 @@ def test_experiment_summarize_with_real_backend(explicit_comparison):
     candidate = braintrust.init(
         project=project_name,
         experiment="generated-experiments-candidate",
-        api_key=_api_key(),
+        api_key=api_key,
         base_experiment_id=base.id,
         update=True,
         set_current=False,

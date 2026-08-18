@@ -508,9 +508,30 @@ def _prune_empty_directories(root: Path) -> None:
         shutil.rmtree(directory)
 
 
+def _leading_underscore_field_aliases(value: Any) -> Dict[str, str]:
+    aliases: Dict[str, str] = {}
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                for name in properties:
+                    if isinstance(name, str) and name.startswith("_") and name.isidentifier():
+                        aliases[name] = name
+            for child in node.values():
+                visit(child)
+        elif isinstance(node, list):
+            for child in node:
+                visit(child)
+
+    visit(value)
+    return dict(sorted(aliases.items()))
+
+
 def _generate_models(spec_path: Path, output_path: Path, config: Mapping[str, Any]) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     header = _generated_header(config, "CONTENT_HASH_PLACEHOLDER").rstrip()
+    aliases = _leading_underscore_field_aliases(json.loads(spec_path.read_text(encoding="utf-8")))
     command = [
         sys.executable,
         "-m",
@@ -520,6 +541,7 @@ def _generate_models(spec_path: Path, output_path: Path, config: Mapping[str, An
         "--output",
         str(output_path),
         *_model_flags(config),
+        *(["--aliases", json.dumps(aliases, sort_keys=True)] if aliases else []),
         "--custom-file-header",
         header,
     ]

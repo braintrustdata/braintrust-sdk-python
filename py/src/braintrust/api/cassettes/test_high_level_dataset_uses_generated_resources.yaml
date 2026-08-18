@@ -1,0 +1,594 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://www.braintrust.dev/api/apikey/login
+  response:
+    body:
+      string: '{"org_info":[{"id":"f5883013-b5c1-438d-9044-5182b4682337","name":"abhi-test-org","api_url":"https://api.braintrust.dev","git_metadata":{"collect":"some","fields":["commit","branch","tag","dirty","author_name","author_email","commit_message","commit_time"]},"is_universal_api":null,"proxy_url":"https://api.braintrust.dev","realtime_url":"wss://realtime.braintrustapi.com"}]}'
+    headers:
+      Access-Control-Allow-Credentials:
+      - 'true'
+      Access-Control-Allow-Headers:
+      - X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5,
+        Content-Type, Date, X-Api-Version
+      Access-Control-Allow-Methods:
+      - GET,OPTIONS,PATCH,DELETE,POST,PUT
+      Access-Control-Allow-Origin:
+      - '*'
+      Cache-Control:
+      - public, max-age=0, must-revalidate
+      Content-Length:
+      - '374'
+      Content-Security-Policy:
+      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
+        ''nonce-NjIzMjM5YWItMGZmOS00ZWY1LWE4NDUtOTM5YzgzYWNjYjZj''  *.js.stripe.com
+        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
+        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
+        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
+        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
+        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
+        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
+        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
+        report-to csp-endpoint-0'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:43:49 GMT
+      Etag:
+      - '"13kwty4qcjgae"'
+      Reporting-Endpoints:
+      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
+      Server:
+      - Vercel
+      Strict-Transport-Security:
+      - max-age=63072000
+      X-Clerk-Auth-Message:
+      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
+        token-carrier=header)
+      X-Clerk-Auth-Reason:
+      - token-invalid
+      X-Clerk-Auth-Status:
+      - signed-out
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Matched-Path:
+      - /api/apikey/login
+      X-Nonce:
+      - NjIzMjM5YWItMGZmOS00ZWY1LWE4NDUtOTM5YzgzYWNjYjZj
+      X-Vercel-Cache:
+      - MISS
+      X-Vercel-Id:
+      - yul1::iad1::kvjw6-1787075029412-0b59d51b3653
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"name": "python-sdk-high-level-datasets-vcr", "org_name": "abhi-test-org"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '75'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/project
+  response:
+    body:
+      string: '{"id":"8bc899ea-301c-43a4-afce-6b7e381f72df","org_id":"f5883013-b5c1-438d-9044-5182b4682337","name":"python-sdk-high-level-datasets-vcr","description":null,"created":"2026-08-18T17:43:49.805Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:43:49 GMT
+      Via:
+      - 1.1 7b609f6f2da1597a3efb21b332d7ce54.cloudfront.net (CloudFront), 1.1 777f4a7ed43b40353f84311869e119c8.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - xgjOSfg2torH-h2YzzYP9-lD_cWvZesy7bpprxrpZfDCsdV7CDA06A==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d5-58fb2ffc78c45aed19654beb;Parent=1598a14803640071;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '276'
+      etag:
+      - W/"114-KUQ+D50relGBKxWrJbiPQ1lUa7c"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTz5dE1VoAMEl0g=
+      x-amzn-RequestId:
+      - b6d3b069-d09c-44dd-b391-743d629f1a3c
+      x-bt-internal-trace-id:
+      - 6a8499d500000000745a36dec81ff912
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"project_id": "8bc899ea-301c-43a4-afce-6b7e381f72df", "name": "logs",
+      "description": "created through braintrust.init_dataset"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '128'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/dataset
+  response:
+    body:
+      string: '{"id":"e0753a78-8202-4f97-9b70-8555cca01f24","project_id":"8bc899ea-301c-43a4-afce-6b7e381f72df","name":"logs","description":"created
+        through braintrust.init_dataset","created":"2026-08-18T17:43:50.112Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","tags":null,"metadata":null,"url_slug":"logs"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:43:50 GMT
+      Via:
+      - 1.1 7f51f788f893911f0cd6b09d9ab21c4a.cloudfront.net (CloudFront), 1.1 04fa8a9e73b27e301fb4b6d36f313186.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - EsPn_ln1NovOs5-Dmk7-sGLHMB4YmUiyHr_Px7uBVM7obAie2tSFLg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d5-235c78ea3fb567ef4d6a0d73;Parent=36a52cda16bbac71;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '317'
+      etag:
+      - W/"13d-bhQPuhN/bOu6S5+5+uANd0j5CnM"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTz5gGedIAMEohw=
+      x-amzn-RequestId:
+      - 5bb15c30-a620-4a52-abb1-cd06abaaf1cd
+      x-bt-internal-trace-id:
+      - 6a8499d50000000019e6272960be9737
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"events": [{"id": "high-level-generated-row", "input": {"question": "What
+      is the answer?"}, "expected": "42"}]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '112'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/dataset/e0753a78-8202-4f97-9b70-8555cca01f24/insert
+  response:
+    body:
+      string: '{"row_ids":["high-level-generated-row"]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:43:50 GMT
+      Via:
+      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 dcd16c430149132ea12a5783d54ff114.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - LQlLspEyAr_LHJxALCbJrmfK7_5WwRZ8LzJgbiB9JHYmnEKzv7hUDg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d6-078871af3601f8740117c7f6;Parent=2fc78e399729f92f;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '40'
+      etag:
+      - W/"28-/WJmCRpRI2OkOxN+4DhKff4swbE"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTz5kGw1IAMEWTA=
+      x-amzn-RequestId:
+      - 64738b4b-1f41-4561-859e-da4161e0a293
+      x-bt-internal-trace-id:
+      - 6a8499d600000000029cae16c59cb207
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"limit": 10}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '13'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/dataset/e0753a78-8202-4f97-9b70-8555cca01f24/fetch
+  response:
+    body:
+      string: '{"events":[{"_pagination_key":"p07675428811820564480","_xact_id":"1000197710002164573","audit_data":[{"_xact_id":"1000197710002164573","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"created":"2026-08-18T17:43:50.515Z","dataset_id":"e0753a78-8202-4f97-9b70-8555cca01f24","expected":"42","facets":null,"id":"high-level-generated-row","input":{"question":"What
+        is the answer?"},"is_root":true,"metadata":null,"origin":null,"project_id":"8bc899ea-301c-43a4-afce-6b7e381f72df","root_span_id":"876464a7-1f60-4802-9935-17437b873c37","span_id":"876464a7-1f60-4802-9935-17437b873c37","tags":null}],"cursor":"aoSZ1pNdAAA"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 18 Aug 2026 17:43:51 GMT
+      Via:
+      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 777f4a7ed43b40353f84311869e119c8.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - d6WbhB4EDH4kf_dgcAAaaAa8S5h66C0-d8IZHrZB8Q0ZHJF459Eu4w==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d6-492948d8584a085765606eb6;Parent=13c6b3c43f57d24e;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '669'
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - CTz5qFHgoAMEGfA=
+      x-amzn-RequestId:
+      - 3f2337b5-cbd1-4243-baae-7914d067e781
+      x-bt-api-duration-ms:
+      - '136'
+      x-bt-brainstore-duration-ms:
+      - '78'
+      x-bt-cursor:
+      - aoSZ1pNdAAA
+      x-bt-internal-trace-id:
+      - 6a8499d6000000006adb50d7a8599b2e
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"limit": 10, "cursor": "aoSZ1pNdAAA"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '38'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/dataset/e0753a78-8202-4f97-9b70-8555cca01f24/fetch
+  response:
+    body:
+      string: '{"events":[]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 18 Aug 2026 17:43:51 GMT
+      Via:
+      - 1.1 5785adb181f17ab60069f54a29dd7b7a.cloudfront.net (CloudFront), 1.1 36c050103b969d83a8b90ba7cba12542.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - 4nWsumLw7zOVWlTAvjH6l1ASt5NzJUglPnIf5bs1rY6I4HyloPd1Gw==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d7-68ed2747425765401f6022b3;Parent=2817e8289b5fbb74;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '13'
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin
+      x-amz-apigw-id:
+      - CTz5tG5EIAMEa6g=
+      x-amzn-RequestId:
+      - 92d19bb6-1b7b-4136-87dc-d3327a904bdc
+      x-bt-api-duration-ms:
+      - '132'
+      x-bt-brainstore-duration-ms:
+      - '82'
+      x-bt-internal-trace-id:
+      - 6a8499d7000000005acfdf1725126e8c
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.34.2
+    method: GET
+    uri: https://api.braintrust.dev/v1/dataset/e0753a78-8202-4f97-9b70-8555cca01f24/summarize?summarize_data=true
+  response:
+    body:
+      string: '{"project_name":"python-sdk-high-level-datasets-vcr","project_url":"https://www.braintrust.dev/app/abhi-test-org/p/python-sdk-high-level-datasets-vcr","dataset_name":"logs","dataset_url":"https://www.braintrust.dev/app/abhi-test-org/p/python-sdk-high-level-datasets-vcr/datasets/logs","data_summary":{"total_records":1}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:43:51 GMT
+      Via:
+      - 1.1 7b609f6f2da1597a3efb21b332d7ce54.cloudfront.net (CloudFront), 1.1 50d743941b822ae5fa30db69233863a6.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - awm3fg8BEF3tfCENgkz01OK90HX7uTHbBHsLM_EJDFgjp81SV8GM7g==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d7-31a5f78a0b76620d2b202493;Parent=0bf38a04fbd2a1ba;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '320'
+      etag:
+      - W/"140-ZIATApjTynNDI+KDjd4FQxLCvzE"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTz5wGbDoAMEHoQ=
+      x-amzn-RequestId:
+      - 9e349ac2-fa36-4b12-81dd-8da468ce7817
+      x-bt-internal-trace-id:
+      - 6a8499d70000000022021e5ffb86ef95
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: DELETE
+    uri: https://api.braintrust.dev/v1/dataset/e0753a78-8202-4f97-9b70-8555cca01f24
+  response:
+    body:
+      string: '{"id":"e0753a78-8202-4f97-9b70-8555cca01f24","project_id":"8bc899ea-301c-43a4-afce-6b7e381f72df","name":"logs","description":"created
+        through braintrust.init_dataset","created":"2026-08-18T17:43:50.112Z","deleted_at":"2026-08-18T17:43:51.863Z","user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","tags":null,"metadata":null,"url_slug":"logs"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:43:51 GMT
+      Via:
+      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 12aa3fefbdb5e80269e58f34f94a99e8.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - d6ETiDAOUN1-g9j0swXy3sjUKwgGvXYyipoctt8ba-hsN2fbn_tjnw==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d7-3a24d2ce27a7706424dbd408;Parent=5e73c5475c4834f4;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '339'
+      etag:
+      - W/"153-UO4DgSQH0U8+UDcUWyIinD0oz3Q"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTz5yGn7oAMEvYg=
+      x-amzn-RequestId:
+      - 81b4aacf-3b14-4f7f-9fd5-14bc3df71448
+      x-bt-internal-trace-id:
+      - 6a8499d700000000701a78a693635ec0
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.34.2
+    method: DELETE
+    uri: https://api.braintrust.dev/v1/project/8bc899ea-301c-43a4-afce-6b7e381f72df
+  response:
+    body:
+      string: '{"id":"8bc899ea-301c-43a4-afce-6b7e381f72df","org_id":"f5883013-b5c1-438d-9044-5182b4682337","name":"python-sdk-high-level-datasets-vcr","description":null,"created":"2026-08-18T17:43:49.805Z","deleted_at":"2026-08-18T17:43:52.132Z","user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:43:52 GMT
+      Via:
+      - 1.1 5785adb181f17ab60069f54a29dd7b7a.cloudfront.net (CloudFront), 1.1 cdd327922be1fd75b18f2ae0982269cc.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - U51YfeDrE-5_Jkz2ZpnVq727hQfDx52cj4108zsOyeHDBJ-w8IVk8g==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a8499d8-59546c7c295f23b460a06a06;Parent=0bc589c0f6c8a18e;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '298'
+      etag:
+      - W/"12a-tOzoIlwgSySoy4LcJgaHwSCW/OE"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTz51HFRoAMEmdg=
+      x-amzn-RequestId:
+      - c1f642da-a5b3-46b8-8758-bf3db4876f90
+      x-bt-internal-trace-id:
+      - 6a8499d80000000050d08549862804c8
+    status:
+      code: 200
+      message: OK
+version: 1
