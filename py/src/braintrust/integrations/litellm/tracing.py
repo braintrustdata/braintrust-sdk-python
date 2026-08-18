@@ -44,6 +44,9 @@ TOKEN_NAME_MAP: dict[str, str] = {
     "tokens": "tokens",
     "input_tokens": "prompt_tokens",
     "output_tokens": "completion_tokens",
+    # provider prompt caching aliases preserved by LiteLLM
+    "cache_creation_input_tokens": "prompt_cache_creation_tokens",
+    "cache_read_input_tokens": "prompt_cached_tokens",
 }
 
 TOKEN_PREFIX_MAP: dict[str, str] = {
@@ -862,12 +865,51 @@ def _extract_transcription_text(response: Any) -> str | None:
 
 
 def _parse_metrics_from_usage(usage: Any) -> dict[str, Any]:
-    """Parse usage metrics from API response."""
-    return _parse_openai_usage_metrics(
-        usage,
+    """Parse usage metrics from API response, including provider prompt caching aliases."""
+    usage_dict = _try_to_dict(usage)
+    metrics = _parse_openai_usage_metrics(
+        usage_dict,
         token_name_map=TOKEN_NAME_MAP,
         token_prefix_map=TOKEN_PREFIX_MAP,
     )
+
+    # LiteLLM exposes cache writes under both OpenAI-style token details and
+    # provider-native Anthropic aliases. Normalize all of them to the metric
+    # names defined by the Braintrust instrumentation spec.
+    cache_write_tokens = metrics.pop("prompt_cache_write_tokens", None)
+    if is_numeric(cache_write_tokens):
+        metrics.setdefault("prompt_cache_creation_tokens", cache_write_tokens)
+
+    if not isinstance(usage_dict, dict):
+        return metrics
+
+    cache_creation_details = []
+    for token_details_name in ("prompt_tokens_details", "input_tokens_details"):
+        token_details = _get_field(usage_dict, token_details_name)
+        details = _get_field(token_details, "cache_creation_token_details")
+        if details is not None:
+            cache_creation_details.append(details)
+
+    provider_cache_creation = _get_field(usage_dict, "cache_creation")
+    if provider_cache_creation is not None:
+        cache_creation_details.append(provider_cache_creation)
+
+    ttl_metric_names = {
+        "ephemeral_5m_input_tokens": "prompt_cache_creation_5m_tokens",
+        "ephemeral_1h_input_tokens": "prompt_cache_creation_1h_tokens",
+    }
+    has_ttl_breakdown = False
+    for details in cache_creation_details:
+        for source_name, metric_name in ttl_metric_names.items():
+            value = _get_field(details, source_name)
+            if is_numeric(value):
+                metrics[metric_name] = value
+                has_ttl_breakdown = True
+
+    if has_ttl_breakdown:
+        metrics.pop("prompt_cache_creation_tokens", None)
+
+    return metrics
 
 
 _RERANK_BILLED_UNITS_MAP: dict[str, str] = {
