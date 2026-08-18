@@ -30,6 +30,26 @@ def test_generation_selects_generated_tag_regardless_of_tag_order(tmp_path, code
     assert "def get_widget(" in (generated / "widgets.py").read_text()
 
 
+def test_declarative_post_reads_use_safe_read_retry_mode(tmp_path, codegen_config, minimal_spec):
+    minimal_spec["paths"]["/widgets"] = {
+        "post": {
+            "operationId": "postWidgetFetch",
+            "tags": ["Widgets"],
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Widget"}}},
+                }
+            },
+        }
+    }
+    codegen_config["endpoint_generator"]["safe_reads"] = ["postWidgetFetch"]
+
+    generated = _generate(tmp_path, "safe-read", codegen_config, minimal_spec)
+
+    assert "retry_mode=RetryMode.SAFE_READ" in (generated / "widgets.py").read_text()
+
+
 def test_idempotent_writes_use_idempotent_write_retry_mode(tmp_path, codegen_config, minimal_spec):
     minimal_spec["paths"]["/widgets"] = {
         "post": {
@@ -51,8 +71,24 @@ def test_idempotent_writes_use_idempotent_write_retry_mode(tmp_path, codegen_con
     assert "retry_mode=RetryMode.IDEMPOTENT_WRITE" in bindings
 
 
-def test_multiple_generated_resource_tags_require_explicit_partitioning(tmp_path, codegen_config, minimal_spec):
+def test_multiple_generated_resources_partition_shared_models_deterministically(
+    tmp_path, codegen_config, minimal_spec
+):
     spec = copy.deepcopy(minimal_spec)
+    spec["components"]["schemas"]["Widget"]["properties"]["details"] = {"$ref": "#/components/schemas/WidgetDetails"}
+    spec["components"]["schemas"]["WidgetDetails"] = {
+        "type": "object",
+        "properties": {"count": {"type": "integer"}},
+        "required": ["count"],
+    }
+    spec["components"]["schemas"]["Gadget"] = {
+        "type": "object",
+        "properties": {
+            "widget": {"$ref": "#/components/schemas/Widget"},
+            "serial": {"type": "string"},
+        },
+        "required": ["widget", "serial"],
+    }
     spec["paths"]["/gadgets"] = {
         "get": {
             "operationId": "getGadget",
@@ -60,15 +96,26 @@ def test_multiple_generated_resource_tags_require_explicit_partitioning(tmp_path
             "responses": {
                 "200": {
                     "description": "OK",
-                    "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Widget"}}},
+                    "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Gadget"}}},
                 }
             },
         }
     }
     codegen_config["endpoint_generator"]["generated_tags"] = ["Widgets", "Gadgets"]
 
-    with pytest.raises(CodegenError, match="exactly one generated OpenAPI tag"):
-        _generate(tmp_path, "multiple-model-resources", codegen_config, spec)
+    generated = _generate(tmp_path, "multiple-model-resources", codegen_config, spec)
+
+    common_models = (generated / "models" / "common.py").read_text()
+    assert "class Widget(TypedDict):" in common_models
+    assert "class WidgetDetails(TypedDict):" in common_models
+    assert "from .common import" not in common_models
+    assert "class Gadget(TypedDict):" in (generated / "models" / "gadgets.py").read_text()
+    assert "from .common import Widget" in (generated / "models" / "gadgets.py").read_text()
+    assert "from .models.common import Widget" in (generated / "widgets.py").read_text()
+    assert "from .models.gadgets import Gadget" in (generated / "gadgets.py").read_text()
+    model_exports = (generated / "models" / "__init__.py").read_text()
+    assert "from .common import Widget, WidgetDetails" in model_exports
+    assert "from .gadgets import Gadget" in model_exports
 
 
 def test_unreachable_models_are_omitted_but_transitive_references_are_kept(tmp_path, codegen_config, minimal_spec):

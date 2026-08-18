@@ -15,12 +15,13 @@ make check-api-client-codegen
 
 The check regenerates into a temporary directory and does not modify the worktree. Endpoint bindings
 are rolled out explicitly through `endpoint_generator.generated_tags`. The current rollout supports
-exactly one selected OpenAPI tag and emits its operation registry and resource class together in
-`projects.py`, with reachable types in `models/projects.py`; unreachable models are omitted. Add
-explicit cross-resource model partitioning before selecting a second tag. Public resource method and
-inline response type names are derived mechanically from each `operationId`, and generated methods
-forward request fields and parameters without implicit defaults. Writes that are safe to retry are
-listed declaratively in `endpoint_generator.idempotent_writes`; reads and all other writes use
+the Projects and Experiments tags and emits one operation registry/resource class per tag. Reachable
+models used by one resource live in that resource's model module; models shared by multiple resources
+live once in `models/common.py` and are imported explicitly. Unreachable models are omitted. Public
+resource method and inline response type names are derived mechanically from each `operationId`, and
+generated methods forward request fields and parameters without implicit defaults. Logical POST reads
+that are safe to retry are listed in `endpoint_generator.safe_reads`, while verified idempotent writes
+are listed in `endpoint_generator.idempotent_writes`; GET/HEAD reads and all other writes use
 mechanical retry defaults.
 
 To fetch the configured upstream commit explicitly:
