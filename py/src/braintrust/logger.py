@@ -41,10 +41,10 @@ from braintrust.functions.stream import BraintrustStream
 from requests.adapters import HTTPAdapter
 
 from . import context, id_gen
-from .api._routing import EndpointRouter, normalize_proxy_url
-from .api._transport import HTTPConnection, Transport
+from .api._routing import normalize_proxy_url
+from .api._transport import HTTPConnection
 from .api._transport import RetryRequestExceptionsAdapter as RetryRequestExceptionsAdapter
-from .api.client import BraintrustClient
+from .api.client import BraintrustClient, BraintrustOpenApiClient
 from .api.errors import BraintrustHTTPError
 from .bt_json import bt_dumps, bt_safe_deep_copy
 from .db_fields import (
@@ -644,8 +644,8 @@ class BraintrustState:
             )
             self.copy_state(state)
 
-    def api_client(self) -> BraintrustClient:
-        """Return the lazily bootstrapped resource client."""
+    def api_client(self) -> BraintrustOpenApiClient:
+        """Return the lazily bootstrapped OpenAPI client."""
 
         if self._client is None:
             with self._client_lock:
@@ -653,7 +653,7 @@ class BraintrustState:
                     self.login()
         if self._client is None:
             raise RuntimeError("Braintrust API client was not initialized during login")
-        return self._client
+        return self._client.openapi
 
     def app_conn(self):
         if not self._app_conn:
@@ -2179,13 +2179,12 @@ def login_to_state(
             }
         ]
         _check_org_info(state, test_org_info, org_name)
-        router = EndpointRouter(app_url=state.app_url, api_url=state.api_url, proxy_url=state.proxy_url)
-        state._client = BraintrustClient.from_transport(
-            transport=Transport(adapter=_http_adapter),
-            router=router,
+        state._client = BraintrustClient(
             api_key=TEST_API_KEY,
-            org_id=cast(str, state.org_id),
-            org_name=cast(str, state.org_name),
+            app_url=state.app_url,
+            api_url=state.api_url,
+            proxy_url=state.proxy_url,
+            adapter=_http_adapter,
         )
         state.login_token = TEST_API_KEY
         state.logged_in = True
@@ -2197,19 +2196,24 @@ def login_to_state(
             "or nearest .env.braintrust file."
         )
 
+    client = BraintrustClient(api_key=api_key, app_url=state.app_url, adapter=_http_adapter)
     try:
-        client = BraintrustClient(api_key=api_key, org_name=org_name, app_url=state.app_url, adapter=_http_adapter)
+        login_result = client.auth.login(org_name=org_name)
     except BraintrustHTTPError as exc:
+        client.close()
         masked_api_key = mask_api_key(api_key)
         raise ValueError(f"Invalid API key {masked_api_key}: [{exc.status_code}] {exc.response_body}") from exc
+    except Exception:
+        client.close()
+        raise
 
-    organization = client.login_result.organization
+    organization = login_result.organization
     state._client = client
-    state.org_id = client.org_id
-    state.org_name = client.org_name
-    state.api_url = client.router.api_url
-    state.proxy_url = client.router.proxy_url
-    state.is_universal_api = client.router.is_universal_api
+    state.org_id = organization.id
+    state.org_name = organization.name
+    state.api_url = login_result.api_url
+    state.proxy_url = login_result.proxy_url
+    state.is_universal_api = organization.is_universal_api
     state.git_metadata_settings = (
         GitMetadataSettings(**organization.git_metadata) if organization.git_metadata else None
     )

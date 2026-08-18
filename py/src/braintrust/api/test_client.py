@@ -7,7 +7,13 @@ import threading
 import pytest
 import requests
 from braintrust import logger
-from braintrust.api import BraintrustClient, BraintrustHTTPError, EndpointRouter, RequestTarget
+from braintrust.api import (
+    BraintrustClient,
+    BraintrustHTTPError,
+    BraintrustOpenApiClient,
+    EndpointRouter,
+    RequestTarget,
+)
 from braintrust.api._transport import RetryRequestExceptionsAdapter
 from braintrust.logger import BraintrustState, login_to_state
 from requests.adapters import HTTPAdapter
@@ -60,7 +66,7 @@ def test_endpoint_router_preserves_origins_and_proxy_fallback():
     assert router.resolve(RequestTarget.PROXY, "function/invoke") == "https://universal.example.com/function/invoke"
 
 
-def test_client_bootstraps_selected_org_on_one_session(monkeypatch):
+def test_braintrust_client_shares_transport_across_auth_and_openapi(monkeypatch):
     monkeypatch.delenv("BRAINTRUST_API_URL", raising=False)
     monkeypatch.delenv("BRAINTRUST_PROXY_URL", raising=False)
     orgs = [
@@ -83,40 +89,67 @@ def test_client_bootstraps_selected_org_on_one_session(monkeypatch):
     session.cookies.set("existing", "yes")
     cookie_policy = session.cookies.get_policy()
     with login_server(orgs, response_headers={"Set-Cookie": "accepted=yes"}) as (app_url, handler):
-        client = BraintrustClient(api_key="secret\n", org_name="selected", app_url=app_url, session=session)
+        client = BraintrustClient(api_key="secret\n", app_url=app_url, session=session)
+        result = client.auth.login(org_name="selected")
 
     assert handler.request_count == 1
     assert handler.authorization == "Bearer secret"
-    assert client.org_id == "org-2"
-    assert client.org_name == "selected"
+    assert result.organization.id == "org-2"
+    assert result.organization.name == "selected"
     assert client.router.api_url == "https://api-2.example.com"
-    assert client.router.is_universal_api is True
+    assert result.organization.is_universal_api is True
     assert client.router.resolve(RequestTarget.PROXY, "ping") == "https://api-2.example.com/ping"
-    assert client.login_result.organization.raw["new_server_field"] == {"preserved": True}
-    assert not hasattr(client, "auth")
+    assert result.organization.raw["new_server_field"] == {"preserved": True}
     assert "Authorization" not in session.headers
     assert session.cookies.get("existing") == "yes"
     assert session.cookies.get_policy() is cookie_policy
-    assert all(
-        service._transport is client.transport
-        for service in (
-            client.projects,
-            client.experiments,
-            client.datasets,
-            client.prompts,
-            client.functions,
-            client.queries,
-            client.attachments,
-        )
-    )
+    assert client.openapi.transport is client.transport
 
 
-def test_sdk_owned_session_rejects_response_cookies():
-    orgs = [{"id": "org-1", "name": "org", "api_url": "https://api.example.com"}]
-    with login_server(orgs, response_headers={"Set-Cookie": "ignored=yes"}) as (app_url, _):
+def test_relogin_refreshes_routing_for_selected_organization(monkeypatch):
+    monkeypatch.delenv("BRAINTRUST_API_URL", raising=False)
+    monkeypatch.delenv("BRAINTRUST_PROXY_URL", raising=False)
+    orgs = [
+        {
+            "id": "org-1",
+            "name": "one",
+            "api_url": "https://api-one.example.com",
+            "proxy_url": "https://proxy-one.example.com",
+        },
+        {
+            "id": "org-2",
+            "name": "two",
+            "api_url": "https://api-two.example.com",
+            "proxy_url": "https://proxy-two.example.com",
+        },
+    ]
+    with login_server(orgs) as (app_url, handler):
         client = BraintrustClient(api_key="secret", app_url=app_url)
+        client.auth.login(org_name="one")
+        result = client.auth.login(org_name="two")
 
-    assert not client.transport.session.cookies
+    assert handler.request_count == 2
+    assert result.organization.name == "two"
+    assert client.openapi.router.api_url == "https://api-two.example.com"
+    assert client.openapi.router.proxy_url == "https://proxy-two.example.com"
+
+
+def test_constructors_do_not_log_in(monkeypatch):
+    with login_server([]) as (app_url, handler):
+        monkeypatch.setenv("BRAINTRUST_APP_URL", app_url)
+        client = BraintrustClient(api_key="secret", api_url="https://api.example.com")
+        openapi_client = BraintrustOpenApiClient(api_key="secret", api_url="https://api.example.com")
+
+    assert handler.request_count == 0
+    assert client.router.api_url == "https://api.example.com"
+    assert openapi_client.router.api_url == "https://api.example.com"
+
+
+def test_constructor_requires_api_url_without_discovery(monkeypatch):
+    monkeypatch.delenv("BRAINTRUST_API_URL", raising=False)
+
+    with pytest.raises(ValueError, match="api_url is required"):
+        BraintrustOpenApiClient(api_key="secret")
 
 
 def test_client_url_override_precedence(monkeypatch):
@@ -131,25 +164,32 @@ def test_client_url_override_precedence(monkeypatch):
         }
     ]
     with login_server(orgs) as (app_url, _):
-        env_client = BraintrustClient(api_key="secret", app_url=app_url)
-        explicit_client = BraintrustClient(
+        with BraintrustClient(api_key="secret", app_url=app_url) as env_client:
+            env_result = env_client.auth.login()
+        with BraintrustClient(
             api_key="secret",
             app_url=app_url,
             api_url="https://api-explicit.example.com",
             proxy_url="https://proxy-explicit.example.com",
-        )
+        ) as explicit_client:
+            explicit_result = explicit_client.auth.login()
 
-    assert env_client.router.api_url == "https://api-env.example.com"
-    assert env_client.router.proxy_url == "https://proxy-env.example.com"
-    assert explicit_client.router.api_url == "https://api-explicit.example.com"
-    assert explicit_client.router.proxy_url == "https://proxy-explicit.example.com"
+    assert env_result.api_url == "https://api-env.example.com"
+    assert env_result.proxy_url == "https://proxy-env.example.com"
+    assert env_client.router.api_url == env_result.api_url
+    assert env_client.router.proxy_url == env_result.proxy_url
+    assert explicit_result.api_url == "https://api-explicit.example.com"
+    assert explicit_result.proxy_url == "https://proxy-explicit.example.com"
+    assert explicit_client.router.api_url == explicit_result.api_url
+    assert explicit_client.router.proxy_url == explicit_result.proxy_url
 
 
 def test_custom_adapter_disables_bootstrap_retries():
     orgs = [{"id": "org-1", "name": "org", "api_url": "https://api.example.com"}]
     with login_server(orgs, status=503) as (app_url, handler):
-        with pytest.raises(BraintrustHTTPError):
-            BraintrustClient(api_key="secret", app_url=app_url, adapter=HTTPAdapter())
+        with BraintrustClient(api_key="secret", app_url=app_url, adapter=HTTPAdapter()) as client:
+            with pytest.raises(BraintrustHTTPError):
+                client.auth.login()
 
     assert handler.request_count == 1
 
@@ -170,7 +210,10 @@ def test_login_to_state_hydrates_isolated_legacy_connections(monkeypatch):
         with login_server(orgs) as (login_url, _):
             state = login_to_state(api_key="secret", app_url=login_url, org_name="org")
 
-    assert state.api_client().org_id == "org-1"
+    assert state.org_id == "org-1"
+    assert state._client is not None
+    assert state._client.openapi is state.api_client()
+    assert state.api_client().router.api_url == app_url
     assert state.git_metadata_settings is None
     assert state._client.transport.session is not state.api_conn().session
     assert state._client.transport.session is not state.app_conn().session

@@ -5,13 +5,14 @@ import difflib
 import hashlib
 import importlib.metadata
 import json
+import keyword
 import os
 import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, NamedTuple, Sequence, Set, Tuple
+from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Sequence, Set, Tuple
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -47,17 +48,33 @@ class CodegenError(RuntimeError):
 
 class ValidationReport(NamedTuple):
     operation_count: int
-    options_operation_count: int
     schema_count: int
-    skip_ids: FrozenSet[str]
 
     def __str__(self) -> str:
-        return (
-            f"{self.operation_count} supported operations, "
-            f"{self.options_operation_count} CORS OPTIONS operations removed, "
-            f"{len(self.skip_ids)} explicitly skipped operations, "
-            f"{self.schema_count} schemas"
-        )
+        return f"{self.operation_count} selected operations, {self.schema_count} reachable schemas"
+
+
+class GeneratedParameter(NamedTuple):
+    argument_name: str
+    name: str
+    location: str
+    type_name: str
+    required: bool
+
+
+class GeneratedOperation(NamedTuple):
+    operation_id: str
+    constant_name: str
+    method: str
+    path: str
+    tag: str
+    parameters: Tuple[GeneratedParameter, ...]
+    request_body_type: str | None
+    request_body_required: bool
+    response_type: str | None
+    success_statuses: Tuple[int, ...]
+    json_success_statuses: Tuple[int, ...]
+    retry_mode: str
 
 
 def load_config(path: Path = CONFIG_PATH) -> Dict[str, Any]:
@@ -130,79 +147,184 @@ def validate_spec(spec: Mapping[str, Any], config: Mapping[str, Any]) -> Validat
     components = spec.get("components", {})
     if not isinstance(components, dict) or not isinstance(components.get("schemas", {}), dict):
         raise CodegenError("OpenAPI spec components.schemas must be an object")
-    schemas = components.get("schemas", {})
 
-    _validate_refs(spec)
-    operations = list(_iter_operations(spec))
-    # Uniqueness is checked before the skip set is resolved: skipped and supported operations share
-    # one operationId namespace, so a collision between them would otherwise drop the supported
-    # operation from the normalized spec without any error.
-    _validate_unique_operation_ids(operations)
     endpoint = _endpoint_config(config)
-    skip_ids = _validate_skip_set(operations, endpoint)
+    all_operations = list(_iter_operations(spec))
+    _validate_unique_operation_ids(all_operations)
+    operations = _selected_operations(all_operations, endpoint["generated_tags"])
+    reference_roots = []
+    for _, _, _, operation, path_item in operations:
+        reference_roots.append(operation)
+        reference_roots.extend(path_item.get("parameters", []))
+    _validate_refs(reference_roots, spec)
 
     generated_names: Dict[str, str] = {}
-    supported_count = 0
-    options_count = 0
+    method_identifiers: Dict[str, str] = {}
+    constant_identifiers: Dict[str, str] = {}
     for method, path, operation_id, operation, path_item in operations:
-        if method == "options":
-            if operation.get("tags") != ["CORS"]:
-                raise CodegenError(
-                    f"OPTIONS {path} is not tagged only as CORS and cannot be removed during normalization"
-                )
-            options_count += 1
-            continue
-        if operation_id in skip_ids:
-            continue
         if not operation_id or not OPERATION_ID_RE.fullmatch(operation_id):
             raise CodegenError(f"Operation {method.upper()} {path} has an invalid operationId: {operation_id!r}")
         tags = operation.get("tags")
-        if not isinstance(tags, list) or len(tags) != 1 or not isinstance(tags[0], str) or not tags[0].strip():
-            raise CodegenError(f"Operation {operation_id!r} must have exactly one usable tag")
+        if not isinstance(tags, list) or not tags or not all(isinstance(tag, str) and tag.strip() for tag in tags):
+            raise CodegenError(f"Operation {operation_id!r} must have usable tags")
+        if len(_generated_operation_tags(operation, endpoint["generated_tags"])) != 1:
+            raise CodegenError(f"Operation {operation_id!r} must have exactly one generated OpenAPI tag")
         generated_name = _python_type_name(operation_id)
         previous = generated_names.setdefault(generated_name, operation_id)
         if previous != operation_id:
             raise CodegenError(
                 f"Inline operation name collision: {previous!r} and {operation_id!r} both generate {generated_name!r}"
             )
+        for namespace, identifier, seen in (
+            ("method", _snake_case(operation_id), method_identifiers),
+            ("constant", _snake_case(operation_id).upper(), constant_identifiers),
+        ):
+            previous = seen.setdefault(identifier, operation_id)
+            if previous != operation_id:
+                raise CodegenError(
+                    f"Generated operation identifier collision: {previous!r} and {operation_id!r} "
+                    f"both emit {namespace} {identifier!r}"
+                )
         _validate_operation_media(operation_id, operation, endpoint, spec)
-        _validate_path_parameters(operation_id, path, path_item, operation, spec)
-        supported_count += 1
+        _validate_parameters(operation_id, path, path_item, operation, spec)
 
+    _validate_selected_operations(operations, endpoint)
+    operation_ids = {operation_id for _, _, operation_id, _, _ in operations}
+    selected_spec = _slice_model_spec(spec, operation_ids)
+    schemas = selected_spec.get("components", {}).get("schemas", {})
     _validate_component_names(schemas)
-    _validate_json_values_and_types(spec)
-    return ValidationReport(supported_count, options_count, len(schemas), frozenset(skip_ids))
+    _validate_json_values_and_types(selected_spec)
+    return ValidationReport(len(operations), len(schemas))
 
 
-def normalize_spec(spec: Mapping[str, Any], skip_ids: FrozenSet[str]) -> Dict[str, Any]:
-    """Remove only CORS OPTIONS and the exact configured skip set."""
-    normalized = copy.deepcopy(spec)
-    for path, path_item in list(normalized["paths"].items()):
-        for method, operation in list(path_item.items()):
-            lower_method = method.lower()
-            if lower_method in HTTP_METHODS and (
-                lower_method == "options" or operation.get("operationId") in skip_ids
-            ):
-                del path_item[method]
-        if not any(key.lower() in HTTP_METHODS for key in path_item):
-            del normalized["paths"][path]
-    return normalized
+def _generated_operation_tags(operation: Mapping[str, Any], generated_tags: Sequence[str]) -> List[str]:
+    tags = operation.get("tags")
+    if not isinstance(tags, list):
+        return []
+    selected_tags = set(generated_tags)
+    return [tag for tag in tags if isinstance(tag, str) and tag in selected_tags]
+
+
+def _selected_operations(
+    operations: Sequence[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]],
+    generated_tags: Sequence[str],
+) -> List[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]]:
+    return [
+        operation_entry
+        for operation_entry in operations
+        if operation_entry[0] != "options" and _generated_operation_tags(operation_entry[3], generated_tags)
+    ]
+
+
+def _slice_model_spec(spec: Mapping[str, Any], operation_ids: Set[str]) -> Dict[str, Any]:
+    """Keep selected operations and the transitive component closure they reference."""
+    selected_paths: Dict[str, Any] = {}
+    for path, path_item in spec.get("paths", {}).items():
+        selected_item = {
+            key: copy.deepcopy(value)
+            for key, value in path_item.items()
+            if key.lower() not in HTTP_METHODS or value.get("operationId") in operation_ids
+        }
+        if any(key.lower() in HTTP_METHODS for key in selected_item):
+            selected_paths[path] = selected_item
+
+    selected_components: Dict[str, Dict[str, Any]] = {}
+    seen_components: Set[Tuple[str, str]] = set()
+
+    def collect_components(value: Any) -> None:
+        if isinstance(value, dict):
+            reference = value.get("$ref")
+            component_key = _component_key_from_ref(reference) if isinstance(reference, str) else None
+            if component_key is not None and component_key not in seen_components:
+                seen_components.add(component_key)
+                component_type, component_name = component_key
+                components = spec.get("components", {})
+                component_group = components.get(component_type, {})
+                if not isinstance(component_group, dict) or component_name not in component_group:
+                    raise CodegenError(f"Unresolved OpenAPI reference {reference!r}")
+                component = component_group[component_name]
+                selected_components.setdefault(component_type, {})[component_name] = copy.deepcopy(component)
+                collect_components(component)
+            for key, child in value.items():
+                if key != "$ref":
+                    collect_components(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect_components(child)
+
+    collect_components(selected_paths)
+    model_spec = {key: copy.deepcopy(spec[key]) for key in ("openapi", "info", "jsonSchemaDialect") if key in spec}
+    model_spec["paths"] = selected_paths
+    model_spec["components"] = selected_components
+    return model_spec
+
+
+def _component_key_from_ref(reference: str) -> Tuple[str, str] | None:
+    prefix = "#/components/"
+    if not reference.startswith(prefix):
+        return None
+    parts = reference[len(prefix) :].split("/", 2)
+    if len(parts) < 2:
+        return None
+    return tuple(part.replace("~1", "/").replace("~0", "~") for part in parts[:2])
+
+
+def _with_inline_models(
+    spec: Mapping[str, Any], inline_models: Sequence[Tuple[str, Mapping[str, Any]]]
+) -> Dict[str, Any]:
+    """Expose named inline response schemas to the existing model generator."""
+    model_spec = copy.deepcopy(spec)
+    schemas = model_spec.setdefault("components", {}).setdefault("schemas", {})
+    generated_names = {_python_type_name(name): name for name in schemas}
+    for name, schema in inline_models:
+        generated_name = _python_type_name(name)
+        existing_name = generated_names.get(generated_name)
+        if existing_name is not None:
+            raise CodegenError(
+                f"Inline response model {name!r} collides with component schema {existing_name!r}; "
+                f"both generate Python type {generated_name!r}"
+            )
+        schemas[name] = copy.deepcopy(schema)
+        generated_names[generated_name] = name
+    return model_spec
+
+
+def _single_model_module(operations: Sequence[GeneratedOperation]) -> str:
+    tags = {operation.tag for operation in operations}
+    if len(tags) != 1:
+        raise CodegenError(
+            "Model generation currently requires exactly one generated OpenAPI tag; "
+            "add explicit cross-resource model partitioning before enabling another tag"
+        )
+    return _snake_case(next(iter(tags)))
+
+
+def _model_modules(spec: Mapping[str, Any], module: str) -> Dict[str, str]:
+    schemas = spec.get("components", {}).get("schemas", {})
+    return {_python_type_name(name): module for name in schemas}
 
 
 def generate_tree(output_root: Path, config: Mapping[str, Any], spec: Mapping[str, Any]) -> ValidationReport:
     validate_config(config)
     report = validate_spec(spec, config)
-    normalized = normalize_spec(spec, report.skip_ids)
+    operations, inline_models = _collect_generated_operations(spec, config)
+    selected_spec = _slice_model_spec(spec, {operation.operation_id for operation in operations})
+    model_spec = _with_inline_models(selected_spec, inline_models)
+    model_module = _single_model_module(operations)
+    model_modules = _model_modules(model_spec, model_module)
     output_root.mkdir(parents=True, exist_ok=True)
-    normalized_path = output_root.parent / "normalized-spec.json"
-    normalized_path.write_text(
-        json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n", encoding="utf-8"
+    selected_spec_path = output_root.parent / "selected-spec.json"
+    selected_spec_path.write_text(
+        json.dumps(model_spec, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n", encoding="utf-8"
     )
     try:
-        _generate_models(normalized_path, output_root / "models.py", config)
+        _generate_models(selected_spec_path, output_root / "models" / f"{model_module}.py", config)
     finally:
-        normalized_path.unlink(missing_ok=True)
+        selected_spec_path.unlink(missing_ok=True)
     _write_generated_file(output_root / "__init__.py", _GENERATED_INIT_BODY, config)
+    _write_generated_file(output_root / "models" / "__init__.py", '"""Generated private model types."""\n', config)
+    resource_files = _generate_resources(output_root, operations, model_modules, config)
+    _format_generated_files(resource_files)
     return report
 
 
@@ -278,8 +400,8 @@ def _prune_empty_directories(root: Path) -> None:
 
 
 def _generate_models(spec_path: Path, output_path: Path, config: Mapping[str, Any]) -> None:
-    placeholder = "CONTENT_HASH_PLACEHOLDER"
-    header = _generated_header(config, placeholder).rstrip()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    header = _generated_header(config, "CONTENT_HASH_PLACEHOLDER").rstrip()
     command = [
         sys.executable,
         "-m",
@@ -297,19 +419,12 @@ def _generate_models(spec_path: Path, output_path: Path, config: Mapping[str, An
     except subprocess.CalledProcessError as exc:
         detail = exc.stderr.strip() or exc.stdout.strip() or str(exc)
         raise CodegenError(f"datamodel-code-generator failed: {detail}") from exc
-    # datamodel-code-generator's own `--formatters=ruff-format` pass is not a fixed point; running
-    # the pinned ruff again is what makes the committed output stable.
-    subprocess.run(
-        [sys.executable, "-m", "ruff", "format", str(output_path)], check=True, capture_output=True, text=True
-    )
-    generated = output_path.read_text(encoding="utf-8")
-    marker = f"# Content SHA-256: {placeholder}"
-    if marker not in generated:
-        raise CodegenError("Generated models did not contain the expected content hash marker")
-    body = generated.split(marker, 1)[1].lstrip("\n")
-    content_hash = hashlib.sha256(body.encode()).hexdigest()
-    # Substituting the hash only rewrites characters inside a comment, so the file stays formatted.
-    _write_checked(output_path, generated.replace(placeholder, content_hash, 1))
+    if not output_path.is_file():
+        raise CodegenError("datamodel-code-generator did not emit the model module")
+    model_paths = [output_path]
+    # datamodel-code-generator's own formatter pass is not a fixed point; one pinned Ruff pass over
+    # the complete module tree makes the committed output stable and finalizes each content hash.
+    _format_generated_files(model_paths)
 
 
 def _write_generated_file(path: Path, body: str, config: Mapping[str, Any]) -> None:
@@ -344,6 +459,355 @@ package pulls in no models.
 '''
 
 
+def _validate_selected_operations(
+    operations: Sequence[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]],
+    endpoint: Mapping[str, Any],
+) -> None:
+    supported = {operation_id: operation for _, _, operation_id, operation, _ in operations}
+    configured_tags = set(endpoint["generated_tags"])
+    actual_tags = {
+        tag
+        for operation in supported.values()
+        for tag in _generated_operation_tags(operation, endpoint["generated_tags"])
+    }
+    missing_tags = configured_tags - actual_tags
+    if missing_tags:
+        raise CodegenError(f"endpoint_generator.generated_tags contains unknown tags: {sorted(missing_tags)}")
+
+    idempotent_writes = set(endpoint["idempotent_writes"])
+    stale_idempotent_writes = idempotent_writes - set(supported)
+    if stale_idempotent_writes:
+        operation_id = sorted(stale_idempotent_writes)[0]
+        raise CodegenError(f"endpoint_generator.idempotent_writes references non-generated operation {operation_id!r}")
+    non_writes = sorted(
+        operation_id
+        for method, _, operation_id, _, _ in operations
+        if operation_id in idempotent_writes and method in {"get", "head"}
+    )
+    if non_writes:
+        raise CodegenError(f"endpoint_generator.idempotent_writes references read operation {non_writes[0]!r}")
+
+
+def _operation_retry_mode(method: str, operation_id: str, idempotent_writes: Set[str]) -> str:
+    if method in {"get", "head"}:
+        return "SAFE_READ"
+    if operation_id in idempotent_writes:
+        return "IDEMPOTENT_WRITE"
+    return "NONE"
+
+
+def _collect_generated_operations(
+    spec: Mapping[str, Any], config: Mapping[str, Any]
+) -> Tuple[List[GeneratedOperation], List[Tuple[str, Mapping[str, Any]]]]:
+    endpoint = _endpoint_config(config)
+    idempotent_writes = set(endpoint["idempotent_writes"])
+    operations: List[GeneratedOperation] = []
+    inline_models: Dict[str, Mapping[str, Any]] = {}
+    for method, path, operation_id, operation, path_item in _iter_operations(spec):
+        operation_generated_tags = _generated_operation_tags(operation, endpoint["generated_tags"])
+        if method == "options" or not operation_generated_tags:
+            continue
+        parameters = _operation_parameters(path_item, operation, spec)
+        request_body_type, request_body_required = _operation_request_body(operation, spec)
+        response_type, statuses, json_statuses, inline_schema = _operation_response(operation_id, operation, spec)
+        if inline_schema is not None:
+            inline_model_name = _python_type_name(operation_id + "Response")
+            previous_schema = inline_models.setdefault(inline_model_name, inline_schema)
+            if previous_schema != inline_schema:
+                raise CodegenError(f"Inline response model {inline_model_name!r} has conflicting schemas")
+        operations.append(
+            GeneratedOperation(
+                operation_id=operation_id,
+                constant_name=_snake_case(operation_id).upper(),
+                method=method.upper(),
+                path=path,
+                tag=operation_generated_tags[0],
+                parameters=tuple(parameters),
+                request_body_type=request_body_type,
+                request_body_required=request_body_required,
+                response_type=response_type,
+                success_statuses=statuses,
+                json_success_statuses=json_statuses,
+                retry_mode=_operation_retry_mode(method, operation_id, idempotent_writes),
+            )
+        )
+    return operations, list(inline_models.items())
+
+
+def _operation_parameters(
+    path_item: Mapping[str, Any], operation: Mapping[str, Any], spec: Mapping[str, Any]
+) -> List[GeneratedParameter]:
+    by_key: Dict[Tuple[str, str], Mapping[str, Any]] = {}
+    for raw_parameter in [*path_item.get("parameters", []), *operation.get("parameters", [])]:
+        parameter = _resolve_object(raw_parameter, spec)
+        location = parameter.get("in")
+        name = parameter.get("name")
+        if not isinstance(location, str) or not isinstance(name, str):
+            raise CodegenError("Generated operation parameter must have string in and name fields")
+        by_key[(location, name)] = parameter
+    generated = []
+    for (location, name), parameter in by_key.items():
+        generated.append(
+            GeneratedParameter(
+                argument_name=_python_argument_name(name),
+                name=name,
+                location=location,
+                type_name=_schema_annotation(parameter.get("schema", {}), spec),
+                required=bool(parameter.get("required", False)),
+            )
+        )
+    return generated
+
+
+def _operation_request_body(operation: Mapping[str, Any], spec: Mapping[str, Any]) -> Tuple[str | None, bool]:
+    request_body = operation.get("requestBody")
+    if request_body is None:
+        return None, False
+    request_body = _resolve_object(request_body, spec)
+    media = request_body["content"]["application/json"]
+    return _schema_annotation(media.get("schema", {}), spec), bool(request_body.get("required", False))
+
+
+def _operation_response(
+    operation_id: str,
+    operation: Mapping[str, Any],
+    spec: Mapping[str, Any],
+) -> Tuple[str | None, Tuple[int, ...], Tuple[int, ...], Mapping[str, Any] | None]:
+    successes = [
+        (int(status), response) for status, response in operation["responses"].items() if str(status).startswith("2")
+    ]
+    successes.sort(key=lambda item: item[0])
+    response_types: List[str | None] = []
+    json_statuses: List[int] = []
+    inline_schema: Mapping[str, Any] | None = None
+    for status, raw_response in successes:
+        response = _resolve_object(raw_response, spec)
+        content = response.get("content", {})
+        if not content:
+            response_types.append(None)
+            continue
+        media_type = "application/json" if "application/json" in content else sorted(content)[0]
+        json_statuses.append(status)
+        schema = content[media_type].get("schema", {})
+        if "$ref" in schema:
+            response_type = _schema_annotation(schema, spec)
+        elif schema:
+            response_type = _python_type_name(operation_id + "Response")
+            if inline_schema is not None and inline_schema != schema:
+                raise CodegenError(f"Operation {operation_id!r} has conflicting inline success response schemas")
+            inline_schema = schema
+        else:
+            response_type = "Any"
+        response_types.append(response_type)
+    unique_types = list(dict.fromkeys(response_types))
+    if len(unique_types) == 1:
+        response_type = unique_types[0]
+    elif len(unique_types) == 2 and None in unique_types:
+        response_type = f"{next(type_name for type_name in unique_types if type_name is not None)} | None"
+    else:
+        response_type = "Any"
+    return (
+        response_type,
+        tuple(status for status, _ in successes),
+        tuple(json_statuses),
+        inline_schema if response_type != "Any" else None,
+    )
+
+
+def _schema_annotation(schema: Mapping[str, Any], spec: Mapping[str, Any]) -> str:
+    if "$ref" in schema:
+        return _python_type_name(str(schema["$ref"]).rsplit("/", 1)[-1])
+    resolved = _resolve_object(schema, spec)
+    if "oneOf" in resolved or "anyOf" in resolved:
+        choices = resolved.get("oneOf", resolved.get("anyOf", []))
+        annotation = " | ".join(_schema_annotation(choice, spec) for choice in choices) or "Any"
+    elif "allOf" in resolved:
+        choices = resolved["allOf"]
+        annotation = _schema_annotation(choices[0], spec) if len(choices) == 1 else "Any"
+    else:
+        schema_type = resolved.get("type")
+        if schema_type == "array":
+            annotation = f"Sequence[{_schema_annotation(resolved.get('items', {}), spec)}]"
+        elif schema_type == "object":
+            annotation = "Mapping[str, Any]"
+        else:
+            annotation = {
+                "boolean": "bool",
+                "integer": "int",
+                "number": "float",
+                "string": "str",
+            }.get(schema_type, "Any")
+    if resolved.get("nullable") is True and "None" not in annotation:
+        annotation += " | None"
+    return annotation
+
+
+def _generate_resources(
+    root: Path,
+    operations: Sequence[GeneratedOperation],
+    model_modules: Mapping[str, str],
+    config: Mapping[str, Any],
+) -> List[Path]:
+    by_tag: Dict[str, List[GeneratedOperation]] = {}
+    for operation in operations:
+        by_tag.setdefault(operation.tag, []).append(operation)
+
+    generated_paths = []
+    for tag, tag_operations in sorted(by_tag.items()):
+        resource_path = root / f"{_snake_case(tag)}.py"
+        _write_generated_file(resource_path, _resource_module_source(tag, tag_operations, model_modules), config)
+        generated_paths.append(resource_path)
+    return generated_paths
+
+
+def _resource_module_source(
+    tag: str, operations: Sequence[GeneratedOperation], model_modules: Mapping[str, str]
+) -> str:
+    annotation_names: Set[str] = set()
+    for operation in operations:
+        for type_name in [
+            operation.request_body_type,
+            operation.response_type,
+            *(parameter.type_name for parameter in operation.parameters),
+        ]:
+            if type_name:
+                annotation_names.update(re.findall(r"\b[A-Z][A-Za-z0-9_]*\b", type_name))
+    collections_imports = sorted(annotation_names & {"Mapping", "Sequence"})
+    typing_imports = sorted(annotation_names & {"Any", "Literal"})
+    model_type_names = annotation_names - {"Any", "Literal", "Mapping", "None", "Sequence"}
+    model_imports: Dict[str, Set[str]] = {}
+    for type_name in model_type_names:
+        module = model_modules.get(type_name)
+        if module is None:
+            raise CodegenError(f"Generated resource {tag!r} references unknown model {type_name!r}")
+        model_imports.setdefault(module, set()).add(type_name)
+
+    lines = [f'"""Generated {tag} REST operations and resource."""', ""]
+    if collections_imports:
+        lines.extend([f"from collections.abc import {', '.join(collections_imports)}", ""])
+    lines.append(f"from typing import {', '.join([*typing_imports, 'cast'])}")
+    lines.extend(
+        [
+            "",
+            "from .._service import Operation, Parameter, ResourceAPI",
+            "from ..policies import RetryMode",
+        ]
+    )
+    for module, names in sorted(model_imports.items()):
+        lines.append(f"from .models.{module} import {', '.join(sorted(names))}")
+    for operation in operations:
+        lines.extend(["", "", *_operation_definition_source(operation)])
+    lines.extend(["", "", "OPERATIONS = {"])
+    lines.extend(f"    {operation.operation_id!r}: {operation.constant_name}," for operation in operations)
+    lines.append("}")
+    lines.extend(["", "", f"class {_python_type_name(tag)}API(ResourceAPI):", f'    """Generated {tag} REST API."""'])
+    for operation in operations:
+        lines.extend(["", *_resource_method_source(operation)])
+    return "\n".join(lines) + "\n"
+
+
+def _operation_definition_source(operation: GeneratedOperation) -> List[str]:
+    lines = [
+        f"{operation.constant_name} = Operation(",
+        f"    operation_id={operation.operation_id!r},",
+        f"    method={operation.method!r},",
+        f"    path={operation.path!r},",
+        "    parameters=(",
+    ]
+    for parameter in operation.parameters:
+        lines.extend(
+            [
+                "        Parameter(",
+                f"            argument_name={parameter.argument_name!r},",
+                f"            name={parameter.name!r},",
+                f"            location={parameter.location!r},",
+                f"            required={parameter.required!r},",
+                "        ),",
+            ]
+        )
+    lines.extend(
+        [
+            "    ),",
+            f"    has_request_body={operation.request_body_type is not None!r},",
+            f"    success_statuses={operation.success_statuses!r},",
+            f"    json_success_statuses={operation.json_success_statuses!r},",
+            f"    retry_mode=RetryMode.{operation.retry_mode},",
+            ")",
+        ]
+    )
+    return lines
+
+
+def _resource_method_source(operation: GeneratedOperation) -> List[str]:
+    required_parameters = [parameter for parameter in operation.parameters if parameter.required]
+    optional_parameters = [parameter for parameter in operation.parameters if not parameter.required]
+    arguments = ["self"]
+    arguments.extend(f'{parameter.argument_name}: "{parameter.type_name}"' for parameter in required_parameters)
+    keyword_arguments = [
+        f'{parameter.argument_name}: "{parameter.type_name} | None" = None' for parameter in optional_parameters
+    ]
+    if operation.request_body_type is not None:
+        default = "" if operation.request_body_required else " = None"
+        body_type = (
+            operation.request_body_type if operation.request_body_required else f"{operation.request_body_type} | None"
+        )
+        keyword_arguments.append(f'body: "{body_type}"{default}')
+    if keyword_arguments:
+        arguments.append("*")
+        arguments.extend(keyword_arguments)
+    return_type = operation.response_type or "None"
+    lines = [
+        f"    def {_snake_case(operation.operation_id)}(",
+        *(f"        {argument}," for argument in arguments),
+        f'    ) -> "{return_type}":',
+    ]
+    call_arguments = [operation.constant_name]
+    for location, keyword_name in (("path", "path_parameters"), ("query", "query_parameters")):
+        parameters = [parameter for parameter in operation.parameters if parameter.location == location]
+        if parameters:
+            values = ", ".join(f"{parameter.argument_name!r}: {parameter.argument_name}" for parameter in parameters)
+            call_arguments.append(f"{keyword_name}={{{values}}}")
+    if operation.request_body_type is not None:
+        call_arguments.append("body=body")
+    lines.append(f'        return cast("{return_type}", self.execute(')
+    lines.extend(f"            {argument}," for argument in call_arguments)
+    lines.append("        ))")
+    return lines
+
+
+def _format_generated_files(paths: Sequence[Path]) -> None:
+    if not paths:
+        return
+    subprocess.run(
+        [sys.executable, "-m", "ruff", "format", *(str(path) for path in paths)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    for path in paths:
+        generated = path.read_text(encoding="utf-8")
+        marker_match = re.search(r"^# Content SHA-256: ([^\n]+)$", generated, flags=re.MULTILINE)
+        if marker_match is None:
+            raise CodegenError(f"Formatted generated file {path} lost its content hash")
+        body_after_marker = generated[marker_match.end() :].lstrip("\n")
+        content_hash = hashlib.sha256(body_after_marker.encode()).hexdigest()
+        _write_checked(path, generated[: marker_match.start(1)] + content_hash + generated[marker_match.end(1) :])
+
+
+def _python_argument_name(value: str) -> str:
+    result = re.sub(r"\W", "_", value)
+    if not result or result[0].isdigit():
+        result = "_" + result
+    if keyword.iskeyword(result):
+        result += "_"
+    return result
+
+
+def _snake_case(value: str) -> str:
+    value = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", value)
+    return re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_").lower()
+
+
 def _iter_operations(
     spec: Mapping[str, Any],
 ) -> Iterator[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]]:
@@ -363,8 +827,20 @@ def _endpoint_config(config: Mapping[str, Any]) -> Mapping[str, Any]:
     endpoint = config.get("endpoint_generator")
     if not isinstance(endpoint, dict) or endpoint.get("schema_version") != 1:
         raise CodegenError("Unsupported endpoint_generator schema_version; expected 1")
-    if not isinstance(endpoint.get("skip_tags"), dict):
-        raise CodegenError("endpoint_generator.skip_tags must be an object")
+    generated_tags = endpoint.get("generated_tags")
+    if (
+        not isinstance(generated_tags, list)
+        or not all(isinstance(value, str) and value for value in generated_tags)
+        or len(generated_tags) != len(set(generated_tags))
+    ):
+        raise CodegenError("endpoint_generator.generated_tags must be a unique list of non-empty strings")
+    idempotent_writes = endpoint.get("idempotent_writes")
+    if (
+        not isinstance(idempotent_writes, list)
+        or not all(isinstance(value, str) and value for value in idempotent_writes)
+        or len(idempotent_writes) != len(set(idempotent_writes))
+    ):
+        raise CodegenError("endpoint_generator.idempotent_writes must be a unique list of non-empty strings")
     for key in ("supported_request_media_types", "supported_response_media_types", "supported_success_statuses"):
         values = endpoint.get(key)
         if not isinstance(values, list) or not values or not all(isinstance(value, str) for value in values):
@@ -385,55 +861,18 @@ def _validate_unique_operation_ids(
             raise CodegenError(f"Duplicate operationId {operation_id!r} on {previous} and {location}")
 
 
-def _validate_skip_set(
-    operations: Sequence[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]], endpoint: Mapping[str, Any]
-) -> Set[str]:
-    skip_tags = endpoint["skip_tags"]
-    configured_ids: Set[str] = set()
-    operation_tags: Dict[str, Set[str]] = {}
-    for method, path, operation_id, operation, _ in operations:
-        if method == "options":
+def _validate_refs(value: Any, spec: Mapping[str, Any], seen_refs: Set[str] | None = None) -> None:
+    seen_refs = seen_refs if seen_refs is not None else set()
+    for child in _walk_values(value):
+        if not isinstance(child, dict) or "$ref" not in child:
             continue
-        if operation_id is not None:
-            operation_tags[operation_id] = set(operation.get("tags", []))
-    for tag, skip_config in skip_tags.items():
-        if not isinstance(tag, str) or not isinstance(skip_config, dict):
-            raise CodegenError("Each endpoint_generator.skip_tags entry must be an object keyed by a tag")
-        reason = skip_config.get("reason")
-        ids = skip_config.get("operation_ids")
-        if (
-            not isinstance(reason, str)
-            or not reason.strip()
-            or not isinstance(ids, list)
-            or not all(isinstance(value, str) for value in ids)
-        ):
-            raise CodegenError(f"Skip tag {tag!r} must have a reason and an operation_ids list")
-        if len(ids) != len(set(ids)):
-            raise CodegenError(f"Skip tag {tag!r} contains duplicate operation IDs")
-        actual_ids = {operation_id for operation_id, tags in operation_tags.items() if tag in tags}
-        expected_ids = set(ids)
-        if actual_ids != expected_ids:
-            missing = sorted(actual_ids - expected_ids)
-            stale = sorted(expected_ids - actual_ids)
-            raise CodegenError(
-                f"Skip tag {tag!r} does not match the spec exactly; unlisted={missing}, stale={stale}. "
-                "Update the explicit skip set and review each operation."
-            )
-        overlap = configured_ids & expected_ids
-        if overlap:
-            raise CodegenError(f"Operations occur in more than one skip tag: {', '.join(sorted(overlap))}")
-        configured_ids.update(expected_ids)
-    return configured_ids
-
-
-def _validate_refs(spec: Mapping[str, Any]) -> None:
-    for value in _walk_values(spec):
-        if not isinstance(value, dict) or "$ref" not in value:
-            continue
-        reference = value["$ref"]
+        reference = child["$ref"]
         if not isinstance(reference, str) or not reference.startswith("#/"):
             raise CodegenError(f"Only local OpenAPI references are supported, got {reference!r}")
-        _resolve_ref(reference, spec)
+        resolved = _resolve_ref(reference, spec)
+        if reference not in seen_refs:
+            seen_refs.add(reference)
+            _validate_refs(resolved, spec, seen_refs)
 
 
 def _resolve_ref(reference: str, spec: Mapping[str, Any]) -> Any:
@@ -514,7 +953,7 @@ def _validate_operation_media(
         raise CodegenError(f"Operation {operation_id!r} has no supported success response")
 
 
-def _validate_path_parameters(
+def _validate_parameters(
     operation_id: str,
     path: str,
     path_item: Mapping[str, Any],
@@ -527,17 +966,36 @@ def _validate_path_parameters(
         if not isinstance(parameter, dict):
             raise CodegenError(f"Operation {operation_id!r} has an invalid parameter")
         parameter = _resolve_object(parameter, spec)
-        if parameter.get("in") == "path":
+        location = parameter.get("in")
+        if location not in {"path", "query"}:
+            raise CodegenError(f"Operation {operation_id!r} has unsupported parameter location {location!r}")
+        if location == "path":
             name = parameter.get("name")
             if not isinstance(name, str):
                 raise CodegenError(f"Operation {operation_id!r} has a path parameter without a name")
             path_parameters[name] = parameter
+            continue
+
+        style = parameter.get("style", "form")
+        if style != "form":
+            raise CodegenError(f"Operation {operation_id!r} has unsupported query parameter style {style!r}")
+        schema = parameter.get("schema")
+        if not isinstance(schema, dict):
+            raise CodegenError(f"Operation {operation_id!r} query parameter must define a schema")
+        schema_kinds = _parameter_schema_kinds(schema, spec)
+        if "array" in schema_kinds and parameter.get("explode", True) is not True:
+            raise CodegenError(f"Operation {operation_id!r} query array parameters must be exploded")
     if template_names != set(path_parameters):
         raise CodegenError(
             f"Operation {operation_id!r} path template/parameter mismatch: "
             f"template={sorted(template_names)}, declared={sorted(path_parameters)}"
         )
     for name, parameter in path_parameters.items():
+        style = parameter.get("style", "simple")
+        if style != "simple":
+            raise CodegenError(f"Operation {operation_id!r} has unsupported path parameter style {style!r}")
+        if parameter.get("explode", False) is not False:
+            raise CodegenError(f"Operation {operation_id!r} path parameters cannot be exploded")
         if parameter.get("required") is not True:
             raise CodegenError(f"Operation {operation_id!r} path parameter {name!r} must be required")
         schema = parameter.get("schema")
@@ -546,6 +1004,28 @@ def _validate_path_parameters(
         schema = _resolve_object(schema, spec)
         if schema.get("type") not in {"boolean", "integer", "number", "string"}:
             raise CodegenError(f"Operation {operation_id!r} path parameter {name!r} must be scalar")
+
+
+def _parameter_schema_kinds(schema: Mapping[str, Any], spec: Mapping[str, Any]) -> Set[str]:
+    schema = _resolve_object(schema, spec)
+    choices = schema.get("oneOf", schema.get("anyOf"))
+    if isinstance(choices, list):
+        kinds: Set[str] = set()
+        for choice in choices:
+            if not isinstance(choice, dict):
+                raise CodegenError("Query parameter alternatives must be schemas")
+            kinds.update(_parameter_schema_kinds(choice, spec))
+        return kinds
+
+    schema_type = schema.get("type")
+    if schema_type in {"boolean", "integer", "number", "string"}:
+        return {"scalar"}
+    if schema_type == "array":
+        items = schema.get("items")
+        if not isinstance(items, dict) or _parameter_schema_kinds(items, spec) != {"scalar"}:
+            raise CodegenError("Query parameter arrays must contain scalar values")
+        return {"array"}
+    raise CodegenError(f"Unsupported query parameter schema type {schema_type!r}")
 
 
 def _validate_component_names(schemas: Mapping[str, Any]) -> None:

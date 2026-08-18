@@ -3,13 +3,7 @@ import hashlib
 import json
 
 import pytest
-from openapi_codegen import (
-    CodegenError,
-    normalize_spec,
-    read_and_verify_spec,
-    validate_config,
-    validate_spec,
-)
+from openapi_codegen import CodegenError, read_and_verify_spec, validate_config, validate_spec
 
 
 def test_hash_and_full_commit_pin_validation(tmp_path, codegen_config, minimal_spec):
@@ -28,42 +22,24 @@ def test_hash_and_full_commit_pin_validation(tmp_path, codegen_config, minimal_s
         validate_config(codegen_config, check_installed_tools=False)
 
 
-def test_normalization_removes_only_options_and_exact_skips(minimal_spec, codegen_config):
+def test_only_allowlisted_operations_are_validated(minimal_spec, codegen_config):
     spec = copy.deepcopy(minimal_spec)
     spec["paths"]["/widgets/{widget_id}"]["options"] = {
         "operationId": "optionsWidget",
         "tags": ["CORS"],
-        "responses": {"200": {"description": "OK", "content": {"text/plain": {"schema": {"type": "string"}}}}},
+        "responses": {},
     }
     spec["paths"]["/proxy"] = {
         "post": {
-            "operationId": "proxyRequest",
+            "operationId": "proxy{path+}",
             "tags": ["Proxy"],
-            "responses": {
-                "200": {
-                    "description": "OK",
-                    "content": {"application/json": {"schema": {"type": "object"}}},
-                }
-            },
+            "responses": {},
         }
     }
-    codegen_config["endpoint_generator"]["skip_tags"] = {
-        "Proxy": {"reason": "Specialized streaming transport", "operation_ids": ["proxyRequest"]}
-    }
 
-    normalized = normalize_spec(spec, validate_spec(spec, codegen_config).skip_ids)
+    report = validate_spec(spec, codegen_config)
 
-    assert set(normalized["paths"]) == {"/widgets/{widget_id}"}
-    assert set(normalized["paths"]["/widgets/{widget_id}"]) == {"get"}
-
-    non_cors_options = copy.deepcopy(spec)
-    non_cors_options["paths"]["/widgets/{widget_id}"]["options"]["tags"] = ["Other"]
-    with pytest.raises(CodegenError, match="is not tagged only as CORS"):
-        validate_spec(non_cors_options, codegen_config)
-
-    codegen_config["endpoint_generator"]["skip_tags"]["Proxy"]["operation_ids"] = []
-    with pytest.raises(CodegenError, match="does not match the spec exactly"):
-        validate_spec(spec, codegen_config)
+    assert report.operation_count == 1
 
 
 def test_invalid_and_duplicate_operation_ids_fail(minimal_spec, codegen_config):
@@ -79,16 +55,16 @@ def test_invalid_and_duplicate_operation_ids_fail(minimal_spec, codegen_config):
         validate_spec(spec, codegen_config)
 
 
-def test_duplicate_operation_ids_fail_even_when_one_copy_is_skipped(minimal_spec, codegen_config):
-    """A skipped duplicate must not silently take its supported twin out of the generated client."""
+def test_duplicate_operation_ids_fail_when_only_one_operation_is_selected(minimal_spec, codegen_config):
     spec = copy.deepcopy(minimal_spec)
     duplicate = copy.deepcopy(spec["paths"]["/widgets/{widget_id}"]["get"])
     duplicate["parameters"] = []
     duplicate["tags"] = ["Proxy"]
-    spec["paths"]["/proxy"] = {"get": duplicate}
-    codegen_config["endpoint_generator"]["skip_tags"] = {
-        "Proxy": {"reason": "Specialized streaming transport", "operation_ids": ["getWidget"]}
+    duplicate["responses"]["200"]["content"]["application/json"]["schema"] = {
+        "$ref": "#/components/schemas/Unselected"
     }
+    spec["paths"]["/proxy"] = {"get": duplicate}
+    spec["components"]["schemas"]["Unselected"] = {"type": "string"}
 
     with pytest.raises(CodegenError, match="Duplicate operationId"):
         validate_spec(spec, codegen_config)
@@ -104,11 +80,27 @@ def test_inline_operation_name_collisions_fail(minimal_spec, codegen_config):
     with pytest.raises(CodegenError, match="Inline operation name collision"):
         validate_spec(spec, codegen_config)
 
+    spec = copy.deepcopy(minimal_spec)
+    spec["paths"]["/widgets/{widget_id}"]["get"]["operationId"] = "getURL"
+    second = copy.deepcopy(spec["paths"]["/widgets/{widget_id}"]["get"])
+    second["operationId"] = "getUrl"
+    second["parameters"] = []
+    spec["paths"]["/other"] = {"get": second}
+
+    with pytest.raises(CodegenError, match="Generated operation identifier collision"):
+        validate_spec(spec, codegen_config)
+
 
 def test_schema_name_collisions_fail(minimal_spec, codegen_config):
     spec = copy.deepcopy(minimal_spec)
     spec["components"]["schemas"]["foo-bar"] = {"type": "string"}
     spec["components"]["schemas"]["foo_bar"] = {"type": "string"}
+    spec["components"]["schemas"]["Widget"]["properties"].update(
+        {
+            "first": {"$ref": "#/components/schemas/foo-bar"},
+            "second": {"$ref": "#/components/schemas/foo_bar"},
+        }
+    )
 
     with pytest.raises(CodegenError, match="Schema name collision"):
         validate_spec(spec, codegen_config)
@@ -137,9 +129,18 @@ def test_media_types_and_success_statuses_are_validated(minimal_spec, codegen_co
         validate_spec(spec, codegen_config)
 
 
-def test_referenced_parameters_resolve_and_match_path(minimal_spec, codegen_config):
-    validate_spec(minimal_spec, codegen_config)
+def test_idempotent_writes_must_reference_generated_operations(minimal_spec, codegen_config):
+    codegen_config["endpoint_generator"]["idempotent_writes"] = ["missingOperation"]
 
+    with pytest.raises(CodegenError, match="idempotent_writes.*missingOperation"):
+        validate_spec(minimal_spec, codegen_config)
+
+    codegen_config["endpoint_generator"]["idempotent_writes"] = ["getWidget"]
+    with pytest.raises(CodegenError, match="idempotent_writes references read operation 'getWidget'"):
+        validate_spec(minimal_spec, codegen_config)
+
+
+def test_referenced_parameters_resolve_and_match_path(minimal_spec, codegen_config):
     spec = copy.deepcopy(minimal_spec)
     spec["components"]["parameters"]["WidgetId"]["schema"] = {"type": "object"}
     with pytest.raises(CodegenError, match="must be scalar"):
@@ -148,6 +149,38 @@ def test_referenced_parameters_resolve_and_match_path(minimal_spec, codegen_conf
     spec = copy.deepcopy(minimal_spec)
     spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"][0]["$ref"] = "#/components/parameters/Missing"
     with pytest.raises(CodegenError, match="Unresolved OpenAPI reference"):
+        validate_spec(spec, codegen_config)
+
+    spec = copy.deepcopy(minimal_spec)
+    spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"].append(
+        {"name": "x-test", "in": "header", "schema": {"type": "string"}}
+    )
+    with pytest.raises(CodegenError, match="unsupported parameter location"):
+        validate_spec(spec, codegen_config)
+
+    spec = copy.deepcopy(minimal_spec)
+    spec["components"]["parameters"]["WidgetId"]["style"] = "label"
+    with pytest.raises(CodegenError, match="unsupported path parameter style"):
+        validate_spec(spec, codegen_config)
+
+    spec = copy.deepcopy(minimal_spec)
+    spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"].append(
+        {"name": "names", "in": "query", "style": "spaceDelimited", "schema": {"type": "string"}}
+    )
+    with pytest.raises(CodegenError, match="unsupported query parameter style"):
+        validate_spec(spec, codegen_config)
+
+    spec = copy.deepcopy(minimal_spec)
+    spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"].append(
+        {
+            "name": "names",
+            "in": "query",
+            "style": "form",
+            "explode": False,
+            "schema": {"type": "array", "items": {"type": "string"}},
+        }
+    )
+    with pytest.raises(CodegenError, match="query array parameters must be exploded"):
         validate_spec(spec, codegen_config)
 
 
@@ -188,9 +221,11 @@ def test_unsupported_types_are_caught_under_every_schema_keyword(minimal_spec, c
 def test_malformed_specs_and_configs_raise_actionable_errors(minimal_spec, codegen_config):
     """Shape problems have to surface as CodegenError; a bare KeyError escapes the scripts' handler."""
     # A spec without any components is empty, not malformed -- it must not blow up on a missing key.
-    assert validate_spec({"openapi": "3.0.3", "paths": {}}, codegen_config).schema_count == 0
+    empty_config = copy.deepcopy(codegen_config)
+    empty_config["endpoint_generator"]["generated_tags"] = []
+    assert validate_spec({"openapi": "3.0.3", "paths": {}}, empty_config).schema_count == 0
     with pytest.raises(CodegenError, match="components.schemas must be an object"):
-        validate_spec({"openapi": "3.0.3", "paths": {}, "components": {"schemas": []}}, codegen_config)
+        validate_spec({"openapi": "3.0.3", "paths": {}, "components": {"schemas": []}}, empty_config)
 
     spec = copy.deepcopy(minimal_spec)
     spec["paths"]["/widgets/{widget_id}"]["get"]["responses"]["200"]["content"]["application/json"] = None
