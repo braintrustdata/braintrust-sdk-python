@@ -4,12 +4,13 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 9736eda7e5e0dd80b0e149a4275c4a94e8da78149af79cc692006076f109107f
+# Content SHA-256: 430c31ef9773d7cd389d86e7ef06d075e8db6c74cd7e6b7ee095ec87ef435a9e
 
-from typing import Literal, TypeAlias, TypedDict
+from typing import Any, Literal, TypeAlias, TypedDict
+from collections.abc import Mapping, Sequence
 from typing_extensions import NotRequired
-from collections.abc import Sequence
 
+from .common import FunctionTypeEnum
 
 AppLimitParam: TypeAlias = int | None
 """
@@ -32,41 +33,6 @@ class CreateProject(TypedDict):
     """
 
 
-EndingBefore: TypeAlias = str
-"""
-Pagination cursor id.
-
-For example, if the initial item in the last page you fetched had an id of `foo`, pass `ending_before=foo` to fetch the previous page. Note: you may only pass one of `starting_after` and `ending_before`
-"""
-
-
-FunctionTypeEnum: TypeAlias = (
-    Literal[
-        "llm",
-        "scorer",
-        "task",
-        "tool",
-        "custom_view",
-        "preprocessor",
-        "facet",
-        "classifier",
-        "tag",
-        "parameters",
-        "sandbox",
-    ]
-    | None
-)
-"""
-The type of global function. Defaults to 'scorer'.
-"""
-
-
-Ids: TypeAlias = str | Sequence[str]
-"""
-Filter search results to a particular set of object IDs. To specify a list of IDs, include the query param multiple times
-"""
-
-
 class NullableSavedFunctionId1(TypedDict):
     id: str
     type: Literal["function"]
@@ -87,22 +53,9 @@ NullableSavedFunctionId: TypeAlias = NullableSavedFunctionId1 | NullableSavedFun
 Default preprocessor for this project. When set, functions that use preprocessors will use this instead of their built-in default.
 """
 
-
-OrgName: TypeAlias = str
-"""
-Filter search results to within a particular organization
-"""
-
-
 ProjectIdParam: TypeAlias = str
 """
 Project id
-"""
-
-
-ProjectName: TypeAlias = str
-"""
-Name of the project to search for
 """
 
 
@@ -141,14 +94,6 @@ class ProjectSettings(TypedDict):
     """
     The order of the fields to display in the trace view
     """
-
-
-StartingAfter: TypeAlias = str
-"""
-Pagination cursor id.
-
-For example, if the final item in the last page you fetched had an id of `foo`, pass `starting_after=foo` to fetch the next page. Note: you may only pass one of `starting_after` and `ending_before`
-"""
 
 
 class PatchProject(TypedDict):

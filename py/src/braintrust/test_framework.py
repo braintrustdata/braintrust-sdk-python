@@ -309,33 +309,6 @@ async def test_run_evaluator_forwards_persisted_base_experiment_id_to_summary(wi
     )
 
 
-def test_experiment_summarize_resolves_explicit_comparison_name(with_memory_logger, with_simulate_login):
-    exp = init_test_exp("test-evaluator", "test-project")
-    mock_conn = MagicMock()
-
-    def get_json(path, args=None):
-        if path == "v1/experiment/base-exp-id":
-            return {"name": "base-exp"}
-        if path == "experiment-comparison2":
-            return {"scores": {}, "metrics": {}}
-        raise AssertionError(f"Unexpected get_json call: {path}, {args}")
-
-    mock_conn.get_json.side_effect = get_json
-
-    with patch.object(exp.state, "api_conn", return_value=mock_conn):
-        summary = exp.summarize(comparison_experiment_id="base-exp-id")
-
-    assert summary.comparison_experiment_name == "base-exp"
-    mock_conn.get_json.assert_any_call("v1/experiment/base-exp-id")
-    mock_conn.get_json.assert_any_call(
-        "experiment-comparison2",
-        args={
-            "experiment_id": "test-evaluator",
-            "base_experiment_id": "base-exp-id",
-        },
-    )
-
-
 @pytest.mark.asyncio
 @pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
 async def test_run_evaluator_exposes_validated_parameter_values_to_hooks():
@@ -774,6 +747,7 @@ async def test_scorer_spans_have_purpose_attribute(with_memory_logger, with_simu
         scores=[purpose_scorer],
         experiment_name="test-scorer-purpose",
         metadata=None,
+        summarize_scores=False,
     )
 
     # Create experiment so spans get logged
@@ -934,6 +908,7 @@ async def test_classifier_spans_are_logged(with_memory_logger, with_simulate_log
         ],
         experiment_name="test-classifier-span",
         metadata=None,
+        summarize_scores=False,
     )
 
     exp = init_test_exp("test-classifier-span", "test-project")

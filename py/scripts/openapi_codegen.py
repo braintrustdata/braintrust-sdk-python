@@ -1,5 +1,6 @@
 """Shared validation and generation helpers for the pinned Braintrust OpenAPI spec."""
 
+import ast
 import copy
 import difflib
 import hashlib
@@ -289,19 +290,119 @@ def _with_inline_models(
     return model_spec
 
 
-def _single_model_module(operations: Sequence[GeneratedOperation]) -> str:
-    tags = {operation.tag for operation in operations}
-    if len(tags) != 1:
-        raise CodegenError(
-            "Model generation currently requires exactly one generated OpenAPI tag; "
-            "add explicit cross-resource model partitioning before enabling another tag"
+_NON_MODEL_ANNOTATION_NAMES = {"Any", "Literal", "Mapping", "None", "Sequence"}
+
+
+def _operation_annotation_names(operation: GeneratedOperation) -> Set[str]:
+    annotation_names: Set[str] = set()
+    for type_name in [
+        operation.request_body_type,
+        operation.response_type,
+        *(parameter.type_name for parameter in operation.parameters),
+    ]:
+        if type_name:
+            annotation_names.update(re.findall(r"\b[A-Z][A-Za-z0-9_]*\b", type_name))
+    return annotation_names
+
+
+def _operation_model_roots(operations: Sequence[GeneratedOperation]) -> Dict[str, Set[str]]:
+    roots: Dict[str, Set[str]] = {}
+    for operation in operations:
+        roots.setdefault(operation.tag, set()).update(
+            _operation_annotation_names(operation) - _NON_MODEL_ANNOTATION_NAMES
         )
-    return _snake_case(next(iter(tags)))
+    return roots
 
 
-def _model_modules(spec: Mapping[str, Any], module: str) -> Dict[str, str]:
-    schemas = spec.get("components", {}).get("schemas", {})
-    return {_python_type_name(name): module for name in schemas}
+def _partition_model_source(
+    source: str, operations: Sequence[GeneratedOperation]
+) -> Tuple[Dict[str, str], Dict[str, str]]:
+    """Partition one deterministic model-generator output by resource dependency closure.
+
+    Definitions reached by more than one generated tag live in ``common.py``. Resource-specific
+    modules import those shared definitions explicitly, avoiding duplicate runtime type identities.
+    """
+    tree = ast.parse(source)
+    imports: List[ast.stmt] = []
+    definitions: List[Tuple[str, List[ast.stmt]]] = []
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            imports.append(node)
+            continue
+        if isinstance(node, ast.ClassDef):
+            names = [node.name]
+        elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            names = [target.id for target in targets if isinstance(target, ast.Name)]
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+            if definitions:
+                definitions[-1][1].append(node)
+            continue
+        else:
+            raise CodegenError(f"Unsupported generated model statement: {type(node).__name__}")
+        if len(names) != 1:
+            raise CodegenError("Generated model definitions must bind exactly one public name")
+        definitions.append((names[0], [node]))
+
+    definition_names = {name for name, _ in definitions}
+    dependencies: Dict[str, Set[str]] = {}
+    for name, nodes in definitions:
+        dependencies[name] = {
+            child.id
+            for node in nodes
+            for child in ast.walk(node)
+            if isinstance(child, ast.Name) and child.id in definition_names and child.id != name
+        }
+
+    owners: Dict[str, Set[str]] = {name: set() for name in definition_names}
+    for tag, roots in _operation_model_roots(operations).items():
+        pending = list(roots)
+        seen: Set[str] = set()
+        while pending:
+            name = pending.pop()
+            if name in seen:
+                continue
+            if name not in definition_names:
+                raise CodegenError(f"Generated resource {tag!r} references unknown model {name!r}")
+            seen.add(name)
+            owners[name].add(tag)
+            pending.extend(dependencies[name])
+
+    unreachable = sorted(name for name, tags in owners.items() if not tags)
+    if unreachable:
+        raise CodegenError(f"Generated models are unreachable from resource methods: {unreachable}")
+
+    common_names = {name for name, tags in owners.items() if len(tags) > 1}
+    module_for_name = {
+        name: "common" if name in common_names else _snake_case(next(iter(tags))) for name, tags in owners.items()
+    }
+
+    def source_for(node: ast.stmt) -> str:
+        segment = ast.get_source_segment(source, node)
+        if segment is None:
+            raise CodegenError(f"Could not recover generated model source for {type(node).__name__}")
+        return segment
+
+    import_source = "\n".join(source_for(node) for node in imports)
+    bodies: Dict[str, List[str]] = {}
+    for name, nodes in definitions:
+        bodies.setdefault(module_for_name[name], []).append("\n".join(source_for(node) for node in nodes))
+
+    modules: Dict[str, str] = {}
+    for module, blocks in sorted(bodies.items()):
+        common_imports = sorted(
+            dependency
+            for name, _ in definitions
+            if module_for_name[name] == module
+            for dependency in dependencies[name]
+            if dependency in common_names
+        )
+        sections = [import_source]
+        if common_imports and module != "common":
+            sections.append(f"from .common import {', '.join(dict.fromkeys(common_imports))}")
+        sections.append("\n\n".join(blocks))
+        modules[module] = "\n\n".join(section for section in sections if section) + "\n"
+    return modules, module_for_name
 
 
 def generate_tree(output_root: Path, config: Mapping[str, Any], spec: Mapping[str, Any]) -> ValidationReport:
@@ -310,21 +411,29 @@ def generate_tree(output_root: Path, config: Mapping[str, Any], spec: Mapping[st
     operations, inline_models = _collect_generated_operations(spec, config)
     selected_spec = _slice_model_spec(spec, {operation.operation_id for operation in operations})
     model_spec = _with_inline_models(selected_spec, inline_models)
-    model_module = _single_model_module(operations)
-    model_modules = _model_modules(model_spec, model_module)
     output_root.mkdir(parents=True, exist_ok=True)
     selected_spec_path = output_root.parent / "selected-spec.json"
+    monolithic_models_path = output_root.parent / "models.py"
     selected_spec_path.write_text(
         json.dumps(model_spec, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n", encoding="utf-8"
     )
     try:
-        _generate_models(selected_spec_path, output_root / "models" / f"{model_module}.py", config)
+        _generate_models(selected_spec_path, monolithic_models_path, config)
+        model_sources, model_modules = _partition_model_source(monolithic_models_path.read_text(), operations)
     finally:
         selected_spec_path.unlink(missing_ok=True)
+        monolithic_models_path.unlink(missing_ok=True)
+    model_paths = []
+    for module, body in model_sources.items():
+        model_path = output_root / "models" / f"{module}.py"
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        _write_generated_file(model_path, body, config)
+        model_paths.append(model_path)
     _write_generated_file(output_root / "__init__.py", _GENERATED_INIT_BODY, config)
-    _write_generated_file(output_root / "models" / "__init__.py", '"""Generated private model types."""\n', config)
+    model_init_path = output_root / "models" / "__init__.py"
+    _write_generated_file(model_init_path, _model_package_source(model_modules), config)
     resource_files = _generate_resources(output_root, operations, model_modules, config)
-    _format_generated_files(resource_files)
+    _format_generated_files([*model_paths, model_init_path, *resource_files])
     return report
 
 
@@ -459,6 +568,20 @@ package pulls in no models.
 '''
 
 
+def _model_package_source(model_modules: Mapping[str, str]) -> str:
+    by_module: Dict[str, List[str]] = {}
+    for name, module in model_modules.items():
+        by_module.setdefault(module, []).append(name)
+
+    lines = ['"""Generated private model types with stable package-level imports."""', ""]
+    for module, names in sorted(by_module.items()):
+        lines.append(f"from .{module} import {', '.join(sorted(names))}")
+    lines.extend(["", "", "__all__ = ["])
+    lines.extend(f"    {name!r}," for name in sorted(model_modules))
+    lines.extend(["]", ""])
+    return "\n".join(lines)
+
+
 def _validate_selected_operations(
     operations: Sequence[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]],
     endpoint: Mapping[str, Any],
@@ -474,11 +597,31 @@ def _validate_selected_operations(
     if missing_tags:
         raise CodegenError(f"endpoint_generator.generated_tags contains unknown tags: {sorted(missing_tags)}")
 
+    safe_reads = set(endpoint["safe_reads"])
+    stale_safe_reads = safe_reads - set(supported)
+    if stale_safe_reads:
+        operation_id = sorted(stale_safe_reads)[0]
+        raise CodegenError(f"endpoint_generator.safe_reads references non-generated operation {operation_id!r}")
+    non_post_safe_reads = sorted(
+        operation_id for method, _, operation_id, _, _ in operations if operation_id in safe_reads and method != "post"
+    )
+    if non_post_safe_reads:
+        raise CodegenError(
+            f"endpoint_generator.safe_reads must reference POST operations; got {non_post_safe_reads[0]!r}"
+        )
+
     idempotent_writes = set(endpoint["idempotent_writes"])
     stale_idempotent_writes = idempotent_writes - set(supported)
     if stale_idempotent_writes:
         operation_id = sorted(stale_idempotent_writes)[0]
         raise CodegenError(f"endpoint_generator.idempotent_writes references non-generated operation {operation_id!r}")
+    overlapping_retry_modes = safe_reads & idempotent_writes
+    if overlapping_retry_modes:
+        operation_id = sorted(overlapping_retry_modes)[0]
+        raise CodegenError(
+            f"Operation {operation_id!r} cannot appear in both endpoint_generator.safe_reads "
+            "and endpoint_generator.idempotent_writes"
+        )
     non_writes = sorted(
         operation_id
         for method, _, operation_id, _, _ in operations
@@ -488,8 +631,8 @@ def _validate_selected_operations(
         raise CodegenError(f"endpoint_generator.idempotent_writes references read operation {non_writes[0]!r}")
 
 
-def _operation_retry_mode(method: str, operation_id: str, idempotent_writes: Set[str]) -> str:
-    if method in {"get", "head"}:
+def _operation_retry_mode(method: str, operation_id: str, safe_reads: Set[str], idempotent_writes: Set[str]) -> str:
+    if method in {"get", "head"} or operation_id in safe_reads:
         return "SAFE_READ"
     if operation_id in idempotent_writes:
         return "IDEMPOTENT_WRITE"
@@ -500,6 +643,7 @@ def _collect_generated_operations(
     spec: Mapping[str, Any], config: Mapping[str, Any]
 ) -> Tuple[List[GeneratedOperation], List[Tuple[str, Mapping[str, Any]]]]:
     endpoint = _endpoint_config(config)
+    safe_reads = set(endpoint["safe_reads"])
     idempotent_writes = set(endpoint["idempotent_writes"])
     operations: List[GeneratedOperation] = []
     inline_models: Dict[str, Mapping[str, Any]] = {}
@@ -528,7 +672,7 @@ def _collect_generated_operations(
                 response_type=response_type,
                 success_statuses=statuses,
                 json_success_statuses=json_statuses,
-                retry_mode=_operation_retry_mode(method, operation_id, idempotent_writes),
+                retry_mode=_operation_retry_mode(method, operation_id, safe_reads, idempotent_writes),
             )
         )
     return operations, list(inline_models.items())
@@ -663,18 +807,10 @@ def _generate_resources(
 def _resource_module_source(
     tag: str, operations: Sequence[GeneratedOperation], model_modules: Mapping[str, str]
 ) -> str:
-    annotation_names: Set[str] = set()
-    for operation in operations:
-        for type_name in [
-            operation.request_body_type,
-            operation.response_type,
-            *(parameter.type_name for parameter in operation.parameters),
-        ]:
-            if type_name:
-                annotation_names.update(re.findall(r"\b[A-Z][A-Za-z0-9_]*\b", type_name))
+    annotation_names = set().union(*(_operation_annotation_names(operation) for operation in operations))
     collections_imports = sorted(annotation_names & {"Mapping", "Sequence"})
     typing_imports = sorted(annotation_names & {"Any", "Literal"})
-    model_type_names = annotation_names - {"Any", "Literal", "Mapping", "None", "Sequence"}
+    model_type_names = annotation_names - _NON_MODEL_ANNOTATION_NAMES
     model_imports: Dict[str, Set[str]] = {}
     for type_name in model_type_names:
         module = model_modules.get(type_name)
@@ -834,13 +970,14 @@ def _endpoint_config(config: Mapping[str, Any]) -> Mapping[str, Any]:
         or len(generated_tags) != len(set(generated_tags))
     ):
         raise CodegenError("endpoint_generator.generated_tags must be a unique list of non-empty strings")
-    idempotent_writes = endpoint.get("idempotent_writes")
-    if (
-        not isinstance(idempotent_writes, list)
-        or not all(isinstance(value, str) and value for value in idempotent_writes)
-        or len(idempotent_writes) != len(set(idempotent_writes))
-    ):
-        raise CodegenError("endpoint_generator.idempotent_writes must be a unique list of non-empty strings")
+    for key in ("safe_reads", "idempotent_writes"):
+        values = endpoint.get(key)
+        if (
+            not isinstance(values, list)
+            or not all(isinstance(value, str) and value for value in values)
+            or len(values) != len(set(values))
+        ):
+            raise CodegenError(f"endpoint_generator.{key} must be a unique list of non-empty strings")
     for key in ("supported_request_media_types", "supported_response_media_types", "supported_success_statuses"):
         values = endpoint.get(key)
         if not isinstance(values, list) or not values or not all(isinstance(value, str) for value in values):

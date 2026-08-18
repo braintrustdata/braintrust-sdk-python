@@ -129,6 +129,35 @@ def test_media_types_and_success_statuses_are_validated(minimal_spec, codegen_co
         validate_spec(spec, codegen_config)
 
 
+def test_safe_reads_must_reference_generated_post_operations(minimal_spec, codegen_config):
+    codegen_config["endpoint_generator"]["safe_reads"] = ["missingOperation"]
+
+    with pytest.raises(CodegenError, match="safe_reads.*missingOperation"):
+        validate_spec(minimal_spec, codegen_config)
+
+    codegen_config["endpoint_generator"]["safe_reads"] = ["getWidget"]
+    with pytest.raises(CodegenError, match="safe_reads must reference POST operations.*getWidget"):
+        validate_spec(minimal_spec, codegen_config)
+
+    operation = minimal_spec["paths"]["/widgets/{widget_id}"].pop("get")
+    operation["operationId"] = "patchWidget"
+    minimal_spec["paths"]["/widgets/{widget_id}"]["patch"] = operation
+    codegen_config["endpoint_generator"]["safe_reads"] = ["patchWidget"]
+    with pytest.raises(CodegenError, match="safe_reads must reference POST operations.*patchWidget"):
+        validate_spec(minimal_spec, codegen_config)
+
+
+def test_retry_mode_allowlists_cannot_overlap(minimal_spec, codegen_config):
+    operation = minimal_spec["paths"]["/widgets/{widget_id}"].pop("get")
+    operation["operationId"] = "postWidgetFetch"
+    minimal_spec["paths"]["/widgets/{widget_id}"]["post"] = operation
+    codegen_config["endpoint_generator"]["safe_reads"] = ["postWidgetFetch"]
+    codegen_config["endpoint_generator"]["idempotent_writes"] = ["postWidgetFetch"]
+
+    with pytest.raises(CodegenError, match="cannot appear in both.*safe_reads.*idempotent_writes"):
+        validate_spec(minimal_spec, codegen_config)
+
+
 def test_idempotent_writes_must_reference_generated_operations(minimal_spec, codegen_config):
     codegen_config["endpoint_generator"]["idempotent_writes"] = ["missingOperation"]
 
@@ -232,10 +261,21 @@ def test_malformed_specs_and_configs_raise_actionable_errors(minimal_spec, codeg
     with pytest.raises(CodegenError, match="must be an object"):
         validate_spec(spec, codegen_config)
 
-    for key in ("supported_request_media_types", "supported_response_media_types", "supported_success_statuses"):
+    for key in (
+        "safe_reads",
+        "idempotent_writes",
+        "supported_request_media_types",
+        "supported_response_media_types",
+        "supported_success_statuses",
+    ):
         broken = copy.deepcopy(codegen_config)
         del broken["endpoint_generator"][key]
-        with pytest.raises(CodegenError, match=f"endpoint_generator.{key} must be a non-empty list"):
+        message = (
+            f"endpoint_generator.{key} must be a unique list"
+            if key in {"safe_reads", "idempotent_writes"}
+            else f"endpoint_generator.{key} must be a non-empty list"
+        )
+        with pytest.raises(CodegenError, match=message):
             validate_spec(minimal_spec, broken)
-        with pytest.raises(CodegenError, match=f"endpoint_generator.{key} must be a non-empty list"):
+        with pytest.raises(CodegenError, match=message):
             validate_config(broken, check_installed_tools=False)

@@ -37,6 +37,7 @@ from .logger import (
     Metadata,
     ScoreSummary,
     Span,
+    SummarySuccess,
     parent_context,
     start_span,
     stringify_exception,
@@ -1952,8 +1953,7 @@ def build_local_summary(
         project_url=None,
         experiment_url=None,
         comparison_experiment_name=None,
-        scores=avg_scores,
-        metrics={},
+        comparison=SummarySuccess(scores=avg_scores, metrics={}),
     )
 
 

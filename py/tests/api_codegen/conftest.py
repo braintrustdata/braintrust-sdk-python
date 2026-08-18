@@ -14,6 +14,7 @@ from openapi_codegen import CONFIG_PATH, load_config  # noqa: E402
 def codegen_config():
     config = copy.deepcopy(load_config(CONFIG_PATH))
     config["endpoint_generator"]["generated_tags"] = ["Widgets"]
+    config["endpoint_generator"]["safe_reads"] = []
     config["endpoint_generator"]["idempotent_writes"] = []
     return config
 
