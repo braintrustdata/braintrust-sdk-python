@@ -11,7 +11,7 @@ Stable releases use a two-step GitHub Actions flow: a version-bump PR, then an a
 3. Review and merge the PR into `main`.
 4. Merging the release PR triggers `Publish Python SDK`.
 5. The stable publish job waits for approval in the `pypi-publish` GitHub environment.
-6. After approval, the workflow builds/verifies the package, publishes to PyPI, and creates the `py-sdk-v<version>` GitHub Release tag and release.
+6. After approval, the workflow uses the pinned Python release actions from [`braintrustdata/sdk-actions`](https://github.com/braintrustdata/sdk-actions) to build and verify the package, generate and attest a CycloneDX SBOM, publish to PyPI with trusted publishing, and create the `py-sdk-v<version>` GitHub Release.
 
 The stable version must match `X.Y.Z`. Stable releases are published from the merge commit of the release PR.
 
@@ -28,7 +28,7 @@ Run `Publish Python SDK` with:
 
 Do not bump `py/src/braintrust/version.py` for prereleases. The workflow validates the requested prerelease version and passes it to the build as a version override.
 
-Prerelease versions must match `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`. Prereleases publish to the normal PyPI package and are marked as prereleases on the GitHub Release. They do not use the stable release PR/tag workflow, do not require a committed version bump, and do not require `pypi-publish` environment approval.
+Prerelease versions must match `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`. Prereleases publish to the normal PyPI package, but do not create a git tag or GitHub Release. They do not use the stable release PR workflow, do not require a committed version bump, and do not require `pypi-publish` environment approval.
 
 If you only want to publish a prerelease build for testing, you can also use `Publish Python SDK to TestPyPI` instead. That workflow does not create a GitHub Release.
 
@@ -47,21 +47,21 @@ Manual inputs are:
 - `version`: the version to publish for manual prerelease runs, for example `0.22.0rc1`. Stable releases read `py/src/braintrust/version.py`.
 - `dry_run`: validate and build without actually publishing. Defaults to `false`.
 
-The workflow will:
+The workflow uses commit-pinned actions from [`braintrustdata/sdk-actions`](https://github.com/braintrustdata/sdk-actions) to:
 
 1. Check out the release PR merge commit, requested ref, or pushed tag.
-2. Validate that the selected commit is on `main`.
-3. Resolve the package version from the manual `version` input or from `py/src/braintrust/version.py`.
-4. Enforce that:
+2. Resolve the package version from the manual `version` input or from `py/src/braintrust/version.py`.
+3. Enforce that the selected commit is on `main` and that:
    - `stable` uses a version like `X.Y.Z`
    - `prerelease` uses a version like `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`
    - `auto` infers stable vs prerelease from the version
-5. Verify that the version is not already published on PyPI and, for manual non-tag runs, that the release tag does not already exist.
+4. Check PyPI availability and ensure that, for normal release runs, the release tag does not already exist.
+5. Generate release notes and post the release approval summary.
 6. Build and verify the package with `make -C py install-dev verify-build`.
-7. Upload the built distribution artifacts for inspection.
-8. If `dry_run=false`, publish to PyPI and create the corresponding GitHub Release.
+7. Generate a CycloneDX SBOM and, for real publishes, create a signed SBOM attestation.
+8. If `dry_run=false`, publish to PyPI through OIDC trusted publishing and create the stable GitHub Release with the SBOM attached.
 
-For stable, non-dry-run publishes, the job that publishes to PyPI runs in the `pypi-publish` GitHub environment. Configure required reviewers on that environment to approve stable releases before publishing.
+For stable, non-dry-run publishes, the `build-and-ship` job runs in the `pypi-publish` GitHub environment. Configure required reviewers on that environment to approve stable releases before publishing. The job needs `contents: write`, `id-token: write`, and `attestations: write` permissions.
 
 ## TestPyPI releases
 
@@ -121,10 +121,10 @@ A dry run still:
 
 - validates the selected ref and version
 - checks that the release commit is on `main`
-- checks that the tag and PyPI version do not already exist
+- checks the tag and PyPI version, reporting existing releases as warnings
 - builds the package and runs `make -C py install-dev verify-build`
-- uploads `py/dist/` as a workflow artifact
-- generates release notes
+- generates a CycloneDX SBOM
+- generates release notes and release summaries
 
 A dry run does not:
 

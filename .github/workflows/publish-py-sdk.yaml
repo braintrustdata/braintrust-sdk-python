@@ -1,3 +1,6 @@
+# Based on sdk-actions `release/py/turnkey`.
+# sdk-actions: {"template":"release/py/turnkey","ref":"71731d4a726df3e3bf42e50c2da4a75842b038dd","version":"1.0.0","params":{"dry_run_environment":"","emoji":":python:","package_name":"braintrust","publish_environment":"pypi-publish","python_version":".tool-versions","slack_channel_var":"","slack_token_secret":"SLACK_BOT_TOKEN","version_file":"py/src/braintrust/version.py","workflow_name":"Publish Python SDK","working_directory":"py"}}
+
 name: Publish Python SDK
 
 on:
@@ -28,22 +31,23 @@ on:
         required: false
         type: string
       dry_run:
-        description: "Validate and build without publishing to PyPI or creating a GitHub Release"
+        description: "Build and validate without publishing or creating a GitHub Release"
         required: true
         type: boolean
         default: false
 
 jobs:
-  validate:
+  resolve:
     if: github.event_name != 'pull_request' || (github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/py-sdk-v'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
-      commit_sha: ${{ steps.validate.outputs.commit_sha }}
-      dry_run: ${{ steps.validate.outputs.dry_run }}
-      release_tag: ${{ steps.validate.outputs.release_tag }}
-      release_type: ${{ steps.validate.outputs.release_type }}
-      version: ${{ steps.validate.outputs.version }}
+      commit_sha: ${{ steps.resolve.outputs.commit_sha }}
+      dry_run: ${{ steps.resolve.outputs.dry_run }}
+      release_type: ${{ steps.resolve.outputs.release_type }}
+      version: ${{ steps.resolve.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -54,226 +58,152 @@ jobs:
         with:
           cache: true
           experimental: true
-      - name: Validate release inputs
-        id: validate
+      - name: Resolve release inputs
+        id: resolve
+        env:
+          INPUT_RELEASE_TYPE: ${{ github.event_name == 'workflow_dispatch' && inputs.release_type || 'auto' }}
+          INPUT_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
         run: |
-          VALIDATE_ARGS=("${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_type || 'auto' }}" --github-output "$GITHUB_OUTPUT")
-          VERSION_INPUT="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '' }}"
-          if [[ -n "$VERSION_INPUT" ]]; then
-            VALIDATE_ARGS+=(--version "$VERSION_INPUT")
+          VERSION="$INPUT_VERSION"
+          if [[ -z "$VERSION" ]]; then
+            VERSION=$(mise exec -- python py/scripts/validate-release.py auto --print-version)
           fi
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            VALIDATE_ARGS+=(--allow-existing-tag)
-          fi
-          mise exec -- python py/scripts/validate-release.py "${VALIDATE_ARGS[@]}"
-          echo "dry_run=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run || 'false' }}" >> "$GITHUB_OUTPUT"
 
-  build-and-publish-stable:
-    needs: validate
-    if: needs.validate.outputs.release_type == 'stable' && needs.validate.outputs.dry_run != 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+          RELEASE_TYPE="$INPUT_RELEASE_TYPE"
+          if [[ "$RELEASE_TYPE" == "auto" ]]; then
+            if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)[0-9]+$ ]]; then
+              RELEASE_TYPE=prerelease
+            else
+              RELEASE_TYPE=stable
+            fi
+          fi
+
+          mise exec -- python py/scripts/validate-release.py "$RELEASE_TYPE" \
+            --version "$VERSION" --validate-version-only
+
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" != "py-sdk-v$VERSION" ]]; then
+            echo "Tag ${{ github.ref_name }} does not match version $VERSION" >&2
+            exit 1
+          fi
+
+          {
+            echo "commit_sha=$(git rev-parse HEAD)"
+            echo "dry_run=$DRY_RUN"
+            echo "release_type=$RELEASE_TYPE"
+            echo "version=$VERSION"
+          } >> "$GITHUB_OUTPUT"
+
+  configure:
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: write
-      id-token: write # Required for PyPI trusted publishing
-    environment: pypi-publish
-
-    env:
-      COMMIT_SHA: ${{ needs.validate.outputs.commit_sha }}
-      DRY_RUN: ${{ needs.validate.outputs.dry_run }}
-      RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
-      RELEASE_TYPE: ${{ needs.validate.outputs.release_type }}
-      VERSION: ${{ needs.validate.outputs.version }}
-
+    outputs:
+      version: ${{ steps.configure.outputs.version }}
+      release_tag: ${{ steps.configure.outputs.release_tag }}
+      prev_release: ${{ steps.configure.outputs.prev_release }}
+      branch: ${{ steps.configure.outputs.branch }}
+      on_release_branch: ${{ steps.configure.outputs.on_release_branch }}
+      commit_message: ${{ steps.configure.outputs.commit_message }}
+      github_release: ${{ steps.configure.outputs.github_release }}
+      already_published: ${{ steps.configure.outputs.already_published }}
+      notes: ${{ steps.configure.outputs.notes }}
+      pr_list: ${{ steps.configure.outputs.pr_list }}
+      package: ${{ steps.configure.outputs.package }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configure release
+        id: configure
+        uses: braintrustdata/sdk-actions/actions/release/lang/py/configure@71731d4a726df3e3bf42e50c2da4a75842b038dd
         with:
-          ref: ${{ env.COMMIT_SHA }}
-          fetch-depth: 0
-      - name: Set up mise
-        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
-        with:
-          cache: true
-          experimental: true
-      - name: Build and verify
-        env:
-          BRAINTRUST_RELEASE_CHANNEL: ${{ env.RELEASE_TYPE }}
-          BRAINTRUST_VERSION_OVERRIDE: ${{ env.VERSION }}
-        run: |
-          mise exec -- make -C py install-dev verify-build
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: python-sdk-dist
-          path: py/dist/
-          retention-days: 5
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          packages-dir: py/dist/
+          sha: ${{ needs.resolve.outputs.commit_sha }}
+          version: ${{ needs.resolve.outputs.version }}
+          working_directory: py
+          tag_format: py-sdk-v{version}
+          release_type: ${{ needs.resolve.outputs.release_type }}
+          release_branch: main
+          pypi_package_name: braintrust
+          package_label: Braintrust Python SDK
+          emoji: ':python:'
 
-      - name: Create local release tag
-        run: |
-          if ! git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
-            git tag "$RELEASE_TAG" "$COMMIT_SHA"
-          fi
-
-      # Create GitHub Release
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          RELEASE_NOTES=$(.github/scripts/generate-release-notes.sh "${{ env.RELEASE_TAG }}" "py/")
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "release_name=Python SDK v${VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Release
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
-          RELEASE_NAME: ${{ steps.release_notes.outputs.release_name }}
-        with:
-          script: |
-            await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: process.env.RELEASE_TAG,
-              target_commitish: process.env.COMMIT_SHA,
-              name: process.env.RELEASE_NAME,
-              body: process.env.RELEASE_NOTES,
-              draft: false,
-              prerelease: false
-            });
-
-  build-and-publish:
-    needs: validate
-    if: needs.validate.result == 'success' && (needs.validate.outputs.release_type != 'stable' || needs.validate.outputs.dry_run == 'true')
-    runs-on: ubuntu-latest
+  validate:
+    needs: [resolve, configure]
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
-      contents: write
-      id-token: write # Required for PyPI trusted publishing
-
+      contents: read
     env:
-      COMMIT_SHA: ${{ needs.validate.outputs.commit_sha }}
-      DRY_RUN: ${{ needs.validate.outputs.dry_run }}
-      RELEASE_TAG: ${{ needs.validate.outputs.release_tag }}
-      RELEASE_TYPE: ${{ needs.validate.outputs.release_type }}
-      VERSION: ${{ needs.validate.outputs.version }}
-
+      BRAINTRUST_RELEASE_CHANNEL: ${{ needs.resolve.outputs.release_type }}
+      BRAINTRUST_VERSION_OVERRIDE: ${{ needs.resolve.outputs.version }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate release
+        uses: braintrustdata/sdk-actions/actions/release/lang/py/validate@71731d4a726df3e3bf42e50c2da4a75842b038dd
         with:
-          ref: ${{ env.COMMIT_SHA }}
-          fetch-depth: 0
-      - name: Set up mise
-        uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4.2.4
-        with:
-          cache: true
-          experimental: true
-      - name: Build and verify
-        env:
-          BRAINTRUST_RELEASE_CHANNEL: ${{ env.RELEASE_TYPE }}
-          BRAINTRUST_VERSION_OVERRIDE: ${{ env.VERSION }}
-        run: |
-          mise exec -- make -C py install-dev verify-build
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: python-sdk-dist
-          path: py/dist/
-          retention-days: 5
-      - name: Publish to PyPI
-        if: env.DRY_RUN != 'true'
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-        with:
-          packages-dir: py/dist/
+          sha: ${{ needs.resolve.outputs.commit_sha }}
+          dry_run: ${{ needs.resolve.outputs.dry_run }}
+          working_directory: py
+          python_version: .tool-versions
+          release_tag: ${{ needs.configure.outputs.release_tag }}
+          on_release_branch: ${{ needs.configure.outputs.on_release_branch }}
+          notes: ${{ needs.configure.outputs.notes }}
+          already_published: ${{ needs.configure.outputs.already_published }}
+          build_command: make install-dev verify-build
+          enforce_release_branch: 'true'
+          check_tag_unused: ${{ github.event_name != 'push' }}
+          check_version_unpublished: ${{ github.event_name != 'push' }}
 
-      - name: Create local release tag
-        run: |
-          if ! git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
-            git tag "$RELEASE_TAG" "$COMMIT_SHA"
-          fi
-
-      # Create GitHub Release
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          RELEASE_NOTES=$(.github/scripts/generate-release-notes.sh "${{ env.RELEASE_TAG }}" "py/")
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "release_name=Python SDK v${VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Release
-        if: env.DRY_RUN != 'true'
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
-          RELEASE_NAME: ${{ steps.release_notes.outputs.release_name }}
-        with:
-          script: |
-            await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: process.env.RELEASE_TAG,
-              target_commitish: process.env.COMMIT_SHA,
-              name: process.env.RELEASE_NAME,
-              body: process.env.RELEASE_NOTES,
-              draft: false,
-              prerelease: process.env.RELEASE_TYPE === "prerelease"
-            });
-
-      - name: Summarize dry run
-        if: env.DRY_RUN == 'true'
-        run: |
-          echo "Dry run completed for $RELEASE_TAG from $COMMIT_SHA"
-
-  notify-success:
-    needs: [validate, build-and-publish-stable, build-and-publish]
-    if: always() && (needs.build-and-publish-stable.result == 'success' || needs.build-and-publish.result == 'success')
-    runs-on: ubuntu-latest
+  request-approval:
+    needs: [resolve, configure, validate]
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions: {}
     steps:
-      - name: Post to Slack on success
-        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+      - name: Request release approval
+        uses: braintrustdata/sdk-actions/actions/release/request-approval@71731d4a726df3e3bf42e50c2da4a75842b038dd
         with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: C0ABHT0SWA2
-            text: "${{ needs.validate.outputs.dry_run == 'true' && '🧪 Python SDK dry run succeeded' || format('✅ Python SDK {0} v{1} published', needs.validate.outputs.release_type, needs.validate.outputs.version) }}"
-            blocks:
-              - type: "header"
-                text:
-                  type: "plain_text"
-                  text: "${{ needs.validate.outputs.dry_run == 'true' && '🧪 Python SDK Dry Run Succeeded' || '✅ Python SDK Published' }}"
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: "${{ needs.validate.outputs.dry_run == 'true' && format('*Mode:* dry run\n*Release type:* {0}\n*Version:* {1}\n*Ref:* {2}\n\n<{3}/{4}/actions/runs/{5}|View Run>', needs.validate.outputs.release_type, needs.validate.outputs.version, github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name, github.server_url, github.repository, github.run_id) || format('*Release type:* {0}\n*Version:* {1}\n*Package:* <https://pypi.org/project/braintrust/|braintrust>\n\n<{2}/{3}/actions/runs/{4}|View Run>', needs.validate.outputs.release_type, needs.validate.outputs.version, github.server_url, github.repository, github.run_id) }}"
+          packages: '{"packages":[${{ needs.configure.outputs.package }}]}'
+          sha: ${{ needs.resolve.outputs.commit_sha }}
+          branch: ${{ needs.configure.outputs.branch }}
+          on_release_branch: ${{ needs.configure.outputs.on_release_branch }}
+          commit_message: ${{ needs.configure.outputs.commit_message }}
+          dry_run: ${{ needs.resolve.outputs.dry_run }}
+          slack_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack_channel: C0ABHT0SWA2
 
-  notify-failure:
-    needs: [validate, build-and-publish-stable, build-and-publish]
-    if: always() && (needs.validate.result == 'failure' || needs.build-and-publish-stable.result == 'failure' || needs.build-and-publish.result == 'failure')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  build-and-ship:
+    needs: [resolve, configure, validate, request-approval]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: ${{ needs.resolve.outputs.release_type == 'stable' && needs.resolve.outputs.dry_run != 'true' && 'pypi-publish' || '' }}
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      BRAINTRUST_RELEASE_CHANNEL: ${{ needs.resolve.outputs.release_type }}
+      BRAINTRUST_VERSION_OVERRIDE: ${{ needs.resolve.outputs.version }}
     steps:
-      - name: Post to Slack on failure
-        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+      - name: Build and ship
+        uses: braintrustdata/sdk-actions/actions/release/lang/py/build-and-ship@71731d4a726df3e3bf42e50c2da4a75842b038dd
         with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: C0ABHT0SWA2
-            text: "🚨 Python SDK release failed"
-            blocks:
-              - type: "header"
-                text:
-                  type: "plain_text"
-                  text: "🚨 Python SDK Release Failed"
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: "*Release type:* ${{ needs.validate.outputs.release_type || (github.event_name == 'workflow_dispatch' && github.event.inputs.release_type || 'auto') }}\n*Ref:* ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}\n*Commit:* ${{ needs.validate.outputs.commit_sha || github.sha }}\n\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+          sha: ${{ needs.resolve.outputs.commit_sha }}
+          working_directory: py
+          python_version: .tool-versions
+          build_command: make install-dev verify-build
+          dry_run: ${{ needs.resolve.outputs.dry_run }}
+          release_tag: ${{ needs.configure.outputs.release_tag }}
+          already_published: ${{ needs.configure.outputs.already_published }}
+          github_release: ${{ needs.configure.outputs.github_release }}
+          release_title: Python SDK v${{ needs.configure.outputs.version }}
+          version: ${{ needs.configure.outputs.version }}
+          package_name: braintrust
+          label: Braintrust Python SDK
+          notes: ${{ needs.configure.outputs.notes }}
+          prev_release: ${{ needs.configure.outputs.prev_release }}
+          branch: ${{ needs.configure.outputs.branch }}
+          on_release_branch: ${{ needs.configure.outputs.on_release_branch }}
+          pr_list: ${{ needs.configure.outputs.pr_list }}
+          slack_token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack_channel: C0ABHT0SWA2
+          emoji: ':python:'
