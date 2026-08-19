@@ -1,7 +1,7 @@
 """Tests for framework2 module, specifically metadata and tags support."""
 
 import importlib.util
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -11,6 +11,23 @@ from .framework2 import ProjectIdCache, global_, projects
 
 # Check if pydantic is available
 HAS_PYDANTIC = importlib.util.find_spec("pydantic") is not None
+
+
+def test_project_id_cache_uses_generated_project_registration():
+    mock_state = MagicMock()
+    mock_state.org_name = "test-org"
+    mock_state.api_client.return_value.projects.post_project.return_value = {
+        "id": "generated-project-id",
+        "name": "test-project",
+    }
+    with patch("braintrust.logger._state", mock_state):
+        project_id = ProjectIdCache().get_by_name("test-project")
+
+    assert project_id == "generated-project-id"
+    mock_state.api_client.return_value.projects.post_project.assert_called_once_with(
+        body={"name": "test-project", "org_name": "test-org"}
+    )
+    mock_state.app_conn.assert_not_called()
 
 
 class TestCodeFunctionMetadata:

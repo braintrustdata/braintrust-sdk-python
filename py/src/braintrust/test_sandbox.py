@@ -1,6 +1,7 @@
 """Tests for sandbox registration."""
 
 import os
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -10,11 +11,13 @@ from .sandbox import RegisterSandboxResult, SandboxConfig, register_sandbox
 
 SNAPSHOT_REF = "im-icRxmsk1Sz9XPP2f8OblVU"
 PROJECT = "My Project"
+PROJECT_ID = "6b770640-a26a-4680-9d69-537262023137"
 ENTRYPOINTS = ["./local/js/optimization/evals/btql-generation/btql-queries.eval.ts"]
 
-# Paths that register_sandbox actually calls — used to filter out
-# unrelated background logger traffic that VCR would otherwise capture.
-_SANDBOX_PATHS = {"/api/project/register", "/function/sandbox-list", "/insert-functions"}
+# Project registration is covered by the Projects API VCR test. Keep these
+# cassettes focused on the specialized sandbox endpoints, which require
+# organization-specific Modal credentials to record.
+_SANDBOX_PATHS = {"/function/sandbox-list", "/insert-functions"}
 
 
 @pytest.fixture(scope="module")
@@ -38,7 +41,9 @@ def logged_in_state():
     state.logged_in = True
 
     token = os.environ.get("BRAINTRUST_API_KEY", "sk-dummy-for-vcr-replay")
-    state.app_conn().set_token(token)
+    api_client = MagicMock()
+    api_client.projects.post_project.return_value = {"id": PROJECT_ID, "name": PROJECT}
+    state.api_client = MagicMock(return_value=api_client)
     state.api_conn().set_token(token)
     state.proxy_conn().set_token(token)
     return state
@@ -60,6 +65,9 @@ def test_register_sandbox_single_evaluator(logged_in_state):
     assert result.functions[0].eval_name
     assert result.functions[0].id
     assert result.functions[0].slug
+    logged_in_state.api_client.return_value.projects.post_project.assert_called_once_with(
+        body={"name": PROJECT, "org_name": logged_in_state.org_name}
+    )
 
 
 @pytest.mark.vcr

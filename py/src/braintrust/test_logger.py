@@ -3531,6 +3531,33 @@ class TestJSONAttachment(TestCase):
         self.assertEqual(event["input"]["data"], json_attachment.reference)
 
 
+class TestProjectGeneratedAPI(TestCase):
+    def test_lazy_project_uses_generated_registration_and_lookup(self):
+        mock_state = MagicMock()
+        mock_state.org_name = "test-org"
+        api_client = mock_state.api_client.return_value
+        api_client.projects.post_project.return_value = {
+            "id": "created-project-id",
+            "name": "created-project",
+        }
+        api_client.projects.get_project_id.return_value = {
+            "id": "looked-up-project-id",
+            "name": "looked-up-project",
+        }
+
+        with patch.object(logger, "_state", mock_state):
+            created = logger.Project(name="created-project")
+            looked_up = logger.Project(id="looked-up-project-id")
+            self.assertEqual(created.id, "created-project-id")
+            self.assertEqual(looked_up.name, "looked-up-project")
+
+        api_client.projects.post_project.assert_called_once_with(
+            body={"name": "created-project", "org_name": "test-org"}
+        )
+        api_client.projects.get_project_id.assert_called_once_with("looked-up-project-id")
+        mock_state.app_conn.assert_not_called()
+
+
 class TestDatasetGeneratedAPI(TestCase):
     def test_init_dataset_uses_generated_project_and_dataset_resources(self):
         mock_state = MagicMock()

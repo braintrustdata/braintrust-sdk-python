@@ -1737,26 +1737,27 @@ def init_dataset(
     )
 
 
-def _compute_logger_metadata(project_name: str | None = None, project_id: str | None = None):
-    login()
-    org_id = _state.org_id
+def _compute_logger_metadata(
+    project_name: str | None = None,
+    project_id: str | None = None,
+    state: BraintrustState | None = None,
+):
+    state = state or _state
+    state.login()
+    org_id = state.org_id
     if project_id is None:
-        response = _state.app_conn().post_json(
-            "api/project/register",
-            {
-                "project_name": project_name or GLOBAL_PROJECT,
-                "org_id": org_id,
-            },
+        response = state.api_client().projects.post_project(
+            body={"name": project_name or GLOBAL_PROJECT, "org_name": state.org_name}
         )
-        resp_project = response["project"]
         return OrgProjectMetadata(
             org_id=org_id,
-            project=ObjectMetadata(id=resp_project["id"], name=resp_project["name"], full_info=resp_project),
+            project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
         )
     elif project_name is None:
-        response = _state.app_conn().get_json("api/project", {"id": project_id})
+        response = state.api_client().projects.get_project_id(project_id)
         return OrgProjectMetadata(
-            org_id=org_id, project=ObjectMetadata(id=project_id, name=response["name"], full_info=response)
+            org_id=org_id,
+            project=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
         )
     else:
         return OrgProjectMetadata(
@@ -1804,7 +1805,7 @@ def init_logger(
 
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url, force_login=force_login)
-        return _compute_logger_metadata(**compute_metadata_args)
+        return _compute_logger_metadata(**compute_metadata_args, state=state)
 
     # For loggers, enable queue size limit enforcement (bounded queue)
     state.enforce_queue_size_limit(True)
@@ -5515,17 +5516,13 @@ class Project:
         if self._id is None or self._name is None:
             with self.init_lock:
                 if self._id is None:
-                    response = _state.app_conn().post_json(
-                        "api/project/register",
-                        {
-                            "project_name": self._name or GLOBAL_PROJECT,
-                            "org_id": _state.org_id,
-                        },
+                    response = _state.api_client().projects.post_project(
+                        body={"name": self._name or GLOBAL_PROJECT, "org_name": _state.org_name}
                     )
-                    self._id = response["project"]["id"]
-                    self._name = response["project"]["name"]
+                    self._id = response["id"]
+                    self._name = response["name"]
                 elif self._name is None:
-                    response = _state.app_conn().get_json("api/project", {"id": self._id})
+                    response = _state.api_client().projects.get_project_id(self._id)
                     self._name = response["name"]
 
         return self
