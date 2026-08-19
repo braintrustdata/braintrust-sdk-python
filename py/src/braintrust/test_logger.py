@@ -65,6 +65,21 @@ def test_login_to_state_uses_env_braintrust_api_key(tmp_path, monkeypatch):
 
 
 class TestInit(TestCase):
+    @staticmethod
+    def _mock_api_client():
+        api_client = MagicMock()
+        api_client.projects.post_project.return_value = {
+            "id": "test-project-id",
+            "name": "test-project",
+        }
+        api_client.experiments.post_experiment.return_value = {
+            "id": "test-exp-id",
+            "name": "test-exp",
+            "project_id": "test-project-id",
+            "public": False,
+        }
+        return api_client
+
     def test_init_validation(self):
         with self.assertRaises(ValueError) as cm:
             braintrust.init()
@@ -123,18 +138,14 @@ class TestInit(TestCase):
         unconditionally later in compute_metadata().
         ref: https://github.com/braintrustdata/braintrust-sdk-python/issues/8
         """
-        mock_conn = MagicMock()
-        mock_conn.post_json.return_value = {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
+        api_client = self._mock_api_client()
 
         from braintrust.git_fields import RepoInfo
 
         repo_info = RepoInfo(commit="abc123", branch="main", dirty=False)
 
         simulate_login()
-        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+        with patch.object(logger._state, "api_client", return_value=api_client):
             exp = braintrust.init(project="test-project", repo_info=repo_info)
 
             # Force compute_metadata() to execute. This would raise
@@ -185,15 +196,11 @@ class TestInit(TestCase):
             GitMetadataSettings(collect="some", fields=["commit", "branch"]),
         ):
             with self.subTest(org_settings=org_settings):
-                mock_conn = MagicMock()
-                mock_conn.post_json.return_value = {
-                    "project": {"id": "test-project-id", "name": "test-project"},
-                    "experiment": {"id": "test-exp-id", "name": "test-exp"},
-                }
+                api_client = self._mock_api_client()
 
                 simulate_login()
                 logger._state.git_metadata_settings = org_settings
-                with patch.object(logger._state, "app_conn", return_value=mock_conn):
+                with patch.object(logger._state, "api_client", return_value=api_client):
                     with patch(
                         "braintrust.logger.get_repo_info", return_value=RepoInfo(commit="abc123")
                     ) as mock_get_repo_info:
@@ -204,15 +211,11 @@ class TestInit(TestCase):
                 assert actual_settings == org_settings
 
     def test_init_git_metadata_override_merges_with_org_policy(self):
-        mock_conn = MagicMock()
-        mock_conn.post_json.return_value = {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
+        api_client = self._mock_api_client()
 
         simulate_login()
         logger._state.git_metadata_settings = GitMetadataSettings(collect="some", fields=["commit", "branch"])
-        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+        with patch.object(logger._state, "api_client", return_value=api_client):
             with patch("braintrust.logger.get_repo_info", return_value=None) as mock_get_repo_info:
                 exp = braintrust.init(
                     project="test-project",
@@ -224,15 +227,11 @@ class TestInit(TestCase):
         assert actual_settings == GitMetadataSettings(collect="some", fields=["commit"])
 
     def test_init_without_git_metadata_policy_collects_none(self):
-        mock_conn = MagicMock()
-        mock_conn.post_json.return_value = {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
+        api_client = self._mock_api_client()
 
         simulate_login()
         assert logger._state.git_metadata_settings is None
-        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+        with patch.object(logger._state, "api_client", return_value=api_client):
             with patch("braintrust.logger.get_repo_info", return_value=None) as mock_get_repo_info:
                 exp = braintrust.init(project="test-project")
                 exp._lazy_metadata.get()
@@ -241,11 +240,7 @@ class TestInit(TestCase):
         assert actual_settings == GitMetadataSettings(collect="none")
 
     def test_init_with_saved_parameters_attaches_reference(self):
-        mock_conn = MagicMock()
-        mock_conn.post_json.return_value = {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
+        api_client = self._mock_api_client()
 
         parameters = RemoteEvalParameters(
             id="params-123",
@@ -258,11 +253,11 @@ class TestInit(TestCase):
         )
 
         simulate_login()
-        with patch.object(logger._state, "app_conn", return_value=mock_conn):
+        with patch.object(logger._state, "api_client", return_value=api_client):
             exp = braintrust.init(project="test-project", parameters=parameters)
             exp._lazy_metadata.get()
 
-        _, payload = mock_conn.post_json.call_args.args
+        payload = api_client.experiments.post_experiment.call_args.kwargs["body"]
         assert payload["parameters_id"] == "params-123"
         assert payload["parameters_version"] == "v1"
 
@@ -3529,6 +3524,134 @@ class TestJSONAttachment(TestCase):
         self.assertEqual(len(attachments), 1)
         self.assertIs(attachments[0], json_attachment)
         self.assertEqual(event["input"]["data"], json_attachment.reference)
+
+
+class TestExperimentGeneratedAPI(TestCase):
+    def test_init_uses_generated_registration_and_resolves_named_base(self):
+        mock_state = MagicMock(spec=BraintrustState)
+        mock_state.org_id = "test-org-id"
+        mock_state.org_name = "test-org"
+        api_client = mock_state.api_client.return_value
+        api_client.projects.post_project.return_value = {
+            "id": "test-project-id",
+            "name": "test-project",
+        }
+        api_client.experiments.get_experiment.return_value = {
+            "objects": [
+                {
+                    "id": "base-experiment-id",
+                    "name": "base-experiment",
+                    "project_id": "test-project-id",
+                    "public": False,
+                }
+            ]
+        }
+        api_client.experiments.post_experiment.return_value = {
+            "id": "test-experiment-id",
+            "name": "test-experiment",
+            "project_id": "test-project-id",
+            "public": False,
+        }
+
+        experiment = braintrust.init(
+            project="test-project",
+            experiment="test-experiment",
+            description="test description",
+            base_experiment="base-experiment",
+            metadata={"source": "unit-test"},
+            tags=["generated"],
+            update=False,
+            set_current=False,
+            repo_info=RepoInfo(commit="abc123"),
+            state=mock_state,
+        )
+
+        assert experiment.id == "test-experiment-id"
+        assert experiment.project.id == "test-project-id"
+        api_client.projects.post_project.assert_called_once_with(body={"name": "test-project", "org_name": "test-org"})
+        api_client.experiments.get_experiment.assert_called_once_with(
+            experiment_name="base-experiment",
+            project_id="test-project-id",
+            org_name="test-org",
+        )
+        body = api_client.experiments.post_experiment.call_args.kwargs["body"]
+        assert body == {
+            "project_id": "test-project-id",
+            "name": "test-experiment",
+            "description": "test description",
+            "repo_info": RepoInfo(commit="abc123").as_dict(),
+            "base_exp_id": "base-experiment-id",
+            "public": False,
+            "metadata": {"source": "unit-test"},
+            "tags": ["generated"],
+            "ensure_new": True,
+        }
+        mock_state.app_conn.assert_not_called()
+
+    def test_open_uses_generated_experiment_lookup(self):
+        mock_state = MagicMock(spec=BraintrustState)
+        mock_state.org_name = "test-org"
+        api_client = mock_state.api_client.return_value
+        api_client.experiments.get_experiment.return_value = {
+            "objects": [
+                {
+                    "id": "test-experiment-id",
+                    "name": "test-experiment",
+                    "project_id": "test-project-id",
+                    "public": False,
+                }
+            ]
+        }
+
+        experiment = braintrust.init(
+            project="test-project",
+            experiment="test-experiment",
+            open=True,
+            set_current=False,
+            state=mock_state,
+        )
+
+        assert experiment.id == "test-experiment-id"
+        api_client.experiments.get_experiment.assert_called_once_with(
+            experiment_name="test-experiment",
+            project_name="test-project",
+            org_name="test-org",
+        )
+        mock_state.app_conn.assert_not_called()
+
+    def test_experiment_fetch_uses_generated_paginated_fetch(self):
+        from braintrust.logger import Experiment, ObjectMetadata, ProjectExperimentMetadata
+
+        mock_state = MagicMock(spec=BraintrustState)
+        api_client = mock_state.api_client.return_value
+        first_event = {
+            "id": "first-event",
+            "_xact_id": "1",
+            "project_id": "test-project-id",
+            "experiment_id": "test-experiment-id",
+            "created": "2026-01-01T00:00:00Z",
+            "span_id": "first-event",
+            "root_span_id": "first-event",
+        }
+        second_event = {**first_event, "id": "second-event", "_xact_id": "2"}
+        api_client.experiments.post_experiment_id_fetch.side_effect = [
+            {"events": [first_event], "cursor": "next-page"},
+            {"events": [second_event]},
+        ]
+        metadata = ProjectExperimentMetadata(
+            project=ObjectMetadata(id="test-project-id", name="test-project", full_info={}),
+            experiment=ObjectMetadata(id="test-experiment-id", name="test-experiment", full_info={}),
+        )
+        experiment = Experiment(LazyValue(lambda: metadata, use_mutex=False), state=mock_state)
+
+        events = list(experiment.fetch(batch_size=1))
+
+        assert [event["id"] for event in events] == ["first-event", "second-event"]
+        assert api_client.experiments.post_experiment_id_fetch.call_args_list == [
+            call("test-experiment-id", body={"limit": 1}),
+            call("test-experiment-id", body={"limit": 1, "cursor": "next-page"}),
+        ]
+        mock_state.api_conn.assert_not_called()
 
 
 class TestProjectGeneratedAPI(TestCase):

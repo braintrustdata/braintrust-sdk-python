@@ -1,3 +1,5 @@
+import contextlib
+
 import braintrust
 import pytest
 from braintrust.api._generated.experiments import OPERATIONS
@@ -89,3 +91,63 @@ def test_experiment_summarize_with_real_backend(explicit_comparison, api_key):
     assert serialized["scores"]["accuracy"]["score"] == 1
     assert serialized["metrics"]["completion_tokens"]["metric"] == 10
     assert f"{candidate.name} compared to {base.name}" in str(summary)
+
+
+@pytest.mark.vcr
+def test_high_level_experiment_uses_generated_resources(api_key):
+    project_name = "python-sdk-high-level-experiments-vcr"
+    experiment_name = "high-level-generated-experiment"
+    event_id = "high-level-generated-experiment-row"
+    cleanup_project_id = None
+    cleanup_experiment_id = None
+
+    experiment = braintrust.init(
+        project=project_name,
+        experiment=experiment_name,
+        api_key=api_key,
+        update=True,
+        set_current=False,
+        repo_info=RepoInfo(),
+    )
+    try:
+        cleanup_experiment_id = experiment.id
+        cleanup_project_id = experiment.project.id
+        api_client = experiment.state.api_client()
+        api_client.experiments.post_experiment_id_insert(
+            experiment.id,
+            body={
+                "events": [
+                    {
+                        "id": event_id,
+                        "input": {"question": "What is the answer?"},
+                        "output": "42",
+                        "scores": {"accuracy": 1},
+                        "span_id": event_id,
+                        "root_span_id": event_id,
+                    }
+                ]
+            },
+        )
+
+        events = list(experiment.fetch(batch_size=1))
+        readonly = braintrust.init(
+            project=project_name,
+            experiment=experiment_name,
+            api_key=api_key,
+            open=True,
+            set_current=False,
+        )
+        readonly_events = list(readonly.fetch(batch_size=1))
+
+        assert readonly.id == experiment.id
+        assert [event["id"] for event in events] == [event_id]
+        assert [event["id"] for event in readonly_events] == [event_id]
+        assert events[0]["input"] == {"question": "What is the answer?"}
+        assert readonly_events[0]["output"] == "42"
+    finally:
+        if cleanup_experiment_id is not None:
+            with contextlib.suppress(Exception):
+                experiment.state.api_client().experiments.delete_experiment_id(cleanup_experiment_id)
+        if cleanup_project_id is not None:
+            with contextlib.suppress(Exception):
+                experiment.state.api_client().projects.delete_project_id(cleanup_project_id)

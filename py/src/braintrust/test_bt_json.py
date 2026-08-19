@@ -6,9 +6,9 @@ import warnings
 from typing import Any
 from unittest import TestCase
 
-import pytest
 from braintrust.bt_json import bt_dumps, bt_safe_deep_copy
 from braintrust.logger import Attachment, ExternalAttachment
+from braintrust.test_helpers import with_memory_logger  # noqa: F401
 
 
 class TestBTJson(TestCase):
@@ -336,8 +336,7 @@ class TestBTJson(TestCase):
         assert "test" in json_str
 
 
-@pytest.mark.vcr
-def test_to_bt_safe_special_objects():
+def test_to_bt_safe_special_objects(with_memory_logger):
     """Test _to_bt_safe handling of Span, Experiment, Dataset, Logger objects."""
     from braintrust import init, init_dataset, init_logger
 

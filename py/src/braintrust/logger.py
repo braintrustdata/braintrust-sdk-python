@@ -98,7 +98,6 @@ from .types import Metadata
 from .types._eval import ExperimentDatasetEvent
 from .util import (
     GLOBAL_PROJECT,
-    AugmentedHTTPError,
     LazyValue,
     add_azure_blob_headers,
     bt_iscoroutinefunction,
@@ -1533,18 +1532,17 @@ def init(
 
         def compute_metadata():
             state.login(org_name=org_name, api_key=api_key, app_url=app_url)
-            args = {
-                "experiment_name": experiment,
-                "project_name": project,
-                "project_id": project_id,
-                "org_name": state.org_name,
-            }
-
-            response = state.app_conn().post_json("api/experiment/get", args)
-            if len(response) == 0:
+            response = state.api_client().experiments.get_experiment(
+                experiment_name=experiment,
+                **({"project_name": project} if project is not None else {}),
+                **({"project_id": project_id} if project_id is not None else {}),
+                org_name=state.org_name,
+            )
+            objects = response.get("objects") or []
+            if len(objects) == 0:
                 raise ValueError(f"Experiment {experiment} not found in project {project}.")
 
-            info = response[0]
+            info = objects[0]
             return ProjectExperimentMetadata(
                 project=ObjectMetadata(id=info["project_id"], name=project or "UNKNOWN_PROJECT", full_info=dict()),
                 experiment=ObjectMetadata(
@@ -1563,15 +1561,20 @@ def init(
     # pylint: disable=function-redefined
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
-        args = {
-            "project_name": project,
-            "project_id": project_id,
-            "org_id": state.org_id,
-            "update": update,
+        if project_id is None:
+            project_info = state.api_client().projects.post_project(
+                body={"name": project or GLOBAL_PROJECT, "org_name": state.org_name}
+            )
+        else:
+            project_info = state.api_client().projects.get_project_id(project_id)
+
+        args: dict[str, Any] = {
+            "project_id": project_info["id"],
+            "ensure_new": update is not True,
         }
 
         if experiment is not None:
-            args["experiment_name"] = experiment
+            args["name"] = experiment
 
         if description is not None:
             args["description"] = description
@@ -1595,7 +1598,16 @@ def init(
         if base_experiment_id is not None:
             args["base_exp_id"] = base_experiment_id
         elif base_experiment is not None:
-            args["base_experiment"] = base_experiment
+            base_response = state.api_client().experiments.get_experiment(
+                experiment_name=base_experiment,
+                project_id=project_info["id"],
+                org_name=state.org_name,
+            )
+            base_objects = base_response.get("objects") or []
+            if base_objects:
+                args["base_exp_id"] = base_objects[0]["id"]
+            else:
+                _logger.warning(f"Base experiment {base_experiment} not found.")
         elif merged_git_metadata_settings and merged_git_metadata_settings.collect != "none":
             args["ancestor_commits"] = list(get_past_n_ancestors())
 
@@ -1625,24 +1637,11 @@ def init(
         if tags is not None:
             args["tags"] = tags
 
-        while True:
-            try:
-                response = state.app_conn().post_json("api/experiment/register", args)
-                break
-            except AugmentedHTTPError as e:
-                if args.get("base_experiment") is not None and "base experiment" in str(e):
-                    _logger.warning(f"Base experiment {args['base_experiment']} not found.")
-                    args["base_experiment"] = None
-                else:
-                    raise
+        response = state.api_client().experiments.post_experiment(body=args)
 
-        resp_project = response["project"]
-        resp_experiment = response["experiment"]
         return ProjectExperimentMetadata(
-            project=ObjectMetadata(id=resp_project["id"], name=resp_project["name"], full_info=resp_project),
-            experiment=ObjectMetadata(
-                id=resp_experiment["id"], name=resp_experiment["name"], full_info=resp_experiment
-            ),
+            project=ObjectMetadata(id=project_info["id"], name=project_info["name"], full_info=dict(project_info)),
+            experiment=ObjectMetadata(id=response["id"], name=response["name"], full_info=dict(response)),
         )
 
     # For experiments, disable queue size limit enforcement (unlimited queue)
@@ -4009,7 +4008,40 @@ class ExperimentDatasetIterator:
             return ret
 
 
-class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
+class _ExperimentFetcher(ObjectFetcher[ExperimentEvent]):
+    def _refetch(self, batch_size: int | None = None) -> list[ExperimentEvent]:
+        if self._fetched_data is not None:
+            return self._fetched_data
+
+        state = self._get_state()
+        limit = batch_size if batch_size is not None else DEFAULT_FETCH_BATCH_SIZE
+        cursor = None
+        data: list[ExperimentEvent] = []
+        iterations = 0
+        while True:
+            body: dict[str, Any] = {"limit": limit}
+            if cursor is not None:
+                body["cursor"] = cursor
+            response = state.api_client().experiments.post_experiment_id_fetch(self.id, body=body)
+            events = response.get("events")
+            if not isinstance(events, list):
+                raise ValueError(f"Expected a list in the response, got {type(events)}")
+            data.extend(cast(list[ExperimentEvent], events))
+            cursor = response.get("cursor")
+            if not cursor:
+                break
+            iterations += 1
+            if iterations > MAX_BTQL_ITERATIONS:
+                raise RuntimeError("Too many experiment fetch iterations")
+
+        if self._mutate_record is not None:
+            self._fetched_data = [self._mutate_record(record) for record in data]
+        else:
+            self._fetched_data = data
+        return self._fetched_data
+
+
+class Experiment(_ExperimentFetcher, Exportable):
     """
     An experiment is a collection of logged events, such as model inputs and outputs, which represent
     a snapshot of your application at a particular point in time. An experiment is meant to capture more
@@ -4352,7 +4384,7 @@ class Experiment(ObjectFetcher[ExperimentEvent], Exportable):
         del exc_type, exc_value, traceback
 
 
-class ReadonlyExperiment(ObjectFetcher[ExperimentEvent]):
+class ReadonlyExperiment(_ExperimentFetcher):
     """
     A read-only view of an experiment, initialized by passing `open=True` to `init()`.
     """

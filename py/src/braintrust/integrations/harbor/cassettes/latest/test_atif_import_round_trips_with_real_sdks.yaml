@@ -34,7 +34,7 @@ interactions:
       - '376'
       Content-Security-Policy:
       - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
-        ''nonce-YzRhMGRjZDktMDM1ZS00ODA4LTk1MzctOGU4YzdhNzVhMjNk''  *.js.stripe.com
+        ''nonce-Y2QyMDgxZWEtNDZiMC00MTY4LWI3ZmUtYzBmZTZjZGQxNjQ4''  *.js.stripe.com
         js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
         btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
         d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
@@ -46,7 +46,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 17 Aug 2026 16:21:03 GMT
+      - Wed, 19 Aug 2026 18:51:18 GMT
       Etag:
       - '"13vsc5ye8flag"'
       Reporting-Endpoints:
@@ -71,18 +71,16 @@ interactions:
       X-Matched-Path:
       - /api/apikey/login
       X-Nonce:
-      - YzRhMGRjZDktMDM1ZS00ODA4LTk1MzctOGU4YzdhNzVhMjNk
+      - Y2QyMDgxZWEtNDZiMC00MTY4LWI3ZmUtYzBmZTZjZGQxNjQ4
       X-Vercel-Cache:
       - MISS
       X-Vercel-Id:
-      - yul1::iad1::b2cl9-1786983663268-67ad7341b42d
+      - yul1::iad1::g5kll-1787165478677-2652ca06d958
     status:
       code: 200
       message: OK
 - request:
-    body: '{"project_name": "python-sdk-harbor-tests", "project_id": null, "org_id":
-      "5abfae3a-7aa7-4653-a9c8-b3efcb18f584", "update": true, "experiment_name": "harbor-atif-import",
-      "public": false}'
+    body: '{"name": "python-sdk-harbor-tests", "org_name": "Braintrust SDKs"}'
     headers:
       Accept:
       - '*/*'
@@ -91,63 +89,124 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '187'
+      - '66'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.34.2
     method: POST
-    uri: https://www.braintrust.dev/api/experiment/register
+    uri: https://api.braintrust.dev/v1/project
   response:
     body:
-      string: '{"project":{"id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-harbor-tests","description":null,"created":"2026-07-30T23:19:36.349Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null},"experiment":{"id":"7aba8758-862e-41ef-9e77-6247c4b71287","project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","name":"harbor-atif-import","description":null,"created":"2026-07-30T23:19:36.349Z","repo_info":null,"commit":null,"base_exp_id":null,"deleted_at":null,"dataset_id":null,"dataset_version":null,"internal_metadata":null,"parameters_id":null,"parameters_version":null,"public":false,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","metadata":null,"tags":null}}'
+      string: '{"id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","org_id":"5abfae3a-7aa7-4653-a9c8-b3efcb18f584","name":"python-sdk-harbor-tests","description":null,"created":"2026-07-30T23:19:36.349Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
     headers:
-      Cache-Control:
-      - public, max-age=0, must-revalidate
-      Content-Length:
-      - '745'
-      Content-Security-Policy:
-      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
-        ''nonce-ZjQ3YTJlZDAtMzA2Ny00YzM2LWI4MDYtZmZjYjYzOWRlNTU0''  *.js.stripe.com
-        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
-        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
-        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
-        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
-        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
-        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
-        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
-        report-to csp-endpoint-0'
+      Connection:
+      - keep-alive
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 17 Aug 2026 16:21:03 GMT
-      Etag:
-      - '"29xhqzk7lxkp"'
-      Reporting-Endpoints:
-      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
-      Server:
-      - Vercel
-      Strict-Transport-Security:
-      - max-age=63072000
-      X-Clerk-Auth-Message:
-      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
-        token-carrier=header)
-      X-Clerk-Auth-Reason:
-      - token-invalid
-      X-Clerk-Auth-Status:
-      - signed-out
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Matched-Path:
-      - /api/experiment/register
-      X-Nonce:
-      - ZjQ3YTJlZDAtMzA2Ny00YzM2LWI4MDYtZmZjYjYzOWRlNTU0
-      X-Vercel-Cache:
-      - MISS
-      X-Vercel-Id:
-      - yul1::iad1::gbrsv-1786983663770-b6b742bb0442
+      - Wed, 19 Aug 2026 18:51:22 GMT
+      Via:
+      - 1.1 eded6ceb5fcf620926ec41d66d9f7be6.cloudfront.net (CloudFront), 1.1 fd407fe7b2bb39801ba9f32e29a6bd42.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - Lxa1OfY4PlhesMl-pCbuyKtT8I6Kp15CoOt4_SzL9cX862a3dP_PUA==
+      X-Amz-Cf-Pop:
+      - ORD56-P13
+      - ORD58-P15
+      X-Amzn-Trace-Id:
+      - Root=1-6a85fb26-6d4495ba61d8d17f62349032;Parent=42e4e7f4b370fc42;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '265'
+      etag:
+      - W/"109-VE7imT7TazCqXt+j/P2ntE0sZqk"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CXQuKFT_IAMECqw=
+      x-amzn-RequestId:
+      - a892c697-b20d-4ac0-8f9a-2159dc1fe55f
+      x-bt-found-existing:
+      - 'true'
+      x-bt-internal-trace-id:
+      - 6a85fb26000000000d81b36feebdca9f
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"project_id": "d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229", "ensure_new": false,
+      "name": "harbor-atif-import", "public": false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '122'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/experiment
+  response:
+    body:
+      string: '{"id":"7aba8758-862e-41ef-9e77-6247c4b71287","project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","name":"harbor-atif-import","description":null,"created":"2026-07-30T23:19:36.349Z","repo_info":null,"commit":null,"base_exp_id":null,"deleted_at":null,"dataset_id":null,"dataset_version":null,"internal_metadata":null,"parameters_id":null,"parameters_version":null,"public":false,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","metadata":null,"tags":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 19 Aug 2026 18:51:22 GMT
+      Via:
+      - 1.1 af315b6ef3c266f73baf65f36a381a24.cloudfront.net (CloudFront), 1.1 5190dea606bf96f8102635278cb23da8.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - N_whCQdrMgr05iR5Stj_T71eKxE3GeegrJ3OGMnQXjeaR-fxiS4Opg==
+      X-Amz-Cf-Pop:
+      - ORD56-P13
+      - ORD58-P15
+      X-Amzn-Trace-Id:
+      - Root=1-6a85fb2a-518b7c445303b4df344e154f;Parent=2a27998d78fa0ccc;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '454'
+      etag:
+      - W/"1c6-4wIC+Yohirm3sLICPy85fG/ToCQ"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CXQutEr4oAMEWsg=
+      x-amzn-RequestId:
+      - c3c41b3d-95ce-4a4b-b9dc-d7f8bcc9c18c
+      x-bt-internal-trace-id:
+      - 6a85fb2a000000006e014d9459e17747
     status:
       code: 200
       message: OK
@@ -166,24 +225,24 @@ interactions:
     uri: https://api.braintrust.dev/version
   response:
     body:
-      string: '{"version":"2.11.0","date_version":"20260814","ff_version":46,"commit":"f5426a800ba05c662bd543c09093ff0a4f1ec650","deployment_mode":"lambda","deployment_type":"custom","loop_runtime_enabled":true,"brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"brainstore_export_enabled":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","memprof","usage"]}'
+      string: '{"version":"2.11.0","date_version":"20260819","ff_version":46,"commit":"e27b14341914e26f128098670df73d3dd05169bf","deployment_mode":"lambda","deployment_type":"custom","loop_runtime_enabled":true,"brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"brainstore_export_enabled":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","memprof","usage"]}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 17 Aug 2026 16:21:04 GMT
+      - Wed, 19 Aug 2026 18:51:22 GMT
       Via:
-      - 1.1 408696aaa16964f78e2fc7cb189ec0e2.cloudfront.net (CloudFront), 1.1 890304274d84dce52c3c8a65cb402758.cloudfront.net
+      - 1.1 413ab95636ac769b950032653c8ba1f2.cloudfront.net (CloudFront), 1.1 f188ca73d9e145b3d0110205c91c9006.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - ME3CnudJ7lyogamOAzMGTZ26HDouEOaVhEg09xKBsD7fdBa-ACpXIA==
+      - i99x248rJGAPBUAY6QmXzijm3LfdelBl27pwoSiXajByZLUZz9ZTIw==
       X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P2
+      - ORD56-P13
+      - ORD58-P15
       X-Amzn-Trace-Id:
-      - Root=1-6a8334f0-79ffee6e68b6518b04c16136;Parent=24b7a73da4ac0eb6;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a85fb2a-25deb47168a4d474722e8e65;Parent=437cbcef2722631a;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -195,7 +254,7 @@ interactions:
       content-length:
       - '586'
       etag:
-      - W/"24a-yTgET7S6YwpVn3uhTcruZxcYxRo"
+      - W/"24a-BgQN3hq6+5gJr7w3Mzv6yd7O2uw"
       expires:
       - '0'
       surrogate-control:
@@ -203,13 +262,13 @@ interactions:
       vary:
       - Origin
       x-amz-apigw-id:
-      - CQU1lEBwoAMEigQ=
+      - CXQuyG2QIAMEVow=
       x-amzn-Remapped-content-length:
       - '586'
       x-amzn-RequestId:
-      - f27adb8e-ba16-4864-a713-7088a8aa1c8b
+      - 653f0fa6-8005-429d-afe2-93b1d967257c
       x-bt-internal-trace-id:
-      - 6a8334f00000000017ad8b6dcaa264ad
+      - 6a85fb2a00000000335eb33d6e145c89
     status:
       code: 200
       message: OK
@@ -217,11 +276,11 @@ interactions:
     body: '{"rows": [{"_is_merge": false, "context": {"caller_filename": "[REDACTED_PATH]",
       "caller_functionname": "pytest_pyfunc_call", "caller_lineno": 167, "span_origin":
       {"instrumentation": {"name": "braintrust-python-logger"}, "name": "braintrust.sdk.python",
-      "version": "0.33.0"}}, "created": "2026-08-17T16:21:03.122499+00:00", "experiment_id":
+      "version": "0.34.0"}}, "created": "2026-08-19T18:51:18.423978+00:00", "experiment_id":
       "7aba8758-862e-41ef-9e77-6247c4b71287", "id": "c7a87986-0192-5f40-9ac0-a535810f1fe7",
-      "metrics": {"start": 1767225600.0}, "root_span_id": "09277e3250559ecc9ee9b5e23c2e3521",
+      "metrics": {"start": 1767225600.0}, "root_span_id": "e01b4f32e5d23fc658d09e820781d24e",
       "span_attributes": {"exec_counter": 1, "name": "agent_execution", "type": "task"},
-      "span_id": "282014be8518bbb6", "span_parents": null}], "api_version": 2}'
+      "span_id": "1471efe57b7e2fc2", "span_parents": null}], "api_version": 2}'
     headers:
       Accept:
       - '*/*'
@@ -230,31 +289,31 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '837'
+      - '782'
       User-Agent:
       - python-requests/2.34.2
     method: POST
     uri: https://api.braintrust.dev/logs3
   response:
     body:
-      string: '{"ids":["c7a87986-0192-5f40-9ac0-a535810f1fe7"],"xact_id":"1000197704014378669"}'
+      string: '{"ids":["c7a87986-0192-5f40-9ac0-a535810f1fe7"],"xact_id":"1000197715930069815"}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 17 Aug 2026 16:21:04 GMT
+      - Wed, 19 Aug 2026 18:51:23 GMT
       Via:
-      - 1.1 76283331d5eee8cee95c8c29a2095f48.cloudfront.net (CloudFront), 1.1 36c050103b969d83a8b90ba7cba12542.cloudfront.net
+      - 1.1 413ab95636ac769b950032653c8ba1f2.cloudfront.net (CloudFront), 1.1 fd407fe7b2bb39801ba9f32e29a6bd42.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - XJgmxIoQBRTfv3wW412_UGFQ5_7Z5Jf7Glc78pq1kSP0gE8fWHNEqA==
+      - beYNFflw7-KnmM9O7H6cLZRiP_NQSsPRmcHCtwmhuKx9zAnkBNTDow==
       X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P2
+      - ORD56-P13
+      - ORD58-P15
       X-Amzn-Trace-Id:
-      - Root=1-6a8334f0-0cadcb5427e69e867c417bda;Parent=18617cfa31dfb814;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a85fb2b-538821d92c42ddc45dfc736d;Parent=5ead6dd3ed6c2cf9;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -266,7 +325,7 @@ interactions:
       content-length:
       - '80'
       etag:
-      - W/"50-7MFbbyn+vrorhH4QqqXclLNjauQ"
+      - W/"50-xneQ07OYjkX10l/eVHMWAzXsHC4"
       expires:
       - '0'
       surrogate-control:
@@ -274,11 +333,11 @@ interactions:
       vary:
       - Origin, Accept-Encoding
       x-amz-apigw-id:
-      - CQU1mEJgIAMEk7w=
+      - CXQu0E27oAMETzg=
       x-amzn-RequestId:
-      - bbfac5ba-6fd5-403d-b576-d5ea9d10f7bc
+      - 1f2e0174-e294-4fa8-9881-5675e98ded96
       x-bt-internal-trace-id:
-      - 6a8334f00000000046779b32296431fa
+      - 6a85fb2b000000000ea74c2a6232e321
     status:
       code: 200
       message: OK
@@ -286,7 +345,7 @@ interactions:
     body: '{"rows": [{"context": {"caller_filename": "[REDACTED_PATH]", "caller_functionname":
       "pytest_pyfunc_call", "caller_lineno": 167, "span_origin": {"instrumentation":
       {"name": "braintrust.plugin.harbor"}, "name": "braintrust.sdk.python", "version":
-      "0.33.0"}}, "created": "2026-08-17T16:21:03.123024+00:00", "experiment_id":
+      "0.34.0"}}, "created": "2026-08-19T18:51:18.424658+00:00", "experiment_id":
       "7aba8758-862e-41ef-9e77-6247c4b71287", "id": "7eb93a96-dfea-5318-bfff-63cf37ce89c6",
       "input": [{"content": "What is 2+2?", "role": "user"}], "metadata": {"model":
       "gpt-4o-mini", "provider": "openai", "tools": [{"function": {"name": "calculator",
@@ -295,21 +354,21 @@ interactions:
       1767225601.0, "tokens": 14}, "output": {"content": "I''ll calculate it.", "role":
       "assistant", "tool_calls": [{"function": {"arguments": "{\"expression\": \"2+2\"}",
       "name": "calculator"}, "id": "call_1", "type": "function"}]}, "root_span_id":
-      "09277e3250559ecc9ee9b5e23c2e3521", "span_attributes": {"exec_counter": 2, "name":
-      "chat.completions.create", "type": "llm"}, "span_id": "d5d11632f4f973b3", "span_parents":
-      ["282014be8518bbb6"]},{"context": {"caller_filename": "[REDACTED_PATH]", "caller_functionname":
+      "e01b4f32e5d23fc658d09e820781d24e", "span_attributes": {"exec_counter": 2, "name":
+      "chat.completions.create", "type": "llm"}, "span_id": "113cc7784bb5b5da", "span_parents":
+      ["1471efe57b7e2fc2"]},{"context": {"caller_filename": "[REDACTED_PATH]", "caller_functionname":
       "pytest_pyfunc_call", "caller_lineno": 167, "span_origin": {"instrumentation":
       {"name": "braintrust.plugin.harbor"}, "name": "braintrust.sdk.python", "version":
-      "0.33.0"}}, "created": "2026-08-17T16:21:03.123357+00:00", "experiment_id":
+      "0.34.0"}}, "created": "2026-08-19T18:51:18.425468+00:00", "experiment_id":
       "7aba8758-862e-41ef-9e77-6247c4b71287", "id": "b134c10f-7dc4-543a-9707-fa9af07dbbe8",
       "input": {"expression": "2+2"}, "metadata": {"tool_call_id": "call_1"}, "metrics":
       {"end": 1767225602.0, "start": 1767225601.0}, "output": "4", "root_span_id":
-      "09277e3250559ecc9ee9b5e23c2e3521", "span_attributes": {"exec_counter": 3, "name":
-      "calculator", "type": "tool"}, "span_id": "616a665fcfddb121", "span_parents":
-      ["282014be8518bbb6"]},{"context": {"caller_filename": "[REDACTED_PATH]", "caller_functionname":
+      "e01b4f32e5d23fc658d09e820781d24e", "span_attributes": {"exec_counter": 3, "name":
+      "calculator", "type": "tool"}, "span_id": "c71dcf5b5912be4f", "span_parents":
+      ["1471efe57b7e2fc2"]},{"context": {"caller_filename": "[REDACTED_PATH]", "caller_functionname":
       "pytest_pyfunc_call", "caller_lineno": 167, "span_origin": {"instrumentation":
       {"name": "braintrust.plugin.harbor"}, "name": "braintrust.sdk.python", "version":
-      "0.33.0"}}, "created": "2026-08-17T16:21:03.123717+00:00", "experiment_id":
+      "0.34.0"}}, "created": "2026-08-19T18:51:18.425730+00:00", "experiment_id":
       "7aba8758-862e-41ef-9e77-6247c4b71287", "id": "a2713e08-b2cb-5762-99d7-be29120f9880",
       "input": [{"content": "What is 2+2?", "role": "user"}, {"content": "I''ll calculate
       it.", "role": "assistant", "tool_calls": [{"function": {"arguments": "{\"expression\":
@@ -319,11 +378,11 @@ interactions:
       {"type": "object"}}, "type": "function"}]}, "metrics": {"completion_tokens":
       5, "end": 1767225603.0, "prompt_tokens": 15, "start": 1767225602.0, "tokens":
       20}, "output": {"content": "The answer is 4.", "role": "assistant"}, "root_span_id":
-      "09277e3250559ecc9ee9b5e23c2e3521", "span_attributes": {"exec_counter": 4, "name":
-      "chat.completions.create", "type": "llm"}, "span_id": "62492d8e4beddeff", "span_parents":
-      ["282014be8518bbb6"]},{"_is_merge": true, "experiment_id": "7aba8758-862e-41ef-9e77-6247c4b71287",
+      "e01b4f32e5d23fc658d09e820781d24e", "span_attributes": {"exec_counter": 4, "name":
+      "chat.completions.create", "type": "llm"}, "span_id": "0c10b6cc263b0049", "span_parents":
+      ["1471efe57b7e2fc2"]},{"_is_merge": true, "experiment_id": "7aba8758-862e-41ef-9e77-6247c4b71287",
       "id": "c7a87986-0192-5f40-9ac0-a535810f1fe7", "metrics": {"end": 1767225603.0},
-      "root_span_id": "09277e3250559ecc9ee9b5e23c2e3521", "span_id": "282014be8518bbb6",
+      "root_span_id": "e01b4f32e5d23fc658d09e820781d24e", "span_id": "1471efe57b7e2fc2",
       "span_parents": null}], "api_version": 2}'
     headers:
       Accept:
@@ -333,31 +392,31 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '3953'
+      - '3788'
       User-Agent:
       - python-requests/2.34.2
     method: POST
     uri: https://api.braintrust.dev/logs3
   response:
     body:
-      string: '{"ids":["7eb93a96-dfea-5318-bfff-63cf37ce89c6","b134c10f-7dc4-543a-9707-fa9af07dbbe8","a2713e08-b2cb-5762-99d7-be29120f9880","c7a87986-0192-5f40-9ac0-a535810f1fe7"],"xact_id":"1000197704014380245"}'
+      string: '{"ids":["7eb93a96-dfea-5318-bfff-63cf37ce89c6","b134c10f-7dc4-543a-9707-fa9af07dbbe8","a2713e08-b2cb-5762-99d7-be29120f9880","c7a87986-0192-5f40-9ac0-a535810f1fe7"],"xact_id":"1000197715930071764"}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 17 Aug 2026 16:21:04 GMT
+      - Wed, 19 Aug 2026 18:51:23 GMT
       Via:
-      - 1.1 14c014b656ee73df9fdddcb13e92dec8.cloudfront.net (CloudFront), 1.1 7293b56f3a0eb541aadcbcaa0146d528.cloudfront.net
+      - 1.1 c99e471e9fca7786a7636f3c84373e72.cloudfront.net (CloudFront), 1.1 df88548a1073b94c202d209937f3ccc6.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - NC7uYp7cNIm0QRLyyA6VZnqkwlfbeYKwdQsNqBXgGFFT-K_QFZ-cIA==
+      - _EhIUIweyQQOMD_e9DD0l2f21EuQKoiYV2pxO43cdIDSOwAW4oZfRQ==
       X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P2
+      - ORD56-P13
+      - ORD58-P15
       X-Amzn-Trace-Id:
-      - Root=1-6a8334f0-7afe91583aea7cdc3b69c71a;Parent=6374d4fd0e7ac6a7;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a85fb2b-496906f05f34c467192a3a5f;Parent=5a98d90964021497;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -369,7 +428,7 @@ interactions:
       content-length:
       - '197'
       etag:
-      - W/"c5-EgBBcKshB38tlemrDF+Fnkrppjs"
+      - W/"c5-OvOTHqEPf2kTFCBLLzy2N1Rqznw"
       expires:
       - '0'
       surrogate-control:
@@ -377,118 +436,57 @@ interactions:
       vary:
       - Origin, Accept-Encoding
       x-amz-apigw-id:
-      - CQU1pGmpoAMEfOA=
+      - CXQu4GQMIAMED5w=
       x-amzn-RequestId:
-      - 789d112f-b96c-427f-bf41-6cf7d1eed9aa
+      - dda56b86-9b7d-4220-90de-6726fc6215f9
       x-bt-internal-trace-id:
-      - 6a8334f000000000197c8bffe3fb90bc
+      - 6a85fb2b0000000061734959a82fe5bb
     status:
       code: 200
       message: OK
 - request:
-    body: '{"query": {"select": [{"op": "star"}], "from": {"op": "function", "name":
-      {"op": "ident", "name": ["experiment"]}, "args": [{"op": "literal", "value":
-      "7aba8758-862e-41ef-9e77-6247c4b71287"}]}, "cursor": null, "limit": 1000}, "use_columnstore":
-      false, "brainstore_realtime": true, "query_source": "py_sdk_object_fetcher_experiment"}'
+    body: '{"limit": 1000}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
-      - gzip
+      - gzip, deflate, zstd
       Connection:
       - keep-alive
       Content-Length:
-      - '332'
+      - '15'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.34.2
     method: POST
-    uri: https://api.braintrust.dev/btql
+    uri: https://api.braintrust.dev/v1/experiment/7aba8758-862e-41ef-9e77-6247c4b71287/fetch
   response:
     body:
-      string: '{"data":[{"_pagination_key":"p07675036396386844674","_xact_id":"1000197704014380245","audit_data":[{"_xact_id":"1000197704014380245","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.33.0"}},"created":"2026-08-17T16:21:03.123Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"a2713e08-b2cb-5762-99d7-be29120f9880","input":[{"content":"What
+      string: '{"events":[{"_pagination_key":"p07675817303146233858","_xact_id":"1000197715930071764","audit_data":[{"_xact_id":"1000197715930071764","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.34.0"}},"created":"2026-08-19T18:51:18.425Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"a2713e08-b2cb-5762-99d7-be29120f9880","input":[{"content":"What
         is 2+2?","role":"user"},{"content":"I''ll calculate it.","role":"assistant","tool_calls":[{"function":{"arguments":"{\"expression\":
         \"2+2\"}","name":"calculator"},"id":"call_1","type":"function"}]},{"content":"4","role":"tool","tool_call_id":"call_1"}],"is_root":false,"metadata":{"model":"gpt-4o-mini","provider":"openai","tools":[{"function":{"name":"calculator","parameters":{"type":"object"}},"type":"function"}]},"metrics":{"completion_tokens":5,"end":1767225603,"prompt_tokens":15,"start":1767225602,"tokens":20},"origin":null,"output":{"content":"The
-        answer is 4.","role":"assistant"},"project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"09277e3250559ecc9ee9b5e23c2e3521","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":4,"name":"chat.completions.create","type":"llm"},"span_id":"62492d8e4beddeff","span_parents":["282014be8518bbb6"],"tags":null},{"_pagination_key":"p07675036396386844673","_xact_id":"1000197704014380245","audit_data":[{"_xact_id":"1000197704014380245","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.33.0"}},"created":"2026-08-17T16:21:03.123Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"b134c10f-7dc4-543a-9707-fa9af07dbbe8","input":{"expression":"2+2"},"is_root":false,"metadata":{"tool_call_id":"call_1"},"metrics":{"end":1767225602,"start":1767225601},"origin":null,"output":"4","project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"09277e3250559ecc9ee9b5e23c2e3521","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":3,"name":"calculator","type":"tool"},"span_id":"616a665fcfddb121","span_parents":["282014be8518bbb6"],"tags":null},{"_pagination_key":"p07675036396386844672","_xact_id":"1000197704014380245","audit_data":[{"_xact_id":"1000197704014380245","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.33.0"}},"created":"2026-08-17T16:21:03.123Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"7eb93a96-dfea-5318-bfff-63cf37ce89c6","input":[{"content":"What
+        answer is 4.","role":"assistant"},"project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"e01b4f32e5d23fc658d09e820781d24e","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":4,"name":"chat.completions.create","type":"llm"},"span_id":"0c10b6cc263b0049","span_parents":["1471efe57b7e2fc2"],"tags":null},{"_pagination_key":"p07675817303146233857","_xact_id":"1000197715930071764","audit_data":[{"_xact_id":"1000197715930071764","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.34.0"}},"created":"2026-08-19T18:51:18.425Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"b134c10f-7dc4-543a-9707-fa9af07dbbe8","input":{"expression":"2+2"},"is_root":false,"metadata":{"tool_call_id":"call_1"},"metrics":{"end":1767225602,"start":1767225601},"origin":null,"output":"4","project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"e01b4f32e5d23fc658d09e820781d24e","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":3,"name":"calculator","type":"tool"},"span_id":"c71dcf5b5912be4f","span_parents":["1471efe57b7e2fc2"],"tags":null},{"_pagination_key":"p07675817303146233856","_xact_id":"1000197715930071764","audit_data":[{"_xact_id":"1000197715930071764","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.34.0"}},"created":"2026-08-19T18:51:18.424Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"7eb93a96-dfea-5318-bfff-63cf37ce89c6","input":[{"content":"What
         is 2+2?","role":"user"}],"is_root":false,"metadata":{"model":"gpt-4o-mini","provider":"openai","tools":[{"function":{"name":"calculator","parameters":{"type":"object"}},"type":"function"}]},"metrics":{"completion_tokens":4,"end":1767225602,"estimated_cost":0.001,"prompt_tokens":10,"start":1767225601,"tokens":14},"origin":null,"output":{"content":"I''ll
         calculate it.","role":"assistant","tool_calls":[{"function":{"arguments":"{\"expression\":
-        \"2+2\"}","name":"calculator"},"id":"call_1","type":"function"}]},"project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"09277e3250559ecc9ee9b5e23c2e3521","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":2,"name":"chat.completions.create","type":"llm"},"span_id":"d5d11632f4f973b3","span_parents":["282014be8518bbb6"],"tags":null},{"_pagination_key":"p07675036396283559936","_xact_id":"1000197704014380245","audit_data":[{"_xact_id":"1000197704014378669","audit_data":{"action":"upsert"},"metadata":{},"source":"api"},{"_xact_id":"1000197704014380245","audit_data":{"action":"merge","from":null,"path":["metrics"],"to":{"end":1767225603}},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust-python-logger"},"name":"braintrust.sdk.python","version":"0.33.0"}},"created":"2026-08-17T16:21:03.122Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"c7a87986-0192-5f40-9ac0-a535810f1fe7","input":null,"is_root":true,"metadata":null,"metrics":{"end":1767225603,"start":1767225600},"origin":null,"output":null,"project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"09277e3250559ecc9ee9b5e23c2e3521","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":1,"name":"agent_execution","type":"task"},"span_id":"282014be8518bbb6","span_parents":null,"tags":null},{"_pagination_key":"p07668465162241900545","_xact_id":"1000197603745304547","audit_data":[{"_xact_id":"1000197603738631632","audit_data":{"action":"upsert"},"metadata":{},"source":"api"},{"_xact_id":"1000197603742781733","audit_data":{"action":"upsert"},"metadata":{},"source":"api"},{"_xact_id":"1000197603745304547","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.31.0"}},"created":"2026-07-30T23:21:18.801Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"843c7c39-2f3a-5813-aa42-56da9fe5709f","input":{"expression":"2+2"},"is_root":false,"metadata":{"tool_call_id":"call_1"},"metrics":{"end":1767225602,"start":1767225601},"origin":null,"output":"4","project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"d43785839001054eaf1c4ac196c82112","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":3,"name":"calculator","type":"tool"},"span_id":"161550719b4ad9d1","span_parents":["2d261ed7ec06b709"],"tags":null}],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
-        stable, time-ordered key that can be used to paginate over experiment events.
-        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
-        transaction id of an event is unique to the network operation that processed
-        the event insertion. Transaction ids are monotonically increasing over time
-        and can be used to retrieve a versioned snapshot of the experiment (see the
-        `version` parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
-        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
-        classification identifier","type":"string"},"label":{"description":"Original
-        label of the classification item, which is useful for search and indexing
-        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
-        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
-        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
-        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
-        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"context":{"anyOf":[{"additionalProperties":{},"properties":{"caller_filename":{"description":"Name
-        of the file in code where the experiment event was created","type":["string","null"]},"caller_functionname":{"description":"The
-        function in code which created the experiment event","type":["string","null"]},"caller_lineno":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"created":{"description":"The
-        timestamp the experiment event was created","format":"date-time","type":"string"},"error":{"description":"The
-        error that occurred, if any."},"expected":{"description":"The ground truth
-        value (an arbitrary, JSON serializable object) that you''d compare to `output`
-        to determine if your `output` value is correct or not. Braintrust currently
-        does not compare `output` to `expected` for you, since there are so many different
-        ways to do that correctly. Instead, these values are just used to help you
-        navigate your experiments while digging into analyses. However, we may later
-        use these values to re-score outputs or fine-tune your models"},"experiment_id":{"description":"Unique
-        identifier for the experiment","format":"uuid","type":"string"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
-        unique identifier for the experiment event. If you don''t provide one, Braintrust
-        will generate one for you","type":"string"},"input":{"description":"The arguments
-        that uniquely define a test case (an arbitrary, JSON serializable object).
-        Later on, Braintrust will use the `input` to know whether two test cases are
-        the same between experiments, so they should not contain experiment-specific
-        state. A simple rule of thumb is that if you run the same experiment twice,
-        the `input` should be identical"},"is_root":{"description":"Whether this span
-        is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
-        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"metrics":{"anyOf":[{"additionalProperties":{"type":"number"},"properties":{"caller_filename":{"description":"This
-        metric is deprecated"},"caller_functionname":{"description":"This metric is
-        deprecated"},"caller_lineno":{"description":"This metric is deprecated"},"completion_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"end":{"description":"A
-        unix timestamp recording when the section of code which produced the experiment
-        event finished","type":["number","null"]},"prompt_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"start":{"description":"A
-        unix timestamp recording when the section of code which produced the experiment
-        event started","type":["number","null"]},"tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
-        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
-        ID of the original event.","type":["string","null"]},"created":{"description":"Created
-        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
-        of the original event.","type":"string"},"object_id":{"description":"ID of
-        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
-        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"output":{"description":"The
-        output of your application, including post-processing (an arbitrary, JSON
-        serializable object), that allows you to determine whether the result is correct
-        or not. For example, in an app that generates SQL queries, the `output` should
-        be the _result_ of the SQL query generated by the model, not the query itself,
-        because there may be multiple valid queries that answer a single question"},"project_id":{"description":"Unique
-        identifier for the project that the experiment belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
-        unique identifier for the trace this experiment event belongs to","type":"string"},"scores":{"anyOf":[{"additionalProperties":{"anyOf":[{"maximum":1,"minimum":0,"type":"number"},{"type":"null"}]},"properties":{},"type":"object"},{"type":"null"}]},"span_attributes":{"anyOf":[{"additionalProperties":{},"description":"Human-identifying
-        attributes of the span, such as name, type, etc.","properties":{"name":{"description":"Name
-        of the span, for display purposes only","type":["string","null"]},"purpose":{"anyOf":[{"enum":["scorer"],"type":"string"},{"type":"null"}]},"type":{"anyOf":[{"enum":["llm","score","function","eval","task","tool","automation","facet","preprocessor","classifier","review"],"type":"string"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"span_id":{"description":"A
-        unique identifier used to link different experiment events together as part
-        of a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
-        for full details on tracing","type":"string"},"span_parents":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"cursor":"amvcb4/jAAE","realtime_state":{"type":"on","minimum_xact_id":"1000197646831505354","read_bytes":5797,"actual_xact_id":"1000197704014380245"},"freshness_state":{"last_processed_xact_id":"1000197646831505354","last_considered_xact_id":"1000197704014380245"},"warnings":[]}'
+        \"2+2\"}","name":"calculator"},"id":"call_1","type":"function"}]},"project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"e01b4f32e5d23fc658d09e820781d24e","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":2,"name":"chat.completions.create","type":"llm"},"span_id":"113cc7784bb5b5da","span_parents":["1471efe57b7e2fc2"],"tags":null},{"_pagination_key":"p07675817303018504192","_xact_id":"1000197715930071764","audit_data":[{"_xact_id":"1000197715930069815","audit_data":{"action":"upsert"},"metadata":{},"source":"api"},{"_xact_id":"1000197715930071764","audit_data":{"action":"merge","from":null,"path":["metrics"],"to":{"end":1767225603}},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust-python-logger"},"name":"braintrust.sdk.python","version":"0.34.0"}},"created":"2026-08-19T18:51:18.423Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"c7a87986-0192-5f40-9ac0-a535810f1fe7","input":null,"is_root":true,"metadata":null,"metrics":{"end":1767225603,"start":1767225600},"origin":null,"output":null,"project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"e01b4f32e5d23fc658d09e820781d24e","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":1,"name":"agent_execution","type":"task"},"span_id":"1471efe57b7e2fc2","span_parents":null,"tags":null},{"_pagination_key":"p07668465162241900545","_xact_id":"1000197603745304547","audit_data":[{"_xact_id":"1000197603738631632","audit_data":{"action":"upsert"},"metadata":{},"source":"api"},{"_xact_id":"1000197603742781733","audit_data":{"action":"upsert"},"metadata":{},"source":"api"},{"_xact_id":"1000197603745304547","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"context":{"caller_filename":"[REDACTED_PATH]","caller_functionname":"pytest_pyfunc_call","caller_lineno":167,"span_origin":{"instrumentation":{"name":"braintrust.plugin.harbor"},"name":"braintrust.sdk.python","version":"0.31.0"}},"created":"2026-07-30T23:21:18.801Z","error":null,"expected":null,"experiment_id":"7aba8758-862e-41ef-9e77-6247c4b71287","facets":null,"id":"843c7c39-2f3a-5813-aa42-56da9fe5709f","input":{"expression":"2+2"},"is_root":false,"metadata":{"tool_call_id":"call_1"},"metrics":{"end":1767225602,"start":1767225601},"origin":null,"output":"4","project_id":"d982a2fd-c0b1-4b55-a0ac-b5af3ba3e229","root_span_id":"d43785839001054eaf1c4ac196c82112","scores":null,"span_attributes":{"created_by_api_key_id":"607d8072-e7a7-48d9-a326-de588dc07bf0","created_by_user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","exec_counter":3,"name":"calculator","type":"tool"},"span_id":"161550719b4ad9d1","span_parents":["2d261ed7ec06b709"],"tags":null}],"cursor":"amvcb4/jAAE"}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 17 Aug 2026 16:21:05 GMT
+      - Wed, 19 Aug 2026 18:51:24 GMT
       Via:
-      - 1.1 e7e881849322d751aeeb9605914b08b4.cloudfront.net (CloudFront), 1.1 777f4a7ed43b40353f84311869e119c8.cloudfront.net
+      - 1.1 8bc8701b373a25ffd828711cdb8fd72a.cloudfront.net (CloudFront), 1.1 5190dea606bf96f8102635278cb23da8.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - _WAjSRvrdRHv7SPofHtPjhIEiMJNZjvcYaL0_EfTw2TZTXWLCpikOA==
+      - oURFNMqiDrhfLGUvCn2eAdSbInO4XmGus4-SxGfEm4oWm0g9g928oQ==
       X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P2
+      - ORD56-P13
+      - ORD58-P15
       X-Amzn-Trace-Id:
-      - Root=1-6a8334f0-7ad041b259d186957b613771;Parent=471d2022b107ab6e;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a85fb2b-4f3ca4f656add3561876f2ea;Parent=53d3452dc613d293;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -496,125 +494,67 @@ interactions:
       access-control-expose-headers:
       - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
       cache-control:
-      - private, no-cache
+      - no-store, no-cache, must-revalidate, proxy-revalidate
       content-length:
-      - '15711'
+      - '7716'
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
       vary:
       - Origin
       x-amz-apigw-id:
-      - CQU1tFsaoAMEv7g=
+      - CXQu8H2mIAMEY9w=
       x-amzn-RequestId:
-      - 44321799-58e5-4d55-b5c5-86e2a9bed86e
+      - cb5810e3-8060-4d2e-8d42-71a3226b52fa
       x-bt-api-duration-ms:
-      - '549'
+      - '401'
       x-bt-brainstore-duration-ms:
-      - '486'
+      - '352'
       x-bt-cursor:
       - amvcb4/jAAE
       x-bt-internal-trace-id:
-      - 6a8334f00000000026b4dedee734d616
+      - 6a85fb2b000000007c63f63dc9dc5aa3
     status:
       code: 200
       message: OK
 - request:
-    body: '{"query": {"select": [{"op": "star"}], "from": {"op": "function", "name":
-      {"op": "ident", "name": ["experiment"]}, "args": [{"op": "literal", "value":
-      "7aba8758-862e-41ef-9e77-6247c4b71287"}]}, "cursor": "amvcb4/jAAE", "limit":
-      1000}, "use_columnstore": false, "brainstore_realtime": true, "query_source":
-      "py_sdk_object_fetcher_experiment"}'
+    body: '{"limit": 1000, "cursor": "amvcb4/jAAE"}'
     headers:
       Accept:
       - '*/*'
       Accept-Encoding:
-      - gzip
+      - gzip, deflate, zstd
       Connection:
       - keep-alive
       Content-Length:
-      - '341'
+      - '40'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.34.2
     method: POST
-    uri: https://api.braintrust.dev/btql
+    uri: https://api.braintrust.dev/v1/experiment/7aba8758-862e-41ef-9e77-6247c4b71287/fetch
   response:
     body:
-      string: '{"data":[],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
-        stable, time-ordered key that can be used to paginate over experiment events.
-        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
-        transaction id of an event is unique to the network operation that processed
-        the event insertion. Transaction ids are monotonically increasing over time
-        and can be used to retrieve a versioned snapshot of the experiment (see the
-        `version` parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
-        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
-        classification identifier","type":"string"},"label":{"description":"Original
-        label of the classification item, which is useful for search and indexing
-        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
-        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
-        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
-        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
-        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"context":{"anyOf":[{"additionalProperties":{},"properties":{"caller_filename":{"description":"Name
-        of the file in code where the experiment event was created","type":["string","null"]},"caller_functionname":{"description":"The
-        function in code which created the experiment event","type":["string","null"]},"caller_lineno":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"created":{"description":"The
-        timestamp the experiment event was created","format":"date-time","type":"string"},"error":{"description":"The
-        error that occurred, if any."},"expected":{"description":"The ground truth
-        value (an arbitrary, JSON serializable object) that you''d compare to `output`
-        to determine if your `output` value is correct or not. Braintrust currently
-        does not compare `output` to `expected` for you, since there are so many different
-        ways to do that correctly. Instead, these values are just used to help you
-        navigate your experiments while digging into analyses. However, we may later
-        use these values to re-score outputs or fine-tune your models"},"experiment_id":{"description":"Unique
-        identifier for the experiment","format":"uuid","type":"string"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
-        unique identifier for the experiment event. If you don''t provide one, Braintrust
-        will generate one for you","type":"string"},"input":{"description":"The arguments
-        that uniquely define a test case (an arbitrary, JSON serializable object).
-        Later on, Braintrust will use the `input` to know whether two test cases are
-        the same between experiments, so they should not contain experiment-specific
-        state. A simple rule of thumb is that if you run the same experiment twice,
-        the `input` should be identical"},"is_root":{"description":"Whether this span
-        is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
-        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"metrics":{"anyOf":[{"additionalProperties":{"type":"number"},"properties":{"caller_filename":{"description":"This
-        metric is deprecated"},"caller_functionname":{"description":"This metric is
-        deprecated"},"caller_lineno":{"description":"This metric is deprecated"},"completion_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"end":{"description":"A
-        unix timestamp recording when the section of code which produced the experiment
-        event finished","type":["number","null"]},"prompt_tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]},"start":{"description":"A
-        unix timestamp recording when the section of code which produced the experiment
-        event started","type":["number","null"]},"tokens":{"anyOf":[{"type":"integer"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
-        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
-        ID of the original event.","type":["string","null"]},"created":{"description":"Created
-        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
-        of the original event.","type":"string"},"object_id":{"description":"ID of
-        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
-        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"output":{"description":"The
-        output of your application, including post-processing (an arbitrary, JSON
-        serializable object), that allows you to determine whether the result is correct
-        or not. For example, in an app that generates SQL queries, the `output` should
-        be the _result_ of the SQL query generated by the model, not the query itself,
-        because there may be multiple valid queries that answer a single question"},"project_id":{"description":"Unique
-        identifier for the project that the experiment belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
-        unique identifier for the trace this experiment event belongs to","type":"string"},"scores":{"anyOf":[{"additionalProperties":{"anyOf":[{"maximum":1,"minimum":0,"type":"number"},{"type":"null"}]},"properties":{},"type":"object"},{"type":"null"}]},"span_attributes":{"anyOf":[{"additionalProperties":{},"description":"Human-identifying
-        attributes of the span, such as name, type, etc.","properties":{"name":{"description":"Name
-        of the span, for display purposes only","type":["string","null"]},"purpose":{"anyOf":[{"enum":["scorer"],"type":"string"},{"type":"null"}]},"type":{"anyOf":[{"enum":["llm","score","function","eval","task","tool","automation","facet","preprocessor","classifier","review"],"type":"string"},{"type":"null"}]}},"type":"object"},{"type":"null"}]},"span_id":{"description":"A
-        unique identifier used to link different experiment events together as part
-        of a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
-        for full details on tracing","type":"string"},"span_parents":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"realtime_state":{"type":"on","minimum_xact_id":"1000197646831505354","read_bytes":5797,"actual_xact_id":"1000197704014380245"},"freshness_state":{"last_processed_xact_id":"1000197646831505354","last_considered_xact_id":"1000197704014380245"},"warnings":[]}'
+      string: '{"events":[]}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Mon, 17 Aug 2026 16:21:05 GMT
+      - Wed, 19 Aug 2026 18:51:24 GMT
       Via:
-      - 1.1 76283331d5eee8cee95c8c29a2095f48.cloudfront.net (CloudFront), 1.1 53d47b61433f6e1682b806fc166731be.cloudfront.net
+      - 1.1 b8e1a6025ed5585661981981a52ff59c.cloudfront.net (CloudFront), 1.1 7d020237cc496fbd54430564b7b9d26a.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - XNrPiFtzOVaqlMTLaKwCvNLmHsVzASXHqO8MyYibgZ69QeleEXCvlA==
+      - kWEXfzwj95FMCLchTCc5tPQueyRapgD38kjRkaRiY6nGTl1Zn7Jadw==
       X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P2
+      - ORD56-P13
+      - ORD58-P15
       X-Amzn-Trace-Id:
-      - Root=1-6a8334f1-7a68c931476779330493f01c;Parent=2fd091a1e6f4cc27;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a85fb2c-3a1f8e5171bfdda613deb998;Parent=48df8fe6060638b3;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -622,21 +562,25 @@ interactions:
       access-control-expose-headers:
       - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
       cache-control:
-      - private, no-cache
+      - no-store, no-cache, must-revalidate, proxy-revalidate
       content-length:
-      - '7788'
+      - '13'
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
       vary:
       - Origin
       x-amz-apigw-id:
-      - CQU10F31oAMEtGQ=
+      - CXQvCHg5IAMEhTw=
       x-amzn-RequestId:
-      - b1e011cb-31ef-4f25-9f22-a01224bf1e16
+      - 4f83a9b1-0372-4e1f-8333-e21cf5577637
       x-bt-api-duration-ms:
-      - '132'
+      - '353'
       x-bt-brainstore-duration-ms:
-      - '65'
+      - '278'
       x-bt-internal-trace-id:
-      - 6a8334f1000000007257e79df23b224f
+      - 6a85fb2c000000002de35b4b5ff03b32
     status:
       code: 200
       message: OK
