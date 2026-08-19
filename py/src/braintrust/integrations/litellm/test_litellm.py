@@ -1,6 +1,7 @@
 import asyncio
 import os
 import time
+import uuid
 
 import litellm
 import pytest
@@ -19,6 +20,8 @@ TEST_MODEL = "gpt-4o-mini"  # cheapest model for tests
 TEST_TEXT_MODEL = "gpt-3.5-turbo-instruct"
 TEST_PROMPT = "What's 12 + 12?"
 TEST_SYSTEM_PROMPT = "You are a helpful assistant that only responds with numbers."
+TEST_CACHE_MODEL = "anthropic/claude-haiku-4-5-20251001"
+TEST_CACHEABLE_PROMPT = "Braintrust LiteLLM prompt caching regression context. " * 400
 TEST_AUDIO_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "test_audio.wav")
 
 RERANK_MODEL = "cohere/rerank-english-v3.0"
@@ -73,6 +76,79 @@ def test_litellm_completion_metrics(memory_logger) -> None:
     assert span["metadata"]["model"] == TEST_MODEL
     assert span["metadata"]["provider"] == "openai"
     assert TEST_PROMPT in str(span["input"])
+
+
+@pytest.mark.vcr
+def test_litellm_prompt_caching_metrics(memory_logger) -> None:
+    package_version = os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION", "direct")
+    cacheable_prompt = f"{TEST_CACHEABLE_PROMPT}\n\nCache salt: {uuid.uuid4().hex}\n"
+    messages = [
+        {
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": cacheable_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+        },
+        {"role": "user", "content": "Reply with OK."},
+    ]
+
+    response = litellm.completion(model=TEST_CACHE_MODEL, messages=messages, max_tokens=5)
+    assert response.choices[0].message.content
+
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    first_metrics = spans[0]["metrics"]
+    first_has_ttl_breakdown = (
+        "prompt_cache_creation_5m_tokens" in first_metrics or "prompt_cache_creation_1h_tokens" in first_metrics
+    )
+    first_cache_creation_tokens = (
+        first_metrics.get("prompt_cache_creation_5m_tokens", 0)
+        + first_metrics.get("prompt_cache_creation_1h_tokens", 0)
+        if first_has_ttl_breakdown
+        else first_metrics.get("prompt_cache_creation_tokens", 0)
+    )
+
+    assert first_cache_creation_tokens > 0
+    assert first_metrics["prompt_cached_tokens"] == 0
+    if first_has_ttl_breakdown:
+        assert "prompt_cache_creation_tokens" not in first_metrics
+
+    second_metrics = None
+    for attempt in range(3):
+        response = litellm.completion(model=TEST_CACHE_MODEL, messages=messages, max_tokens=5)
+        assert response.choices[0].message.content
+
+        spans = memory_logger.pop()
+        assert len(spans) == 1
+        second_metrics = spans[0]["metrics"]
+        if second_metrics.get("prompt_cached_tokens", 0) > 0:
+            break
+        if attempt < 2:
+            time.sleep(1)
+
+    assert second_metrics is not None
+    assert second_metrics["prompt_cached_tokens"] > 0
+    second_has_ttl_breakdown = (
+        "prompt_cache_creation_5m_tokens" in second_metrics or "prompt_cache_creation_1h_tokens" in second_metrics
+    )
+    if second_has_ttl_breakdown:
+        assert "prompt_cache_creation_tokens" not in second_metrics
+
+    if package_version == "latest":
+        assert first_has_ttl_breakdown
+        assert second_has_ttl_breakdown
+
+    unsupported_cache_metrics = {
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+        "prompt_cache_write_tokens",
+    }
+    assert unsupported_cache_metrics.isdisjoint(first_metrics)
+    assert unsupported_cache_metrics.isdisjoint(second_metrics)
 
 
 @pytest.mark.vcr
