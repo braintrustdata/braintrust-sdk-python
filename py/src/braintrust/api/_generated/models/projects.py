@@ -4,18 +4,13 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 430c31ef9773d7cd389d86e7ef06d075e8db6c74cd7e6b7ee095ec87ef435a9e
+# Content SHA-256: 7f255d8bb302ac26b6281a82889c8108c5a8f65cc4b9f748eb47919dcf89d947
 
 from typing import Any, Literal, TypeAlias, TypedDict
-from collections.abc import Mapping, Sequence
 from typing_extensions import NotRequired
+from collections.abc import Mapping, Sequence
 
 from .common import FunctionTypeEnum
-
-AppLimitParam: TypeAlias = int | None
-"""
-Limit the number of objects to return
-"""
 
 
 class CreateProject(TypedDict):

@@ -1,42 +1,46 @@
 # Pinned Braintrust OpenAPI specification
 
-`spec.json` is a committed snapshot of the public specification from
+`spec.json` is a committed snapshot of
 [`braintrustdata/braintrust-openapi`](https://github.com/braintrustdata/braintrust-openapi).
-`config.json` pins the full upstream commit, snapshot SHA-256, generator tools, generator flags, and
-selected endpoint tags. The generator scripts live in `py/scripts/`. Builds and package installation
-use the committed generated source and never fetch or run code generation.
+`config.json` pins the upstream commit, snapshot hash, generator versions and flags, selected endpoint
+tags, and retry-policy allowlists. Builds use committed generated source and never fetch the spec or
+run code generation.
 
-From `py/`, validate and regenerate the private models offline with:
+## Generate and check
+
+Run from `py/`:
 
 ```bash
 make generate-api-client
 make check-api-client-codegen
 ```
 
-The check regenerates into a temporary directory and does not modify the worktree. Endpoint bindings
-are rolled out explicitly through `endpoint_generator.generated_tags`. The current rollout supports
-the Projects and Experiments tags and emits one operation registry/resource class per tag. Reachable
-models used by one resource live in that resource's model module; models shared by multiple resources
-live once in `models/common.py` and are imported explicitly. Unreachable models are omitted. Public
-resource method and inline response type names are derived mechanically from each `operationId`, and
-generated methods forward request fields and parameters without implicit defaults. Logical POST reads
-that are safe to retry are listed in `endpoint_generator.safe_reads`, while verified idempotent writes
-are listed in `endpoint_generator.idempotent_writes`; GET/HEAD reads and all other writes use
-mechanical retry defaults.
+The check regenerates in a temporary directory and reports drift without changing the worktree.
+Currently selected tags are Projects, Experiments, and Datasets. Each tag produces one resource and
+operation registry. Models used by one resource stay in that resource's model module; shared models
+live in `models/common.py`; unreachable models are omitted.
 
-To fetch the configured upstream commit explicitly:
+Method and inline-response names come directly from normalized OpenAPI `operationId` values. Generated
+models preserve exact wire keys, including leading underscores, and methods do not add implicit request
+defaults. GET and HEAD operations use the safe-read retry policy.
+Logical POST reads and verified idempotent writes must be listed explicitly in `safe_reads` and
+`idempotent_writes`; all other writes are non-retrying.
+
+## Refresh the snapshot
+
+Fetch the configured upstream commit:
 
 ```bash
 make fetch-openapi-spec
 ```
 
-For an existing local checkout, set `BRAINTRUST_OPENAPI_ROOT` to its root. The checkout must be at the
-commit pinned in `config.json`, and its specification must have the pinned hash:
+To fetch from a local checkout instead:
 
 ```bash
 BRAINTRUST_OPENAPI_ROOT=../../braintrust-openapi make fetch-openapi-spec
 ```
 
-To update the snapshot, first update the commit and SHA-256 in `config.json`, then fetch, regenerate,
-and review both the upstream spec diff and generated model diff. Only operations selected through
-`endpoint_generator.generated_tags` and their reachable schemas are validated and generated.
+The checkout must be at the commit pinned in `config.json`, and its spec must match the pinned hash.
+To update the snapshot, update the commit and hash in `config.json`, fetch, regenerate, and review both
+the upstream spec diff and generated-source diff. Validation and generation apply only to selected tags
+and their transitively reachable schemas.

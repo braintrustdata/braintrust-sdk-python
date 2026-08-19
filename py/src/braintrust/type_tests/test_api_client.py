@@ -4,16 +4,23 @@ from typing import TYPE_CHECKING
 
 from braintrust.api import BraintrustClient, BraintrustOpenApiClient, EndpointRouter, RequestTarget
 from braintrust.api.types import (
+    CreateDataset,
     CreateExperiment,
     CreateProject,
+    Dataset,
     Experiment,
+    FetchDatasetEventsResponse,
     FetchEventsRequest,
     FetchExperimentEventsResponse,
+    GetDatasetResponse,
     GetExperimentResponse,
     GetProjectResponse,
+    InsertDatasetEventRequest,
+    PatchDataset,
     PatchExperiment,
     PatchProject,
     Project,
+    SummarizeDatasetResponse,
     SummarizeExperimentResponse,
 )
 
@@ -34,6 +41,32 @@ if TYPE_CHECKING:
     fetched_project: Project = openapi_client.projects.get_project_id(project["id"])
     updated_project: Project = openapi_client.projects.patch_project_id(project["id"], body=patch_project)
     deleted_project: Project = openapi_client.projects.delete_project_id(project["id"])
+
+    create_dataset: CreateDataset = {"project_id": project["id"], "name": "typed-dataset"}
+    dataset: Dataset = openapi_client.datasets.post_dataset(body=create_dataset)
+    datasets: GetDatasetResponse = openapi_client.datasets.get_dataset(ids=[dataset["id"]], project_id=project["id"])
+    fetched_dataset: Dataset = openapi_client.datasets.get_dataset_id(dataset["id"])
+    patch_dataset: PatchDataset = {"description": "updated"}
+    updated_dataset: Dataset = openapi_client.datasets.patch_dataset_id(dataset["id"], body=patch_dataset)
+    insert_dataset_events: InsertDatasetEventRequest = {
+        "events": [
+            {
+                "id": "row-id",
+                "_is_merge": True,
+                "_merge_paths": [["input"]],
+                "_array_delete": [{"path": ["tags"], "delete": ["old"]}],
+                "_object_delete": True,
+                "_parent_id": "parent-id",
+            }
+        ]
+    }
+    openapi_client.datasets.post_dataset_id_insert(dataset["id"], body=insert_dataset_events)
+    fetched_dataset_events: FetchDatasetEventsResponse = openapi_client.datasets.post_dataset_id_fetch(
+        dataset["id"], body={"limit": 10}
+    )
+    fetched_dataset_xact_id: str | None = fetched_dataset_events["events"][0].get("_xact_id")
+    dataset_summary: SummarizeDatasetResponse = openapi_client.datasets.get_dataset_id_summarize(dataset["id"])
+    deleted_dataset: Dataset = openapi_client.datasets.delete_dataset_id(dataset["id"])
 
     create_experiment: CreateExperiment = {"project_id": project["id"], "name": "typed-experiment"}
     experiment: Experiment = openapi_client.experiments.post_experiment(body=create_experiment)

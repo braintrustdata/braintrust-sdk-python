@@ -4,13 +4,13 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 8217275b6af7a615da1333759bd9958a66bfbd003548dc35a70cc3430c27b119
+# Content SHA-256: 48aad16184321bf01b7d94dbc3515e18099eeccac91c32dae3c2c5a09af5e38d
 
 from typing import Any, Literal, TypeAlias, TypedDict
-from collections.abc import Mapping, Sequence
 from typing_extensions import NotRequired
+from collections.abc import Mapping, Sequence
 
-from .common import FunctionTypeEnum
+from .common import Classification, FieldArrayDeleteItem, Metadata, ObjectReferenceNullish
 
 AppLimitWithDefaultParam: TypeAlias = int | None
 """
@@ -42,13 +42,6 @@ class Context(TypedDict):
     caller_lineno: NotRequired[int | None]
     """
     Line of code where the experiment event was created
-    """
-
-
-class Metadata(TypedDict):
-    model: NotRequired[str | None]
-    """
-    The model used for this example
     """
 
 
@@ -129,67 +122,6 @@ class FeedbackExperimentItem(TypedDict):
     """
 
 
-class FeedbackResponseSchema(TypedDict):
-    status: Literal["success"]
-
-
-FetchLimit: TypeAlias = int | None
-"""
-limit the number of traces fetched
-
-Fetch queries may be paginated if the total result size is expected to be large (e.g. project_logs which accumulate over a long time). Note that fetch queries only support pagination in descending time order (from latest to earliest `_xact_id`. Furthermore, later pages may return rows which showed up in earlier pages, except with an earlier `_xact_id`. This happens because pagination occurs over the whole version history of the event log. You will most likely want to exclude any such duplicate, outdated rows (by `id`) from your combined result set.
-
-The `limit` parameter controls the number of full traces to return. So you may end up with more individual rows than the specified limit if you are fetching events containing traces.
-"""
-
-FetchLimitParam: TypeAlias = int | None
-"""
-limit the number of traces fetched
-
-Fetch queries may be paginated if the total result size is expected to be large (e.g. project_logs which accumulate over a long time). Note that fetch queries only support pagination in descending time order (from latest to earliest `_xact_id`. Furthermore, later pages may return rows which showed up in earlier pages, except with an earlier `_xact_id`. This happens because pagination occurs over the whole version history of the event log. You will most likely want to exclude any such duplicate, outdated rows (by `id`) from your combined result set.
-
-The `limit` parameter controls the number of full traces to return. So you may end up with more individual rows than the specified limit if you are fetching events containing traces.
-"""
-
-FetchPaginationCursor: TypeAlias = str | None
-"""
-An opaque string to be used as a cursor for the next page of results, in order from latest to earliest.
-
-The string can be obtained directly from the `cursor` property of the previous fetch query
-"""
-
-
-class InsertEventsResponse(TypedDict):
-    row_ids: Sequence[str]
-    """
-    The ids of all rows that were inserted, aligning one-to-one with the rows provided as input
-    """
-
-
-class FieldArrayDeleteItem(TypedDict):
-    delete: Sequence[Any]
-    path: Sequence[str]
-
-
-MaxRootSpanId: TypeAlias = str
-"""
-DEPRECATION NOTICE: The manually-constructed pagination cursor is deprecated in favor of the explicit 'cursor' returned by object fetch requests. Please prefer the 'cursor' argument going forwards.
-
-Together, `max_xact_id` and `max_root_span_id` form a pagination cursor
-
-Since a paginated fetch query returns results in order from latest to earliest, the cursor for the next page can be found as the row with the minimum (earliest) value of the tuple `(_xact_id, root_span_id)`. See the documentation of `limit` for an overview of paginating fetch queries.
-"""
-
-MaxXactId: TypeAlias = str
-"""
-DEPRECATION NOTICE: The manually-constructed pagination cursor is deprecated in favor of the explicit 'cursor' returned by object fetch requests. Please prefer the 'cursor' argument going forwards.
-
-Together, `max_xact_id` and `max_root_span_id` form a pagination cursor
-
-Since a paginated fetch query returns results in order from latest to earliest, the cursor for the next page can be found as the row with the minimum (earliest) value of the tuple `(_xact_id, root_span_id)`. See the documentation of `limit` for an overview of paginating fetch queries.
-"""
-
-
 class MetricSummary(TypedDict):
     diff: NotRequired[float]
     """
@@ -215,35 +147,6 @@ class MetricSummary(TypedDict):
     """
     Unit label for the metric
     """
-
-
-class ObjectReferenceNullish(TypedDict):
-    field_xact_id: NotRequired[str | None]
-    """
-    Transaction ID of the original event.
-    """
-    created: NotRequired[str | None]
-    """
-    Created timestamp of the original event. Used to help sort in the UI
-    """
-    id: str
-    """
-    ID of the original event.
-    """
-    object_id: str
-    """
-    ID of the object the event is originating from.
-    """
-    object_type: Literal["project_logs", "experiment", "dataset", "prompt", "function", "prompt_session"]
-    """
-    Type of the object the event is originating from.
-    """
-
-
-ProjectIdQuery: TypeAlias = str
-"""
-Project id
-"""
 
 
 class RepoInfo(TypedDict):
@@ -283,27 +186,6 @@ class RepoInfo(TypedDict):
     """
     Name of the tag on the most recent commit
     """
-
-
-class SavedFunctionId1(TypedDict):
-    id: str
-    type: Literal["function"]
-    version: NotRequired[str]
-    """
-    The version of the function
-    """
-
-
-class SavedFunctionId2(TypedDict):
-    function_type: NotRequired[FunctionTypeEnum]
-    name: str
-    type: Literal["global"]
-
-
-SavedFunctionId: TypeAlias = SavedFunctionId1 | SavedFunctionId2 | None
-"""
-Optional function identifier that produced the classification
-"""
 
 
 class ScoreSummary(TypedDict):
@@ -384,13 +266,6 @@ class SummarizeExperimentResponse(TypedDict):
 SummarizeScores: TypeAlias = bool | None
 """
 Whether to summarize the scores and metrics. If false (or omitted), only the metadata will be returned.
-"""
-
-Version: TypeAlias = str
-"""
-Retrieve a snapshot of events from a past time
-
-The version id is essentially a filter on the latest event transaction id. You can use the `max_xact_id` returned by a past fetch as the version to reproduce that exact fetch.
 """
 
 
@@ -522,39 +397,11 @@ class Experiment(TypedDict):
     """
 
 
-class Classification(TypedDict):
-    confidence: NotRequired[float | None]
-    """
-    Optional confidence score for the classification
-    """
-    id: str
-    """
-    Stable classification identifier
-    """
-    label: NotRequired[str]
-    """
-    Original label of the classification item, which is useful for search and indexing purposes
-    """
-    metadata: NotRequired[Mapping[str, Any] | None]
-    """
-    Optional metadata associated with the classification
-    """
-    source: NotRequired[SavedFunctionId]
-
-
 class FeedbackExperimentEventRequest(TypedDict):
     feedback: Sequence[FeedbackExperimentItem]
     """
     A list of experiment feedback items
     """
-
-
-class FetchEventsRequest(TypedDict):
-    cursor: NotRequired[FetchPaginationCursor | None]
-    limit: NotRequired[FetchLimit | None]
-    max_root_span_id: NotRequired[MaxRootSpanId | None]
-    max_xact_id: NotRequired[MaxXactId | None]
-    version: NotRequired[Version | None]
 
 
 class GetExperimentResponse(TypedDict):
@@ -625,11 +472,11 @@ class SpanAttributes(TypedDict):
 
 
 class ExperimentEvent(TypedDict):
-    field_pagination_key: NotRequired[str | None]
+    _pagination_key: NotRequired[str | None]
     """
     A stable, time-ordered key that can be used to paginate over experiment events. This field is auto-generated by Braintrust and only exists in Brainstore.
     """
-    field_xact_id: str
+    _xact_id: str
     """
     The transaction id of an event is unique to the network operation that processed the event insertion. Transaction ids are monotonically increasing over time and can be used to retrieve a versioned snapshot of the experiment (see the `version` parameter)
     """
@@ -735,29 +582,29 @@ class FetchExperimentEventsResponse(TypedDict):
 
 
 class InsertExperimentEvent(TypedDict):
-    field_array_delete: NotRequired[Sequence[FieldArrayDeleteItem] | None]
+    _array_delete: NotRequired[Sequence[FieldArrayDeleteItem] | None]
     """
     The `_array_delete` field allows removing specific values from array fields. It is an array of objects with `path` and `delete` properties.
 
     For example, to remove tags "foo" and "bar" from an existing row: `{"_is_merge": true, "_array_delete": [{"path": ["tags"], "delete": ["foo", "bar"]}]}`. For nested fields like `metadata.categories`, use `[{"path": ["metadata", "categories"], "delete": ["value"]}]`. This will remove those specific values from the array while preserving others.
     """
-    field_is_merge: NotRequired[bool | None]
+    _is_merge: NotRequired[bool | None]
     """
     The `_is_merge` field controls how the row is merged with any existing row with the same id in the DB. By default (or when set to `false`), the existing row is completely replaced by the new row. When set to `true`, the new row is deep-merged into the existing row, if one is found. If no existing row is found, the new row is inserted as is.
 
     For example, say there is an existing row in the DB `{"id": "foo", "input": {"a": 5, "b": 10}}`. If we merge a new row as `{"_is_merge": true, "id": "foo", "input": {"b": 11, "c": 20}}`, the new row will be `{"id": "foo", "input": {"a": 5, "b": 11, "c": 20}}`. If we replace the new row as `{"id": "foo", "input": {"b": 11, "c": 20}}`, the new row will be `{"id": "foo", "input": {"b": 11, "c": 20}}`
     """
-    field_merge_paths: NotRequired[Sequence[Sequence[str]] | None]
+    _merge_paths: NotRequired[Sequence[Sequence[str]] | None]
     """
     The `_merge_paths` field allows controlling the depth of the merge, when `_is_merge=true`. `_merge_paths` is a list of paths, where each path is a list of field names. The deep merge will not descend below any of the specified merge paths.
 
     For example, say there is an existing row in the DB `{"id": "foo", "input": {"a": {"b": 10}, "c": {"d": 20}}, "output": {"a": 20}}`. If we merge a new row as `{"_is_merge": true, "_merge_paths": [["input", "a"], ["output"]], "input": {"a": {"q": 30}, "c": {"e": 30}, "bar": "baz"}, "output": {"d": 40}}`, the new row will be `{"id": "foo": "input": {"a": {"q": 30}, "c": {"d": 20, "e": 30}, "bar": "baz"}, "output": {"d": 40}}`. In this case, due to the merge paths, we have replaced `input.a` and `output`, but have still deep-merged `input` and `input.c`.
     """
-    field_object_delete: NotRequired[bool | None]
+    _object_delete: NotRequired[bool | None]
     """
     Pass `_object_delete=true` to mark the experiment event deleted. Deleted events will not show up in subsequent fetches for this experiment
     """
-    field_parent_id: NotRequired[str | None]
+    _parent_id: NotRequired[str | None]
     """
     DEPRECATED: The `_parent_id` field is deprecated and should not be used. Support for `_parent_id` will be dropped in a future version of Braintrust. Log `span_id`, `root_span_id`, and `span_parents` explicitly instead.
 

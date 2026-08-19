@@ -33,7 +33,7 @@ interactions:
       - '374'
       Content-Security-Policy:
       - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
-        ''nonce-YmMyZTM0NWYtYzJmZS00MzQyLThlOTItOTViMTgwMmUyNzg5''  *.js.stripe.com
+        ''nonce-YmE2NDk4N2ItOGFiMi00ZTk2LWI3M2EtZTZlOGE1Y2Q0NDI5''  *.js.stripe.com
         js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
         btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
         d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
@@ -45,7 +45,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Aug 2026 14:55:30 GMT
+      - Tue, 18 Aug 2026 17:32:55 GMT
       Etag:
       - '"13kwty4qcjgae"'
       Reporting-Endpoints:
@@ -54,6 +54,8 @@ interactions:
       - Vercel
       Strict-Transport-Security:
       - max-age=63072000
+      X-Bt-Was-Udf-Cached:
+      - 'true'
       X-Clerk-Auth-Message:
       - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
         token-carrier=header)
@@ -68,17 +70,16 @@ interactions:
       X-Matched-Path:
       - /api/apikey/login
       X-Nonce:
-      - YmMyZTM0NWYtYzJmZS00MzQyLThlOTItOTViMTgwMmUyNzg5
+      - YmE2NDk4N2ItOGFiMi00ZTk2LWI3M2EtZTZlOGE1Y2Q0NDI5
       X-Vercel-Cache:
       - MISS
       X-Vercel-Id:
-      - yul1::iad1::p2wth-1785941730640-7c7991ba6747
+      - yul1::iad1::m5dkt-1787074375027-e16770f80a4d
     status:
       code: 200
       message: OK
 - request:
-    body: '{"project_name": "python-sdk-vcr-tests", "project_id": null, "org_id":
-      "f5883013-b5c1-438d-9044-5182b4682337", "dataset_name": "test-dataset-internal-btql-total-limit"}'
+    body: '{"name": "python-sdk-vcr-tests", "org_name": "abhi-test-org"}'
     headers:
       Accept:
       - '*/*'
@@ -87,63 +88,125 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '168'
+      - '61'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.34.2
     method: POST
-    uri: https://www.braintrust.dev/api/dataset/register
+    uri: https://api.braintrust.dev/v1/project
   response:
     body:
-      string: '{"project":{"id":"5740905a-baf8-4edf-b634-8aa62ea149d3","org_id":"f5883013-b5c1-438d-9044-5182b4682337","name":"python-sdk-vcr-tests","description":null,"created":"2026-08-05T14:55:31.022Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null},"dataset":{"id":"93e21c91-a4a1-441f-9ba5-91331b414da4","project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","name":"test-dataset-internal-btql-total-limit","description":null,"created":"2026-08-05T14:55:31.022Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","tags":null,"metadata":null,"url_slug":"test-dataset-internal-btql-total-limit"},"found_existing":false}'
+      string: '{"id":"5740905a-baf8-4edf-b634-8aa62ea149d3","org_id":"f5883013-b5c1-438d-9044-5182b4682337","name":"python-sdk-vcr-tests","description":null,"created":"2026-08-05T14:55:31.022Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","settings":null}'
     headers:
-      Cache-Control:
-      - public, max-age=0, must-revalidate
-      Content-Length:
-      - '656'
-      Content-Security-Policy:
-      - 'script-src ''self'' ''unsafe-eval'' ''wasm-unsafe-eval'' ''strict-dynamic''
-        ''nonce-ZTZjODczYWQtN2Y3OS00OWQ2LThiNzItMmM3M2E0MmEwMGNk''  *.js.stripe.com
-        js.stripe.com maps.googleapis.com ; style-src ''self'' ''unsafe-inline'' *.braintrust.dev
-        btcm6qilbbhv4yi1.public.blob.vercel-storage.com fonts.googleapis.com www.gstatic.com
-        d4tuoctqmanu0.cloudfront.net; font-src ''self'' data: fonts.gstatic.com btcm6qilbbhv4yi1.public.blob.vercel-storage.com
-        cdn.jsdelivr.net d4tuoctqmanu0.cloudfront.net fonts.googleapis.com mintlify-assets.b-cdn.net
-        fonts.cdnfonts.com; object-src ''none''; base-uri ''self''; form-action ''self''
-        https://www.facebook.com; frame-ancestors ''self''; worker-src ''self'' blob:;
-        report-uri https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16;
-        report-to csp-endpoint-0'
+      Connection:
+      - keep-alive
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Aug 2026 14:55:31 GMT
-      Etag:
-      - '"12sv3og5gzpi8"'
-      Reporting-Endpoints:
-      - csp-endpoint-0="https://o4507221741076480.ingest.us.sentry.io/api/4507221754380288/security/?sentry_key=27fa5ac907cf7c6ce4a1ab2a03f805b4&sentry_environment=production&sentry_release=16"
-      Server:
-      - Vercel
-      Strict-Transport-Security:
-      - max-age=63072000
-      X-Clerk-Auth-Message:
-      - Invalid JWT form. A JWT consists of three parts separated by dots. (reason=token-invalid,
-        token-carrier=header)
-      X-Clerk-Auth-Reason:
-      - token-invalid
-      X-Clerk-Auth-Status:
-      - signed-out
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - SAMEORIGIN
-      X-Matched-Path:
-      - /api/dataset/register
-      X-Nonce:
-      - ZTZjODczYWQtN2Y3OS00OWQ2LThiNzItMmM3M2E0MmEwMGNk
-      X-Vercel-Cache:
-      - MISS
-      X-Vercel-Id:
-      - yul1::iad1::xn7p5-1785941730906-ade6974e689c
+      - Tue, 18 Aug 2026 17:32:55 GMT
+      Via:
+      - 1.1 cf658ee9f945547220eb3f4e1f7ef2fe.cloudfront.net (CloudFront), 1.1 3340b5a392e45fce453c4d978abfd6be.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - UGZIuvdtW-NSNAfcLrNjjA7oBycJRK2Haq2xN1v6NjHFdihNp4b7Iw==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a849747-642adf1a76ee5d0026dc2c9c;Parent=3dc2fc5da29f632b;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '262'
+      etag:
+      - W/"106-sw4f3jJYmmtrfBUZ4IeAvOYj8tQ"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTyTOECToAMETzg=
+      x-amzn-RequestId:
+      - 5050b7c6-49f8-4c94-8cf0-a1846204b31d
+      x-bt-found-existing:
+      - 'true'
+      x-bt-internal-trace-id:
+      - 6a849747000000001547ff41cb55072d
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"project_id": "5740905a-baf8-4edf-b634-8aa62ea149d3", "name": "test-dataset-internal-btql-total-limit"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '104'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+    method: POST
+    uri: https://api.braintrust.dev/v1/dataset
+  response:
+    body:
+      string: '{"id":"93e21c91-a4a1-441f-9ba5-91331b414da4","project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","name":"test-dataset-internal-btql-total-limit","description":null,"created":"2026-08-05T14:55:31.022Z","deleted_at":null,"user_id":"c1f71e19-b3ce-4f59-89a9-055901f7755b","tags":null,"metadata":null,"url_slug":"test-dataset-internal-btql-total-limit"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Aug 2026 17:32:55 GMT
+      Via:
+      - 1.1 cf658ee9f945547220eb3f4e1f7ef2fe.cloudfront.net (CloudFront), 1.1 3340b5a392e45fce453c4d978abfd6be.cloudfront.net
+        (CloudFront)
+      X-Amz-Cf-Id:
+      - SeDNoJvWvd2bDa7O4pQyvjMvdb_J_fCdaZsxL3mrWXPzN1p04dFABg==
+      X-Amz-Cf-Pop:
+      - YTO53-P2
+      - YTO50-P2
+      X-Amzn-Trace-Id:
+      - Root=1-6a849747-1a97f393087ea4c57c05588b;Parent=2d8b0875a5d4d8b9;Sampled=0;Lineage=1:24be3d11:0
+      X-Cache:
+      - Miss from cloudfront
+      access-control-allow-credentials:
+      - 'true'
+      access-control-expose-headers:
+      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
+      cache-control:
+      - no-store, no-cache, must-revalidate, proxy-revalidate
+      content-length:
+      - '348'
+      etag:
+      - W/"15c-TfW7o/HENJkX+ZuBPa/y33dkY8k"
+      expires:
+      - '0'
+      surrogate-control:
+      - no-store
+      vary:
+      - Origin, Accept-Encoding
+      x-amz-apigw-id:
+      - CTyTQEZToAMEZKQ=
+      x-amzn-RequestId:
+      - b2388e01-779b-4d01-afc3-b3a90038d3cc
+      x-bt-found-existing:
+      - 'true'
+      x-bt-internal-trace-id:
+      - 6a849747000000002061da26ff721be7
     status:
       code: 200
       message: OK
@@ -162,24 +225,24 @@ interactions:
     uri: https://api.braintrust.dev/version
   response:
     body:
-      string: '{"version":"2.9.0","date_version":"20260730","ff_version":42,"commit":"752127a4257d43c647e4f26fca64445645b9a982","deployment_mode":"lambda","deployment_type":"custom","brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"brainstore_export_enabled":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","memprof","usage"]}'
+      string: '{"version":"2.11.0","date_version":"20260817","ff_version":46,"commit":"bb8ea042b06e943817298c9fc56a802148e024a4","deployment_mode":"lambda","deployment_type":"custom","loop_runtime_enabled":true,"brainstore_default":"force","brainstore_can_contain_row_refs":true,"skip_pg_config":"all","has_realtime_wal_bucket":true,"brainstore_wal_footer_version":"v3","brainstore_wal_use_efficient_format":true,"has_logs2":true,"brainstore_export_enabled":true,"js":true,"universal":true,"code_execution":true,"logs3_payload_max_bytes":5242880,"control_plane_telemetry":["status","memprof","usage"]}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Aug 2026 14:55:31 GMT
+      - Tue, 18 Aug 2026 17:32:55 GMT
       Via:
-      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 8e6145785e47042f882be946f6c05880.cloudfront.net
+      - 1.1 dee47bbe1fe762707eeae94e76255170.cloudfront.net (CloudFront), 1.1 5a2f8eb373b5a17b769c0fee9b0725a6.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - nP5Yi5R8JpBCfrXan9JJG9r1N2L14jQ1-zOVH-AaCkUpUCoOjxUCSg==
+      - NmhHLud0kQaG17s5jK2W7FFXyL6OZuZ9ND2oOnSvC9x8u8isVWAxeQ==
       X-Amz-Cf-Pop:
       - YTO53-P2
       - YTO50-P2
       X-Amzn-Trace-Id:
-      - Root=1-6a734ee3-4ae6d8fd1361006d0a7a678c;Parent=71d1c6d6ad287dc5;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a849747-75fb864528deb0e6494bedd6;Parent=6f163d63df18fe1b;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -189,9 +252,9 @@ interactions:
       cache-control:
       - no-store, no-cache, must-revalidate, proxy-revalidate
       content-length:
-      - '557'
+      - '586'
       etag:
-      - W/"22d-ctakgszqYQZk3xpUQtT3XtS3QV4"
+      - W/"24a-yjnAH/Jq2lSD3sfOGxkgOHgzOK0"
       expires:
       - '0'
       surrogate-control:
@@ -199,20 +262,20 @@ interactions:
       vary:
       - Origin
       x-amz-apigw-id:
-      - BolDlH1JoAMEJbg=
+      - CTyTSHuRoAMEDdA=
       x-amzn-Remapped-content-length:
-      - '557'
+      - '586'
       x-amzn-RequestId:
-      - d1977231-4402-423f-aaa3-26879c5f8257
+      - 34224fc0-7829-47f2-9d84-b394abc21088
       x-bt-internal-trace-id:
-      - 6a734ee3000000003adf69420fe9bf21
+      - 6a84974700000000048c3830b68fe4c5
     status:
       code: 200
       message: OK
 - request:
-    body: '{"rows": [{"created": "2026-08-05T14:55:30.472778+00:00", "dataset_id":
+    body: '{"rows": [{"created": "2026-08-18T17:32:54.876745+00:00", "dataset_id":
       "93e21c91-a4a1-441f-9ba5-91331b414da4", "expected": "first", "id": "internal-btql-limit-record-1",
-      "input": "first", "tags": null},{"created": "2026-08-05T14:55:30.473043+00:00",
+      "input": "first", "tags": null},{"created": "2026-08-18T17:32:54.877013+00:00",
       "dataset_id": "93e21c91-a4a1-441f-9ba5-91331b414da4", "expected": "second",
       "id": "internal-btql-limit-record-2", "input": "second", "tags": null}], "api_version":
       2}'
@@ -231,24 +294,24 @@ interactions:
     uri: https://api.braintrust.dev/logs3
   response:
     body:
-      string: '{"ids":["internal-btql-limit-record-1","internal-btql-limit-record-2"],"xact_id":"1000197635730255173"}'
+      string: '{"ids":["internal-btql-limit-record-1","internal-btql-limit-record-2"],"xact_id":"1000197709959278726"}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 05 Aug 2026 14:55:32 GMT
+      - Tue, 18 Aug 2026 17:32:56 GMT
       Via:
-      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 71eaa9eb77c2eecb57c03cdcdad1cf76.cloudfront.net
+      - 1.1 e7dbdec0a9983cf82c16b332b6b30812.cloudfront.net (CloudFront), 1.1 74797197cacba7d22a7c3a7685b38272.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - 3Q1Ri4YPhZs10OPexGrLj3oZpnEyruxPHgHfhYdt-w4op8YZCOPZnA==
+      - UJOGlJK3GAoGjz9aqsr4RnoFpVKmf8rmaToblsBh6atrxgnHMxQL3Q==
       X-Amz-Cf-Pop:
       - YTO53-P2
       - YTO50-P2
       X-Amzn-Trace-Id:
-      - Root=1-6a734ee3-6c9750aa4626ef89322574f2;Parent=64344bf0f42f2bd2;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a849747-205c91a95a4abf2b7a92c77d;Parent=78b86585b93f11cd;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -260,7 +323,7 @@ interactions:
       content-length:
       - '103'
       etag:
-      - W/"67-slrO8h6R7bzoArJaQMDL+SPIzYk"
+      - W/"67-JJYZnmsGxepipGA+8Rqd9t2xGM8"
       expires:
       - '0'
       surrogate-control:
@@ -268,11 +331,11 @@ interactions:
       vary:
       - Origin, Accept-Encoding
       x-amz-apigw-id:
-      - BolDnHiqIAMEDlg=
+      - CTyTUFxaIAMEVtQ=
       x-amzn-RequestId:
-      - bb6ca664-bf55-422e-9f3b-d776b45d5a7d
+      - 00860d45-27c2-4ec9-9570-cb031c745732
       x-bt-internal-trace-id:
-      - 6a734ee3000000001f5cc1b071725c11
+      - 6a849747000000006836f82150a2548a
     status:
       code: 200
       message: OK
@@ -298,7 +361,7 @@ interactions:
     uri: https://api.braintrust.dev/btql
   response:
     body:
-      string: '{"data":[{"_pagination_key":"p07670561327966126081","_xact_id":"1000197635730255173","audit_data":[{"_xact_id":"1000197635730255173","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"created":"2026-08-05T14:55:30.473Z","dataset_id":"93e21c91-a4a1-441f-9ba5-91331b414da4","expected":"second","facets":null,"id":"internal-btql-limit-record-2","input":"second","is_root":true,"metadata":null,"origin":null,"project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","root_span_id":"6a9a2a70-7597-48c7-affc-375126066bc2","span_id":"6a9a2a70-7597-48c7-affc-375126066bc2","tags":null}],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
+      string: '{"data":[{"_pagination_key":"p07675426001253695489","_xact_id":"1000197709959278726","audit_data":[{"_xact_id":"1000197709959278726","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"created":"2026-08-18T17:32:54.877Z","dataset_id":"93e21c91-a4a1-441f-9ba5-91331b414da4","expected":"second","facets":null,"id":"internal-btql-limit-record-2","input":"second","is_root":true,"metadata":null,"origin":null,"project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","root_span_id":"25a9a8fc-0229-42d2-a5cb-704369e76b9f","span_id":"25a9a8fc-0229-42d2-a5cb-704369e76b9f","tags":null}],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
         stable, time-ordered key that can be used to paginate over dataset events.
         This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
         transaction id of an event is unique to the network operation that processed
@@ -332,24 +395,24 @@ interactions:
         unique identifier for the trace this dataset event belongs to","type":"string"},"span_id":{"description":"A
         unique identifier used to link different dataset events together as part of
         a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
-        for full details on tracing","type":"string"},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"cursor":"anNO4y1FAAE","realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":1356,"actual_xact_id":"1000197635730255173"},"freshness_state":{"last_processed_xact_id":null,"last_considered_xact_id":"1000197635730255173"},"warnings":[]}'
+        for full details on tracing","type":"string"},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"cursor":"aoSXSDCGAAE","realtime_state":{"type":"on","minimum_xact_id":"1000197709952402389","read_bytes":1356,"actual_xact_id":"1000197709959278726"},"freshness_state":{"last_processed_xact_id":"1000197709952402389","last_considered_xact_id":"1000197709959278726"},"warnings":[]}'
     headers:
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Wed, 05 Aug 2026 14:55:32 GMT
+      - Tue, 18 Aug 2026 17:32:56 GMT
       Via:
-      - 1.1 8250156022879efefd7a589c8ba8c706.cloudfront.net (CloudFront), 1.1 0e761f7a5b2481acd893422a702c9fa8.cloudfront.net
+      - 1.1 cf658ee9f945547220eb3f4e1f7ef2fe.cloudfront.net (CloudFront), 1.1 4f3eaee3896fb5ad2377261bd0d773c8.cloudfront.net
         (CloudFront)
       X-Amz-Cf-Id:
-      - a9P0CyqWFCX1nbieSCP2r9FWONXVEP4r2RuFfMu_60I6KH3ewQC2-A==
+      - YnfhFiFv6zThETOkK4-y-oC1pEPwEyv2-1SX69ez6Q8eyO7N_itQPw==
       X-Amz-Cf-Pop:
       - YTO53-P2
       - YTO50-P2
       X-Amzn-Trace-Id:
-      - Root=1-6a734ee4-19a429a8006a9c7703caf496;Parent=4a2aaa6030920b78;Sampled=0;Lineage=1:24be3d11:0
+      - Root=1-6a849748-1ab42bad65cc8211562c5d44;Parent=47ddb79078a43246;Sampled=0;Lineage=1:24be3d11:0
       X-Cache:
       - Miss from cloudfront
       access-control-allow-credentials:
@@ -359,221 +422,21 @@ interactions:
       cache-control:
       - private, no-cache
       content-length:
-      - '5300'
+      - '5334'
       vary:
       - Origin
       x-amz-apigw-id:
-      - BolDvFo2IAMEvtQ=
+      - CTyTaH3SIAMEVoA=
       x-amzn-RequestId:
-      - 642cf8b4-67d2-4084-9499-5be8b5441123
+      - fd16dc66-5727-46d2-b4f0-c1938998ff91
       x-bt-api-duration-ms:
-      - '121'
+      - '159'
       x-bt-brainstore-duration-ms:
-      - '79'
+      - '99'
       x-bt-cursor:
-      - anNO4y1FAAE
+      - aoSXSDCGAAE
       x-bt-internal-trace-id:
-      - 6a734ee40000000005540f09408671f8
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"query": {"select": [{"op": "star"}], "from": {"op": "function", "name":
-      {"op": "ident", "name": ["dataset"]}, "args": [{"op": "literal", "value": "93e21c91-a4a1-441f-9ba5-91331b414da4"}]},
-      "cursor": "anNO4y1FAAE", "limit": 1}, "use_columnstore": false, "brainstore_realtime":
-      true, "query_source": "py_sdk_object_fetcher_dataset"}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '332'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.34.2
-    method: POST
-    uri: https://api.braintrust.dev/btql
-  response:
-    body:
-      string: '{"data":[{"_pagination_key":"p07670561327966126080","_xact_id":"1000197635730255173","audit_data":[{"_xact_id":"1000197635730255173","audit_data":{"action":"upsert"},"metadata":{},"source":"api"}],"classifications":null,"comments":null,"created":"2026-08-05T14:55:30.472Z","dataset_id":"93e21c91-a4a1-441f-9ba5-91331b414da4","expected":"first","facets":null,"id":"internal-btql-limit-record-1","input":"first","is_root":true,"metadata":null,"origin":null,"project_id":"5740905a-baf8-4edf-b634-8aa62ea149d3","root_span_id":"a540f0e9-c6e3-4e32-bff3-9b382db1f1be","span_id":"a540f0e9-c6e3-4e32-bff3-9b382db1f1be","tags":null}],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
-        stable, time-ordered key that can be used to paginate over dataset events.
-        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
-        transaction id of an event is unique to the network operation that processed
-        the event insertion. Transaction ids are monotonically increasing over time
-        and can be used to retrieve a versioned snapshot of the dataset (see the `version`
-        parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
-        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
-        classification identifier","type":"string"},"label":{"description":"Original
-        label of the classification item, which is useful for search and indexing
-        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
-        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
-        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
-        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
-        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"created":{"description":"The
-        timestamp the dataset event was created","format":"date-time","type":"string"},"dataset_id":{"description":"Unique
-        identifier for the dataset","format":"uuid","type":"string"},"expected":{"description":"The
-        output of your application, including post-processing (an arbitrary, JSON
-        serializable object)"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
-        unique identifier for the dataset event. If you don''t provide one, Braintrust
-        will generate one for you","type":"string"},"input":{"description":"The argument
-        that uniquely define an input case (an arbitrary, JSON serializable object)"},"is_root":{"description":"Whether
-        this span is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
-        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
-        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
-        ID of the original event.","type":["string","null"]},"created":{"description":"Created
-        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
-        of the original event.","type":"string"},"object_id":{"description":"ID of
-        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
-        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"project_id":{"description":"Unique
-        identifier for the project that the dataset belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
-        unique identifier for the trace this dataset event belongs to","type":"string"},"span_id":{"description":"A
-        unique identifier used to link different dataset events together as part of
-        a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
-        for full details on tracing","type":"string"},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"cursor":"anNO4y1FAAA","realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":1356,"actual_xact_id":"1000197635730255173"},"freshness_state":{"last_processed_xact_id":null,"last_considered_xact_id":"1000197635730255173"},"warnings":[]}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 05 Aug 2026 14:55:32 GMT
-      Via:
-      - 1.1 8757e4d26d0f26e2f05769a88e8a5ace.cloudfront.net (CloudFront), 1.1 cdd327922be1fd75b18f2ae0982269cc.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - p8i4xVqYm9RbA0FjIvFUo7PEYMQLp_haerqQT7wrHTIm_i7bPCy1kA==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P2
-      X-Amzn-Trace-Id:
-      - Root=1-6a734ee4-53a6e2be76ca6ad941fffd56;Parent=5d0127a9aa8cff18;Sampled=0;Lineage=1:24be3d11:0
-      X-Cache:
-      - Miss from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
-      cache-control:
-      - private, no-cache
-      content-length:
-      - '5298'
-      vary:
-      - Origin
-      x-amz-apigw-id:
-      - BolDyF6moAMER_Q=
-      x-amzn-RequestId:
-      - 2c872d8c-963c-470c-954b-da5fb2ead97a
-      x-bt-api-duration-ms:
-      - '231'
-      x-bt-brainstore-duration-ms:
-      - '184'
-      x-bt-cursor:
-      - anNO4y1FAAA
-      x-bt-internal-trace-id:
-      - 6a734ee40000000044a5247423f04fb1
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"query": {"select": [{"op": "star"}], "from": {"op": "function", "name":
-      {"op": "ident", "name": ["dataset"]}, "args": [{"op": "literal", "value": "93e21c91-a4a1-441f-9ba5-91331b414da4"}]},
-      "cursor": "anNO4y1FAAA", "limit": 1}, "use_columnstore": false, "brainstore_realtime":
-      true, "query_source": "py_sdk_object_fetcher_dataset"}'
-    headers:
-      Accept:
-      - '*/*'
-      Accept-Encoding:
-      - gzip
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '332'
-      Content-Type:
-      - application/json
-      User-Agent:
-      - python-requests/2.34.2
-    method: POST
-    uri: https://api.braintrust.dev/btql
-  response:
-    body:
-      string: '{"data":[],"schema":{"type":"array","items":{"type":"object","properties":{"_pagination_key":{"description":"A
-        stable, time-ordered key that can be used to paginate over dataset events.
-        This field is auto-generated by Braintrust and only exists in Brainstore.","type":["string","null"]},"_xact_id":{"description":"The
-        transaction id of an event is unique to the network operation that processed
-        the event insertion. Transaction ids are monotonically increasing over time
-        and can be used to retrieve a versioned snapshot of the dataset (see the `version`
-        parameter)","type":"string"},"audit_data":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"classifications":{"anyOf":[{"additionalProperties":{"items":{"additionalProperties":false,"properties":{"confidence":{"description":"Optional
-        confidence score for the classification","type":["number","null"]},"id":{"description":"Stable
-        classification identifier","type":"string"},"label":{"description":"Original
-        label of the classification item, which is useful for search and indexing
-        purposes","type":"string"},"metadata":{"anyOf":[{"additionalProperties":{},"type":"object"},{"type":"null"}],"description":"Optional
-        metadata associated with the classification"},"source":{"anyOf":[{"anyOf":[{"additionalProperties":false,"properties":{"id":{"type":"string"},"type":{"const":"function","type":"string"},"version":{"description":"The
-        version of the function","type":"string"}},"required":["type","id"],"type":"object"},{"additionalProperties":false,"properties":{"function_type":{"default":"scorer","description":"The
-        type of global function. Defaults to ''scorer''.","enum":["llm","scorer","task","tool","custom_view","preprocessor","facet","classifier","tag","parameters","sandbox"],"type":"string"},"name":{"type":"string"},"type":{"const":"global","type":"string"}},"required":["type","name"],"type":"object"}]},{"type":"null"}],"description":"Optional
-        function identifier that produced the classification"}},"required":["id"],"type":"object"},"type":"array"},"properties":{},"type":"object"},{"type":"null"}]},"comments":{"anyOf":[{"items":{},"type":"array"},{"type":"null"}]},"created":{"description":"The
-        timestamp the dataset event was created","format":"date-time","type":"string"},"dataset_id":{"description":"Unique
-        identifier for the dataset","format":"uuid","type":"string"},"expected":{"description":"The
-        output of your application, including post-processing (an arbitrary, JSON
-        serializable object)"},"facets":{"anyOf":[{"additionalProperties":{"type":["string","null"]},"properties":{},"type":"object"},{"type":"null"}]},"id":{"description":"A
-        unique identifier for the dataset event. If you don''t provide one, Braintrust
-        will generate one for you","type":"string"},"input":{"description":"The argument
-        that uniquely define an input case (an arbitrary, JSON serializable object)"},"is_root":{"description":"Whether
-        this span is a root span","type":["boolean","null"]},"metadata":{"anyOf":[{"additionalProperties":{},"properties":{"model":{"description":"The
-        model used for this example","type":["string","null"]}},"type":"object"},{"type":"null"}]},"origin":{"anyOf":[{"description":"Reference
-        to the original object and event this was copied from.","properties":{"_xact_id":{"description":"Transaction
-        ID of the original event.","type":["string","null"]},"created":{"description":"Created
-        timestamp of the original event. Used to help sort in the UI","type":["string","null"]},"id":{"description":"ID
-        of the original event.","type":"string"},"object_id":{"description":"ID of
-        the object the event is originating from.","format":"uuid","type":"string"},"object_type":{"description":"Type
-        of the object the event is originating from.","enum":["project_logs","experiment","dataset","prompt","function","prompt_session"],"type":"string"}},"required":["object_type","object_id","id"],"type":"object"},{"type":"null"}]},"project_id":{"description":"Unique
-        identifier for the project that the dataset belongs under","format":"uuid","type":"string"},"root_span_id":{"description":"A
-        unique identifier for the trace this dataset event belongs to","type":"string"},"span_id":{"description":"A
-        unique identifier used to link different dataset events together as part of
-        a full trace. See the [tracing guide](https://www.braintrust.dev/docs/instrument)
-        for full details on tracing","type":"string"},"tags":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}]}}}},"realtime_state":{"type":"on","minimum_xact_id":null,"read_bytes":1356,"actual_xact_id":"1000197635730255173"},"freshness_state":{"last_processed_xact_id":null,"last_considered_xact_id":"1000197635730255173"},"warnings":[]}'
-    headers:
-      Connection:
-      - keep-alive
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 05 Aug 2026 14:55:33 GMT
-      Via:
-      - 1.1 d38f8e8aaab4437dcb36d4adc5a35cbe.cloudfront.net (CloudFront), 1.1 5fef2688877996791689cf17ab2832d0.cloudfront.net
-        (CloudFront)
-      X-Amz-Cf-Id:
-      - OUOs4hNWapakRzFf7h224KR47hCmaRRMs3qEEVcnZER4dP8VbidQgg==
-      X-Amz-Cf-Pop:
-      - YTO53-P2
-      - YTO50-P2
-      X-Amzn-Trace-Id:
-      - Root=1-6a734ee4-51f9e72509d68cc95c0b2cd5;Parent=7f72df8695b1d063;Sampled=0;Lineage=1:24be3d11:0
-      X-Cache:
-      - Miss from cloudfront
-      access-control-allow-credentials:
-      - 'true'
-      access-control-expose-headers:
-      - x-bt-cursor,x-bt-found-existing,x-bt-query-plan,x-bt-api-duration-ms,x-bt-brainstore-duration-ms,x-bt-internal-trace-id,x-bt-error-origin,x-bt-used-endpoint,x-bt-overflow-url
-      cache-control:
-      - private, no-cache
-      content-length:
-      - '4662'
-      vary:
-      - Origin
-      x-amz-apigw-id:
-      - BolD2Fb1oAMEW-Q=
-      x-amzn-RequestId:
-      - b295f072-8be4-4466-ada4-d3e5f30dcd50
-      x-bt-api-duration-ms:
-      - '127'
-      x-bt-brainstore-duration-ms:
-      - '75'
-      x-bt-internal-trace-id:
-      - 6a734ee5000000001aab8ad265e6a1d3
+      - 6a84974800000000144ad6faf33a0765
     status:
       code: 200
       message: OK

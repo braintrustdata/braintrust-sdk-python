@@ -4,15 +4,16 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 539406e3c181decdc8f29755e5b60d79b61798b27371fa34cd905f1542671985
+# Content SHA-256: 39bb40ebc26c57f57f09d2a309b8bb6702b737b0d6dbd07a1faca97e7ea5be56
 
-"""Generated Experiments REST operations and resource."""
+"""Generated Datasets REST operations and resource."""
 
 from typing import cast
 
 from .._service import Operation, Parameter, ResourceAPI
 from ..policies import RetryMode
 from .models.common import (
+    AppLimitParam,
     EndingBefore,
     FeedbackResponseSchema,
     FetchEventsRequest,
@@ -27,39 +28,37 @@ from .models.common import (
     StartingAfter,
     Version,
 )
-from .models.experiments import (
-    AppLimitWithDefaultParam,
-    ComparisonExperimentId,
-    CreateExperiment,
-    Experiment,
-    ExperimentIdParam,
-    ExperimentName,
-    FeedbackExperimentEventRequest,
-    FetchExperimentEventsResponse,
-    GetExperimentResponse,
-    InsertExperimentEventRequest,
-    PatchExperiment,
-    SummarizeExperimentResponse,
-    SummarizeScores,
+from .models.datasets import (
+    CreateDataset,
+    Dataset,
+    DatasetIdParam,
+    DatasetName,
+    FeedbackDatasetEventRequest,
+    FetchDatasetEventsResponse,
+    GetDatasetResponse,
+    InsertDatasetEventRequest,
+    PatchDataset,
+    SummarizeData,
+    SummarizeDatasetResponse,
 )
 
 
-POST_EXPERIMENT = Operation(
-    operation_id="postExperiment",
+POST_DATASET = Operation(
+    operation_id="postDataset",
     method="POST",
-    path="/v1/experiment",
+    path="/v1/dataset",
     parameters=(),
     has_request_body=True,
     success_statuses=(200,),
     json_success_statuses=(200,),
-    retry_mode=RetryMode.NONE,
+    retry_mode=RetryMode.IDEMPOTENT_WRITE,
 )
 
 
-GET_EXPERIMENT = Operation(
-    operation_id="getExperiment",
+GET_DATASET = Operation(
+    operation_id="getDataset",
     method="GET",
-    path="/v1/experiment",
+    path="/v1/dataset",
     parameters=(
         Parameter(
             argument_name="limit",
@@ -86,8 +85,8 @@ GET_EXPERIMENT = Operation(
             required=False,
         ),
         Parameter(
-            argument_name="experiment_name",
-            name="experiment_name",
+            argument_name="dataset_name",
+            name="dataset_name",
             location="query",
             required=False,
         ),
@@ -117,14 +116,14 @@ GET_EXPERIMENT = Operation(
 )
 
 
-GET_EXPERIMENT_ID = Operation(
-    operation_id="getExperimentId",
+GET_DATASET_ID = Operation(
+    operation_id="getDatasetId",
     method="GET",
-    path="/v1/experiment/{experiment_id}",
+    path="/v1/dataset/{dataset_id}",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
@@ -136,14 +135,14 @@ GET_EXPERIMENT_ID = Operation(
 )
 
 
-PATCH_EXPERIMENT_ID = Operation(
-    operation_id="patchExperimentId",
+PATCH_DATASET_ID = Operation(
+    operation_id="patchDatasetId",
     method="PATCH",
-    path="/v1/experiment/{experiment_id}",
+    path="/v1/dataset/{dataset_id}",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
@@ -155,14 +154,14 @@ PATCH_EXPERIMENT_ID = Operation(
 )
 
 
-DELETE_EXPERIMENT_ID = Operation(
-    operation_id="deleteExperimentId",
+DELETE_DATASET_ID = Operation(
+    operation_id="deleteDatasetId",
     method="DELETE",
-    path="/v1/experiment/{experiment_id}",
+    path="/v1/dataset/{dataset_id}",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
@@ -174,14 +173,14 @@ DELETE_EXPERIMENT_ID = Operation(
 )
 
 
-POST_EXPERIMENT_ID_INSERT = Operation(
-    operation_id="postExperimentIdInsert",
+POST_DATASET_ID_INSERT = Operation(
+    operation_id="postDatasetIdInsert",
     method="POST",
-    path="/v1/experiment/{experiment_id}/insert",
+    path="/v1/dataset/{dataset_id}/insert",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
@@ -193,14 +192,14 @@ POST_EXPERIMENT_ID_INSERT = Operation(
 )
 
 
-POST_EXPERIMENT_ID_FETCH = Operation(
-    operation_id="postExperimentIdFetch",
+POST_DATASET_ID_FETCH = Operation(
+    operation_id="postDatasetIdFetch",
     method="POST",
-    path="/v1/experiment/{experiment_id}/fetch",
+    path="/v1/dataset/{dataset_id}/fetch",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
@@ -212,14 +211,14 @@ POST_EXPERIMENT_ID_FETCH = Operation(
 )
 
 
-GET_EXPERIMENT_ID_FETCH = Operation(
-    operation_id="getExperimentIdFetch",
+GET_DATASET_ID_FETCH = Operation(
+    operation_id="getDatasetIdFetch",
     method="GET",
-    path="/v1/experiment/{experiment_id}/fetch",
+    path="/v1/dataset/{dataset_id}/fetch",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
@@ -255,14 +254,14 @@ GET_EXPERIMENT_ID_FETCH = Operation(
 )
 
 
-POST_EXPERIMENT_ID_FEEDBACK = Operation(
-    operation_id="postExperimentIdFeedback",
+POST_DATASET_ID_FEEDBACK = Operation(
+    operation_id="postDatasetIdFeedback",
     method="POST",
-    path="/v1/experiment/{experiment_id}/feedback",
+    path="/v1/dataset/{dataset_id}/feedback",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
@@ -274,26 +273,20 @@ POST_EXPERIMENT_ID_FEEDBACK = Operation(
 )
 
 
-GET_EXPERIMENT_ID_SUMMARIZE = Operation(
-    operation_id="getExperimentIdSummarize",
+GET_DATASET_ID_SUMMARIZE = Operation(
+    operation_id="getDatasetIdSummarize",
     method="GET",
-    path="/v1/experiment/{experiment_id}/summarize",
+    path="/v1/dataset/{dataset_id}/summarize",
     parameters=(
         Parameter(
-            argument_name="experiment_id",
-            name="experiment_id",
+            argument_name="dataset_id",
+            name="dataset_id",
             location="path",
             required=True,
         ),
         Parameter(
-            argument_name="summarize_scores",
-            name="summarize_scores",
-            location="query",
-            required=False,
-        ),
-        Parameter(
-            argument_name="comparison_experiment_id",
-            name="comparison_experiment_id",
+            argument_name="summarize_data",
+            name="summarize_data",
             location="query",
             required=False,
         ),
@@ -306,57 +299,57 @@ GET_EXPERIMENT_ID_SUMMARIZE = Operation(
 
 
 OPERATIONS = {
-    "postExperiment": POST_EXPERIMENT,
-    "getExperiment": GET_EXPERIMENT,
-    "getExperimentId": GET_EXPERIMENT_ID,
-    "patchExperimentId": PATCH_EXPERIMENT_ID,
-    "deleteExperimentId": DELETE_EXPERIMENT_ID,
-    "postExperimentIdInsert": POST_EXPERIMENT_ID_INSERT,
-    "postExperimentIdFetch": POST_EXPERIMENT_ID_FETCH,
-    "getExperimentIdFetch": GET_EXPERIMENT_ID_FETCH,
-    "postExperimentIdFeedback": POST_EXPERIMENT_ID_FEEDBACK,
-    "getExperimentIdSummarize": GET_EXPERIMENT_ID_SUMMARIZE,
+    "postDataset": POST_DATASET,
+    "getDataset": GET_DATASET,
+    "getDatasetId": GET_DATASET_ID,
+    "patchDatasetId": PATCH_DATASET_ID,
+    "deleteDatasetId": DELETE_DATASET_ID,
+    "postDatasetIdInsert": POST_DATASET_ID_INSERT,
+    "postDatasetIdFetch": POST_DATASET_ID_FETCH,
+    "getDatasetIdFetch": GET_DATASET_ID_FETCH,
+    "postDatasetIdFeedback": POST_DATASET_ID_FEEDBACK,
+    "getDatasetIdSummarize": GET_DATASET_ID_SUMMARIZE,
 }
 
 
-class ExperimentsAPI(ResourceAPI):
-    """Generated Experiments REST API."""
+class DatasetsAPI(ResourceAPI):
+    """Generated Datasets REST API."""
 
-    def post_experiment(
+    def post_dataset(
         self,
         *,
-        body: "CreateExperiment | None" = None,
-    ) -> "Experiment":
+        body: "CreateDataset | None" = None,
+    ) -> "Dataset":
         return cast(
-            "Experiment",
+            "Dataset",
             self.execute(
-                POST_EXPERIMENT,
+                POST_DATASET,
                 body=body,
             ),
         )
 
-    def get_experiment(
+    def get_dataset(
         self,
         *,
-        limit: "AppLimitWithDefaultParam | None" = None,
+        limit: "AppLimitParam | None" = None,
         starting_after: "StartingAfter | None" = None,
         ending_before: "EndingBefore | None" = None,
         ids: "Ids | None" = None,
-        experiment_name: "ExperimentName | None" = None,
+        dataset_name: "DatasetName | None" = None,
         project_name: "ProjectName | None" = None,
         project_id: "ProjectIdQuery | None" = None,
         org_name: "OrgName | None" = None,
-    ) -> "GetExperimentResponse":
+    ) -> "GetDatasetResponse":
         return cast(
-            "GetExperimentResponse",
+            "GetDatasetResponse",
             self.execute(
-                GET_EXPERIMENT,
+                GET_DATASET,
                 query_parameters={
                     "limit": limit,
                     "starting_after": starting_after,
                     "ending_before": ending_before,
                     "ids": ids,
-                    "experiment_name": experiment_name,
+                    "dataset_name": dataset_name,
                     "project_name": project_name,
                     "project_id": project_id,
                     "org_name": org_name,
@@ -364,89 +357,89 @@ class ExperimentsAPI(ResourceAPI):
             ),
         )
 
-    def get_experiment_id(
+    def get_dataset_id(
         self,
-        experiment_id: "ExperimentIdParam",
-    ) -> "Experiment":
+        dataset_id: "DatasetIdParam",
+    ) -> "Dataset":
         return cast(
-            "Experiment",
+            "Dataset",
             self.execute(
-                GET_EXPERIMENT_ID,
-                path_parameters={"experiment_id": experiment_id},
+                GET_DATASET_ID,
+                path_parameters={"dataset_id": dataset_id},
             ),
         )
 
-    def patch_experiment_id(
+    def patch_dataset_id(
         self,
-        experiment_id: "ExperimentIdParam",
+        dataset_id: "DatasetIdParam",
         *,
-        body: "PatchExperiment | None" = None,
-    ) -> "Experiment":
+        body: "PatchDataset | None" = None,
+    ) -> "Dataset":
         return cast(
-            "Experiment",
+            "Dataset",
             self.execute(
-                PATCH_EXPERIMENT_ID,
-                path_parameters={"experiment_id": experiment_id},
+                PATCH_DATASET_ID,
+                path_parameters={"dataset_id": dataset_id},
                 body=body,
             ),
         )
 
-    def delete_experiment_id(
+    def delete_dataset_id(
         self,
-        experiment_id: "ExperimentIdParam",
-    ) -> "Experiment":
+        dataset_id: "DatasetIdParam",
+    ) -> "Dataset":
         return cast(
-            "Experiment",
+            "Dataset",
             self.execute(
-                DELETE_EXPERIMENT_ID,
-                path_parameters={"experiment_id": experiment_id},
+                DELETE_DATASET_ID,
+                path_parameters={"dataset_id": dataset_id},
             ),
         )
 
-    def post_experiment_id_insert(
+    def post_dataset_id_insert(
         self,
-        experiment_id: "ExperimentIdParam",
+        dataset_id: "DatasetIdParam",
         *,
-        body: "InsertExperimentEventRequest | None" = None,
+        body: "InsertDatasetEventRequest | None" = None,
     ) -> "InsertEventsResponse":
         return cast(
             "InsertEventsResponse",
             self.execute(
-                POST_EXPERIMENT_ID_INSERT,
-                path_parameters={"experiment_id": experiment_id},
+                POST_DATASET_ID_INSERT,
+                path_parameters={"dataset_id": dataset_id},
                 body=body,
             ),
         )
 
-    def post_experiment_id_fetch(
+    def post_dataset_id_fetch(
         self,
-        experiment_id: "ExperimentIdParam",
+        dataset_id: "DatasetIdParam",
         *,
         body: "FetchEventsRequest | None" = None,
-    ) -> "FetchExperimentEventsResponse":
+    ) -> "FetchDatasetEventsResponse":
         return cast(
-            "FetchExperimentEventsResponse",
+            "FetchDatasetEventsResponse",
             self.execute(
-                POST_EXPERIMENT_ID_FETCH,
-                path_parameters={"experiment_id": experiment_id},
+                POST_DATASET_ID_FETCH,
+                path_parameters={"dataset_id": dataset_id},
                 body=body,
             ),
         )
 
-    def get_experiment_id_fetch(
+    def get_dataset_id_fetch(
         self,
-        experiment_id: "ExperimentIdParam",
+        dataset_id: "DatasetIdParam",
         *,
         limit: "FetchLimitParam | None" = None,
         max_xact_id: "MaxXactId | None" = None,
         max_root_span_id: "MaxRootSpanId | None" = None,
         version: "Version | None" = None,
-    ) -> "FetchExperimentEventsResponse":
+    ) -> "FetchDatasetEventsResponse":
         return cast(
-            "FetchExperimentEventsResponse",
+            "FetchDatasetEventsResponse",
             self.execute(
-                GET_EXPERIMENT_ID_FETCH,
-                path_parameters={"experiment_id": experiment_id},
+                GET_DATASET_ID_FETCH,
+                path_parameters={"dataset_id": dataset_id},
                 query_parameters={
                     "limit": limit,
                     "max_xact_id": max_xact_id,
@@ -456,36 +449,32 @@ class ExperimentsAPI(ResourceAPI):
             ),
         )
 
-    def post_experiment_id_feedback(
+    def post_dataset_id_feedback(
         self,
-        experiment_id: "ExperimentIdParam",
+        dataset_id: "DatasetIdParam",
         *,
-        body: "FeedbackExperimentEventRequest | None" = None,
+        body: "FeedbackDatasetEventRequest | None" = None,
     ) -> "FeedbackResponseSchema":
         return cast(
             "FeedbackResponseSchema",
             self.execute(
-                POST_EXPERIMENT_ID_FEEDBACK,
-                path_parameters={"experiment_id": experiment_id},
+                POST_DATASET_ID_FEEDBACK,
+                path_parameters={"dataset_id": dataset_id},
                 body=body,
             ),
         )
 
-    def get_experiment_id_summarize(
+    def get_dataset_id_summarize(
         self,
-        experiment_id: "ExperimentIdParam",
+        dataset_id: "DatasetIdParam",
         *,
-        summarize_scores: "SummarizeScores | None" = None,
-        comparison_experiment_id: "ComparisonExperimentId | None" = None,
-    ) -> "SummarizeExperimentResponse":
+        summarize_data: "SummarizeData | None" = None,
+    ) -> "SummarizeDatasetResponse":
         return cast(
-            "SummarizeExperimentResponse",
+            "SummarizeDatasetResponse",
             self.execute(
-                GET_EXPERIMENT_ID_SUMMARIZE,
-                path_parameters={"experiment_id": experiment_id},
-                query_parameters={
-                    "summarize_scores": summarize_scores,
-                    "comparison_experiment_id": comparison_experiment_id,
-                },
+                GET_DATASET_ID_SUMMARIZE,
+                path_parameters={"dataset_id": dataset_id},
+                query_parameters={"summarize_data": summarize_data},
             ),
         )

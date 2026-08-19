@@ -7,18 +7,11 @@ from braintrust.logger import BraintrustState
 
 async def get_dataset_by_id(state: BraintrustState, dataset_id: str) -> dict[str, str]:
     """Fetch dataset information by ID."""
-    # Make API call to get dataset info
-    conn = state.api_conn()
-    # Note: The Python SDK doesn't have async API calls yet, so we use sync
-    response = conn.get_json(f"v1/dataset/{dataset_id}")
-
-    if response is None:
-        raise ValueError(f"Dataset with id {dataset_id} not found")
-
-    # Extract project_id and dataset name from response
+    # The public client is synchronous; the devserver currently runs this call inline.
+    response = state.api_client().datasets.get_dataset_id(dataset_id)
     return {
-        "project_id": response.get("project_id"),
-        "dataset": response.get("name"),
+        "project_id": response["project_id"],
+        "dataset": response["name"],
     }
 
 

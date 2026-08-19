@@ -4,17 +4,60 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 4f44bc62a969364392528ed2e8919cb5ba98b5a57aa742fe184571dcc61443da
+# Content SHA-256: 4f4034d79da55f9379228307ac3f68923c3c0ef40d89c07614d9f141d6cf9862
 
 from typing import Any, Literal, TypeAlias, TypedDict
-from collections.abc import Mapping, Sequence
 from typing_extensions import NotRequired
+from collections.abc import Mapping, Sequence
+
+AppLimitParam: TypeAlias = int | None
+"""
+Limit the number of objects to return
+"""
+
+
+class Metadata(TypedDict):
+    model: NotRequired[str | None]
+    """
+    The model used for this example
+    """
+
 
 EndingBefore: TypeAlias = str
 """
 Pagination cursor id.
 
 For example, if the initial item in the last page you fetched had an id of `foo`, pass `ending_before=foo` to fetch the previous page. Note: you may only pass one of `starting_after` and `ending_before`
+"""
+
+
+class FeedbackResponseSchema(TypedDict):
+    status: Literal["success"]
+
+
+FetchLimit: TypeAlias = int | None
+"""
+limit the number of traces fetched
+
+Fetch queries may be paginated if the total result size is expected to be large (e.g. project_logs which accumulate over a long time). Note that fetch queries only support pagination in descending time order (from latest to earliest `_xact_id`. Furthermore, later pages may return rows which showed up in earlier pages, except with an earlier `_xact_id`. This happens because pagination occurs over the whole version history of the event log. You will most likely want to exclude any such duplicate, outdated rows (by `id`) from your combined result set.
+
+The `limit` parameter controls the number of full traces to return. So you may end up with more individual rows than the specified limit if you are fetching events containing traces.
+"""
+
+FetchLimitParam: TypeAlias = int | None
+"""
+limit the number of traces fetched
+
+Fetch queries may be paginated if the total result size is expected to be large (e.g. project_logs which accumulate over a long time). Note that fetch queries only support pagination in descending time order (from latest to earliest `_xact_id`. Furthermore, later pages may return rows which showed up in earlier pages, except with an earlier `_xact_id`. This happens because pagination occurs over the whole version history of the event log. You will most likely want to exclude any such duplicate, outdated rows (by `id`) from your combined result set.
+
+The `limit` parameter controls the number of full traces to return. So you may end up with more individual rows than the specified limit if you are fetching events containing traces.
+"""
+
+FetchPaginationCursor: TypeAlias = str | None
+"""
+An opaque string to be used as a cursor for the next page of results, in order from latest to earliest.
+
+The string can be obtained directly from the `cursor` property of the previous fetch query
 """
 
 FunctionTypeEnum: TypeAlias = (
@@ -42,14 +85,95 @@ Ids: TypeAlias = str | Sequence[str]
 Filter search results to a particular set of object IDs. To specify a list of IDs, include the query param multiple times
 """
 
+
+class FieldArrayDeleteItem(TypedDict):
+    delete: Sequence[Any]
+    path: Sequence[str]
+
+
+class InsertEventsResponse(TypedDict):
+    row_ids: Sequence[str]
+    """
+    The ids of all rows that were inserted, aligning one-to-one with the rows provided as input
+    """
+
+
+MaxRootSpanId: TypeAlias = str
+"""
+DEPRECATION NOTICE: The manually-constructed pagination cursor is deprecated in favor of the explicit 'cursor' returned by object fetch requests. Please prefer the 'cursor' argument going forwards.
+
+Together, `max_xact_id` and `max_root_span_id` form a pagination cursor
+
+Since a paginated fetch query returns results in order from latest to earliest, the cursor for the next page can be found as the row with the minimum (earliest) value of the tuple `(_xact_id, root_span_id)`. See the documentation of `limit` for an overview of paginating fetch queries.
+"""
+
+MaxXactId: TypeAlias = str
+"""
+DEPRECATION NOTICE: The manually-constructed pagination cursor is deprecated in favor of the explicit 'cursor' returned by object fetch requests. Please prefer the 'cursor' argument going forwards.
+
+Together, `max_xact_id` and `max_root_span_id` form a pagination cursor
+
+Since a paginated fetch query returns results in order from latest to earliest, the cursor for the next page can be found as the row with the minimum (earliest) value of the tuple `(_xact_id, root_span_id)`. See the documentation of `limit` for an overview of paginating fetch queries.
+"""
+
+
+class ObjectReferenceNullish(TypedDict):
+    _xact_id: NotRequired[str | None]
+    """
+    Transaction ID of the original event.
+    """
+    created: NotRequired[str | None]
+    """
+    Created timestamp of the original event. Used to help sort in the UI
+    """
+    id: str
+    """
+    ID of the original event.
+    """
+    object_id: str
+    """
+    ID of the object the event is originating from.
+    """
+    object_type: Literal["project_logs", "experiment", "dataset", "prompt", "function", "prompt_session"]
+    """
+    Type of the object the event is originating from.
+    """
+
+
 OrgName: TypeAlias = str
 """
 Filter search results to within a particular organization
 """
 
+ProjectIdQuery: TypeAlias = str
+"""
+Project id
+"""
+
 ProjectName: TypeAlias = str
 """
 Name of the project to search for
+"""
+
+
+class SavedFunctionId1(TypedDict):
+    id: str
+    type: Literal["function"]
+    version: NotRequired[str]
+    """
+    The version of the function
+    """
+
+
+class SavedFunctionId2(TypedDict):
+    function_type: NotRequired[FunctionTypeEnum]
+    name: str
+    type: Literal["global"]
+
+
+SavedFunctionId: TypeAlias = SavedFunctionId1 | SavedFunctionId2 | None
+"""
+Optional function identifier that produced the classification
 """
 
 StartingAfter: TypeAlias = str
@@ -58,3 +182,38 @@ Pagination cursor id.
 
 For example, if the final item in the last page you fetched had an id of `foo`, pass `starting_after=foo` to fetch the next page. Note: you may only pass one of `starting_after` and `ending_before`
 """
+
+Version: TypeAlias = str
+"""
+Retrieve a snapshot of events from a past time
+
+The version id is essentially a filter on the latest event transaction id. You can use the `max_xact_id` returned by a past fetch as the version to reproduce that exact fetch.
+"""
+
+
+class Classification(TypedDict):
+    confidence: NotRequired[float | None]
+    """
+    Optional confidence score for the classification
+    """
+    id: str
+    """
+    Stable classification identifier
+    """
+    label: NotRequired[str]
+    """
+    Original label of the classification item, which is useful for search and indexing purposes
+    """
+    metadata: NotRequired[Mapping[str, Any] | None]
+    """
+    Optional metadata associated with the classification
+    """
+    source: NotRequired[SavedFunctionId]
+
+
+class FetchEventsRequest(TypedDict):
+    cursor: NotRequired[FetchPaginationCursor | None]
+    limit: NotRequired[FetchLimit | None]
+    max_root_span_id: NotRequired[MaxRootSpanId | None]
+    max_xact_id: NotRequired[MaxXactId | None]
+    version: NotRequired[Version | None]
