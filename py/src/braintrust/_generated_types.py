@@ -4372,6 +4372,10 @@ class View(TypedDict):
     """
     Textual description of the view
     """
+    starred: NotRequired[bool | None]
+    """
+    Whether the view is starred in its project
+    """
     created: NotRequired[str | None]
     """
     Date of view creation
