@@ -91,10 +91,8 @@ def register_sandbox(
     state = state or _state
     state.login(api_key=api_key, app_url=app_url, org_name=org_name)
 
-    project_response = state.app_conn().post_json(
-        "api/project/register", {"project_name": project, "org_id": state.org_id}
-    )
-    project_id = project_response["project"]["id"]
+    project_response = state.api_client().projects.post_project(body={"name": project, "org_name": state.org_name})
+    project_id = project_response["id"]
 
     runtime_context = {
         "runtime": "python",

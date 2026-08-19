@@ -1,5 +1,7 @@
 import pytest
+from braintrust import init_logger
 from braintrust.api import BraintrustClient
+from braintrust.logger import BraintrustState
 
 
 @pytest.mark.vcr
@@ -22,6 +24,14 @@ def test_projects_end_to_end_with_real_backend(api_key):
         updated = client.openapi.projects.patch_project_id(
             created["id"], body={"description": "updated by the Python SDK VCR test"}
         )
+
+        state = BraintrustState()
+        state.login(api_key=api_key, org_name=discovery.organization.name)
+        registered_logger = init_logger(project=project_name, state=state, set_current=False)
+        looked_up_logger = init_logger(project_id=created["id"], state=state, set_current=False)
+        assert registered_logger.id == created["id"]
+        assert looked_up_logger.project.name == project_name
+
         deleted = client.openapi.projects.delete_project_id(created["id"])
 
     assert create_project == {

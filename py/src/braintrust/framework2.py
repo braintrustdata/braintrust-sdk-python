@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any, overload
 
 import slugify
-from braintrust.logger import api_conn, app_conn, login
+from braintrust.logger import _internal_get_global_state, api_conn, login
 
 from .framework import _is_lazy_load, bcolors  # type: ignore
 from .generated_types import (
@@ -28,8 +28,9 @@ class ProjectIdCache:
 
     def get_by_name(self, project_name: str) -> str:
         if project_name not in self._name_cache:
-            resp = app_conn().post_json("api/project/register", {"project_name": project_name})
-            self._name_cache[project_name] = resp["project"]["id"]
+            state = _internal_get_global_state()
+            project = state.api_client().projects.post_project(body={"name": project_name, "org_name": state.org_name})
+            self._name_cache[project_name] = project["id"]
         return self._name_cache[project_name]
 
     def get(self, project: "Project") -> str:
