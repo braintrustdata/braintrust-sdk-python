@@ -10,7 +10,7 @@ Stable releases use a two-step GitHub Actions flow: a version-bump PR, then an a
 2. The workflow validates the version, updates `py/src/braintrust/version.py`, and opens a PR from `release/py-sdk-v<version>`.
 3. Review and merge the PR into `main`.
 4. Merging the release PR triggers `Publish Python SDK`.
-5. The stable publish job waits for approval in the `pypi-publish` GitHub environment.
+5. The stable publish job waits for approval in the `publish` GitHub environment.
 6. After approval, the workflow uses the pinned Python release actions from [`braintrustdata/sdk-actions`](https://github.com/braintrustdata/sdk-actions) to build and verify the package, generate and attest a CycloneDX SBOM, publish to PyPI with trusted publishing, and create the `py-sdk-v<version>` GitHub Release.
 
 The stable version must match `X.Y.Z`. Stable releases are published from the merge commit of the release PR.
@@ -28,7 +28,7 @@ Run `Publish Python SDK` with:
 
 Do not bump `py/src/braintrust/version.py` for prereleases. The workflow validates the requested prerelease version and passes it to the build as a version override.
 
-Prerelease versions must match `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`. Prereleases publish to the normal PyPI package, but do not create a git tag or GitHub Release. They do not use the stable release PR workflow, do not require a committed version bump, and do not require `pypi-publish` environment approval.
+Prerelease versions must match `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`. Prereleases publish to the normal PyPI package, but do not create a git tag or GitHub Release. They do not use the stable release PR workflow or require a committed version bump, but they do require approval in the `publish` GitHub environment.
 
 If you only want to publish a prerelease build for testing, you can also use `Publish Python SDK to TestPyPI` instead. That workflow does not create a GitHub Release.
 
@@ -61,7 +61,7 @@ The workflow uses commit-pinned actions from [`braintrustdata/sdk-actions`](http
 7. Generate a CycloneDX SBOM and, for real publishes, create a signed SBOM attestation.
 8. If `dry_run=false`, publish to PyPI through OIDC trusted publishing and create the stable GitHub Release with the SBOM attached.
 
-For stable, non-dry-run publishes, the `build-and-ship` job runs in the `pypi-publish` GitHub environment. Configure required reviewers on that environment to approve stable releases before publishing. The job needs `contents: write`, `id-token: write`, and `attestations: write` permissions.
+The `build-and-ship` job always runs behind an environment approval gate. Real stable and prerelease publishes use the `publish` environment; dry runs use `publish-dry-run`. Configure required reviewers on both environments. The job needs `contents: write`, `id-token: write`, and `attestations: write` permissions.
 
 ## TestPyPI releases
 
@@ -115,7 +115,7 @@ Just like the main PyPI workflow, the TestPyPI workflow also supports `dry_run=t
 
 ## Dry runs
 
-Use `dry_run=true` when you want to exercise the release workflow without publishing anything.
+Use `dry_run=true` when you want to exercise the release workflow without publishing anything. Dry runs require approval in the `publish-dry-run` GitHub environment.
 
 A dry run still:
 
@@ -131,4 +131,48 @@ A dry run does not:
 - publish to PyPI
 - create the `py-sdk-v<version>` tag
 - create a GitHub Release
-- require `pypi-publish` environment approval
+
+---
+
+## Maintenance
+
+`.github/workflows/publish-py-sdk.yaml` is generated from the `release/py/turnkey` template in [`braintrustdata/sdk-actions`](https://github.com/braintrustdata/sdk-actions). The shared actions are pinned by commit SHA. Do not hand-edit their pins to pick up upstream changes; use the workflow generator so it can preserve this repository's customizations.
+
+### Updating sdk-actions
+
+From an `sdk-actions` checkout with its mise tools installed:
+
+```bash
+WF=/path/to/braintrust-sdk-python/.github/workflows/publish-py-sdk.yaml
+REF=$(git rev-parse origin/main)
+mise exec -- bin/workflow compare --ref "$REF" "$WF"
+mise exec -- bin/workflow update --ref "$REF" "$WF"
+mise exec -- bin/workflow validate "$WF"
+```
+
+Pass the resolved commit SHA through `--ref`; `compare` otherwise uses the ref already recorded in the workflow header. `update` performs a three-way merge of upstream template changes, retains local edits, and updates the action pins and provenance header.
+
+After updating:
+
+1. Review the workflow diff and the upstream sdk-actions changes between the old and new refs. A major change to the header's `version` field indicates a breaking release-action change.
+2. Run `bash scripts/ensure-pinned-actions.sh` and the workflow validator.
+3. Open a PR and complete an approved `dry_run` before the next real release.
+
+The `# sdk-actions: {...}` header at the top of the workflow records the template, pinned ref, and generation parameters. Keep it intact so `compare` and `update` can reconstruct the upstream baseline.
+
+### Local workflow customizations
+
+`compare` reports the intentional differences from the turnkey template. Preserve these when updating:
+
+- merged `release/py-sdk-v*` PR and pushed `py-sdk-v*` tag triggers, in addition to manual dispatch
+- manual `ref`, `auto` release type, and prerelease version override support
+- the `resolve` job that normalizes those trigger modes to a commit SHA, release type, and version
+- Braintrust package templating and wheel verification through `make install-dev verify-build`
+- `py-sdk-v{version}` tags, `main` branch enforcement, and tag-push repair behavior
+- Braintrust-specific release labels, titles, and PR-list notifications
+
+### Required configuration
+
+- GitHub environments `publish` and `publish-dry-run`, with required reviewers configured. Real stable and prerelease publishes use `publish`; dry runs use `publish-dry-run`.
+- A PyPI trusted publisher for `braintrust`: owner `braintrustdata`, repository `braintrust-sdk-python`, workflow `publish-py-sdk.yaml`, environment `publish`.
+- Repository or organization secret `SLACK_BOT_TOKEN` and variable `SLACK_SDK_RELEASE_CHANNEL`, with the variable visible to this repository.

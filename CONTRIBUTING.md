@@ -260,9 +260,9 @@ CI uses committed HTTP VCR cassettes and Claude Agent SDK subprocess cassettes, 
 
 See `docs/publishing.md` for the full Python SDK publishing playbook.
 
-Stable releases are started from GitHub Actions by running `Prepare Stable Python SDK Release` with a stable version such as `0.22.0`. That workflow opens a `release/py-sdk-v<version>` PR that updates `py/src/braintrust/version.py`. Merging the PR triggers `Publish Python SDK`. The stable PyPI publish job requires approval through the `pypi-publish` GitHub environment, then publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
+Stable releases are started from GitHub Actions by running `Prepare Stable Python SDK Release` with a stable version such as `0.22.0`. That workflow opens a `release/py-sdk-v<version>` PR that updates `py/src/braintrust/version.py`. Merging the PR triggers `Publish Python SDK`. The stable PyPI publish job requires approval through the `publish` GitHub environment, then publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
 
-Prereleases use the manual `Publish Python SDK` workflow without a committed version bump: run the workflow against `main` or a commit on `main` with `release_type=prerelease` and the `version` input set to a prerelease version such as `0.22.0rc1`. Prereleases are not gated by the `pypi-publish` environment.
+Prereleases use the manual `Publish Python SDK` workflow without a committed version bump: run the workflow against `main` or a commit on `main` with `release_type=prerelease` and the `version` input set to a prerelease version such as `0.22.0rc1`. Prereleases are also gated by the `publish` environment; dry runs use `publish-dry-run`.
 
 Do not create or push release tags locally.
 
