@@ -1,10 +1,8 @@
-"""Regression test for pyright's ``reportPrivateImportUsage`` on top-level ``braintrust`` symbols.
+"""Regression tests for top-level ``braintrust`` symbols.
 
-Without PEP 484 ``as``-aliasing in ``braintrust/__init__.py``, pyright flags
-``from braintrust import auto_instrument`` (and peers) as private in a
-``py.typed`` consumer. The local ``pyrightconfig.json`` turns the rule into
-an error so this file breaks ``nox -s test_types`` if someone regresses the
-aliasing pattern.
+The static resource check keeps mypy from resolving generated ``TypedDict``
+names instead of the public runtime classes. The runtime checks cover PEP 484
+aliasing for pyright's ``reportPrivateImportUsage`` rule.
 """
 
 import braintrust
@@ -29,6 +27,18 @@ _PUBLIC_SYMBOLS = [
     ("setup_ai_sdk", setup_ai_sdk),
     ("setup_pydantic_ai", setup_pydantic_ai),
 ]
+
+
+def accepts_public_resource_types(
+    experiment: braintrust.Experiment,
+    dataset: braintrust.Dataset,
+    project: braintrust.Project,
+    prompt: braintrust.Prompt,
+) -> None:
+    experiment.fetch()
+    dataset.fetch()
+    _ = project.name
+    prompt.build()
 
 
 @pytest.mark.parametrize("name,imported", _PUBLIC_SYMBOLS)
