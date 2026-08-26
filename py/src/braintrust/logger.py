@@ -1677,12 +1677,14 @@ def init_dataset(
     _internal_btql: dict[str, Any] | None = None,
     state: BraintrustState | None = None,
     environment: str | None = None,
+    dataset_id: str | None = None,
 ) -> "Dataset":
     """
-    Create a new dataset in a specified project. If the project does not exist, it will be created.
+    Create or load a dataset. When creating a dataset, its project will be created if it does not exist.
 
-    :param project_name: The name of the project to create the dataset in. Must specify at least one of `project_name` or `project_id`.
+    :param project: The name of the project to create the dataset in.
     :param name: The name of the dataset to create. Defaults to `logs` if not specified.
+    :param dataset_id: The id of an existing dataset to load. If specified, this takes precedence over `project`, `project_id`, and `name`.
     :param description: An optional description of the dataset.
     :param version: An optional version of the dataset (to read). If not specified, the latest version will be used.
     :param environment: The environment to load the dataset from. If both `version` and `environment` are provided, `version` takes precedence.
@@ -1711,16 +1713,20 @@ def init_dataset(
     def compute_metadata():
         state.login(org_name=org_name, api_key=api_key, app_url=app_url)
         api_client = state.api_client()
-        if project_id is not None:
-            resp_project = api_client.projects.get_project_id(project_id)
+        if dataset_id is not None:
+            resp_dataset = api_client.datasets.get_dataset_id(dataset_id)
+            resp_project = api_client.projects.get_project_id(resp_dataset["project_id"])
         else:
-            resp_project = api_client.projects.post_project(body={"name": project, "org_name": state.org_name})
-        body = _populate_args(
-            {"project_id": resp_project["id"], "name": name or "logs"},
-            description=description,
-            metadata=metadata,
-        )
-        resp_dataset = api_client.datasets.post_dataset(body=body)
+            if project_id is not None:
+                resp_project = api_client.projects.get_project_id(project_id)
+            else:
+                resp_project = api_client.projects.post_project(body={"name": project, "org_name": state.org_name})
+            body = _populate_args(
+                {"project_id": resp_project["id"], "name": name or "logs"},
+                description=description,
+                metadata=metadata,
+            )
+            resp_dataset = api_client.datasets.post_dataset(body=body)
         return ProjectDatasetMetadata(
             project=ObjectMetadata(id=resp_project["id"], name=resp_project["name"], full_info=dict(resp_project)),
             dataset=ObjectMetadata(id=resp_dataset["id"], name=resp_dataset["name"], full_info=dict(resp_dataset)),

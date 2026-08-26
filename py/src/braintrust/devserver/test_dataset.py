@@ -33,7 +33,10 @@ class _DatasetAPIHandler(http.server.BaseHTTPRequestHandler):
             self._send_json({"id": "dataset-reference", "project_id": "project-id", "name": "dataset-name"})
         elif parsed_url.path == "/v1/project/project-id":
             self._send_json({"id": "project-id", "name": "project-name"})
-        elif parsed_url.path == "/environment-object/dataset/dataset-id/prod%2Fstable":
+        elif parsed_url.path in {
+            "/environment-object/dataset/dataset-id/prod%2Fstable",
+            "/environment-object/dataset/dataset-reference/prod%2Fstable",
+        }:
             self._send_json({"object_version": "2"})
         else:
             self._send_json({"error": "not found"}, status=404)
@@ -48,7 +51,10 @@ class _DatasetAPIHandler(http.server.BaseHTTPRequestHandler):
             self._send_json({"id": "project-id", "name": "project-name"})
         elif parsed_url.path == "/v1/dataset":
             self._send_json({"id": "dataset-id", "project_id": "project-id", "name": "dataset-name"})
-        elif parsed_url.path == "/v1/dataset/dataset-id/fetch":
+        elif parsed_url.path in {
+            "/v1/dataset/dataset-id/fetch",
+            "/v1/dataset/dataset-reference/fetch",
+        }:
             self._send_json({"events": []})
         elif parsed_url.path == "/btql":
             self._send_json({"data": []})
@@ -122,14 +128,19 @@ async def test_get_dataset_resolves_environment_to_pinned_version(
     )
 
     assert list(dataset) == []
+    expected_dataset_id = reference.get("dataset_id", "dataset-id")
     assert (
         "GET",
-        "/environment-object/dataset/dataset-id/prod%2Fstable",
+        f"/environment-object/dataset/{expected_dataset_id}/prod%2Fstable",
         expected_query,
         None,
     ) in _DatasetAPIHandler.requests
     assert _request_body("/btql")["version"] == "2"
     assert _request_body("/btql")["query"]["limit"] == 10
+    if "dataset_id" in reference:
+        assert not any(
+            method == "POST" and path == "/v1/dataset" for method, path, _query, _body in _DatasetAPIHandler.requests
+        )
 
 
 @pytest.mark.asyncio
@@ -156,7 +167,8 @@ async def test_get_dataset_prefers_explicit_version_over_environment(
     assert not any(
         path.startswith("/environment-object/") for _method, path, _query, _body in _DatasetAPIHandler.requests
     )
-    assert _request_body("/v1/dataset/dataset-id/fetch")["version"] == "1"
+    expected_dataset_id = reference.get("dataset_id", "dataset-id")
+    assert _request_body(f"/v1/dataset/{expected_dataset_id}/fetch")["version"] == "1"
 
 
 @pytest.mark.asyncio

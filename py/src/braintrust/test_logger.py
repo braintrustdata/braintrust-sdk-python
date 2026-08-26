@@ -3745,6 +3745,33 @@ class TestDatasetGeneratedAPI(TestCase):
         )
         mock_state.app_conn.assert_not_called()
 
+    def test_init_dataset_looks_up_explicit_dataset_id(self):
+        mock_state = MagicMock()
+        api_client = mock_state.api_client.return_value
+        api_client.datasets.get_dataset_id.return_value = {
+            "id": "test-dataset-id",
+            "project_id": "test-project-id",
+            "name": "test-dataset",
+        }
+        api_client.projects.get_project_id.return_value = {
+            "id": "test-project-id",
+            "name": "test-project",
+        }
+
+        dataset = braintrust.init_dataset(
+            dataset_id="test-dataset-id",
+            use_output=False,
+            state=mock_state,
+        )
+
+        self.assertEqual(dataset.id, "test-dataset-id")
+        self.assertEqual(dataset.name, "test-dataset")
+        self.assertEqual(dataset.project.name, "test-project")
+        api_client.datasets.get_dataset_id.assert_called_once_with("test-dataset-id")
+        api_client.projects.get_project_id.assert_called_once_with("test-project-id")
+        api_client.datasets.post_dataset.assert_not_called()
+        api_client.projects.post_project.assert_not_called()
+
     def test_init_dataset_looks_up_explicit_project_id(self):
         mock_state = MagicMock()
         api_client = mock_state.api_client.return_value
