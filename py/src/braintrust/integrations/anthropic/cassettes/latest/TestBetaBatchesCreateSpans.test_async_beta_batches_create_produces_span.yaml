@@ -7,7 +7,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       anthropic-beta:
       - message-batches-2024-09-24
       anthropic-version:
@@ -21,7 +21,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - AsyncAnthropic/Python 0.122.0
+      - AsyncAnthropic/Python 1.0.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -31,7 +31,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 0.122.0
+      - 1.0.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -46,7 +46,7 @@ interactions:
     uri: https://api.anthropic.com/v1/messages/batches?beta=true
   response:
     body:
-      string: '{"id":"msgbatch_01N6N5CB6RXTnEf8T4YFZCsJ","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-08-17T16:31:44.332864+00:00","expires_at":"2026-08-18T16:31:44.332864+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+      string: '{"id":"msgbatch_01H28DSd2625pai6vNvuRr8z","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-08-26T15:12:24.524346+00:00","expires_at":"2026-08-27T15:12:24.524346+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -55,7 +55,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca121c9dceac3c-YYZ
+      - a313c6478bdcf00c-YYZ
       connection:
       - keep-alive
       content-length:
@@ -65,13 +65,13 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:31:44 GMT
+      - Wed, 26 Aug 2026 15:12:24 GMT
       request-id:
-      - req_011Ce8e7E5ThoPo1eNzmEWUc
+      - req_011CeRaLbcy4ycyYLZSAHWrC
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=225
+      - x-originResponse;dur=281
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:

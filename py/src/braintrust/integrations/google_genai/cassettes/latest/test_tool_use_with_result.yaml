@@ -22,25 +22,25 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
         [\n          {\n            \"functionCall\": {\n              \"name\": \"calculate\",\n
-        \             \"args\": {\n                \"operation\": \"multiply\",\n
-        \               \"b\": 49,\n                \"a\": 127\n              }\n
-        \           },\n            \"thoughtSignature\": \"CvoBARFNMg9ym/Rpj6kYxFGz3a/FsRHx56GZc6fh3rp21EvYc6wZpxHHQSeKS1cuDTty1Yy/4g0PPvltCNmun09mhK7uomHEIxQKC+kGxG9EfW6az07sBQsDNj0V84wqowQwIBW3lJ5YYnmq7B+ncAKIvPNS3E4fbsLkH2KiEAOquc3D7cJuU8Lv6kzKLD2BcGmtlfLKxGm7esVSHr6QVNpbWiT2y4VYDHpSjT/l3fEQ+UlCIBUVKMDDcoNsrLUTN33etwJ9FE5f2xJH5IjHy47ep9gP9A87H4eV4O2Winul8nJJ2G70sTLi/89HZQFYR9I/da4v1jom6Loj+g==\"\n
+        \             \"args\": {\n                \"b\": 49,\n                \"operation\":
+        \"multiply\",\n                \"a\": 127\n              }\n            },\n
+        \           \"thoughtSignature\": \"CvoBARFNMg9IAeNA9+BXCLJrsvB/exlpXNcHMcwzupyor+sln8zF0suEKzHyLHaW67VNSmNcmwATh+jdxcW35u49Sh/QcR26pnQ17j5nDuzCsxDNbXuSjqkllqcdmHWhuJrR+QGLBvEhovprSjgfni7qygRctfwWKJHt+Wcdx8hE2El1lR1DiCOmPh+TZfdH2jaQAqf6Xaw5ugvGawCXqcRAFvPuRh7SJ1GuqZohVIxUS20F3thPlbMrm4GXRpEpTSJiLNjnwVw27BhtW94Z4Hk+0u3+sulP7J5f8m+S3ZVG/6Qr4h1XEyYXS0+TGfwwcWUCUcIkLKvgEDAyzg==\"\n
         \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
         \"STOP\",\n      \"index\": 0,\n      \"finishMessage\": \"Model generated
         function call(s).\"\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 168,\n    \"promptTokensDetails\":
+        84,\n    \"candidatesTokenCount\": 26,\n    \"totalTokenCount\": 170,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 58,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"ADWDaoq0D6SC-8YPjKfQ0A8\"\n}\n"
+        \     }\n    ],\n    \"thoughtsTokenCount\": 60,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"0AKPapGmJOW8jrEPnfHC2As\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -49,11 +49,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 17 Aug 2026 16:21:20 GMT
+      - Wed, 26 Aug 2026 15:14:25 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=613
+      - gfet4t7; dur=701
       transfer-encoding:
       - chunked
       vary:
@@ -73,8 +73,8 @@ interactions:
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "What is 127 multiplied by 49?"}], "role":
-      "user"}, {"parts": [{"functionCall": {"args": {"operation": "multiply", "b":
-      49, "a": 127}, "name": "calculate"}, "thoughtSignature": "CvoBARFNMg9ym_Rpj6kYxFGz3a_FsRHx56GZc6fh3rp21EvYc6wZpxHHQSeKS1cuDTty1Yy_4g0PPvltCNmun09mhK7uomHEIxQKC-kGxG9EfW6az07sBQsDNj0V84wqowQwIBW3lJ5YYnmq7B-ncAKIvPNS3E4fbsLkH2KiEAOquc3D7cJuU8Lv6kzKLD2BcGmtlfLKxGm7esVSHr6QVNpbWiT2y4VYDHpSjT_l3fEQ-UlCIBUVKMDDcoNsrLUTN33etwJ9FE5f2xJH5IjHy47ep9gP9A87H4eV4O2Winul8nJJ2G70sTLi_89HZQFYR9I_da4v1jom6Loj-g=="}],
+      "user"}, {"parts": [{"functionCall": {"args": {"b": 49, "operation": "multiply",
+      "a": 127}, "name": "calculate"}, "thoughtSignature": "CvoBARFNMg9IAeNA9-BXCLJrsvB_exlpXNcHMcwzupyor-sln8zF0suEKzHyLHaW67VNSmNcmwATh-jdxcW35u49Sh_QcR26pnQ17j5nDuzCsxDNbXuSjqkllqcdmHWhuJrR-QGLBvEhovprSjgfni7qygRctfwWKJHt-Wcdx8hE2El1lR1DiCOmPh-TZfdH2jaQAqf6Xaw5ugvGawCXqcRAFvPuRh7SJ1GuqZohVIxUS20F3thPlbMrm4GXRpEpTSJiLNjnwVw27BhtW94Z4Hk-0u3-sulP7J5f8m-S3ZVG_6Qr4h1XEyYXS0-TGfwwcWUCUcIkLKvgEDAyzg=="}],
       "role": "model"}, {"parts": [{"functionResponse": {"name": "calculate", "response":
       {"result": 6223}}}], "role": "user"}], "tools": [{"functionDeclarations": [{"description":
       "Perform a mathematical calculation", "name": "calculate", "parameters_json_schema":
@@ -97,9 +97,9 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
@@ -111,7 +111,7 @@ interactions:
         126,\n    \"candidatesTokenCount\": 15,\n    \"totalTokenCount\": 141,\n    \"promptTokensDetails\":
         [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 126\n
         \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
-        \"gemini-2.5-flash\",\n  \"responseId\": \"ADWDasyrNIGMjrEP_YidkQI\"\n}\n"
+        \"gemini-2.5-flash\",\n  \"responseId\": \"0QKPaoiFFNOa-8YP7Ka3gQw\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -120,11 +120,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 17 Aug 2026 16:21:21 GMT
+      - Wed, 26 Aug 2026 15:14:25 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=485
+      - gfet4t7; dur=389
       transfer-encoding:
       - chunked
       vary:

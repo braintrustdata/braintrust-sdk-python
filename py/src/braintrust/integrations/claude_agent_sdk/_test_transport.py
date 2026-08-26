@@ -90,8 +90,25 @@ def _normalize_for_match(value: Any) -> Any:
             normalized["session_id"] = "SESSION_ID"
         if normalized.get("type") == "control_request" and isinstance(normalized.get("request_id"), str):
             normalized["request_id"] = "CONTROL_REQUEST_ID"
+        _normalize_mcp_initialize_response(normalized)
         return normalized
     return value
+
+
+def _normalize_mcp_initialize_response(value: dict[str, Any]) -> None:
+    """Ignore MCP handshake details that vary with the SDK's MCP dependency."""
+    if value.get("type") != "control_response":
+        return
+    response = value.get("response")
+    sdk_response = response.get("response") if isinstance(response, dict) else None
+    mcp_response = sdk_response.get("mcp_response") if isinstance(sdk_response, dict) else None
+    result = mcp_response.get("result") if isinstance(mcp_response, dict) else None
+    if not isinstance(result, dict) or not {"protocolVersion", "serverInfo", "capabilities"} <= result.keys():
+        return
+
+    result["protocolVersion"] = "MCP_PROTOCOL_VERSION"
+    capabilities = result.get("capabilities")
+    result["capabilities"] = {"tools": {}} if isinstance(capabilities, dict) and "tools" in capabilities else {}
 
 
 def _sanitize_json_for_storage(value: Any) -> Any:

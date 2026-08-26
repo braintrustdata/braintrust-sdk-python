@@ -142,7 +142,7 @@ def auto_instrument(
         # Anthropic
         import anthropic
         client = anthropic.Anthropic()
-        client.messages.create(model="claude-sonnet-4-20250514", messages=[...])
+        client.messages.create(model="claude-haiku-4-5-20251001", messages=[...])
 
         # LiteLLM
         import litellm

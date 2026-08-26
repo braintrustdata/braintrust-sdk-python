@@ -5,7 +5,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.31.0
+      - pydantic-ai/2.33.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,8 +38,8 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EDujM4aiq50nR144NtJeM1uXqmcP5\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1786985044,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EH9fW9mlFR7qpl7FpeQI1DATZfZi7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1787757450,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Hi there! How can I assist you today?\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
@@ -59,7 +59,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca24309dc3f00c-YYZ
+      - a313cdc26fd1860b-YYZ
       connection:
       - keep-alive
       content-length:
@@ -67,9 +67,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:44:05 GMT
+      - Wed, 26 Aug 2026 15:17:31 GMT
       openai-processing-ms:
-      - '648'
+      - '643'
       openai-version:
       - '2020-10-01'
       server:
@@ -95,7 +95,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_40893ea2f97d44cc8146ece59528e49a
+      - req_fbacbfc48cfa465397170fc0675ea497
     status:
       code: 200
       message: OK

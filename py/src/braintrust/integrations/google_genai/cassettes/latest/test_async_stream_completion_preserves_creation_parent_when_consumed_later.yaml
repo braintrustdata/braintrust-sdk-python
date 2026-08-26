@@ -16,24 +16,23 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse
   response:
     body:
-      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The
-        capital of France is **\"}],\"role\": \"model\"},\"index\": 0}],\"usageMetadata\":
-        {\"promptTokenCount\": 8,\"candidatesTokenCount\": 6,\"totalTokenCount\":
-        14,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\": 8}],\"serviceTier\":
-        \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
-        \"7jSDaoWyNa7XjrEPjrygiQ0\"}\r\n\r\ndata: {\"candidates\": [{\"content\":
-        {\"parts\": [{\"text\": \"Paris**.\"}],\"role\": \"model\"},\"finishReason\":
+      string: "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"The\"}],\"role\":
+        \"model\"},\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
+        1,\"totalTokenCount\": 9,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
+        8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
+        \"wQKPaovGBtmD-8YP5s9-\"}\r\n\r\ndata: {\"candidates\": [{\"content\": {\"parts\":
+        [{\"text\": \" capital of France is **Paris**.\"}],\"role\": \"model\"},\"finishReason\":
         \"STOP\",\"index\": 0}],\"usageMetadata\": {\"promptTokenCount\": 8,\"candidatesTokenCount\":
         8,\"totalTokenCount\": 16,\"promptTokensDetails\": [{\"modality\": \"TEXT\",\"tokenCount\":
         8}],\"serviceTier\": \"standard\"},\"modelVersion\": \"gemini-2.5-flash-lite\",\"responseId\":
-        \"7jSDaoWyNa7XjrEPjrygiQ0\"}\r\n\r\n"
+        \"wQKPaovGBtmD-8YP5s9-\"}\r\n\r\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
@@ -42,11 +41,11 @@ interactions:
       content-type:
       - text/event-stream
       date:
-      - Mon, 17 Aug 2026 16:21:03 GMT
+      - Wed, 26 Aug 2026 15:14:09 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=295
+      - gfet4t7; dur=270
       transfer-encoding:
       - chunked
       vary:

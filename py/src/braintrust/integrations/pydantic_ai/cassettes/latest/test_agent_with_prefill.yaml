@@ -6,7 +6,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.31.0
+      - pydantic-ai/2.33.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,19 +39,19 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0301fc8121dc5b5c006a833a5b137481a1802a126e087b850c\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1786985051,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0eb1895425727ff8006a8f039aa23487d29c3ea0445e0547d8\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1787757466,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1786985051,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1787757467,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0301fc8121dc5b5c006a833a5b749881a1af5fbb6247ca9149\",\n
+        \     \"id\": \"msg_0eb1895425727ff8006a8f039b2dbc87d2a77d5cbd5b93c414\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Lines of logic flow,
-        \ \\nFingers dance on keys like rain,  \\nWorlds in silence grow.\"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Lines of light cascade,
+        \ \\nLogic weaves through silent keys\\u2014  \\nDreams in code take flight.\"\n
+        \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
@@ -79,17 +79,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca2458ec4dc65d-YYZ
+      - a313ce0c4c20ebbc-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2052'
+      - '2065'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:44:11 GMT
+      - Wed, 26 Aug 2026 15:17:47 GMT
       openai-processing-ms:
-      - '736'
+      - '5172'
       openai-version:
       - '2020-10-01'
       server:
@@ -107,13 +107,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999947'
+      - '149999945'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_3954d9e1c2054dd1aa53e43179ecf90f
+      - req_7e3ab8a210f24bd7a0968ca198e6acf5
     status:
       code: 200
       message: OK

@@ -5,7 +5,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.31.0
+      - pydantic-ai/2.33.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,18 +38,18 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0ec065b242629b06006a833a5c0cc881a397b7fcb345db301e\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1786985052,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0107c2fc76024e41006a8f039c0e1c87d2866283c802fb85da\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1787757468,\n  \"status\":
         \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
         \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
         0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
         \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 16,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0ec065b242629b06006a833a5c7e7481a3ae06c5dd9b181331\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_0107c2fc76024e41006a8f039c6edc87d282e50a228490af4b\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"Artificial Intelligence
-        (AI) refers to the simulation of human intelligence in machines designed to\"\n
+        (AI) refers to the development of computer systems or software that can\"\n
         \       }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -78,17 +78,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca245e6b343b8e-YYZ
+      - a313ce2eec6d52e6-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2098'
+      - '2094'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:44:12 GMT
+      - Wed, 26 Aug 2026 15:17:48 GMT
       openai-processing-ms:
-      - '949'
+      - '714'
       openai-version:
       - '2020-10-01'
       server:
@@ -112,7 +112,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_8810747dac1149dd97e9be9b4d697c85
+      - req_04574d5fca434436a5134bcbe647a3f5
     status:
       code: 200
       message: OK
