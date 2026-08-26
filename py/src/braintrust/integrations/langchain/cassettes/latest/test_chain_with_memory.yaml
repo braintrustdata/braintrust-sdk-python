@@ -13,8 +13,6 @@ interactions:
       - '149'
       content-type:
       - application/json
-      cookie:
-      - __cf_bm=hv47slwIwRfZDb2SDLjTq5j3hc6JvRcRVqd5FPVR2Ac-1785331837.805637-1.0.1.1-va9n6PdNTlNdNG1dcpMlZwEbQm.3UhKGBNFvk1gQX1GglFuXajLLFm965Tri.rhSuM4W3VXE3_dA_c8OLw9x15RULE13qmG4hwPqOSF84jUA8bjeNF4tLWmqZj_bBbsb
       host:
       - api.openai.com
       user-agent:
@@ -41,11 +39,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-E6yelsk3DIXQkfLgCqRbOTODfhXHm\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1785331839,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EH9emMFRxyo5s3sWCEPZos0dwOCK2\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1787757404,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Assistant: I don't have a personal
-        name, but you can call me Assistant! How can I help you today?\",\n        \"refusal\":
+        name, but you can call me Assistant. How can I help you today?\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
         \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
         24,\n    \"completion_tokens\": 23,\n    \"total_tokens\": 47,\n    \"prompt_tokens_details\":
@@ -63,7 +61,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c7ab87f991707-YYZ
+      - a313cc9f2e31b5e5-YYZ
       connection:
       - keep-alive
       content-length:
@@ -71,13 +69,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 29 Jul 2026 13:30:39 GMT
-      openai-organization:
-      - braintrust-data
+      - Wed, 26 Aug 2026 15:16:44 GMT
       openai-processing-ms:
-      - '585'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '672'
       openai-version:
       - '2020-10-01'
       server:
@@ -103,7 +97,109 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_eec0adcd50014e508eb086e043a0da0c
+      - req_eddac7606f474a3da5bf273aa57b0647
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Assistant: Hello! How can I assist you today?
+      User: What''s your name?","role":"user"}],"model":"gpt-4o-mini","stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '149'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.32.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.32.0
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EH9gxok5BImDgtkeDfbyrwZCG7DKa\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1787757539,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Assistant: I don't have a personal
+        name, but you can call me Assistant! How can I help you today?\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        24,\n    \"completion_tokens\": 23,\n    \"total_tokens\": 47,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_6ec6bfb92d\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a313cfea0afbaaad-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '904'
+      content-type:
+      - application/json
+      date:
+      - Wed, 26 Aug 2026 15:18:59 GMT
+      openai-processing-ms:
+      - '725'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999980'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_16919a2f87164790a290bc9796658af6
     status:
       code: 200
       message: OK

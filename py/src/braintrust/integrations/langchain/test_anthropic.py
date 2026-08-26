@@ -12,7 +12,7 @@ from .helpers import assert_matches_object
 
 
 PROJECT_NAME = "langchain-anthropic"
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-haiku-4-5-20251001"
 
 
 @pytest.fixture

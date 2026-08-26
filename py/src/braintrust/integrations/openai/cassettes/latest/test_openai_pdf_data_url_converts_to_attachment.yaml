@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.1.0
+      - OpenAI/Python 3.3.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,16 +39,18 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EDueE5feCMygNO67VcmAMIoxsjfBM\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1786984726,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EH9URjIdQsg2Pz0fI6xMuw5RHAAhs\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1787756763,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"It seems that I'm unable to access
-        or interpret any content from the document titled 'test.pdf.' If you can describe
-        the document or provide details about its content, I could help answer questions
-        or provide guidance based on that information!\",\n        \"refusal\": null,\n
-        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
-        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 233,\n    \"completion_tokens\":
-        45,\n    \"total_tokens\": 278,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        \"assistant\",\n        \"content\": \"It appears that the document 'test.pdf'
+        has no readable text or content that can be analyzed directly. However, I
+        do have the capability to view rendered images of the pages from the file.
+        If you would like, I can examine those images for any relevant information
+        such as text, diagrams, or any other elements. Please let me know how you
+        would like to proceed!\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 233,\n    \"completion_tokens\":
+        75,\n    \"total_tokens\": 308,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
@@ -63,17 +65,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca1c65fc0ffcd9-YYZ
+      - a313bcfbfe9e076d-YYZ
       connection:
       - keep-alive
       content-length:
-      - '1053'
+      - '1169'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:38:47 GMT
+      - Wed, 26 Aug 2026 15:06:05 GMT
       openai-processing-ms:
-      - '1652'
+      - '1911'
       openai-version:
       - '2020-10-01'
       server:
@@ -99,7 +101,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_df96be81cd4f40f6aec67fb5cc78b31a
+      - req_609f9c6fc1904c90ab8fb67fe5a552fd
     status:
       code: 200
       message: OK

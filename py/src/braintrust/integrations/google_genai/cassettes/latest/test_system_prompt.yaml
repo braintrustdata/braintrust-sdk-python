@@ -18,37 +18,41 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
       x-goog-api-client:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6
+      - google-genai-sdk/2.19.0 gl-python/3.14.6
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Arr, matey! The sky be lookin' a bit
-        grim today, with clouds as dark as a kraken's ink. The wind be howlin' like
-        a banshee, and the waves be crashin' against the hull like a thousand angry
-        sea beasts. Best to batten down the hatches and pray ye don't get caught in
-        this tempest!\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
-        \     \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\":
-        {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\": 75,\n    \"totalTokenCount\":
-        94,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 19\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"_DSDapP_G87BsOIPmLmboA4\"\n}\n"
+        [\n          {\n            \"text\": \"Ahoy there, matey!  The sky be a fickle
+        mistress, it be.\\n\\nRight now, it looks like a fair wind be blowin', not
+        too much of a squall in sight. The sun be peeking through the clouds, offerin'
+        a bit o' warmth to yer old bones. The sea be a bit choppy, mind ye, with a
+        few whitecaps dancin' on the waves, but nothin' a seasoned sailor can't handle.\\n\\nKeep
+        an eye on those clouds, though! They can gather faster than a kraken snatchin'
+        a ship. Could be a bit o' rain comin' our way later, or maybe a strong gust
+        that'll fill yer sails somethin\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\":
+        0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 19,\n    \"candidatesTokenCount\":
+        150,\n    \"totalTokenCount\": 169,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 19\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"zAKPas2nKqK9sOIP55mSmAg\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '826'
+      - '1097'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 17 Aug 2026 16:21:17 GMT
+      - Wed, 26 Aug 2026 15:14:21 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=656
+      - gfet4t7; dur=882
       transfer-encoding:
       - chunked
       vary:

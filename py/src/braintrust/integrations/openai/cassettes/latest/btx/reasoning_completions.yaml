@@ -19,21 +19,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EDugl0N4FOpjE3ozTyDKkZ7ttTQpJ\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1786984883,\n  \"model\": \"o4-mini-2025-04-16\",\n
+      string: "{\n  \"id\": \"chatcmpl-EH9bop7zDMOnQlVjDyWhGlAV52aYM\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1787757220,\n  \"model\": \"o4-mini-2025-04-16\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The five terms are  \\r\\n 2, 6, 12,
-        20, 30  \\r\\nand their successive differences are  \\r\\n 6\u22122=4, 12\u22126=6,
-        20\u221212=8, 30\u221220=10, \u2026  \\r\\nso the gaps are the even numbers
-        4,6,8,10,\u2026 (i.e. increasing by 2 each time).  \\r\\n\\r\\nEquivalently
-        one sees  \\r\\n 2=1\xB72, 6=2\xB73, 12=3\xB74, 20=4\xB75, 30=5\xB76  \\r\\nso
-        the n-th term (with n starting at 1) is  \\r\\n a\u2099 = n\xB7(n+1)  \\r\\nor
-        in expanded form  \\r\\n a\u2099 = n\xB2 + n.\",\n        \"refusal\": null,\n
+        \"assistant\",\n        \"content\": \"Each term is the product of two consecutive
+        integers (the \u201Cpronic\u201D or \u201Coblong\u201D numbers).  In fact,
+        if you label the terms so that  \\n\u2003a\u2081=2, a\u2082=6, a\u2083=12,
+        a\u2084=20, a\u2085=30,\u2026  \\nthen  \\n\u2003a\u2099 = n\xB7(n+1).  \\n\\nEquivalently,
+        \ \\n\u2003a\u2099 = n\xB2 + n.  \\n\\nYou can also see that the differences
+        between successive terms are 4, 6, 8, 10,\u2026 (i.e. the even numbers), which
+        is another way to recognize the pattern.\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"finish_reason\": \"stop\"\n
         \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 41,\n    \"completion_tokens\":
-        831,\n    \"total_tokens\": 872,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        602,\n    \"total_tokens\": 643,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
         0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
-        {\n      \"reasoning_tokens\": 640,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        {\n      \"reasoning_tokens\": 448,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
         \"default\",\n  \"system_fingerprint\": null\n}\n"
     headers:
@@ -44,13 +44,13 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1188'
+      - '1193'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:41:31 GMT
+      - Wed, 26 Aug 2026 15:13:46 GMT
       openai-processing-ms:
-      - '7899'
+      - '6697'
       openai-version:
       - '2020-10-01'
       server:
@@ -70,7 +70,7 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999970'
+      - '149999972'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:

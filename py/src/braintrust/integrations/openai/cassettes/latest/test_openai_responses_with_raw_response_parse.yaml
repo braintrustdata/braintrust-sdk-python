@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.1.0
+      - OpenAI/Python 3.3.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -40,31 +40,31 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_05638f6ea67500e2006a83382d7ce4819cb6ca9a8996e786fa\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1786984493,\n  \"status\":
+      string: "{\n  \"id\": \"resp_02b01e2b0c9619f4006a8f0028f39c87d297dc19e934c8bb32\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1787756585,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1786984494,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1787756585,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_05638f6ea67500e2006a83382dcc08819c91df79faa9f39fdd\",\n
+        \     \"id\": \"msg_02b01e2b0c9619f4006a8f00295ce887d280d3333f81b5ca4d\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
-        plus 12 equals 24 because when you combine the two numbers, you are essentially
-        adding their total values.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
-        \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
-        \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
-        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
-        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
-        \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n
-        \   \"format\": {\n      \"type\": \"json_schema\",\n      \"description\":
-        null,\n      \"name\": \"NumberAnswer\",\n      \"schema\": {\n        \"properties\":
-        {\n          \"value\": {\n            \"title\": \"Value\",\n            \"type\":
-        \"integer\"\n          },\n          \"reasoning\": {\n            \"title\":
-        \"Reasoning\",\n            \"type\": \"string\"\n          }\n        },\n
-        \       \"required\": [\n          \"value\",\n          \"reasoning\"\n        ],\n
-        \       \"title\": \"NumberAnswer\",\n        \"type\": \"object\",\n        \"additionalProperties\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"The
+        sum of 12 and 12 is calculated by adding the two numbers together: 12 + 12
+        = 24.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
+        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
+        \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
+        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
+        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"json_schema\",\n      \"description\": null,\n      \"name\":
+        \"NumberAnswer\",\n      \"schema\": {\n        \"properties\": {\n          \"value\":
+        {\n            \"title\": \"Value\",\n            \"type\": \"integer\"\n
+        \         },\n          \"reasoning\": {\n            \"title\": \"Reasoning\",\n
+        \           \"type\": \"string\"\n          }\n        },\n        \"required\":
+        [\n          \"value\",\n          \"reasoning\"\n        ],\n        \"title\":
+        \"NumberAnswer\",\n        \"type\": \"object\",\n        \"additionalProperties\":
         false\n      },\n      \"strict\": true\n    },\n    \"verbosity\": \"medium\"\n
         \ },\n  \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\":
         {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
@@ -74,8 +74,8 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 33,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 92\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 36,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 95\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -87,17 +87,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca16bbdda0aac2-YYZ
+      - a313b89e785adda9-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2625'
+      - '2600'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:34:54 GMT
+      - Wed, 26 Aug 2026 15:03:06 GMT
       openai-processing-ms:
-      - '854'
+      - '1288'
       openai-version:
       - '2020-10-01'
       server:
@@ -121,7 +121,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_d62ee87dfc864412bca7879b868b0fc1
+      - req_6e27e8b464514f9eabd3852dcc42739e
     status:
       code: 200
       message: OK
@@ -141,7 +141,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.1.0
+      - OpenAI/Python 3.3.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -151,7 +151,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-raw-response:
       - 'true'
       x-stainless-read-timeout:
@@ -166,18 +166,19 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_07e32eb60513a11b006a83382e8680819ea84a75e001e3e093\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1786984494,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0ba1eca0ba2d5d63006a8f002a695487d2a58b88a2383e796e\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1787756586,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1786984495,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1787756587,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_07e32eb60513a11b006a83382f0eec819e90d1bab7f7388f97\",\n
+        \     \"id\": \"msg_0ba1eca0ba2d5d63006a8f002afb2887d2a31adb1c2bae0f42\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"Adding
-        12 and 12 together gives you 24.\\\"}\"\n        }\n      ],\n      \"role\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
+        plus 12 equals 24 because when you combine the two quantities, you add the
+        values together, resulting in 24.\\\"}\"\n        }\n      ],\n      \"role\":
         \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
         0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
@@ -199,8 +200,8 @@ interactions:
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 59,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 22,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 81\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 36,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 95\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -212,17 +213,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca16c2390fac3f-YYZ
+      - a313b8a87ee1f288-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2555'
+      - '2627'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:34:55 GMT
+      - Wed, 26 Aug 2026 15:03:07 GMT
       openai-processing-ms:
-      - '1004'
+      - '1409'
       openai-version:
       - '2020-10-01'
       server:
@@ -240,13 +241,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999920'
+      - '149999922'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1f6d76bdd5764df494e88a513dfdf450
+      - req_76fe504771a54b849d9e6e9a7467acdc
     status:
       code: 200
       message: OK

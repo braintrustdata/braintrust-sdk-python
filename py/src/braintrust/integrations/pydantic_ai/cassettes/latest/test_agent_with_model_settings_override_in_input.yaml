@@ -5,7 +5,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.31.0
+      - pydantic-ai/2.33.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,39 +38,40 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0c212f5e07edcfef006a833a35927c819f848b29b059d6cc78\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1786985013,\n  \"status\":
+      string: "{\n  \"id\": \"resp_091784f4adb90023006a8f0369f6ac87d286eed3ebdc73ecca\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1787757417,\n  \"status\":
         \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
         \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
         0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
         \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_0c212f5e07edcfef006a833a361600819f96532f84d805feb6\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_091784f4adb90023006a8f036adc1887d28cbcf2f14daba16f\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"Once upon a time in
-        a small village nestled between rolling hills, there lived a young girl named
-        Elara. Known for her adventurous spirit and insatiable curiosity, she often
-        wandered into the lush forests that surrounded her home. \\n\\nOne sunny afternoon,
-        Elara noticed a shimmering light flickering among the trees. Driven by her
-        inquisitive nature, she followed the glimmer, weaving through tall ferns and
-        colorful wildflowers. The light led her to a hidden clearing, where a magnificent
-        pond sparkled like diamonds under the sun.\\n\\nAt the edge of the pond stood
-        a graceful, shimmering swan. To Elara\\u2019s amazement, the swan spoke, \\u201cThank
-        you for finding me, dear girl. I am no ordinary swan; I am enchanted and can
-        grant you one wish.\\u201d\\n\\nElara\\u2019s heart raced with excitement.
-        She thought of her village, which often faced hardships due to poor harvests.
-        \\u201cI wish for my village to always have enough food to feed everyone,\\u201d
-        she declared\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
-        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
-        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
-        \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
-        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
-        \ \"store\": true,\n  \"temperature\": 0.9,\n  \"text\": {\n    \"format\":
-        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
-        \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
-        \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Once in a small village
+        nestled between rolling hills, there was a curious young girl named Elara.
+        She had a wild mane of curly hair that danced in the wind and sparkling green
+        eyes that seemed to hold the secrets of the forest nearby.\\n\\nElara often
+        wandered into the woods, fascinated by the whispered tales of ancient trees
+        and mystical creatures. The villagers spoke of a hidden glade, a magical place
+        where the stars could be touched and wishes could be made. However, no one
+        had found it for generations.\\n\\nOne crisp autumn evening, driven by her
+        insatiable curiosity, Elara set out to discover this legendary glade. She
+        packed a small satchel with her favorite book, a few biscuits, and a warm
+        scarf, wishing to stay cozy as she ventured into the twilight.\\n\\nAs she
+        ventured deeper into the woods, the trees seemed to lean in closer, their
+        leaves shimmering like emeralds under the fading light. The air was filled
+        with the sweet scent of pine and the soft rustle of\"\n        }\n      ],\n
+        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
+        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
+        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
+        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
+        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
+        true,\n  \"temperature\": 0.9,\n  \"text\": {\n    \"format\": {\n      \"type\":
+        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
+        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
+        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
@@ -89,17 +90,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca236e2d400426-YYZ
+      - a313ccf5ce010702-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2969'
+      - '2977'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:43:36 GMT
+      - Wed, 26 Aug 2026 15:17:01 GMT
       openai-processing-ms:
-      - '2545'
+      - '3130'
       openai-version:
       - '2020-10-01'
       server:
@@ -123,7 +124,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_b2b68fa5afe34b70935205cda415db1a
+      - req_285a22d7cb39445988b90fc3c8767e24
     status:
       code: 200
       message: OK

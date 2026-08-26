@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.1.0
+      - OpenAI/Python 3.3.1
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.1.0
+      - 3.3.1
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,42 +39,44 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0381c1325d7f9902006a8337f947b48191a30e2573e37f44bb\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1786984441,\n  \"status\":
+      string: "{\n  \"id\": \"resp_06d9050a5f1bc6de006a8efff0003487d29485f32fa92be668\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1787756528,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1786984443,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1787756530,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_0381c1325d7f9902006a8337f985ec81918298b78270b49cdb\",\n
+        \     \"id\": \"ws_06d9050a5f1bc6de006a8efff0506c87d2aff71c614e2d9975\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_0381c1325d7f9902006a8337fa208081919de46efde4cfc4d9\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_06d9050a5f1bc6de006a8efff14b6487d29d5ef6f2c36905ba\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 6:34\\u202fPM
-        CEST on August 17, 2026, Paris is experiencing mostly cloudy conditions with
-        a temperature of 82\\u00b0F (28\\u00b0C).\\n\\n## Weather for Paris, \\u00cele-de-France,
-        France:\\nCurrent Conditions: Mostly cloudy, 82\\u00b0F (28\\u00b0C)\\n\\nDaily
-        Forecast:\\n* Monday, August 17: Low: 66\\u00b0F (19\\u00b0C), High: 86\\u00b0F
-        (30\\u00b0C), Description: Very warm with sunshine interrupted by clouds at
-        times\\n* Tuesday, August 18: Low: 66\\u00b0F (19\\u00b0C), High: 79\\u00b0F
-        (26\\u00b0C), Description: Cloudy\\n* Wednesday, August 19: Low: 60\\u00b0F
-        (15\\u00b0C), High: 76\\u00b0F (25\\u00b0C), Description: Mostly cloudy with
-        a couple of showers\\n* Thursday, August 20: Low: 59\\u00b0F (15\\u00b0C),
-        High: 78\\u00b0F (26\\u00b0C), Description: Sun through high clouds\\n* Friday,
-        August 21: Low: 56\\u00b0F (14\\u00b0C), High: 74\\u00b0F (24\\u00b0C), Description:
-        Mostly cloudy\\n* Saturday, August 22: Low: 56\\u00b0F (13\\u00b0C), High:
-        75\\u00b0F (24\\u00b0C), Description: Mostly sunny and delightful\\n* Sunday,
-        August 23: Low: 56\\u00b0F (14\\u00b0C), High: 73\\u00b0F (23\\u00b0C), Description:
-        Mostly cloudy\\n\\nSevere Weather Alerts:\\n* Paris: Yellow Warning for Extreme
-        High Temperature in effect until Tuesday, 12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France,
-        Moderate high-temperature warning\\n\\nModerate damages may occur, especially
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 5:02 PM CEST
+        on August 26, 2026, Paris is experiencing light rain with a temperature of
+        86\\u00b0F (30\\u00b0C).\\n\\n## Weather for Paris, \\u00cele-de-France, France:\\nCurrent
+        Conditions: Light rain, 86\\u00b0F (30\\u00b0C)\\n\\nDaily Forecast:\\n* Wednesday,
+        August 26: Low: 68\\u00b0F (20\\u00b0C), High: 86\\u00b0F (30\\u00b0C), Description:
+        Very warm with some sun, then turning cloudy\\n* Thursday, August 27: Low:
+        62\\u00b0F (17\\u00b0C), High: 81\\u00b0F (27\\u00b0C), Description: Very
+        warm with some sun, then turning cloudy; a couple of showers in the afternoon\\n*
+        Friday, August 28: Low: 61\\u00b0F (16\\u00b0C), High: 74\\u00b0F (23\\u00b0C),
+        Description: Partly sunny with a couple of showers in the afternoon\\n* Saturday,
+        August 29: Low: 63\\u00b0F (17\\u00b0C), High: 75\\u00b0F (24\\u00b0C), Description:
+        Mostly cloudy with a brief shower or two in the afternoon\\n* Sunday, August
+        30: Low: 61\\u00b0F (16\\u00b0C), High: 76\\u00b0F (25\\u00b0C), Description:
+        Cloudy with showers, some heavy\\n* Monday, August 31: Low: 57\\u00b0F (14\\u00b0C),
+        High: 76\\u00b0F (24\\u00b0C), Description: A little morning rain; otherwise,
+        clouds giving way to sun\\n* Tuesday, September 1: Low: 56\\u00b0F (13\\u00b0C),
+        High: 74\\u00b0F (23\\u00b0C), Description: Clouds and sunshine\\n\\nSevere
+        Weather Alerts:\\n* Paris: Yellow Warning for Thunderstorms in effect from
+        Thursday, 12:00 AM CEST until Friday, 12:00 AM CEST.  Source: M\\u00e9t\\u00e9o-France,
+        Moderate thunderstorm warning\\n\\nModerate damages may occur, especially
         in vulnerable or in exposed areas and to people who carry out weather-related
         activities.\\n\\nBe careful, keep informed of the latest weather forecast.,
-        start time: Monday, August 17, 00:00:00 UTC, end time: Tuesday, August 18,
+        start time: Thursday, August 27, 00:00:00 UTC, end time: Friday, August 28,
         00:00:00 UTC\\n \"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
         \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
         null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
@@ -94,8 +96,8 @@ interactions:
         null,\n        \"timezone\": null\n      }\n    }\n  ],\n  \"top_logprobs\":
         0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
         323,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n
-        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 399,\n    \"output_tokens_details\":
-        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 722\n  },\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 446,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 769\n  },\n
         \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
@@ -107,17 +109,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2ca1574e92f5577-YYZ
+      - a313b73a9f0b0c26-YYZ
       connection:
       - keep-alive
       content-length:
-      - '4287'
+      - '4452'
       content-type:
       - application/json
       date:
-      - Mon, 17 Aug 2026 16:34:03 GMT
+      - Wed, 26 Aug 2026 15:02:10 GMT
       openai-processing-ms:
-      - '2434'
+      - '2482'
       openai-version:
       - '2020-10-01'
       server:
@@ -129,7 +131,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_43a5b647b63b4005aa9fdecf5a7300fc
+      - req_7a20a102ef9343bfac185a7c9598bed1
     status:
       code: 200
       message: OK

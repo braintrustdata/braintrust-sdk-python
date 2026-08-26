@@ -396,7 +396,6 @@ def test_anthropic_messages_create_prompt_cache_5m_metrics(memory_logger):
     response = client.messages.create(
         model=LATEST_MODEL,
         max_tokens=16,
-        temperature=0,
         system=[
             {
                 "type": "text",
@@ -427,7 +426,6 @@ def test_anthropic_messages_create_prompt_cache_1h_metrics(memory_logger):
     response = client.messages.create(
         model=LATEST_MODEL,
         max_tokens=16,
-        temperature=0,
         extra_headers={"anthropic-beta": "extended-cache-ttl-2025-04-11"},
         system=[
             {
@@ -694,10 +692,12 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         "max_tokens": 300,
         "system": "just return the number",
         "messages": [{"role": "user", "content": "what is 1+1?"}],
-        "top_p": 0.5,
     }
     if MODEL == LEGACY_MODEL:
-        kw["temperature"] = 0.5
+        kw.update(temperature=0.5, top_p=0.5)
+    else:
+        # Anthropic 1.0 removed temperature and top_p from Messages.create().
+        kw["stop_sequences"] = ["END"]
 
     def _with_messages_create():
         return client.messages.create(**kw)
@@ -721,7 +721,9 @@ def test_anthropic_messages_model_params_inputs(memory_logger):
         assert log["metadata"]["max_tokens"] == 300
         if MODEL == LEGACY_MODEL:
             assert log["metadata"]["temperature"] == 0.5
-        assert log["metadata"]["top_p"] == 0.5
+            assert log["metadata"]["top_p"] == 0.5
+        else:
+            assert log["metadata"]["stop_sequences"] == ["END"]
 
 
 @pytest.mark.vcr
@@ -734,11 +736,12 @@ def test_anthropic_messages_system_prompt_inputs(memory_logger):
 
     args = {
         "messages": q,
-        "temperature": 0,
         "max_tokens": 300,
         "system": system,
         "model": MODEL,
     }
+    if MODEL == LEGACY_MODEL:
+        args["temperature"] = 0
 
     def _with_messages_create():
         return client.messages.create(**args)

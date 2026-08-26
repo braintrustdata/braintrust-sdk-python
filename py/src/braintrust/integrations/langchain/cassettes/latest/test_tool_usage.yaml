@@ -16,8 +16,6 @@ interactions:
       - '725'
       content-type:
       - application/json
-      cookie:
-      - __cf_bm=hv47slwIwRfZDb2SDLjTq5j3hc6JvRcRVqd5FPVR2Ac-1785331837.805637-1.0.1.1-va9n6PdNTlNdNG1dcpMlZwEbQm.3UhKGBNFvk1gQX1GglFuXajLLFm965Tri.rhSuM4W3VXE3_dA_c8OLw9x15RULE13qmG4hwPqOSF84jUA8bjeNF4tLWmqZj_bBbsb
       host:
       - api.openai.com
       user-agent:
@@ -44,11 +42,11 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-E6yele7HmgDjte5zawdtkGNTv0cFs\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1785331839,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EH9enCzU9Jcs0q1Ac6Pe3wLgq6nLC\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1787757405,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
-        \           \"id\": \"call_CE5VyXmOU1p33Fokm4j3Cygj\",\n            \"type\":
+        \           \"id\": \"call_q5abKABoSBpazQOqI1tnuNEw\",\n            \"type\":
         \"function\",\n            \"function\": {\n              \"name\": \"calculator\",\n
         \             \"arguments\": \"{\\\"input\\\":{\\\"operation\\\":\\\"multiply\\\",\\\"number1\\\":3,\\\"number2\\\":12}}\"\n
         \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
@@ -69,7 +67,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a22c7abcbacf1707-YYZ
+      - a313cca42f15b5e5-YYZ
       connection:
       - keep-alive
       content-length:
@@ -77,13 +75,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 29 Jul 2026 13:30:40 GMT
-      openai-organization:
-      - braintrust-data
+      - Wed, 26 Aug 2026 15:16:45 GMT
       openai-processing-ms:
-      - '1049'
-      openai-project:
-      - proj_vsCSXafhhByzWOThMrJcZiw9
+      - '616'
       openai-version:
       - '2020-10-01'
       server:
@@ -109,7 +103,115 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_1b5d143e6bd9428e93a4979bcdc2f64b
+      - req_e9f2b93e509d44be8f1de87115b7de66
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"What is 3 * 12","role":"user"}],"model":"gpt-4o-mini","frequency_penalty":0.0,"n":1,"presence_penalty":0.0,"stream":false,"temperature":1.0,"tools":[{"type":"function","function":{"name":"calculator","description":"Can
+      perform mathematical operations.","parameters":{"properties":{"input":{"properties":{"operation":{"description":"The
+      type of operation to execute.","enum":["add","subtract","multiply","divide"],"type":"string"},"number1":{"description":"The
+      first number to operate on.","type":"number"},"number2":{"description":"The
+      second number to operate on.","type":"number"}},"required":["operation","number1","number2"],"type":"object"}},"required":["input"],"type":"object"}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '725'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.32.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.32.0
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EH9gxr8qmr9ZEHfTINgPqLN3aNtZV\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1787757539,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_NWB3C4xbsdBWhQ5ZslYf4j1I\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"calculator\",\n
+        \             \"arguments\": \"{\\\"input\\\":{\\\"operation\\\":\\\"multiply\\\",\\\"number1\\\":3,\\\"number2\\\":12}}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 97,\n    \"completion_tokens\":
+        26,\n    \"total_tokens\": 123,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_836208cd2a\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a313cfef5863aaad-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1133'
+      content-type:
+      - application/json
+      date:
+      - Wed, 26 Aug 2026 15:19:00 GMT
+      openai-processing-ms:
+      - '676'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_0fbc7e0c72b64af5ab761fd51bc4f313
     status:
       code: 200
       message: OK

@@ -28,7 +28,7 @@ except ImportError:
 from braintrust import logger
 from braintrust.integrations.anthropic._utils import extract_anthropic_usage
 from braintrust.integrations.claude_agent_sdk import setup_claude_agent_sdk
-from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
+from braintrust.integrations.claude_agent_sdk._test_transport import _normalize_for_match, make_cassette_transport
 from braintrust.integrations.claude_agent_sdk.tracing import (
     ContextTracker,
     ToolSpanTracker,
@@ -70,6 +70,31 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
+
+
+def test_transport_normalizes_mcp_initialize_handshake_versions():
+    def response(protocol_version, capabilities):
+        return {
+            "type": "control_response",
+            "response": {
+                "subtype": "success",
+                "response": {
+                    "mcp_response": {
+                        "jsonrpc": "2.0",
+                        "id": 0,
+                        "result": {
+                            "capabilities": capabilities,
+                            "protocolVersion": protocol_version,
+                            "serverInfo": {"name": "calculator", "version": "1.0.0"},
+                        },
+                    }
+                },
+            },
+        }
+
+    old = response("2024-11-05", {"tools": {}})
+    new = response("2025-11-25", {"experimental": {}, "tools": {"listChanged": False}})
+    assert _normalize_for_match(old) == _normalize_for_match(new)
 
 
 @contextmanager
