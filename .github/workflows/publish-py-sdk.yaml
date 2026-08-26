@@ -83,6 +83,7 @@ jobs:
           python_version: .tool-versions
           release_tag: ${{ needs.configure.outputs.release_tag }}
           on_release_branch: ${{ needs.configure.outputs.on_release_branch }}
+          enforce_release_branch: ${{ inputs.release_type == 'stable' }}
           notes: ${{ needs.configure.outputs.notes }}
           already_published: ${{ needs.configure.outputs.already_published }}
           build_command: make install-dev verify-build

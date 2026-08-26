@@ -44,7 +44,7 @@ If you only want to publish a prerelease build for testing, you can also use `Pu
 The workflow uses commit-pinned actions from [`braintrustdata/sdk-actions`](https://github.com/braintrustdata/sdk-actions) to:
 
 1. Check out the requested SHA and read the package version from `py/src/braintrust/version.py`.
-2. Determine whether the SHA is on `main`, warning rather than failing if it is not.
+2. Require stable release SHAs to be on `main`; prerelease SHAs outside `main` produce a warning instead.
 3. Check PyPI availability and ensure the release tag does not already exist.
 4. Generate release notes and post the release approval summary.
 5. Build and verify the package with `make -C py install-dev verify-build`.
@@ -157,6 +157,7 @@ The `# sdk-actions: {...}` header at the top of the workflow records the templat
 - the dispatch instruction reminding releasers to commit the version before publishing
 - release-channel templating and wheel verification through `BRAINTRUST_RELEASE_CHANNEL` and `make install-dev verify-build`, with extended build timeouts
 - the existing `py-sdk-v{version}` tag format
+- hard enforcement of `main` for stable releases while prereleases remain warning-only
 - the `@sdk-eng` mention in approval notifications
 
 ### Required configuration
