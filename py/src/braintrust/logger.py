@@ -7,6 +7,7 @@ import contextlib
 import contextvars
 import dataclasses
 import datetime
+import hashlib
 import inspect
 import io
 import json
@@ -38,14 +39,22 @@ from urllib.parse import quote, urlencode
 import chevron
 import exceptiongroup
 from braintrust.functions.stream import BraintrustStream
+from requests import exceptions as requests_exceptions
 from requests.adapters import HTTPAdapter
 
 from . import context, id_gen
 from .api._routing import normalize_proxy_url
 from .api._transport import HTTPConnection
 from .api._transport import RetryRequestExceptionsAdapter as RetryRequestExceptionsAdapter
+from .api.auth import LoginResult, OrganizationInfo
 from .api.client import BraintrustClient, BraintrustOpenApiClient
-from .api.errors import BraintrustAPIError, BraintrustHTTPError
+from .api.errors import (
+    BraintrustAPIError,
+    BraintrustHTTPError,
+    BraintrustJSONDecodeError,
+    BraintrustTransportError,
+)
+from .api.policies import DEFAULT_RETRYABLE_STATUSES, is_retryable_request_exception
 from .bt_json import bt_dumps, bt_safe_deep_copy
 from .db_fields import (
     AUDIT_METADATA_FIELD,
@@ -432,6 +441,19 @@ NOOP_SPAN: Span = _NoopSpan()
 NOOP_SPAN_PERMALINK = "https://www.braintrust.dev/noop-span"
 
 
+@dataclasses.dataclass(frozen=True)
+class _LoaderRequestState:
+    app_url: str
+    org_id: str
+    _api_conn: HTTPConnection
+
+    def api_conn(self) -> HTTPConnection:
+        return self._api_conn
+
+    def close(self) -> None:
+        self._api_conn.close()
+
+
 class BraintrustState:
     def __init__(self):
         self.id = str(uuid.uuid4())
@@ -516,6 +538,14 @@ class BraintrustState:
         self._otel_flush_callback: Any | None = None
 
     def reset_login_info(self):
+        if hasattr(self, "_loader_login_cache"):
+            self._loader_login_cache.clear()
+        else:
+            self._loader_login_cache: LRUCache[str, LazyValue[_LoaderRequestState]] = LRUCache(
+                max_size=16,
+                on_remove=self._close_loader_request_state,
+            )
+
         self.app_url: str | None = None
         self.app_public_url: str | None = None
         self.login_token: str | None = None
@@ -532,6 +562,12 @@ class BraintrustState:
         self._proxy_conn: HTTPConnection | None = None
         self._client: BraintrustClient | None = None
         self._user_info: Mapping[str, Any] | None = None
+
+    @staticmethod
+    def _close_loader_request_state(_key: str, lazy_state: LazyValue[_LoaderRequestState]) -> None:
+        has_succeeded, request_state = lazy_state.get_sync()
+        if has_succeeded and request_state is not None:
+            request_state.close()
 
     def reset_parent_state(self):
         # reset possible parent state for tests
@@ -591,6 +627,7 @@ class BraintrustState:
 
     def copy_state(self, other: "BraintrustState"):
         """Copy login information from another BraintrustState instance."""
+        self._loader_login_cache.clear()
         self.__dict__.update(
             {
                 k: v
@@ -608,6 +645,7 @@ class BraintrustState:
                     "_last_otel_setting",
                     "_context_manager_lock",
                     "_client_lock",
+                    "_loader_login_cache",
                 )
             }
         )
@@ -682,6 +720,37 @@ class BraintrustState:
         if not self._user_info:
             self._user_info = self.api_conn().get_json("ping")
         return self._user_info
+
+    def loader_request_state(
+        self,
+        *,
+        app_url: str,
+        api_key: str,
+        org_name: str | None,
+        cache_namespace: str,
+    ) -> "BraintrustState | _LoaderRequestState":
+        if (
+            self.logged_in
+            and self.login_token == api_key
+            and self.app_url == app_url
+            and (org_name is None or self.org_name == org_name)
+        ):
+            return self
+
+        with self._client_lock:
+            try:
+                lazy_state = self._loader_login_cache.get(cache_namespace)
+            except KeyError:
+                lazy_state = LazyValue(
+                    lambda: _login_to_loader_request_state(
+                        app_url=app_url,
+                        api_key=api_key,
+                        org_name=org_name,
+                    ),
+                    use_mutex=True,
+                )
+                self._loader_login_cache.set(cache_namespace, lazy_state)
+        return lazy_state.get()
 
     def global_bg_logger(self) -> "_BackgroundLogger":
         return getattr(self._override_bg_logger, "logger", None) or self._global_bg_logger.get()
@@ -1830,6 +1899,68 @@ def init_logger(
     return ret
 
 
+def _resolve_loader_login_options(
+    *,
+    app_url: str | None,
+    api_key: str | None,
+    org_name: str | None,
+) -> tuple[str, str, str | None, str]:
+    resolved_app_url = app_url or (_state.app_url if _state.logged_in else None) or _get_app_url()
+    resolved_api_key = api_key or (_state.login_token if _state.logged_in else None)
+    if resolved_api_key is None:
+        resolved_api_key = BraintrustEnv.API_KEY.get(None, use_dotenv=True)
+    if resolved_api_key is None:
+        raise ValueError(
+            "Could not login to Braintrust. You may need to set BRAINTRUST_API_KEY in your environment "
+            "or nearest .env.braintrust file."
+        )
+    resolved_api_key = HTTPConnection.sanitize_token(resolved_api_key)
+
+    uses_active_credential = _state.logged_in and resolved_api_key == _state.login_token
+    resolved_org_name = org_name
+    if resolved_org_name is None:
+        resolved_org_name = _state.org_name if uses_active_credential else _get_org_name()
+
+    namespace_input = json.dumps(
+        ["loader-credential", resolved_app_url, resolved_org_name, resolved_api_key],
+        separators=(",", ":"),
+    )
+    cache_namespace = f"loader-credential:{hashlib.sha256(namespace_input.encode('utf-8')).hexdigest()}"
+    return resolved_app_url, resolved_api_key, resolved_org_name, cache_namespace
+
+
+def _is_loader_cache_fallback_error(error: BaseException) -> bool:
+    pending: list[BaseException] = [error]
+    seen: set[int] = set()
+    while pending:
+        current = pending.pop()
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+
+        if isinstance(current, (json.JSONDecodeError, BraintrustJSONDecodeError)):
+            return False
+        if isinstance(current, BraintrustTransportError):
+            return current.retryable
+
+        status_code = getattr(current, "status_code", None)
+        if status_code is None:
+            response = getattr(current, "response", None)
+            status_code = getattr(response, "status_code", None)
+        if isinstance(status_code, int):
+            return status_code in DEFAULT_RETRYABLE_STATUSES
+
+        if isinstance(current, requests_exceptions.RequestException):
+            return is_retryable_request_exception(current)
+
+        if current.__cause__ is not None:
+            pending.append(current.__cause__)
+        if current.__context__ is not None:
+            pending.append(current.__context__)
+
+    return False
+
+
 def load_prompt(
     project: str | None = None,
     slug: str | None = None,
@@ -1855,8 +1986,7 @@ def load_prompt(
     :param no_trace: If true, do not include logging metadata for this prompt when build() is called.
     :param environment: The environment to load the prompt from. If both `version` and `environment` are provided, `version` takes precedence.
     :param app_url: The URL of the Braintrust App. Defaults to https://www.braintrust.dev.
-    :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable. If no API
-    key is specified, will prompt the user to login.
+    :param api_key: The API key to use for this request, independently of any existing global login. If the parameter is not specified, will use an existing login or try the `BRAINTRUST_API_KEY` environment variable. If no API key is specified, will prompt the user to login.
     :param org_name: (Optional) The name of a specific organization to connect to. This is useful if you belong to multiple.
     :returns: The prompt object.
     """
@@ -1871,12 +2001,22 @@ def load_prompt(
         raise ValueError("Must specify slug")
 
     def compute_metadata():
+        resolved_app_url, resolved_api_key, resolved_org_name, cache_namespace = _resolve_loader_login_options(
+            app_url=app_url,
+            api_key=api_key,
+            org_name=org_name,
+        )
         try:
-            login(org_name=org_name, api_key=api_key, app_url=app_url)
+            request_state = _state.loader_request_state(
+                app_url=resolved_app_url,
+                api_key=resolved_api_key,
+                org_name=resolved_org_name,
+                cache_namespace=cache_namespace,
+            )
             if id:
                 # Load prompt by ID using the /v1/prompt/{id} endpoint
                 prompt_args = _populate_args({}, version=version, environment=effective_environment)
-                response = _state.api_conn().get_json(f"/v1/prompt/{id}", prompt_args)
+                response = request_state.api_conn().get_json(f"/v1/prompt/{id}", prompt_args)
                 # Wrap single prompt response in objects array to match list API format
                 if response is not None:
                     response = {"objects": [response]}
@@ -1889,8 +2029,10 @@ def load_prompt(
                     version=version,
                     environment=effective_environment,
                 )
-                response = _state.api_conn().get_json("/v1/prompt", args)
+                response = request_state.api_conn().get_json("/v1/prompt", args)
         except Exception as server_error:
+            if not _is_loader_cache_fallback_error(server_error):
+                raise
             # If environment or version was specified, don't fall back to cache
             if effective_environment is not None or version is not None:
                 raise ValueError(f"Prompt not found with specified parameters") from server_error
@@ -1898,13 +2040,14 @@ def load_prompt(
             eprint(f"Failed to load prompt, attempting to fall back to cache: {server_error}")
             try:
                 if id:
-                    return _state._prompt_cache.get(id=id)
+                    return _state._prompt_cache.get(id=id, cache_namespace=cache_namespace)
                 else:
                     return _state._prompt_cache.get(
                         slug,
                         version=str(version) if version else "latest",
                         project_id=project_id,
                         project_name=project,
+                        cache_namespace=cache_namespace,
                     )
             except Exception as cache_error:
                 if id:
@@ -1934,6 +2077,7 @@ def load_prompt(
                 _state._prompt_cache.set(
                     prompt,
                     id=id,
+                    cache_namespace=cache_namespace,
                 )
             elif slug:
                 _state._prompt_cache.set(
@@ -1942,6 +2086,7 @@ def load_prompt(
                     version=str(version) if version else "latest",
                     project_id=project_id,
                     project_name=project,
+                    cache_namespace=cache_namespace,
                 )
         except Exception as e:
             eprint(f"Failed to store prompt in cache: {e}")
@@ -2028,7 +2173,7 @@ def load_parameters(
     :param id: The ID of a specific parameters object to load. If specified, this takes precedence over project and slug.
     :param environment: The environment to load the parameters from. If both `version` and `environment` are provided, `version` takes precedence.
     :param app_url: The URL of the Braintrust App. Defaults to https://www.braintrust.dev.
-    :param api_key: The API key to use. If the parameter is not specified, will try to use the `BRAINTRUST_API_KEY` environment variable.
+    :param api_key: The API key to use for this request, independently of any existing global login. If the parameter is not specified, will use an existing login or try the `BRAINTRUST_API_KEY` environment variable.
     :param org_name: The name of a specific organization to connect to.
     :returns: A `RemoteEvalParameters` object.
     """
@@ -2040,11 +2185,21 @@ def load_parameters(
     effective_environment = None if version is not None else environment
     should_fall_back_to_cache = version is None and effective_environment is None
     query_args = _populate_args({}, version=version, environment=effective_environment)
+    resolved_app_url, resolved_api_key, resolved_org_name, cache_namespace = _resolve_loader_login_options(
+        app_url=app_url,
+        api_key=api_key,
+        org_name=org_name,
+    )
 
     try:
-        login(org_name=org_name, api_key=api_key, app_url=app_url)
+        request_state = _state.loader_request_state(
+            app_url=resolved_app_url,
+            api_key=resolved_api_key,
+            org_name=resolved_org_name,
+            cache_namespace=cache_namespace,
+        )
         if id:
-            response = _state.api_conn().get_json(f"/v1/function/{id}", query_args)
+            response = request_state.api_conn().get_json(f"/v1/function/{id}", query_args)
             if response is not None:
                 response = {"objects": [response]}
         else:
@@ -2055,20 +2210,23 @@ def load_parameters(
                 slug=slug,
                 **query_args,
             )
-            response = _state.api_conn().get_json("/v1/function", args)
+            response = request_state.api_conn().get_json("/v1/function", args)
     except Exception as server_error:
+        if not _is_loader_cache_fallback_error(server_error):
+            raise
         if not should_fall_back_to_cache:
             raise
 
         eprint(f"Failed to load parameters, attempting to fall back to cache: {server_error}")
         try:
             if id:
-                return _state._parameters_cache.get(id=id)
+                return _state._parameters_cache.get(id=id, cache_namespace=cache_namespace)
             return _state._parameters_cache.get(
                 slug=slug,
                 version=str(version) if version is not None else "latest",
                 project_id=project_id,
                 project_name=project,
+                cache_namespace=cache_namespace,
             )
         except Exception as cache_error:
             if id:
@@ -2093,7 +2251,7 @@ def load_parameters(
     parameters = RemoteEvalParameters.from_function_row(response["objects"][0])
     try:
         if id:
-            _state._parameters_cache.set(parameters, id=id)
+            _state._parameters_cache.set(parameters, id=id, cache_namespace=cache_namespace)
         elif slug:
             _state._parameters_cache.set(
                 parameters,
@@ -2101,6 +2259,7 @@ def load_parameters(
                 version=str(version) if version is not None else "latest",
                 project_id=project_id,
                 project_name=project,
+                cache_namespace=cache_namespace,
             )
     except Exception as exc:
         eprint(f"Failed to store parameters in cache: {exc}")
@@ -2156,6 +2315,66 @@ def register_otel_flush(callback: Any) -> None:
     _state.span_cache.disable()
 
 
+def _login_with_api_key(*, app_url: str, api_key: str, org_name: str | None) -> tuple[BraintrustClient, LoginResult]:
+    if api_key == TEST_API_KEY:
+        api_url = BraintrustEnv.API_URL.get("https://api.braintrust.ai")
+        proxy_url = BraintrustEnv.PROXY_URL.get("https://proxy.braintrust.ai")
+        organization = OrganizationInfo(
+            id="test-org-id",
+            name=org_name or "test-org-name",
+            api_url=api_url,
+            proxy_url=proxy_url,
+            realtime_url=None,
+            is_universal_api=False,
+            git_metadata=None,
+            raw={},
+        )
+        client = BraintrustClient(
+            api_key=api_key,
+            app_url=app_url,
+            api_url=api_url,
+            proxy_url=proxy_url,
+            adapter=_http_adapter,
+        )
+        return client, LoginResult(organization=organization, api_url=api_url, proxy_url=proxy_url, response={})
+
+    client = BraintrustClient(api_key=api_key, app_url=app_url, adapter=_http_adapter)
+    try:
+        return client, client.auth.login(org_name=org_name)
+    except BraintrustHTTPError as exc:
+        client.close()
+        masked_api_key = mask_api_key(api_key)
+        raise ValueError(f"Invalid API key {masked_api_key}: [{exc.status_code}] {exc.response_body}") from exc
+    except Exception:
+        client.close()
+        raise
+
+
+def _authenticated_api_conn(api_url: str, api_key: str) -> HTTPConnection:
+    conn = HTTPConnection(api_url, adapter=_http_adapter)
+    conn.set_token(api_key)
+    conn.make_long_lived()
+    return conn
+
+
+def _login_to_loader_request_state(
+    *,
+    app_url: str,
+    api_key: str,
+    org_name: str | None,
+) -> _LoaderRequestState:
+    client, login_result = _login_with_api_key(app_url=app_url, api_key=api_key, org_name=org_name)
+    try:
+        conn = _authenticated_api_conn(login_result.api_url, api_key)
+    finally:
+        client.close()
+    return _LoaderRequestState(
+        app_url=app_url,
+        org_id=login_result.organization.id,
+        _api_conn=conn,
+    )
+
+
 def login_to_state(
     app_url: str | None = None,
     api_key: str | None = None,
@@ -2175,46 +2394,13 @@ def login_to_state(
     state.app_public_url = app_public_url
     state.org_name = org_name
 
-    if api_key == TEST_API_KEY:
-        # A small hook for pseudo-logins. It still constructs the facade so
-        # concurrent lazy access follows the same state lifecycle as real login.
-        test_org_info = [
-            {
-                "id": "test-org-id",
-                "name": org_name or "test-org-name",
-                "api_url": "https://api.braintrust.ai",
-                "proxy_url": "https://proxy.braintrust.ai",
-            }
-        ]
-        _check_org_info(state, test_org_info, org_name)
-        state._client = BraintrustClient(
-            api_key=TEST_API_KEY,
-            app_url=state.app_url,
-            api_url=state.api_url,
-            proxy_url=state.proxy_url,
-            adapter=_http_adapter,
-        )
-        state.login_token = TEST_API_KEY
-        state.logged_in = True
-        return state
-
     if api_key is None:
         raise ValueError(
             "Could not login to Braintrust. You may need to set BRAINTRUST_API_KEY in your environment "
             "or nearest .env.braintrust file."
         )
 
-    client = BraintrustClient(api_key=api_key, app_url=state.app_url, adapter=_http_adapter)
-    try:
-        login_result = client.auth.login(org_name=org_name)
-    except BraintrustHTTPError as exc:
-        client.close()
-        masked_api_key = mask_api_key(api_key)
-        raise ValueError(f"Invalid API key {masked_api_key}: [{exc.status_code}] {exc.response_body}") from exc
-    except Exception:
-        client.close()
-        raise
-
+    client, login_result = _login_with_api_key(app_url=app_url, api_key=api_key, org_name=org_name)
     organization = login_result.organization
     state._client = client
     state.org_id = organization.id
@@ -2225,12 +2411,16 @@ def login_to_state(
     state.git_metadata_settings = (
         GitMetadataSettings(**organization.git_metadata) if organization.git_metadata else None
     )
+    state.login_token = HTTPConnection.sanitize_token(api_key)
+    state.logged_in = True
+
+    if api_key == TEST_API_KEY:
+        return state
 
     # Keep un-migrated call sites on isolated legacy sessions. Their mutable
     # adapters and session headers must not affect the policy-aware client.
-    conn = state.api_conn()
-    conn.set_token(api_key)
-    conn.make_long_lived()
+    conn = _authenticated_api_conn(login_result.api_url, api_key)
+    state._api_conn = conn
 
     app_connection = state.app_conn()
     app_connection.set_token(api_key)
@@ -2240,9 +2430,6 @@ def login_to_state(
         proxy_connection = state.proxy_conn()
         proxy_connection.set_token(api_key)
         proxy_connection.make_long_lived()
-
-    state.login_token = HTTPConnection.sanitize_token(api_key)
-    state.logged_in = True
 
     # Replace the global logger's api_conn with this one.
     state.login_replace_api_conn(conn)

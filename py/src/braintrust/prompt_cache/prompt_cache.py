@@ -6,7 +6,7 @@ The caching system consists of:
 2. A persistent disk-based cache that serves as a backing store
 
 This allows for efficient prompt retrieval while maintaining persistence across sessions.
-The cache is keyed by project identifier (ID or name), prompt slug, and version.
+The cache is keyed by an optional namespace, project identifier (ID or name), prompt slug, and version.
 """
 
 from braintrust import prompt
@@ -19,18 +19,23 @@ def _create_cache_key(
     slug: str | None,
     version: str = "latest",
     id: str | None = None,
+    cache_namespace: str | None = None,
 ) -> str:
     """Creates a unique cache key from project identifier, slug and version, or from ID."""
     if id:
         # When caching by ID, we don't need project or slug
-        return f"id:{id}"
+        cache_key = f"id:{id}"
+    else:
+        prefix = project_id or project_name
+        if not prefix:
+            raise ValueError("Either project_id or project_name must be provided")
+        if not slug:
+            raise ValueError("Slug must be provided when not using ID")
+        cache_key = f"{prefix}:{slug}:{version}"
 
-    prefix = project_id or project_name
-    if not prefix:
-        raise ValueError("Either project_id or project_name must be provided")
-    if not slug:
-        raise ValueError("Slug must be provided when not using ID")
-    return f"{prefix}:{slug}:{version}"
+    if cache_namespace is None:
+        return cache_key
+    return f"{len(cache_namespace)}:{cache_namespace}:{cache_key}"
 
 
 class PromptCache:
@@ -64,6 +69,7 @@ class PromptCache:
         project_id: str | None = None,
         project_name: str | None = None,
         id: str | None = None,
+        cache_namespace: str | None = None,
     ) -> prompt.PromptSchema:
         """
         Retrieve a prompt from the cache.
@@ -74,6 +80,7 @@ class PromptCache:
             project_id: The ID of the project containing the prompt.
             project_name: The name of the project containing the prompt.
             id: The ID of a specific prompt. If provided, slug and project parameters are ignored.
+            cache_namespace: An optional namespace used to isolate cache entries.
 
         Returns:
             The cached Prompt object.
@@ -82,7 +89,7 @@ class PromptCache:
             ValueError: If neither project_id nor project_name is provided (when not using id).
             KeyError: If the prompt is not found in the cache.
         """
-        cache_key = _create_cache_key(project_id, project_name, slug, version, id)
+        cache_key = _create_cache_key(project_id, project_name, slug, version, id, cache_namespace)
 
         # First check memory cache.
         try:
@@ -110,6 +117,7 @@ class PromptCache:
         project_id: str | None = None,
         project_name: str | None = None,
         id: str | None = None,
+        cache_namespace: str | None = None,
     ) -> None:
         """
         Store a prompt in the cache.
@@ -121,12 +129,13 @@ class PromptCache:
             project_id: The ID of the project containing the prompt.
             project_name: The name of the project containing the prompt.
             id: The ID of a specific prompt. If provided, slug and project parameters are ignored.
+            cache_namespace: An optional namespace used to isolate cache entries.
 
         Raises:
             ValueError: If neither project_id nor project_name is provided (when not using id).
             RuntimeError: If there is an error writing to the disk cache.
         """
-        cache_key = _create_cache_key(project_id, project_name, slug, version, id)
+        cache_key = _create_cache_key(project_id, project_name, slug, version, id, cache_namespace)
 
         # Update memory cache.
         self.memory_cache.set(cache_key, value)

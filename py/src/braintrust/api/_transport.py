@@ -23,7 +23,7 @@ from .errors import (
     BraintrustTransportError,
     BraintrustTransportRetryExhaustedError,
 )
-from .policies import RetryMode, RetryPolicy
+from .policies import RetryMode, RetryPolicy, is_retryable_request_exception
 
 
 logger = logging.getLogger(__name__)
@@ -119,6 +119,9 @@ class HTTPConnection:
                 base_num_retries=10, backoff_factor=0.5, default_timeout_secs=timeout_secs
             )
         self._reset()
+
+    def close(self) -> None:
+        self.session.close()
 
     @staticmethod
     def sanitize_token(token: str) -> str:
@@ -272,7 +275,7 @@ class Transport:
                     **kwargs,
                 )
             except requests.exceptions.RequestException as exc:
-                if not _is_retryable_request_exception(exc):
+                if not is_retryable_request_exception(exc):
                     error = BraintrustTransportError(method=method, url=url, attempts=attempt, retryable=False)
                     raise error from exc
                 if attempt >= max_attempts:
@@ -394,12 +397,6 @@ def _retry_delay(policy: RetryPolicy, attempt: int, retry_after: float | None) -
 
 def _request_body_is_replayable(data: Any, files: Any) -> bool:
     return files is None and (data is None or isinstance(data, (bytes, str)))
-
-
-def _is_retryable_request_exception(exc: requests.exceptions.RequestException) -> bool:
-    return isinstance(exc, (requests.exceptions.ConnectionError, requests.exceptions.Timeout)) and not isinstance(
-        exc, requests.exceptions.SSLError
-    )
 
 
 def _parse_retry_after(value: str | None, wall_time: float) -> float | None:
