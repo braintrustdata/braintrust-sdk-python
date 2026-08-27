@@ -295,10 +295,10 @@ Stable Python SDK releases:
 
 1. Run the `Prepare Stable Python SDK Release` workflow with a stable `X.Y.Z` version.
 2. Review and merge the generated `release/py-sdk-v<version>` PR.
-3. The merge triggers `Publish Python SDK`; the actual PyPI publish job is gated by the `pypi-publish` GitHub environment.
-4. After approval, the workflow publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
+3. Run `Publish Python SDK` manually with the full SHA of the version-bump merge commit and `release_type=stable`.
+4. Approve the `publish` environment; the workflow then publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
 
-Prereleases stay on the manual `Publish Python SDK` path, but do not require a committed version bump: run the workflow against `main` or a commit on `main` with `release_type=prerelease` and the `version` input set to `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`. Prereleases are not gated by the `pypi-publish` environment.
+Prereleases also use the manual `Publish Python SDK` workflow and require the prerelease version to be committed at the supplied SHA. Use `release_type=prerelease` with a version such as `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`; prerelease branches are allowed with a warning. Prereleases are gated by the `publish` environment, and dry runs are gated by `publish-dry-run`.
 
 Do not create or push release tags locally.
 

@@ -251,7 +251,7 @@ Main workflows:
 - `langchain-py-test.yaml`: LangChain integration tests
 - `adk-py-test.yaml`: ADK integration tests
 - `prepare-release.yml`: stable Python SDK version-bump PR creation
-- `publish-py-sdk.yaml`: PyPI release, including stable release PR merges
+- `publish-py-sdk.yaml`: manually dispatched PyPI releases from an explicit commit SHA
 - `test-publish-py-sdk.yaml`: TestPyPI release validation
 
 CI uses committed HTTP VCR cassettes and Claude Agent SDK subprocess cassettes, so forks do not need provider API secrets for normal replayed test runs.
@@ -260,9 +260,9 @@ CI uses committed HTTP VCR cassettes and Claude Agent SDK subprocess cassettes, 
 
 See `docs/publishing.md` for the full Python SDK publishing playbook.
 
-Stable releases are started from GitHub Actions by running `Prepare Stable Python SDK Release` with a stable version such as `0.22.0`. That workflow opens a `release/py-sdk-v<version>` PR that updates `py/src/braintrust/version.py`. Merging the PR triggers `Publish Python SDK`. The stable PyPI publish job requires approval through the `pypi-publish` GitHub environment, then publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
+Stable releases start by running `Prepare Stable Python SDK Release` with a version such as `0.22.0`. That workflow opens a `release/py-sdk-v<version>` PR that updates `py/src/braintrust/version.py`. After merging the PR, run `Publish Python SDK` manually with the full merge commit SHA and `release_type=stable`. The publish job requires approval through the `publish` GitHub environment, then publishes to PyPI and creates the `py-sdk-v<version>` GitHub Release tag and release.
 
-Prereleases use the manual `Publish Python SDK` workflow without a committed version bump: run the workflow against `main` or a commit on `main` with `release_type=prerelease` and the `version` input set to a prerelease version such as `0.22.0rc1`. Prereleases are not gated by the `pypi-publish` environment.
+Prereleases also use `Publish Python SDK` and require a committed prerelease version, such as `0.22.0rc1`, at the supplied SHA. Prerelease branches are allowed with a warning. Prereleases use the `publish` environment; dry runs use `publish-dry-run`.
 
 Do not create or push release tags locally.
 

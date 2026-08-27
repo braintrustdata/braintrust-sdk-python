@@ -4,64 +4,54 @@ The Python SDK is published from GitHub Actions. Do not use a local tag-push scr
 
 ## Stable PyPI release flow
 
-Stable releases use a two-step GitHub Actions flow: a version-bump PR, then an approval-gated publish after the PR is merged.
+Stable releases use a version-bump PR followed by a manually dispatched, approval-gated publish.
 
 1. Run the `Prepare Stable Python SDK Release` workflow in GitHub Actions with the stable version to release, for example `0.22.0`.
 2. The workflow validates the version, updates `py/src/braintrust/version.py`, and opens a PR from `release/py-sdk-v<version>`.
 3. Review and merge the PR into `main`.
-4. Merging the release PR triggers `Publish Python SDK`.
-5. The stable publish job waits for approval in the `pypi-publish` GitHub environment.
-6. After approval, the workflow builds/verifies the package, publishes to PyPI, and creates the `py-sdk-v<version>` GitHub Release tag and release.
+4. Copy the full SHA of the version-bump merge commit on `main`.
+5. Run `Publish Python SDK` with `release_type=stable`, that commit SHA, and `dry_run=false`.
+6. Approve the `publish` environment.
+7. The workflow builds and verifies the package, generates and attests a CycloneDX SBOM, publishes to PyPI with trusted publishing, and creates the `py-sdk-v<version>` GitHub Release.
 
-The stable version must match `X.Y.Z`. Stable releases are published from the merge commit of the release PR.
+The stable version must match `X.Y.Z`. Stable releases are published from the merge commit of the version-bump PR.
 
 ## Prereleases
 
-Prereleases stay manual through the `Publish Python SDK` workflow.
+Prereleases use the same manually dispatched workflow, but the prerelease version must already be committed at the release SHA.
 
-Run `Publish Python SDK` with:
+1. Create a prerelease branch and commit `py/src/braintrust/version.py` with a version such as `0.22.0rc1`, `0.22.0a1`, or `0.22.0b1`.
+2. Run `Publish Python SDK` with:
+   - `release_type=prerelease`
+   - `sha` set to the full commit SHA containing the version bump
+   - `prev_release` set optionally to the previous tag or prerelease anchor
+   - `dry_run=false`
+3. Approve the `publish` environment.
 
-- `ref=main` or the exact commit SHA to build from
-- `release_type=prerelease`
-- `version` set to the prerelease version to publish, for example `0.22.0rc1`
-- `dry_run=false`
-
-Do not bump `py/src/braintrust/version.py` for prereleases. The workflow validates the requested prerelease version and passes it to the build as a version override.
-
-Prerelease versions must match `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`. Prereleases publish to the normal PyPI package and are marked as prereleases on the GitHub Release. They do not use the stable release PR/tag workflow, do not require a committed version bump, and do not require `pypi-publish` environment approval.
+Prereleases publish to the normal PyPI package, but do not create a git tag or GitHub Release. A prerelease SHA outside `main` produces a warning rather than failing validation.
 
 If you only want to publish a prerelease build for testing, you can also use `Publish Python SDK to TestPyPI` instead. That workflow does not create a GitHub Release.
 
 ## Publish Python SDK workflow details
 
-`Publish Python SDK` can be triggered by:
+`Publish Python SDK` is triggered manually through `workflow_dispatch`. Its inputs are:
 
-- a merged `release/py-sdk-v*` PR
-- a pushed `py-sdk-v*` tag, for rerunning or repairing a release
-- manual `workflow_dispatch`
+- `release_type`: `stable` or `prerelease`. Defaults to `stable`.
+- `sha`: the full commit SHA containing the version to release. The version cannot be overridden.
+- `prev_release`: an optional tag or SHA to use as the release-notes anchor.
+- `dry_run`: build and validate without publishing or tagging. Defaults to `false`.
 
-Manual inputs are:
+The workflow uses commit-pinned actions from [`braintrustdata/sdk-actions`](https://github.com/braintrustdata/sdk-actions) to:
 
-- `ref`: the branch, tag, or commit SHA to release. Defaults to `main`.
-- `release_type`: `stable`, `prerelease`, or `auto`. Defaults to `stable`.
-- `version`: the version to publish for manual prerelease runs, for example `0.22.0rc1`. Stable releases read `py/src/braintrust/version.py`.
-- `dry_run`: validate and build without actually publishing. Defaults to `false`.
+1. Check out the requested SHA and read the package version from `py/src/braintrust/version.py`.
+2. Require stable release SHAs to be on `main`; prerelease SHAs outside `main` produce a warning instead.
+3. Check PyPI availability and ensure the release tag does not already exist.
+4. Generate release notes and post the release approval summary.
+5. Build and verify the package with `make -C py install-dev verify-build`.
+6. Generate a CycloneDX SBOM and, for real publishes, create a signed SBOM attestation.
+7. If `dry_run=false`, publish to PyPI through OIDC trusted publishing and create the stable GitHub Release with the SBOM attached.
 
-The workflow will:
-
-1. Check out the release PR merge commit, requested ref, or pushed tag.
-2. Validate that the selected commit is on `main`.
-3. Resolve the package version from the manual `version` input or from `py/src/braintrust/version.py`.
-4. Enforce that:
-   - `stable` uses a version like `X.Y.Z`
-   - `prerelease` uses a version like `X.Y.Zrc1`, `X.Y.Za1`, or `X.Y.Zb1`
-   - `auto` infers stable vs prerelease from the version
-5. Verify that the version is not already published on PyPI and, for manual non-tag runs, that the release tag does not already exist.
-6. Build and verify the package with `make -C py install-dev verify-build`.
-7. Upload the built distribution artifacts for inspection.
-8. If `dry_run=false`, publish to PyPI and create the corresponding GitHub Release.
-
-For stable, non-dry-run publishes, the job that publishes to PyPI runs in the `pypi-publish` GitHub environment. Configure required reviewers on that environment to approve stable releases before publishing.
+The `build-and-ship` job always runs behind an environment approval gate. Real stable and prerelease publishes use the `publish` environment; dry runs use `publish-dry-run`. Configure required reviewers on both environments. The job needs `contents: write`, `id-token: write`, and `attestations: write` permissions.
 
 ## TestPyPI releases
 
@@ -115,20 +105,63 @@ Just like the main PyPI workflow, the TestPyPI workflow also supports `dry_run=t
 
 ## Dry runs
 
-Use `dry_run=true` when you want to exercise the release workflow without publishing anything.
+Use `dry_run=true` when you want to exercise the release workflow without publishing anything. Dry runs require approval in the `publish-dry-run` GitHub environment.
 
 A dry run still:
 
-- validates the selected ref and version
-- checks that the release commit is on `main`
-- checks that the tag and PyPI version do not already exist
+- validates the selected SHA and committed version
+- reports whether the release commit is on `main`
+- checks the tag and PyPI version, reporting existing releases as warnings
 - builds the package and runs `make -C py install-dev verify-build`
-- uploads `py/dist/` as a workflow artifact
-- generates release notes
+- generates a CycloneDX SBOM
+- generates release notes and release summaries
 
 A dry run does not:
 
 - publish to PyPI
 - create the `py-sdk-v<version>` tag
 - create a GitHub Release
-- require `pypi-publish` environment approval
+
+---
+
+## Maintenance
+
+`.github/workflows/publish-py-sdk.yaml` is generated from the `release/py/turnkey` template in [`braintrustdata/sdk-actions`](https://github.com/braintrustdata/sdk-actions). The shared actions are pinned by commit SHA. Do not hand-edit their pins to pick up upstream changes; use the workflow generator so it can preserve this repository's customizations.
+
+### Updating sdk-actions
+
+From an `sdk-actions` checkout with its mise tools installed:
+
+```bash
+WF=/path/to/braintrust-sdk-python/.github/workflows/publish-py-sdk.yaml
+REF=$(git rev-parse origin/main)
+mise exec -- bin/workflow compare --ref "$REF" "$WF"
+mise exec -- bin/workflow update --ref "$REF" "$WF"
+mise exec -- bin/workflow validate "$WF"
+```
+
+Pass the resolved commit SHA through `--ref`; `compare` otherwise uses the ref already recorded in the workflow header. `update` performs a three-way merge of upstream template changes, retains local edits, and updates the action pins and provenance header.
+
+After updating:
+
+1. Review the workflow diff and the upstream sdk-actions changes between the old and new refs. A major change to the header's `version` field indicates a breaking release-action change.
+2. Run `bash scripts/ensure-pinned-actions.sh` and the workflow validator.
+3. Open a PR and complete an approved `dry_run` before the next real release.
+
+The `# sdk-actions: {...}` header at the top of the workflow records the template, pinned ref, and generation parameters. Keep it intact so `compare` and `update` can reconstruct the upstream baseline.
+
+### Local workflow customizations
+
+`compare` reports the intentional differences from the turnkey template. Preserve these when updating:
+
+- the dispatch instruction reminding releasers to commit the version before publishing
+- release-channel templating and wheel verification through `BRAINTRUST_RELEASE_CHANNEL` and `make install-dev verify-build`, with extended build timeouts
+- the existing `py-sdk-v{version}` tag format
+- hard enforcement of `main` for stable releases while prereleases remain warning-only
+- the `@sdk-eng` mention in approval notifications
+
+### Required configuration
+
+- GitHub environments `publish` and `publish-dry-run`, with required reviewers configured. Real stable and prerelease publishes use `publish`; dry runs use `publish-dry-run`.
+- A PyPI trusted publisher for `braintrust`: owner `braintrustdata`, repository `braintrust-sdk-python`, workflow `publish-py-sdk.yaml`, environment `publish`.
+- Repository or organization secret `SLACK_BOT_TOKEN` and variable `SLACK_SDK_RELEASE_CHANNEL`, with the variable visible to this repository.

@@ -1,5 +1,5 @@
 # Starts the stable Python SDK release process by opening a PR that bumps the
-# package version. Merge the PR to trigger the approval-gated publish workflow.
+# package version. After merging, manually publish the merge commit's SHA.
 name: Prepare Stable Python SDK Release
 
 on:
@@ -61,6 +61,6 @@ jobs:
           commit-message: "chore: release Python SDK v${{ inputs.version }}"
           title: "chore: release Python SDK v${{ inputs.version }}"
           body: |
-            Automated stable Python SDK release PR for `${{ inputs.version }}`. Merging will trigger approval-gated publishing and create the `py-sdk-v${{ inputs.version }}` release tag.
+            Automated stable Python SDK release PR for `${{ inputs.version }}`. After merging, run `Publish Python SDK` with the merge commit SHA to publish and create the `py-sdk-v${{ inputs.version }}` release tag.
 
             ${{ steps.changeset.outputs.body }}
