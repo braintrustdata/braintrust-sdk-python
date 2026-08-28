@@ -61,6 +61,28 @@ class ATIFImportResult:
     repairs: tuple[str, ...] = ()
     imported_llm_spans: int = 0
     imported_tool_spans: int = 0
+    attachment_bytes: int = 0
+
+
+@dataclass
+class _AttachmentBudget:
+    remaining: int
+    used: int = 0
+
+    def consume(self, size: int) -> None:
+        self.remaining -= size
+        self.used += size
+
+
+def _resolve_attachment_budget(
+    config: PluginConfig,
+    available_bytes: int | None,
+    shared_budget: _AttachmentBudget | None,
+) -> _AttachmentBudget:
+    if shared_budget is not None:
+        return shared_budget
+    limit = config.max_total_attachment_bytes if available_bytes is None else available_bytes
+    return _AttachmentBudget(max(0, limit))
 
 
 def _timestamp(value: Any) -> tuple[float | None, bool]:
@@ -193,14 +215,16 @@ def _content(
     config: PluginConfig,
     notes: _Notes,
     context: str,
-) -> tuple[Any, bool]:
+    attachment_budget: _AttachmentBudget,
+) -> tuple[Any, bool, int]:
     if isinstance(value, str) or value is None:
         bounded = _bounded(value, config, notes, context)
-        return bounded.value, bounded.complete
+        return bounded.value, bounded.complete, 0
     if not isinstance(value, list):
-        return _bounded(value, config, notes, context).value, False
+        return _bounded(value, config, notes, context).value, False, 0
     result: list[Any] = []
     complete = True
+    attachment_bytes = 0
     trajectory_root = trajectory_dir.resolve()
     for index, part in enumerate(value):
         part_context = f"{context}[{index}]"
@@ -226,9 +250,9 @@ def _content(
                     complete = False
                     result.append(_bounded(part, config, notes, part_context).value)
                     continue
-                if len(data) > config.max_attachment_bytes:
+                if len(data) > min(config.max_attachment_bytes, attachment_budget.remaining):
                     complete = False
-                    notes.add(f"{part_context}: image omitted because it exceeds max_attachment_bytes")
+                    notes.add(f"{part_context}: image omitted because it exceeds the attachment size limit")
                     result.append({"type": "text", "text": "[image omitted: size limit]"})
                     continue
                 result.append(
@@ -243,10 +267,12 @@ def _content(
                         },
                     }
                 )
+                attachment_budget.consume(len(data))
+                attachment_bytes += len(data)
                 continue
         complete = False
         result.append(_bounded(part, config, notes, part_context).value)
-    return result, complete
+    return result, complete, attachment_bytes
 
 
 def _step_observations(step: dict[str, Any]) -> dict[str, Any]:
@@ -319,6 +345,8 @@ def import_trajectory(
     phase_end: float,
     config: PluginConfig,
     _trajectory_data: dict[str, Any] | None = None,
+    _available_attachment_bytes: int | None = None,
+    _shared_attachment_budget: _AttachmentBudget | None = None,
 ) -> ATIFImportResult:
     notes = _Notes()
     if _trajectory_data is not None:
@@ -333,6 +361,11 @@ def import_trajectory(
     if not isinstance(trajectory, dict) or not isinstance(trajectory.get("steps"), list):
         return ATIFImportResult(warnings=("trajectory malformed: steps must be an array",))
 
+    attachment_budget = _resolve_attachment_budget(
+        config,
+        _available_attachment_bytes,
+        _shared_attachment_budget,
+    )
     steps = [step for step in trajectory["steps"] if isinstance(step, dict)]
     times, repairs = _step_times(steps, phase_start, phase_end)
     agent = trajectory.get("agent") if isinstance(trajectory.get("agent"), dict) else {}
@@ -354,11 +387,18 @@ def import_trajectory(
     final_message: Any = None
     llm_count = 0
     tool_count = 0
+    attachment_bytes = 0
     for index, step in enumerate(steps):
         source = step.get("source")
-        content, content_complete = _content(
-            step.get("message"), trajectory_path.parent, config, notes, f"step {index + 1} message"
+        content, content_complete, content_bytes = _content(
+            step.get("message"),
+            trajectory_path.parent,
+            config,
+            notes,
+            f"step {index + 1} message",
+            attachment_budget,
         )
+        attachment_bytes += content_bytes
         if source in {"system", "user"}:
             if config.content_mode != "metadata":
                 messages.append({"role": source, "content": content})
@@ -456,9 +496,15 @@ def import_trajectory(
                 and isinstance(result, dict)
             ):
                 tool_context = f"step {index + 1} tool {call_id}"
-                tool_output, tool_complete = _content(
-                    result.get("content"), trajectory_path.parent, config, notes, f"{tool_context} result"
+                tool_output, tool_complete, tool_bytes = _content(
+                    result.get("content"),
+                    trajectory_path.parent,
+                    config,
+                    notes,
+                    f"{tool_context} result",
+                    attachment_budget,
                 )
+                attachment_bytes += tool_bytes
                 tool_input = _bounded(arguments, config, notes, f"{tool_context} arguments")
                 result_extra = result.get("extra") if isinstance(result.get("extra"), dict) else {}
                 tool_error = result_extra.get("error") if isinstance(result_extra.get("error"), str) else None
@@ -509,6 +555,7 @@ def import_trajectory(
             phase_end=phase_end,
             config=config,
             _trajectory_data=subagent,
+            _shared_attachment_budget=attachment_budget,
         )
         sub_parent.end(end_time=phase_end)
         # Step numbers restart inside a subagent, so namespace its warnings the way
@@ -518,6 +565,7 @@ def import_trajectory(
         repairs.extend(f"subagent {sub_index}: {repair}" for repair in imported.repairs)
         llm_count += imported.imported_llm_spans
         tool_count += imported.imported_tool_spans
+        attachment_bytes += imported.attachment_bytes
 
     extra = trajectory.get("extra") if isinstance(trajectory.get("extra"), dict) else None
     root_extra = dict(extra or {})
@@ -531,4 +579,5 @@ def import_trajectory(
         repairs=tuple(repairs),
         imported_llm_spans=llm_count,
         imported_tool_spans=tool_count,
+        attachment_bytes=attachment_bytes,
     )

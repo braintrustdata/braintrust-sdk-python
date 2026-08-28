@@ -9,7 +9,8 @@ import fnmatch
 import json
 import logging
 import os
-from dataclasses import dataclass, field, fields
+import stat
+from dataclasses import dataclass, field, fields, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -26,6 +27,7 @@ from .compat import (
     reward_details_paths,
     snapshot_job,
     trajectory_paths,
+    verifier_output_paths,
 )
 from .config import _UNSET, PluginConfig
 from .identity import (
@@ -158,6 +160,31 @@ def _step_label(step_name: str | None, path: Path) -> str:
     return path.name if step_name is None else f"{step_name}/{path.name}"
 
 
+def _read_bounded_file(path: Path, max_bytes: int) -> tuple[bytes | None, str | None]:
+    """Read at most max_bytes from a file that may be controlled by a task."""
+    if max_bytes < 0:
+        return None, "attachment size limit"
+    try:
+        before = path.lstat()
+        if not stat.S_ISREG(before.st_mode):
+            return None, "unsafe file type"
+        if before.st_size > max_bytes:
+            return None, "attachment size limit"
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        with os.fdopen(os.open(path, flags), "rb") as file_obj:
+            opened = os.fstat(file_obj.fileno())
+            if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+                return None, "unsafe file type"
+            data = file_obj.read(max_bytes + 1)
+    except FileNotFoundError:
+        return None, None
+    except OSError as exc:
+        return None, str(exc)
+    if opened.st_size > max_bytes or len(data) > max_bytes:
+        return None, "attachment size limit"
+    return data, None
+
+
 def _read_json_summary(entries: list[tuple[str | None, Path]], max_bytes: int) -> tuple[Any, list[str]]:
     summaries: list[tuple[str | None, Any]] = []
     warnings: list[str] = []
@@ -202,14 +229,11 @@ def _artifact_attachments(result: Any, config: PluginConfig) -> tuple[dict[str, 
             # Each step has its own artifacts root, so the relative path alone
             # collides whenever two steps collect the same file name.
             key = relative if step_name is None else f"{step_name}/{relative}"
-            try:
-                size = resolved.stat().st_size
-                if size > config.max_attachment_bytes or total + size > config.max_total_attachment_bytes:
-                    warnings.append(f"artifact {key} omitted: attachment size limit")
-                    continue
-                data = resolved.read_bytes()
-            except OSError as exc:
-                warnings.append(f"artifact {key} omitted: {exc}")
+            limit = min(config.max_attachment_bytes, config.max_total_attachment_bytes - total)
+            data, read_warning = _read_bounded_file(resolved, limit)
+            if data is None:
+                if read_warning is not None:
+                    warnings.append(f"artifact {key} omitted: {read_warning}")
                 continue
             total += len(data)
             attachments[key] = Attachment(
@@ -232,15 +256,11 @@ def _attachment(
     for step_name, path in entries:
         label = _step_label(step_name, path)
         filename = path.name
-        try:
-            data = path.read_bytes()
-        except FileNotFoundError:
-            continue
-        except OSError as exc:
-            warnings.append(f"could not read {label}: {exc}")
-            continue
-        if len(data) > config.max_attachment_bytes or total + len(data) > config.max_total_attachment_bytes:
-            warnings.append(f"{label} omitted: attachment size limit")
+        limit = min(config.max_attachment_bytes, config.max_total_attachment_bytes - total)
+        data, read_warning = _read_bounded_file(path, limit)
+        if data is None:
+            if read_warning is not None:
+                warnings.append(f"{label} omitted: {read_warning}")
             continue
         try:
             parsed = json.loads(data)
@@ -260,8 +280,8 @@ def _attachment(
     if summary is None:
         return None, None, warnings
     attachment_data = (canonical_json(summary) + "\n").encode()
-    # One serialized payload is bounded by the per-file limit, not the job total.
-    if len(attachment_data) > config.max_attachment_bytes:
+    # The merged payload must fit both the per-file and remaining trial limits.
+    if len(attachment_data) > min(config.max_attachment_bytes, config.max_total_attachment_bytes):
         warnings.append(f"{filename} omitted after redaction: attachment size limit")
         return None, summary, warnings
     return (
@@ -269,6 +289,106 @@ def _attachment(
         summary,
         warnings,
     )
+
+
+_VERIFIER_OUTPUT_FILES = (
+    ("stdout", "test-stdout.txt", False),
+    ("stderr", "test-stderr.txt", False),
+    ("ctrf", "ctrf.json", True),
+)
+
+
+def _decode_verifier_output(data: bytes, parse_json: bool) -> tuple[Any, list[str]]:
+    if not parse_json:
+        return data.decode("utf-8", errors="replace"), []
+    try:
+        return json.loads(data), []
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return data.decode("utf-8", errors="replace"), ["is not valid JSON"]
+
+
+def _read_verifier_output(
+    path: Path, parse_json: bool, config: PluginConfig, max_bytes: int
+) -> tuple[Any | None, int, list[str]]:
+    data, read_warning = _read_bounded_file(path, max_bytes)
+    if data is None:
+        return None, 0, [] if read_warning is None else [f"omitted: {read_warning}"]
+    if not data:
+        return None, 0, []
+    value, warnings = _decode_verifier_output(data, parse_json)
+    normalized = normalize_json(
+        value,
+        max_bytes=config.max_attachment_bytes,
+        redact_patterns=config.redact_patterns,
+        max_depth=20,
+        redact_absolute_paths=False,
+    )
+    return normalized.value, len(data), [*warnings, *normalized.warnings]
+
+
+def _verifier_output_attachment(result: Any, config: PluginConfig) -> tuple[Attachment | None, Any, list[str]]:
+    if config.attachments == "none":
+        return None, None, []
+    outputs: list[tuple[str | None, dict[str, Any]]] = []
+    warnings: list[str] = []
+    total = 0
+    for step_name, verifier_dir in verifier_output_paths(result):
+        step_output: dict[str, Any] = {}
+        for key, filename, parse_json in _VERIFIER_OUTPUT_FILES:
+            path = verifier_dir / filename
+            label = _step_label(step_name, path)
+            limit = min(config.max_attachment_bytes, config.max_total_attachment_bytes - total)
+            value, size, file_warnings = _read_verifier_output(path, parse_json, config, limit)
+            warnings.extend(f"{label} {warning}" for warning in file_warnings)
+            if value is not None:
+                step_output[key] = value
+                total += size
+        if step_output:
+            outputs.append((step_name, step_output))
+
+    summary = _by_step(outputs, "verifier")
+    if summary is None:
+        return None, None, warnings
+    attachment_data = (canonical_json(summary) + "\n").encode()
+    if len(attachment_data) > min(config.max_attachment_bytes, config.max_total_attachment_bytes):
+        warnings.append("verifier-output.json omitted after redaction: attachment size limit")
+        return None, summary, warnings
+    return (
+        Attachment(data=attachment_data, filename="verifier-output.json", content_type="application/json"),
+        summary,
+        warnings,
+    )
+
+
+def _remaining_attachment_config(config: PluginConfig, used_bytes: int) -> PluginConfig:
+    return replace(config, max_total_attachment_bytes=_remaining_attachment_bytes(config, used_bytes))
+
+
+def _remaining_attachment_bytes(config: PluginConfig, used_bytes: int) -> int:
+    return max(0, config.max_total_attachment_bytes - used_bytes)
+
+
+def _attachments_size(attachments: dict[str, Attachment]) -> int:
+    return sum(len(attachment.data) for attachment in attachments.values())
+
+
+def _verifier_evidence(result: Any, config: PluginConfig) -> tuple[dict[str, Any], list[str], int]:
+    attachment, summary, warnings = _verifier_output_attachment(result, config)
+    output: dict[str, Any] = {}
+    if summary is not None:
+        output["verifier_output_summary"] = normalize_json(
+            summary,
+            max_bytes=config.max_content_bytes,
+            redact_patterns=config.redact_patterns,
+            redact_absolute_paths=False,
+        ).value
+    if attachment is not None:
+        output["verifier_output"] = attachment
+    return output, warnings, 0 if attachment is None else len(attachment.data)
+
+
+def _output_event(output: dict[str, Any]) -> dict[str, Any]:
+    return {} if not output else {"output": output}
 
 
 class HarborPlugin:
@@ -714,6 +834,7 @@ class HarborPlugin:
             execution_input["extra_instructions"] = extra_instructions
         selected_artifacts, artifact_attachment_warnings = _artifact_attachments(result, self.config)
         metadata["harbor"]["warnings"].extend(artifact_attachment_warnings)
+        attachment_bytes = _attachments_size(selected_artifacts)
         agent_span = task.start_span(
             name="agent_execution",
             type="task",
@@ -741,12 +862,27 @@ class HarborPlugin:
                         phase_start=agent_start,
                         phase_end=agent_end,
                         config=self.config,
+                        _available_attachment_bytes=_remaining_attachment_bytes(self.config, attachment_bytes),
                     )
                 atif_results.append((step_name, imported))
+                attachment_bytes += imported.attachment_bytes
         if selected_artifacts:
             agent_span.log(output={"artifacts": selected_artifacts})
         agent_span.end(end_time=agent_end)
-        self._start_phase(task, result, "verification", "verifier", trial_id, root_start, root_end)
+        verifier_config = _remaining_attachment_config(self.config, attachment_bytes)
+        verifier_output, verifier_warnings, verifier_attachment_bytes = _verifier_evidence(result, verifier_config)
+        metadata["harbor"]["warnings"].extend(verifier_warnings)
+        attachment_bytes += verifier_attachment_bytes
+        self._start_phase(
+            task,
+            result,
+            "verification",
+            "verifier",
+            trial_id,
+            root_start,
+            root_end,
+            **_output_event(verifier_output),
+        )
 
         for step in getattr(result, "step_results", None) or []:
             step_start, step_end = _timing(getattr(step, "agent_execution", None), root_start, root_end)
@@ -813,7 +949,10 @@ class HarborPlugin:
         task.log(metadata={"harbor": {"warnings": trajectory_warnings}})
         task.end(end_time=root_end)
 
-        details_attachment, details_summary, detail_warnings = _attachment(reward_details_paths(result), self.config)
+        details_config = _remaining_attachment_config(self.config, attachment_bytes)
+        details_attachment, details_summary, detail_warnings = _attachment(
+            reward_details_paths(result), details_config
+        )
         metadata["harbor"]["warnings"].extend(detail_warnings)
         # The summary is the same for every score, so bound it once rather than
         # re-normalizing a payload up to max_attachment_bytes per scorer span.
@@ -842,6 +981,7 @@ class HarborPlugin:
                 scorer_output["reward_details_summary"] = bounded_details
             if details_attachment is not None:
                 scorer_output["reward_details"] = details_attachment
+            scorer_output.update(verifier_output)
             scorer.log(output=scorer_output, scores={score.name: score.value})
             scorer.end(end_time=root_end)
 

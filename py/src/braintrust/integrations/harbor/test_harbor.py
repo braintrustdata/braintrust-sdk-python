@@ -15,7 +15,13 @@ from braintrust import flush, init
 from braintrust.conftest import get_vcr_config
 from braintrust.git_fields import GitMetadataSettings
 from braintrust.integrations.harbor.atif import _usage_metrics, import_trajectory, summarize_trajectory
-from braintrust.integrations.harbor.compat import artifact_manifest_paths, load_backfill_snapshot
+from braintrust.integrations.harbor.compat import (
+    JobSnapshot,
+    TaskData,
+    TrialPlan,
+    artifact_manifest_paths,
+    load_backfill_snapshot,
+)
 from braintrust.integrations.harbor.config import PluginConfig
 from braintrust.integrations.harbor.identity import (
     child_span_id,
@@ -27,13 +33,17 @@ from braintrust.integrations.harbor.identity import (
     semantic_agent_config,
 )
 from braintrust.integrations.harbor.plugin import (
+    DatasetBinding,
     HarborPlugin,
+    Partition,
     RuntimeState,
     _artifact_attachments,
     _attachment,
+    _read_bounded_file,
     _resolve_project,
     _seconds,
     _timing,
+    _verifier_output_attachment,
 )
 from braintrust.integrations.harbor.rewards import classify_rewards, validate_classifications
 from braintrust.integrations.harbor.state import (
@@ -53,7 +63,7 @@ from harbor.models.job.result import JobResult, JobStats
 from harbor.models.task.id import LocalTaskId
 from harbor.models.trajectories.trajectory import Trajectory
 from harbor.models.trial.config import AgentConfig, EnvironmentConfig, TaskConfig, TrialConfig
-from harbor.models.trial.result import AgentInfo, StepResult, TimingInfo, TrialResult
+from harbor.models.trial.result import AgentInfo, StepResult, TimingInfo, TrialResult, VerifierResult
 
 
 _ABSOLUTE_PATH_RE = re.compile(r"(?:/(?:Users|private|home)/[^\"\\\\\s]+|[A-Za-z]:\\\\[^\"\\\\\s]+)")
@@ -464,6 +474,293 @@ def test_reward_details_attachment_uses_the_per_file_limit(tmp_path):
     assert attachment.reference["filename"] == "reward-details.json"
     assert summary == {"criteria": "x" * 400}
     assert warnings == []
+
+
+def test_verifier_output_attachment_collects_standard_harbor_evidence(tmp_path):
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    (verifier_dir / "test-stdout.txt").write_text("FAILED test_answer.py::test_count - assert 27 == 28\n")
+    (verifier_dir / "test-stderr.txt").write_text("token=secret-value\n")
+    (verifier_dir / "ctrf.json").write_text(
+        json.dumps(
+            {
+                "results": {
+                    "summary": {"tests": 1, "passed": 0, "failed": 1},
+                    "tests": [
+                        {
+                            "name": "test_answer.py::test_count",
+                            "status": "failed",
+                            "message": "assert 27 == 28",
+                            "trace": "Authorization: Bearer verifier-secret",
+                        }
+                    ],
+                }
+            }
+        )
+    )
+
+    config = PluginConfig.from_options(redact_patterns=(r"secret-value|Bearer verifier-secret",))
+    attachment, summary, warnings = _verifier_output_attachment(result, config)
+
+    assert summary == {
+        "stdout": "FAILED test_answer.py::test_count - assert 27 == 28\n",
+        "stderr": "token=[REDACTED]\n",
+        "ctrf": {
+            "results": {
+                "summary": {"tests": 1, "passed": 0, "failed": 1},
+                "tests": [
+                    {
+                        "name": "test_answer.py::test_count",
+                        "status": "failed",
+                        "message": "assert 27 == 28",
+                        "trace": "Authorization: [REDACTED]",
+                    }
+                ],
+            }
+        },
+    }
+    assert attachment is not None
+    assert attachment.reference["filename"] == "verifier-output.json"
+    assert json.loads(attachment.data) == summary
+    assert warnings == []
+
+
+def test_verifier_output_attachment_handles_invalid_utf8_and_configured_redaction(tmp_path):
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    (verifier_dir / "test-stdout.txt").write_text("Authorization: Bearer header-secret\n")
+    (verifier_dir / "ctrf.json").write_bytes(b"\xff token=opaque-secret\n")
+
+    attachment, summary, warnings = _verifier_output_attachment(
+        result,
+        PluginConfig.from_options(redact_patterns=(r"(?:header|opaque)-secret",)),
+    )
+
+    assert attachment is not None
+    assert summary == {
+        "stdout": "Authorization: Bearer [REDACTED]\n",
+        "ctrf": "\ufffd token=[REDACTED]\n",
+    }
+    assert any("ctrf.json is not valid JSON" in warning for warning in warnings)
+
+
+def test_verifier_output_attachment_rejects_oversized_file_before_reading_it(tmp_path, monkeypatch):
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    stdout = verifier_dir / "test-stdout.txt"
+    stdout.write_text("too large")
+
+    def fail_open(*_args, **_kwargs):
+        raise AssertionError("oversized output must be rejected from stat metadata")
+
+    monkeypatch.setattr(os, "open", fail_open)
+    attachment, summary, warnings = _verifier_output_attachment(
+        result,
+        PluginConfig.from_options(max_attachment_bytes=4),
+    )
+
+    assert attachment is None
+    assert summary is None
+    assert warnings == ["test-stdout.txt omitted: attachment size limit"]
+
+
+@pytest.mark.parametrize("kind", ["symlink", "fifo"])
+def test_verifier_output_attachment_rejects_unsafe_file_types(tmp_path, kind):
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    stdout = verifier_dir / "test-stdout.txt"
+    if kind == "symlink":
+        secret = tmp_path / "host-secret"
+        secret.write_text("must not escape")
+        stdout.symlink_to(secret)
+    else:
+        os.mkfifo(stdout)
+
+    attachment, summary, warnings = _verifier_output_attachment(result, PluginConfig.from_options())
+
+    assert attachment is None
+    assert summary is None
+    assert warnings == ["test-stdout.txt omitted: unsafe file type"]
+
+
+def test_bounded_file_read_rejects_replacement_between_inspection_and_open(tmp_path, monkeypatch):
+    expected = tmp_path / "expected"
+    replacement = tmp_path / "replacement"
+    expected.write_text("safe")
+    replacement.write_text("must not escape")
+    real_open = os.open
+
+    def swap_after_inspection(_path, flags):
+        return real_open(replacement, flags)
+
+    monkeypatch.setattr(os, "open", swap_after_inspection)
+
+    assert _read_bounded_file(expected, 100) == (None, "unsafe file type")
+
+
+def test_verifier_output_attachment_scopes_steps_and_respects_attachment_mode(tmp_path):
+    result = _trial_result(tmp_path, "trial-1", "task-a", step_names=("first", "second"))
+    for step_name in ("first", "second"):
+        verifier_dir = tmp_path / "trial-1" / "steps" / step_name / "verifier"
+        verifier_dir.mkdir(parents=True)
+        (verifier_dir / "test-stdout.txt").write_text(f"{step_name} output\n")
+
+    attachment, summary, warnings = _verifier_output_attachment(result, PluginConfig.from_options())
+
+    assert summary == {
+        "first": {"stdout": "first output\n"},
+        "second": {"stdout": "second output\n"},
+    }
+    assert attachment is not None
+    assert warnings == []
+    assert _verifier_output_attachment(result, PluginConfig.from_options(attachments="none")) == (None, None, [])
+
+
+@pytest.mark.parametrize("attachments", ["verifier-details", "none"])
+def test_final_sync_wires_verifier_evidence_to_verification_and_score_spans(tmp_path, attachments):
+    class RecordingSpan:
+        def __init__(self, **event):
+            self.event = event
+            self.children = []
+            self.logs = []
+
+        def start_span(self, **event):
+            child = RecordingSpan(**event)
+            self.children.append(child)
+            return child
+
+        def log(self, **event):
+            self.logs.append(event)
+
+        def end(self, **_event):
+            return None
+
+    class RecordingExperiment:
+        def __init__(self):
+            self.children = []
+
+        def start_span(self, **event):
+            span = RecordingSpan(**event)
+            self.children.append(span)
+            return span
+
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    result.verifier_result = VerifierResult(rewards={"reward": 0.25})
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    (verifier_dir / "test-stdout.txt").write_text("assert 1 == 2\n")
+    task = TaskData(
+        logical_key="task-key",
+        source="suite",
+        name="task-a",
+        input={"instruction": "solve"},
+        expected=None,
+        metadata={"harbor": {"custom": {}}},
+        digest=None,
+        schema_version=None,
+        task_dir=None,
+    )
+    plan = TrialPlan(result.trial_name, result.config, None, task, 0)
+    snapshot = JobSnapshot("job-id", "job", tmp_path, None, None, (plan,))
+    experiment = RecordingExperiment()
+    partition = Partition("partition", "experiment", "scope", experiment=experiment)
+    plugin = HarborPlugin(attachments=attachments)
+    plugin._runtime = RuntimeState(
+        snapshot,
+        {result.trial_name: plan},
+        {result.trial_name: partition},
+        {"scope": DatasetBinding("scope")},
+        {"partition": partition},
+    )
+    plugin._trial_machines[result.trial_name] = TrialMachine(result.trial_name)
+
+    plugin._sync_final_result(result)
+
+    root = experiment.children[0]
+    task_span = next(span for span in root.children if span.event["name"] == "task")
+    verification = next(span for span in task_span.children if span.event["name"] == "verification")
+    scorer = next(span for span in root.children if span.event["type"] == "score")
+    if attachments == "none":
+        assert "output" not in verification.event
+        assert "verifier_output_summary" not in scorer.logs[0]["output"]
+        assert "verifier_output" not in scorer.logs[0]["output"]
+    else:
+        assert verification.event["output"]["verifier_output_summary"] == {"stdout": "assert 1 == 2\n"}
+        verifier_attachment = verification.event["output"]["verifier_output"]
+        assert verifier_attachment.reference["filename"] == "verifier-output.json"
+        assert (
+            scorer.logs[0]["output"]["verifier_output_summary"]
+            == verification.event["output"]["verifier_output_summary"]
+        )
+        assert scorer.logs[0]["output"]["verifier_output"] is verifier_attachment
+
+        # The verification span owns the attachment, so unevaluated trials do not
+        # lose their complete evidence merely because no score span is created.
+        experiment.children.clear()
+        result.verifier_result = VerifierResult(rewards=None)
+        plugin._sync_final_result(result)
+        scoreless_root = experiment.children[0]
+        scoreless_task = next(span for span in scoreless_root.children if span.event["name"] == "task")
+        scoreless_verification = next(span for span in scoreless_task.children if span.event["name"] == "verification")
+        assert not any(span.event["type"] == "score" for span in scoreless_root.children)
+        assert scoreless_verification.event["output"]["verifier_output"] is not None
+
+        # ATIF images consume the same trial attachment budget as verifier
+        # evidence, even though the image is logged on an agent child span.
+        agent_dir = tmp_path / "trial-1" / "agent"
+        agent_dir.mkdir(exist_ok=True)
+        (agent_dir / "first.png").write_bytes(b"i" * 600)
+        (agent_dir / "second.png").write_bytes(b"j" * 600)
+        (agent_dir / "trajectory.json").write_text(
+            json.dumps(
+                {
+                    "steps": [
+                        {
+                            "step_id": 1,
+                            "source": "agent",
+                            "message": [
+                                {
+                                    "type": "image",
+                                    "source": {"path": "first.png", "media_type": "image/png"},
+                                },
+                                {
+                                    "type": "image",
+                                    "source": {"path": "second.png", "media_type": "image/png"},
+                                },
+                            ],
+                        }
+                    ]
+                }
+            )
+        )
+        (verifier_dir / "test-stdout.txt").write_text("v" * 100)
+        experiment.children.clear()
+        result.verifier_result = VerifierResult(rewards={"reward": 0.25})
+        budgeted_plugin = HarborPlugin(max_attachment_bytes=1000, max_total_attachment_bytes=1000)
+        budgeted_plugin._runtime = RuntimeState(
+            snapshot,
+            {result.trial_name: plan},
+            {result.trial_name: partition},
+            {"scope": DatasetBinding("scope")},
+            {"partition": partition},
+        )
+        budgeted_plugin._trial_machines[result.trial_name] = TrialMachine(result.trial_name)
+
+        budgeted_plugin._sync_final_result(result)
+
+        budgeted_root = experiment.children[0]
+        budgeted_task = next(span for span in budgeted_root.children if span.event["name"] == "task")
+        budgeted_agent = next(span for span in budgeted_task.children if span.event["name"] == "agent_execution")
+        trajectory_step = budgeted_agent.children[0]
+        trajectory_message = trajectory_step.logs[0]["output"]["message"]
+        assert trajectory_message[0]["type"] == "image_url"
+        assert trajectory_message[1] == {"type": "text", "text": "[image omitted: size limit]"}
+        budgeted_verification = next(span for span in budgeted_task.children if span.event["name"] == "verification")
+        assert budgeted_verification.event["output"]["verifier_output_summary"] == {"stdout": "v" * 100}
 
 
 def test_disabled_plugin_does_not_reconcile_or_write_spans():
