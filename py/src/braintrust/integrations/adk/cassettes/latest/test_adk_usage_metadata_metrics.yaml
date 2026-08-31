@@ -9,62 +9,61 @@ interactions:
       Content-Type:
       - application/json
       user-agent:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6 google-adk/2.7.0 gl-python/3.14.6
+      - google-genai-sdk/2.20.0 gl-python/3.14.3 google-adk/2.8.0 gl-python/3.14.3
       x-goog-api-client:
-      - google-genai-sdk/2.18.1 gl-python/3.14.6 google-adk/2.7.0 gl-python/3.14.6
+      - google-genai-sdk/2.20.0 gl-python/3.14.3 google-adk/2.8.0 gl-python/3.14.3
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The current population of Tokyo Metropolis,
-        Japan, is estimated to be over 14 million residents as of May 2026.\"\n          }\n
-        \       ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
-        \"STOP\",\n      \"index\": 0,\n      \"groundingMetadata\": {\n        \"searchEntryPoint\":
-        {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container {\\n
-        \ align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
-        Google Sans, Roboto, sans-serif;\\n  font-size: 14px;\\n  line-height: 20px;\\n
-        \ padding: 8px 12px;\\n}\\n.chip {\\n  display: inline-block;\\n  border:
-        solid 1px;\\n  border-radius: 16px;\\n  min-width: 14px;\\n  padding: 5px
-        16px;\\n  text-align: center;\\n  user-select: none;\\n  margin: 0 8px;\\n
-        \ -webkit-tap-highlight-color: transparent;\\n}\\n.carousel {\\n  overflow:
-        auto;\\n  scrollbar-width: none;\\n  white-space: nowrap;\\n  margin-right:
-        -12px;\\n}\\n.headline {\\n  display: flex;\\n  margin-right: 4px;\\n}\\n.gradient-container
-        {\\n  position: relative;\\n}\\n.gradient {\\n  position: absolute;\\n  transform:
-        translate(3px, -9px);\\n  height: 36px;\\n  width: 9px;\\n}\\n@media (prefers-color-scheme:
-        light) {\\n  .container {\\n    background-color: #fafafa;\\n    box-shadow:
-        0 0 0 1px #0000000f;\\n  }\\n  .headline-label {\\n    color: #1f1f1f;\\n
-        \ }\\n  .chip {\\n    background-color: #ffffff;\\n    border-color: #d2d2d2;\\n
-        \   color: #5e5e5e;\\n    text-decoration: none;\\n  }\\n  .chip:hover {\\n
-        \   background-color: #f2f2f2;\\n  }\\n  .chip:focus {\\n    background-color:
-        #f2f2f2;\\n  }\\n  .chip:active {\\n    background-color: #d8d8d8;\\n    border-color:
-        #b6b6b6;\\n  }\\n  .logo-dark {\\n    display: none;\\n  }\\n  .gradient {\\n
-        \   background: linear-gradient(90deg, #fafafa 15%, #fafafa00 100%);\\n  }\\n}\\n@media
-        (prefers-color-scheme: dark) {\\n  .container {\\n    background-color: #1f1f1f;\\n
-        \   box-shadow: 0 0 0 1px #ffffff26;\\n  }\\n  .headline-label {\\n    color:
-        #fff;\\n  }\\n  .chip {\\n    background-color: #2c2c2c;\\n    border-color:
-        #3c4043;\\n    color: #fff;\\n    text-decoration: none;\\n  }\\n  .chip:hover
-        {\\n    background-color: #353536;\\n  }\\n  .chip:focus {\\n    background-color:
-        #353536;\\n  }\\n  .chip:active {\\n    background-color: #464849;\\n    border-color:
-        #53575b;\\n  }\\n  .logo-light {\\n    display: none;\\n  }\\n  .gradient
-        {\\n    background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\\n
-        \ }\\n}\\n\\u003c/style\\u003e\\n\\u003cdiv class=\\\"container\\\"\\u003e\\n
-        \ \\u003cdiv class=\\\"headline\\\"\\u003e\\n    \\u003csvg class=\\\"logo-light\\\"
-        width=\\\"18\\\" height=\\\"18\\\" viewBox=\\\"9 9 35 35\\\" fill=\\\"none\\\"
-        xmlns=\\\"http://www.w3.org/2000/svg\\\"\\u003e\\n      \\u003cpath fill-rule=\\\"evenodd\\\"
-        clip-rule=\\\"evenodd\\\" d=\\\"M42.8622 27.0064C42.8622 25.7839 42.7525 24.6084
-        42.5487 23.4799H26.3109V30.1568H35.5897C35.1821 32.3041 33.9596 34.1222 32.1258
-        35.3448V39.6864H37.7213C40.9814 36.677 42.8622 32.2571 42.8622 27.0064V27.0064Z\\\"
-        fill=\\\"#4285F4\\\"/\\u003e\\n      \\u003cpath fill-rule=\\\"evenodd\\\"
-        clip-rule=\\\"evenodd\\\" d=\\\"M26.3109 43.8555C30.9659 43.8555 34.8687 42.3195
-        37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306 37.0061 26.3109 37.0061C21.8282
-        37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563 39.9841 19.5712
-        43.8555 26.3109 43.8555V43.8555Z\\\" fill=\\\"#34A853\\\"/\\u003e\\n      \\u003cpath
-        fill-rule=\\\"evenodd\\\" clip-rule=\\\"evenodd\\\" d=\\\"M16.6559 29.8904C16.3111
-        28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111 24.3733 16.6559
-        23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992 26.6146C9.06992
-        29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559 29.8904V29.8904Z\\\"
-        fill=\\\"#FBBC05\\\"/\\u003e\\n      \\u003cpath fill-rule=\\\"evenodd\\\"
+        [\n          {\n            \"text\": \"As of 2026, the population of Tokyo,
+        Japan, is estimated to be 14,270,748.\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0,\n
+        \     \"groundingMetadata\": {\n        \"searchEntryPoint\": {\n          \"renderedContent\":
+        \"\\u003cstyle\\u003e\\n.container {\\n  align-items: center;\\n  border-radius:
+        8px;\\n  display: flex;\\n  font-family: Google Sans, Roboto, sans-serif;\\n
+        \ font-size: 14px;\\n  line-height: 20px;\\n  padding: 8px 12px;\\n}\\n.chip
+        {\\n  display: inline-block;\\n  border: solid 1px;\\n  border-radius: 16px;\\n
+        \ min-width: 14px;\\n  padding: 5px 16px;\\n  text-align: center;\\n  user-select:
+        none;\\n  margin: 0 8px;\\n  -webkit-tap-highlight-color: transparent;\\n}\\n.carousel
+        {\\n  overflow: auto;\\n  scrollbar-width: none;\\n  white-space: nowrap;\\n
+        \ margin-right: -12px;\\n}\\n.headline {\\n  display: flex;\\n  margin-right:
+        4px;\\n}\\n.gradient-container {\\n  position: relative;\\n}\\n.gradient {\\n
+        \ position: absolute;\\n  transform: translate(3px, -9px);\\n  height: 36px;\\n
+        \ width: 9px;\\n}\\n@media (prefers-color-scheme: light) {\\n  .container
+        {\\n    background-color: #fafafa;\\n    box-shadow: 0 0 0 1px #0000000f;\\n
+        \ }\\n  .headline-label {\\n    color: #1f1f1f;\\n  }\\n  .chip {\\n    background-color:
+        #ffffff;\\n    border-color: #d2d2d2;\\n    color: #5e5e5e;\\n    text-decoration:
+        none;\\n  }\\n  .chip:hover {\\n    background-color: #f2f2f2;\\n  }\\n  .chip:focus
+        {\\n    background-color: #f2f2f2;\\n  }\\n  .chip:active {\\n    background-color:
+        #d8d8d8;\\n    border-color: #b6b6b6;\\n  }\\n  .logo-dark {\\n    display:
+        none;\\n  }\\n  .gradient {\\n    background: linear-gradient(90deg, #fafafa
+        15%, #fafafa00 100%);\\n  }\\n}\\n@media (prefers-color-scheme: dark) {\\n
+        \ .container {\\n    background-color: #1f1f1f;\\n    box-shadow: 0 0 0 1px
+        #ffffff26;\\n  }\\n  .headline-label {\\n    color: #fff;\\n  }\\n  .chip
+        {\\n    background-color: #2c2c2c;\\n    border-color: #3c4043;\\n    color:
+        #fff;\\n    text-decoration: none;\\n  }\\n  .chip:hover {\\n    background-color:
+        #353536;\\n  }\\n  .chip:focus {\\n    background-color: #353536;\\n  }\\n
+        \ .chip:active {\\n    background-color: #464849;\\n    border-color: #53575b;\\n
+        \ }\\n  .logo-light {\\n    display: none;\\n  }\\n  .gradient {\\n    background:
+        linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);\\n  }\\n}\\n\\u003c/style\\u003e\\n\\u003cdiv
+        class=\\\"container\\\"\\u003e\\n  \\u003cdiv class=\\\"headline\\\"\\u003e\\n
+        \   \\u003csvg class=\\\"logo-light\\\" width=\\\"18\\\" height=\\\"18\\\"
+        viewBox=\\\"9 9 35 35\\\" fill=\\\"none\\\" xmlns=\\\"http://www.w3.org/2000/svg\\\"\\u003e\\n
+        \     \\u003cpath fill-rule=\\\"evenodd\\\" clip-rule=\\\"evenodd\\\" d=\\\"M42.8622
+        27.0064C42.8622 25.7839 42.7525 24.6084 42.5487 23.4799H26.3109V30.1568H35.5897C35.1821
+        32.3041 33.9596 34.1222 32.1258 35.3448V39.6864H37.7213C40.9814 36.677 42.8622
+        32.2571 42.8622 27.0064V27.0064Z\\\" fill=\\\"#4285F4\\\"/\\u003e\\n      \\u003cpath
+        fill-rule=\\\"evenodd\\\" clip-rule=\\\"evenodd\\\" d=\\\"M26.3109 43.8555C30.9659
+        43.8555 34.8687 42.3195 37.7213 39.6863L32.1258 35.3447C30.5898 36.3792 28.6306
+        37.0061 26.3109 37.0061C21.8282 37.0061 18.0195 33.9811 16.6559 29.906H10.9194V34.3573C13.7563
+        39.9841 19.5712 43.8555 26.3109 43.8555V43.8555Z\\\" fill=\\\"#34A853\\\"/\\u003e\\n
+        \     \\u003cpath fill-rule=\\\"evenodd\\\" clip-rule=\\\"evenodd\\\" d=\\\"M16.6559
+        29.8904C16.3111 28.8559 16.1074 27.7588 16.1074 26.6146C16.1074 25.4704 16.3111
+        24.3733 16.6559 23.3388V18.8875H10.9194C9.74388 21.2072 9.06992 23.8247 9.06992
+        26.6146C9.06992 29.4045 9.74388 32.022 10.9194 34.3417L15.3864 30.8621L16.6559
+        29.8904V29.8904Z\\\" fill=\\\"#FBBC05\\\"/\\u003e\\n      \\u003cpath fill-rule=\\\"evenodd\\\"
         clip-rule=\\\"evenodd\\\" d=\\\"M26.3109 16.2386C28.85 16.2386 31.107 17.1164
         32.9095 18.8091L37.8466 13.8719C34.853 11.082 30.9659 9.3736 26.3109 9.3736C19.5712
         9.3736 13.7563 13.245 10.9194 18.8875L16.6559 23.3388C18.0195 19.2636 21.8282
@@ -84,37 +83,35 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH4L6Uzewv9K5ysvs5DrQ9hFxzwcUo_oSkfqWER6JIFtaKwyUHHthvQjS-JG1WyJTmonGWA7j1rtsfuTb2adLR5-hY66rcjlzMUpxTww03Q_pNwkGqi2zTNkXQgHLJqaDXRVc8DPpD9IBgh7-hQ1rO9e0QHzOhEi7L8r3CE0dZnXkLN8pAquv-mb-ivUa2Vcx9LSotA3wfrYk5kC2hoMlQeOEW3hw==\\\"\\u003ecurrent
-        population of Tokyo Japan\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEL2xaFNkm6Xbhk4ElXGMjyvQmy8aaS9q-HWquShH7kOleiTvnPbTJaYWyeOB3XjAYAxrLuSpJEA21zYxEHRxJ33TxB-0scFcCf2sWIwRFicYbnn0hWRwR_8iBBonPI95_Gz_hGrH1x_-_BVxhpmmjJ-V7avMpz-Q7uOyseNgoNQIf65ARrIdttA4Ikn36WnkbShwHMuNHJzA==\\\"\\u003eTokyo
-        population 2026\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFZGY0PPagsNTdrT0WQijkiha8EJybXN52-NC3jh6K8ERxlRWi_fA9h1hXWo1yDG_6S-9fbiDq9VoPjc00NIRqKJoF9EMFBlR0gUWcEgNRyyYjDHHZ3MtZyROjp1Q0R135iryy47hynNeOtcV-XhAVXVhR1rFRL8aiWd3NlndVzfZw7xVF0vGChCRjM16bWILL2zGcbR053Se3x9Vbs8ayJC7_Fzkw=\\\"\\u003ecurrent
+        population of Tokyo, Japan\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
         \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
-        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF927pP-E8iLrRK9c0BN-tCUCQ9S7GsJprQFjFRZT2f8Qh7macACansba-ddiJmWzH9F2QdWQHoFg5VwPfsRKtHj8gohutfsVHcXkA1L2wu-MSj5xlVAHk8VkrpozW3ECgux9_DrxF1M2qoRVPGj9LBGoR4-xWzMA==\",\n
-        \             \"title\": \"nyu.edu\"\n            }\n          }\n        ],\n
+        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFXy3vFeoqB5Lpuiy3elWp8x6Y_1lFPq_FrVf0UWEF5J_wfYAmVKRFuq4ld6iMT32Rfn_GfucRM-vnrmUO71815d_GJDdp3dBkkVi63gPJN1k2VV8VImuPYxgKOZBYU6wCDJy-0SVStTFFncNJHcA==\",\n
+        \             \"title\": \"wikipedia.org\"\n            }\n          }\n        ],\n
         \       \"groundingSupports\": [\n          {\n            \"segment\": {\n
-        \             \"endIndex\": 111,\n              \"text\": \"The current population
-        of Tokyo Metropolis, Japan, is estimated to be over 14 million residents as
-        of May 2026.\"\n            },\n            \"groundingChunkIndices\": [\n
-        \             0\n            ]\n          }\n        ],\n        \"webSearchQueries\":
-        [\n          \"current population of Tokyo Japan\",\n          \"Tokyo population
-        2026\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        48,\n    \"candidatesTokenCount\": 53,\n    \"totalTokenCount\": 901,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 48\n
-        \     }\n    ],\n    \"toolUsePromptTokenCount\": 118,\n    \"toolUsePromptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 118\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 682,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"8TeDarDhIKq5sOIPwqSAYA\"\n}\n"
+        \             \"endIndex\": 74,\n              \"text\": \"As of 2026, the
+        population of Tokyo, Japan, is estimated to be 14,270,748.\"\n            },\n
+        \           \"groundingChunkIndices\": [\n              0\n            ]\n
+        \         }\n        ],\n        \"webSearchQueries\": [\n          \"current
+        population of Tokyo, Japan\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 48,\n    \"candidatesTokenCount\": 48,\n    \"totalTokenCount\":
+        644,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 48\n      }\n    ],\n    \"toolUsePromptTokenCount\":
+        107,\n    \"toolUsePromptTokensDetails\": [\n      {\n        \"modality\":
+        \"TEXT\",\n        \"tokenCount\": 107\n      }\n    ],\n    \"thoughtsTokenCount\":
+        441,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"Np2VaoKFMJqu39IPjPrkgQQ\"\n}\n"
     headers:
       Alt-Svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       Content-Type:
       - application/json; charset=UTF-8
       Date:
-      - Mon, 17 Aug 2026 16:33:57 GMT
+      - Mon, 31 Aug 2026 15:26:49 GMT
       Server:
       - scaffolding on HTTPServer2
       Server-Timing:
-      - gfet4t7; dur=4507
+      - gfet4t7; dur=3193
       Transfer-Encoding:
       - chunked
       Vary:
@@ -130,7 +127,7 @@ interactions:
       X-XSS-Protection:
       - '0'
       content-length:
-      - '7307'
+      - '6840'
     status:
       code: 200
       message: OK

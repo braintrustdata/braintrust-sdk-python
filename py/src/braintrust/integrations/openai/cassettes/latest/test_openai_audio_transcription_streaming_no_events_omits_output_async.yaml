@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS05ZDEyYmQxNTU2YjA5MWE0YzdjMTFlMWRkNWEwMjlmYg0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tOWQxMmJkMTU1
-      NmIwOTFhNGM3YzExZTFkZDVhMDI5ZmINCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTlkMTJiZDE1NTZiMDkxYTRjN2MxMWUxZGQ1YTAyOWZi
+      LS1iMTQ5Mzc3MWZiNDY2OWExNzlmNmIwMDIxYzM0ZjFjYQ0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tYjE0OTM3NzFm
+      YjQ2NjlhMTc5ZjZiMDAyMWMzNGYxY2ENCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWIxNDkzNzcxZmI0NjY5YTE3OWY2YjAwMjFjMzRmMWNh
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tOWQxMmJkMTU1NmIwOTFhNGM3YzExZTFkZDVhMDI5ZmItLQ0K
+      Ci0tYjE0OTM3NzFmYjQ2NjlhMTc5ZjZiMDAyMWMzNGYxY2EtLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=9d12bd1556b091a4c7c11e1dd5a029fb
+      - multipart/form-data; boundary=b1493771fb4669a179f6b0021c34f1ca
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.3.1
+      - AsyncOpenAI/Python 3.6.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.3.1
+      - 3.6.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -602,15 +602,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"W\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"ass\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"erk\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"raft\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"Wasserkraft.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":17,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":7}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"Hallo\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"?\"}\r\n\r\ndata: {\"type\":\"transcript.text.done\",\"text\":\"Hallo?\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":14,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":4}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -623,15 +621,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313bcb43ab1ae18-YYZ
+      - a33cfbb77fcb4a29-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Wed, 26 Aug 2026 15:05:53 GMT
+      - Mon, 31 Aug 2026 15:14:09 GMT
       openai-processing-ms:
-      - '329'
+      - '300'
       openai-version:
       - '2020-10-01'
       server:
@@ -651,7 +649,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_21dd5b7c58b9444289e3fd4d66d02d81
+      - req_ad21411823ef44f093e0d752cff1ba12
     status:
       code: 200
       message: OK

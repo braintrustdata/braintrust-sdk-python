@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.3.1
+      - OpenAI/Python 3.6.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.3.1
+      - 3.6.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,22 +34,22 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EH9UQIpJHRv7tKz1mPIvXYwkHjQ3i\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787756762,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EIy0BdadKCNCYY5YwsURgaSX7NK74\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788189259,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The color of the image is red.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        8513,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 8521,\n    \"prompt_tokens_details\":
+        \"assistant\",\n        \"content\": \"The image is red.\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        8513,\n    \"completion_tokens\": 5,\n    \"total_tokens\": 8518,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_e7eb9f2bc2\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_c411fd2591\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -60,17 +60,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313bcf6cb14aaf8-YYZ
+      - a33cfbf4bbfef80a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '840'
+      - '827'
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:06:03 GMT
+      - Mon, 31 Aug 2026 15:14:19 GMT
       openai-processing-ms:
-      - '600'
+      - '559'
       openai-version:
       - '2020-10-01'
       server:
@@ -102,7 +102,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_65f6aef145014ddd9b638557c94ee638
+      - req_d6de269abd01435487d3a739f750d910
     status:
       code: 200
       message: OK

@@ -4,10 +4,12 @@ import os
 import time
 from pathlib import Path
 
+import google.genai as genai
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
 from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
@@ -42,6 +44,16 @@ TINY_WAV_BASE64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="
 LATEST_ONLY = pytest.mark.skipif(
     os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest",
     reason="model is only covered by the latest google-genai matrix entry",
+)
+
+# google-genai 2.20.0 restricted ``generate_images`` to Vertex AI ("Gemini
+# Enterprise Agent Platform") mode.  On the Developer API (API-key) path it now
+# raises ValueError client-side before issuing a request, so the call cannot be
+# exercised -- or re-recorded -- without Vertex credentials.
+_GENAI_VERSION = detect_module_version(genai, ("google.genai",))
+DEVELOPER_API_IMAGEN_ONLY = pytest.mark.skipif(
+    not version_satisfies(_GENAI_VERSION, "<2.20.0"),
+    reason="google-genai >=2.20.0 supports generate_images only in Vertex AI mode",
 )
 
 
@@ -1166,6 +1178,7 @@ def test_attachment_in_config(memory_logger):
     assert copied["temperature"] == 0.5
 
 
+@DEVELOPER_API_IMAGEN_ONLY
 @pytest.mark.vcr
 def test_generate_images(memory_logger):
     assert not memory_logger.pop()
@@ -1215,6 +1228,7 @@ def test_generate_images(memory_logger):
     _assert_timing_metrics_are_valid(span["metrics"], start, end)
 
 
+@DEVELOPER_API_IMAGEN_ONLY
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_generate_images_async(memory_logger):

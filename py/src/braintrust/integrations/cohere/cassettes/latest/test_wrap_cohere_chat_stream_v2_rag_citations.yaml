@@ -5,37 +5,37 @@ interactions:
       overview","snippet":"Braintrust is a platform for evaluating, logging, and improving
       AI applications."}}],"citation_options":{"mode":"fast"},"max_tokens":80,"stream":true}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '331'
-      Host:
-      - api.cohere.com
-      User-Agent:
-      - cohere/7.0.0
-      X-Fern-Language:
-      - Python
-      X-Fern-Platform:
-      - darwin/25.5.0
-      X-Fern-Runtime:
-      - python/3.14.3
-      X-Fern-SDK-Name:
-      - cohere
-      X-Fern-SDK-Version:
-      - 7.0.0
       content-type:
       - application/json
+      host:
+      - api.cohere.com
+      user-agent:
+      - cohere/7.1.0
+      x-fern-language:
+      - Python
+      x-fern-platform:
+      - darwin/25.6.0
+      x-fern-runtime:
+      - python/3.14.3
+      x-fern-sdk-name:
+      - cohere
+      x-fern-sdk-version:
+      - 7.1.0
     method: POST
     uri: https://api.cohere.com/v2/chat
   response:
     body:
       string: 'event: message-start
 
-        data: {"id":"ded5f451-d9e9-4662-9c74-9f0cc48cc6d4","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+        data: {"id":"14ebe8b1-46bc-4ac9-b89c-b1ec2fa1a69e","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
 
         event: content-start
@@ -153,7 +153,7 @@ interactions:
 
         event: message-end
 
-        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":34,"output_tokens":15},"tokens":{"input_tokens":1677,"output_tokens":27},"cached_tokens":0}}}
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":34,"output_tokens":15},"tokens":{"input_tokens":1677,"output_tokens":28},"cached_tokens":992}}}
 
 
         data: [DONE]
@@ -161,36 +161,36 @@ interactions:
 
         '
     headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - 1.1 google
       access-control-expose-headers:
       - X-Debug-Trace-ID
+      alt-svc:
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - text/event-stream
       date:
-      - Mon, 25 May 2026 18:10:39 GMT
+      - Mon, 31 Aug 2026 15:26:14 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
       - no-cache
       server:
       - envoy
+      transfer-encoding:
+      - chunked
       vary:
       - Origin
+      via:
+      - 1.1 google
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - ee802e871874d9fe46ac3d84666c292d
+      - 81dfcb09dca78da54ac2fc8637e13741
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '21'
+      - '12'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

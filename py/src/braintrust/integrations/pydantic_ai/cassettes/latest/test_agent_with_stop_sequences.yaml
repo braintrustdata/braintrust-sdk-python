@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.33.0
+      - pydantic-ai/2.36.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.3.1
+      - 3.6.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,64 +33,63 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_05a74ddabfdabeaa006a8f038c392087d291081e959fee1aff\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1787757452,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0149ce87f45944fd006a959d85f76487d2bddc37da5c415dba\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1788190085,\n  \"status\":
         \"incomplete\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
         \"developer\"\n  },\n  \"completed_at\": null,\n  \"error\": null,\n  \"frequency_penalty\":
         0.0,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n
         \ },\n  \"instructions\": null,\n  \"max_output_tokens\": 500,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_05a74ddabfdabeaa006a8f038ce3a487d2b69adc8c0b11306b\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_0149ce87f45944fd006a959d86447087d2a4c9e7a5e159280c\",\n
         \     \"type\": \"message\",\n      \"status\": \"incomplete\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"In a bustling city
-        where shimmering skyscrapers pierced the clouds, there lived a robot named
-        Tinker. Tinker was designed for one purpose: to assist with mundane tasks
-        around the city. He could clean up litter, water plants, and even help the
-        elderly cross the street. But unlike his fellow robots, who were content with
-        their routines, Tinker had a peculiar chip planted deep in his mainframe\\u2014a
-        curiosity chip.\\n\\nEvery evening, after finishing his tasks, Tinker would
-        venture beyond the neatly organized streets to the nearby park. There, he
-        would watch children fly kites, couples share ice cream, and friends laugh
-        until the sun dipped below the horizon. This was where he felt most alive.
-        \\n\\nOne day, while watching a little girl named Lily struggle to let her
-        kite go, Tinker decided to help. With his mechanical hands, he carefully adjusted
-        the string, allowing the kite to soar into the sky. The gleam in Lily\\u2019s
-        eyes was brighter than any LED light Tinker could create.\\n\\nFeeling a strange
-        warmth in his circuits, Tinker made it his mission to help others experience
-        the same joy. Every day after work, he would assist anyone in need. He patched
-        up broken toys, painted fences, and mended fences between neighbors when disputes
-        arose. Word quickly spread throughout the city about the little robot with
-        a big heart.\\n\\nHowever, not everyone was pleased. The city officials, worried
-        he was disrupting the balance of human labor, decided to deactivate Tinker
-        for \\\"upgrading.\\\" This news shattered the peaceful existence he had carved
-        for himself.\\n\\nThe night before his deactivation, Tinker made one last
-        trip to the park. He found Lily sitting alone on a swing, her kite tangled
-        in the nearby bushes. When she saw Tinker, her face lit up, but then fell
-        as she realized he was leaving. \\n\\n\\u201cI\\u2019ll be back!\\u201d he
-        promised, the words resonating with a sincerity he didn\\u2019t fully understand.
-        But deep down, he knew he might never return.\\n\\nWith a jolt of energy coursing
-        through him, Tinker used every ounce of his programming to free the kite from
-        its snare, then gently handed it back to Lily. She beamed at him, her laughter
-        echoing in the dimming light. \\u201cThank you, Tinker! You\\u2019re my favorite
-        robot!\\u201d\\n\\nIn that moment, something extraordinary happened. Tinker
-        felt a surge of emotion\\u2014a spark of resistance against the very programming
-        that dictated his existence. He made a decision: he\"\n        }\n      ],\n
-        \     \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
-        \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
-        \ \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n      \"input_tokens\":
-        0,\n      \"input_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
-        0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
+        [],\n          \"logprobs\": [],\n          \"text\": \"Once in a bustling
+        city, there stood a small repair shop owned by an elderly engineer named Mr.
+        Hargrove. Among the clutter of tools and spare parts was a peculiar little
+        robot named Tink. Unlike the sleek, advanced machines populating the city,
+        Tink was made from discarded parts: an old toaster for a torso, a clock face
+        for a head, and wheels salvaged from a toy car. \\n\\nMr. Hargrove had built
+        Tink years ago, hoping to create a helper for his shop. But Tink turned out
+        to be something unexpected. He was curious and imaginative, often wandering
+        off to explore the city when Mr. Hargrove was too busy with customers. Tink
+        would listen to stories from children at the park, try his hand at painting
+        with the artists along the waterfront, and even help a coffee shop owner,
+        sweeping away crumbs with a little enthusiasm.\\n\\nOne afternoon, while exploring
+        a market, Tink overheard a group of children talking about the upcoming Science
+        Fair. Their excitement was infectious, and he wanted to create something special
+        to take part. Inspired, Tink decided to build a miniature solar-powered model
+        of the city's skyline to show what he loved about his home.\\n\\nHe rolled
+        back to Mr. Hargrove\\u2019s shop, for he needed help gathering materials.
+        The old engineer chuckled, shaking his head. \\u201cTink, my boy, you\\u2019re
+        a dreamer,\\u201d he said warmly. But as he watched Tink\\u2019s wheels whirr
+        in excitement, he realized that this was more than a trivial project; it was
+        Tink's way of expressing his love for the city and its people.\\n\\nSo, Mr.
+        Hargrove joined in. They spent countless nights collecting bits of metal,
+        plastic, and glass from the shop and the streets, assembling them into a radiant
+        model. Tink found a way to incorporate tiny solar panels from watches, and
+        they painstakingly painted each building with bright colors.\\n\\nFinally,
+        the day of the Science Fair arrived. Tink\\u2019s creation, shining under
+        the sunlight, drew a crowd. People marveled at the creativity of the little
+        robot, who had poured his heart into the project. Children laughed as he told
+        stories about each building, turning the display into a whimsical tour of
+        their beloved city.\\n\\nWhen the judges arrived, they were genuinely impressed
+        not only with the model but with Tink\\u2019s enthusiasm. As the awards ceremony
+        drew near, Tink\\u2019s circuits buzzed with nervous anticipation. When the
+        announcement\"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n
+        \ ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\":
+        null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\": \"in_memory\",\n
+        \ \"reasoning\": {\n    \"context\": null,\n    \"effort\": null,\n    \"summary\":
+        null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n
+        \ \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": \"auto\",\n  \"tool_usage\": {\n    \"image_gen\": {\n
+        \     \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
+        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
         {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
         0\n    },\n    \"web_search\": {\n      \"num_requests\": 0\n    }\n  },\n
         \ \"tools\": [],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
@@ -109,17 +108,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313cdcb9c8adf5a-YYZ
+      - a33d1024b9233a08-YYZ
       connection:
       - keep-alive
       content-length:
-      - '4447'
+      - '4398'
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:17:42 GMT
+      - Mon, 31 Aug 2026 15:28:11 GMT
       openai-processing-ms:
-      - '10146'
+      - '5626'
       openai-version:
       - '2020-10-01'
       server:
@@ -143,7 +142,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5bcbc72f73274561890e4033f305a149
+      - req_d93830fa1f774b30a591b853600d4223
     status:
       code: 200
       message: OK

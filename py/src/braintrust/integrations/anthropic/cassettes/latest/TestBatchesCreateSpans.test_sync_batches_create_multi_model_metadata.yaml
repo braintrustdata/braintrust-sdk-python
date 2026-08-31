@@ -17,7 +17,7 @@ interactions:
       host:
       - api.anthropic.com
       user-agent:
-      - Anthropic/Python 1.0.0
+      - Anthropic/Python 1.2.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 1.0.0
+      - 1.2.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -35,14 +35,14 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.3
       x-stainless-timeout:
       - NOT_GIVEN
     method: POST
     uri: https://api.anthropic.com/v1/messages/batches
   response:
     body:
-      string: '{"id":"msgbatch_01BFJU7KXi8e2dpAoqMBMk55","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-08-26T15:12:23.105955+00:00","expires_at":"2026-08-27T15:12:23.105955+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
+      string: '{"id":"msgbatch_01JKwYuM85Xxtgs1LsxKwzZ3","type":"message_batch","processing_status":"in_progress","request_counts":{"processing":2,"succeeded":0,"errored":0,"canceled":0,"expired":0},"ended_at":null,"created_at":"2026-08-31T15:26:00.861889+00:00","expires_at":"2026-09-01T15:26:00.861889+00:00","archived_at":null,"cancel_initiated_at":null,"results_url":null}'
     headers:
       anthropic-organization-id:
       - 27796668-7351-40ac-acc4-024aee8995a5
@@ -51,7 +51,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313c63d5aaa375a-YYZ
+      - a33d0d14ca720c69-YYZ
       connection:
       - keep-alive
       content-length:
@@ -61,13 +61,13 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:12:23 GMT
+      - Mon, 31 Aug 2026 15:26:00 GMT
       request-id:
-      - req_011CeRaLUcY92U98qntuSzqC
+      - req_011Ceb4RLrPrSgrGtwtDngCx
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=522
+      - x-originResponse;dur=443
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       transfer-encoding:

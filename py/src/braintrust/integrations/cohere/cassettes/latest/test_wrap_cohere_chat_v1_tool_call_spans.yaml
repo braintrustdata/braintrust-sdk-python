@@ -4,55 +4,51 @@ interactions:
       the weather for a city.","parameter_definitions":{"city":{"description":"City
       name","type":"str","required":true}}}],"force_single_step":true,"stream":false}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '300'
-      Host:
-      - api.cohere.com
-      User-Agent:
-      - cohere/7.0.0
-      X-Fern-Language:
-      - Python
-      X-Fern-Platform:
-      - darwin/25.5.0
-      X-Fern-Runtime:
-      - python/3.14.3
-      X-Fern-SDK-Name:
-      - cohere
-      X-Fern-SDK-Version:
-      - 7.0.0
       content-type:
       - application/json
+      host:
+      - api.cohere.com
+      user-agent:
+      - cohere/7.1.0
+      x-fern-language:
+      - Python
+      x-fern-platform:
+      - darwin/25.6.0
+      x-fern-runtime:
+      - python/3.14.3
+      x-fern-sdk-name:
+      - cohere
+      x-fern-sdk-version:
+      - 7.1.0
     method: POST
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"response_id":"5c0f9e96-2e5a-4b6a-a2ae-54ee8e35f6bd","text":"I will
-        use one or more of the available tools to find the answer","generation_id":"82171216-b285-4810-9e66-1af6f15036c9","chat_history":[{"role":"USER","message":"Use
+      string: '{"response_id":"a049f501-aedd-4d19-9328-c67a6d6351a2","text":"I will
+        use one or more of the available tools to find the answer","generation_id":"3ff5d3b2-1148-4e82-85ff-b7a58e224040","chat_history":[{"role":"USER","message":"Use
         the get_weather tool for Paris."},{"role":"CHATBOT","message":"I will use
-        one or more of the available tools to find the answer","tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":42,"output_tokens":22},"tokens":{"input_tokens":1462,"output_tokens":33},"cached_tokens":0},"tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}'
+        one or more of the available tools to find the answer","tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":42,"output_tokens":22},"tokens":{"input_tokens":1462,"output_tokens":34},"cached_tokens":992},"tool_calls":[{"name":"get_weather","parameters":{"city":"Paris"}}]}'
     headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - 1.1 google
       access-control-expose-headers:
       - X-Debug-Trace-ID
+      alt-svc:
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '684'
+      - '686'
       content-type:
       - application/json
       date:
-      - Mon, 25 May 2026 18:10:32 GMT
+      - Mon, 31 Aug 2026 15:26:09 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       num_chars:
@@ -63,16 +59,20 @@ interactions:
       - no-cache
       server:
       - envoy
+      transfer-encoding:
+      - chunked
       vary:
       - Origin,Accept-Encoding
+      via:
+      - 1.1 google
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 0b4811d6e6abfd7e3691fe3452e0e7f9
+      - dbde5676e9b9db1a30f1c54019377cc0
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '540'
+      - '327'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:
