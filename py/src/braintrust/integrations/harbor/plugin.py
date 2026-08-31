@@ -39,6 +39,7 @@ from .identity import (
     normalize_json,
     partition_key,
     semantic_agent_config,
+    try_parse_json,
 )
 from .rewards import classify_rewards, extract_json_path, validate_classifications
 from .state import (
@@ -183,6 +184,21 @@ def _read_safe_file(path: Path) -> tuple[bytes | None, str | None]:
     return data, None
 
 
+def _json_attachment(
+    items: list[tuple[str | None, Any]], default_key: str, filename: str, warnings: list[str]
+) -> tuple[Attachment | None, Any, list[str]]:
+    """Merge per-step values into one JSON attachment plus the summary it holds."""
+    summary = _by_step(items, default_key)
+    if summary is None:
+        return None, None, warnings
+    attachment_data = (canonical_json(summary) + "\n").encode()
+    return (
+        Attachment(data=attachment_data, filename=filename, content_type="application/json"),
+        summary,
+        warnings,
+    )
+
+
 def _read_json_summary(entries: list[tuple[str | None, Path]], max_bytes: int) -> tuple[Any, list[str]]:
     summaries: list[tuple[str | None, Any]] = []
     warnings: list[str] = []
@@ -195,7 +211,11 @@ def _read_json_summary(entries: list[tuple[str | None, Path]], max_bytes: int) -
             if len(data) > max_bytes:
                 warnings.append(f"{label} omitted: size limit")
                 continue
-            summaries.append((step_name, json.loads(data)))
+            parsed, parsed_ok = try_parse_json(data)
+            if not parsed_ok:
+                warnings.append(f"{label} is not valid JSON")
+                continue
+            summaries.append((step_name, parsed))
         except FileNotFoundError:
             continue
         except (OSError, json.JSONDecodeError) as exc:
@@ -255,9 +275,8 @@ def _attachment(
             if read_warning is not None:
                 warnings.append(f"{label} omitted: {read_warning}")
             continue
-        try:
-            parsed = json.loads(data)
-        except (json.JSONDecodeError, RecursionError):
+        parsed, parsed_ok = try_parse_json(data)
+        if not parsed_ok:
             warnings.append(f"{label} is not valid JSON")
             continue
         normalized = normalize_json(
@@ -268,15 +287,7 @@ def _attachment(
         )
         warnings.extend(normalized.warnings)
         complete.append((step_name, normalized.value))
-    summary = _by_step(complete, "details")
-    if summary is None:
-        return None, None, warnings
-    attachment_data = (canonical_json(summary) + "\n").encode()
-    return (
-        Attachment(data=attachment_data, filename=filename, content_type="application/json"),
-        summary,
-        warnings,
-    )
+    return _json_attachment(complete, "details", filename, warnings)
 
 
 @dataclass(frozen=True)
@@ -286,8 +297,10 @@ class _VerifierOutputFile:
     parse_json: bool
     # normalize_json redacts by key name, which a structured document supplies and
     # raw text does not: raw verifier output is only covered by configured
-    # redact_patterns. Treat it like any other arbitrary byte stream the task
-    # wrote and require the same explicit opt-in that artifact_include does.
+    # redact_patterns. Keep it out of the default tier so shipping unredactable
+    # bytes is always a deliberate choice. Note this is a weaker gate than the one
+    # on artifact_include, which needs attachments="all" *and* an explicit glob:
+    # attachments="all" alone is enough to opt into raw verifier logs.
     requires_all: bool
 
 
@@ -298,23 +311,20 @@ _VERIFIER_OUTPUT_FILES = (
 )
 
 
-def _decode_verifier_output(data: bytes, parse_json: bool) -> tuple[Any, list[str]]:
-    if not parse_json:
-        return data.decode("utf-8", errors="replace"), []
-    try:
-        return json.loads(data), []
-    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
-        # RecursionError is what json.loads raises for a deeply nested document.
-        return data.decode("utf-8", errors="replace"), ["is not valid JSON"]
-
-
 def _read_verifier_output(path: Path, parse_json: bool, config: PluginConfig) -> tuple[Any | None, list[str]]:
     data, read_warning = _read_safe_file(path)
     if data is None:
         return None, [] if read_warning is None else [f"omitted: {read_warning}"]
     if not data:
         return None, []
-    value, warnings = _decode_verifier_output(data, parse_json)
+    warnings: list[str] = []
+    value: Any = data.decode("utf-8", errors="replace")
+    if parse_json:
+        parsed, parsed_ok = try_parse_json(data)
+        if parsed_ok:
+            value = parsed
+        else:
+            warnings.append("is not valid JSON")
     normalized = normalize_json(
         value,
         max_bytes=None,
@@ -343,35 +353,45 @@ def _verifier_output_attachment(result: Any, config: PluginConfig) -> tuple[Atta
                 step_output[output_file.key] = value
         if step_output:
             outputs.append((step_name, step_output))
+    return _json_attachment(outputs, "verifier", "verifier-output.json", warnings)
 
-    summary = _by_step(outputs, "verifier")
-    if summary is None:
-        return None, None, warnings
-    attachment_data = (canonical_json(summary) + "\n").encode()
-    return (
-        Attachment(data=attachment_data, filename="verifier-output.json", content_type="application/json"),
+
+def _bounded_summary(
+    summary: Any, serialized_bytes: int, config: PluginConfig, *, redact_absolute_paths: bool = True
+) -> Any:
+    """Bound an attachment's summary for the span field that previews it.
+
+    The attachment payload is this same value already normalized with the same
+    patterns and depth, so its serialized length is the summary's size and one
+    that already fits needs no second walk. Keep max_depth in step with the
+    attachment's, or the preview would truncate structure the attachment kept.
+    """
+    if serialized_bytes <= config.max_content_bytes:
+        return summary
+    return normalize_json(
         summary,
-        warnings,
-    )
+        max_bytes=config.max_content_bytes,
+        redact_patterns=config.redact_patterns,
+        max_depth=20,
+        redact_absolute_paths=redact_absolute_paths,
+    ).value
+
+
+def _serialized_bytes(attachment: Attachment) -> int:
+    # _json_attachment appends a trailing newline that canonical sizing omits.
+    return len(attachment.data) - 1
 
 
 def _verifier_evidence(result: Any, config: PluginConfig) -> tuple[dict[str, Any], list[str]]:
     attachment, summary, warnings = _verifier_output_attachment(result, config)
-    output: dict[str, Any] = {}
-    if summary is not None:
-        output["verifier_output_summary"] = normalize_json(
-            summary,
-            max_bytes=config.max_content_bytes,
-            redact_patterns=config.redact_patterns,
-            redact_absolute_paths=False,
-        ).value
-    if attachment is not None:
-        output["verifier_output"] = attachment
-    return output, warnings
-
-
-def _output_event(output: dict[str, Any]) -> dict[str, Any]:
-    return {} if not output else {"output": output}
+    if attachment is None:
+        return {}, warnings
+    return {
+        "verifier_output_summary": _bounded_summary(
+            summary, _serialized_bytes(attachment), config, redact_absolute_paths=False
+        ),
+        "verifier_output": attachment,
+    }, warnings
 
 
 class HarborPlugin:
@@ -727,7 +747,7 @@ class HarborPlugin:
         trial_id: str,
         root_start: float,
         root_end: float,
-        **event: Any,
+        output: dict[str, Any] | None = None,
     ) -> Any:
         start, end = _timing(getattr(result, timing_name, None), root_start, root_end)
         span = task_span.start_span(
@@ -737,7 +757,8 @@ class HarborPlugin:
             start_time=start,
             set_current=False,
             internal={"instrumentation": _INSTRUMENTATION},
-            **event,
+            # A phase with nothing to report must not log an empty output field.
+            **({"output": output} if output else {}),
         )
         span.end(end_time=end)
         return span
@@ -857,7 +878,7 @@ class HarborPlugin:
             trial_id,
             root_start,
             root_end,
-            **_output_event(verifier_output),
+            output=verifier_output,
         )
 
         for step in getattr(result, "step_results", None) or []:
@@ -931,12 +952,8 @@ class HarborPlugin:
         # re-normalizing an unbounded payload per scorer span.
         bounded_details = (
             None
-            if details_summary is None
-            else normalize_json(
-                details_summary,
-                max_bytes=self.config.max_content_bytes,
-                redact_patterns=self.config.redact_patterns,
-            ).value
+            if details_attachment is None
+            else _bounded_summary(details_summary, _serialized_bytes(details_attachment), self.config)
         )
         for score in conversion.scores:
             scorer = root.start_span(

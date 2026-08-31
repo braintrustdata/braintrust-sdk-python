@@ -108,6 +108,18 @@ def _is_secret_key(key: str, value: Any) -> bool:
     return _key_segments(key).isdisjoint(_COUNTER_SEGMENTS)
 
 
+def try_parse_json(data: bytes) -> tuple[Any, bool]:
+    """Parse a task-controlled document, reporting failure rather than raising.
+
+    json.loads raises RecursionError, not JSONDecodeError, for a deeply nested
+    document, and a task can write one to any file this package reads.
+    """
+    try:
+        return json.loads(data), True
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+        return None, False
+
+
 def _json_size(value: Any) -> int:
     try:
         return len(canonical_json(value).encode("utf-8"))

@@ -11,7 +11,7 @@ from typing import Any
 from braintrust.logger import Attachment
 
 from .config import PluginConfig
-from .identity import NormalizedValue, child_span_id, normalize_json
+from .identity import NormalizedValue, child_span_id, normalize_json, try_parse_json
 
 
 _INSTRUMENTATION = "braintrust.plugin.harbor"
@@ -273,9 +273,12 @@ def summarize_trajectory(trajectory_path: Path, config: PluginConfig) -> ATIFImp
     try:
         if trajectory_path.stat().st_size > config.max_trajectory_bytes:
             return ATIFImportResult(warnings=("trajectory omitted: size limit",))
-        trajectory = json.loads(trajectory_path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+        data = trajectory_path.read_bytes()
+    except OSError as exc:
         return ATIFImportResult(warnings=(f"trajectory unavailable or malformed: {exc}",))
+    trajectory, parsed_ok = try_parse_json(data)
+    if not parsed_ok:
+        return ATIFImportResult(warnings=("trajectory unavailable or malformed: not valid JSON",))
     if not isinstance(trajectory, dict) or not isinstance(trajectory.get("steps"), list):
         return ATIFImportResult(warnings=("trajectory malformed: steps must be an array",))
     notes = _Notes()
@@ -324,9 +327,12 @@ def import_trajectory(
             # rather than handed to object storage, so its size is bounded.
             if trajectory_path.stat().st_size > config.max_trajectory_bytes:
                 return ATIFImportResult(warnings=("trajectory omitted: size limit",))
-            trajectory = json.loads(trajectory_path.read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+            data = trajectory_path.read_bytes()
+        except OSError as exc:
             return ATIFImportResult(warnings=(f"trajectory unavailable or malformed: {exc}",))
+        trajectory, parsed_ok = try_parse_json(data)
+        if not parsed_ok:
+            return ATIFImportResult(warnings=("trajectory unavailable or malformed: not valid JSON",))
     if not isinstance(trajectory, dict) or not isinstance(trajectory.get("steps"), list):
         return ATIFImportResult(warnings=("trajectory malformed: steps must be an array",))
 
@@ -354,11 +360,7 @@ def import_trajectory(
     for index, step in enumerate(steps):
         source = step.get("source")
         content, content_complete = _content(
-            step.get("message"),
-            trajectory_path.parent,
-            config,
-            notes,
-            f"step {index + 1} message",
+            step.get("message"), trajectory_path.parent, config, notes, f"step {index + 1} message"
         )
         if source in {"system", "user"}:
             if config.content_mode != "metadata":
@@ -458,11 +460,7 @@ def import_trajectory(
             ):
                 tool_context = f"step {index + 1} tool {call_id}"
                 tool_output, tool_complete = _content(
-                    result.get("content"),
-                    trajectory_path.parent,
-                    config,
-                    notes,
-                    f"{tool_context} result",
+                    result.get("content"), trajectory_path.parent, config, notes, f"{tool_context} result"
                 )
                 tool_input = _bounded(arguments, config, notes, f"{tool_context} arguments")
                 result_extra = result.get("extra") if isinstance(result.get("extra"), dict) else {}
