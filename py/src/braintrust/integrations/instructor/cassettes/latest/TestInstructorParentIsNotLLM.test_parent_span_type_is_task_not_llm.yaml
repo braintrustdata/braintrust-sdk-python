@@ -1,17 +1,215 @@
 interactions:
 - request:
-    body: '{"messages":[{"role":"user","content":"Extract Grace, age 45."}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"Person"}},"tools":[{"type":"function","function":{"name":"Person","description":"Correctly extracted `Person` with all the required parameters with correct types","parameters":{"properties":{"name":{"description":"The person''s name","title":"Name","type":"string"},"age":{"description":"The person''s age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
-    headers: {}
+    body: '{"messages":[{"role":"user","content":"Extract Grace, age 45."}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"Person"}},"tools":[{"type":"function","function":{"name":"Person","description":"Correctly
+      extracted `Person` with all the required parameters with correct types","parameters":{"properties":{"name":{"description":"The
+      person''s name","title":"Name","type":"string"},"age":{"description":"The person''s
+      age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '524'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 3.6.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.6.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: '{"id":"chatcmpl-instructor-grace","object":"chat.completion","created":1779735568,"model":"gpt-4o-mini-2024-07-18","choices":[{"index":0,"message":{"role":"assistant","content":null,"tool_calls":[{"id":"call_grace","type":"function","function":{"name":"Person","arguments":"{\"name\":\"Grace\",\"age\":45}"}}],"refusal":null,"annotations":[]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":80,"completion_tokens":12,"total_tokens":92,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}},"service_tier":"default","system_fingerprint":"fp_test"}'
+      string: "{\n  \"id\": \"chatcmpl-EIyRUP460FcXG7m3AZc3wbPztwG05\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788190952,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_GJrVuWy55w8lRCrW3HCYhlDp\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"Person\",\n
+        \             \"arguments\": \"{\\\"name\\\":\\\"Grace\\\",\\\"age\\\":45}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 85,\n    \"completion_tokens\":
+        9,\n    \"total_tokens\": 94,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_c23e83d968\"\n}\n"
     headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a33d2547f97d36ca-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1083'
       content-type:
       - application/json
+      date:
+      - Mon, 31 Aug 2026 15:42:32 GMT
+      openai-processing-ms:
+      - '419'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999990'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
       x-request-id:
-      - req_instructor_grace
+      - req_d68e02683c7b406d8dd294358ecab05a
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"Extract Grace, age 45."}],"model":"gpt-4o-mini","tool_choice":{"type":"function","function":{"name":"Person"}},"tools":[{"type":"function","function":{"name":"Person","description":"Correctly
+      extracted `Person` with all the required parameters with correct types","parameters":{"properties":{"name":{"description":"The
+      person''s name","title":"Name","type":"string"},"age":{"description":"The person''s
+      age","title":"Age","type":"integer"}},"required":["age","name"],"type":"object"}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '524'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 3.6.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.6.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.3
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EIySiBLccMWksLUdx8sjjImGcsMoi\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788191028,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_t83V4VmPygFxTwFPFBnruW07\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"Person\",\n
+        \             \"arguments\": \"{\\\"name\\\":\\\"Grace\\\",\\\"age\\\":45}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 85,\n    \"completion_tokens\":
+        9,\n    \"total_tokens\": 94,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_c23e83d968\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a33d27288940ac9a-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1083'
+      content-type:
+      - application/json
+      date:
+      - Mon, 31 Aug 2026 15:43:49 GMT
+      openai-processing-ms:
+      - '442'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_df7a3b9915be4b98a70f56c6d979cc5e
     status:
       code: 200
       message: OK

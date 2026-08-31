@@ -38,9 +38,12 @@ class Person(BaseModel):
 
 
 def _make_openai_client():
-    # The real OpenAI client is fine even without a real key — VCR will serve
-    # the request from the cassette.
-    return openai.OpenAI(api_key="sk-test-dummy-api-key-for-vcr-tests")
+    # Read the key from the environment rather than hard-coding a dummy one.
+    # ``conftest.py`` injects the same dummy value via ``setdefault``, so
+    # playback still works with no key configured, while re-recording
+    # (``--vcr-record=all``) can reach the real API.  The ``authorization``
+    # header is stripped by ``filter_headers`` before a cassette is written.
+    return openai.OpenAI()
 
 
 def _all_spans(memory_logger):
@@ -152,6 +155,18 @@ class TestInstructorOpenAISpans:
         retry_count=1 and one validation_errors entry. Token totals across
         the trace equal the sum across the *children*; parent contributes
         zero tokens.
+
+        NOTE: this test's cassette is hand-authored and must NOT be
+        re-recorded.  Its first interaction returns ``{"name": "Ada"}`` with
+        ``age`` deliberately omitted, which is what forces the validation
+        retry.  A live model returns a valid ``Person`` on the first attempt,
+        so ``--vcr-record=all`` captures a single interaction and the
+        ``retry_count == 1`` / two-``llm``-span assertions below fail.  If you
+        clobber it, restore with::
+
+            git checkout -- src/braintrust/integrations/instructor/cassettes/\
+                latest/TestInstructorOpenAISpans.\
+                test_instructor_openai_retries_then_succeeds.yaml
         """
         from braintrust import wrap_openai
 
