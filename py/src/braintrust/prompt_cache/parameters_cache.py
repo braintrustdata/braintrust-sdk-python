@@ -20,8 +20,9 @@ class ParametersCache:
         project_id: str | None = None,
         project_name: str | None = None,
         id: str | None = None,
+        cache_namespace: str | None = None,
     ) -> RemoteEvalParameters:
-        cache_key = prompt_cache._create_cache_key(project_id, project_name, slug, version, id)
+        cache_key = prompt_cache._create_cache_key(project_id, project_name, slug, version, id, cache_namespace)
 
         try:
             return self.memory_cache.get(cache_key)
@@ -45,8 +46,9 @@ class ParametersCache:
         project_id: str | None = None,
         project_name: str | None = None,
         id: str | None = None,
+        cache_namespace: str | None = None,
     ) -> None:
-        cache_key = prompt_cache._create_cache_key(project_id, project_name, slug, version, id)
+        cache_key = prompt_cache._create_cache_key(project_id, project_name, slug, version, id, cache_namespace)
         self.memory_cache.set(cache_key, value)
         if self.disk_cache:
             self.disk_cache.set(cache_key, value)

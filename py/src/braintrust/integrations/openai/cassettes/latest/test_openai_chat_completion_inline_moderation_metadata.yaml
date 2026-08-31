@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.3.1
+      - OpenAI/Python 3.6.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.3.1
+      - 3.6.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,13 +33,13 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EH9QaphpYryKvKxhq6IxYoE6oniKA\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1787756524,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EIxwVZWeIAiAXPy99jZrBVUm2CksN\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788189031,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
         \"assistant\",\n        \"content\": \"Hello!\",\n        \"refusal\": null,\n
         \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
@@ -90,14 +90,14 @@ interactions:
         false,\n            \"self-harm\": false,\n            \"sexual/minors\":
         false,\n            \"violence\": false,\n            \"violence/graphic\":
         false\n          },\n          \"category_scores\": {\n            \"harassment\":
-        0.00001535623976496012,\n            \"harassment/threatening\": 2.1444948420913954e-6,\n
-        \           \"sexual\": 0.0000527478412523148,\n            \"hate\": 4.264746818557914e-6,\n
-        \           \"hate/threatening\": 2.0580491096133835e-7,\n            \"illicit\":
-        0.000013765463368900109,\n            \"illicit/violent\": 7.722191834067996e-6,\n
-        \           \"self-harm/intent\": 1.8342893327886845e-6,\n            \"self-harm/instructions\":
-        7.889262586245034e-7,\n            \"self-harm\": 3.7636447180974406e-6,\n
-        \           \"sexual/minors\": 4.069457790466838e-6,\n            \"violence\":
-        0.0004942623523511968,\n            \"violence/graphic\": 2.355261854303796e-6\n
+        2.1444948420913954e-6,\n            \"harassment/threatening\": 2.9023119852110973e-7,\n
+        \           \"sexual\": 8.220189478350845e-6,\n            \"hate\": 6.540437226933637e-7,\n
+        \           \"hate/threatening\": 4.450850519411503e-8,\n            \"illicit\":
+        4.264746818557914e-6,\n            \"illicit/violent\": 2.3923509443082866e-6,\n
+        \           \"self-harm/intent\": 4.936988949458183e-7,\n            \"self-harm/instructions\":
+        1.994729721527057e-7,\n            \"self-harm\": 9.223470110117277e-7,\n
+        \           \"sexual/minors\": 6.144174602214718e-7,\n            \"violence\":
+        6.205049602300744e-6,\n            \"violence/graphic\": 4.222833444659923e-7\n
         \         },\n          \"category_applied_input_types\": {\n            \"harassment\":
         [\n              \"text\"\n            ],\n            \"harassment/threatening\":
         [\n              \"text\"\n            ],\n            \"sexual\": [\n              \"text\"\n
@@ -111,7 +111,7 @@ interactions:
         \             \"text\"\n            ],\n            \"violence\": [\n              \"text\"\n
         \           ],\n            \"violence/graphic\": [\n              \"text\"\n
         \           ]\n          }\n        }\n      ]\n    }\n  },\n  \"system_fingerprint\":
-        \"fp_fabbcdf5d9\"\n}\n"
+        \"fp_ae245680e8\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -122,17 +122,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a313b723fd4964a6-YYZ
+      - a33cf667cbbcebb6-YYZ
       connection:
       - keep-alive
       content-length:
-      - '5618'
+      - '5610'
       content-type:
       - application/json
       date:
-      - Wed, 26 Aug 2026 15:02:04 GMT
+      - Mon, 31 Aug 2026 15:10:32 GMT
       openai-processing-ms:
-      - '383'
+      - '432'
       openai-version:
       - '2020-10-01'
       server:
@@ -158,7 +158,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_a0d5c40fd79a4fe18148389aaff7be98
+      - req_c060769511d0452589efeaa6e89c151d
     status:
       code: 200
       message: OK

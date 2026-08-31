@@ -2,75 +2,75 @@ interactions:
 - request:
     body: '{"message":"Say hi in one word.","model":"command-a-03-2025","max_tokens":8,"stream":true}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '90'
-      Host:
-      - api.cohere.com
-      User-Agent:
-      - cohere/7.0.0
-      X-Fern-Language:
-      - Python
-      X-Fern-Platform:
-      - darwin/25.5.0
-      X-Fern-Runtime:
-      - python/3.14.3
-      X-Fern-SDK-Name:
-      - cohere
-      X-Fern-SDK-Version:
-      - 7.0.0
       content-type:
       - application/json
+      host:
+      - api.cohere.com
+      user-agent:
+      - cohere/7.1.0
+      x-fern-language:
+      - Python
+      x-fern-platform:
+      - darwin/25.6.0
+      x-fern-runtime:
+      - python/3.14.3
+      x-fern-sdk-name:
+      - cohere
+      x-fern-sdk-version:
+      - 7.1.0
     method: POST
     uri: https://api.cohere.com/v1/chat
   response:
     body:
-      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"4bfabced-0f5b-4f5e-9508-04fd760cbdfd"}
+      string: '{"is_finished":false,"event_type":"stream-start","generation_id":"d8bd9341-85c2-4bbe-ac31-21171438f930"}
 
         {"is_finished":false,"event_type":"text-generation","text":"Hi"}
 
         {"is_finished":false,"event_type":"text-generation","text":"!"}
 
-        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"fdcd6dbd-4983-4ab5-8255-f038bc743eff","text":"Hi!","generation_id":"4bfabced-0f5b-4f5e-9508-04fd760cbdfd","chat_history":[{"role":"USER","message":"Say
-        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":4},"cached_tokens":0}},"finish_reason":"COMPLETE"}
+        {"is_finished":true,"event_type":"stream-end","response":{"response_id":"8fa95daf-028a-4053-825c-8db301da21e7","text":"Hi!","generation_id":"d8bd9341-85c2-4bbe-ac31-21171438f930","chat_history":[{"role":"USER","message":"Say
+        hi in one word."},{"role":"CHATBOT","message":"Hi!"}],"finish_reason":"COMPLETE","meta":{"api_version":{"version":"1"},"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":448}},"finish_reason":"COMPLETE"}
 
         '
     headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - 1.1 google
       access-control-expose-headers:
       - X-Debug-Trace-ID
+      alt-svc:
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - application/stream+json
       date:
-      - Mon, 25 May 2026 18:10:36 GMT
+      - Mon, 31 Aug 2026 15:26:13 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
       - no-cache
       server:
       - envoy
+      transfer-encoding:
+      - chunked
       vary:
       - Origin
+      via:
+      - 1.1 google
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 2e52930b738b513c93176f2f855d92e9
+      - 635b3551994576ade7be9c12a05c7d41
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '1353'
+      - '870'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:

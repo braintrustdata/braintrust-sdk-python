@@ -3,37 +3,37 @@ interactions:
     body: '{"model":"command-a-03-2025","messages":[{"role":"user","content":"Say
       hi in one word."}],"max_tokens":8,"stream":true}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '119'
-      Host:
-      - api.cohere.com
-      User-Agent:
-      - cohere/7.0.0
-      X-Fern-Language:
-      - Python
-      X-Fern-Platform:
-      - darwin/25.5.0
-      X-Fern-Runtime:
-      - python/3.14.3
-      X-Fern-SDK-Name:
-      - cohere
-      X-Fern-SDK-Version:
-      - 7.0.0
       content-type:
       - application/json
+      host:
+      - api.cohere.com
+      user-agent:
+      - cohere/7.1.0
+      x-fern-language:
+      - Python
+      x-fern-platform:
+      - darwin/25.6.0
+      x-fern-runtime:
+      - python/3.14.3
+      x-fern-sdk-name:
+      - cohere
+      x-fern-sdk-version:
+      - 7.1.0
     method: POST
     uri: https://api.cohere.com/v2/chat
   response:
     body:
       string: 'event: message-start
 
-        data: {"id":"bc2964b0-7ba8-4c7f-a84f-6a63c423e166","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+        data: {"id":"26dddd39-2c32-4129-b3f4-94138fb80c59","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
 
         event: content-start
@@ -58,7 +58,7 @@ interactions:
 
         event: message-end
 
-        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":4},"cached_tokens":0}}}
+        data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":6,"output_tokens":2},"tokens":{"input_tokens":501,"output_tokens":5},"cached_tokens":464}}}
 
 
         data: [DONE]
@@ -66,36 +66,36 @@ interactions:
 
         '
     headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - 1.1 google
       access-control-expose-headers:
       - X-Debug-Trace-ID
+      alt-svc:
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-type:
       - text/event-stream
       date:
-      - Mon, 25 May 2026 18:10:39 GMT
+      - Mon, 31 Aug 2026 15:26:13 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
       - no-cache
       server:
       - envoy
+      transfer-encoding:
+      - chunked
       vary:
       - Origin
+      via:
+      - 1.1 google
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - b721cc6e41acd12445ce5b5e83229842
+      - 637b54962b2a9b80d228c21e717afa15
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '314'
+      - '115'
       x-trial-endpoint-call-limit:
       - '20'
       x-trial-endpoint-call-remaining:
