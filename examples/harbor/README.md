@@ -39,7 +39,9 @@ uv run harbor run \
 
 The agent solves the task in `task/`, and Harbor's verifier emits a normalized `reward` plus an `answer_length` metric. The plugin creates `jobs/braintrust-harbor-example/braintrust-sync.json` after synchronization.
 
-With the default `attachments=verifier-details` mode, the verification span and each score also include Harbor's captured `test-stdout.txt`, optional `test-stderr.txt`, and conventional `ctrf.json` output when present. The size-bounded summary and complete redacted `verifier-output.json` attachment appear together in the span output. Structured CTRF fields with sensitive key names use the plugin's standard redaction, and configured `redact_patterns` apply to both structured CTRF strings and raw verifier text.
+With the default `attachments=verifier-details` mode, the verification span and each score also include Harbor's conventional `ctrf.json` output when present. The size-bounded summary and complete redacted `verifier-output.json` attachment appear together in the span output. Structured CTRF fields with sensitive key names use the plugin's standard redaction.
+
+Harbor's captured `test-stdout.txt` and `test-stderr.txt` require `attachments=all`. Redaction works from key names, which raw text does not have, so **configured `redact_patterns` are the only redaction applied to raw verifier logs** — and `redact_patterns` is empty by default. Verifier logs are a common place for environment dumps, tokens in URLs, and other credentials, so set `redact_patterns` before enabling this, or leave the logs out and rely on `ctrf.json` for structured failure detail.
 
 By default, the plugin uses `Harbor` as the Braintrust project name. Override it with `--plugin-kwarg project_name=example-harbor` or through `.env`:
 

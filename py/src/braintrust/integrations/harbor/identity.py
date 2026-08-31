@@ -118,7 +118,7 @@ def _json_size(value: Any) -> int:
 def normalize_json(
     value: Any,
     *,
-    max_bytes: int,
+    max_bytes: int | None,
     redact_patterns: tuple[str, ...] = (),
     max_depth: int = 8,
     redact_absolute_paths: bool = True,
@@ -128,6 +128,9 @@ def normalize_json(
     Set ``redact_absolute_paths=False`` for payloads produced inside the task
     sandbox: their absolute paths are container paths the agent actually operated
     on, so redacting them erases the substance of filesystem tool calls.
+
+    ``max_bytes=None`` redacts without truncating, for payloads bound for an
+    attachment rather than a span field.
     """
     warnings: list[str] = []
     compiled_patterns = tuple(re.compile(pattern) for pattern in redact_patterns)
@@ -176,7 +179,7 @@ def normalize_json(
         return f"[DROPPED: {type(item).__name__}]"
 
     normalized = walk(value, "", 0)
-    if _json_size(normalized) <= max_bytes:
+    if max_bytes is None or _json_size(normalized) <= max_bytes:
         return NormalizedValue(normalized, tuple(warnings))
 
     # Fitting a container to a byte budget needs each entry's serialized size, not

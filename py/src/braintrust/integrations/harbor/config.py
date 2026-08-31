@@ -100,9 +100,8 @@ class PluginConfig:
     include_tracebacks: bool = False
     attachments: str = "verifier-details"
     artifact_include: tuple[str, ...] = ()
-    max_attachment_bytes: int = 5_000_000
-    max_total_attachment_bytes: int = 20_000_000
     max_content_bytes: int = 20_000
+    max_trajectory_bytes: int = 20_000_000
     log_retry_attempts: bool = False
     strict: bool = False
     redact_patterns: tuple[str, ...] = ()
@@ -124,9 +123,8 @@ class PluginConfig:
             values[name] = _parse_bool(values[name], name)
         for name in (
             "max_custom_metadata_bytes",
-            "max_attachment_bytes",
-            "max_total_attachment_bytes",
             "max_content_bytes",
+            "max_trajectory_bytes",
         ):
             values[name] = _parse_int(values[name], name)
         for name in ("score_keys", "metric_keys", "artifact_include", "redact_patterns"):
@@ -161,8 +159,6 @@ class PluginConfig:
             raise ValueError("attachments must be 'none', 'verifier-details', or 'all'")
         if self.artifact_include and self.attachments != "all":
             raise ValueError("artifact_include requires attachments='all'")
-        if self.max_total_attachment_bytes < self.max_attachment_bytes:
-            raise ValueError("max_total_attachment_bytes must be at least max_attachment_bytes")
 
         for score_pattern in self.score_keys:
             for metric_pattern in self.metric_keys:
