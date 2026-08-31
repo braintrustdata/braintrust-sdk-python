@@ -520,8 +520,10 @@ def test_oversized_trajectory_is_refused_before_it_is_parsed(tmp_path):
 
 def test_verifier_output_attachment_collects_standard_harbor_evidence(tmp_path):
     result, verifier_dir = _verifier_trial(tmp_path)
-    (verifier_dir / "test-stdout.txt").write_text("FAILED test_answer.py::test_count - assert 27 == 28\n")
-    (verifier_dir / "test-stderr.txt").write_text("token=secret-value\n")
+    # write_bytes, not write_text: on Windows text mode would rewrite "\n" as
+    # "\r\n", and the plugin decodes the file's bytes exactly as written.
+    (verifier_dir / "test-stdout.txt").write_bytes(b"FAILED test_answer.py::test_count - assert 27 == 28\n")
+    (verifier_dir / "test-stderr.txt").write_bytes(b"token=secret-value\n")
     (verifier_dir / "ctrf.json").write_text(
         json.dumps(
             {
@@ -579,7 +581,16 @@ def test_verifier_output_attachment_handles_invalid_utf8_and_configured_redactio
     assert any("ctrf.json is not valid JSON" in warning for warning in warnings)
 
 
-@pytest.mark.parametrize("kind", ["symlink", "fifo"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "symlink",
+        pytest.param(
+            "fifo",
+            marks=pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="os.mkfifo is not available on Windows"),
+        ),
+    ],
+)
 def test_verifier_output_attachment_rejects_unsafe_file_types(tmp_path, kind):
     result, verifier_dir = _verifier_trial(tmp_path)
     stdout = verifier_dir / "test-stdout.txt"
@@ -618,7 +629,7 @@ def test_verifier_output_attachment_scopes_steps_and_respects_attachment_mode(tm
     for step_name in ("first", "second"):
         verifier_dir = tmp_path / "trial-1" / "steps" / step_name / "verifier"
         verifier_dir.mkdir(parents=True)
-        (verifier_dir / "test-stdout.txt").write_text(f"{step_name} output\n")
+        (verifier_dir / "test-stdout.txt").write_bytes(f"{step_name} output\n".encode())
         (verifier_dir / "ctrf.json").write_text(json.dumps({"step": step_name}))
 
     attachment, summary, warnings = _verifier_output_attachment(result, PluginConfig.from_options(attachments="all"))
@@ -742,7 +753,7 @@ def _child_spans(spans, parent):
 def _scored_verifier_trial(tmp_path):
     result, verifier_dir = _verifier_trial(tmp_path)
     result.verifier_result = VerifierResult(rewards={"reward": 0.25})
-    (verifier_dir / "test-stdout.txt").write_text("assert 1 == 2\n")
+    (verifier_dir / "test-stdout.txt").write_bytes(b"assert 1 == 2\n")
     (verifier_dir / "ctrf.json").write_text(json.dumps({"failed": 1}))
     return result
 
