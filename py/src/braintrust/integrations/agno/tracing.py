@@ -1,4 +1,6 @@
+import contextvars
 import time
+from contextlib import contextmanager
 from inspect import isawaitable
 from typing import Any
 
@@ -8,12 +10,45 @@ from braintrust.logger import start_span as _bt_start_span
 
 _INSTRUMENTATION = "agno-auto"
 
+_SUPPRESSED: contextvars.ContextVar[bool] = contextvars.ContextVar("braintrust_agno_suppressed", default=False)
 
-def start_span(*args, **kwargs):
+
+@contextmanager
+def suppress_spans():
+    """Skip agno instrumentation entirely for the duration of the block.
+
+    ``PerformanceEval`` calls the measured function ``warmup_runs + num_iterations``
+    times (60 by default). Tracing all of those would bury the eval's own row under
+    dozens of identical child traces, so the agno patchers hand straight through to
+    the wrapped method while this is set, building no payloads and retaining no
+    stream chunks (see ``_AgnoFunctionWrapperPatcher``). Spans from other
+    integrations (openai, anthropic, ...) are not agno's to suppress and still
+    appear under the eval's row.
+    """
+    token = _SUPPRESSED.set(True)
+    try:
+        yield
+    finally:
+        _SUPPRESSED.reset(token)
+
+
+def spans_suppressed() -> bool:
+    """Whether agno instrumentation is currently suppressed."""
+    return _SUPPRESSED.get()
+
+
+def start_span(*args, parent_object: Any | None = None, **kwargs):
+    """Start a span stamped as agno-instrumented.
+
+    ``parent_object`` starts the span on an explicit parent (an experiment, say)
+    rather than on whatever the ambient span/experiment/logger resolution picks, so
+    both routes keep the instrumentation stamp.
+    """
     internal = dict(kwargs.get("internal") or {})
     internal.setdefault("instrumentation", _INSTRUMENTATION)
     kwargs["internal"] = internal
-    return _bt_start_span(*args, **kwargs)
+    start = _bt_start_span if parent_object is None else parent_object.start_span
+    return start(*args, **kwargs)
 
 
 from braintrust.span_types import SpanTypeAttribute
@@ -29,8 +64,17 @@ def omit(obj: dict[str, Any], keys: list[str]):
     return {k: v for k, v in obj.items() if k not in keys}
 
 
-def clean(obj: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in obj.items() if v is not None}
+def bound_args(args: Any, kwargs: Any, names: tuple[str, ...]) -> dict[str, Any]:
+    """Resolve a wrapped method's arguments by name, positional or keyword.
+
+    Cheaper and more forgiving than binding the real signature per call, which the
+    wrappers here deliberately avoid.
+    """
+    bound: dict[str, Any] = dict(zip(names, args))
+    for name in names:
+        if name in kwargs:
+            bound[name] = kwargs[name]
+    return bound
 
 
 # Keys the SDK-integrations spec routes into metadata rather than the span input.

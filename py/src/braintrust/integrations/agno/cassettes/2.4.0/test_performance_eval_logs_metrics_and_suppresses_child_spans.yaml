@@ -1,0 +1,348 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"developer","content":"Answer with the final number
+      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-4o-mini"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '145'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EIywWZN1REuXfusCLhh4iByswWpQe\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788192876,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 25,\n    \"completion_tokens\":
+        1,\n    \"total_tokens\": 26,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_79b520a473\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a33d544678ed64a6-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '807'
+      content-type:
+      - application/json
+      date:
+      - Mon, 31 Aug 2026 16:14:36 GMT
+      openai-processing-ms:
+      - '339'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999985'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_b04d4b3cc63b49aabdbfb0cde86beb07
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"session_id":"3699a3bb-657d-42bf-a010-98ec306d0f9a","run_id":"6231cf98-3166-4c21-aec7-d5581bfcb09f","data":{"agent_id":"perf-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '493'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.4.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/runs
+  response:
+    body:
+      string: '{"message":"Run creation acknowledged: 6231cf98-3166-4c21-aec7-d5581bfcb09f","status":"success"}'
+    headers:
+      content-length:
+      - '96'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 31 Aug 2026 16:14:37 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"messages":[{"role":"developer","content":"Answer with the final number
+      only."},{"role":"user","content":"What is 2+2?"}],"model":"gpt-4o-mini"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '145'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EIywXbU8FiFe3rsevMP3Nn1T7Hs1d\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788192877,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 25,\n    \"completion_tokens\":
+        1,\n    \"total_tokens\": 26,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_79b520a473\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a33d544a7c8e64a6-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '807'
+      content-type:
+      - application/json
+      date:
+      - Mon, 31 Aug 2026 16:14:37 GMT
+      openai-processing-ms:
+      - '281'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999985'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_133e5fbeadfe4e1da346f3484d882cbd
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"session_id":"3699a3bb-657d-42bf-a010-98ec306d0f9a","run_id":"1b1a6731-bb11-47fe-97ad-0078a20bd40a","data":{"agent_id":"perf-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '493'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.4.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/runs
+  response:
+    body:
+      string: '{"message":"Run creation acknowledged: 1b1a6731-bb11-47fe-97ad-0078a20bd40a","status":"success"}'
+    headers:
+      content-length:
+      - '96'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 31 Aug 2026 16:14:37 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"run_id":"ee256d33-f722-4fb2-9fc7-b4350e02cbac","eval_type":"performance","data":{"model_id":null,"model_provider":null,"num_iterations":2,"warmup_runs":0,"measure_memory":false,"measure_runtime":true},"sdk_version":"2.4.0"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '225'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.4.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/evals
+  response:
+    body:
+      string: '{"message":"Eval creation acknowledged: ee256d33-f722-4fb2-9fc7-b4350e02cbac","status":"success"}'
+    headers:
+      content-length:
+      - '97'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 31 Aug 2026 16:14:37 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+version: 1
