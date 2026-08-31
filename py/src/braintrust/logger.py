@@ -442,21 +442,67 @@ NOOP_SPAN_PERMALINK = "https://www.braintrust.dev/noop-span"
 
 
 @dataclasses.dataclass(frozen=True)
-class _LoaderRequestState:
+class _LoaderLoginOptions:
+    """The credential one loader call runs under, and the cache scope it implies."""
+
     app_url: str
-    org_id: str
-    _api_conn: HTTPConnection
+    api_key: str
+    org_name: str | None
+    cache_namespace: str
 
-    def api_conn(self) -> HTTPConnection:
-        return self._api_conn
 
-    def close(self) -> None:
-        self._api_conn.close()
+class _LoaderLoginEntry:
+    """One credential's loader login, tracking who is responsible for closing it.
+
+    The login runs outside the cache lock, so an entry can be evicted while its
+    login is still in flight. An evicted entry is never handed to a new caller,
+    so the callers already holding it own it, and the last one to finish closes
+    it. Deferring to the last release also keeps an eviction from tearing down a
+    connection that another caller is still issuing a request on.
+    """
+
+    def __init__(self, factory: Callable[[], HTTPConnection]):
+        self._lazy: LazyValue[HTTPConnection] = LazyValue(factory, use_mutex=True)
+        self._lock = threading.Lock()
+        self._evicted = False
+        self._active = 0
+
+    def acquire(self) -> HTTPConnection:
+        with self._lock:
+            self._active += 1
+        try:
+            return self._lazy.get()
+        except BaseException:
+            self.release()
+            raise
+
+    def release(self) -> None:
+        with self._lock:
+            self._active -= 1
+            should_close = self._evicted and self._active == 0
+        if should_close:
+            self._close()
+
+    def evict(self) -> None:
+        with self._lock:
+            self._evicted = True
+            should_close = self._active == 0
+        if should_close:
+            self._close()
+
+    def _close(self) -> None:
+        has_succeeded, conn = self._lazy.get_sync()
+        if has_succeeded and conn is not None:
+            conn.close()
 
 
 class BraintrustState:
     def __init__(self):
         self.id = str(uuid.uuid4())
+        self._loader_login_cache: LRUCache[str, _LoaderLoginEntry] = LRUCache(
+            max_size=16,
+            on_remove=self._evict_loader_login_entry,
+        )
         self.current_experiment: Experiment | None = None
         # We use both a ContextVar and a plain attribute for the current logger:
         # - _cv_logger (ContextVar): Provides async context isolation so different
@@ -538,13 +584,7 @@ class BraintrustState:
         self._otel_flush_callback: Any | None = None
 
     def reset_login_info(self):
-        if hasattr(self, "_loader_login_cache"):
-            self._loader_login_cache.clear()
-        else:
-            self._loader_login_cache: LRUCache[str, LazyValue[_LoaderRequestState]] = LRUCache(
-                max_size=16,
-                on_remove=self._close_loader_request_state,
-            )
+        self._loader_login_cache.clear()
 
         self.app_url: str | None = None
         self.app_public_url: str | None = None
@@ -564,10 +604,8 @@ class BraintrustState:
         self._user_info: Mapping[str, Any] | None = None
 
     @staticmethod
-    def _close_loader_request_state(_key: str, lazy_state: LazyValue[_LoaderRequestState]) -> None:
-        has_succeeded, request_state = lazy_state.get_sync()
-        if has_succeeded and request_state is not None:
-            request_state.close()
+    def _evict_loader_login_entry(_key: str, entry: "_LoaderLoginEntry") -> None:
+        entry.evict()
 
     def reset_parent_state(self):
         # reset possible parent state for tests
@@ -721,36 +759,36 @@ class BraintrustState:
             self._user_info = self.api_conn().get_json("ping")
         return self._user_info
 
-    def loader_request_state(
-        self,
-        *,
-        app_url: str,
-        api_key: str,
-        org_name: str | None,
-        cache_namespace: str,
-    ) -> "BraintrustState | _LoaderRequestState":
+    @contextlib.contextmanager
+    def loader_conn(self, options: "_LoaderLoginOptions") -> "Iterator[HTTPConnection]":
+        """Yield the API connection for one loader call, releasing it on exit.
+
+        The global login's connection is shared and outlives the call, so it is
+        yielded as-is. A per-credential connection is owned by its cache entry,
+        which needs the release to know when an evicted one is safe to close.
+        """
+
         if (
             self.logged_in
-            and self.login_token == api_key
-            and self.app_url == app_url
-            and (org_name is None or self.org_name == org_name)
+            and self.login_token == options.api_key
+            and self.app_url == options.app_url
+            and (options.org_name is None or self.org_name == options.org_name)
         ):
-            return self
+            yield self.api_conn()
+            return
 
         with self._client_lock:
             try:
-                lazy_state = self._loader_login_cache.get(cache_namespace)
+                entry = self._loader_login_cache.get(options.cache_namespace)
             except KeyError:
-                lazy_state = LazyValue(
-                    lambda: _login_to_loader_request_state(
-                        app_url=app_url,
-                        api_key=api_key,
-                        org_name=org_name,
-                    ),
-                    use_mutex=True,
-                )
-                self._loader_login_cache.set(cache_namespace, lazy_state)
-        return lazy_state.get()
+                entry = _LoaderLoginEntry(lambda: _login_loader_conn(options))
+                self._loader_login_cache.set(options.cache_namespace, entry)
+
+        conn = entry.acquire()
+        try:
+            yield conn
+        finally:
+            entry.release()
 
     def global_bg_logger(self) -> "_BackgroundLogger":
         return getattr(self._override_bg_logger, "logger", None) or self._global_bg_logger.get()
@@ -1904,17 +1942,9 @@ def _resolve_loader_login_options(
     app_url: str | None,
     api_key: str | None,
     org_name: str | None,
-) -> tuple[str, str, str | None, str]:
+) -> "_LoaderLoginOptions":
     resolved_app_url = app_url or (_state.app_url if _state.logged_in else None) or _get_app_url()
-    resolved_api_key = api_key or (_state.login_token if _state.logged_in else None)
-    if resolved_api_key is None:
-        resolved_api_key = BraintrustEnv.API_KEY.get(None, use_dotenv=True)
-    if resolved_api_key is None:
-        raise ValueError(
-            "Could not login to Braintrust. You may need to set BRAINTRUST_API_KEY in your environment "
-            "or nearest .env.braintrust file."
-        )
-    resolved_api_key = HTTPConnection.sanitize_token(resolved_api_key)
+    resolved_api_key = _require_api_key(api_key or (_state.login_token if _state.logged_in else None))
 
     uses_active_credential = _state.logged_in and resolved_api_key == _state.login_token
     resolved_org_name = org_name
@@ -1925,17 +1955,24 @@ def _resolve_loader_login_options(
         ["loader-credential", resolved_app_url, resolved_org_name, resolved_api_key],
         separators=(",", ":"),
     )
-    cache_namespace = f"loader-credential:{hashlib.sha256(namespace_input.encode('utf-8')).hexdigest()}"
-    return resolved_app_url, resolved_api_key, resolved_org_name, cache_namespace
+    return _LoaderLoginOptions(
+        app_url=resolved_app_url,
+        api_key=resolved_api_key,
+        org_name=resolved_org_name,
+        cache_namespace=f"loader-credential:{hashlib.sha256(namespace_input.encode('utf-8')).hexdigest()}",
+    )
 
 
 def _is_loader_cache_fallback_error(error: BaseException) -> bool:
-    pending: list[BaseException] = [error]
+    """Return whether an error is transient enough to justify serving a cached value.
+
+    The failure that matters is usually wrapped, so walk down the chain until one
+    link is classifiable. `seen` only guards against a self-referential chain.
+    """
+
+    current: BaseException | None = error
     seen: set[int] = set()
-    while pending:
-        current = pending.pop()
-        if id(current) in seen:
-            continue
+    while current is not None and id(current) not in seen:
         seen.add(id(current))
 
         if isinstance(current, (json.JSONDecodeError, BraintrustJSONDecodeError)):
@@ -1945,18 +1982,14 @@ def _is_loader_cache_fallback_error(error: BaseException) -> bool:
 
         status_code = getattr(current, "status_code", None)
         if status_code is None:
-            response = getattr(current, "response", None)
-            status_code = getattr(response, "status_code", None)
+            status_code = getattr(getattr(current, "response", None), "status_code", None)
         if isinstance(status_code, int):
             return status_code in DEFAULT_RETRYABLE_STATUSES
 
         if isinstance(current, requests_exceptions.RequestException):
             return is_retryable_request_exception(current)
 
-        if current.__cause__ is not None:
-            pending.append(current.__cause__)
-        if current.__context__ is not None:
-            pending.append(current.__context__)
+        current = current.__cause__ or current.__context__
 
     return False
 
@@ -2001,35 +2034,31 @@ def load_prompt(
         raise ValueError("Must specify slug")
 
     def compute_metadata():
-        resolved_app_url, resolved_api_key, resolved_org_name, cache_namespace = _resolve_loader_login_options(
+        login_options = _resolve_loader_login_options(
             app_url=app_url,
             api_key=api_key,
             org_name=org_name,
         )
+        cache_namespace = login_options.cache_namespace
         try:
-            request_state = _state.loader_request_state(
-                app_url=resolved_app_url,
-                api_key=resolved_api_key,
-                org_name=resolved_org_name,
-                cache_namespace=cache_namespace,
-            )
-            if id:
-                # Load prompt by ID using the /v1/prompt/{id} endpoint
-                prompt_args = _populate_args({}, version=version, environment=effective_environment)
-                response = request_state.api_conn().get_json(f"/v1/prompt/{id}", prompt_args)
-                # Wrap single prompt response in objects array to match list API format
-                if response is not None:
-                    response = {"objects": [response]}
-            else:
-                args = _populate_args(
-                    {},
-                    project_name=project,
-                    project_id=project_id,
-                    slug=slug,
-                    version=version,
-                    environment=effective_environment,
-                )
-                response = request_state.api_conn().get_json("/v1/prompt", args)
+            with _state.loader_conn(login_options) as conn:
+                if id:
+                    # Load prompt by ID using the /v1/prompt/{id} endpoint
+                    prompt_args = _populate_args({}, version=version, environment=effective_environment)
+                    response = conn.get_json(f"/v1/prompt/{id}", prompt_args)
+                    # Wrap single prompt response in objects array to match list API format
+                    if response is not None:
+                        response = {"objects": [response]}
+                else:
+                    args = _populate_args(
+                        {},
+                        project_name=project,
+                        project_id=project_id,
+                        slug=slug,
+                        version=version,
+                        environment=effective_environment,
+                    )
+                    response = conn.get_json("/v1/prompt", args)
         except Exception as server_error:
             if not _is_loader_cache_fallback_error(server_error):
                 raise
@@ -2185,32 +2214,28 @@ def load_parameters(
     effective_environment = None if version is not None else environment
     should_fall_back_to_cache = version is None and effective_environment is None
     query_args = _populate_args({}, version=version, environment=effective_environment)
-    resolved_app_url, resolved_api_key, resolved_org_name, cache_namespace = _resolve_loader_login_options(
+    login_options = _resolve_loader_login_options(
         app_url=app_url,
         api_key=api_key,
         org_name=org_name,
     )
+    cache_namespace = login_options.cache_namespace
 
     try:
-        request_state = _state.loader_request_state(
-            app_url=resolved_app_url,
-            api_key=resolved_api_key,
-            org_name=resolved_org_name,
-            cache_namespace=cache_namespace,
-        )
-        if id:
-            response = request_state.api_conn().get_json(f"/v1/function/{id}", query_args)
-            if response is not None:
-                response = {"objects": [response]}
-        else:
-            args = _populate_args(
-                {"function_type": "parameters"},
-                project_name=project,
-                project_id=project_id,
-                slug=slug,
-                **query_args,
-            )
-            response = request_state.api_conn().get_json("/v1/function", args)
+        with _state.loader_conn(login_options) as conn:
+            if id:
+                response = conn.get_json(f"/v1/function/{id}", query_args)
+                if response is not None:
+                    response = {"objects": [response]}
+            else:
+                args = _populate_args(
+                    {"function_type": "parameters"},
+                    project_name=project,
+                    project_id=project_id,
+                    slug=slug,
+                    **query_args,
+                )
+                response = conn.get_json("/v1/function", args)
     except Exception as server_error:
         if not _is_loader_cache_fallback_error(server_error):
             raise
@@ -2315,6 +2340,16 @@ def register_otel_flush(callback: Any) -> None:
     _state.span_cache.disable()
 
 
+def _require_api_key(api_key: str | None) -> str:
+    resolved = api_key or BraintrustEnv.API_KEY.get(None, use_dotenv=True)
+    if resolved is None:
+        raise ValueError(
+            "Could not login to Braintrust. You may need to set BRAINTRUST_API_KEY in your environment "
+            "or nearest .env.braintrust file."
+        )
+    return HTTPConnection.sanitize_token(resolved)
+
+
 def _login_with_api_key(*, app_url: str, api_key: str, org_name: str | None) -> tuple[BraintrustClient, LoginResult]:
     if api_key == TEST_API_KEY:
         api_url = BraintrustEnv.API_URL.get("https://api.braintrust.ai")
@@ -2357,22 +2392,14 @@ def _authenticated_api_conn(api_url: str, api_key: str) -> HTTPConnection:
     return conn
 
 
-def _login_to_loader_request_state(
-    *,
-    app_url: str,
-    api_key: str,
-    org_name: str | None,
-) -> _LoaderRequestState:
-    client, login_result = _login_with_api_key(app_url=app_url, api_key=api_key, org_name=org_name)
+def _login_loader_conn(options: _LoaderLoginOptions) -> HTTPConnection:
+    client, login_result = _login_with_api_key(
+        app_url=options.app_url, api_key=options.api_key, org_name=options.org_name
+    )
     try:
-        conn = _authenticated_api_conn(login_result.api_url, api_key)
+        return _authenticated_api_conn(login_result.api_url, options.api_key)
     finally:
         client.close()
-    return _LoaderRequestState(
-        app_url=app_url,
-        org_id=login_result.organization.id,
-        _api_conn=conn,
-    )
 
 
 def login_to_state(

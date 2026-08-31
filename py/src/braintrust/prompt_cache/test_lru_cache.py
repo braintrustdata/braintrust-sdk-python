@@ -72,6 +72,7 @@ class TestLRUCache(unittest.TestCase):
         cache = lru_cache.LRUCache[str, int](max_size=2, on_remove=lambda key, value: removed.append((key, value)))
 
         cache.set("a", 1)
+        cache.set("a", 1)  # Re-setting the same value is not a removal.
         cache.set("a", 2)
         cache.set("b", 3)
         cache.set("c", 4)

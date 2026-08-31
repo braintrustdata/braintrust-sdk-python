@@ -70,29 +70,25 @@ def test_login_to_state_uses_env_braintrust_api_key(tmp_path, monkeypatch):
     assert state.logged_in is True
 
 
+def _loader_options(api_key: str, cache_namespace: str) -> logger._LoaderLoginOptions:
+    return logger._LoaderLoginOptions(
+        app_url="https://app.example.com",
+        api_key=api_key,
+        org_name=None,
+        cache_namespace=cache_namespace,
+    )
+
+
 def test_loader_request_state_closes_connections_on_eviction_and_reset():
     state = BraintrustState()
-    state._loader_login_cache = LRUCache(max_size=1, on_remove=state._close_loader_request_state)
+    state._loader_login_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
     first_conn = MagicMock()
     second_conn = MagicMock()
-    request_states = [
-        logger._LoaderRequestState("https://app.example.com", "org-a", first_conn),
-        logger._LoaderRequestState("https://app.example.com", "org-b", second_conn),
-    ]
-
-    with patch.object(logger, "_login_to_loader_request_state", side_effect=request_states):
-        state.loader_request_state(
-            app_url="https://app.example.com",
-            api_key="first-api-key",
-            org_name=None,
-            cache_namespace="first",
-        )
-        state.loader_request_state(
-            app_url="https://app.example.com",
-            api_key="second-api-key",
-            org_name=None,
-            cache_namespace="second",
-        )
+    with patch.object(logger, "_login_loader_conn", side_effect=[first_conn, second_conn]):
+        with state.loader_conn(_loader_options("first-api-key", "first")):
+            pass
+        with state.loader_conn(_loader_options("second-api-key", "second")):
+            pass
 
     first_conn.close.assert_called_once()
     second_conn.close.assert_not_called()
@@ -100,6 +96,57 @@ def test_loader_request_state_closes_connections_on_eviction_and_reset():
     state.reset_login_info()
 
     second_conn.close.assert_called_once()
+
+
+def test_loader_request_state_closes_state_evicted_while_login_is_pending():
+    state = BraintrustState()
+    state._loader_login_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
+    pending_conn = MagicMock()
+    login_started = threading.Event()
+    release_login = threading.Event()
+
+    def login(options):
+        if options.api_key == "slow-api-key":
+            login_started.set()
+            assert release_login.wait(5)
+            return pending_conn
+        return MagicMock()
+
+    def run_slow_login():
+        with state.loader_conn(_loader_options("slow-api-key", "first")):
+            pass
+
+    with patch.object(logger, "_login_loader_conn", side_effect=login):
+        thread = threading.Thread(target=run_slow_login)
+        thread.start()
+        try:
+            assert login_started.wait(5)
+            # Evicts "first" while its login is still in flight, so the cache can no
+            # longer close whatever that login resolves into.
+            with state.loader_conn(_loader_options("fast-api-key", "second")):
+                pass
+        finally:
+            release_login.set()
+            thread.join(5)
+
+    assert not thread.is_alive()
+    pending_conn.close.assert_called_once()
+
+
+def test_loader_request_state_defers_close_until_last_holder_releases():
+    state = BraintrustState()
+    state._loader_login_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
+    conn = MagicMock()
+
+    with patch.object(logger, "_login_loader_conn", side_effect=[conn, MagicMock()]):
+        with state.loader_conn(_loader_options("first-api-key", "first")):
+            # Evicting while the caller is still issuing its request must not close
+            # the connection out from under it.
+            with state.loader_conn(_loader_options("second-api-key", "second")):
+                pass
+            conn.close.assert_not_called()
+
+    conn.close.assert_called_once()
 
 
 class TestInit(TestCase):
@@ -415,12 +462,10 @@ def test_load_prompt_uses_explicit_api_key_without_changing_global_login():
     prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
     request_conn = MagicMock()
     request_conn.get_json.return_value = _prompt_response("saved-prompt")
-    request_state = MagicMock()
-    request_state.api_conn.return_value = request_conn
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_to_loader_request_state", return_value=request_state) as mock_login_to_state,
+        patch.object(logger, "_login_loader_conn", return_value=request_conn) as mock_login_conn,
     ):
         prompt = braintrust.load_prompt(
             project="test-project",
@@ -429,11 +474,10 @@ def test_load_prompt_uses_explicit_api_key_without_changing_global_login():
         )
         assert prompt.slug == "saved-prompt"
 
-    mock_login_to_state.assert_called_once_with(
-        app_url=logger._state.app_url,
-        api_key="prompt-api-key",
-        org_name=None,
-    )
+    (called_options,) = mock_login_conn.call_args.args
+    assert called_options.app_url == logger._state.app_url
+    assert called_options.api_key == "prompt-api-key"
+    assert called_options.org_name is None
     assert logger._state.login_token == original_login_token
 
 
@@ -443,12 +487,10 @@ def test_load_parameters_uses_explicit_api_key_without_changing_global_login():
     parameters_cache = ParametersCache(memory_cache=LRUCache(max_size=10))
     request_conn = MagicMock()
     request_conn.get_json.return_value = _parameters_response("saved-parameters")
-    request_state = MagicMock()
-    request_state.api_conn.return_value = request_conn
 
     with (
         patch.object(logger._state, "_parameters_cache", parameters_cache),
-        patch.object(logger, "_login_to_loader_request_state", return_value=request_state) as mock_login_to_state,
+        patch.object(logger, "_login_loader_conn", return_value=request_conn) as mock_login_conn,
     ):
         parameters = braintrust.load_parameters(
             project="test-project",
@@ -457,11 +499,10 @@ def test_load_parameters_uses_explicit_api_key_without_changing_global_login():
         )
 
     assert parameters.data == {"prefix": "saved-parameters"}
-    mock_login_to_state.assert_called_once_with(
-        app_url=logger._state.app_url,
-        api_key="parameters-api-key",
-        org_name=None,
-    )
+    (called_options,) = mock_login_conn.call_args.args
+    assert called_options.app_url == logger._state.app_url
+    assert called_options.api_key == "parameters-api-key"
+    assert called_options.org_name is None
     assert logger._state.login_token == original_login_token
 
 
@@ -479,12 +520,10 @@ def test_load_prompt_does_not_fall_back_to_cache_for_non_transient_errors(server
     prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
     request_conn = MagicMock()
     request_conn.get_json.side_effect = [_prompt_response("saved-prompt"), server_error]
-    request_state = MagicMock()
-    request_state.api_conn.return_value = request_conn
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_to_loader_request_state", return_value=request_state),
+        patch.object(logger, "_login_loader_conn", return_value=request_conn),
     ):
         first_prompt = braintrust.load_prompt(
             project="test-project",
@@ -507,12 +546,10 @@ def test_load_prompt_uses_same_api_keys_cache_for_transient_errors():
     prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
     request_conn = MagicMock()
     request_conn.get_json.side_effect = [_prompt_response("saved-prompt"), _http_error(500)]
-    request_state = MagicMock()
-    request_state.api_conn.return_value = request_conn
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_to_loader_request_state", return_value=request_state),
+        patch.object(logger, "_login_loader_conn", return_value=request_conn),
     ):
         first_prompt = braintrust.load_prompt(
             project="test-project",
@@ -536,18 +573,14 @@ def test_load_prompt_does_not_use_another_api_keys_transient_fallback_cache():
     first_conn.get_json.return_value = _prompt_response("saved-prompt")
     second_conn = MagicMock()
     second_conn.get_json.side_effect = _http_error(500)
-    request_states = {}
-    for api_key, request_conn in (("first-api-key", first_conn), ("second-api-key", second_conn)):
-        request_state = MagicMock()
-        request_state.api_conn.return_value = request_conn
-        request_states[api_key] = request_state
+    conns = {"first-api-key": first_conn, "second-api-key": second_conn}
 
-    def login_for_api_key(*, api_key, **_kwargs):
-        return request_states[api_key]
+    def login_for_api_key(options):
+        return conns[options.api_key]
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_to_loader_request_state", side_effect=login_for_api_key),
+        patch.object(logger, "_login_loader_conn", side_effect=login_for_api_key),
     ):
         first_prompt = braintrust.load_prompt(
             project="test-project",
@@ -722,7 +755,7 @@ class TestLogger(TestCase):
             app_url=None,
             api_key=None,
             org_name=None,
-        )[-1]
+        ).cache_namespace
         assert (
             logger._state._parameters_cache.get(
                 slug="saved-parameters",

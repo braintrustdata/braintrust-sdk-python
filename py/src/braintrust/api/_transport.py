@@ -102,6 +102,9 @@ class HTTPConnection:
         self.base_url = base_url
         self.token = None
         self.adapter = adapter
+        # An adapter handed to us belongs to the caller. `set_http_adapter` installs
+        # one instance across every connection, so we must not close it.
+        self._injected_adapter = adapter
 
         self._reset(total=0)
 
@@ -121,6 +124,7 @@ class HTTPConnection:
         self._reset()
 
     def close(self) -> None:
+        _unmount_adapter(self.session, self._injected_adapter)
         self.session.close()
 
     @staticmethod
@@ -134,6 +138,7 @@ class HTTPConnection:
 
     def _set_adapter(self, adapter: HTTPAdapter | None) -> None:
         self.adapter = adapter
+        self._injected_adapter = adapter
 
     def _reset(self, **retry_kwargs: Any) -> None:
         self.session = requests.Session()
@@ -205,6 +210,7 @@ class Transport:
     ):
         custom_transport = session is not None or adapter is not None
         self._owns_session = session is None
+        self._injected_adapter = adapter
         self.session = session if session is not None else requests.Session()
         if not persist_cookies and self._owns_session:
             self.session.cookies.set_policy(_RejectCookiesPolicy())
@@ -218,6 +224,7 @@ class Transport:
 
     def close(self) -> None:
         if self._owns_session:
+            _unmount_adapter(self.session, self._injected_adapter)
             self.session.close()
 
     def __enter__(self) -> "Transport":
@@ -393,6 +400,22 @@ def _retry_delay(policy: RetryPolicy, attempt: int, retry_after: float | None) -
     if retry_after is not None:
         return retry_after
     return min(policy.max_backoff, policy.backoff_factor * (2 ** (attempt - 1)))
+
+
+def _unmount_adapter(session: requests.Session, adapter: HTTPAdapter | None) -> None:
+    """Detach a caller-owned adapter so ``Session.close()`` leaves it open.
+
+    ``requests.Session.close()`` closes every mounted adapter. A single adapter
+    installed via ``set_http_adapter`` is mounted on many sessions at once, so
+    closing one session would otherwise clear the connection pools that the
+    other sessions are still using.
+    """
+
+    if adapter is None:
+        return
+    for prefix, mounted in list(session.adapters.items()):
+        if mounted is adapter:
+            del session.adapters[prefix]
 
 
 def _request_body_is_replayable(data: Any, files: Any) -> bool:
