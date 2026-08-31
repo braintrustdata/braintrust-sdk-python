@@ -1,6 +1,7 @@
 import datetime
 import io
 from email.utils import format_datetime
+from unittest import mock
 
 import pytest
 import requests
@@ -14,7 +15,7 @@ from braintrust.api import (
     RetryPolicy,
 )
 from braintrust.api._test_server import scripted_server
-from braintrust.api._transport import Transport
+from braintrust.api._transport import HTTPConnection, Transport
 from braintrust.util import AugmentedHTTPError
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -68,13 +69,17 @@ class TrackingSession(requests.Session):
         super().close()
 
 
-def test_transport_closes_owned_session():
+def test_transport_closes_owned_session_without_closing_injected_adapter():
     adapter = TrackingAdapter()
+    transport = Transport(adapter=adapter)
+    session = transport.session
 
-    with Transport(adapter=adapter) as transport:
-        assert transport.session is not None
+    with mock.patch.object(session, "close", wraps=session.close) as close_spy:
+        transport.close()
 
-    assert adapter.close_count > 0
+    close_spy.assert_called_once()
+    # The adapter belongs to the caller and may be mounted on other sessions.
+    assert adapter.close_count == 0
 
 
 def test_transport_does_not_close_injected_session():
@@ -351,3 +356,50 @@ def test_non_retrying_custom_adapter_can_delegate_retries_to_sdk():
 
     assert response.status_code == 200
     assert handler.request_count == 2
+
+
+def test_http_connection_close_does_not_close_shared_adapter():
+    adapter = TrackingAdapter()
+    first = HTTPConnection("http://localhost", adapter=adapter)
+    second = HTTPConnection("http://localhost", adapter=adapter)
+
+    first.close()
+
+    assert adapter.close_count == 0
+    assert second.session.get_adapter("http://localhost") is adapter
+
+
+def test_http_connection_close_closes_self_created_long_lived_adapter():
+    conn = HTTPConnection("http://localhost")
+    conn.make_long_lived()
+    adapter = conn.adapter
+    assert adapter is not None
+
+    with mock.patch.object(adapter, "close", wraps=adapter.close) as close_spy:
+        conn.close()
+
+    # Mounted on both the http:// and https:// prefixes, so closed once per mount.
+    assert close_spy.call_count > 0
+
+
+def test_http_connection_close_closes_long_lived_adapter_replaced_by_set_adapter():
+    adapter = TrackingAdapter()
+    conn = HTTPConnection("http://localhost")
+    conn.make_long_lived()
+    conn._set_adapter(adapter)
+    conn._reset()
+
+    conn.close()
+
+    assert adapter.close_count == 0
+
+
+def test_http_connection_close_does_not_close_adapter_set_after_construction():
+    adapter = TrackingAdapter()
+    conn = HTTPConnection("http://localhost")
+    conn._set_adapter(adapter)
+    conn._reset()
+
+    conn.close()
+
+    assert adapter.close_count == 0

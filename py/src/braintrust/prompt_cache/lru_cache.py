@@ -8,6 +8,7 @@ for O(1) access and update operations.
 """
 
 from collections import OrderedDict
+from collections.abc import Callable
 from typing import Generic, TypeVar
 
 
@@ -28,11 +29,17 @@ class LRUCache(Generic[K, V]):
     Args:
         max_size: Maximum number of items to store in the cache.
                  If not specified, the cache will grow unbounded.
+        on_remove: Optional callback invoked when an entry is replaced, evicted, or cleared.
     """
 
-    def __init__(self, max_size: int | None = None):
+    def __init__(
+        self,
+        max_size: int | None = None,
+        on_remove: Callable[[K, V], None] | None = None,
+    ):
         self._cache: OrderedDict[K, V] = OrderedDict()
         self._max_size = max_size
+        self._on_remove = on_remove
 
     def get(self, key: K) -> V:
         """
@@ -66,14 +73,23 @@ class LRUCache(Generic[K, V]):
             key: The key to store.
             value: The value to store.
         """
+        removed: tuple[K, V] | None = None
         if key in self._cache:
-            self._cache.pop(key)
+            previous = self._cache.pop(key)
+            if previous is not value:
+                removed = (key, previous)
         elif self._max_size and len(self._cache) >= self._max_size:
             # Remove oldest item (first item in ordered dict).
-            self._cache.popitem(last=False)
+            removed = self._cache.popitem(last=False)
 
         self._cache[key] = value
+        if removed is not None and self._on_remove is not None:
+            self._on_remove(*removed)
 
     def clear(self) -> None:
         """Removes all items from the cache."""
+        items = list(self._cache.items()) if self._on_remove is not None else []
         self._cache.clear()
+        if self._on_remove is not None:
+            for item in items:
+                self._on_remove(*item)
