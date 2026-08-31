@@ -3,68 +3,68 @@ interactions:
     body: '{"model":"rerank-english-v3.0","query":"capital of france","documents":["Paris
       is in France","Vienna is in Austria"],"top_n":2}'
     headers:
-      Accept:
+      accept:
       - '*/*'
-      Accept-Encoding:
+      accept-encoding:
       - gzip, deflate
-      Connection:
+      connection:
       - keep-alive
-      Content-Length:
+      content-length:
       - '127'
-      Host:
-      - api.cohere.com
-      User-Agent:
-      - cohere/7.0.0
-      X-Fern-Language:
-      - Python
-      X-Fern-Platform:
-      - darwin/25.5.0
-      X-Fern-Runtime:
-      - python/3.14.3
-      X-Fern-SDK-Name:
-      - cohere
-      X-Fern-SDK-Version:
-      - 7.0.0
       content-type:
       - application/json
+      host:
+      - api.cohere.com
+      user-agent:
+      - cohere/7.1.0
+      x-fern-language:
+      - Python
+      x-fern-platform:
+      - darwin/25.6.0
+      x-fern-runtime:
+      - python/3.14.3
+      x-fern-sdk-name:
+      - cohere
+      x-fern-sdk-version:
+      - 7.1.0
     method: POST
     uri: https://api.cohere.com/v1/rerank
   response:
     body:
-      string: '{"id":"dafe06f5-843f-4768-8a9b-db601e4ad339","results":[{"index":0,"relevance_score":0.82104415},{"index":1,"relevance_score":0.0000413354}],"meta":{"api_version":{"version":"1"},"billed_units":{"search_units":1}}}'
+      string: '{"id":"192e7ef4-f4ca-41d2-adfe-75314f8d13ef","results":[{"index":0,"relevance_score":0.82147413},{"index":1,"relevance_score":0.00004165958}],"meta":{"api_version":{"version":"1"},"billed_units":{"search_units":1}}}'
     headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000
-      Transfer-Encoding:
-      - chunked
-      Via:
-      - 1.1 google
       access-control-expose-headers:
       - X-Debug-Trace-ID
+      alt-svc:
+      - h3=":443"; ma=2592000
       cache-control:
       - no-cache, no-store, no-transform, must-revalidate, private, max-age=0
       content-length:
-      - '214'
+      - '215'
       content-type:
       - application/json
       date:
-      - Mon, 25 May 2026 18:10:34 GMT
+      - Mon, 31 Aug 2026 15:26:12 GMT
       expires:
       - Thu, 01 Jan 1970 00:00:00 GMT
       pragma:
       - no-cache
       server:
       - envoy
+      transfer-encoding:
+      - chunked
       vary:
       - Origin,Accept-Encoding
+      via:
+      - 1.1 google
       x-accel-expires:
       - '0'
       x-debug-trace-id:
-      - 2a6e8564125ae10d6918e218325f7085
+      - d5090b8954dd1f0df8778533b218f4eb
       x-endpoint-monthly-call-limit:
       - '1000'
       x-envoy-upstream-service-time:
-      - '47'
+      - '55'
       x-trial-endpoint-call-limit:
       - '10'
       x-trial-endpoint-call-remaining:

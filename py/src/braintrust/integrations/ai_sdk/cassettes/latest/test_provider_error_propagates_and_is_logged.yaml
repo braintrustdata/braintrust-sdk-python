@@ -5,7 +5,7 @@ interactions:
       accept:
       - application/json
       accept-encoding:
-      - gzip, deflate
+      - gzip, deflate, zstd
       connection:
       - keep-alive
       content-length:
@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 2.53.0
+      - AsyncOpenAI/Python 3.6.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 2.53.0
+      - 3.6.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,7 +33,7 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.3
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
@@ -51,7 +51,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a2686612fd24cca0-YYZ
+      - a33cf5fa5de9aaf7-YYZ
       connection:
       - keep-alive
       content-length:
@@ -59,9 +59,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Wed, 05 Aug 2026 20:02:18 GMT
+      - Mon, 31 Aug 2026 15:10:14 GMT
       openai-processing-ms:
-      - '92'
+      - '325'
       openai-version:
       - '2020-10-01'
       server:
@@ -71,7 +71,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_9f2deacd3ec5456dba6655b4c6250a82
+      - req_d13c3da23c9f474faf147940e20102b6
     status:
       code: 400
       message: Bad Request
