@@ -14,7 +14,7 @@ import uuid
 from typing import Any
 
 from braintrust.types import Metadata
-from braintrust.util import merge_dicts
+from braintrust.util import clean_nones, merge_dicts
 
 
 # Global registry of active span caches for process exit cleanup
@@ -23,7 +23,12 @@ _exit_handlers_registered = False
 
 
 class CachedSpan:
-    """Cached span data structure."""
+    """A span held in the local cache, before it has been flushed to the server.
+
+    Carries the subset of span fields that scorers can filter on, so that a trace can be
+    queried without a round-trip. Fields the server has but this does not are simply not
+    filterable locally.
+    """
 
     def __init__(
         self,
@@ -33,6 +38,9 @@ class CachedSpan:
         metadata: Metadata | None = None,
         span_parents: list[str] | None = None,
         span_attributes: dict[str, Any] | None = None,
+        error: Any | None = None,
+        metrics: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
     ):
         self.span_id = span_id
         self.input = input
@@ -40,33 +48,26 @@ class CachedSpan:
         self.metadata = metadata
         self.span_parents = span_parents
         self.span_attributes = span_attributes
+        self.error = error
+        self.metrics = metrics
+        self.tags = tags
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for serialization."""
-        result = {"span_id": self.span_id}
-        if self.input is not None:
-            result["input"] = self.input
-        if self.output is not None:
-            result["output"] = self.output
-        if self.metadata is not None:
-            result["metadata"] = self.metadata
-        if self.span_parents is not None:
-            result["span_parents"] = self.span_parents
-        if self.span_attributes is not None:
-            result["span_attributes"] = self.span_attributes
-        return result
+        """Return the span's set fields, dropping those left as None.
+
+        Unset fields are omitted rather than written as null to keep the on-disk record
+        small; span_id is always present, so it survives the stripping.
+        """
+        return clean_nones(self.__dict__)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CachedSpan":
-        """Create from dictionary."""
-        return cls(
-            span_id=data["span_id"],
-            input=data.get("input"),
-            output=data.get("output"),
-            metadata=data.get("metadata"),
-            span_parents=data.get("span_parents"),
-            span_attributes=data.get("span_attributes"),
-        )
+        """Rebuild a span from a record produced by to_dict().
+
+        The cache file is written and read by one process, so `data` always has exactly the
+        fields this class defines and can be passed straight through.
+        """
+        return cls(**data)
 
 
 class DiskSpanRecord:

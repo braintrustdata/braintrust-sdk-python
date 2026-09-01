@@ -6,16 +6,181 @@ spans from the current evaluation task without making server round-trips.
 """
 
 import asyncio
-from collections.abc import Awaitable, Callable
-from typing import Any, Protocol, TypedDict
+import math
+from collections.abc import Awaitable, Callable, Mapping
+from typing import Any, Protocol, TypedDict, cast
 
 from braintrust.functions.invoke import invoke
 from braintrust.logger import BraintrustState, ObjectFetcher
 from braintrust.types import Metadata
+from braintrust.util import clean_nones
+
+
+class SpanDurationFilter(TypedDict, total=False):
+    """Inclusive duration bounds, in seconds."""
+
+    min: float
+    """Minimum value of metrics.end - metrics.start."""
+    max: float
+    """Maximum value of metrics.end - metrics.start."""
+
+
+class SpanFilters(TypedDict, total=False):
+    """Filters supported by Trace.get_spans(). Different fields combine with AND.
+
+    Empty name/span_type lists match no spans. Empty metadata/duration objects
+    add no constraints. Omit a field to leave it unfiltered.
+    """
+
+    span_type: list[str]
+    """Match spans whose span_attributes.type equals any of these."""
+    name: list[str]
+    """Match spans whose span_attributes.name equals any of these."""
+    has_error: bool
+    """True to keep only spans that recorded an error, False to keep only those that did not."""
+    metadata: dict[str, Any]
+    """Match named metadata keys at any depth without type coercion. None matches null or missing paths."""
+    duration: SpanDurationFilter
+    """Bound how long the span took, inclusive, in seconds."""
+
+
+def _metadata_leaves(metadata: Mapping[str, Any], path: tuple[str, ...] = ()) -> list[tuple[tuple[str, ...], Any]]:
+    """Flatten a partial metadata object into paths shared by local and BTQL matching."""
+    leaves = []
+    for key, value in metadata.items():
+        if not isinstance(key, str):
+            raise ValueError("filters.metadata keys must be strings")
+        child_path = (*path, key)
+        if isinstance(value, Mapping):
+            leaves.extend(_metadata_leaves(value, child_path))
+        else:
+            leaves.append((child_path, value))
+    return leaves
+
+
+def _normalize_span_filters(filters: Any, span_type: list[str] | None = None) -> SpanFilters:
+    """Check shapes needed by both execution paths and fold in the top-level span_type."""
+    if filters is not None and not isinstance(filters, Mapping):
+        raise ValueError("filters must be an object")
+    values = dict(filters or {})
+    if span_type is not None:
+        if "span_type" in values:
+            raise ValueError("span_type cannot be provided both directly and in filters")
+        # Preserve the original API's span_type=[] meaning of no constraint.
+        if span_type:
+            values["span_type"] = span_type
+    if set(values) - SpanFilters.__annotations__.keys():
+        raise ValueError("Unsupported span filter fields")
+    for field in ("span_type", "name"):
+        if field in values:
+            items = values[field]
+            if not isinstance(items, list) or not all(isinstance(item, str) for item in items):
+                raise ValueError(f"filters.{field} must be a list of strings")
+    if "has_error" in values and not isinstance(values["has_error"], bool):
+        raise ValueError("filters.has_error must be a boolean")
+    if "metadata" in values:
+        if not isinstance(values["metadata"], Mapping):
+            raise ValueError("filters.metadata must be an object")
+        _metadata_leaves(values["metadata"])
+    if "duration" in values:
+        bounds = values["duration"]
+        if not isinstance(bounds, Mapping) or set(bounds) - {"min", "max"}:
+            raise ValueError("filters.duration must be an object with min and/or max")
+        if any(not _is_finite_number(value) for value in bounds.values()):
+            raise ValueError("filters.duration bounds must be finite numbers")
+    return cast(SpanFilters, values)
+
+
+def _is_finite_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _metadata_equal(actual: Any, expected: Any) -> bool:
+    """JSON equality without Python's bool/number coercion, including inside arrays."""
+    if isinstance(actual, bool) != isinstance(expected, bool):
+        return False
+    if isinstance(expected, list):
+        return (
+            isinstance(actual, list)
+            and len(actual) == len(expected)
+            and all(_metadata_equal(a, e) for a, e in zip(actual, expected))
+        )
+    if isinstance(expected, Mapping):
+        return (
+            isinstance(actual, Mapping)
+            and actual.keys() == expected.keys()
+            and all(_metadata_equal(actual[key], value) for key, value in expected.items())
+        )
+    return actual == expected
+
+
+def _matches_span_filters(span: Any, filters: SpanFilters) -> bool:
+    attributes = span.span_attributes or {}
+    for field, attribute in (("span_type", "type"), ("name", "name")):
+        if field in filters and attributes.get(attribute) not in filters[field]:
+            return False
+    if "has_error" in filters and (span.error is not None) != filters["has_error"]:
+        return False
+    for path, expected in _metadata_leaves(filters.get("metadata", {})):
+        actual = span.metadata
+        for key in path:
+            actual = actual.get(key) if isinstance(actual, Mapping) else None
+        if not _metadata_equal(actual, expected):
+            return False
+    if bounds := filters.get("duration"):
+        metrics = span.metrics or {}
+        start, end = metrics.get("start"), metrics.get("end")
+        if not _is_finite_number(start) or not _is_finite_number(end):
+            return False
+        elapsed = end - start
+        if "min" in bounds and elapsed < bounds["min"]:
+            return False
+        if "max" in bounds and elapsed > bounds["max"]:
+            return False
+    return True
+
+
+def _btql_cmp(op: str, name: list[str], value: Any) -> dict[str, Any]:
+    return {"op": op, "left": {"op": "ident", "name": name}, "right": {"op": "literal", "value": value}}
+
+
+def _btql_null_check(op: str, name: list[str]) -> dict[str, Any]:
+    return {"op": op, "expr": {"op": "ident", "name": name}}
+
+
+def _span_filter_clauses(filters: SpanFilters) -> list[dict[str, Any]]:
+    children = []
+    for field, attribute in (("span_type", "type"), ("name", "name")):
+        if field in filters:
+            # BTQL rejects IN []; an empty set of alternatives is always false.
+            children.append(
+                _btql_cmp("in", ["span_attributes", attribute], filters[field])
+                if filters[field]
+                else {"op": "literal", "value": False}
+            )
+    if "has_error" in filters:
+        children.append(_btql_null_check("isnotnull" if filters["has_error"] else "isnull", ["error"]))
+    for path, value in _metadata_leaves(filters.get("metadata", {})):
+        name = ["metadata", *path]
+        children.append(_btql_null_check("isnull", name) if value is None else _btql_cmp("eq", name, value))
+    elapsed = {
+        "op": "sub",
+        "left": {"op": "ident", "name": ["metrics", "end"]},
+        "right": {"op": "ident", "name": ["metrics", "start"]},
+    }
+    bounds = filters.get("duration", {})
+    for bound, op in (("min", "ge"), ("max", "le")):
+        if bound in bounds:
+            children.append({"op": op, "left": elapsed, "right": {"op": "literal", "value": bounds[bound]}})
+    return children
 
 
 class SpanData:
-    """Span data returned by get_spans()."""
+    """One span, as returned by get_spans().
+
+    Fields mirror the span columns; anything the server sends that is not named explicitly
+    is still kept, as an attribute, so a newer backend does not lose data on the way through.
+    """
 
     def __init__(
         self,
@@ -49,16 +214,12 @@ class SpanData:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SpanData":
-        """Create SpanData from a dictionary."""
+        """Build a span from a row, keeping columns this class does not name."""
         return cls(**data)
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary."""
-        result = {}
-        for key, value in self.__dict__.items():
-            if value is not None:
-                result[key] = value
-        return result
+        """Return the span's set fields, dropping those left as None."""
+        return clean_nones(self.__dict__)
 
 
 class SpanFetcher(ObjectFetcher[dict[str, Any]]):
@@ -73,12 +234,12 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
         object_id: str,
         root_span_id: str,
         state: BraintrustState,
-        span_type_filter: list[str] | None = None,
         include_scorers: bool = False,
         brainstore_realtime: bool = True,
+        filters: SpanFilters | None = None,
     ):
-        # Build the filter expression for root_span_id and optionally span_attributes.type
-        filter_expr = self._build_filter(root_span_id, span_type_filter, include_scorers)
+        # `filters` is expected to already be normalized by _normalize_span_filters.
+        filter_expr = self._build_filter(root_span_id, filters, include_scorers)
 
         super().__init__(
             object_type=object_type,
@@ -91,52 +252,26 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
     @staticmethod
     def _build_filter(
         root_span_id: str,
-        span_type_filter: list[str] | None = None,
+        filters: SpanFilters | None = None,
         include_scorers: bool = False,
     ) -> dict[str, Any]:
-        """Build BTQL filter expression."""
-        children = [
-            # Base filter: root_span_id = 'value'
-            {
-                "op": "eq",
-                "left": {"op": "ident", "name": ["root_span_id"]},
-                "right": {"op": "literal", "value": root_span_id},
-            },
-        ]
+        """Combine trace identity, scorer exclusion, and span filters with AND."""
+        # Scorer exclusion is a fetch mode rather than a SpanFilters field, so it stays here.
+        purpose = ["span_attributes", "purpose"]
+        children: list[dict[str, Any]] = [_btql_cmp("eq", ["root_span_id"], root_span_id)]
 
         if not include_scorers:
             children.append(
                 {
                     "op": "or",
                     "children": [
-                        {
-                            "op": "isnull",
-                            "expr": {
-                                "op": "ident",
-                                "name": ["span_attributes", "purpose"],
-                            },
-                        },
-                        {
-                            "op": "ne",
-                            "left": {
-                                "op": "ident",
-                                "name": ["span_attributes", "purpose"],
-                            },
-                            "right": {"op": "literal", "value": "scorer"},
-                        },
+                        _btql_null_check("isnull", purpose),
+                        _btql_cmp("ne", purpose, "scorer"),
                     ],
                 }
             )
 
-        # If span type filter specified, add it
-        if span_type_filter and len(span_type_filter) > 0:
-            children.append(
-                {
-                    "op": "in",
-                    "left": {"op": "ident", "name": ["span_attributes", "type"]},
-                    "right": {"op": "literal", "value": span_type_filter},
-                }
-            )
+        children.extend(_span_filter_clauses(filters or {}))
 
         return {"op": "and", "children": children}
 
@@ -148,8 +283,8 @@ class SpanFetcher(ObjectFetcher[dict[str, Any]]):
         return self._state
 
 
-SpanFetchFn = Callable[[list[str] | None], Awaitable[list[SpanData]]]
-SpanFetchWithOptionsFn = Callable[[list[str] | None, bool], Awaitable[list[SpanData]]]
+SpanFetchFn = Callable[[SpanFilters], Awaitable[list[SpanData]]]
+SpanFetchWithOptionsFn = Callable[[SpanFilters, bool], Awaitable[list[SpanData]]]
 
 
 class GetThreadOptions(TypedDict, total=False):
@@ -158,12 +293,14 @@ class GetThreadOptions(TypedDict, total=False):
 
 class CachedSpanFetcher:
     """
-    Cached span fetcher that handles fetching and caching spans by type.
+    Fetches spans for one root span, reusing what it has already seen.
 
-    Caching strategy:
-    - Cache spans by span type (dict[spanType, list[SpanData]])
-    - Track if all spans have been fetched (all_fetched flag)
-    - When filtering by spanType, only fetch types not already in cache
+    The cache is keyed by span type, plus a flag for whether an unfiltered fetch has
+    happened. That shape is what makes it useful and also what bounds it: it can answer a
+    span_type query offline, because it knows it holds every span of the types it has
+    fetched, but it cannot answer a query on any other field, because a partial result set
+    says nothing about the spans it never asked for. Those queries go to the server every
+    time and their results are used once rather than cached.
     """
 
     def __init__(
@@ -179,13 +316,14 @@ class CachedSpanFetcher:
         self._all_fetched = False
 
         if fetch_fn is not None:
-            # Direct fetch function injection (for testing)
+            # Direct fetch function injection (for testing). Like the server, the injected
+            # function is responsible for honoring every filter it is given.
             async def _fetch_fn(
-                span_type: list[str] | None,
+                filters: SpanFilters,
                 include_scorers: bool = False,
             ) -> list[SpanData]:
                 del include_scorers
-                return await fetch_fn(span_type)
+                return await fetch_fn(filters)
 
             self._fetch_fn: SpanFetchWithOptionsFn = _fetch_fn
         else:
@@ -196,7 +334,7 @@ class CachedSpanFetcher:
                 )
 
             async def _fetch_fn(
-                span_type: list[str] | None,
+                filters: SpanFilters,
                 include_scorers: bool = False,
             ) -> list[SpanData]:
                 state = await get_state()
@@ -205,61 +343,56 @@ class CachedSpanFetcher:
                     object_id=object_id,
                     root_span_id=root_span_id,
                     state=state,
-                    span_type_filter=span_type,
                     include_scorers=include_scorers,
                     brainstore_realtime=brainstore_realtime,
+                    filters=filters,
                 )
-                rows = list(fetcher.fetch())
-                return [
-                    SpanData(
-                        input=row.get("input"),
-                        output=row.get("output"),
-                        expected=row.get("expected"),
-                        error=row.get("error"),
-                        scores=row.get("scores"),
-                        metrics=row.get("metrics"),
-                        metadata=row.get("metadata"),
-                        span_id=row.get("span_id"),
-                        span_parents=row.get("span_parents"),
-                        span_attributes=row.get("span_attributes"),
-                        id=row.get("id"),
-                        _xact_id=row.get("_xact_id"),
-                        _pagination_key=row.get("_pagination_key"),
-                        root_span_id=row.get("root_span_id"),
-                        is_root=row.get("is_root"),
-                        created=row.get("created"),
-                        tags=row.get("tags"),
-                    )
-                    for row in rows
-                ]
+                spans = [SpanData.from_dict(row) for row in fetcher.fetch()]
+                # Backend comparisons can coerce metadata types. Keep the same exact
+                # matching as the local cache while still pushing filters down.
+                if filters.get("metadata"):
+                    spans = [span for span in spans if _matches_span_filters(span, filters)]
+                return spans
 
             self._fetch_fn = _fetch_fn
 
     async def get_spans(
         self,
-        span_type: list[str] | None = None,
         *,
+        filters: SpanFilters | None = None,
         include_scorers: bool = False,
     ) -> list[SpanData]:
         """
-        Get spans, using cache when possible.
+        Get spans, using the cache where it can answer the query.
 
         Args:
-            span_type: Optional list of span types to filter by
+            filters: Optional filters for span type, name, error state, metadata, and duration
             include_scorers: Include spans with span_attributes.purpose = "scorer"
 
         Returns:
             List of matching spans
         """
+        filters = _normalize_span_filters(filters)
+        span_type = filters.get("span_type")
+        # A partial cache is only authoritative for the fields it partitions on.
+        has_advanced_filters = any(field != "span_type" for field in filters)
+        if span_type == []:
+            return []
+
         if include_scorers:
-            return await self._fetch_fn(span_type, True)
+            return await self._fetch_fn(filters, True)
 
-        # If we've fetched all spans, just filter from cache
+        # A complete cache can answer every supported filter locally.
         if self._all_fetched:
-            return self._get_from_cache(span_type)
+            spans = self._get_from_cache(span_type)
+            return [span for span in spans if _matches_span_filters(span, filters)] if has_advanced_filters else spans
 
-        # If no filter requested, fetch everything
-        if not span_type or len(span_type) == 0:
+        # Arbitrary filtered results are not authoritative for their span type.
+        if has_advanced_filters:
+            return await self._fetch_fn(filters, False)
+
+        # If no filter requested, fetch everything.
+        if not span_type:
             # A full fetch is authoritative; reset the per-type cache first so a
             # prior typed fetch's spans are not duplicated by re-fetching them
             # (_fetch_spans appends).
@@ -269,20 +402,19 @@ class CachedSpanFetcher:
                 self._all_fetched = True
             return self._get_from_cache(None)
 
-        # Find which spanTypes we don't have in cache yet
+        # Find which span types we don't have in cache yet.
         missing_types = [t for t in span_type if t not in self._span_cache]
-
-        # If all requested types are cached, return from cache
-        if not missing_types:
-            return self._get_from_cache(span_type)
-
-        # Fetch only the missing types
-        await self._fetch_spans(missing_types)
+        if missing_types:
+            await self._fetch_spans(missing_types)
         return self._get_from_cache(span_type)
 
     async def _fetch_spans(self, span_type: list[str] | None) -> None:
-        """Fetch spans from the server."""
-        spans = await self._fetch_fn(span_type, False)
+        """Fetch spans and file them into the cache under their own type.
+
+        Spans are filed by the type they report, not the type that was asked for, so a
+        requested type that yields nothing leaves no entry and will be asked for again.
+        """
+        spans = await self._fetch_fn({"span_type": span_type} if span_type else {}, False)
 
         for span in spans:
             span_attrs = span.span_attributes or {}
@@ -292,7 +424,11 @@ class CachedSpanFetcher:
             self._span_cache[span_type_str].append(span)
 
     def _get_from_cache(self, span_type: list[str] | None) -> list[SpanData]:
-        """Get spans from cache, optionally filtering by type."""
+        """Read spans back out of the cache, optionally narrowing to some types.
+
+        Assumes the caller has established that the cache holds what is being asked for;
+        types with no entry are simply absent from the result, not fetched.
+        """
         if not span_type or len(span_type) == 0:
             # Return all spans
             result = []
@@ -322,13 +458,15 @@ class Trace(Protocol):
         self,
         span_type: list[str] | None = None,
         *,
+        filters: SpanFilters | None = None,
         include_scorers: bool = False,
     ) -> list[SpanData]:
         """
         Fetch all spans for this root span.
 
         Args:
-            span_type: Optional list of span types to filter by
+            span_type: Optional span types; may also be provided in filters, but not both
+            filters: Optional filters for span type, name, error state, metadata, and duration
             include_scorers: Include spans with span_attributes.purpose = "scorer"
 
         Returns:
@@ -349,7 +487,7 @@ class Trace(Protocol):
         ...
 
 
-class LocalTrace(dict):
+class LocalTrace(dict[str, Any]):
     """
     SDK implementation of Trace that uses local span cache and falls back to BTQL.
     Carries identifying information about the evaluation so scorers can perform
@@ -413,6 +551,7 @@ class LocalTrace(dict):
         self,
         span_type: list[str] | None = None,
         *,
+        filters: SpanFilters | None = None,
         include_scorers: bool = False,
     ) -> list[SpanData]:
         """
@@ -421,46 +560,29 @@ class LocalTrace(dict):
         back to CachedSpanFetcher which handles BTQL fetching and caching.
 
         Args:
-            span_type: Optional list of span types to filter by
+            span_type: Optional span types; may also be provided in filters, but not both
+            filters: Optional filters for span type, name, error state, metadata, and duration
             include_scorers: Include spans with span_attributes.purpose = "scorer"
 
         Returns:
             List of matching spans
         """
+        normalized_filters = _normalize_span_filters(filters, span_type)
+
         # Try local span cache first (for recently logged spans not yet flushed)
         cached_spans = self._state.span_cache.get_by_root_span_id(self._root_span_id)
         if cached_spans and len(cached_spans) > 0:
-            # Filter by purpose
             spans = [
                 span
                 for span in cached_spans
-                if include_scorers or not (span.span_attributes or {}).get("purpose") == "scorer"
+                if (include_scorers or not (span.span_attributes or {}).get("purpose") == "scorer")
+                and _matches_span_filters(span, normalized_filters)
             ]
 
-            # Filter by span type if requested
-            if span_type and len(span_type) > 0:
-                spans = [span for span in spans if (span.span_attributes or {}).get("type", "") in span_type]
+            return [SpanData.from_dict(span.to_dict()) for span in spans]
 
-            # Convert to SpanData
-            return [
-                SpanData(
-                    input=span.input,
-                    output=span.output,
-                    expected=getattr(span, "expected", None),
-                    error=getattr(span, "error", None),
-                    scores=getattr(span, "scores", None),
-                    metrics=getattr(span, "metrics", None),
-                    metadata=span.metadata,
-                    span_id=span.span_id,
-                    span_parents=span.span_parents,
-                    span_attributes=span.span_attributes,
-                    tags=getattr(span, "tags", None),
-                )
-                for span in spans
-            ]
-
-        # Fall back to CachedSpanFetcher for BTQL fetching with caching
-        return await self._cached_fetcher.get_spans(span_type, include_scorers=include_scorers)
+        # Fall back to CachedSpanFetcher for BTQL fetching with caching.
+        return await self._cached_fetcher.get_spans(filters=normalized_filters, include_scorers=include_scorers)
 
     async def get_thread(self, options: GetThreadOptions | None = None) -> list[Any]:
         """
@@ -479,7 +601,7 @@ class LocalTrace(dict):
         await asyncio.get_event_loop().run_in_executor(None, lambda: self._state.login())
         preprocessor = options.get("preprocessor") if options and options.get("preprocessor") else None
 
-        result = await asyncio.get_event_loop().run_in_executor(
+        result: Any = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: invoke(
                 global_function=preprocessor or "project_default",
@@ -498,15 +620,20 @@ class LocalTrace(dict):
         return result if isinstance(result, list) else []
 
     async def _ensure_spans_ready(self) -> None:
-        """Ensure spans are flushed before fetching."""
-        if self._spans_flushed or not self._ensure_spans_flushed:
+        """Flush pending spans so a fetch sees them, at most once per trace.
+
+        Concurrent scorers share one in-flight flush rather than each triggering their own.
+        A failed flush clears that shared handle so the next caller can retry.
+        """
+        ensure_spans_flushed = self._ensure_spans_flushed
+        if self._spans_flushed or ensure_spans_flushed is None:
             return
 
         if self._spans_flush_promise is None:
 
-            async def flush_and_mark():
+            async def flush_and_mark() -> None:
                 try:
-                    await self._ensure_spans_flushed()
+                    await ensure_spans_flushed()
                     self._spans_flushed = True
                 except Exception as err:
                     self._spans_flush_promise = None
