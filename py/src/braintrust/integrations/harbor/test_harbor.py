@@ -143,6 +143,13 @@ def test_plugin_defaults_project_to_harbor():
     assert _resolve_project(PluginConfig.from_options(project_id="project-id")) == (None, "project-id")
 
 
+def test_attachment_modes_default_to_all_and_name_the_structured_only_tier():
+    assert PluginConfig.from_options().attachments == "all"
+    assert PluginConfig.from_options(attachments="structured").attachments == "structured"
+    with pytest.raises(ValueError, match="attachments must be 'none', 'structured', or 'all'"):
+        PluginConfig.from_options(attachments="verifier-details")
+
+
 def test_harbor_resolves_the_plugin_through_its_entry_point():
     # Users select this plugin with `--plugin braintrust`, which Harbor resolves
     # through the harbor.plugins entry-point group. Nothing else in the test suite
@@ -641,11 +648,20 @@ def test_verifier_output_attachment_scopes_steps_and_respects_attachment_mode(tm
     assert attachment is not None
     assert warnings == []
 
-    # Raw verifier text is only covered by configured redact_patterns, so the
-    # default tier ships the structured report and leaves the logs behind.
+    # Eval runs keep the full verifier evidence by default. The explicitly
+    # structured tier retains the machine-readable report without raw logs.
     _, default_summary, default_warnings = _verifier_output_attachment(result, PluginConfig.from_options())
-    assert default_summary == {"first": {"ctrf": {"step": "first"}}, "second": {"ctrf": {"step": "second"}}}
+    assert default_summary == summary
     assert default_warnings == []
+
+    _, structured_summary, structured_warnings = _verifier_output_attachment(
+        result, PluginConfig.from_options(attachments="structured")
+    )
+    assert structured_summary == {
+        "first": {"ctrf": {"step": "first"}},
+        "second": {"ctrf": {"step": "second"}},
+    }
+    assert structured_warnings == []
 
     assert _verifier_output_attachment(result, PluginConfig.from_options(attachments="none")) == (None, None, [])
 
@@ -761,8 +777,7 @@ def _scored_verifier_trial(tmp_path):
 @pytest.mark.parametrize(
     ("attachments", "expected_summary"),
     [
-        # Raw verifier text needs the explicit opt-in; the structured report does not.
-        ("verifier-details", {"ctrf": {"failed": 1}}),
+        ("structured", {"ctrf": {"failed": 1}}),
         ("all", {"ctrf": {"failed": 1}, "stdout": "assert 1 == 2\n"}),
     ],
 )

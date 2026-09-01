@@ -297,10 +297,10 @@ class _VerifierOutputFile:
     parse_json: bool
     # normalize_json redacts by key name, which a structured document supplies and
     # raw text does not: raw verifier output is only covered by configured
-    # redact_patterns. Keep it out of the default tier so shipping unredactable
-    # bytes is always a deliberate choice. Note this is a weaker gate than the one
-    # on artifact_include, which needs attachments="all" *and* an explicit glob:
-    # attachments="all" alone is enough to opt into raw verifier logs.
+    # redact_patterns. The structured tier excludes it for callers that do not
+    # want raw eval logs. Note this is a weaker gate than the one on
+    # artifact_include, which needs attachments="all" *and* an explicit glob:
+    # attachments="all" alone includes raw verifier logs.
     requires_all: bool
 
 

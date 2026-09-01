@@ -98,7 +98,7 @@ class PluginConfig:
     classifier_rules: dict[str, str] = field(default_factory=dict)
     invalid_score_policy: str = "metric"
     include_tracebacks: bool = False
-    attachments: str = "verifier-details"
+    attachments: str = "all"
     artifact_include: tuple[str, ...] = ()
     max_content_bytes: int = 20_000
     max_trajectory_bytes: int = 20_000_000
@@ -155,8 +155,8 @@ class PluginConfig:
             raise ValueError("log_retry_attempts=True is not implemented; only the final attempt is logged")
         if self.invalid_score_policy not in {"metric", "drop", "error"}:
             raise ValueError("invalid_score_policy must be 'metric', 'drop', or 'error'")
-        if self.attachments not in {"none", "verifier-details", "all"}:
-            raise ValueError("attachments must be 'none', 'verifier-details', or 'all'")
+        if self.attachments not in {"none", "structured", "all"}:
+            raise ValueError("attachments must be 'none', 'structured', or 'all'")
         if self.artifact_include and self.attachments != "all":
             raise ValueError("artifact_include requires attachments='all'")
 
