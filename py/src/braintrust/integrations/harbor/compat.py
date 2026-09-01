@@ -194,6 +194,10 @@ def reward_details_paths(result: Any) -> list[tuple[str | None, Path]]:
     return _step_paths(result, "verifier", "reward-details.json")
 
 
+def verifier_output_paths(result: Any) -> list[tuple[str | None, Path]]:
+    return _step_paths(result, "verifier")
+
+
 def artifact_manifest_paths(result: Any) -> list[tuple[str | None, Path]]:
     return _step_paths(result, "artifacts", "manifest.json")
 

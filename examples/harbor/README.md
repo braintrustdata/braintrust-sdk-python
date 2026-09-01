@@ -1,6 +1,6 @@
 # Harbor + Braintrust
 
-Runs a small, self-contained [Harbor](https://harborframework.com/) evaluation and uses Harbor's native Braintrust job plugin to sync the result. Braintrust receives a managed dataset, an experiment row for the final trial, verifier rewards, and the Harbor lifecycle and ATIF trace.
+Runs a small, self-contained [Harbor](https://harborframework.com/) evaluation and uses Harbor's native Braintrust job plugin to sync the result. Braintrust receives a managed dataset, an experiment row for the final trial, verifier rewards and standard verifier output, and the Harbor lifecycle and ATIF trace.
 
 The plugin is discovered automatically through Harbor's `braintrust` entry point. The Braintrust API key remains in the host process; it is not passed into the task container.
 
@@ -38,6 +38,10 @@ uv run harbor run \
 ```
 
 The agent solves the task in `task/`, and Harbor's verifier emits a normalized `reward` plus an `answer_length` metric. The plugin creates `jobs/braintrust-harbor-example/braintrust-sync.json` after synchronization.
+
+With the default `attachments=all` mode, the verification span and each score also include Harbor's captured `test-stdout.txt`, optional `test-stderr.txt`, and conventional `ctrf.json` output when present. The size-bounded summary and complete redacted `verifier-output.json` attachment appear together in the span output. Structured CTRF fields with sensitive key names use the plugin's standard redaction, and configured `redact_patterns` apply to both structured CTRF strings and raw verifier text.
+
+Use `attachments=structured` to keep only structured verifier evidence such as `ctrf.json`, or `attachments=none` to disable verifier and reward-detail attachments. Redaction works from key names, which raw text does not have, so **configured `redact_patterns` are the only redaction applied to raw verifier logs** — and `redact_patterns` is empty by default. Verifier logs are a common place for environment dumps, tokens in URLs, and other credentials, so configure `redact_patterns` when the evaluation environment contains sensitive values.
 
 By default, the plugin uses `Harbor` as the Braintrust project name. Override it with `--plugin-kwarg project_name=example-harbor` or through `.env`:
 

@@ -11,7 +11,7 @@ from typing import Any
 from braintrust.logger import Attachment
 
 from .config import PluginConfig
-from .identity import NormalizedValue, child_span_id, normalize_json
+from .identity import NormalizedValue, child_span_id, normalize_json, try_parse_json
 
 
 _INSTRUMENTATION = "braintrust.plugin.harbor"
@@ -226,11 +226,6 @@ def _content(
                     complete = False
                     result.append(_bounded(part, config, notes, part_context).value)
                     continue
-                if len(data) > config.max_attachment_bytes:
-                    complete = False
-                    notes.add(f"{part_context}: image omitted because it exceeds max_attachment_bytes")
-                    result.append({"type": "text", "text": "[image omitted: size limit]"})
-                    continue
                 result.append(
                     {
                         "type": "image_url",
@@ -276,11 +271,14 @@ def _end_time(times: list[float], index: int, phase_end: float) -> float:
 def summarize_trajectory(trajectory_path: Path, config: PluginConfig) -> ATIFImportResult:
     """Read bounded trajectory summary data without creating detailed leaves."""
     try:
-        if trajectory_path.stat().st_size > config.max_total_attachment_bytes:
+        if trajectory_path.stat().st_size > config.max_trajectory_bytes:
             return ATIFImportResult(warnings=("trajectory omitted: size limit",))
-        trajectory = json.loads(trajectory_path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+        data = trajectory_path.read_bytes()
+    except OSError as exc:
         return ATIFImportResult(warnings=(f"trajectory unavailable or malformed: {exc}",))
+    trajectory, parsed_ok = try_parse_json(data)
+    if not parsed_ok:
+        return ATIFImportResult(warnings=("trajectory unavailable or malformed: not valid JSON",))
     if not isinstance(trajectory, dict) or not isinstance(trajectory.get("steps"), list):
         return ATIFImportResult(warnings=("trajectory malformed: steps must be an array",))
     notes = _Notes()
@@ -325,11 +323,16 @@ def import_trajectory(
         trajectory = _trajectory_data
     else:
         try:
-            if trajectory_path.stat().st_size > config.max_total_attachment_bytes:
+            # Unlike an attachment, this document is parsed into the host process
+            # rather than handed to object storage, so its size is bounded.
+            if trajectory_path.stat().st_size > config.max_trajectory_bytes:
                 return ATIFImportResult(warnings=("trajectory omitted: size limit",))
-            trajectory = json.loads(trajectory_path.read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+            data = trajectory_path.read_bytes()
+        except OSError as exc:
             return ATIFImportResult(warnings=(f"trajectory unavailable or malformed: {exc}",))
+        trajectory, parsed_ok = try_parse_json(data)
+        if not parsed_ok:
+            return ATIFImportResult(warnings=("trajectory unavailable or malformed: not valid JSON",))
     if not isinstance(trajectory, dict) or not isinstance(trajectory.get("steps"), list):
         return ATIFImportResult(warnings=("trajectory malformed: steps must be an array",))
 
