@@ -4627,6 +4627,9 @@ class SpanImpl(Span):
                 metadata=serializable_partial_record.get("metadata"),
                 span_parents=self.span_parents,
                 span_attributes=serializable_partial_record.get("span_attributes"),
+                error=serializable_partial_record.get("error"),
+                metrics=serializable_partial_record.get("metrics"),
+                tags=serializable_partial_record.get("tags"),
             )
             self.state.span_cache.queue_write(self.root_span_id, self.span_id, cached_span)
 
