@@ -173,6 +173,18 @@ class SpanInternalOptions(TypedDict, total=False):
     `context.span_origin.instrumentation.name`. Set by SDK integrations
     (`openai-auto`, `anthropic-auto`, etc.)."""
 
+    initial_span_write_as_merge: bool
+    """Emit the initial row as a merge for an SDK-owned deterministic span."""
+
+    skip_initial_span_write: bool
+    """Rehydrate an existing span without emitting an initial row."""
+
+    span_id: str
+    """SDK-controlled span ID."""
+
+    root_span_id: str
+    """SDK-controlled root span ID."""
+
 
 T = TypeVar("T")
 TMapping = TypeVar("TMapping", bound=Mapping[str, Any])
@@ -3091,6 +3103,33 @@ def flush():
     _state.global_bg_logger().flush()
 
 
+def _internal_start_span_with_initial_merge(
+    name: str,
+    *,
+    parent: str,
+    span_id: str,
+    root_span_id: str,
+    state: BraintrustState | None = None,
+    type: SpanTypeAttribute | None = None,
+    span_attributes: SpanAttributes | Mapping[str, Any] | None = None,
+    **event: Any,
+) -> Span:
+    """Start a deterministic SDK-owned span whose first row is merge-safe."""
+    return start_span(
+        name=name,
+        parent=parent,
+        state=state,
+        type=type,
+        span_attributes=span_attributes,
+        internal={
+            "initial_span_write_as_merge": True,
+            "span_id": span_id,
+            "root_span_id": root_span_id,
+        },
+        **event,
+    )
+
+
 def _check_org_info(state, org_info, org_name):
     if len(org_info) == 0:
         raise ValueError("This user is not part of any organizations.")
@@ -3986,6 +4025,26 @@ def update_span(exported: str, **event: Any) -> None:
     )
 
 
+def _internal_resume_span(exported: str, state: BraintrustState | None = None) -> Span:
+    """Rehydrate an exported root span so SDK work can continue later."""
+    components = SpanComponentsV4.from_str(exported)
+    if not components.row_id or not components.span_id or not components.root_span_id:
+        raise ValueError("Only exported root spans can be resumed")
+    return SpanImpl(
+        parent_object_type=components.object_type,
+        parent_object_id=LazyValue(_span_components_to_object_id_lambda(components), use_mutex=False),
+        parent_compute_object_metadata_args=components.compute_object_metadata_args,
+        parent_span_ids=None,
+        event={"id": components.row_id},
+        propagated_event=components.propagated_event,
+        span_id=components.span_id,
+        root_span_id=components.root_span_id,
+        state=state,
+        lookup_span_parent=False,
+        internal={"skip_initial_span_write": True},
+    )
+
+
 @dataclasses.dataclass
 class ParentSpanIds:
     span_id: str
@@ -4744,7 +4803,8 @@ class SpanImpl(Span):
             span_attributes=dict(**{"type": type, "name": name, **span_attributes}, exec_counter=exec_counter),
             created=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         )
-        self._instrumentation = (internal or {}).get("instrumentation") or "braintrust-python-logger"
+        internal = internal or {}
+        self._instrumentation = internal.get("instrumentation") or "braintrust-python-logger"
         internal_data["context"] = merge_span_origin_context(
             caller_location or {},
             self._instrumentation,
@@ -4759,8 +4819,8 @@ class SpanImpl(Span):
 
         # Resolve all span IDs (span_id, root_span_id, span_parents)
         span_ids = _resolve_span_ids(
-            span_id=span_id,
-            root_span_id=root_span_id,
+            span_id=internal.get("span_id", span_id),
+            root_span_id=internal.get("root_span_id", root_span_id),
             parent_span_ids=parent_span_ids,
             lookup_span_parent=lookup_span_parent,
             id_generator=self.state.id_generator,
@@ -4772,8 +4832,9 @@ class SpanImpl(Span):
 
         # The first log is a replacement, but subsequent logs to the same span
         # object will be merges.
-        self._is_merge = False
-        self.log_internal(event=event, internal_data=internal_data)
+        self._is_merge = internal.get("initial_span_write_as_merge", False)
+        if not internal.get("skip_initial_span_write", False):
+            self.log_internal(event=event, internal_data=internal_data)
         self._is_merge = True
 
     @property
