@@ -5,9 +5,14 @@ import logging
 from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
+    AccuracyEvalPatcher,
+    AgentAsJudgeEvalPatcher,
     AgentPatcher,
+    EvalSuitePatcher,
     FunctionCallPatcher,
     ModelPatcher,
+    PerformanceEvalPatcher,
+    ReliabilityEvalPatcher,
     TeamPatcher,
     WorkflowPatcher,
 )
@@ -28,4 +33,9 @@ class AgnoIntegration(BaseIntegration):
         ModelPatcher,
         FunctionCallPatcher,
         WorkflowPatcher,
+        AccuracyEvalPatcher,
+        AgentAsJudgeEvalPatcher,
+        ReliabilityEvalPatcher,
+        PerformanceEvalPatcher,
+        EvalSuitePatcher,
     )

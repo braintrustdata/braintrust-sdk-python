@@ -72,6 +72,43 @@ assert hasattr(FunctionCall, "aexecute") and hasattr(FunctionCall.aexecute, "__w
     "FunctionCall.aexecute should be wrapped"
 )
 
+# Eval classes (agno.eval). These live in submodules the eval package imports lazily,
+# so this also verifies auto_instrument imports and patches them in a fresh process.
+# agent_as_judge (agno >= 2.4) and suite (agno >= 2.9) are absent in older versions.
+import importlib
+
+
+def check_eval_targets_wrapped(module_path, targets):
+    try:
+        module = importlib.import_module(module_path)
+    except ImportError:
+        print(f"{module_path} not present in this agno version, skipped")
+        return
+    for target in targets:
+        obj = module
+        for part in target.split("."):
+            obj = getattr(obj, part)
+        assert hasattr(obj, "__wrapped__"), f"{module_path}.{target} should be wrapped"
+    print(f"{module_path} wrapped: {', '.join(targets)}")
+
+
+check_eval_targets_wrapped(
+    "agno.eval.accuracy",
+    ["AccuracyEval.run", "AccuracyEval.arun", "AccuracyEval.evaluate_answer", "AccuracyEval.aevaluate_answer"],
+)
+check_eval_targets_wrapped(
+    "agno.eval.agent_as_judge",
+    [
+        "AgentAsJudgeEval.run",
+        "AgentAsJudgeEval.arun",
+        "AgentAsJudgeEval.post_check",
+        "AgentAsJudgeEval.async_post_check",
+    ],
+)
+check_eval_targets_wrapped("agno.eval.reliability", ["ReliabilityEval.run", "ReliabilityEval.arun"])
+check_eval_targets_wrapped("agno.eval.performance", ["PerformanceEval.run", "PerformanceEval.arun"])
+check_eval_targets_wrapped("agno.eval.suite", ["arun_cases", "_arun_case"])
+
 # 4. Make API call and verify spans
 with autoinstrument_test_context("test_auto_agno", integration="agno") as memory_logger:
     from agno.models.openai import OpenAIChat

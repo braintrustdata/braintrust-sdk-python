@@ -1,0 +1,337 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"developer","content":"Answer with the final number
+      only."},{"role":"user","content":"What is 10*5? Use your tools."}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"add","description":"Add
+      two numbers and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"divide","description":"Divide
+      first number by second and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      Numerator."},"b":{"type":"number","description":"(float) Denominator."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"exponentiate","description":"Raise
+      first number to the power of the second number and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      Base."},"b":{"type":"number","description":"(float) Exponent."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"factorial","description":"Calculate
+      the factorial of a number and return the result.","parameters":{"type":"object","properties":{"n":{"type":"integer","description":"(int)
+      Number to calculate the factorial of."}},"required":["n"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"is_prime","description":"Check
+      if a number is prime and return the result.","parameters":{"type":"object","properties":{"n":{"type":"integer","description":"(int)
+      Number to check if prime."}},"required":["n"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"multiply","description":"Multiply
+      two numbers and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"square_root","description":"Calculate
+      the square root of a number and return the result.","parameters":{"type":"object","properties":{"n":{"type":"number","description":"(float)
+      Number to calculate the square root of."}},"required":["n"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"subtract","description":"Subtract
+      second number from first and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2955'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EIyqZPEa6aCPLWCYWF7iY0cWKZR4c\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788192507,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_bI5onRCPFYzYhMcOlqOyr3rs\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"multiply\",\n
+        \             \"arguments\": \"{\\\"a\\\":10,\\\"b\\\":5}\"\n            }\n
+        \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 351,\n    \"completion_tokens\":
+        17,\n    \"total_tokens\": 368,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_ed36603d78\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a33d4b3e9d6a39e4-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1081'
+      content-type:
+      - application/json
+      date:
+      - Mon, 31 Aug 2026 16:08:27 GMT
+      openai-processing-ms:
+      - '718'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_f2b8c5fb567f4362a0a2a29a0cb67da9
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"developer","content":"Answer with the final number
+      only."},{"role":"user","content":"What is 10*5? Use your tools."},{"role":"assistant","tool_calls":[{"id":"call_bI5onRCPFYzYhMcOlqOyr3rs","function":{"arguments":"{\"a\":10,\"b\":5}","name":"multiply"},"type":"function"}],"content":""},{"role":"tool","content":"{\"operation\":
+      \"multiplication\", \"result\": 50.0}","tool_call_id":"call_bI5onRCPFYzYhMcOlqOyr3rs"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"add","description":"Add
+      two numbers and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"divide","description":"Divide
+      first number by second and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      Numerator."},"b":{"type":"number","description":"(float) Denominator."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"exponentiate","description":"Raise
+      first number to the power of the second number and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      Base."},"b":{"type":"number","description":"(float) Exponent."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"factorial","description":"Calculate
+      the factorial of a number and return the result.","parameters":{"type":"object","properties":{"n":{"type":"integer","description":"(int)
+      Number to calculate the factorial of."}},"required":["n"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"is_prime","description":"Check
+      if a number is prime and return the result.","parameters":{"type":"object","properties":{"n":{"type":"integer","description":"(int)
+      Number to check if prime."}},"required":["n"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"multiply","description":"Multiply
+      two numbers and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"square_root","description":"Calculate
+      the square root of a number and return the result.","parameters":{"type":"object","properties":{"n":{"type":"number","description":"(float)
+      Number to calculate the square root of."}},"required":["n"]},"requires_confirmation":false,"external_execution":false}},{"type":"function","function":{"name":"subtract","description":"Subtract
+      second number from first and return the result.","parameters":{"type":"object","properties":{"a":{"type":"number","description":"(float)
+      First number."},"b":{"type":"number","description":"(float) Second number."}},"required":["a","b"]},"requires_confirmation":false,"external_execution":false}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '3254'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EIyqZMBDxXz7oJq7P9H39aCWr3jjX\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788192507,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"50.0\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 390,\n    \"completion_tokens\":
+        4,\n    \"total_tokens\": 394,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_ed36603d78\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a33d4b441bb839e4-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '812'
+      content-type:
+      - application/json
+      date:
+      - Mon, 31 Aug 2026 16:08:28 GMT
+      openai-processing-ms:
+      - '393'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999967'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_58cf3b9384174aa9a7d4a16e1ed7660b
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"session_id":"fc9f316b-982c-4eb6-9039-4d7d87f9bf18","run_id":"4b4633c8-e59e-4de8-bf37-e9c664c511f4","data":{"agent_id":"calculator-agent","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.9.0","type":"agent"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '499'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.9.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/runs
+  response:
+    body:
+      string: '{"message":"Run creation acknowledged: 4b4633c8-e59e-4de8-bf37-e9c664c511f4","status":"success"}'
+    headers:
+      content-length:
+      - '96'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 31 Aug 2026 16:08:28 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"run_id":"c719de65-3cba-40f8-9ec8-dadf7a7f24e7","eval_type":"reliability","data":{"team_id":null,"agent_id":"calculator-agent","model_id":"gpt-4o-mini","model_provider":"OpenAI"},"sdk_version":"2.9.0"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '202'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.9.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/evals
+  response:
+    body:
+      string: '{"message":"Eval creation acknowledged: c719de65-3cba-40f8-9ec8-dadf7a7f24e7","status":"success"}'
+    headers:
+      content-length:
+      - '97'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 31 Aug 2026 16:08:28 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+version: 1

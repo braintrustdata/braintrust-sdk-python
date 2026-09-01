@@ -1,0 +1,217 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"developer","content":"You are an expert evaluator.
+      Score outputs objectively based on the provided criteria.\n## Criteria\nThe
+      response is polite and mentions renewable energy.\n\n## Scoring (1-10)\n- 1-2:
+      Completely fails the criteria\n- 3-4: Major issues\n- 5-6: Partial success with
+      significant issues\n- 7-8: Mostly meets criteria with minor issues\n- 9-10:
+      Fully meets or exceeds criteria\n\n## Instructions\n1. Carefully evaluate the
+      output against the criteria above\n2. Provide a score from 1-10\n3. Provide
+      detailed reasoning that references specific parts of the output\n\nBe objective
+      and thorough in your evaluation."},{"role":"user","content":"<input>\nTell me
+      about renewable energy.\n</input>\n\n<output>\nCertainly! Renewable energy comes
+      from sources like wind and solar power.\n</output>\n"}],"model":"gpt-4o-mini","response_format":{"type":"json_schema","json_schema":{"name":"NumericJudgeResponse","schema":{"description":"Response
+      schema for numeric scoring mode.","properties":{"score":{"description":"Score
+      between 1 and 10.","maximum":10,"minimum":1,"title":"Score","type":"integer"},"reason":{"description":"Detailed
+      reasoning for the evaluation.","title":"Reason","type":"string"}},"required":["score","reason"],"title":"NumericJudgeResponse","type":"object","additionalProperties":false},"strict":true}}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1353'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EIywOHF8v9p3H76XnhIGxL42X1rXB\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788192868,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"{\\\"score\\\":6,\\\"reason\\\":\\\"The
+        response mentions renewable energy and provides examples of sources like wind
+        and solar power, which is a positive aspect. However, it lacks politeness
+        such as a greeting or closing remark. While it is informative, a more engaging
+        and respectful tone would enhance the overall quality of the response.\\\"}\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        255,\n    \"completion_tokens\": 64,\n    \"total_tokens\": 319,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_75a1a369d7\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a33d541258a864a6-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '1143'
+      content-type:
+      - application/json
+      date:
+      - Mon, 31 Aug 2026 16:14:29 GMT
+      openai-processing-ms:
+      - '923'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999812'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_91e8f78720bd460db176e1e8fe798fa5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"session_id":"c359cf17-eb42-4db5-bcdc-1d085ece22d7","run_id":"a46b8c96-125c-43e6-8ad3-ad08b886bda2","data":{"agent_id":"fad36f29-8415-4ddd-ae84-4dc02a34853b","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":true,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '518'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.4.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/runs
+  response:
+    body:
+      string: '{"message":"Run creation acknowledged: a46b8c96-125c-43e6-8ad3-ad08b886bda2","status":"success"}'
+    headers:
+      content-length:
+      - '96'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 31 Aug 2026 16:14:29 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"run_id":"4527ea38-c581-433b-864e-deba822baf37","eval_type":"agent_as_judge","data":{"criteria_length":53,"scoring_strategy":"numeric","threshold":7,"num_results":1},"sdk_version":"2.4.0"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '189'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.4.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/evals
+  response:
+    body:
+      string: '{"detail":[{"type":"enum","loc":["body","eval_type"],"msg":"Input should
+        be ''accuracy'', ''performance'' or ''reliability''","input":"agent_as_judge","ctx":{"expected":"''accuracy'',
+        ''performance'' or ''reliability''"}}]}'
+    headers:
+      content-length:
+      - '211'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Mon, 31 Aug 2026 16:14:29 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 422
+      message: Unprocessable Entity
+version: 1
