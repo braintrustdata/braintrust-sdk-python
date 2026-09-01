@@ -429,6 +429,7 @@ async def test_durable_logging_uses_stable_spans_and_resume_metadata(
     monkeypatch.setattr(experiment, "summarize", lambda **_kwargs: local_summary)
     submitted = []
     trace_configurations = []
+    classifier_trace_configurations = []
 
     async def submit(items, _context):
         submitted.extend(items)
@@ -437,6 +438,10 @@ async def test_durable_logging_uses_stable_spans_and_resume_metadata(
     def scorer(output, expected, trace):
         trace_configurations.append(trace.get_configuration())
         return output == expected
+
+    def classifier(output, trace):
+        classifier_trace_configurations.append(trace.get_configuration())
+        return {"id": "positive"}
 
     durable_eval = define_durable_eval(
         "project",
@@ -450,6 +455,7 @@ async def test_durable_logging_uses_stable_spans_and_resume_metadata(
             ],
         ),
         scores=[scorer],
+        classifiers=[classifier],
         experiment_name="durable",
     )
 
@@ -458,7 +464,7 @@ async def test_durable_logging_uses_stable_spans_and_resume_metadata(
     logs = with_memory_logger.pop()
 
     assert result.status == "completed"
-    assert len(logs) == 3
+    assert len(logs) == 4
     roots = [row for row in logs if not row["span_parents"]]
     assert len(roots) == 1
     assert roots[0]["metadata"]["durable_eval"] == {
@@ -473,7 +479,8 @@ async def test_durable_logging_uses_stable_spans_and_resume_metadata(
             "root_span_id": roots[0]["root_span_id"],
         }
     ]
-    assert len({row["span_id"] for row in logs}) == 3
+    assert classifier_trace_configurations == trace_configurations
+    assert len({row["span_id"] for row in logs}) == 4
     await durable_eval.status(result.run_id)
     assert with_memory_logger.pop() == []
 

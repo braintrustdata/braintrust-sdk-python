@@ -1205,11 +1205,12 @@ class _DurableEvalRunner(Generic[Input, Output, Expected]):
             if not await self._claim(run_id, f"classification:{name}:{item_id}"):
                 return
             task_result = await self._required(run_id, "task-result", item_id)
+            trace = await self._trace_for_case(run, item_id)
             raw = await call_user_fn(
                 asyncio.get_running_loop(),
                 classifier,
                 **_scorer_args(case, task_result),
-                trace=None,
+                trace=trace,
             )
             if raw is None:
                 values: list[Any] = []
