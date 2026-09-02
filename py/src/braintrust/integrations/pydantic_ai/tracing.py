@@ -364,6 +364,8 @@ def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any)
         input_data["model_settings"] = model_settings
 
     metadata = _build_model_metadata(model_name, provider, model_settings=None)
+    if model_settings is not None:
+        metadata["invocation_params"] = model_settings
 
     return model_name, display_name, input_data, metadata
 
