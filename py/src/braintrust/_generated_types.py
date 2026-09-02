@@ -1691,7 +1691,16 @@ class ProjectAutomationConfigAction1(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Instructions for Loop to format content sent to this destination
+    Publish a Slack mrkdwn digest.
+
+    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+
+    Use this row format exactly:
+    • <pattern_url|Pattern title> — `outcome`
+
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
     """
 
 
@@ -1817,7 +1826,16 @@ class ProjectAutomationConfig4Action1(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Instructions for Loop to format content sent to this destination
+    Publish a Slack mrkdwn digest.
+
+    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+
+    Use this row format exactly:
+    • <pattern_url|Pattern title> — `outcome`
+
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
     """
 
 
@@ -2003,6 +2021,10 @@ class ProjectSettings(TypedDict):
     monitor_charts_use_metrics_start: NotRequired[bool | None]
     """
     If true, use metrics.start rather than created for monitor chart time bucket dimensions.
+    """
+    blind_reviews: NotRequired[bool | None]
+    """
+    If true, hide peer review scores, comments, and aggregate results from reviewers without project update permissions until they submit their own review.
     """
     default_preprocessor: NotRequired[NullableSavedFunctionId | None]
 
@@ -2663,7 +2685,16 @@ class TopicDigestAutomationConfigAction(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Instructions for Loop to format content sent to this destination
+    Publish a Slack mrkdwn digest.
+
+    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+
+    Use this row format exactly:
+    • <pattern_url|Pattern title> — `outcome`
+
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
     """
 
 
@@ -3061,6 +3092,7 @@ class WindowedAutomationConfigLoop(TypedDict):
     """
     harness: NotRequired[Literal['native', 'codex', 'claude-code'] | None]
     model: NotRequired[str | None]
+    endpoint_name: NotRequired[str | None]
     reasoning_effort: NotRequired[
         Literal['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']
     ]
@@ -3100,7 +3132,16 @@ class WindowedAutomationConfigActions1(TypedDict):
     """
     formatting_prompt: NotRequired[str | None]
     """
-    Instructions for Loop to format content sent to this destination
+    Publish a Slack mrkdwn digest.
+
+    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+
+    Use this row format exactly:
+    • <pattern_url|Pattern title> — `outcome`
+
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
     """
 
 
