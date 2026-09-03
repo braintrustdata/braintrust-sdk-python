@@ -67,6 +67,19 @@ class TestLRUCache(unittest.TestCase):
         with self.assertRaises(KeyError):
             cache.get("b")
 
+    def test_on_remove_runs_for_replacement_eviction_and_clear(self):
+        removed = []
+        cache = lru_cache.LRUCache[str, int](max_size=2, on_remove=lambda key, value: removed.append((key, value)))
+
+        cache.set("a", 1)
+        cache.set("a", 1)  # Re-setting the same value is not a removal.
+        cache.set("a", 2)
+        cache.set("b", 3)
+        cache.set("c", 4)
+        cache.clear()
+
+        self.assertEqual(removed, [("a", 1), ("a", 2), ("b", 3), ("c", 4)])
+
 
 if __name__ == "__main__":
     unittest.main()

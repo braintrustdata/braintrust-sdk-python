@@ -66,6 +66,27 @@ class TestPromptCache(unittest.TestCase):
         result = self.cache.get(slug="test-prompt", version="789", project_id="123")
         self.assertEqual(result.as_dict(), self.test_prompt.as_dict())
 
+    def test_cache_namespace_isolates_memory_and_disk_entries(self):
+        self.cache.set(
+            self.test_prompt,
+            slug="test-prompt",
+            project_id="123",
+            cache_namespace="first-credential",
+        )
+
+        result = self.cache.get(
+            slug="test-prompt",
+            project_id="123",
+            cache_namespace="first-credential",
+        )
+        self.assertEqual(result.as_dict(), self.test_prompt.as_dict())
+        with self.assertRaises(KeyError):
+            self.cache.get(
+                slug="test-prompt",
+                project_id="123",
+                cache_namespace="second-credential",
+            )
+
     def test_work_with_project_name(self):
         self.cache.set(self.test_prompt, slug="test-prompt", version="789", project_name="test-project")
         result = self.cache.get(slug="test-prompt", version="789", project_name="test-project")

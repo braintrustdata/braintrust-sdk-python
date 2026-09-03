@@ -965,10 +965,13 @@ async def test_agent_with_model_settings_in_metadata(memory_logger):
     assert chat_settings["max_tokens"] == 100
     assert chat_settings["temperature"] == 0.5
 
-    # Verify model_settings is NOT in chat metadata (it's in input)
+    assert chat_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    invocation_params = chat_span["metadata"]["invocation_params"]
+    assert invocation_params["max_tokens"] == 100
+    assert invocation_params["temperature"] == 0.5
+
     assert "model_settings" not in chat_span["metadata"], "model_settings should NOT be in chat span metadata"
 
-    # Verify other metadata is present
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"
 

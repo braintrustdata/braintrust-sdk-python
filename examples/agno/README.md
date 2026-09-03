@@ -9,6 +9,8 @@ Each script calls `braintrust.auto_instrument()` before importing `agno`, so all
 | `async_simple_agent_stream.py` | one agent, async + streamed |
 | `team_agent.py` | research + advisor team, sync |
 | `async_team_agent.py` | research + advisor team, async + streamed |
+| `accuracy_eval.py` | `AccuracyEval` over one agent, scored in Braintrust |
+| `eval_suite.py` | an `agno.eval` suite; each `Case` becomes an experiment row |
 
 ## Run
 

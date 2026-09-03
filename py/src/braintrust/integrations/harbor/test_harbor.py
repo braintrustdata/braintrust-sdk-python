@@ -15,7 +15,13 @@ from braintrust import flush, init
 from braintrust.conftest import get_vcr_config
 from braintrust.git_fields import GitMetadataSettings
 from braintrust.integrations.harbor.atif import _usage_metrics, import_trajectory, summarize_trajectory
-from braintrust.integrations.harbor.compat import artifact_manifest_paths, load_backfill_snapshot
+from braintrust.integrations.harbor.compat import (
+    JobSnapshot,
+    TaskData,
+    TrialPlan,
+    artifact_manifest_paths,
+    load_backfill_snapshot,
+)
 from braintrust.integrations.harbor.config import PluginConfig
 from braintrust.integrations.harbor.identity import (
     child_span_id,
@@ -27,13 +33,18 @@ from braintrust.integrations.harbor.identity import (
     semantic_agent_config,
 )
 from braintrust.integrations.harbor.plugin import (
+    DatasetBinding,
     HarborPlugin,
+    Partition,
     RuntimeState,
     _artifact_attachments,
     _attachment,
+    _read_safe_file,
     _resolve_project,
     _seconds,
     _timing,
+    _verifier_evidence,
+    _verifier_output_attachment,
 )
 from braintrust.integrations.harbor.rewards import classify_rewards, validate_classifications
 from braintrust.integrations.harbor.state import (
@@ -47,13 +58,20 @@ from braintrust.integrations.harbor.state import (
     reduce_job,
     reduce_trial,
 )
+from braintrust.test_helpers import (  # noqa: F401
+    find_span_by_name,
+    find_spans_by_type,
+    init_test_exp,
+    with_memory_logger,
+    with_simulate_login,
+)
 from harbor.models.job.config import JobConfig, RetryConfig
 from harbor.models.job.lock import AgentSkillLock, JobLock, TaskLock, TrialLock
 from harbor.models.job.result import JobResult, JobStats
 from harbor.models.task.id import LocalTaskId
 from harbor.models.trajectories.trajectory import Trajectory
 from harbor.models.trial.config import AgentConfig, EnvironmentConfig, TaskConfig, TrialConfig
-from harbor.models.trial.result import AgentInfo, StepResult, TimingInfo, TrialResult
+from harbor.models.trial.result import AgentInfo, StepResult, TimingInfo, TrialResult, VerifierResult
 
 
 _ABSOLUTE_PATH_RE = re.compile(r"(?:/(?:Users|private|home)/[^\"\\\\\s]+|[A-Za-z]:\\\\[^\"\\\\\s]+)")
@@ -123,6 +141,13 @@ def test_plugin_defaults_project_to_harbor():
         None,
     )
     assert _resolve_project(PluginConfig.from_options(project_id="project-id")) == (None, "project-id")
+
+
+def test_attachment_modes_default_to_all_and_name_the_structured_only_tier():
+    assert PluginConfig.from_options().attachments == "all"
+    assert PluginConfig.from_options(attachments="structured").attachments == "structured"
+    with pytest.raises(ValueError, match="attachments must be 'none', 'structured', or 'all'"):
+        PluginConfig.from_options(attachments="verifier-details")
 
 
 def test_harbor_resolves_the_plugin_through_its_entry_point():
@@ -421,6 +446,14 @@ def _trial_result(trials_dir, trial_name, task_name, step_names=()):
     )
 
 
+def _verifier_trial(tmp_path):
+    """Build a single-phase trial with an empty verifier output directory."""
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    return result, verifier_dir
+
+
 def test_artifact_attachments_are_scoped_per_step(tmp_path):
     result = _trial_result(tmp_path, "trial-1", "task-a", step_names=("first", "second"))
     for step_name, contents in (("first", b"first output"), ("second", b"second output")):
@@ -441,9 +474,7 @@ def test_artifact_attachments_are_scoped_per_step(tmp_path):
     assert [step for step, _ in artifact_manifest_paths(result)] == ["first", "second"]
 
 
-def test_reward_details_attachment_uses_the_per_file_limit(tmp_path):
-    # A multi-step trial merges one reward-details file per step, so the combined
-    # payload can exceed the per-file limit while every source file fits.
+def test_reward_details_attachment_merges_every_step(tmp_path):
     entries = []
     for step in ("first", "second"):
         path = tmp_path / step / "reward-details.json"
@@ -451,19 +482,411 @@ def test_reward_details_attachment_uses_the_per_file_limit(tmp_path):
         path.write_text(json.dumps({"criteria": "x" * 400}))
         entries.append((step, path))
 
-    config = PluginConfig.from_options(max_attachment_bytes=600, max_total_attachment_bytes=100_000)
+    config = PluginConfig.from_options()
     attachment, summary, warnings = _attachment(entries, config)
 
-    assert attachment is None
+    assert attachment is not None
     # The summary keys each step's details, so a score cannot misattribute them.
     assert sorted(summary) == ["first", "second"]
-    assert any("attachment size limit" in warning for warning in warnings)
+    assert json.loads(attachment.data) == summary
+    assert warnings == []
 
     attachment, summary, warnings = _attachment([(None, entries[0][1])], config)
     assert attachment is not None
     assert attachment.reference["filename"] == "reward-details.json"
     assert summary == {"criteria": "x" * 400}
     assert warnings == []
+
+
+def test_oversized_trajectory_is_refused_before_it_is_parsed(tmp_path):
+    # trajectory.json is parsed into the host process rather than handed to
+    # object storage, so it keeps a bound of its own now that attachments do not.
+    trajectory_path = tmp_path / "trajectory.json"
+    trajectory_path.write_text(json.dumps({"steps": [{"step_id": 1, "source": "agent", "message": "hello"}]}))
+    oversized = PluginConfig.from_options(max_trajectory_bytes=4)
+
+    summarized = summarize_trajectory(trajectory_path, oversized)
+    assert summarized.warnings == ("trajectory omitted: size limit",)
+    assert summarized.final_message is None
+
+    imported = import_trajectory(
+        parent=None,
+        trajectory_path=trajectory_path,
+        trial_id="trial-1",
+        semantic_prefix="prefix",
+        phase_start=0.0,
+        phase_end=1.0,
+        config=oversized,
+    )
+    assert imported.warnings == ("trajectory omitted: size limit",)
+    assert imported.imported_llm_spans == 0
+
+    # The same document is imported normally under the default bound.
+    assert summarize_trajectory(trajectory_path, PluginConfig.from_options()).warnings == ()
+
+
+def test_verifier_output_attachment_collects_standard_harbor_evidence(tmp_path):
+    result, verifier_dir = _verifier_trial(tmp_path)
+    # write_bytes, not write_text: on Windows text mode would rewrite "\n" as
+    # "\r\n", and the plugin decodes the file's bytes exactly as written.
+    (verifier_dir / "test-stdout.txt").write_bytes(b"FAILED test_answer.py::test_count - assert 27 == 28\n")
+    (verifier_dir / "test-stderr.txt").write_bytes(b"token=secret-value\n")
+    (verifier_dir / "ctrf.json").write_text(
+        json.dumps(
+            {
+                "results": {
+                    "summary": {"tests": 1, "passed": 0, "failed": 1},
+                    "tests": [
+                        {
+                            "name": "test_answer.py::test_count",
+                            "status": "failed",
+                            "message": "assert 27 == 28",
+                            "trace": "Authorization: Bearer verifier-secret",
+                        }
+                    ],
+                }
+            }
+        )
+    )
+
+    config = PluginConfig.from_options(attachments="all", redact_patterns=(r"secret-value|Bearer verifier-secret",))
+    attachment, summary, warnings = _verifier_output_attachment(result, config)
+
+    assert summary == {
+        "stdout": "FAILED test_answer.py::test_count - assert 27 == 28\n",
+        "stderr": "token=[REDACTED]\n",
+        "ctrf": {
+            "results": {
+                "summary": {"tests": 1, "passed": 0, "failed": 1},
+                "tests": [
+                    {
+                        "name": "test_answer.py::test_count",
+                        "status": "failed",
+                        "message": "assert 27 == 28",
+                        "trace": "Authorization: [REDACTED]",
+                    }
+                ],
+            }
+        },
+    }
+    assert attachment is not None
+    assert attachment.reference["filename"] == "verifier-output.json"
+    assert json.loads(attachment.data) == summary
+    assert warnings == []
+
+
+def test_verifier_output_attachment_handles_invalid_utf8_and_configured_redaction(tmp_path):
+    result, verifier_dir = _verifier_trial(tmp_path)
+    (verifier_dir / "ctrf.json").write_bytes(b"\xff token=opaque-secret\n")
+
+    attachment, summary, warnings = _verifier_output_attachment(
+        result, PluginConfig.from_options(redact_patterns=(r"opaque-secret",))
+    )
+
+    assert attachment is not None
+    assert summary == {"ctrf": "\ufffd token=[REDACTED]\n"}
+    assert any("ctrf.json is not valid JSON" in warning for warning in warnings)
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "symlink",
+        pytest.param(
+            "fifo",
+            marks=pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="os.mkfifo is not available on Windows"),
+        ),
+    ],
+)
+def test_verifier_output_attachment_rejects_unsafe_file_types(tmp_path, kind):
+    result, verifier_dir = _verifier_trial(tmp_path)
+    stdout = verifier_dir / "test-stdout.txt"
+    if kind == "symlink":
+        secret = tmp_path / "host-secret"
+        secret.write_text("must not escape")
+        stdout.symlink_to(secret)
+    else:
+        os.mkfifo(stdout)
+
+    config = PluginConfig.from_options(attachments="all")
+    attachment, summary, warnings = _verifier_output_attachment(result, config)
+
+    assert attachment is None
+    assert summary is None
+    assert warnings == ["test-stdout.txt omitted: unsafe file type"]
+
+
+def test_safe_file_read_rejects_replacement_between_inspection_and_open(tmp_path, monkeypatch):
+    expected = tmp_path / "expected"
+    replacement = tmp_path / "replacement"
+    expected.write_text("safe")
+    replacement.write_text("must not escape")
+    real_open = os.open
+
+    def swap_after_inspection(_path, flags):
+        return real_open(replacement, flags)
+
+    monkeypatch.setattr(os, "open", swap_after_inspection)
+
+    assert _read_safe_file(expected) == (None, "unsafe file type")
+
+
+def test_verifier_output_attachment_scopes_steps_and_respects_attachment_mode(tmp_path):
+    result = _trial_result(tmp_path, "trial-1", "task-a", step_names=("first", "second"))
+    for step_name in ("first", "second"):
+        verifier_dir = tmp_path / "trial-1" / "steps" / step_name / "verifier"
+        verifier_dir.mkdir(parents=True)
+        (verifier_dir / "test-stdout.txt").write_bytes(f"{step_name} output\n".encode())
+        (verifier_dir / "ctrf.json").write_text(json.dumps({"step": step_name}))
+
+    attachment, summary, warnings = _verifier_output_attachment(result, PluginConfig.from_options(attachments="all"))
+
+    assert summary == {
+        "first": {"stdout": "first output\n", "ctrf": {"step": "first"}},
+        "second": {"stdout": "second output\n", "ctrf": {"step": "second"}},
+    }
+    assert attachment is not None
+    assert warnings == []
+
+    # Eval runs keep the full verifier evidence by default. The explicitly
+    # structured tier retains the machine-readable report without raw logs.
+    _, default_summary, default_warnings = _verifier_output_attachment(result, PluginConfig.from_options())
+    assert default_summary == summary
+    assert default_warnings == []
+
+    _, structured_summary, structured_warnings = _verifier_output_attachment(
+        result, PluginConfig.from_options(attachments="structured")
+    )
+    assert structured_summary == {
+        "first": {"ctrf": {"step": "first"}},
+        "second": {"ctrf": {"step": "second"}},
+    }
+    assert structured_warnings == []
+
+    assert _verifier_output_attachment(result, PluginConfig.from_options(attachments="none")) == (None, None, [])
+
+
+def test_verifier_summary_keeps_the_structure_the_attachment_kept(tmp_path):
+    # The span preview and the attachment are the same value, so a document
+    # nested deeper than normalize_json's default limit but within the limit the
+    # attachment uses must not be truncated in one and whole in the other.
+    result, verifier_dir = _verifier_trial(tmp_path)
+    nested = {"leaf": "kept"}
+    for _ in range(12):
+        nested = {"a": nested}
+    (verifier_dir / "ctrf.json").write_text(json.dumps(nested))
+
+    output, warnings = _verifier_evidence(result, PluginConfig.from_options())
+
+    assert warnings == []
+    assert output["verifier_output_summary"] == {"ctrf": nested}
+    assert json.loads(output["verifier_output"].data) == output["verifier_output_summary"]
+
+
+def test_deeply_nested_verifier_json_is_reported_not_raised(tmp_path):
+    # json.loads raises RecursionError rather than JSONDecodeError here, and it
+    # used to escape the sync between starting a trial's spans and logging them.
+    result, verifier_dir = _verifier_trial(tmp_path)
+    (verifier_dir / "ctrf.json").write_bytes(b"[" * 200_000 + b"]" * 200_000)
+
+    attachment, summary, warnings = _verifier_output_attachment(result, PluginConfig.from_options())
+
+    assert attachment is not None
+    assert summary["ctrf"].startswith("[[[")
+    assert warnings == ["ctrf.json is not valid JSON"]
+
+
+def test_deeply_nested_trajectory_is_reported_not_raised(tmp_path):
+    # trajectory.json is task-controlled too, and both readers parse it in-process.
+    trajectory_path = tmp_path / "trajectory.json"
+    trajectory_path.write_bytes(b"[" * 200_000 + b"]" * 200_000)
+    config = PluginConfig.from_options()
+
+    assert summarize_trajectory(trajectory_path, config).warnings == (
+        "trajectory unavailable or malformed: not valid JSON",
+    )
+
+    imported = import_trajectory(
+        parent=None,
+        trajectory_path=trajectory_path,
+        trial_id="trial-1",
+        semantic_prefix="prefix",
+        phase_start=0.0,
+        phase_end=1.0,
+        config=config,
+    )
+    assert imported.warnings == ("trajectory unavailable or malformed: not valid JSON",)
+
+
+def test_deeply_nested_reward_details_are_reported_not_raised(tmp_path):
+    path = tmp_path / "reward-details.json"
+    path.write_bytes(b"[" * 200_000 + b"]" * 200_000)
+
+    attachment, summary, warnings = _attachment([(None, path)], PluginConfig.from_options())
+
+    assert (attachment, summary) == (None, None)
+    assert warnings == ["reward-details.json is not valid JSON"]
+
+
+def _install_runtime(plugin, result, trials_dir, experiment):
+    """Point a plugin at one trial writing into a real Braintrust experiment."""
+    task = TaskData(
+        logical_key="task-key",
+        source="suite",
+        name="task-a",
+        input={"instruction": "solve"},
+        expected=None,
+        metadata={"harbor": {"custom": {}}},
+        digest=None,
+        schema_version=None,
+        task_dir=None,
+    )
+    plan = TrialPlan(result.trial_name, result.config, None, task, 0)
+    snapshot = JobSnapshot("job-id", "job", trials_dir, None, None, (plan,))
+    partition = Partition("partition", "experiment", "scope", experiment=experiment)
+    plugin._runtime = RuntimeState(
+        snapshot,
+        {result.trial_name: plan},
+        {result.trial_name: partition},
+        {"scope": DatasetBinding("scope")},
+        {"partition": partition},
+    )
+    plugin._trial_machines[result.trial_name] = TrialMachine(result.trial_name)
+
+
+def _sync_spans(plugin, result, experiment, memory_logger):
+    """Run one trial through the plugin and return its flushed spans."""
+    plugin._sync_final_result(result)
+    experiment.flush()
+    return memory_logger.pop()
+
+
+def _child_spans(spans, parent):
+    # Root spans carry span_parents=None rather than an empty list.
+    return [span for span in spans if parent["span_id"] in (span["span_parents"] or ())]
+
+
+def _scored_verifier_trial(tmp_path):
+    result, verifier_dir = _verifier_trial(tmp_path)
+    result.verifier_result = VerifierResult(rewards={"reward": 0.25})
+    (verifier_dir / "test-stdout.txt").write_bytes(b"assert 1 == 2\n")
+    (verifier_dir / "ctrf.json").write_text(json.dumps({"failed": 1}))
+    return result
+
+
+@pytest.mark.parametrize(
+    ("attachments", "expected_summary"),
+    [
+        ("structured", {"ctrf": {"failed": 1}}),
+        ("all", {"ctrf": {"failed": 1}, "stdout": "assert 1 == 2\n"}),
+    ],
+)
+def test_final_sync_logs_verifier_evidence_on_verification_and_score_spans(
+    tmp_path, attachments, expected_summary, with_memory_logger, with_simulate_login
+):
+    result = _scored_verifier_trial(tmp_path)
+    experiment = init_test_exp("harbor-verifier-evidence", "harbor")
+    plugin = HarborPlugin(attachments=attachments)
+    _install_runtime(plugin, result, tmp_path, experiment)
+
+    spans = _sync_spans(plugin, result, experiment, with_memory_logger)
+
+    verification = find_span_by_name(spans, "verification")
+    scorer = find_spans_by_type(spans, "score")[0]
+    assert verification["output"]["verifier_output_summary"] == expected_summary
+    # The real serializer replaces the attachment with the reference that is
+    # stored on the span, and queues the payload itself for upload.
+    reference = verification["output"]["verifier_output"]
+    assert reference["type"] == "braintrust_attachment"
+    assert reference["filename"] == "verifier-output.json"
+    assert scorer["output"]["verifier_output_summary"] == verification["output"]["verifier_output_summary"]
+    assert scorer["output"]["verifier_output"] == reference
+    uploaded = {attachment.reference["key"] for attachment in with_memory_logger.upload_attempts}
+    assert reference["key"] in uploaded
+
+
+def test_final_sync_logs_no_verifier_evidence_when_attachments_are_disabled(
+    tmp_path, with_memory_logger, with_simulate_login
+):
+    result = _scored_verifier_trial(tmp_path)
+    experiment = init_test_exp("harbor-verifier-evidence", "harbor")
+    plugin = HarborPlugin(attachments="none")
+    _install_runtime(plugin, result, tmp_path, experiment)
+
+    spans = _sync_spans(plugin, result, experiment, with_memory_logger)
+
+    verification = find_span_by_name(spans, "verification")
+    assert "verifier_output_summary" not in (verification.get("output") or {})
+    assert "verifier_output" not in find_spans_by_type(spans, "score")[0]["output"]
+    assert with_memory_logger.upload_attempts == []
+
+
+def test_verification_span_keeps_verifier_evidence_without_scores(tmp_path, with_memory_logger, with_simulate_login):
+    # The verification span owns the attachment, so unevaluated trials do not
+    # lose their complete evidence merely because no score span is created.
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    result.verifier_result = VerifierResult(rewards=None)
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    (verifier_dir / "ctrf.json").write_text(json.dumps({"failed": 1}))
+
+    experiment = init_test_exp("harbor-verifier-evidence", "harbor")
+    plugin = HarborPlugin()
+    _install_runtime(plugin, result, tmp_path, experiment)
+
+    spans = _sync_spans(plugin, result, experiment, with_memory_logger)
+
+    assert not find_spans_by_type(spans, "score")
+    verification = find_span_by_name(spans, "verification")
+    assert verification["output"]["verifier_output"]["type"] == "braintrust_attachment"
+
+
+def test_trajectory_images_and_verifier_evidence_are_both_logged(tmp_path, with_memory_logger, with_simulate_login):
+    # ATIF images and verifier evidence are independent: neither competes with
+    # the other for a shared budget.
+    result = _trial_result(tmp_path, "trial-1", "task-a")
+    result.verifier_result = VerifierResult(rewards={"reward": 0.25})
+    verifier_dir = tmp_path / "trial-1" / "verifier"
+    verifier_dir.mkdir(parents=True)
+    (verifier_dir / "ctrf.json").write_text(json.dumps({"failed": 1}))
+    agent_dir = tmp_path / "trial-1" / "agent"
+    agent_dir.mkdir(parents=True)
+    (agent_dir / "first.png").write_bytes(b"i" * 600)
+    (agent_dir / "second.png").write_bytes(b"j" * 600)
+    (agent_dir / "trajectory.json").write_text(
+        json.dumps(
+            {
+                "steps": [
+                    {
+                        "step_id": 1,
+                        "source": "agent",
+                        "message": [
+                            {"type": "image", "source": {"path": "first.png", "media_type": "image/png"}},
+                            {"type": "image", "source": {"path": "second.png", "media_type": "image/png"}},
+                        ],
+                    }
+                ]
+            }
+        )
+    )
+
+    experiment = init_test_exp("harbor-verifier-evidence", "harbor")
+    plugin = HarborPlugin()
+    _install_runtime(plugin, result, tmp_path, experiment)
+
+    spans = _sync_spans(plugin, result, experiment, with_memory_logger)
+
+    agent_execution = find_span_by_name(spans, "agent_execution")
+    trajectory_step = _child_spans(spans, agent_execution)[0]
+    message = trajectory_step["output"]["message"]
+    assert [part["type"] for part in message] == ["image_url", "image_url"]
+    assert all(part["image_url"]["url"]["type"] == "braintrust_attachment" for part in message)
+    assert find_span_by_name(spans, "verification")["output"]["verifier_output_summary"] == {"ctrf": {"failed": 1}}
+    # Both images and the verifier payload reach the uploader.
+    assert sorted(a.data for a in with_memory_logger.upload_attempts if a.data in (b"i" * 600, b"j" * 600)) == [
+        b"i" * 600,
+        b"j" * 600,
+    ]
 
 
 def test_disabled_plugin_does_not_reconcile_or_write_spans():
