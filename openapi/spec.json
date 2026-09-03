@@ -64,6 +64,11 @@
         "format": "uuid",
         "description": "Group id"
       },
+      "ProjectGroupIdParam": {
+        "type": "string",
+        "format": "uuid",
+        "description": "ProjectGroup id"
+      },
       "AclIdParam": {
         "type": "string",
         "format": "uuid",
@@ -83,6 +88,11 @@
         "type": "string",
         "format": "uuid",
         "description": "ProjectAutomation id"
+      },
+      "OrgAutomationIdParam": {
+        "type": "string",
+        "format": "uuid",
+        "description": "OrgAutomation id"
       },
       "ProjectScoreIdParam": {
         "type": "string",
@@ -177,6 +187,10 @@
         "type": "string",
         "description": "Name of the group to search for"
       },
+      "ProjectGroupName": {
+        "type": "string",
+        "description": "Name of the project_group to search for"
+      },
       "AgentName": {
         "type": "string",
         "description": "Name of the agent to search for"
@@ -184,6 +198,10 @@
       "ProjectAutomationName": {
         "type": "string",
         "description": "Name of the project_automation to search for"
+      },
+      "OrgAutomationName": {
+        "type": "string",
+        "description": "Name of the org_automation to search for"
       },
       "ProjectScoreName": {
         "type": "string",
@@ -397,7 +415,10 @@
           "org_member",
           "project_log",
           "org_project",
-          "org_audit_logs"
+          "org_audit_logs",
+          "project_group",
+          "ai_secret",
+          "org_ai_secret"
         ],
         "description": "The object type that the ACL applies to"
       },
@@ -420,7 +441,10 @@
           "org_member",
           "project_log",
           "org_project",
-          "org_audit_logs"
+          "org_audit_logs",
+          "project_group",
+          "ai_secret",
+          "org_ai_secret"
         ],
         "description": "The object type that the ACL applies to"
       },
@@ -467,7 +491,10 @@
           "org_member",
           "project_log",
           "org_project",
-          "org_audit_logs"
+          "org_audit_logs",
+          "project_group",
+          "ai_secret",
+          "org_ai_secret"
         ],
         "description": "The object type that the ACL applies to"
       },
@@ -675,6 +702,16 @@
             "type": "boolean",
             "nullable": true,
             "description": "If true, disable real-time queries for this project. This can improve query performance for high-volume logs."
+          },
+          "monitor_charts_use_metrics_start": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "If true, use metrics.start rather than created for monitor chart time bucket dimensions."
+          },
+          "blind_reviews": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "If true, hide peer review scores, comments, and aggregate results from reviewers without project update permissions until they submit their own review."
           },
           "default_preprocessor": {
             "$ref": "#/components/schemas/NullableSavedFunctionId"
@@ -3249,6 +3286,13 @@
                 "enum": [
                   "ephemeral"
                 ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
+                ]
               }
             },
             "required": [
@@ -3280,6 +3324,13 @@
                 "type": "string",
                 "enum": [
                   "ephemeral"
+                ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
                 ]
               }
             },
@@ -3337,6 +3388,27 @@
             "enum": [
               "image_url"
             ]
+          },
+          "cache_control": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ephemeral"
+                ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
           }
         },
         "required": [
@@ -3370,6 +3442,27 @@
             "type": "string",
             "enum": [
               "file"
+            ]
+          },
+          "cache_control": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "ephemeral"
+                ]
+              },
+              "ttl": {
+                "type": "string",
+                "enum": [
+                  "5m",
+                  "1h"
+                ]
+              }
+            },
+            "required": [
+              "type"
             ]
           }
         },
@@ -4133,6 +4226,10 @@
           },
           "position": {
             "type": "string"
+          },
+          "endpoint_name": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -4168,12 +4265,95 @@
           "allow_no_match": {
             "type": "boolean",
             "description": "If true, adds a 'No match' option. When selected, no tag is deposited."
+          },
+          "allow_skip": {
+            "type": "boolean",
+            "description": "If true, adds a 'Skip' option. When selected, the scorer returns null."
           }
         },
         "required": [
           "type",
           "use_cot"
         ]
+      },
+      "PreprocessorId": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "function"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string",
+                "description": "The version of the function"
+              }
+            },
+            "required": [
+              "type",
+              "id"
+            ],
+            "title": "function"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "global"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "function_type": {
+                "type": "string",
+                "enum": [
+                  "preprocessor"
+                ],
+                "default": "preprocessor",
+                "description": "The type of global function. Defaults to 'preprocessor'."
+              }
+            },
+            "required": [
+              "type",
+              "name"
+            ],
+            "title": "preprocessor_global"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "inline"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The complete JavaScript preprocessor implementation, including its handler."
+              }
+            },
+            "required": [
+              "type",
+              "code"
+            ],
+            "title": "preprocessor_inline"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "For prompt-backed functions: the saved, global, or inline preprocessor to use for trace template variables. Set to null to disable preprocessing. If omitted, the traced project's default preprocessor will be used, falling back to the global 'thread' preprocessor."
       },
       "PromptDataNullish": {
         "type": "object",
@@ -4187,6 +4367,9 @@
           },
           "parser": {
             "$ref": "#/components/schemas/PromptParserNullish"
+          },
+          "preprocessor": {
+            "$ref": "#/components/schemas/PreprocessorId"
           },
           "tool_functions": {
             "type": "array",
@@ -4895,6 +5078,123 @@
           }
         }
       },
+      "ProjectGroup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the project group"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique id for the organization that the project group belongs under\n\nIt is forbidden to change the org after creating a project group"
+          },
+          "user_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Identifies the user who created the project group"
+          },
+          "created": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date of project group creation"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the project group"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the project group"
+          },
+          "deleted_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date of project group deletion, or null if the project group is still active"
+          },
+          "member_projects": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 10000,
+            "description": "Sorted ids of active projects in this project group"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "name",
+          "member_projects"
+        ],
+        "description": "A project group is a collection of projects which can inherit access from project-group ACLs"
+      },
+      "CreateProjectGroup": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Name of the project group"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the project group"
+          },
+          "org_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "For nearly all users, this parameter should be unnecessary. But in the rare case that your API key belongs to multiple organizations, you may specify the name of the organization the project group belongs in."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "PatchProjectGroup": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "description": "Name of the project group"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the project group"
+          },
+          "add_member_projects": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 1000,
+            "description": "A list of project IDs to add to the project group"
+          },
+          "remove_member_projects": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 1000,
+            "description": "A list of project IDs to remove from the project group"
+          }
+        }
+      },
       "Acl": {
         "type": "object",
         "properties": {
@@ -5294,6 +5594,367 @@
         ],
         "description": "The object type that the retention policy applies to"
       },
+      "WindowedAutomationConfig": {
+        "type": "object",
+        "properties": {
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "windowed"
+            ],
+            "description": "The type of automation."
+          },
+          "product_origin": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "patterns",
+              null
+            ],
+            "description": "The product surface that created and manages the automation"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AutomationStatus"
+          },
+          "threshold": {
+            "type": "object",
+            "properties": {
+              "calculation": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "btql"
+                        ]
+                      },
+                      "btql_query": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "A project-scoped BTQL or SQL query without runtime-owned evaluation time bounds"
+                      },
+                      "output": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "scalar"
+                            ]
+                          },
+                          "value_column": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "The numeric result column produced by the query"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "value_column"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "btql_query",
+                      "output"
+                    ]
+                  }
+                ],
+                "description": "The calculation evaluated for each window"
+              },
+              "policy": {
+                "type": "object",
+                "properties": {
+                  "condition": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "threshold"
+                        ]
+                      },
+                      "operator": {
+                        "type": "string",
+                        "enum": [
+                          "lt",
+                          "lte",
+                          "gt",
+                          "gte",
+                          "eq",
+                          "neq"
+                        ]
+                      },
+                      "threshold": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "operator",
+                      "threshold"
+                    ]
+                  },
+                  "pending_seconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2592000,
+                    "description": "How long the condition must remain breached before firing"
+                  },
+                  "no_data_behavior": {
+                    "type": "string",
+                    "enum": [
+                      "keep_last",
+                      "resolve",
+                      "alert"
+                    ],
+                    "description": "How the lifecycle changes when the calculation returns no data"
+                  },
+                  "renotify_interval_seconds": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 1,
+                    "maximum": 2592000,
+                    "description": "Optional reminder interval while the automation is firing"
+                  },
+                  "notify_on_recovery": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to deliver actions when a firing automation recovers"
+                  }
+                },
+                "required": [
+                  "condition",
+                  "pending_seconds",
+                  "no_data_behavior"
+                ],
+                "description": "The lifecycle policy applied to each calculation result"
+              }
+            },
+            "required": [
+              "calculation",
+              "policy"
+            ],
+            "description": "Optional calculation and lifecycle policy that gate scheduled delivery"
+          },
+          "window": {
+            "type": "object",
+            "properties": {
+              "window_seconds": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2592000,
+                "description": "How much recent data each scheduled run covers"
+              },
+              "schedule": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "interval"
+                        ]
+                      },
+                      "evaluation_interval_seconds": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2592000,
+                        "description": "How often the automation runs"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "evaluation_interval_seconds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "cron"
+                        ]
+                      },
+                      "cron_expression": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "A standard five-field cron expression (minute hour day-of-month month day-of-week) controlling when the automation runs"
+                      },
+                      "timezone": {
+                        "type": "string",
+                        "nullable": true,
+                        "minLength": 1,
+                        "description": "IANA timezone used to interpret the cron expression (defaults to UTC)"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "cron_expression"
+                    ]
+                  }
+                ],
+                "description": "How often the windowed automation runs: at a fixed interval or on a cron schedule"
+              },
+              "evaluation_delay_seconds": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2592000,
+                "description": "How far behind the present each evaluation window ends"
+              }
+            },
+            "required": [
+              "window_seconds",
+              "schedule",
+              "evaluation_delay_seconds"
+            ]
+          },
+          "loop": {
+            "type": "object",
+            "properties": {
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 10000,
+                "description": "Instructions for the Loop agent"
+              },
+              "include_trigger_input": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to include the automation trigger payload as input"
+              },
+              "agent_slug": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The Loop agent to run"
+              },
+              "auto_approve_tools": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "default": [],
+                "description": "Write tools that may run without interactive approval"
+              },
+              "harness": {
+                "type": "string",
+                "enum": [
+                  "native",
+                  "codex",
+                  "claude-code"
+                ]
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1
+              },
+              "endpoint_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reasoning_effort": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "minimal",
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              }
+            },
+            "required": [
+              "prompt",
+              "agent_slug"
+            ],
+            "description": "Optional Loop agent to run for each triggered window"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "webhook"
+                      ],
+                      "description": "The type of action to take"
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "The webhook URL to send the request to"
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Instructions for Loop to format content sent to this destination"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "url"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "slack"
+                      ],
+                      "description": "The type of action to take"
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "description": "The Slack workspace ID to post to"
+                    },
+                    "channel": {
+                      "type": "string",
+                      "description": "The Slack channel ID to post to"
+                    },
+                    "message_template": {
+                      "type": "string",
+                      "description": "Custom message template for the alert"
+                    },
+                    "formatting_prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 10000,
+                      "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "workspace_id",
+                    "channel"
+                  ]
+                }
+              ],
+              "description": "A delivery action available to an automation"
+            },
+            "maxItems": 20,
+            "default": [],
+            "description": "Delivery actions exposed to Loop as tools, or run directly when Loop is not configured"
+          }
+        },
+        "required": [
+          "event_type",
+          "window"
+        ]
+      },
       "TopicAutomationFacetModel": {
         "type": "string",
         "nullable": true,
@@ -5533,7 +6194,7 @@
                 "type": "null"
               }
             ],
-            "description": "Execution scope for topic automation. Defaults to span-level execution."
+            "description": "Execution scope for topic automation."
           },
           "data_scope": {
             "$ref": "#/components/schemas/TopicAutomationDataScope"
@@ -5636,6 +6297,12 @@
               "message_template": {
                 "type": "string",
                 "description": "Custom message template for the alert"
+              },
+              "formatting_prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 10000,
+                "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
               }
             },
             "required": [
@@ -5706,6 +6373,9 @@
                     ],
                     "description": "The type of automation."
                   },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
                   "btql_filter": {
                     "type": "string",
                     "description": "BTQL filter to identify rows for the automation rule"
@@ -5731,6 +6401,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -5759,6 +6435,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
                           }
                         },
                         "required": [
@@ -6015,7 +6697,7 @@
                     "$ref": "#/components/schemas/RetentionObjectType"
                   },
                   "retention_days": {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 0,
                     "description": "The number of days to retain the object"
                   }
@@ -6035,6 +6717,9 @@
                       "environment_update"
                     ],
                     "description": "The type of automation."
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
                   },
                   "environment_filter": {
                     "type": "array",
@@ -6058,6 +6743,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -6086,6 +6777,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
                           }
                         },
                         "required": [
@@ -6102,6 +6799,9 @@
                   "event_type",
                   "action"
                 ]
+              },
+              {
+                "$ref": "#/components/schemas/WindowedAutomationConfig"
               },
               {
                 "$ref": "#/components/schemas/TopicAutomationConfig"
@@ -6149,6 +6849,9 @@
                     ],
                     "description": "The type of automation."
                   },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
                   "btql_filter": {
                     "type": "string",
                     "description": "BTQL filter to identify rows for the automation rule"
@@ -6174,6 +6877,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -6202,6 +6911,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
                           }
                         },
                         "required": [
@@ -6458,7 +7173,7 @@
                     "$ref": "#/components/schemas/RetentionObjectType"
                   },
                   "retention_days": {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 0,
                     "description": "The number of days to retain the object"
                   }
@@ -6478,6 +7193,9 @@
                       "environment_update"
                     ],
                     "description": "The type of automation."
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
                   },
                   "environment_filter": {
                     "type": "array",
@@ -6501,6 +7219,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -6529,6 +7253,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
                           }
                         },
                         "required": [
@@ -6545,6 +7275,9 @@
                   "event_type",
                   "action"
                 ]
+              },
+              {
+                "$ref": "#/components/schemas/WindowedAutomationConfig"
               },
               {
                 "$ref": "#/components/schemas/TopicAutomationConfig"
@@ -6587,6 +7320,9 @@
                     ],
                     "description": "The type of automation."
                   },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
+                  },
                   "btql_filter": {
                     "type": "string",
                     "description": "BTQL filter to identify rows for the automation rule"
@@ -6612,6 +7348,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -6640,6 +7382,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
                           }
                         },
                         "required": [
@@ -6896,7 +7644,7 @@
                     "$ref": "#/components/schemas/RetentionObjectType"
                   },
                   "retention_days": {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 0,
                     "description": "The number of days to retain the object"
                   }
@@ -6916,6 +7664,9 @@
                       "environment_update"
                     ],
                     "description": "The type of automation."
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/AutomationStatus"
                   },
                   "environment_filter": {
                     "type": "array",
@@ -6939,6 +7690,12 @@
                           "url": {
                             "type": "string",
                             "description": "The webhook URL to send the request to"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Instructions for Loop to format content sent to this destination"
                           }
                         },
                         "required": [
@@ -6967,6 +7724,12 @@
                           "message_template": {
                             "type": "string",
                             "description": "Custom message template for the alert"
+                          },
+                          "formatting_prompt": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 10000,
+                            "description": "Publish a Slack mrkdwn digest.\n\nInclude a complete \"*Pattern outcomes*\" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.\n\nUse this row format exactly:\n• <pattern_url|Pattern title> — `outcome`\n\nIf a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say \"No pattern outcomes.\"\n\nAfter the outcome list, include a \"*Highlights*\" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report."
                           }
                         },
                         "required": [
@@ -6985,6 +7748,9 @@
                 ]
               },
               {
+                "$ref": "#/components/schemas/WindowedAutomationConfig"
+              },
+              {
                 "$ref": "#/components/schemas/TopicAutomationConfig"
               },
               {
@@ -6995,6 +7761,166 @@
               }
             ],
             "description": "The configuration for the automation rule"
+          }
+        }
+      },
+      "OrgAutomation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the project automation"
+          },
+          "org_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the organization that the org automation belongs under"
+          },
+          "user_id": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "Identifies the user who created the project automation"
+          },
+          "created": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date of project automation creation"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the project automation"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the project automation"
+          },
+          "config": {
+            "type": "object",
+            "properties": {
+              "event_type": {
+                "type": "string",
+                "enum": [
+                  "retention"
+                ],
+                "description": "The type of automation."
+              },
+              "object_type": {
+                "$ref": "#/components/schemas/RetentionObjectType"
+              },
+              "retention_days": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The number of days to retain the object"
+              }
+            },
+            "required": [
+              "event_type",
+              "object_type",
+              "retention_days"
+            ],
+            "description": "The configuration for the org automation rule"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "name",
+          "config"
+        ]
+      },
+      "CreateOrgAutomation": {
+        "type": "object",
+        "properties": {
+          "org_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the organization that the org automation belongs under"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the project automation"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the project automation"
+          },
+          "config": {
+            "type": "object",
+            "properties": {
+              "event_type": {
+                "type": "string",
+                "enum": [
+                  "retention"
+                ],
+                "description": "The type of automation."
+              },
+              "object_type": {
+                "$ref": "#/components/schemas/RetentionObjectType"
+              },
+              "retention_days": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The number of days to retain the object"
+              }
+            },
+            "required": [
+              "event_type",
+              "object_type",
+              "retention_days"
+            ],
+            "description": "The configuration for the org automation rule"
+          }
+        },
+        "required": [
+          "org_id",
+          "name",
+          "config"
+        ]
+      },
+      "PatchOrgAutomation": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of the project automation"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the project automation"
+          },
+          "config": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "event_type": {
+                "type": "string",
+                "enum": [
+                  "retention"
+                ],
+                "description": "The type of automation."
+              },
+              "object_type": {
+                "$ref": "#/components/schemas/RetentionObjectType"
+              },
+              "retention_days": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The number of days to retain the object"
+              }
+            },
+            "required": [
+              "event_type",
+              "object_type",
+              "retention_days"
+            ],
+            "description": "The configuration for the org automation rule"
           }
         }
       },
@@ -7054,6 +7980,9 @@
         "type": "object",
         "nullable": true,
         "properties": {
+          "status": {
+            "$ref": "#/components/schemas/AutomationStatus"
+          },
           "sampling_rate": {
             "type": "number",
             "minimum": 0,
@@ -8276,6 +9205,80 @@
         "description": "This feature is preliminary and unsupported.",
         "title": "graph"
       },
+      "FacetPreprocessorId": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "function"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string",
+                "description": "The version of the function"
+              }
+            },
+            "required": [
+              "type",
+              "id"
+            ],
+            "title": "function"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "global"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "function_type": {
+                "$ref": "#/components/schemas/FunctionTypeEnum"
+              }
+            },
+            "required": [
+              "type",
+              "name"
+            ],
+            "title": "global"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "inline"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The complete JavaScript preprocessor implementation, including its handler."
+              }
+            },
+            "required": [
+              "type",
+              "code"
+            ],
+            "title": "preprocessor_inline"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "The saved, global, or inline preprocessor to use for facet extraction. If not provided, the project default preprocessor will be used, falling back to the global 'thread' preprocessor."
+      },
       "FacetData": {
         "type": "object",
         "properties": {
@@ -8286,14 +9289,7 @@
             ]
           },
           "preprocessor": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NullableSavedFunctionId"
-              },
-              {
-                "description": "The preprocessor function to use for facet extraction. If not provided, the project default preprocessor will be used, falling back to the global 'thread' preprocessor."
-              }
-            ]
+            "$ref": "#/components/schemas/FacetPreprocessorId"
           },
           "prompt": {
             "type": "string",
@@ -8325,7 +9321,8 @@
             "type": "string",
             "enum": [
               "hdbscan",
-              "kmeans"
+              "kmeans",
+              "community"
             ]
           },
           "dimension_reduction": {
@@ -8382,7 +9379,64 @@
           },
           "source_facet": {
             "type": "string",
-            "description": "The facet field name to use as input for classification"
+            "description": "Materialized facet field name used when source_facet_function is absent"
+          },
+          "source_facet_function": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SavedFunctionId"
+              },
+              {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "function"
+                        ]
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string",
+                        "description": "The version of the function"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id"
+                    ],
+                    "title": "function"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "global"
+                        ]
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "function_type": {
+                        "$ref": "#/components/schemas/FunctionTypeEnum"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "name"
+                    ],
+                    "title": "global"
+                  }
+                ],
+                "description": "The stable function reference for the source facet"
+              }
+            ]
           },
           "embedding_model": {
             "type": "string",
@@ -8409,6 +9463,14 @@
           "disable_reconciliation": {
             "type": "boolean",
             "description": "Whether new topic generation should ignore the previously saved report during reconciliation. Defaults to false when omitted."
+          },
+          "reconcile_mode": {
+            "type": "string",
+            "enum": [
+              "evolve",
+              "names_only"
+            ],
+            "description": "How reconciliation carries the previous map forward: \"evolve\" re-routes new samples into the previous topics before naming; \"names_only\" keeps the fresh clustering and carries only topic ids/names. Defaults to \"names_only\" when omitted."
           },
           "distance_threshold": {
             "type": "number",
@@ -8439,14 +9501,7 @@
             ]
           },
           "preprocessor": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NullableSavedFunctionId"
-              },
-              {
-                "description": "The preprocessor function to use for facet extraction. If not provided, the project default preprocessor will be used, falling back to the global 'thread' preprocessor."
-              }
-            ]
+            "$ref": "#/components/schemas/FacetPreprocessorId"
           },
           "facets": {
             "type": "array",
@@ -9396,6 +10451,11 @@
             },
             "description": "Partial function definition to merge with the function being invoked. Fields are validated against the function type's schema at runtime. For facets: { preprocessor?, prompt?, model? }. For prompts: { model?, ... }."
           },
+          "endpoint_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of the AI provider secret to pin this invocation to."
+          },
           "version": {
             "type": "string",
             "description": "The version of the function"
@@ -9665,6 +10725,28 @@
                   "value"
                 ]
               },
+              "pointSizeMetric": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "score",
+                      "metric",
+                      "metadata"
+                    ]
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "value"
+                ]
+              },
               "xAxisAggregation": {
                 "type": "string",
                 "nullable": true,
@@ -9785,11 +10867,26 @@
             "type": "string",
             "description": "Name of the view"
           },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the view"
+          },
+          "starred": {
+            "type": "boolean",
+            "description": "Whether the view is starred in its project"
+          },
           "created": {
             "type": "string",
             "nullable": true,
             "format": "date-time",
             "description": "Date of view creation"
+          },
+          "updated_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date of last view update"
           },
           "view_data": {
             "$ref": "#/components/schemas/ViewData"
@@ -9857,6 +10954,11 @@
             "type": "string",
             "description": "Name of the view"
           },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the view"
+          },
           "view_data": {
             "$ref": "#/components/schemas/ViewData"
           },
@@ -9923,6 +11025,15 @@
             "type": "string",
             "nullable": true,
             "description": "Name of the view"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Textual description of the view"
+          },
+          "starred": {
+            "type": "boolean",
+            "description": "Whether the view is starred in its project"
           },
           "view_data": {
             "$ref": "#/components/schemas/ViewData"
@@ -10095,7 +11206,7 @@
                 "id"
               ]
             },
-            "description": "If service accounts with tokens were created, this will contain the added users with their API keys"
+            "description": "The users who were added by this request. api_key and token_name are only present for the inline service-account create-and-mint compatibility path."
           }
         },
         "required": [
@@ -10140,14 +11251,21 @@
                     "token_name": {
                       "type": "string",
                       "nullable": true,
-                      "description": "Optional name of an initial service token to create for the new service account. When this field is set, the request must be authenticated with a service token that has organization-owner permissions, not a user API key."
+                      "description": "Optional name of an initial service token to create for the new service account. This is a narrow compatibility carve-out only on PATCH /v1/organization/members. When this field is set, the request must be authenticated with a service token that has organization-owner permissions, not a user API key."
+                    },
+                    "token_expires_in_seconds": {
+                      "type": "integer",
+                      "nullable": true,
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
+                      "description": "Number of seconds from now after which the initial service token should expire. If omitted, the token never expires."
                     }
                   },
                   "required": [
                     "name"
                   ]
                 },
-                "description": "Service accounts to create. Any caller permitted to add organization members can create service accounts (but not necessarily their associated tokens)."
+                "description": "Service accounts to create. PATCH /v1/organization/members is the compatibility layer that accepts both plain service-account creation and the narrower token_name create-and-mint carve-out."
               },
               "send_invite_emails": {
                 "type": "boolean",
@@ -10271,6 +11389,12 @@
             "nullable": true,
             "format": "uuid",
             "description": "Unique identifier for the organization"
+          },
+          "expires_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date at which the API key expires. If null, the key never expires."
           }
         },
         "required": [
@@ -10321,6 +11445,12 @@
             "nullable": true,
             "format": "uuid",
             "description": "Unique identifier for the organization"
+          },
+          "expires_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date and time at which the service token expires. If null, the token never expires."
           },
           "key": {
             "type": "string",
@@ -10376,6 +11506,12 @@
             "nullable": true,
             "format": "uuid",
             "description": "Unique identifier for the organization"
+          },
+          "expires_at": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "Date and time at which the service token expires. If null, the token never expires."
           }
         },
         "required": [
@@ -11024,6 +12160,9 @@
           "parser": {
             "$ref": "#/components/schemas/PromptParserNullish"
           },
+          "preprocessor": {
+            "$ref": "#/components/schemas/PreprocessorId"
+          },
           "tool_functions": {
             "type": "array",
             "nullable": true,
@@ -11489,6 +12628,19 @@
                 ],
                 "description": "Dataset rows",
                 "title": "dataset_rows"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "experiment_name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "experiment_name"
+                ],
+                "description": "Experiment whose inputs and outputs should be used as dataset inputs and expected values",
+                "title": "experiment_name"
               }
             ],
             "description": "The dataset to use"
@@ -11622,6 +12774,11 @@
                 }
               }
             }
+          },
+          "endpoint_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of the AI provider secret to pin this run to."
           }
         },
         "required": [
@@ -11696,6 +12853,15 @@
         "name": "group_id",
         "in": "path"
       },
+      "ProjectGroupIdParam": {
+        "schema": {
+          "$ref": "#/components/schemas/ProjectGroupIdParam"
+        },
+        "required": true,
+        "description": "ProjectGroup id",
+        "name": "project_group_id",
+        "in": "path"
+      },
       "AclIdParam": {
         "schema": {
           "$ref": "#/components/schemas/AclIdParam"
@@ -11730,6 +12896,15 @@
         "required": true,
         "description": "ProjectAutomation id",
         "name": "project_automation_id",
+        "in": "path"
+      },
+      "OrgAutomationIdParam": {
+        "schema": {
+          "$ref": "#/components/schemas/OrgAutomationIdParam"
+        },
+        "required": true,
+        "description": "OrgAutomation id",
+        "name": "org_automation_id",
         "in": "path"
       },
       "ProjectScoreIdParam": {
@@ -11919,6 +13094,16 @@
         "in": "query",
         "allowReserved": true
       },
+      "ProjectGroupName": {
+        "schema": {
+          "$ref": "#/components/schemas/ProjectGroupName"
+        },
+        "required": false,
+        "description": "Name of the project_group to search for",
+        "name": "project_group_name",
+        "in": "query",
+        "allowReserved": true
+      },
       "AgentName": {
         "schema": {
           "$ref": "#/components/schemas/AgentName"
@@ -11936,6 +13121,16 @@
         "required": false,
         "description": "Name of the project_automation to search for",
         "name": "project_automation_name",
+        "in": "query",
+        "allowReserved": true
+      },
+      "OrgAutomationName": {
+        "schema": {
+          "$ref": "#/components/schemas/OrgAutomationName"
+        },
+        "required": false,
+        "description": "Name of the org_automation to search for",
+        "name": "org_automation_name",
         "in": "query",
         "allowReserved": true
       },
@@ -12386,7 +13581,7 @@
         "summary": "Create project",
         "requestBody": {
           "description": "Any desired information about the new project object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -13124,7 +14319,7 @@
         ],
         "requestBody": {
           "description": "An array of project logs events to insert",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -13625,7 +14820,7 @@
         ],
         "requestBody": {
           "description": "An array of feedback objects",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -13808,7 +15003,7 @@
         "summary": "Create experiment",
         "requestBody": {
           "description": "Any desired information about the new experiment object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -14552,7 +15747,7 @@
         ],
         "requestBody": {
           "description": "An array of experiment events to insert",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -15053,7 +16248,7 @@
         ],
         "requestBody": {
           "description": "An array of feedback objects",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -15418,7 +16613,7 @@
         "summary": "Create dataset",
         "requestBody": {
           "description": "Any desired information about the new dataset object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -16162,7 +17357,7 @@
         ],
         "requestBody": {
           "description": "An array of dataset events to insert",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -16663,7 +17858,7 @@
         ],
         "requestBody": {
           "description": "An array of feedback objects",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -17025,7 +18220,7 @@
         "summary": "Create prompt",
         "requestBody": {
           "description": "Any desired information about the new prompt object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -17144,7 +18339,7 @@
         "summary": "Create or replace prompt",
         "requestBody": {
           "description": "Any desired information about the new prompt object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -17898,7 +19093,7 @@
         "summary": "Create role",
         "requestBody": {
           "description": "Any desired information about the new role object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -18017,7 +19212,7 @@
         "summary": "Create or replace role",
         "requestBody": {
           "description": "Any desired information about the new role object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -18750,7 +19945,7 @@
         "summary": "Create group",
         "requestBody": {
           "description": "Any desired information about the new group object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -18869,7 +20064,7 @@
         "summary": "Create or replace group",
         "requestBody": {
           "description": "Any desired information about the new group object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -19586,6 +20781,858 @@
         }
       }
     },
+    "/v1/project_group": {
+      "post": {
+        "tags": [
+          "ProjectGroups"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "operationId": "postProjectGroup",
+        "description": "Create a new project_group. If there is an existing project_group with the same name as the one specified in the request, will return the existing project_group unmodified",
+        "summary": "Create project_group",
+        "requestBody": {
+          "description": "Any desired information about the new project_group object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the new project_group object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ProjectGroups"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "operationId": "putProjectGroup",
+        "description": "Create or replace project_group. If there is an existing project_group with the same name as the one specified in the request, will replace the existing project_group with the provided fields",
+        "summary": "Create or replace project_group",
+        "requestBody": {
+          "description": "Any desired information about the new project_group object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the new project_group object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getProjectGroup",
+        "tags": [
+          "ProjectGroups"
+        ],
+        "description": "List out all project_groups. The project_groups are sorted by creation date, with the most recently-created project_groups coming first",
+        "summary": "List project_groups",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppLimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/StartingAfter"
+          },
+          {
+            "$ref": "#/components/parameters/EndingBefore"
+          },
+          {
+            "$ref": "#/components/parameters/Ids"
+          },
+          {
+            "$ref": "#/components/parameters/ProjectGroupName"
+          },
+          {
+            "$ref": "#/components/parameters/OrgName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a list of project_group objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "objects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ProjectGroup"
+                      },
+                      "description": "A list of project_group objects"
+                    }
+                  },
+                  "required": [
+                    "objects"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsProjectGroup",
+        "description": "Enable CORS",
+        "summary": "Enable CORS (`/v1/project_group`)",
+        "security": [],
+        "tags": [
+          "CORS"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for CORS method",
+            "headers": {
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Max-Age": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {}
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/project_group/{project_group_id}": {
+      "get": {
+        "operationId": "getProjectGroupId",
+        "tags": [
+          "ProjectGroups"
+        ],
+        "description": "Get a project_group object by its id",
+        "summary": "Get project_group",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectGroupIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the project_group object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchProjectGroupId",
+        "tags": [
+          "ProjectGroups"
+        ],
+        "description": "Partially update a project_group object. Specify the fields to update in the payload. Any object-type fields will be deep-merged with existing content. Currently we do not support removing fields or setting them to null.",
+        "summary": "Partially update project_group",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectGroupIdParam"
+          }
+        ],
+        "requestBody": {
+          "description": "Fields to update",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchProjectGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the project_group object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProjectGroupId",
+        "tags": [
+          "ProjectGroups"
+        ],
+        "description": "Delete a project_group object by its id",
+        "summary": "Delete project_group",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectGroupIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the deleted project_group object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsProjectGroupId",
+        "description": "Enable CORS",
+        "summary": "Enable CORS (`/v1/project_group/{project_group_id}`)",
+        "security": [],
+        "tags": [
+          "CORS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectGroupIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for CORS method",
+            "headers": {
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Max-Age": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {}
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/acl": {
       "post": {
         "tags": [
@@ -19602,7 +21649,7 @@
         "summary": "Create acl",
         "requestBody": {
           "description": "Any desired information about the new acl object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -19614,6 +21661,125 @@
         "responses": {
           "200": {
             "description": "Returns the new acl object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acl"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAcl",
+        "tags": [
+          "Acls"
+        ],
+        "description": "Delete a single acl",
+        "summary": "Delete single acl",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "requestBody": {
+          "description": "Parameters which uniquely specify the acl to delete",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AclItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the deleted acl object",
             "content": {
               "application/json": {
                 "schema": {
@@ -20997,7 +23163,7 @@
         "summary": "Create agent",
         "requestBody": {
           "description": "Any desired information about the new agent object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -21116,7 +23282,7 @@
         "summary": "Create or replace agent",
         "requestBody": {
           "description": "Any desired information about the new agent object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -21849,7 +24015,7 @@
         "summary": "Create project_automation",
         "requestBody": {
           "description": "Any desired information about the new project_automation object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -21968,7 +24134,7 @@
         "summary": "Create or replace project_automation",
         "requestBody": {
           "description": "Any desired information about the new project_automation object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -22685,6 +24851,858 @@
         }
       }
     },
+    "/v1/org_automation": {
+      "post": {
+        "tags": [
+          "OrgAutomations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "operationId": "postOrgAutomation",
+        "description": "Create a new org_automation. If there is an existing org_automation with the same name as the one specified in the request, will return the existing org_automation unmodified",
+        "summary": "Create org_automation",
+        "requestBody": {
+          "description": "Any desired information about the new org_automation object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrgAutomation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the new org_automation object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgAutomation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "OrgAutomations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "operationId": "putOrgAutomation",
+        "description": "Create or replace org_automation. If there is an existing org_automation with the same name as the one specified in the request, will replace the existing org_automation with the provided fields",
+        "summary": "Create or replace org_automation",
+        "requestBody": {
+          "description": "Any desired information about the new org_automation object",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrgAutomation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the new org_automation object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgAutomation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getOrgAutomation",
+        "tags": [
+          "OrgAutomations"
+        ],
+        "description": "List out all org_automations. The org_automations are sorted by creation date, with the most recently-created org_automations coming first",
+        "summary": "List org_automations",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AppLimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/StartingAfter"
+          },
+          {
+            "$ref": "#/components/parameters/EndingBefore"
+          },
+          {
+            "$ref": "#/components/parameters/Ids"
+          },
+          {
+            "$ref": "#/components/parameters/OrgAutomationName"
+          },
+          {
+            "$ref": "#/components/parameters/OrgName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a list of org_automation objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "objects": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrgAutomation"
+                      },
+                      "description": "A list of org_automation objects"
+                    }
+                  },
+                  "required": [
+                    "objects"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsOrgAutomation",
+        "description": "Enable CORS",
+        "summary": "Enable CORS (`/v1/org_automation`)",
+        "security": [],
+        "tags": [
+          "CORS"
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for CORS method",
+            "headers": {
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Max-Age": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {}
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/org_automation/{org_automation_id}": {
+      "get": {
+        "operationId": "getOrgAutomationId",
+        "tags": [
+          "OrgAutomations"
+        ],
+        "description": "Get a org_automation object by its id",
+        "summary": "Get org_automation",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrgAutomationIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the org_automation object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgAutomation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchOrgAutomationId",
+        "tags": [
+          "OrgAutomations"
+        ],
+        "description": "Partially update a org_automation object. Specify the fields to update in the payload. Any object-type fields will be deep-merged with existing content. Currently we do not support removing fields or setting them to null.",
+        "summary": "Partially update org_automation",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrgAutomationIdParam"
+          }
+        ],
+        "requestBody": {
+          "description": "Fields to update",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchOrgAutomation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the org_automation object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgAutomation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteOrgAutomationId",
+        "tags": [
+          "OrgAutomations"
+        ],
+        "description": "Delete a org_automation object by its id",
+        "summary": "Delete org_automation",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrgAutomationIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the deleted org_automation object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgAutomation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "operationId": "optionsOrgAutomationId",
+        "description": "Enable CORS",
+        "summary": "Enable CORS (`/v1/org_automation/{org_automation_id}`)",
+        "security": [],
+        "tags": [
+          "CORS"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrgAutomationIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for CORS method",
+            "headers": {
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Headers": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Methods": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Access-Control-Max-Age": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {}
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/project_score": {
       "post": {
         "tags": [
@@ -22701,7 +25719,7 @@
         "summary": "Create project_score",
         "requestBody": {
           "description": "Any desired information about the new project_score object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -22820,7 +25838,7 @@
         "summary": "Create or replace project_score",
         "requestBody": {
           "description": "Any desired information about the new project_score object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -23562,7 +26580,7 @@
         "summary": "Create project_tag",
         "requestBody": {
           "description": "Any desired information about the new project_tag object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -23681,7 +26699,7 @@
         "summary": "Create or replace project_tag",
         "requestBody": {
           "description": "Any desired information about the new project_tag object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -24420,7 +27438,7 @@
         "summary": "Create span_iframe",
         "requestBody": {
           "description": "Any desired information about the new span_iframe object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -24539,7 +27557,7 @@
         "summary": "Create or replace span_iframe",
         "requestBody": {
           "description": "Any desired information about the new span_iframe object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -25272,7 +28290,7 @@
         "summary": "Create function",
         "requestBody": {
           "description": "Any desired information about the new function object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -25391,7 +28409,7 @@
         "summary": "Create or replace function",
         "requestBody": {
           "description": "Any desired information about the new function object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -26250,7 +29268,7 @@
         "summary": "Create view",
         "requestBody": {
           "description": "Any desired information about the new view object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -26369,7 +29387,7 @@
         "summary": "Create or replace view",
         "requestBody": {
           "description": "Any desired information about the new view object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -26818,7 +29836,7 @@
         ],
         "requestBody": {
           "description": "Fields to update",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -26942,7 +29960,7 @@
         ],
         "requestBody": {
           "description": "Additional parameters for the delete operation",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -28291,7 +31309,7 @@
         "summary": "Create service_token",
         "requestBody": {
           "description": "Any desired information about the new service_token object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -28309,6 +31327,13 @@
                   "service_account_id": {
                     "type": "string",
                     "description": "The ID of the service account to which the token should belong. To create a service account, visit [**Settings > Service tokens**](https://www.braintrust.dev/app/~/configuration/org/service-tokens) in the Braintrust UI or call [`PATCH /v1/organization/members`](https://www.braintrust.dev/docs/api-reference/organizations/modify-organization-membership)."
+                  },
+                  "expires_in_seconds": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "description": "Number of seconds from now after which the service token should expire. If omitted, the token never expires."
                   }
                 },
                 "required": [
@@ -28429,7 +31454,7 @@
         "summary": "Create or replace service_token",
         "requestBody": {
           "description": "Any desired information about the new service_token object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -28447,6 +31472,13 @@
                   "service_account_id": {
                     "type": "string",
                     "description": "The ID of the service account to which the token should belong. To create a service account, visit [**Settings > Service tokens**](https://www.braintrust.dev/app/~/configuration/org/service-tokens) in the Braintrust UI or call [`PATCH /v1/organization/members`](https://www.braintrust.dev/docs/api-reference/organizations/modify-organization-membership)."
+                  },
+                  "expires_in_seconds": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "exclusiveMinimum": true,
+                    "description": "Number of seconds from now after which the service token should expire. If omitted, the token never expires."
                   }
                 },
                 "required": [
@@ -28464,6 +31496,125 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateServiceTokenOutput"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteServiceToken",
+        "tags": [
+          "ServiceTokens"
+        ],
+        "description": "Delete a single service_token",
+        "summary": "Delete single service_token",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "requestBody": {
+          "description": "Parameters which uniquely specify the service_token to delete",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteServiceToken"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the deleted service_token object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceToken"
                 }
               }
             }
@@ -29057,7 +32208,7 @@
         "summary": "Create ai_secret",
         "requestBody": {
           "description": "Any desired information about the new ai_secret object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -29176,7 +32327,7 @@
         "summary": "Create or replace ai_secret",
         "requestBody": {
           "description": "Any desired information about the new ai_secret object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -29188,6 +32339,125 @@
         "responses": {
           "200": {
             "description": "Returns the new ai_secret object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AISecret"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request was unacceptable, often due to missing a required parameter",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid API key provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The API key doesn’t have permissions to perform the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests hit the API too quickly. We recommend an exponential backoff of your requests",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong on Braintrust's end. (These are rare.)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAiSecret",
+        "tags": [
+          "AiSecrets"
+        ],
+        "description": "Delete a single ai_secret",
+        "summary": "Delete single ai_secret",
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "requestBody": {
+          "description": "Parameters which uniquely specify the ai_secret to delete",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAISecret"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Returns the deleted ai_secret object",
             "content": {
               "application/json": {
                 "schema": {
@@ -29912,7 +33182,7 @@
         "summary": "Create env_var",
         "requestBody": {
           "description": "Any desired information about the new env_var object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -30074,7 +33344,7 @@
         "summary": "Create or replace env_var",
         "requestBody": {
           "description": "Any desired information about the new env_var object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -30551,7 +33821,7 @@
         ],
         "requestBody": {
           "description": "Fields to update",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -30874,7 +34144,7 @@
         "summary": "Create mcp_server",
         "requestBody": {
           "description": "Any desired information about the new mcp_server object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -30993,7 +34263,7 @@
         "summary": "Create or replace mcp_server",
         "requestBody": {
           "description": "Any desired information about the new mcp_server object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -31726,7 +34996,7 @@
         "summary": "Create dataset_snapshot",
         "requestBody": {
           "description": "Any desired information about the new dataset_snapshot object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -31845,7 +35115,7 @@
         "summary": "Create or replace dataset_snapshot",
         "requestBody": {
           "description": "Any desired information about the new dataset_snapshot object",
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
