@@ -1,4 +1,5 @@
 import os
+from collections.abc import AsyncGenerator
 from importlib.metadata import version as pkg_version
 from pathlib import Path
 
@@ -12,7 +13,9 @@ from google.adk import Agent
 
 
 ADK_VERSION = tuple(int(x) for x in pkg_version("google-adk").split(".")[:3])
-from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
+from google.adk.agents import BaseAgent, LlmAgent, ParallelAgent, SequentialAgent
+from google.adk.agents.invocation_context import InvocationContext
+from google.adk.events.event import Event
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.adk.tools import google_search
@@ -22,7 +25,9 @@ from pydantic import BaseModel, Field
 
 PROJECT_NAME = "test_adk"
 ADK_MODEL = (
-    "gemini-2.5-flash-lite" if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest" else "gemini-2.0-flash"
+    "gemini-2.5-flash-lite"
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") in {"latest", "2.6.3"}
+    else "gemini-2.0-flash"
 )
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures"
 
@@ -229,6 +234,64 @@ def test_adk_sync_runner_run_does_not_duplicate_invocation_spans(memory_logger):
             f"{row['span_attributes']['name']} lost thread context: "
             f"{row['root_span_id']} != {parent_span.root_span_id}"
         )
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_adk_custom_base_agent_root_preserves_agent_spans(memory_logger):
+    """A plain BaseAgent root must preserve agent attribution for its whole subtree."""
+    assert not memory_logger.pop()
+
+    class CustomAgent(BaseAgent):
+        async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event, None]:
+            yield Event(
+                author=self.name,
+                invocation_id=ctx.invocation_id,
+                content=types.Content(role="model", parts=[types.Part(text="step")]),
+            )
+            for sub_agent in self.sub_agents:
+                async for event in sub_agent.run_async(ctx):
+                    yield event
+
+    app_name = "custom_root_app"
+    user_id = "test-user"
+    session_id = "test-session-custom-root"
+    agent = CustomAgent(
+        name="custom_root",
+        sub_agents=[
+            LlmAgent(
+                name="child",
+                model="gemini-2.5-flash-lite",
+                instruction="Reply with only the word hello.",
+            )
+        ],
+    )
+    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
+
+    async for _ in runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=types.Content(role="user", parts=[types.Part(text="Say hello.")]),
+    ):
+        pass
+
+    spans = memory_logger.pop()
+    expected_names = {
+        f"invocation [{app_name}]",
+        "agent_run [custom_root]",
+        "agent_run [child]",
+        "call_llm",
+        "llm_call [direct_response]",
+    }
+    spans_by_name = {span["span_attributes"]["name"]: span for span in spans}
+    assert len(spans) == len(expected_names)
+    assert spans_by_name.keys() == expected_names
+
+    parent_name_by_id = {span["span_id"]: name for name, span in spans_by_name.items()}
+    assert parent_name_by_id[spans_by_name["agent_run [custom_root]"]["span_parents"][0]] == f"invocation [{app_name}]"
+    assert parent_name_by_id[spans_by_name["agent_run [child]"]["span_parents"][0]] == "agent_run [custom_root]"
+    assert parent_name_by_id[spans_by_name["call_llm"]["span_parents"][0]] == "agent_run [child]"
+    assert parent_name_by_id[spans_by_name["llm_call [direct_response]"]["span_parents"][0]] == "call_llm"
 
 
 @pytest.mark.vcr

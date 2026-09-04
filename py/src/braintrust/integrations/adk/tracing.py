@@ -352,34 +352,19 @@ def _create_thread_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any) 
 
 
 async def _agent_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
-    # ADK 2.7 routes agents and workflows through BaseNode.run. Only add an
-    # agent span for BaseAgent instances; non-agent workflow nodes pass through.
-    from google.adk.agents import BaseAgent
-
-    if not isinstance(instance, BaseAgent):
+    with _start_stream_span(
+        name=f"agent_run [{instance.name}]",
+        type=SpanTypeAttribute.TASK,
+        metadata={"agent_name": instance.name},
+    ) as agent_span:
+        last_event = None
         async with aclosing(wrapped(*args, **kwargs)) as agen:
             async for event in agen:
+                if event.is_final_response():
+                    last_event = event
                 yield event
-        return
-
-    async def _trace():
-        with _start_stream_span(
-            name=f"agent_run [{instance.name}]",
-            type=SpanTypeAttribute.TASK,
-            metadata={"agent_name": instance.name},
-        ) as agent_span:
-            last_event = None
-            async with aclosing(wrapped(*args, **kwargs)) as agen:
-                async for event in agen:
-                    if event.is_final_response():
-                        last_event = event
-                    yield event
-            if last_event:
-                agent_span.log(output=last_event)
-
-    async with aclosing(_trace()) as agen:
-        async for event in agen:
-            yield event
+        if last_event:
+            agent_span.log(output=last_event)
 
 
 async def _flow_run_async_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):

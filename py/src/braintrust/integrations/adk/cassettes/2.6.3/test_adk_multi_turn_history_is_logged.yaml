@@ -1,0 +1,114 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Hi, my name is Alice."}], "role": "user"}],
+      "systemInstruction": {"parts": [{"text": "You are a concise assistant. When
+      the user says their name, acknowledge it briefly. When later asked to recall
+      it, answer with just the name.\n\nYou are an agent. Your internal name is \"conversation_agent\"."}],
+      "role": "user"}, "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Hi Alice.\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        54,\n    \"candidatesTokenCount\": 3,\n    \"totalTokenCount\": 57,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 54\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"U_yaavXhHLCY9MoP5oflsAg\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 04 Sep 2026 17:13:55 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=371
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '556'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"contents": [{"parts": [{"text": "Hi, my name is Alice."}], "role": "user"},
+      {"parts": [{"text": "Hi Alice."}], "role": "model"}, {"parts": [{"text": "What
+      name did I tell you?"}], "role": "user"}], "systemInstruction": {"parts": [{"text":
+      "You are a concise assistant. When the user says their name, acknowledge it
+      briefly. When later asked to recall it, answer with just the name.\n\nYou are
+      an agent. Your internal name is \"conversation_agent\"."}], "role": "user"},
+      "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"Alice.\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        66,\n    \"candidatesTokenCount\": 2,\n    \"totalTokenCount\": 68,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 66\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"U_yaap7hOtvU_uMPkNPziQE\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 04 Sep 2026 17:13:56 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=395
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '553'
+    status:
+      code: 200
+      message: OK
+version: 1

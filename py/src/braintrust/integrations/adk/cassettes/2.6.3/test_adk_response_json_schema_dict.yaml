@@ -1,0 +1,61 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Tell me about Tokyo"}], "role": "user"}],
+      "systemInstruction": {"parts": [{"text": "You are a City Information Agent.
+      Provide city information.\n\nYou are an agent. Your internal name is \"city_agent\"."}],
+      "role": "user"}, "generationConfig": {"responseMimeType": "application/json",
+      "responseJsonSchema": {"type": "object", "properties": {"city": {"type": "string",
+      "description": "Name of the city"}, "population": {"type": "integer", "description":
+      "Population of the city", "minimum": 0}, "country": {"type": "string", "description":
+      "Country where the city is located"}}, "required": ["city", "country"]}}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"{\\n  \\\"city\\\": \\\"Tokyo\\\",\\n
+        \ \\\"country\\\": \\\"Japan\\\"\\n}\"\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n
+        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 32,\n    \"candidatesTokenCount\":
+        19,\n    \"totalTokenCount\": 51,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 32\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"YfyaaqLCIsqi_uMPyLPLiAE\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 04 Sep 2026 17:14:09 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=364
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '602'
+    status:
+      code: 200
+      message: OK
+version: 1
