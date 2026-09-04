@@ -356,8 +356,6 @@ def _shape_model_tool_definition(tool: Any) -> dict[str, Any] | None:
         return None
 
     description = _field_value(tool, "description")
-    if not isinstance(description, str) or not description:
-        description = f"Tool: {name}"
 
     parameters = _field_value(tool, "parameters_json_schema")
     if parameters is _MISSING:
@@ -365,14 +363,14 @@ def _shape_model_tool_definition(tool: Any) -> dict[str, Any] | None:
     if parameters is _MISSING:
         parameters = {"type": "object", "properties": {}, "required": []}
 
-    return {
-        "type": "function",
-        "function": {
-            "name": name,
-            "description": description,
-            "parameters": parameters,
-        },
-    }
+    function = {"name": name, "parameters": parameters}
+    if description is not _MISSING and description is not None:
+        function["description"] = description
+    strict = _field_value(tool, "strict")
+    if strict is not _MISSING and strict is not None:
+        function["strict"] = strict
+
+    return {"type": "function", "function": function}
 
 
 def _extract_model_request_tools(model_request_parameters: Any) -> list[Any]:
@@ -409,6 +407,13 @@ def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any)
     metadata = _build_model_metadata(model_name, provider, model_settings=None)
     if model_settings is not None:
         metadata["invocation_params"] = model_settings
+    # Provider customization resolves inferred strictness and schema transformations used on the wire.
+    customize_request_parameters = getattr(instance, "customize_request_parameters", None)
+    if model_request_parameters is not None and callable(customize_request_parameters):
+        try:
+            model_request_parameters = customize_request_parameters(model_request_parameters)
+        except Exception as e:
+            logger.debug(f"Failed to customize model request parameters for tracing: {e}")
     tools = _extract_model_request_tools(model_request_parameters)
     if tools:
         metadata["tools"] = tools
