@@ -32,6 +32,37 @@ RERANK_DOCUMENTS = [
     "Madrid is the capital of Spain.",
 ]
 
+# Applied to every sync/async pair below. The ``is_async`` param selects the
+# async LiteLLM entrypoint (e.g. ``acompletion``) over the sync one; the two
+# variants share a single test body and record to ``...[sync]`` / ``...[async]``
+# cassettes.
+#
+# The parametrized tests are plain (non-``async``) functions so the ``sync``
+# variant calls LiteLLM with no running event loop, exactly as ordinary
+# synchronous callers do -- ``_run``/``_run_stream`` drive the ``async`` variant
+# with ``asyncio.run`` instead. Running the sync entrypoints inside a coroutine
+# would let LiteLLM take loop-dependent code paths and hide sync-only failures.
+sync_async = pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
+
+
+def _run(is_async, sync_fn, async_fn, *args, **kwargs):
+    """Call ``sync_fn`` directly, or drive ``async_fn`` with ``asyncio.run``."""
+    if is_async:
+        return asyncio.run(async_fn(*args, **kwargs))
+    return sync_fn(*args, **kwargs)
+
+
+def _run_stream(is_async, sync_fn, async_fn, *args, **kwargs):
+    """Open a streaming request and drain it into a list of chunks."""
+    if is_async:
+
+        async def _drain():
+            stream = await async_fn(*args, **kwargs)
+            return [chunk async for chunk in stream]
+
+        return asyncio.run(_drain())
+    return list(sync_fn(*args, **kwargs))
+
 
 def _assert_speech_output_attachment(span) -> None:
     assert span["output"]["type"] == "audio"
@@ -55,11 +86,18 @@ def memory_logger():
 
 
 @pytest.mark.vcr
-def test_litellm_completion_metrics(memory_logger) -> None:
+@sync_async
+def test_litellm_completion_metrics(memory_logger, is_async) -> None:
     assert not memory_logger.pop()
 
     start = time.time()
-    response = litellm.completion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
+    response = _run(
+        is_async,
+        litellm.completion,
+        litellm.acompletion,
+        model=TEST_MODEL,
+        messages=[{"role": "user", "content": TEST_PROMPT}],
+    )
     end = time.time()
 
     assert response
@@ -152,35 +190,18 @@ def test_litellm_prompt_caching_metrics(memory_logger) -> None:
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_acompletion_metrics(memory_logger):
+@sync_async
+def test_litellm_text_completion_metrics(memory_logger, is_async) -> None:
     assert not memory_logger.pop()
 
     start = time.time()
-    response = await litellm.acompletion(model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}])
-    end = time.time()
-
-    assert response
-    assert response.choices[0].message.content
-    assert "24" in response.choices[0].message.content or "twenty-four" in response.choices[0].message.content.lower()
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "openai"
-    assert TEST_PROMPT in str(span["input"])
-
-
-@pytest.mark.vcr
-def test_litellm_text_completion_metrics(memory_logger) -> None:
-    assert not memory_logger.pop()
-
-    start = time.time()
-    response = litellm.text_completion(model=TEST_TEXT_MODEL, prompt=TEST_PROMPT)
+    response = _run(
+        is_async,
+        litellm.text_completion,
+        litellm.atext_completion,
+        model=TEST_TEXT_MODEL,
+        prompt=TEST_PROMPT,
+    )
     end = time.time()
 
     assert response
@@ -200,44 +221,19 @@ def test_litellm_text_completion_metrics(memory_logger) -> None:
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_atext_completion_metrics(memory_logger):
+@sync_async
+def test_litellm_completion_streaming(memory_logger, is_async):
     assert not memory_logger.pop()
 
     start = time.time()
-    response = await litellm.atext_completion(model=TEST_TEXT_MODEL, prompt=TEST_PROMPT)
-    end = time.time()
-
-    assert response
-    assert response.choices[0].text
-    assert "24" in response.choices[0].text or "twenty-four" in response.choices[0].text.lower()
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["model"] == TEST_TEXT_MODEL
-    assert span["metadata"]["provider"] == "openai"
-    assert TEST_PROMPT in str(span["input"])
-    assert "text" in span["output"][0]
-
-
-@pytest.mark.vcr
-def test_litellm_completion_streaming_sync(memory_logger):
-    assert not memory_logger.pop()
-
-    start = time.time()
-    stream = litellm.completion(
+    chunks = _run_stream(
+        is_async,
+        litellm.completion,
+        litellm.acompletion,
         model=TEST_MODEL,
         messages=[{"role": "user", "content": TEST_PROMPT}],
         stream=True,
     )
-
-    chunks = []
-    for chunk in stream:
-        chunks.append(chunk)
     end = time.time()
 
     # Verify streaming works
@@ -267,44 +263,15 @@ def test_litellm_completion_streaming_sync(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_acompletion_streaming_async(memory_logger):
+@sync_async
+def test_litellm_responses_metrics(memory_logger, is_async):
     assert not memory_logger.pop()
 
     start = time.time()
-    stream = await litellm.acompletion(
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": TEST_PROMPT}],
-        stream=True,
-    )
-
-    chunks = []
-    async for chunk in stream:
-        chunks.append(chunk)
-    end = time.time()
-
-    # Verify streaming works
-    assert chunks
-    assert len(chunks) > 1
-
-    # Verify spans were created
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "openai"
-    assert TEST_PROMPT in str(span["input"])
-
-
-@pytest.mark.vcr
-def test_litellm_responses_metrics(memory_logger):
-    assert not memory_logger.pop()
-
-    start = time.time()
-    response = litellm.responses(
+    response = _run(
+        is_async,
+        litellm.responses,
+        litellm.aresponses,
         model=TEST_MODEL,
         input=TEST_PROMPT,
         instructions="Just the number please",
@@ -330,43 +297,17 @@ def test_litellm_responses_metrics(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_aresponses_metrics(memory_logger):
+@sync_async
+def test_litellm_embedding(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    start = time.time()
-    response = await litellm.aresponses(
-        model=TEST_MODEL,
-        input=TEST_PROMPT,
-        instructions="Just the number please",
+    response = _run(
+        is_async,
+        litellm.embedding,
+        litellm.aembedding,
+        model="text-embedding-ada-002",
+        input="This is a test",
     )
-    end = time.time()
-
-    assert response
-    assert response.output
-    assert len(response.output) > 0
-    content = response.output[0].content[0].text
-    assert "24" in content or "twenty-four" in content.lower()
-
-    # Verify spans were created
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["model"] == TEST_MODEL
-    assert span["metadata"]["provider"] == "openai"
-    assert TEST_PROMPT in str(span["input"])
-
-
-@pytest.mark.vcr
-def test_litellm_embeddings(memory_logger):
-    assert not memory_logger.pop()
-
-    start = time.time()
-    response = litellm.embedding(model="text-embedding-ada-002", input="This is a test")
-    end = time.time()
 
     assert response
     assert response.data
@@ -383,32 +324,17 @@ def test_litellm_embeddings(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_aembedding(memory_logger):
+@sync_async
+def test_litellm_moderation(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    response = await litellm.aembedding(model="text-embedding-ada-002", input="This is a test")
-
-    assert response
-    assert response.data
-    assert response.data[0]["embedding"]
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span
-    assert span["metadata"]["model"] == "text-embedding-ada-002"
-    assert span["metadata"]["provider"] == "openai"
-    assert "This is a test" in str(span["input"])
-
-
-@pytest.mark.vcr
-def test_litellm_moderation(memory_logger):
-    assert not memory_logger.pop()
-
-    start = time.time()
-    response = litellm.moderation(model="omni-moderation-latest", input="This is a test message")
-    end = time.time()
+    response = _run(
+        is_async,
+        litellm.moderation,
+        litellm.amoderation,
+        model="omni-moderation-latest",
+        input="This is a test message",
+    )
 
     assert response
     assert response.results
@@ -424,30 +350,17 @@ def test_litellm_moderation(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_amoderation(memory_logger):
+@sync_async
+def test_litellm_image_generation(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    response = await litellm.amoderation(model="omni-moderation-latest", input="This is a test message")
+    # Distinct prompts per variant to match the recorded [sync]/[async] cassettes.
+    prompt = "A tiny blue square on a white background" if is_async else "A tiny red square on a white background"
 
-    assert response
-    assert response.results
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "omni-moderation-latest"
-    assert span["metadata"]["provider"] == "openai"
-    assert "This is a test message" in str(span["input"])
-
-
-@pytest.mark.vcr
-def test_litellm_image_generation(memory_logger):
-    assert not memory_logger.pop()
-
-    prompt = "A tiny red square on a white background"
-
-    response = litellm.image_generation(
+    response = _run(
+        is_async,
+        litellm.image_generation,
+        litellm.aimage_generation,
         model="gpt-image-1-mini",
         prompt=prompt,
         size="1024x1024",
@@ -468,37 +381,14 @@ def test_litellm_image_generation(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_aimage_generation(memory_logger):
+@sync_async
+def test_litellm_completion_with_system_prompt(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    prompt = "A tiny blue square on a white background"
-
-    response = await litellm.aimage_generation(
-        model="gpt-image-1-mini",
-        prompt=prompt,
-        size="1024x1024",
-    )
-
-    assert response
-    assert response.data
-    assert response.data[0].b64_json or response.data[0].url
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "gpt-image-1-mini"
-    assert span["metadata"]["provider"] == "openai"
-    assert span["input"] == prompt
-    assert span["output"]["images_count"] == 1
-    assert span["metrics"]["duration"] >= 0
-
-
-@pytest.mark.vcr
-def test_litellm_completion_with_system_prompt(memory_logger):
-    assert not memory_logger.pop()
-
-    response = litellm.completion(
+    response = _run(
+        is_async,
+        litellm.completion,
+        litellm.acompletion,
         model=TEST_MODEL,
         messages=[{"role": "system", "content": TEST_SYSTEM_PROMPT}, {"role": "user", "content": TEST_PROMPT}],
     )
@@ -519,11 +409,12 @@ def test_litellm_completion_with_system_prompt(memory_logger):
 
 
 @pytest.mark.vcr
-def test_litellm_transcription(memory_logger):
+@sync_async
+def test_litellm_transcription(memory_logger, is_async):
     assert not memory_logger.pop()
 
     with open(TEST_AUDIO_FILE, "rb") as f:
-        response = litellm.transcription(model="whisper-1", file=f)
+        response = _run(is_async, litellm.transcription, litellm.atranscription, model="whisper-1", file=f)
 
     assert response
     assert response.text == "you"
@@ -540,32 +431,14 @@ def test_litellm_transcription(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_atranscription(memory_logger):
+@sync_async
+def test_litellm_speech(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    with open(TEST_AUDIO_FILE, "rb") as f:
-        response = await litellm.atranscription(model="whisper-1", file=f)
-
-    assert response
-    assert response.text == "you"
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "whisper-1"
-    assert span["metadata"]["provider"] == "openai"
-    assert isinstance(span["input"]["file"], Attachment)
-    assert span["input"]["file"].reference["filename"] == "test_audio.wav"
-    assert span["input"]["file"].reference["content_type"] in ("audio/x-wav", "audio/wav")  # OS-dependent
-    assert span["output"] == "you"
-
-
-@pytest.mark.vcr
-def test_litellm_speech(memory_logger):
-    assert not memory_logger.pop()
-
-    response = litellm.speech(
+    response = _run(
+        is_async,
+        litellm.speech,
+        litellm.aspeech,
         model="tts-1",
         voice="alloy",
         input="Hello, this is a test.",
@@ -587,88 +460,21 @@ def test_litellm_speech(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_aspeech(memory_logger):
-    assert not memory_logger.pop()
-
-    response = await litellm.aspeech(
-        model="tts-1",
-        voice="alloy",
-        input="Hello, this is a test.",
-        response_format="mp3",
-    )
-
-    assert response
-    assert response.content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == "tts-1"
-    assert span["metadata"]["voice"] == "alloy"
-    assert span["metadata"]["response_format"] == "mp3"
-    assert span["metadata"]["provider"] == "openai"
-    assert span["input"] == "Hello, this is a test."
-    _assert_speech_output_attachment(span)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_acompletion_with_system_prompt(memory_logger):
-    assert not memory_logger.pop()
-
-    response = await litellm.acompletion(
-        model=TEST_MODEL,
-        messages=[{"role": "system", "content": TEST_SYSTEM_PROMPT}, {"role": "user", "content": TEST_PROMPT}],
-    )
-
-    assert response
-    assert response.choices
-    assert "24" in response.choices[0].message.content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    inputs = span["input"]
-    assert len(inputs) == 2
-    assert inputs[0]["role"] == "system"
-    assert inputs[0]["content"] == TEST_SYSTEM_PROMPT
-    assert inputs[1]["role"] == "user"
-    assert inputs[1]["content"] == TEST_PROMPT
-
-
-@pytest.mark.vcr
-def test_litellm_completion_error(memory_logger):
+@sync_async
+def test_litellm_completion_error(memory_logger, is_async):
     assert not memory_logger.pop()
 
     # Use a non-existent model to force an error
     fake_model = "non-existent-model"
 
     try:
-        litellm.completion(model=fake_model, messages=[{"role": "user", "content": TEST_PROMPT}])
-        pytest.fail("Expected an exception but none was raised")
-    except Exception:
-        # We expect an error here
-        pass
-
-    logs = memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-    assert log["project_id"] == PROJECT_NAME
-    # Check that we got a log entry with the fake model
-    assert fake_model in str(log)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_acompletion_error(memory_logger):
-    assert not memory_logger.pop()
-
-    # Use a non-existent model to force an error
-    fake_model = "non-existent-model"
-
-    try:
-        await litellm.acompletion(model=fake_model, messages=[{"role": "user", "content": TEST_PROMPT}])
+        _run(
+            is_async,
+            litellm.completion,
+            litellm.acompletion,
+            model=fake_model,
+            messages=[{"role": "user", "content": TEST_PROMPT}],
+        )
         pytest.fail("Expected an exception but none was raised")
     except Exception:
         # We expect an error here
@@ -775,22 +581,25 @@ def test_litellm_tool_calls(memory_logger):
 
 
 @pytest.mark.vcr
-def test_litellm_responses_streaming_sync(memory_logger):
+@sync_async
+def test_litellm_responses_streaming(memory_logger, is_async):
     """Test the responses API with streaming."""
     assert not memory_logger.pop()
 
     start = time.time()
-    stream = litellm.responses(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
-
-    chunks = []
-    for chunk in stream:
-        if chunk.type == "response.output_text.delta":
-            chunks.append(chunk.delta)
+    chunks = _run_stream(
+        is_async,
+        litellm.responses,
+        litellm.aresponses,
+        model=TEST_MODEL,
+        input="What's 12 + 12?",
+        stream=True,
+    )
     end = time.time()
 
-    output = "".join(chunks)
     assert chunks
     assert len(chunks) > 1
+    output = "".join(chunk.delta for chunk in chunks if getattr(chunk, "type", None) == "response.output_text.delta")
     assert "24" in output
 
     # Verify the span is created
@@ -802,33 +611,6 @@ def test_litellm_responses_streaming_sync(memory_logger):
     assert span["metadata"]["stream"] is True
     assert "What's 12 + 12?" in str(span["input"])
     assert "24" in str(span["output"])
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_aresponses_streaming_async(memory_logger):
-    """Test the async responses API with streaming."""
-    assert not memory_logger.pop()
-
-    start = time.time()
-    stream = await litellm.aresponses(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
-
-    chunks = []
-    async for chunk in stream:
-        chunks.append(chunk)
-    end = time.time()
-
-    assert chunks
-    assert len(chunks) > 1
-
-    # Verify the span is created
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert span["metadata"]["stream"] is True
-    assert "What's 12 + 12?" in str(span["input"])
 
 
 @pytest.mark.vcr
@@ -947,11 +729,15 @@ def test_litellm_openrouter_no_booleans_in_metrics(memory_logger):
 
 
 @pytest.mark.vcr
-def test_litellm_rerank(memory_logger):
+@sync_async
+def test_litellm_rerank(memory_logger, is_async):
     assert not memory_logger.pop()
 
     start = time.time()
-    response = litellm.rerank(
+    response = _run(
+        is_async,
+        litellm.rerank,
+        litellm.arerank,
         model=RERANK_MODEL,
         query=RERANK_QUERY,
         documents=RERANK_DOCUMENTS,
@@ -990,42 +776,6 @@ def test_litellm_rerank(memory_logger):
     assert metrics["end"] >= metrics["start"]
     assert metrics["duration"] >= 0
     # Cohere rerank bills in search_units.
-    assert metrics.get("search_units") == 1
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_litellm_arerank(memory_logger):
-    assert not memory_logger.pop()
-
-    start = time.time()
-    response = await litellm.arerank(
-        model=RERANK_MODEL,
-        query=RERANK_QUERY,
-        documents=RERANK_DOCUMENTS,
-        top_n=2,
-    )
-    end = time.time()
-
-    assert response
-    assert response.results
-    assert len(response.results) == 2
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["span_attributes"]["name"] == "Rerank"
-    assert span["metadata"]["provider"] == "cohere"
-    assert span["metadata"]["model"] == RERANK_MODEL
-    assert span["metadata"]["top_n"] == 2
-    assert span["metadata"]["document_count"] == 3
-    assert span["input"] == {"query": RERANK_QUERY, "documents": RERANK_DOCUMENTS}
-    assert isinstance(span["output"], list)
-    assert len(span["output"]) == 2
-
-    metrics = span["metrics"]
-    assert metrics["start"] >= start
-    assert metrics["end"] <= end
     assert metrics.get("search_units") == 1
 
 
