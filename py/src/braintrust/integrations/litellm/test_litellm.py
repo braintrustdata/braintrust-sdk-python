@@ -48,14 +48,9 @@ async def _call(is_async, sync_fn, async_fn, *args, **kwargs):
 
 async def _collect_stream(stream, is_async):
     """Drain a sync or async LiteLLM stream into a list of chunks."""
-    chunks = []
     if is_async:
-        async for chunk in stream:
-            chunks.append(chunk)
-    else:
-        for chunk in stream:
-            chunks.append(chunk)
-    return chunks
+        return [chunk async for chunk in stream]
+    return list(stream)
 
 
 def _assert_speech_output_attachment(span) -> None:
@@ -356,7 +351,8 @@ async def test_litellm_moderation(memory_logger, is_async):
 async def test_litellm_image_generation(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    prompt = "A tiny red square on a white background"
+    # Distinct prompts per variant to match the recorded [sync]/[async] cassettes.
+    prompt = "A tiny blue square on a white background" if is_async else "A tiny red square on a white background"
 
     response = await _call(
         is_async,
