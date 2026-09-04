@@ -1,97 +1,169 @@
 ---
 name: commit-message
-description: Suggest a Braintrust SDK repo-style commit message from the current diff and conversation. Use when asked to write, suggest, or generate a commit message for the current changes.
+description: Generates a meaningful conventional commit message (title + body) from the current diff and conversation context. Use when asked to write, suggest, or generate a commit message for the current changes.
 ---
 
-# Commit Message
+# Commit Message Generator
 
-Generate a single commit message that matches the style used on `main` in this repo.
+Generate a conventional commit message based on the staged/unstaged diff and the surrounding conversation.
 
-## Repo Style
+## Conventional Commits Format
 
-Prefer:
+```
+<type>(<scope>): <short summary>
 
-```text
-<type>(<scope>): <summary>
+<body>
+
+<footer>
 ```
 
-or, when scope does not add much:
-
-```text
-<type>: <summary>
-```
-
-Recent `main` examples:
-
-- `feat(openai): trace images api calls`
-- `fix(framework): split \`Output\` TypeVar into \`Output\` and \`Expected\``
-- `ref(litellm): migrate litellm wrapper to integrations API`
-- `chore: generated SDK types`
-- `ci(checks): bump nox shards to 4 and introduce shard weights`
-- `test(openai): add vcr regression coverage for stream helpers`
-- `docs: document integrations in readme`
-- `perf(json): reduce span serialization overhead`
-
-Notes:
-
-- This repo uses `ref`, not `refactor`.
-- Scope is common and usually names the subsystem, provider, or area being changed.
-- Commits on `main` often include a GitHub squash suffix like `(#245)`. Omit that for a normal local commit unless the user explicitly wants a PR title or squash-merge title.
-- This repo commonly uses commit bodies for substantive changes. Prefer a concise subject that makes the main change obvious, and add a short body unless the change is truly trivial and fully explained by the subject.
-
-## Types
-
-Use the most specific type:
-
+**Types:**
 - `feat` — new feature
 - `fix` — bug fix
-- `ref` — restructuring without behavior change
+- `ref` — code restructuring without behavior change (prefer `ref` over `refactor`)
 - `perf` — performance improvement
-- `test` — tests only
+- `test` — adding or updating tests
 - `docs` — documentation only
-- `chore` — tooling, generated files, maintenance, config
-- `ci` — GitHub Actions, nox sharding, CI wiring
-- `style` — formatting only
-- `revert` — reverting a prior change
+- `chore` — build system, tooling, dependencies, config
+- `ci` — CI/CD pipeline changes
+- `style` — formatting, whitespace (no logic change)
+- `revert` — reverts a previous commit
 
-## Scope Guidance
+**Rules:**
+- Subject line ≤ 72 characters, lowercase, no trailing period
+- Imperative mood: "add feature" not "added feature"
+- Body wraps at 100 characters, explains *what* and *why* (not *how*)
+- Footer: `BREAKING CHANGE: ...` or `Fixes #<issue>` / `Closes #<issue>` if applicable
+- Scope is optional but encouraged when it adds clarity (e.g., `feat(auth):`, `fix(api):`)
+- Omit body if the subject line fully communicates the intent
 
-Good scopes in this repo usually look like:
+## Writing Style
 
-- provider or integration names: `openai`, `anthropic`, `google_genai`, `claude_agent_sdk`, `langchain`
-- SDK areas: `framework`, `cli`, `devserver`, `integrations`
-- CI/tooling areas: `checks`, `nox`, `release`
+- Lead with the point. Be direct, technical, collaborative, and lightly casual.
+- Use plain words, contractions where natural, and short paragraphs.
+- Prefer `we` for shared decisions and `I` for genuine opinion or uncertainty. Do not hide uncertainty behind authoritative prose.
+- Ground claims in specifics: name the API, version, behavior, error, test, or file involved.
+- Put code, identifiers, filenames, versions, and literal values in backticks.
+- Give only the context needed to explain **context → change → reason/evidence → consequence or follow-up**.
+- Surface compatibility constraints, tradeoffs, risks, and intentionally deferred work plainly when relevant.
+- Use bullets for multiple distinct changes or findings; avoid unnecessary headings and polished filler.
+- Do not merely restate the diff. Explain why the implementation matters or how behavior changes.
 
-If the change is broad or generated, omit scope instead of forcing one.
+For a substantive change, actively consider including a compact code snippet, before/after example, or ASCII diagram when it explains behavior or data flow more clearly than prose. Keep it focused and omit it when it would be decorative or redundant. For example:
 
-## Rules
+````text
+Before: provider response -> wrapper-specific span
+After:  provider response -> shared integration hook -> normalized span
+````
 
-- Keep the message useful but concise.
-- Keep the subject concise and imperative.
-- Prefer lowercase style and no trailing period.
-- Keep the subject around 72 characters or less when practical.
-- Describe the primary change, not every file touched.
-- Make the subject specific enough that a reviewer can understand the change without opening the diff.
-- If the diff mixes unrelated concerns, say so instead of forcing one message.
-- Add a short body by default for feature, fix, perf, or ref commits.
-- The body should briefly capture why the change was made, any important behavioral detail, and key test/coverage notes when they materially help a reviewer.
-- Only omit the body when the change is truly tiny and the subject fully explains it.
+or:
 
-## Workflow
+````python
+# Before
+wrap(client)
 
-1. Inspect the current change:
+# After
+client = wrap_client(client)
+````
+
+## Instructions
+
+1. **Collect the diff** — run `git diff HEAD` (staged + unstaged). If empty, try `git diff --cached` (staged only). If still empty, try `git status --short` and `git log --oneline -3` to understand the trajectory.
+
+2. **Review the conversation** — you already have the conversation history in context. Look for:
+   - Explicit intent from the user ("I'm adding X", "this fixes Y")
+   - Issue or ticket numbers mentioned
+   - Feature names, module names, or domain language used
+   - Any constraints or things the user emphasized
+
+3. **Identify ambiguities** — before generating, check if any of these are unclear:
+   - Is the primary intent a new feature, a fix, a refactor, or something else?
+   - Is there a scope (module/package/component) worth calling out?
+   - Are there breaking changes?
+   - Is there a related issue or ticket number?
+   - Does the diff span multiple unrelated concerns? (should be split into separate commits)
+
+4. **Ask for clarifications if needed** — if the intent is genuinely ambiguous from both the diff and the conversation, ask 1–3 focused questions before generating. Do **not** ask about things already clear from the context.
+
+5. **Generate the commit message** — produce exactly one commit message in a fenced code block:
+   - Pick the most specific `type` that fits
+   - Include a `scope` when it meaningfully narrows the change
+   - Write a crisp subject line in imperative mood
+   - Add a body if the change is non-trivial, explaining the reasoning
+   - Check whether a small before/after snippet or ASCII diagram would make a substantive change easier to review, and include one when it would
+   - Add footer entries for breaking changes or issue references
+   - **CRITICAL when committing:** preserve **real newline characters** in the commit body
+   - **Never** put literal `\n` text inside a quoted `git commit -m "..."` body and assume Git will turn it into line breaks — it will not
+   - If issuing `git commit` yourself, prefer these patterns in this order:
+     1. **Best for multiline bodies:** write the full message to a temp file and use `git commit -F <file>`
+     2. **Good for amendments:** write the full message to a temp file and use `git commit --amend -F <file>`
+     3. multiple `-m` flags, e.g. `git commit -m "subject" -m "first paragraph
+
+second paragraph"`
+     4. ANSI-C quoting, e.g. `git commit -m "subject" -m $'line 1\n\nline 2'`
+   - Prefer temp-file commits by default whenever the body has multiple paragraphs, bullets, or any non-trivial formatting
+   - Before finalizing, sanity-check that `git log -1 --format=medium` shows actual blank lines and wrapped paragraphs, not backslash-n sequences
+
+## Newline safety examples
+
+**Wrong:**
+
+```bash
+git commit -m "docs: add pi guide" -m "line 1\n\nline 2"
+```
+
+This stores the characters `\` and `n` literally in the commit message.
+
+**Correct:**
+
+```bash
+git commit -m "docs: add pi guide" -m $'line 1\n\nline 2'
+```
+
+or
+
+```bash
+git commit -m "docs: add pi guide" -m "line 1
+
+line 2"
+```
+
+or use a temp file/editor.
+
+## Default execution preference
+
+When the task is not just to suggest a commit message, but to actually run `git commit` or `git commit --amend`:
+
+1. If the message has a body, prefer a temp file with `-F`
+2. If amending a commit with a body, prefer `git commit --amend -F <file>`
+3. Only use inline `-m` bodies when the formatting is trivially simple and you are certain real newlines will be preserved
+4. After committing, verify with `git log -1 --format=medium`
+
+This preference exists to avoid malformed commit bodies with literal `\n` sequences.
+
+## Output Format
+
+Present the final message in a fenced code block. If the message contains its own fenced snippet, use a longer outer fence so the full message remains copyable:
+
+```
+feat(auth): add OAuth2 PKCE flow for CLI login
+
+Replace the device-code flow with PKCE so the CLI can authenticate
+without opening a browser on headless machines. The previous flow
+required interactive browser consent which blocked CI usage.
+
+Closes #342
+```
+
+Then briefly (1–2 sentences) explain the key decision made (type choice, scope, whether a body was needed).
+
+If you asked for clarifications and the user answered, incorporate those answers and output the final message immediately — no need to re-ask.
+
+## Commands
 
 ```bash
 git diff HEAD
 git diff --cached
 git status --short
+git log --oneline -5
 ```
-
-2. Pick the main intent, choose `type` and optional `scope`, then write one useful but concise commit message.
-3. Unless the change is trivial, include a body with 1-3 short paragraphs or bullets covering rationale, behavior, or test coverage.
-
-## Output
-
-Return exactly one commit message in a fenced code block.
-
-If helpful, add one short sentence after the block explaining the type/scope choice.

@@ -1,0 +1,126 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What''s the weather in San Francisco?"}],
+      "role": "user"}], "systemInstruction": {"parts": [{"text": "You are a helpful
+      weather assistant. Use the get_weather tool to answer questions about weather.\n\nYou
+      are an agent. Your internal name is \"weather_agent\"."}], "role": "user"},
+      "tools": [{"functionDeclarations": [{"description": "Get the weather for a location.",
+      "name": "get_weather", "parameters_json_schema": {"properties": {"location":
+      {"title": "Location", "type": "string"}}, "required": ["location"], "title":
+      "get_weatherParams", "type": "object"}}]}], "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"functionCall\": {\n              \"name\": \"get_weather\",\n
+        \             \"args\": {\n                \"location\": \"San Francisco\"\n
+        \             }\n            }\n          }\n        ],\n        \"role\":
+        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0,\n
+        \     \"finishMessage\": \"Model generated function call(s).\"\n    }\n  ],\n
+        \ \"usageMetadata\": {\n    \"promptTokenCount\": 84,\n    \"candidatesTokenCount\":
+        16,\n    \"totalTokenCount\": 100,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 84\n      }\n    ],\n
+        \   \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
+        \ \"responseId\": \"VPyaasGCI5HT_uMPldWosAI\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 04 Sep 2026 17:13:56 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=470
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '751'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"contents": [{"parts": [{"text": "What''s the weather in San Francisco?"}],
+      "role": "user"}, {"parts": [{"functionCall": {"args": {"location": "San Francisco"},
+      "name": "get_weather"}}], "role": "model"}, {"parts": [{"functionResponse":
+      {"name": "get_weather", "response": {"location": "San Francisco", "temperature":
+      "72\u00b0F", "condition": "sunny", "humidity": "45%", "wind": "5 mph NW"}}}],
+      "role": "user"}], "systemInstruction": {"parts": [{"text": "You are a helpful
+      weather assistant. Use the get_weather tool to answer questions about weather.\n\nYou
+      are an agent. Your internal name is \"weather_agent\"."}], "role": "user"},
+      "tools": [{"functionDeclarations": [{"description": "Get the weather for a location.",
+      "name": "get_weather", "parameters_json_schema": {"properties": {"location":
+      {"title": "Location", "type": "string"}}, "required": ["location"], "title":
+      "get_weatherParams", "type": "object"}}]}], "generationConfig": {}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"The weather in San Francisco is sunny
+        with a temperature of 72\xB0F, 45% humidity, and a wind speed of 5 mph NW.\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        146,\n    \"candidatesTokenCount\": 33,\n    \"totalTokenCount\": 179,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 146\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"Vfyaarv3DOu11MkPrYXjiAI\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 04 Sep 2026 17:13:57 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=514
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '661'
+    status:
+      code: 200
+      message: OK
+version: 1

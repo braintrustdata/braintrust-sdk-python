@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "Give me info about Alice who lives in
+      Paris, France."}], "role": "user"}], "systemInstruction": {"parts": [{"text":
+      "Return a person with their address.\n\nYou are an agent. Your internal name
+      is \"nested_agent\"."}], "role": "user"}, "generationConfig": {"responseMimeType":
+      "application/json", "responseSchema": {"properties": {"name": {"description":
+      "Person''s name", "title": "Name", "type": "STRING"}, "age": {"description":
+      "Person''s age", "maximum": 150.0, "minimum": 0.0, "title": "Age", "type": "INTEGER"},
+      "address": {"properties": {"street": {"description": "Street address", "title":
+      "Street", "type": "STRING"}, "city": {"description": "City name", "title": "City",
+      "type": "STRING"}, "country": {"description": "Country name", "title": "Country",
+      "type": "STRING"}}, "property_ordering": ["street", "city", "country"], "required":
+      ["street", "city", "country"], "title": "Address", "type": "OBJECT"}}, "property_ordering":
+      ["name", "age", "address"], "required": ["name", "age", "address"], "title":
+      "Person", "type": "OBJECT"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"{\\n  \\\"name\\\": \\\"Alice\\\",\\n
+        \ \\\"age\\\": 30,\\n  \\\"address\\\": {\\n    \\\"street\\\": \\\"123 Main
+        St\\\",\\n    \\\"city\\\": \\\"Paris\\\",\\n    \\\"country\\\": \\\"France\\\"\\n
+        \ }\\n}\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
+        \     \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 36,\n    \"candidatesTokenCount\": 57,\n    \"totalTokenCount\":
+        93,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 36\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"YfyaaolSia_89Q-R6rnoBg\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 04 Sep 2026 17:14:09 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=419
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '703'
+    status:
+      code: 200
+      message: OK
+version: 1

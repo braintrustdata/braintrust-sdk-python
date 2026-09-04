@@ -1,0 +1,60 @@
+interactions:
+- request:
+    body: '{"contents": [{"parts": [{"text": "What is the capital of France?"}], "role":
+      "user"}], "systemInstruction": {"parts": [{"text": "You are a Capital Information
+      Agent. Given a country, respond ONLY with a JSON object containing the capital.
+      Format: {\"capital\": \"capital_name\"}\n\nYou are an agent. Your internal name
+      is \"capital_agent\"."}], "role": "user"}, "generationConfig": {"responseMimeType":
+      "application/json", "responseSchema": {"properties": {"capital": {"description":
+      "The capital of the country.", "title": "Capital", "type": "STRING"}}, "required":
+      ["capital"], "title": "CapitalOutput", "type": "OBJECT"}}}'
+    headers:
+      Content-Type:
+      - application/json
+      user-agent:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+      x-goog-api-client:
+      - google-genai-sdk/2.22.0 gl-python/3.14.6 google-adk/2.6.3 gl-python/3.14.6
+    method: POST
+    uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
+  response:
+    body:
+      string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
+        [\n          {\n            \"text\": \"{\\\"capital\\\": \\\"Paris\\\"}\"\n
+        \         }\n        ],\n        \"role\": \"model\"\n      },\n      \"finishReason\":
+        \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        55,\n    \"candidatesTokenCount\": 6,\n    \"totalTokenCount\": 61,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 55\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"X_yaapu4PL6t1MkP1Zf1sQI\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Fri, 04 Sep 2026 17:14:08 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Server-Timing:
+      - gfet4t7; dur=417
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gemini-Service-Tier:
+      - standard
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '571'
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -20,23 +20,13 @@ from .tracing import (
 # ---------------------------------------------------------------------------
 
 
-class AgentRunPatcher(FunctionWrapperPatcher):
-    """Patch the ADK 2.7+ node entry point used to execute agents."""
-
-    name = "adk.agent.run"
-    target_module = "google.adk.workflow._base_node"
-    target_path = "BaseNode.run"
-    wrapper = _agent_run_async_wrapper
-
-
 class AgentRunAsyncPatcher(FunctionWrapperPatcher):
-    """Patch the legacy ``BaseAgent.run_async`` entry point for tracing."""
+    """Patch the ``BaseAgent.run_async`` agent execution entry point."""
 
     name = "adk.agent.run_async"
     target_module = "google.adk.agents"
     target_path = "BaseAgent.run_async"
     wrapper = _agent_run_async_wrapper
-    superseded_by = (AgentRunPatcher,)
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +151,6 @@ class McpToolPatcher(FunctionWrapperPatcher):
 
 def wrap_agent(Agent: Any) -> Any:
     """Manually patch an agent class for tracing."""
-    AgentRunPatcher.wrap_target(Agent)
     return AgentRunAsyncPatcher.wrap_target(Agent)
 
 
