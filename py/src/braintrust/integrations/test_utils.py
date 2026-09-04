@@ -3,8 +3,10 @@ import subprocess
 import sys
 import textwrap
 import unittest.mock
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import pytest
 import vcr
@@ -133,6 +135,57 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
     )
     assert result.returncode == 0, f"Script {script_name} failed:\n{result.stderr}"
     return result
+
+
+def run_auto_smoke(
+    name: str,
+    *,
+    auto_instrument_kwargs: Mapping[str, object] | None = None,
+    is_patched: Callable[[], bool] | None = None,
+    cassette: str | None = None,
+    integration: str | None = None,
+    use_vcr: bool = True,
+    vcr_config: dict | None = None,
+    run: Callable[[Any], None] | None = None,
+) -> None:
+    """Run the standard ``auto_instrument()`` smoke pattern.
+
+    Encodes the contract shared by scripts under ``auto_test_scripts/``:
+
+    1. Optional pre-check: ``is_patched()`` returns False before patching.
+    2. ``auto_instrument(**auto_instrument_kwargs)`` returns ``{name: True, ...}``.
+    3. Optional post-check: ``is_patched()`` returns True after patching.
+    4. A second ``auto_instrument`` call still returns ``{name: True, ...}`` (idempotent).
+    5. If ``run`` is given, open ``autoinstrument_test_context`` (defaults cassette
+       name to ``f"test_auto_{name}"``) and delegate to ``run(memory_logger)``.
+
+    Callers assert their own API-call and span-shape expectations inside ``run``.
+    """
+    from braintrust.auto import auto_instrument
+
+    kwargs = dict(auto_instrument_kwargs or {})
+
+    if is_patched is not None:
+        assert not is_patched(), f"{name!r} already patched before auto_instrument()"
+
+    first = auto_instrument(**kwargs)
+    assert first.get(name) is True, f"auto_instrument returned {first!r}"
+    if is_patched is not None:
+        assert is_patched(), f"{name!r} not patched after auto_instrument()"
+
+    second = auto_instrument(**kwargs)
+    assert second.get(name) is True, f"auto_instrument (2nd call) returned {second!r}"
+
+    if run is None:
+        return
+
+    ctx_kwargs: dict[str, Any] = {"use_vcr": use_vcr}
+    if integration is not None:
+        ctx_kwargs["integration"] = integration
+    if vcr_config is not None:
+        ctx_kwargs["vcr_config"] = vcr_config
+    with autoinstrument_test_context(cassette or f"test_auto_{name}", **ctx_kwargs) as memory_logger:
+        run(memory_logger)
 
 
 def assert_metrics_are_valid(metrics, start=None, end=None):

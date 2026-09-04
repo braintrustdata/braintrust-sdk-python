@@ -7,18 +7,10 @@ os.environ.setdefault("CO_API_KEY", "co-test-dummy-api-key-for-vcr-tests")
 os.environ.setdefault("COHERE_API_KEY", os.environ["CO_API_KEY"])
 
 import cohere
-from braintrust.auto import auto_instrument
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-results = auto_instrument()
-assert results.get("cohere") is True
-
-results2 = auto_instrument()
-assert results2.get("cohere") is True
-
-
-with autoinstrument_test_context("test_auto_cohere", integration="cohere") as memory_logger:
+def _call(memory_logger):
     use_v2 = hasattr(cohere, "ClientV2") and hasattr(cohere.ClientV2, "chat")
     if use_v2:
         client = cohere.ClientV2(api_key=os.environ["CO_API_KEY"])
@@ -44,4 +36,6 @@ with autoinstrument_test_context("test_auto_cohere", integration="cohere") as me
     assert span["metadata"]["model"] == "command-a-03-2025"
     assert span["span_attributes"]["name"] == "cohere.chat"
 
+
+run_auto_smoke("cohere", integration="cohere", run=_call)
 print("SUCCESS")

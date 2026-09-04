@@ -1,20 +1,12 @@
 """Test auto_instrument for Claude Agent SDK (no uninstrument available)."""
 
-from braintrust.auto import auto_instrument
+import asyncio
+
 from braintrust.integrations.claude_agent_sdk._test_transport import make_cassette_transport
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-# 1. Instrument
-results = auto_instrument()
-assert results.get("claude_agent_sdk") == True
-
-# 2. Idempotent
-results2 = auto_instrument()
-assert results2.get("claude_agent_sdk") == True
-
-# 3. Make API call and verify span
-with autoinstrument_test_context("test_auto_claude_agent_sdk", use_vcr=False) as memory_logger:
+def _call(memory_logger):
     import claude_agent_sdk  # pylint: disable=import-error
 
     options = claude_agent_sdk.ClaudeAgentOptions(
@@ -35,12 +27,12 @@ with autoinstrument_test_context("test_auto_claude_agent_sdk", use_vcr=False) as
                     return message
         return None
 
-    import asyncio
-
     result = asyncio.run(run_agent())
     assert result is not None
 
     spans = memory_logger.pop()
     assert len(spans) >= 1, f"Expected at least 1 span, got {len(spans)}"
 
+
+run_auto_smoke("claude_agent_sdk", use_vcr=False, run=_call)
 print("SUCCESS")

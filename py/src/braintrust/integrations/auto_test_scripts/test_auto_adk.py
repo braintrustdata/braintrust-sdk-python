@@ -3,7 +3,6 @@
 import importlib
 from importlib.metadata import version as pkg_version
 
-from braintrust.auto import auto_instrument
 from braintrust.integrations.adk.patchers import (
     AgentRunAsyncPatcher,
     AgentRunPatcher,
@@ -11,6 +10,7 @@ from braintrust.integrations.adk.patchers import (
     _ThreadBridgePlatformSubPatcher,
     _ThreadBridgeRunnersSubPatcher,
 )
+from braintrust.integrations.test_utils import run_auto_smoke
 from google.adk import runners as adk_runners
 from google.adk.agents import BaseAgent
 from google.adk.runners import Runner
@@ -22,34 +22,26 @@ assert importlib.import_module("google.adk").__name__ == "google.adk"
 assert pkg_version("google-adk")
 
 
-def is_patched(target, patcher):
+agent_run_target = base_node.BaseNode.run if base_node is not None else BaseAgent.run_async
+agent_run_patcher = AgentRunPatcher if base_node is not None else AgentRunAsyncPatcher
+
+
+def _marker(target, patcher) -> bool:
     return bool(getattr(target, patcher.patch_marker_attr(), False))
 
 
-# 1. Verify ADK surfaces are not patched initially.
-agent_run_target = base_node.BaseNode.run if base_node is not None else BaseAgent.run_async
-agent_run_patcher = AgentRunPatcher if base_node is not None else AgentRunAsyncPatcher
-assert not is_patched(agent_run_target, agent_run_patcher)
-assert not is_patched(Runner.run_async, _RunnerRunAsyncSubPatcher)
-assert not is_patched(platform_thread.create_thread, _ThreadBridgePlatformSubPatcher)
-assert not is_patched(adk_runners.create_thread, _ThreadBridgeRunnersSubPatcher)
+def _is_patched() -> bool:
+    return (
+        _marker(agent_run_target, agent_run_patcher)
+        and _marker(Runner.run_async, _RunnerRunAsyncSubPatcher)
+        and _marker(platform_thread.create_thread, _ThreadBridgePlatformSubPatcher)
+        and _marker(adk_runners.create_thread, _ThreadBridgeRunnersSubPatcher)
+    )
 
-# 2. Instrument.
-results = auto_instrument()
-assert results.get("adk") == True, "auto_instrument should return True for adk"
 
-# 3. Verify the imported google.adk surfaces are patched.
-assert is_patched(agent_run_target, agent_run_patcher)
-assert is_patched(Runner.run_async, _RunnerRunAsyncSubPatcher)
-assert not is_patched(Runner.run, _RunnerRunAsyncSubPatcher)
-assert is_patched(platform_thread.create_thread, _ThreadBridgePlatformSubPatcher)
-assert is_patched(adk_runners.create_thread, _ThreadBridgeRunnersSubPatcher)
+run_auto_smoke("adk", is_patched=_is_patched)
 
-# 4. Idempotent.
-results2 = auto_instrument()
-assert results2.get("adk") == True, "auto_instrument should still return True on second call"
-assert is_patched(agent_run_target, agent_run_patcher)
-assert is_patched(Runner.run_async, _RunnerRunAsyncSubPatcher)
-assert not is_patched(Runner.run, _RunnerRunAsyncSubPatcher)
+# Runner.run must stay unpatched even after auto_instrument — only run_async is instrumented.
+assert not _marker(Runner.run, _RunnerRunAsyncSubPatcher)
 
 print("SUCCESS")

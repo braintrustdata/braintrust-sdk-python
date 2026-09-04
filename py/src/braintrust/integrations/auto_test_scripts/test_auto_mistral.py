@@ -2,8 +2,7 @@
 
 import os
 
-from braintrust.auto import auto_instrument
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
 try:
@@ -12,14 +11,7 @@ except ImportError:
     from mistralai import Mistral
 
 
-results = auto_instrument()
-assert results.get("mistral") == True
-
-results2 = auto_instrument()
-assert results2.get("mistral") == True
-
-
-with autoinstrument_test_context("test_auto_mistral", integration="mistral") as memory_logger:
+def _call(memory_logger):
     client = Mistral(api_key=os.environ.get("MISTRAL_API_KEY"))
     response = client.chat.complete(
         model="mistral-small-latest",
@@ -35,4 +27,6 @@ with autoinstrument_test_context("test_auto_mistral", integration="mistral") as 
     assert span["metadata"]["model"] == "mistral-small-latest"
     assert "4" in str(span["output"])
 
+
+run_auto_smoke("mistral", integration="mistral", run=_call)
 print("SUCCESS")

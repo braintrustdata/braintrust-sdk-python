@@ -3,18 +3,12 @@
 # Keep the large Transformers/PyTorch dependencies isolated to their nox job.
 # pylint: disable=import-error
 
-from braintrust.auto import auto_instrument
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-results = auto_instrument(transformers=True)
-assert results.get("transformers") is True
-assert auto_instrument(transformers=True).get("transformers") is True
+def _call(memory_logger):
+    from transformers import pipeline
 
-from transformers import pipeline  # noqa: E402
-
-
-with autoinstrument_test_context("test_auto_transformers", use_vcr=False) as memory_logger:
     generator = pipeline(
         "text-generation",
         model="hf-internal-testing/tiny-random-LlamaForCausalLM",
@@ -29,4 +23,11 @@ with autoinstrument_test_context("test_auto_transformers", use_vcr=False) as mem
     assert span["span_attributes"]["name"] == "huggingface.transformers.text_generation"
     assert span["context"]["span_origin"]["instrumentation"]["name"] == "transformers-auto"
 
+
+run_auto_smoke(
+    "transformers",
+    auto_instrument_kwargs={"transformers": True},
+    use_vcr=False,
+    run=_call,
+)
 print("SUCCESS")

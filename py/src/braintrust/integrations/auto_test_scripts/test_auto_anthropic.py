@@ -3,36 +3,25 @@
 import os
 
 import anthropic
-from braintrust.auto import auto_instrument
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-# 1. Verify not patched initially
-original_sync_module = type(anthropic.Anthropic(api_key="test-key").messages).__module__
-original_async_module = type(anthropic.AsyncAnthropic(api_key="test-key").messages).__module__
+_TRACING_MODULE = "braintrust.integrations.anthropic.tracing"
 
-# 2. Instrument
-results = auto_instrument()
-assert results.get("anthropic") == True
 
-patched_sync = anthropic.Anthropic(api_key="test-key")
-patched_async = anthropic.AsyncAnthropic(api_key="test-key")
-assert type(patched_sync.messages).__module__ == "braintrust.integrations.anthropic.tracing"
-assert type(patched_async.messages).__module__ == "braintrust.integrations.anthropic.tracing"
-assert type(patched_sync.messages).__module__ != original_sync_module
-assert type(patched_async.messages).__module__ != original_async_module
+def _is_patched() -> bool:
+    return (
+        type(anthropic.Anthropic(api_key="test-key").messages).__module__ == _TRACING_MODULE
+        and type(anthropic.AsyncAnthropic(api_key="test-key").messages).__module__ == _TRACING_MODULE
+    )
 
-# 3. Idempotent
-results2 = auto_instrument()
-assert results2.get("anthropic") == True
 
-# 4. Make API call and verify span
-model = (
-    "claude-haiku-4-5-20251001"
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
-    else "claude-3-haiku-20240307"
-)
-with autoinstrument_test_context("test_auto_anthropic", integration="anthropic") as memory_logger:
+def _call(memory_logger):
+    model = (
+        "claude-haiku-4-5-20251001"
+        if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") == "latest"
+        else "claude-3-haiku-20240307"
+    )
     client = anthropic.Anthropic()
     response = client.messages.create(
         model=model,
@@ -47,4 +36,6 @@ with autoinstrument_test_context("test_auto_anthropic", integration="anthropic")
     assert span["metadata"]["provider"] == "anthropic"
     assert "claude" in span["metadata"]["model"]
 
+
+run_auto_smoke("anthropic", is_patched=_is_patched, integration="anthropic", run=_call)
 print("SUCCESS")

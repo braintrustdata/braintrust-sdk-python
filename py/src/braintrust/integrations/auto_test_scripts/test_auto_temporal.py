@@ -1,14 +1,10 @@
 """Test auto_instrument for Temporal."""
 
-from braintrust.auto import auto_instrument
 from braintrust.integrations.temporal import BraintrustPlugin, setup_temporal
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-results = auto_instrument()
-assert results.get("temporal") == True
-
-results2 = auto_instrument()
-assert results2.get("temporal") == True
+run_auto_smoke("temporal")
 
 assert setup_temporal() == True
 assert BraintrustPlugin is not None

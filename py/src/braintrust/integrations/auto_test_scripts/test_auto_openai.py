@@ -3,30 +3,16 @@
 import inspect
 
 import openai
-from braintrust.auto import auto_instrument
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 from wrapt import FunctionWrapper
 
 
-def _is_braintrust_wrapped() -> bool:
+def _is_patched() -> bool:
     attr = inspect.getattr_static(openai.resources.chat.completions.Completions, "create", None)
     return isinstance(attr, FunctionWrapper)
 
 
-# 1. Verify not patched initially
-assert not _is_braintrust_wrapped()
-
-# 2. Instrument
-results = auto_instrument()
-assert results.get("openai") == True
-assert _is_braintrust_wrapped()
-
-# 3. Idempotent
-results2 = auto_instrument()
-assert results2.get("openai") == True
-
-# 4. Make API call and verify span
-with autoinstrument_test_context("test_auto_openai", integration="openai") as memory_logger:
+def _call(memory_logger):
     client = openai.OpenAI()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -40,4 +26,6 @@ with autoinstrument_test_context("test_auto_openai", integration="openai") as me
     assert span["metadata"]["provider"] == "openai"
     assert "gpt-4o-mini" in span["metadata"]["model"]
 
+
+run_auto_smoke("openai", is_patched=_is_patched, integration="openai", run=_call)
 print("SUCCESS")

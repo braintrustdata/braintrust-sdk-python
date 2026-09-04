@@ -7,27 +7,24 @@ calls.  Full span-shape coverage lives in ``test_crewai.py``.
 
 # pylint: disable=import-error
 
-from braintrust.auto import auto_instrument
 from braintrust.integrations.crewai import BraintrustCrewAIListener
 from braintrust.integrations.crewai.patchers import _get_registered_listener
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-# 1. Not registered initially.
-assert _get_registered_listener() is None
+def _is_patched() -> bool:
+    listener = _get_registered_listener()
+    return isinstance(listener, BraintrustCrewAIListener)
 
-# 2. Instrument once.
-results = auto_instrument()
-assert results.get("crewai") is True
-listener1 = _get_registered_listener()
-assert listener1 is not None
-assert isinstance(listener1, BraintrustCrewAIListener)
 
-# 3. Idempotent — same listener, still reports True.
-results2 = auto_instrument()
-assert results2.get("crewai") is True
-assert _get_registered_listener() is listener1
+run_auto_smoke("crewai", is_patched=_is_patched)
 
-# 4. Listener is actually subscribed on the CrewAI event bus.
+# Listener stays the same across the two auto_instrument calls.
+listener = _get_registered_listener()
+assert listener is not None
+assert isinstance(listener, BraintrustCrewAIListener)
+
+# Listener is actually subscribed on the CrewAI event bus.
 from crewai.events import CrewKickoffStartedEvent
 from crewai.events.event_bus import crewai_event_bus
 

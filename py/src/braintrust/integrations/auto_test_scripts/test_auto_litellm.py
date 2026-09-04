@@ -1,28 +1,15 @@
 """Test auto_instrument for LiteLLM."""
 
 import litellm
-from braintrust.auto import auto_instrument
 from braintrust.integrations.litellm import LiteLLMIntegration
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-# 1. Verify not patched initially
-assert not LiteLLMIntegration.patchers[0].is_patched(litellm, None)
+def _is_patched() -> bool:
+    return LiteLLMIntegration.patchers[0].is_patched(litellm, None)
 
-# 2. Instrument
-# Disable OpenAI auto-instrumentation here because LiteLLM's OpenAI-backed
-# chat path can otherwise produce both a LiteLLM span and an OpenAI span.
-# This test is meant to validate LiteLLM instrumentation in isolation.
-results = auto_instrument(openai=False)
-assert results.get("litellm") == True
-assert LiteLLMIntegration.patchers[0].is_patched(litellm, None)
 
-# 3. Idempotent
-results2 = auto_instrument(openai=False)
-assert results2.get("litellm") == True
-
-# 4. Make API call and verify span
-with autoinstrument_test_context("test_auto_litellm", integration="litellm") as memory_logger:
+def _call(memory_logger):
     response = litellm.completion(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": "Say hi"}],
@@ -34,4 +21,15 @@ with autoinstrument_test_context("test_auto_litellm", integration="litellm") as 
     span = spans[0]
     assert span["metadata"]["provider"] == "openai"
 
+
+# Disable OpenAI auto-instrumentation here because LiteLLM's OpenAI-backed
+# chat path can otherwise produce both a LiteLLM span and an OpenAI span.
+# This test is meant to validate LiteLLM instrumentation in isolation.
+run_auto_smoke(
+    "litellm",
+    auto_instrument_kwargs={"openai": False},
+    is_patched=_is_patched,
+    integration="litellm",
+    run=_call,
+)
 print("SUCCESS")

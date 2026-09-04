@@ -2,20 +2,10 @@
 
 import os
 
-from braintrust.auto import auto_instrument
-from braintrust.integrations.test_utils import autoinstrument_test_context
+from braintrust.integrations.test_utils import run_auto_smoke
 
 
-# 1. Instrument
-results = auto_instrument()
-assert results.get("google_genai") == True
-
-# 2. Idempotent
-results2 = auto_instrument()
-assert results2.get("google_genai") == True
-
-# 3. Make API call and verify span
-with autoinstrument_test_context("test_auto_google_genai", integration="google_genai") as memory_logger:
+def _call(memory_logger):
     from google.genai import types
     from google.genai.client import Client
 
@@ -36,4 +26,6 @@ with autoinstrument_test_context("test_auto_google_genai", integration="google_g
     span = spans[0]
     assert "gemini" in span["metadata"]["model"]
 
+
+run_auto_smoke("google_genai", integration="google_genai", run=_call)
 print("SUCCESS")
