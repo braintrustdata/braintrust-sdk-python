@@ -43,7 +43,7 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
     _serialize_tool_result_output,
     _thread_local,
 )
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
@@ -2548,7 +2548,7 @@ class TestAutoInstrumentClaudeAgentSDK:
     @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
     def test_auto_instrument_claude_agent_sdk(self):
         """Test auto_instrument patches Claude Agent SDK and creates spans."""
-        verify_autoinstrument_script("test_auto_claude_agent_sdk.py")
+        verify_autoinstrument_smoke("claude_agent_sdk")
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")

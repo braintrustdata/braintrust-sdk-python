@@ -7,7 +7,7 @@ import inspect
 
 import pytest
 from braintrust import logger
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.integrations.transformers import TransformersIntegration, setup_transformers, wrap_transformers
 from braintrust.integrations.transformers.patchers import PIPELINE_PATCHERS
 from braintrust.integrations.transformers.tracing import _input, _metadata
@@ -350,4 +350,4 @@ def test_streamer_call_produces_no_span(text_generation_pipeline, memory_logger,
 
 
 def test_auto_instrument_transformers():
-    verify_autoinstrument_script("test_auto_transformers.py", timeout=120)
+    verify_autoinstrument_smoke("transformers", timeout=120)

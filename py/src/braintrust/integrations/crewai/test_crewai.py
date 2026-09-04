@@ -31,7 +31,7 @@ from braintrust.integrations.crewai import (
     setup_crewai,
 )
 from braintrust.integrations.crewai.patchers import _get_registered_listener, _reset_for_testing
-from braintrust.integrations.test_utils import run_in_subprocess, verify_autoinstrument_script
+from braintrust.integrations.test_utils import run_in_subprocess, verify_autoinstrument_smoke
 from braintrust.logger import Attachment, start_span
 from braintrust.test_helpers import init_test_logger
 from braintrust.util import LazyValue
@@ -585,7 +585,7 @@ def test_setup_crewai_returns_true_under_active_logger():
 
 class TestAutoInstrumentCrewAI:
     def test_auto_instrument_crewai(self):
-        verify_autoinstrument_script("test_auto_crewai.py")
+        verify_autoinstrument_smoke("crewai")
 
     def test_patch_crewai_subprocess(self):
         result = run_in_subprocess(

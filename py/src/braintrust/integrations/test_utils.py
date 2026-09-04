@@ -3,10 +3,8 @@ import subprocess
 import sys
 import textwrap
 import unittest.mock
-from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
 
 import pytest
 import vcr
@@ -112,7 +110,11 @@ def run_in_subprocess(code: str, timeout: int = 30, env: dict[str, str] | None =
     )
 
 
-def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subprocess.CompletedProcess:
+def verify_autoinstrument_script(
+    script_name: str,
+    timeout: int = 30,
+    args: list[str] | None = None,
+) -> subprocess.CompletedProcess:
     """Run a test script from the integrations auto_test_scripts directory.
 
     Raises AssertionError if the script exits with non-zero code.
@@ -127,7 +129,7 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
         Path(_versioned_cassette_dir(str(_INTEGRATIONS_DIR / "claude_agent_sdk" / "cassettes")))
     )
     result = subprocess.run(
-        [sys.executable, str(script_path)],
+        [sys.executable, str(script_path), *(args or [])],
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -137,55 +139,13 @@ def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subproc
     return result
 
 
-def run_auto_smoke(
-    name: str,
-    *,
-    auto_instrument_kwargs: Mapping[str, object] | None = None,
-    is_patched: Callable[[], bool] | None = None,
-    cassette: str | None = None,
-    integration: str | None = None,
-    use_vcr: bool = True,
-    vcr_config: dict | None = None,
-    run: Callable[[Any], None] | None = None,
-) -> None:
-    """Run the standard ``auto_instrument()`` smoke pattern.
+def verify_autoinstrument_smoke(name: str, timeout: int = 30) -> subprocess.CompletedProcess:
+    """Fresh-subprocess sanity check for ``auto_instrument(name=True)``.
 
-    Encodes the contract shared by scripts under ``auto_test_scripts/``:
-
-    1. Optional pre-check: ``is_patched()`` returns False before patching.
-    2. ``auto_instrument(**auto_instrument_kwargs)`` returns ``{name: True, ...}``.
-    3. Optional post-check: ``is_patched()`` returns True after patching.
-    4. A second ``auto_instrument`` call still returns ``{name: True, ...}`` (idempotent).
-    5. If ``run`` is given, open ``autoinstrument_test_context`` (defaults cassette
-       name to ``f"test_auto_{name}"``) and delegate to ``run(memory_logger)``.
-
-    Callers assert their own API-call and span-shape expectations inside ``run``.
+    See ``auto_test_scripts/_run_smoke.py`` for what the check actually asserts.
+    Raises AssertionError if the check fails.
     """
-    from braintrust.auto import auto_instrument
-
-    kwargs = dict(auto_instrument_kwargs or {})
-
-    if is_patched is not None:
-        assert not is_patched(), f"{name!r} already patched before auto_instrument()"
-
-    first = auto_instrument(**kwargs)
-    assert first.get(name) is True, f"auto_instrument returned {first!r}"
-    if is_patched is not None:
-        assert is_patched(), f"{name!r} not patched after auto_instrument()"
-
-    second = auto_instrument(**kwargs)
-    assert second.get(name) is True, f"auto_instrument (2nd call) returned {second!r}"
-
-    if run is None:
-        return
-
-    ctx_kwargs: dict[str, Any] = {"use_vcr": use_vcr}
-    if integration is not None:
-        ctx_kwargs["integration"] = integration
-    if vcr_config is not None:
-        ctx_kwargs["vcr_config"] = vcr_config
-    with autoinstrument_test_context(cassette or f"test_auto_{name}", **ctx_kwargs) as memory_logger:
-        run(memory_logger)
+    return verify_autoinstrument_script("_run_smoke.py", timeout=timeout, args=[name])
 
 
 def assert_metrics_are_valid(metrics, start=None, end=None):

@@ -4,7 +4,7 @@ import braintrust
 import pytest
 from braintrust import logger
 from braintrust.integrations.openai_agents import BraintrustTracingProcessor, OpenAIAgentsIntegration
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.test_helpers import init_test_logger
 
 
@@ -327,4 +327,4 @@ class TestAutoInstrumentOpenAIAgents:
     """Tests for auto_instrument() with the OpenAI Agents SDK."""
 
     def test_auto_instrument_openai_agents(self):
-        verify_autoinstrument_script("test_auto_openai_agents.py")
+        verify_autoinstrument_smoke("openai_agents")

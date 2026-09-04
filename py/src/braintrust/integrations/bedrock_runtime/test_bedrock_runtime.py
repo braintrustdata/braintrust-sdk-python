@@ -13,7 +13,7 @@ from braintrust.integrations.bedrock_runtime.patchers import (
     BedrockClientCreatorPatcher,
     BedrockRuntimeClientMethodsPatcher,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_smoke
 from braintrust.test_helpers import init_test_logger
 
 
@@ -435,4 +435,4 @@ def test_wrap_bedrock_converse_with_document_input_materializes_attachment(memor
 
 @pytest.mark.vcr
 def test_auto_instrument_bedrock_runtime_subprocess():
-    verify_autoinstrument_script("test_auto_bedrock_runtime.py", timeout=60)
+    verify_autoinstrument_smoke("bedrock_runtime", timeout=60)

@@ -8,7 +8,7 @@ import time
 
 import pytest
 from braintrust import logger, setup_pydantic_ai, traced
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
@@ -2918,7 +2918,7 @@ class TestAutoInstrumentPydanticAI:
 
     def test_auto_instrument_pydantic_ai(self):
         """Test auto_instrument patches Pydantic AI and creates spans."""
-        verify_autoinstrument_script("test_auto_pydantic_ai.py")
+        verify_autoinstrument_smoke("pydantic_ai")
 
 
 @pytest.mark.vcr

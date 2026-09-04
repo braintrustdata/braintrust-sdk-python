@@ -232,9 +232,9 @@ class TestInstructorAutoInstrumentSubprocess:
     """auto_instrument() must instrument Instructor in a fresh subprocess too."""
 
     def test_subprocess_auto_instrument_instructor(self):
-        from braintrust.integrations.test_utils import verify_autoinstrument_script
+        from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 
-        verify_autoinstrument_script("test_auto_instructor.py", timeout=30)
+        verify_autoinstrument_smoke("instructor", timeout=30)
 
 
 class TestInstructorParentIsNotLLM:

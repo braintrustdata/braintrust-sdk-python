@@ -9,7 +9,7 @@ from braintrust import Attachment, logger
 from braintrust.integrations.litellm import patch_litellm
 from braintrust.integrations.test_utils import (
     assert_metrics_are_valid,
-    verify_autoinstrument_script,
+    verify_autoinstrument_script, verify_autoinstrument_smoke,
 )
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
 
@@ -1085,4 +1085,4 @@ class TestAutoInstrumentLiteLLM:
 
     def test_auto_instrument_litellm(self):
         """Test auto_instrument patches LiteLLM, creates spans, and uninstrument works."""
-        verify_autoinstrument_script("test_auto_litellm.py")
+        verify_autoinstrument_smoke("litellm")

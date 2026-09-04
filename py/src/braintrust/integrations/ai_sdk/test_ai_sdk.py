@@ -9,7 +9,7 @@ import pytest
 from braintrust import Attachment, logger, setup_ai_sdk
 from braintrust.integrations.ai_sdk import patch_ai_sdk, unpatch_ai_sdk
 from braintrust.integrations.ai_sdk.tracing import _shape_input_messages
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
@@ -254,4 +254,4 @@ def test_registration_and_unregistration_are_idempotent():
 
 
 def test_auto_instrument_ai_sdk_subprocess():
-    verify_autoinstrument_script("test_auto_ai_sdk.py")
+    verify_autoinstrument_smoke("ai_sdk")

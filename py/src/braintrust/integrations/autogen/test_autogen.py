@@ -1,7 +1,7 @@
 import pytest
 from braintrust import logger
 from braintrust.integrations.autogen import setup_autogen
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 
@@ -122,4 +122,4 @@ async def test_autogen_team_run_creates_team_span(memory_logger):
 
 
 def test_autogen_auto_instrument_subprocess():
-    verify_autoinstrument_script("test_auto_autogen.py")
+    verify_autoinstrument_smoke("autogen")

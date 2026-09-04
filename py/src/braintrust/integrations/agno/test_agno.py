@@ -9,7 +9,7 @@ from braintrust import logger
 from braintrust.integrations.agno import setup_agno
 from braintrust.integrations.agno import tracing as agno_tracing_module
 from braintrust.integrations.agno.patchers import wrap_agent, wrap_team
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.logger import Attachment, start_span
 from braintrust.test_helpers import init_test_logger
 
@@ -232,7 +232,7 @@ def test_get_model_name_prefers_stable_provider_attribute():
 
 class TestAutoInstrumentAgno:
     def test_auto_instrument_agno(self):
-        verify_autoinstrument_script("test_auto_agno.py")
+        verify_autoinstrument_smoke("agno")
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,7 @@ import time
 import pytest
 from braintrust import logger
 from braintrust.integrations.openrouter import OpenRouterIntegration, wrap_openrouter
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_smoke
 from braintrust.test_helpers import init_test_logger
 
 
@@ -277,4 +277,4 @@ def test_openrouter_integration_setup_is_idempotent(monkeypatch):
 
 class TestAutoInstrumentOpenRouter:
     def test_auto_instrument_openrouter(self):
-        verify_autoinstrument_script("test_auto_openrouter.py")
+        verify_autoinstrument_smoke("openrouter")

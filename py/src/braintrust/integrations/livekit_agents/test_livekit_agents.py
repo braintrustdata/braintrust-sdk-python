@@ -20,7 +20,7 @@ from braintrust.integrations.livekit_agents.tracing import (
     traced_llm_stream_run,
     traced_session_start,
 )
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.test_helpers import init_test_logger
 
 
@@ -188,7 +188,7 @@ def test_livekit_agents_integration_min_version():
 
 def test_auto_instrument_livekit_agents_subprocess():
     pytest.importorskip("livekit.agents")
-    verify_autoinstrument_script("test_auto_livekit_agents.py")
+    verify_autoinstrument_smoke("livekit_agents")
 
 
 def test_wrap_livekit_agents_wraps_real_agent_session():

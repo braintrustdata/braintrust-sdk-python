@@ -15,7 +15,7 @@ from braintrust.integrations.pipecat import (
     setup_pipecat,
     wrap_pipeline_worker,
 )
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.logger import Attachment
 from braintrust.test_helpers import init_test_logger
 
@@ -300,4 +300,4 @@ def test_setup_and_wrap_pipeline_worker_are_idempotent():
 @pytest.mark.skipif(__import__("sys").version_info < (3, 11), reason="Pipecat AI 1.x requires Python 3.11+")
 def test_auto_instrument_pipecat_subprocess():
     pytest.importorskip("pipecat")
-    verify_autoinstrument_script("test_auto_pipecat.py")
+    verify_autoinstrument_smoke("pipecat")

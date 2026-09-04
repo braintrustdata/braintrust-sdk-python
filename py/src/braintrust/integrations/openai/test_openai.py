@@ -17,7 +17,7 @@ from braintrust.integrations.openai.tracing import (
     _materialize_logged_file_input,
     _process_attachments_in_chat_output,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_smoke
 from braintrust.integrations.utils import _try_to_dict
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import assert_dict_matches, init_test_logger
@@ -2797,7 +2797,7 @@ class TestAutoInstrumentOpenAI:
 
     def test_auto_instrument_openai(self):
         """Test auto_instrument patches OpenAI, creates spans, and uninstrument works."""
-        verify_autoinstrument_script("test_auto_openai.py")
+        verify_autoinstrument_smoke("openai")
 
 
 def test_wrap_openai_wraps_images_methods():

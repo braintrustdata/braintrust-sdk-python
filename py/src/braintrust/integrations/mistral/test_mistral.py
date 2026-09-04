@@ -17,7 +17,7 @@ from braintrust.integrations.mistral.tracing import (
     _normalize_mistral_multimodal_value,
     _ocr_process_wrapper,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_script
+from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
@@ -1464,4 +1464,4 @@ def test_aggregate_completion_events_merges_tool_calls_and_content():
 
 class TestAutoInstrumentMistral:
     def test_auto_instrument_mistral(self):
-        verify_autoinstrument_script("test_auto_mistral.py")
+        verify_autoinstrument_smoke("mistral")

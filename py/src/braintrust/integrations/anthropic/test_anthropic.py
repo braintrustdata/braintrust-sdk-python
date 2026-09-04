@@ -19,7 +19,7 @@ from braintrust.integrations.anthropic.tracing import (
     _get_metadata_from_kwargs,
     _log_message_to_span,
 )
-from braintrust.integrations.test_utils import verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
 from pydantic import BaseModel
@@ -1501,7 +1501,7 @@ def test_setup_creates_spans(memory_logger):
 
 class TestAutoInstrumentAnthropic:
     def test_auto_instrument_anthropic(self):
-        verify_autoinstrument_script("test_auto_anthropic.py")
+        verify_autoinstrument_smoke("anthropic")
 
 
 def test_extract_anthropic_usage_preserves_nested_numeric_fields():
