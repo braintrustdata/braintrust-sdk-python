@@ -906,6 +906,17 @@ async def test_agent_structured_output(memory_logger):
     assert is_descendant(chat_span, agent_span["span_id"]), "chat span should be nested under agent_run"
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"
+    output_tool = next(
+        (
+            tool
+            for tool in chat_span["metadata"]["tools"]
+            if tool.get("type") == "function" and tool.get("function", {}).get("name") == "final_result"
+        ),
+        None,
+    )
+    assert output_tool is not None
+    assert set(output_tool["function"]) == {"name", "description", "parameters"}
+    assert output_tool["function"]["parameters"]["properties"]["answer"]["type"] == "integer"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
     # Wrapper agent_run span must not log token metrics (would double-count at rollup).
@@ -1891,6 +1902,24 @@ async def test_agent_with_tool_execution(memory_logger):
     assert isinstance(tools, list), "tools should be a list"
     tool_names = [t["name"] for t in tools if isinstance(t, dict)]
     assert "calculate" in tool_names, f"calculate tool should be in tools list, got: {tool_names}"
+
+    # Tool definitions passed to each leaf model call belong in metadata.tools.
+    chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
+    assert chat_spans, "chat span not found"
+    for chat_span in chat_spans:
+        model_tools = chat_span["metadata"]["tools"]
+        calculate_tool = next(
+            (
+                tool
+                for tool in model_tools
+                if tool.get("type") == "function" and tool.get("function", {}).get("name") == "calculate"
+            ),
+            None,
+        )
+        assert calculate_tool is not None, f"calculate tool should be in chat metadata.tools, got: {model_tools}"
+        assert set(calculate_tool) == {"type", "function"}
+        assert set(calculate_tool["function"]) == {"name", "description", "parameters"}
+        assert "operation" in calculate_tool["function"]["parameters"]["properties"]
 
     # Verify toolsets are NOT in metadata (following the principle: agent.run() accepts it)
     assert "toolsets" not in agent_span["metadata"], "toolsets should NOT be in metadata"

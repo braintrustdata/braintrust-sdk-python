@@ -350,12 +350,55 @@ def wrap_model_request_stream_sync(original_func: Any) -> Any:
     return wrapper
 
 
+def _shape_model_tool_definition(tool: Any) -> dict[str, Any] | None:
+    name = _field_value(tool, "name")
+    if not isinstance(name, str):
+        return None
+
+    description = _field_value(tool, "description")
+    if not isinstance(description, str) or not description:
+        description = f"Tool: {name}"
+
+    parameters = _field_value(tool, "parameters_json_schema")
+    if parameters is _MISSING:
+        parameters = _field_value(tool, "parameters")
+    if parameters is _MISSING:
+        parameters = {"type": "object", "properties": {}, "required": []}
+
+    return {
+        "type": "function",
+        "function": {
+            "name": name,
+            "description": description,
+            "parameters": parameters,
+        },
+    }
+
+
+def _extract_model_request_tools(model_request_parameters: Any) -> list[Any]:
+    if model_request_parameters is None:
+        return []
+
+    tools = []
+    for field in ("function_tools", "output_tools"):
+        definitions = _field_value(model_request_parameters, field)
+        if definitions is _MISSING or not definitions:
+            continue
+        for definition in definitions:
+            shaped_definition = _shape_model_tool_definition(definition)
+            if shaped_definition is not None:
+                tools.append(shaped_definition)
+
+    return tools
+
+
 def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any):
     model_name, provider = _extract_model_info_from_model_instance(instance)
     display_name = model_name or type(instance).__name__
 
     messages = args[0] if len(args) > 0 else kwargs.get("messages")
     model_settings = args[1] if len(args) > 1 else kwargs.get("model_settings")
+    model_request_parameters = args[2] if len(args) > 2 else kwargs.get("model_request_parameters")
 
     shaped_messages = _shape_messages(messages)
 
@@ -366,6 +409,9 @@ def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any)
     metadata = _build_model_metadata(model_name, provider, model_settings=None)
     if model_settings is not None:
         metadata["invocation_params"] = model_settings
+    tools = _extract_model_request_tools(model_request_parameters)
+    if tools:
+        metadata["tools"] = tools
 
     return model_name, display_name, input_data, metadata
 
