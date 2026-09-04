@@ -4,7 +4,6 @@ import braintrust
 import pytest
 from braintrust import logger
 from braintrust.integrations.openai_agents import BraintrustTracingProcessor, OpenAIAgentsIntegration
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.test_helpers import init_test_logger
 
 
@@ -323,8 +322,3 @@ async def test_openai_agents_task_and_turn_span_types(memory_logger):
     assert turn_span.get("metadata", {}).get("agent_name") is not None
 
 
-class TestAutoInstrumentOpenAIAgents:
-    """Tests for auto_instrument() with the OpenAI Agents SDK."""
-
-    def test_auto_instrument_openai_agents(self):
-        verify_autoinstrument_smoke("openai_agents")

@@ -43,7 +43,6 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
     _serialize_tool_result_output,
     _thread_local,
 )
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.logger import start_span
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
@@ -2540,15 +2539,6 @@ async def test_wrapped_tool_handler_matches_same_name_tool_spans_by_input(memory
         tool_span_by_input[(("a", 10), ("b", 5), ("operation", "add"))]["span_id"]
         in nested_span_second["span_parents"]
     )
-
-
-class TestAutoInstrumentClaudeAgentSDK:
-    """Tests for auto_instrument() with Claude Agent SDK."""
-
-    @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
-    def test_auto_instrument_claude_agent_sdk(self):
-        """Test auto_instrument patches Claude Agent SDK and creates spans."""
-        verify_autoinstrument_smoke("claude_agent_sdk")
 
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")

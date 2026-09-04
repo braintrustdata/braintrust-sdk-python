@@ -9,9 +9,6 @@ from typing import Any, cast
 
 import pytest
 import pytest_asyncio
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
-
-
 pytest.importorskip("temporalio")
 
 import braintrust
@@ -319,9 +316,6 @@ class ReplayAfterSignalWorkflow:
 
 class TestAutoInstrumentation:
     """Tests for Temporal auto-instrumentation helpers."""
-
-    def test_auto_instrument_temporal_subprocess(self):
-        verify_autoinstrument_smoke("temporal")
 
     def test_contrib_temporal_compat_import_deprecated(self):
         with pytest.warns(DeprecationWarning, match="braintrust.contrib.temporal is deprecated"):

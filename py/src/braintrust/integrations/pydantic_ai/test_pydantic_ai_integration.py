@@ -8,7 +8,6 @@ import time
 
 import pytest
 from braintrust import logger, setup_pydantic_ai, traced
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic import BaseModel
@@ -2911,14 +2910,6 @@ async def test_no_model_agent_run(memory_logger):
     assert chat_span["span_parents"] == [agent_span["span_id"]]
     assert chat_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
-
-
-class TestAutoInstrumentPydanticAI:
-    """Tests for auto_instrument() with Pydantic AI."""
-
-    def test_auto_instrument_pydantic_ai(self):
-        """Test auto_instrument patches Pydantic AI and creates spans."""
-        verify_autoinstrument_smoke("pydantic_ai")
 
 
 @pytest.mark.vcr

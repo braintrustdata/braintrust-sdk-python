@@ -13,7 +13,7 @@ from braintrust.integrations.bedrock_runtime.patchers import (
     BedrockClientCreatorPatcher,
     BedrockRuntimeClientMethodsPatcher,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_smoke
+from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.test_helpers import init_test_logger
 
 
@@ -431,8 +431,3 @@ def test_wrap_bedrock_converse_with_document_input_materializes_attachment(memor
     assert isinstance(file_part["file"]["file_data"], Attachment)
     assert file_part["file"]["file_data"].reference["content_type"] == "application/pdf"
     assert "source" not in file_part
-
-
-@pytest.mark.vcr
-def test_auto_instrument_bedrock_runtime_subprocess():
-    verify_autoinstrument_smoke("bedrock_runtime", timeout=60)

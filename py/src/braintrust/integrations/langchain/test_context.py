@@ -4,7 +4,6 @@ from unittest.mock import ANY
 import pytest
 from braintrust import logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler, setup_langchain
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage
@@ -176,6 +175,3 @@ def test_setup_langchain_installs_default_handler():
     assert get_global_handler() is handler
 
 
-class TestAutoInstrumentLangChain:
-    def test_auto_instrument_langchain(self):
-        verify_autoinstrument_smoke("langchain")

@@ -925,6 +925,42 @@ def _run_core_tests(session):
     )
 
 
+_SMOKE_DONE: set[str] = set()
+
+
+def _maybe_run_autoinstrument_smoke(session, test_path):
+    """Run the fresh-subprocess ``auto_instrument`` sanity check once per
+    (session, integration).
+
+    Infers the integration name from ``test_path`` (``braintrust/integrations/
+    <name>/test_*.py`` → ``<name>``) and invokes
+    ``auto_test_scripts/_run_smoke.py`` via ``-m`` so it works in both src and
+    wheel modes.  Silently skips paths that aren't under a per-provider
+    subdirectory (e.g. ``braintrust`` itself for ``test_core``, or
+    ``braintrust/integrations/test_versioning.py``).
+    """
+    parts = pathlib.Path(test_path).parts
+    try:
+        idx = parts.index("integrations")
+    except ValueError:
+        return
+    if idx + 1 >= len(parts):
+        return
+    name = parts[idx + 1]
+    if name.endswith(".py"):
+        return  # e.g. integrations/test_versioning.py — shared, not per-provider
+    key = f"{session.name}::{name}"
+    if key in _SMOKE_DONE:
+        return
+    _SMOKE_DONE.add(key)
+    session.run(
+        "python",
+        "-m",
+        "braintrust.integrations.auto_test_scripts._run_smoke",
+        name,
+    )
+
+
 def _run_tests(
     session,
     test_path,
@@ -935,6 +971,7 @@ def _run_tests(
     run_from_temp_dir=False,
 ):
     """Run tests against a wheel or the source code. Paths should be relative and start with braintrust."""
+    _maybe_run_autoinstrument_smoke(session, test_path)
     env = env.copy() if env else {}
     if version:
         env["BRAINTRUST_TEST_PACKAGE_VERSION"] = version

@@ -29,7 +29,7 @@ from braintrust.integrations.cohere.patchers import (
     V2EmbedPatcher,
     V2RerankPatcher,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_smoke
+from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
@@ -814,6 +814,3 @@ def test_cohere_integration_setup_patches_audio_transcriptions(memory_logger, cl
     assert spans[0]["metadata"]["model"] == TRANSCRIBE_MODEL
 
 
-class TestAutoInstrumentCohere:
-    def test_auto_instrument_cohere(self):
-        verify_autoinstrument_smoke("cohere")

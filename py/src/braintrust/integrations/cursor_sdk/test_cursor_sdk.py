@@ -13,7 +13,6 @@ from braintrust.integrations.anthropic import AnthropicIntegration
 from braintrust.integrations.cursor_sdk import CursorSDKIntegration, setup_cursor_sdk
 from braintrust.integrations.cursor_sdk._test_vcr import cursor_vcr_config
 from braintrust.integrations.openai import OpenAIIntegration
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_spans_by_type, init_test_logger
 
@@ -71,12 +70,6 @@ def _call_custom_tool(client, agent_id: str, tool_name: str, call_id: str, args:
 def test_setup_cursor_sdk_is_idempotent():
     assert setup_cursor_sdk(project=PROJECT_NAME)
     assert setup_cursor_sdk(project=PROJECT_NAME)
-
-
-@_REQUIRES_SYNC_BRIDGE
-@pytest.mark.vcr
-def test_auto_instrument_cursor_sdk_subprocess():
-    verify_autoinstrument_smoke("cursor_sdk", timeout=45)
 
 
 @_REQUIRES_SYNC_BRIDGE

@@ -19,7 +19,6 @@ from braintrust.integrations.anthropic.tracing import (
     _get_metadata_from_kwargs,
     _log_message_to_span,
 )
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger
 from pydantic import BaseModel
@@ -1497,11 +1496,6 @@ def test_setup_creates_spans(memory_logger):
     assert metrics["prompt_cache_creation_5m_tokens"] == ephemeral_5m
     assert metrics["prompt_cache_creation_1h_tokens"] == ephemeral_1h
     assert "service_tier" not in metrics
-
-
-class TestAutoInstrumentAnthropic:
-    def test_auto_instrument_anthropic(self):
-        verify_autoinstrument_smoke("anthropic")
 
 
 def test_extract_anthropic_usage_preserves_nested_numeric_fields():

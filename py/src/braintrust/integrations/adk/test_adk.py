@@ -1159,11 +1159,3 @@ async def test_adk_response_json_schema_dict(memory_logger):
         assert output["avg_logprobs"] is not None
 
 
-class TestAutoInstrumentADK:
-    """Tests for auto_instrument() with Google ADK."""
-
-    def test_auto_instrument_adk(self):
-        """Test auto_instrument patches ADK classes and is idempotent."""
-        from braintrust.integrations.test_utils import verify_autoinstrument_smoke
-
-        verify_autoinstrument_smoke("adk")

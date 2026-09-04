@@ -6,7 +6,7 @@ import dspy
 import pytest
 from braintrust import logger
 from braintrust.integrations.dspy import BraintrustDSpyCallback
-from braintrust.integrations.test_utils import run_in_subprocess, verify_autoinstrument_smoke
+from braintrust.integrations.test_utils import run_in_subprocess
 from braintrust.test_helpers import init_test_logger
 
 
@@ -229,11 +229,3 @@ class TestPatchDSPy:
         """)
         assert result.returncode == 0, f"Failed: {result.stderr}"
         assert "SUCCESS" in result.stdout
-
-
-class TestAutoInstrumentDSPy:
-    """Tests for auto_instrument() with DSPy."""
-
-    def test_auto_instrument_dspy(self):
-        """Test auto_instrument patches DSPy, creates spans, and uninstrument works."""
-        verify_autoinstrument_smoke("dspy")

@@ -7,7 +7,6 @@ import os
 import pytest
 from braintrust import logger
 from braintrust.integrations.agentscope import setup_agentscope
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from packaging.version import Version
@@ -324,6 +323,3 @@ def test_setup_agentscope_is_idempotent():
     assert inspect.getattr_static(OpenAIChatModel, "__call__") is wrapped
 
 
-class TestAutoInstrumentAgentScope:
-    def test_auto_instrument_agentscope(self):
-        verify_autoinstrument_smoke("agentscope")

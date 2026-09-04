@@ -8,7 +8,6 @@ import google.genai as genai
 import pytest
 from braintrust import logger
 from braintrust.integrations.google_genai import setup_genai
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.logger import Attachment
 from braintrust.span_types import SpanTypeAttribute
@@ -1910,9 +1909,3 @@ async def test_interactions_async_stream(memory_logger):
     )
 
 
-class TestAutoInstrumentGoogleGenAI:
-    """Tests for auto_instrument() with Google GenAI."""
-
-    def test_auto_instrument_google_genai(self):
-        """Test auto_instrument patches Google GenAI and creates spans."""
-        verify_autoinstrument_smoke("google_genai")

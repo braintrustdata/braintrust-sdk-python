@@ -40,12 +40,14 @@ SMOKES: dict[str, dict[str, bool]] = {
     # span and an OpenAI span; disable OpenAI so this smoke stays scoped.
     "litellm": {"openai": False},
     "livekit_agents": {},
+    "llamaindex": {},
     "mistral": {},
     "openai": {},
     "openai_agents": {},
     "openrouter": {},
     "pipecat": {},
     "pydantic_ai": {},
+    "strands": {},
     "temporal": {},
     "transformers": {},
 }

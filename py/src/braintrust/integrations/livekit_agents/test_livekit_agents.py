@@ -20,7 +20,6 @@ from braintrust.integrations.livekit_agents.tracing import (
     traced_llm_stream_run,
     traced_session_start,
 )
-from braintrust.integrations.test_utils import verify_autoinstrument_smoke
 from braintrust.test_helpers import init_test_logger
 
 
@@ -184,11 +183,6 @@ async def test_openai_tts_stream_closes_span_when_closed_early(memory_logger):
 
 def test_livekit_agents_integration_min_version():
     assert LiveKitAgentsIntegration.min_version == "1.3.1"
-
-
-def test_auto_instrument_livekit_agents_subprocess():
-    pytest.importorskip("livekit.agents")
-    verify_autoinstrument_smoke("livekit_agents")
 
 
 def test_wrap_livekit_agents_wraps_real_agent_session():

@@ -110,11 +110,7 @@ def run_in_subprocess(code: str, timeout: int = 30, env: dict[str, str] | None =
     )
 
 
-def verify_autoinstrument_script(
-    script_name: str,
-    timeout: int = 30,
-    args: list[str] | None = None,
-) -> subprocess.CompletedProcess:
+def verify_autoinstrument_script(script_name: str, timeout: int = 30) -> subprocess.CompletedProcess:
     """Run a test script from the integrations auto_test_scripts directory.
 
     Raises AssertionError if the script exits with non-zero code.
@@ -129,7 +125,7 @@ def verify_autoinstrument_script(
         Path(_versioned_cassette_dir(str(_INTEGRATIONS_DIR / "claude_agent_sdk" / "cassettes")))
     )
     result = subprocess.run(
-        [sys.executable, str(script_path), *(args or [])],
+        [sys.executable, str(script_path)],
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -137,15 +133,6 @@ def verify_autoinstrument_script(
     )
     assert result.returncode == 0, f"Script {script_name} failed:\n{result.stderr}"
     return result
-
-
-def verify_autoinstrument_smoke(name: str, timeout: int = 30) -> subprocess.CompletedProcess:
-    """Fresh-subprocess sanity check for ``auto_instrument(name=True)``.
-
-    See ``auto_test_scripts/_run_smoke.py`` for what the check actually asserts.
-    Raises AssertionError if the check fails.
-    """
-    return verify_autoinstrument_script("_run_smoke.py", timeout=timeout, args=[name])
 
 
 def assert_metrics_are_valid(metrics, start=None, end=None):

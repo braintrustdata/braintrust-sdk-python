@@ -228,15 +228,6 @@ class TestInstructorPatcherIdempotence:
         assert callable(patched.chat.completions.create)
 
 
-class TestInstructorAutoInstrumentSubprocess:
-    """auto_instrument() must instrument Instructor in a fresh subprocess too."""
-
-    def test_subprocess_auto_instrument_instructor(self):
-        from braintrust.integrations.test_utils import verify_autoinstrument_smoke
-
-        verify_autoinstrument_smoke("instructor", timeout=30)
-
-
 class TestInstructorParentIsNotLLM:
     """Span-type invariant: Instructor parent is never typed as `llm`."""
 

@@ -18,7 +18,7 @@ from braintrust.integrations.huggingface_hub.patchers import (
     SentenceSimilarityPatcher,
     TextGenerationPatcher,
 )
-from braintrust.integrations.test_utils import assert_metrics_are_valid, verify_autoinstrument_smoke
+from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.test_helpers import init_test_logger
 
 
@@ -757,6 +757,3 @@ def test_chat_completion_async_streaming_nests_under_parent_span(memory_logger):
 # ---------------------------------------------------------------------------
 
 
-class TestAutoInstrumentHuggingFaceHub:
-    def test_auto_instrument_huggingface_hub(self):
-        verify_autoinstrument_smoke("huggingface_hub")
