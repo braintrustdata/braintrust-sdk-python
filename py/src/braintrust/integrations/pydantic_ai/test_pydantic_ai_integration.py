@@ -1068,6 +1068,39 @@ async def test_agent_with_system_prompt_in_metadata(memory_logger):
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
+async def test_agent_with_instructions_and_dynamic_system_prompt(memory_logger):
+    """Resolved instructions and system prompts should appear on agent and model spans."""
+    assert not memory_logger.pop()
+
+    instructions = "Answer with only the number requested by the user."
+    dynamic_system_prompt = "The user is currently taking a math quiz."
+    agent = Agent(MODEL, instructions=instructions, model_settings=ModelSettings(max_tokens=100))
+
+    @agent.system_prompt
+    def add_dynamic_system_prompt():
+        return dynamic_system_prompt
+
+    result = await agent.run(TEST_PROMPT)
+    assert "4" in str(result.output)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
+
+    agent_span = next(span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.TASK)
+    chat_span = next(span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.LLM)
+
+    assert agent_span["input"]["instructions"] == instructions
+    assert agent_span["input"]["system_prompt"] == dynamic_system_prompt
+
+    request = chat_span["input"]["messages"][0]
+    assert request["instructions"] == instructions
+    assert any(
+        part["part_kind"] == "system-prompt" and part["content"] == dynamic_system_prompt for part in request["parts"]
+    )
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
 async def test_agent_with_message_history(memory_logger):
     """Test Agent with conversation history."""
     assert not memory_logger.pop()
