@@ -13,6 +13,9 @@ def test_span_cache_write_and_read():
         span_id="span-1",
         input={"text": "hello"},
         output={"response": "world"},
+        error={"message": "retryable"},
+        metrics={"start": 1, "end": 3},
+        tags=["production"],
     )
     span2 = CachedSpan(
         span_id="span-2",
@@ -30,6 +33,10 @@ def test_span_cache_write_and_read():
     span_ids = {s.span_id for s in spans}
     assert "span-1" in span_ids
     assert "span-2" in span_ids
+    stored_span1 = next(span for span in spans if span.span_id == "span-1")
+    assert stored_span1.error == {"message": "retryable"}
+    assert stored_span1.metrics == {"start": 1, "end": 3}
+    assert stored_span1.tags == ["production"]
 
     cache.stop()
     cache.dispose()
