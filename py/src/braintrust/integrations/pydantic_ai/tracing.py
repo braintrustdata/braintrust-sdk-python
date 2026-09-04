@@ -82,6 +82,28 @@ def _maybe_create_tool_spans_from_messages(result: Any) -> None:
     _create_tool_spans_from_messages(result)
 
 
+def _log_agent_result(span: Any, input_data: dict[str, Any], result: Any, output: Any, metrics: Any) -> None:
+    resolved_input = input_data
+    if result is not None:
+        resolved_input = dict(input_data)
+        for message in reversed(result.new_messages()):
+            instructions = getattr(message, "instructions", None)
+            if instructions:
+                resolved_input["instructions"] = instructions
+                break
+
+        system_prompts = [
+            part.content
+            for message in result.all_messages()
+            for part in getattr(message, "parts", ())
+            if getattr(part, "part_kind", None) == "system-prompt" and getattr(part, "content", None)
+        ]
+        if system_prompts:
+            resolved_input["system_prompt"] = "\n\n".join(system_prompts)
+
+    span.log(input=resolved_input, output=output, metrics=metrics)
+
+
 async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
     input_data, metadata = _build_agent_input_and_metadata(args, kwargs, instance)
 
@@ -99,8 +121,13 @@ async def _agent_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
 
             _maybe_create_tool_spans_from_messages(result)
 
-            output = _shape_result_output(result)
-            agent_span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
+            _log_agent_result(
+                agent_span,
+                input_data,
+                result,
+                _shape_result_output(result),
+                _wrapper_span_metrics(start_time, end_time),
+            )
             return result
         finally:
             _reset_tool_trace_capture(tool_trace_token)
@@ -123,8 +150,13 @@ def _agent_run_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any)
 
             _maybe_create_tool_spans_from_messages(result)
 
-            output = _shape_result_output(result)
-            agent_span.log(output=output, metrics=_wrapper_span_metrics(start_time, end_time))
+            _log_agent_result(
+                agent_span,
+                input_data,
+                result,
+                _shape_result_output(result),
+                _wrapper_span_metrics(start_time, end_time),
+            )
             return result
         finally:
             _reset_tool_trace_capture(tool_trace_token)
@@ -185,6 +217,7 @@ def _agent_run_stream_sync_wrapper(wrapped: Any, instance: Any, args: Any, kwarg
             span,
             span_cm,
             start_time,
+            input_data,
             tool_trace_token,
         )
     except Exception:
@@ -480,7 +513,7 @@ class _AgentStreamEventsWrapper(AbstractAsyncContextManager):
                     "event_count": self._event_count,
                 }
                 output = _shape_result_output(self._final_result) if self._final_result is not None else None
-                self.agent_span.log(output=output, metrics=metrics)
+                _log_agent_result(self.agent_span, self.input_data, self._final_result, output, metrics)
 
             if self.span_cm:
                 if asyncio.current_task() is self._enter_task:
@@ -584,10 +617,12 @@ class _AgentStreamWrapper(AbstractAsyncContextManager):
 
                 _maybe_create_tool_spans_from_messages(self.stream_result)
 
-                output = _shape_stream_output(self.stream_result)
-                self.span_cm.log(
-                    output=output,
-                    metrics=_wrapper_span_metrics(self.start_time, end_time, self._first_token_time),
+                _log_agent_result(
+                    self.span_cm,
+                    self.input_data,
+                    self.stream_result,
+                    _shape_stream_output(self.stream_result),
+                    _wrapper_span_metrics(self.start_time, end_time, self._first_token_time),
                 )
 
             if self.span_cm:
@@ -721,12 +756,14 @@ class _AgentStreamResultSyncProxy:
         span: Any,
         span_cm: Any,
         start_time: float,
+        input_data: dict[str, Any] | None = None,
         tool_trace_token: Any = None,
     ):
         self._stream_result = stream_result
         self._span = span
         self._span_cm = span_cm
         self._start_time = start_time
+        self._input_data = input_data or {}
         self._logged = False
         self._finalize_on_del = True
         self._first_token_time = None
@@ -767,10 +804,12 @@ class _AgentStreamResultSyncProxy:
 
                 _maybe_create_tool_spans_from_messages(self._stream_result)
 
-                output = _shape_stream_output(self._stream_result)
-                self._span.log(
-                    output=output,
-                    metrics=_wrapper_span_metrics(self._start_time, end_time, self._first_token_time),
+                _log_agent_result(
+                    self._span,
+                    self._input_data,
+                    self._stream_result,
+                    _shape_stream_output(self._stream_result),
+                    _wrapper_span_metrics(self._start_time, end_time, self._first_token_time),
                 )
                 self._logged = True
             finally:
@@ -976,8 +1015,17 @@ def _msg_timestamp(msg: Any) -> float | None:
 
 
 _MISSING = object()
-_MESSAGE_FIELDS = ("kind", "role", "timestamp", "state")
-_PART_FIELDS = ("kind", "part_kind", "tool_name", "tool_call_id")
+_MESSAGE_FIELDS = (
+    "kind",
+    "role",
+    "timestamp",
+    "state",
+    "instructions",
+    "run_id",
+    "conversation_id",
+    "metadata",
+)
+_PART_FIELDS = ("kind", "part_kind", "tool_name", "tool_call_id", "timestamp", "dynamic_ref", "id", "args")
 _RESPONSE_FIELDS = (
     "kind",
     "model_name",
@@ -1057,8 +1105,13 @@ def _shape_message(message: Any) -> Any:
     parts = _field_value(message, "parts")
     if not parts:
         return message
-    if not any(_has_binary_leaf(part) for part in parts):
-        # Let Braintrust's dataclass/Pydantic serializer preserve every field.
+    has_prompt_data = _field_value(message, "instructions") not in (_MISSING, None, "") or any(
+        _field_value(part, "part_kind") == "system-prompt" for part in parts
+    )
+    if not has_prompt_data and not any(_has_binary_leaf(part) for part in parts):
+        # Let Braintrust's serializer preserve every top-level field. It does not recurse
+        # into dataclasses nested in a list, so prompt-bearing parts have to be shaped
+        # here or they reach the span as repr strings; binary leaves need materializing.
         return message
     return _shape_object(
         message, fields=_MESSAGE_FIELDS, overrides={"parts": [_shape_content_part(part) for part in parts]}
@@ -1074,12 +1127,16 @@ def _shape_content_part(part: Any) -> Any:
         return attachment_payload
 
     content = _field_value(part, "content")
-    if content is _MISSING or not _has_binary_leaf(content):
+    if content is _MISSING:
         return part
 
-    shaped_content = (
-        [_shape_content_part(item) for item in content] if isinstance(content, list) else _shape_content_part(content)
-    )
+    shaped_content = content
+    if _has_binary_leaf(content):
+        shaped_content = (
+            [_shape_content_part(item) for item in content]
+            if isinstance(content, list)
+            else _shape_content_part(content)
+        )
     return _shape_object(part, fields=_PART_FIELDS, overrides={"content": shaped_content})
 
 

@@ -1,0 +1,104 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Answer with only the number requested by the user.","role":"system"},{"role":"system","content":"The
+      user is currently taking a math quiz."},{"role":"user","content":"What is 2+2?
+      Answer with just the number."}],"model":"gpt-4o-mini","max_completion_tokens":100,"stream":false}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '302'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - pydantic-ai/1.10.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.8.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EKSb4SbtYB0fiLGdkgdeIqTZXUUOz\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788545194,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"4\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 47,\n    \"completion_tokens\":
+        1,\n    \"total_tokens\": 48,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_b85f3645a5\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a35eedc85be9cceb-YYZ
+      connection:
+      - keep-alive
+      content-length:
+      - '807'
+      content-type:
+      - application/json
+      date:
+      - Fri, 04 Sep 2026 18:06:35 GMT
+      openai-processing-ms:
+      - '515'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999962'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_e67f592357a64de29dda6a4c82b4e1a4
+    status:
+      code: 200
+      message: OK
+version: 1

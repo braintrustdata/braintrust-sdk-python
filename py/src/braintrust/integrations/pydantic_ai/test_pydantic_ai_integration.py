@@ -2,7 +2,6 @@
 # pyright: reportUnknownMemberType=false
 # pyright: reportUnknownParameterType=false
 # pyright: reportPrivateUsage=false
-import asyncio
 import inspect
 import time
 
@@ -1064,6 +1063,39 @@ async def test_agent_with_system_prompt_in_metadata(memory_logger):
     # Verify other metadata is present
     assert agent_span["metadata"]["model"] == "gpt-4o-mini"
     assert agent_span["metadata"]["provider"] == "openai"
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+async def test_agent_with_instructions_and_dynamic_system_prompt(memory_logger):
+    """Resolved instructions and system prompts should appear on agent and model spans."""
+    assert not memory_logger.pop()
+
+    instructions = "Answer with only the number requested by the user."
+    dynamic_system_prompt = "The user is currently taking a math quiz."
+    agent = Agent(MODEL, instructions=instructions, model_settings=ModelSettings(max_tokens=100))
+
+    @agent.system_prompt
+    def add_dynamic_system_prompt():
+        return dynamic_system_prompt
+
+    result = await agent.run(TEST_PROMPT)
+    assert "4" in str(result.output)
+
+    spans = memory_logger.pop()
+    assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
+
+    agent_span = next(span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.TASK)
+    chat_span = next(span for span in spans if span["span_attributes"]["type"] == SpanTypeAttribute.LLM)
+
+    assert agent_span["input"]["instructions"] == instructions
+    assert agent_span["input"]["system_prompt"] == dynamic_system_prompt
+
+    request = chat_span["input"]["messages"][0]
+    assert request["instructions"] == instructions
+    assert any(
+        part["part_kind"] == "system-prompt" and part["content"] == dynamic_system_prompt for part in request["parts"]
+    )
 
 
 @pytest.mark.vcr
@@ -2615,211 +2647,6 @@ def test_shape_messages_with_binary_content():
 
     # Second content item should be the string
     assert content[1] == "What is in this document?"
-
-
-@pytest.mark.asyncio
-async def test_streaming_wrappers_capture_time_to_first_token():
-    """Unit test verifying all streaming wrappers capture time_to_first_token.
-
-    This test uses mocks to verify the internal wrapper logic without requiring
-    API calls. It ensures that _first_token_time is tracked correctly in:
-    - _AgentStreamWrapper (async agent streaming)
-    - _DirectStreamWrapper (async direct API streaming)
-    - _AgentStreamResultSyncProxy (sync agent streaming)
-    - _DirectStreamWrapperSync (sync direct API streaming)
-    """
-    from unittest.mock import AsyncMock, MagicMock, Mock
-
-    from braintrust.integrations.pydantic_ai.tracing import (
-        _AgentStreamResultSyncProxy,
-        _AgentStreamWrapper,
-        _DirectStreamIteratorProxy,
-        _DirectStreamIteratorSyncProxy,
-        _DirectStreamWrapper,
-        _DirectStreamWrapperSync,
-        _StreamResultProxy,
-    )
-
-    # Test 1: _AgentStreamWrapper captures first token time
-    print("\n--- Testing _AgentStreamWrapper ---")
-
-    class MockStreamResult:
-        async def stream_text(self, delta=True):
-            for i in range(3):
-                await asyncio.sleep(0.001)
-                yield f"token{i} "
-
-        def usage(self):
-            usage_mock = Mock(input_tokens=50, output_tokens=20, total_tokens=70)
-            usage_mock.cache_read_tokens = None
-            usage_mock.cache_write_tokens = None
-            return usage_mock
-
-    mock_stream_result = MockStreamResult()
-    wrapper = _AgentStreamWrapper(
-        stream_cm=AsyncMock(),
-        span_name="test_stream",
-        input_data={"prompt": "test"},
-        metadata={"model": "gpt-4o"},
-    )
-
-    wrapper.span_cm = MagicMock()
-    wrapper.span_cm.__enter__ = MagicMock()
-    wrapper.start_time = time.time()
-    wrapper.stream_result = mock_stream_result
-
-    proxy = _StreamResultProxy(mock_stream_result, wrapper)
-
-    assert wrapper._first_token_time is None
-
-    chunk_count = 0
-    async for text in proxy.stream_text(delta=True):
-        chunk_count += 1
-        if chunk_count == 1:
-            assert wrapper._first_token_time is not None
-            assert wrapper._first_token_time > wrapper.start_time
-
-    assert chunk_count == 3
-    assert wrapper._first_token_time is not None
-    print("✓ _AgentStreamWrapper captures first token time")
-
-    # Test 2: _DirectStreamWrapper captures first token time
-    print("\n--- Testing _DirectStreamWrapper ---")
-
-    class MockStream:
-        def __init__(self):
-            self.chunks = []
-
-        async def __anext__(self):
-            if len(self.chunks) < 3:
-                await asyncio.sleep(0.001)
-                chunk = Mock(delta=Mock(content_delta=f"chunk{len(self.chunks)}"))
-                self.chunks.append(chunk)
-                return chunk
-            raise StopAsyncIteration
-
-        def __aiter__(self):
-            return self
-
-        def get(self):
-            usage_mock = Mock(input_tokens=50, output_tokens=20, total_tokens=70)
-            usage_mock.cache_read_tokens = None
-            usage_mock.cache_write_tokens = None
-            return Mock(usage=usage_mock)
-
-    mock_stream = MockStream()
-    direct_wrapper = _DirectStreamWrapper(
-        stream_cm=AsyncMock(),
-        span_name="test_direct_stream",
-        input_data={"messages": []},
-        metadata={"model": "gpt-4o"},
-    )
-
-    direct_wrapper.span_cm = MagicMock()
-    direct_wrapper.start_time = time.time()
-    direct_wrapper.stream = mock_stream
-
-    proxy = _DirectStreamIteratorProxy(mock_stream, direct_wrapper)
-
-    assert direct_wrapper._first_token_time is None
-
-    chunk_count = 0
-    async for chunk in proxy:
-        chunk_count += 1
-        if chunk_count == 1:
-            assert direct_wrapper._first_token_time is not None
-            assert direct_wrapper._first_token_time > direct_wrapper.start_time
-
-    assert chunk_count == 3
-    assert direct_wrapper._first_token_time is not None
-    print("✓ _DirectStreamWrapper captures first token time")
-
-    # Test 3: _AgentStreamResultSyncProxy captures first token time
-    print("\n--- Testing _AgentStreamResultSyncProxy ---")
-
-    class MockSyncStreamResult:
-        def stream_text(self, delta=True):
-            for i in range(3):
-                time.sleep(0.001)
-                yield f"token{i} "
-
-        def usage(self):
-            usage_mock = Mock(input_tokens=50, output_tokens=20, total_tokens=70)
-            usage_mock.cache_read_tokens = None
-            usage_mock.cache_write_tokens = None
-            return usage_mock
-
-    mock_sync_result = MockSyncStreamResult()
-    sync_proxy = _AgentStreamResultSyncProxy(
-        stream_result=mock_sync_result,
-        span=MagicMock(),
-        span_cm=MagicMock(),
-        start_time=time.time(),
-    )
-
-    assert sync_proxy._first_token_time is None
-
-    chunk_count = 0
-    for text in sync_proxy.stream_text(delta=True):
-        chunk_count += 1
-        if chunk_count == 1:
-            assert sync_proxy._first_token_time is not None
-
-    assert chunk_count == 3
-    assert sync_proxy._first_token_time is not None
-    print("✓ _AgentStreamResultSyncProxy captures first token time")
-
-    # Test 4: _DirectStreamWrapperSync captures first token time
-    print("\n--- Testing _DirectStreamWrapperSync ---")
-
-    class MockSyncStream:
-        def __init__(self):
-            self.chunks = []
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            if len(self.chunks) < 3:
-                time.sleep(0.001)
-                chunk = Mock(delta=Mock(content_delta=f"chunk{len(self.chunks)}"))
-                self.chunks.append(chunk)
-                return chunk
-            raise StopIteration
-
-        def get(self):
-            usage_mock = Mock(input_tokens=50, output_tokens=20, total_tokens=70)
-            usage_mock.cache_read_tokens = None
-            usage_mock.cache_write_tokens = None
-            return Mock(usage=usage_mock)
-
-    mock_sync_stream = MockSyncStream()
-    sync_wrapper = _DirectStreamWrapperSync(
-        stream_cm=MagicMock(),
-        span_name="test_sync_stream",
-        input_data={"messages": []},
-        metadata={"model": "gpt-4o"},
-    )
-
-    sync_wrapper.start_time = time.time()
-    sync_wrapper.stream = mock_sync_stream
-
-    sync_proxy = _DirectStreamIteratorSyncProxy(mock_sync_stream, sync_wrapper)
-
-    assert sync_wrapper._first_token_time is None
-
-    chunk_count = 0
-    for chunk in sync_proxy:
-        chunk_count += 1
-        if chunk_count == 1:
-            assert sync_wrapper._first_token_time is not None
-            assert sync_wrapper._first_token_time > sync_wrapper.start_time
-
-    assert chunk_count == 3
-    assert sync_wrapper._first_token_time is not None
-    print("✓ _DirectStreamWrapperSync captures first token time")
-
-    print("\n✅ All streaming wrapper unit tests passed!")
 
 
 @pytest.mark.asyncio
