@@ -36,21 +36,32 @@ RERANK_DOCUMENTS = [
 # async LiteLLM entrypoint (e.g. ``acompletion``) over the sync one; the two
 # variants share a single test body and record to ``...[sync]`` / ``...[async]``
 # cassettes.
+#
+# The parametrized tests are plain (non-``async``) functions so the ``sync``
+# variant calls LiteLLM with no running event loop, exactly as ordinary
+# synchronous callers do -- ``_run``/``_run_stream`` drive the ``async`` variant
+# with ``asyncio.run`` instead. Running the sync entrypoints inside a coroutine
+# would let LiteLLM take loop-dependent code paths and hide sync-only failures.
 sync_async = pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
 
 
-async def _call(is_async, sync_fn, async_fn, *args, **kwargs):
-    """Invoke ``async_fn`` (awaited) when ``is_async`` else ``sync_fn``."""
+def _run(is_async, sync_fn, async_fn, *args, **kwargs):
+    """Call ``sync_fn`` directly, or drive ``async_fn`` with ``asyncio.run``."""
     if is_async:
-        return await async_fn(*args, **kwargs)
+        return asyncio.run(async_fn(*args, **kwargs))
     return sync_fn(*args, **kwargs)
 
 
-async def _collect_stream(stream, is_async):
-    """Drain a sync or async LiteLLM stream into a list of chunks."""
+def _run_stream(is_async, sync_fn, async_fn, *args, **kwargs):
+    """Open a streaming request and drain it into a list of chunks."""
     if is_async:
-        return [chunk async for chunk in stream]
-    return list(stream)
+
+        async def _drain():
+            stream = await async_fn(*args, **kwargs)
+            return [chunk async for chunk in stream]
+
+        return asyncio.run(_drain())
+    return list(sync_fn(*args, **kwargs))
 
 
 def _assert_speech_output_attachment(span) -> None:
@@ -75,13 +86,12 @@ def memory_logger():
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_completion_metrics(memory_logger, is_async) -> None:
+def test_litellm_completion_metrics(memory_logger, is_async) -> None:
     assert not memory_logger.pop()
 
     start = time.time()
-    response = await _call(
+    response = _run(
         is_async,
         litellm.completion,
         litellm.acompletion,
@@ -180,13 +190,12 @@ def test_litellm_prompt_caching_metrics(memory_logger) -> None:
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_text_completion_metrics(memory_logger, is_async) -> None:
+def test_litellm_text_completion_metrics(memory_logger, is_async) -> None:
     assert not memory_logger.pop()
 
     start = time.time()
-    response = await _call(
+    response = _run(
         is_async,
         litellm.text_completion,
         litellm.atext_completion,
@@ -212,13 +221,12 @@ async def test_litellm_text_completion_metrics(memory_logger, is_async) -> None:
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_completion_streaming(memory_logger, is_async):
+def test_litellm_completion_streaming(memory_logger, is_async):
     assert not memory_logger.pop()
 
     start = time.time()
-    stream = await _call(
+    chunks = _run_stream(
         is_async,
         litellm.completion,
         litellm.acompletion,
@@ -226,7 +234,6 @@ async def test_litellm_completion_streaming(memory_logger, is_async):
         messages=[{"role": "user", "content": TEST_PROMPT}],
         stream=True,
     )
-    chunks = await _collect_stream(stream, is_async)
     end = time.time()
 
     # Verify streaming works
@@ -256,13 +263,12 @@ async def test_litellm_completion_streaming(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_responses_metrics(memory_logger, is_async):
+def test_litellm_responses_metrics(memory_logger, is_async):
     assert not memory_logger.pop()
 
     start = time.time()
-    response = await _call(
+    response = _run(
         is_async,
         litellm.responses,
         litellm.aresponses,
@@ -291,12 +297,11 @@ async def test_litellm_responses_metrics(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_embedding(memory_logger, is_async):
+def test_litellm_embedding(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    response = await _call(
+    response = _run(
         is_async,
         litellm.embedding,
         litellm.aembedding,
@@ -319,12 +324,11 @@ async def test_litellm_embedding(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_moderation(memory_logger, is_async):
+def test_litellm_moderation(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    response = await _call(
+    response = _run(
         is_async,
         litellm.moderation,
         litellm.amoderation,
@@ -346,15 +350,14 @@ async def test_litellm_moderation(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_image_generation(memory_logger, is_async):
+def test_litellm_image_generation(memory_logger, is_async):
     assert not memory_logger.pop()
 
     # Distinct prompts per variant to match the recorded [sync]/[async] cassettes.
     prompt = "A tiny blue square on a white background" if is_async else "A tiny red square on a white background"
 
-    response = await _call(
+    response = _run(
         is_async,
         litellm.image_generation,
         litellm.aimage_generation,
@@ -378,12 +381,11 @@ async def test_litellm_image_generation(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_completion_with_system_prompt(memory_logger, is_async):
+def test_litellm_completion_with_system_prompt(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    response = await _call(
+    response = _run(
         is_async,
         litellm.completion,
         litellm.acompletion,
@@ -407,13 +409,12 @@ async def test_litellm_completion_with_system_prompt(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_transcription(memory_logger, is_async):
+def test_litellm_transcription(memory_logger, is_async):
     assert not memory_logger.pop()
 
     with open(TEST_AUDIO_FILE, "rb") as f:
-        response = await _call(is_async, litellm.transcription, litellm.atranscription, model="whisper-1", file=f)
+        response = _run(is_async, litellm.transcription, litellm.atranscription, model="whisper-1", file=f)
 
     assert response
     assert response.text == "you"
@@ -430,12 +431,11 @@ async def test_litellm_transcription(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_speech(memory_logger, is_async):
+def test_litellm_speech(memory_logger, is_async):
     assert not memory_logger.pop()
 
-    response = await _call(
+    response = _run(
         is_async,
         litellm.speech,
         litellm.aspeech,
@@ -460,16 +460,15 @@ async def test_litellm_speech(memory_logger, is_async):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_completion_error(memory_logger, is_async):
+def test_litellm_completion_error(memory_logger, is_async):
     assert not memory_logger.pop()
 
     # Use a non-existent model to force an error
     fake_model = "non-existent-model"
 
     try:
-        await _call(
+        _run(
             is_async,
             litellm.completion,
             litellm.acompletion,
@@ -582,14 +581,13 @@ def test_litellm_tool_calls(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_responses_streaming(memory_logger, is_async):
+def test_litellm_responses_streaming(memory_logger, is_async):
     """Test the responses API with streaming."""
     assert not memory_logger.pop()
 
     start = time.time()
-    stream = await _call(
+    chunks = _run_stream(
         is_async,
         litellm.responses,
         litellm.aresponses,
@@ -597,7 +595,6 @@ async def test_litellm_responses_streaming(memory_logger, is_async):
         input="What's 12 + 12?",
         stream=True,
     )
-    chunks = await _collect_stream(stream, is_async)
     end = time.time()
 
     assert chunks
@@ -732,13 +729,12 @@ def test_litellm_openrouter_no_booleans_in_metrics(memory_logger):
 
 
 @pytest.mark.vcr
-@pytest.mark.asyncio
 @sync_async
-async def test_litellm_rerank(memory_logger, is_async):
+def test_litellm_rerank(memory_logger, is_async):
     assert not memory_logger.pop()
 
     start = time.time()
-    response = await _call(
+    response = _run(
         is_async,
         litellm.rerank,
         litellm.arerank,
