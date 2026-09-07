@@ -1,0 +1,68 @@
+interactions:
+- request:
+    body: '{"max_tokens":2048,"messages":[{"role":"user","content":[{"text":"What
+      is 17 * 23? Think it through, then give the number.","type":"text"}]}],"model":"claude-haiku-4-5-20251001","stream":false,"thinking":{"type":"enabled","budget_tokens":1024}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '244'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - pydantic-ai/2.36.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.2.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.11.15
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages?beta=true
+  response:
+    body:
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011CeorTzoNmBZLscy4jhvVS","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"17
+        * 23\n\nLet me break this down:\n17 * 23 = 17 * (20 + 3)\n= 17 * 20 + 17 *
+        3\n= 340 + 51\n= 391\n\nLet me verify: \n17 * 23\n= (20 - 3) * 23\n= 20 *
+        23 - 3 * 23\n= 460 - 69\n= 391\n\nYes, 391 is correct.","signature":"Er0DCpoBCBEYAipAfQOcVMh+fN1kqKgyYniNFmLoXQndf7+wItJBZdo15tWSaYQloTdiBYEPUjjfVb5BWuTi7Y2SC01sXMYmfZe+sTIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1qAG7i/rUBhIMwNYhm9izIza3IBM+Ggw3Yl78vAm4cQvUy1IiMC+l0Z2l9ca6Ed9mQVMPsQkx8I/TEWhrLmvfeEZFefFnfDsmfJz79ZHIg+KGNzVXtirPAaJFPsSgcn6FdRadilHlhlgKCcvbQuyaHEDd4iYQb/UVnFK5xwpyuFJDw9qoWmghP5LmkAdbKfj/iA+2mnJDE69ZVd//dHtVu6Y58bH9B3Tbwku46gf/0rru7m6dd6k0DztvAqT5wSQ4KUV4iGdID1hNlo+Qj3QXYAXrJkQCnWPjlVdqCXH2z02uR2B2fSC/KDCcUQ2lIJBYCNmYPVBi8BmJ4X8yC8/XoewSy26hKUMM3oLhnQ5k28UB1HMe2i/F0Uur7oeExShBTJXLWfPnkhgB"},{"type":"text","text":"Let
+        me work through this:\n\n17 * 23 = 17 * (20 + 3)\n= (17 * 20) + (17 * 3)\n=
+        340 + 51\n= **391**"}],"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":54,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":186,"output_tokens_details":{"thinking_tokens":125},"service_tier":"standard","inference_geo":"not_available"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      date:
+      - Mon, 07 Sep 2026 09:36:59 GMT
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - accept-encoding
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -3,6 +3,7 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportPrivateUsage=false
 import inspect
+import os
 import time
 
 import pytest
@@ -2210,6 +2211,50 @@ def test_agent_tool_with_custom_name():
     assert "parameters" in tool, "Tool should have parameters schema"
     assert "a" in tool["parameters"]["properties"]
     assert "b" in tool["parameters"]["properties"]
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+@pytest.mark.asyncio
+async def test_agent_run_anthropic_reasoning_tokens(memory_logger):
+    """Real Anthropic extended-thinking response through pydantic-ai's own usage mapping.
+
+    pydantic-ai stashes the reasoning count under ``details["thinking_tokens"]`` for
+    Anthropic (vs ``reasoning_tokens`` for OpenAI); the extractor must surface it as
+    ``completion_reasoning_tokens``. This exercises the real provider mapping via a
+    checked-in cassette; ``test_reasoning_tokens_extraction_provider_keys`` is the
+    supplemental synthetic coverage.
+    """
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Anthropic extended-thinking usage requires the latest pydantic-ai cassette")
+
+    import anthropic
+    from pydantic_ai.models.anthropic import AnthropicModel, AnthropicModelSettings
+    from pydantic_ai.providers.anthropic import AnthropicProvider
+
+    assert not memory_logger.pop()
+
+    model = AnthropicModel(
+        "claude-haiku-4-5-20251001",
+        provider=AnthropicProvider(anthropic_client=anthropic.AsyncAnthropic()),
+    )
+    agent = Agent(
+        model,
+        model_settings=AnthropicModelSettings(
+            max_tokens=2048,
+            anthropic_thinking={"type": "enabled", "budget_tokens": 1024},
+        ),
+    )
+
+    result = await agent.run("What is 17 * 23? Think it through, then give the number.")
+    assert "391" in str(result.output)
+
+    spans = memory_logger.pop()
+    chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
+    assert chat_span is not None, "chat span not found"
+    assert chat_span["metadata"]["provider"] == "anthropic"
+    # pylint: disable=unsupported-membership-test,unsubscriptable-object
+    assert chat_span["metrics"]["completion_reasoning_tokens"] > 0
+    # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
 @pytest.mark.parametrize(
