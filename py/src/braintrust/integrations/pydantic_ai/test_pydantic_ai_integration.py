@@ -2212,6 +2212,36 @@ def test_agent_tool_with_custom_name():
     assert "b" in tool["parameters"]["properties"]
 
 
+@pytest.mark.parametrize(
+    "details_key",
+    [
+        "reasoning_tokens",  # OpenAI
+        "thinking_tokens",  # Anthropic
+        "thoughts_tokens",  # Google
+    ],
+)
+def test_reasoning_tokens_extraction_provider_keys(details_key):
+    """pydantic_ai stashes the reasoning-token count under a provider-specific key:
+    OpenAI "reasoning_tokens", Anthropic "thinking_tokens", Google "thoughts_tokens".
+    All three must surface as `completion_reasoning_tokens` (previously only OpenAI's
+    key was read, silently dropping Anthropic/Google reasoning).
+    """
+    from types import SimpleNamespace
+
+    from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
+    from pydantic_ai.usage import RequestUsage
+
+    usage = RequestUsage(input_tokens=10, output_tokens=20, details={details_key: 128})
+    response = SimpleNamespace(parts=[], usage=usage)
+
+    metrics = _extract_response_metrics(response, start_time=1.0, end_time=2.0)
+
+    assert metrics is not None
+    # pylint: disable=unsupported-membership-test,unsubscriptable-object
+    assert metrics["completion_reasoning_tokens"] == 128.0
+    # pylint: enable=unsupported-membership-test,unsubscriptable-object
+
+
 def test_explicit_toolsets_kwarg_in_input():
     """Test that explicitly passed toolsets kwarg goes to input (not just metadata)."""
     from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata

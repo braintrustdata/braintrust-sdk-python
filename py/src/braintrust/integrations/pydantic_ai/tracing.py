@@ -1392,9 +1392,20 @@ def _extract_response_metrics(
             metrics["completion_audio_tokens"] = float(usage.output_audio_tokens)
 
         # RequestUsage.details is a dict; providers stash reasoning_tokens/cached_tokens here.
+        # The reasoning-token count lives under a provider-specific key: OpenAI uses
+        # "reasoning_tokens", Anthropic "thinking_tokens", Google "thoughts_tokens". All three
+        # are the same normalized quantity (a subset of the output tokens), so read whichever
+        # is present.
         details = getattr(usage, "details", None)
         if isinstance(details, dict):
-            reasoning = details.get("reasoning_tokens")
+            reasoning = next(
+                (
+                    details[key]
+                    for key in ("reasoning_tokens", "thinking_tokens", "thoughts_tokens")
+                    if details.get(key) is not None
+                ),
+                None,
+            )
             if reasoning is not None:
                 metrics["completion_reasoning_tokens"] = float(reasoning)
             cached = details.get("cached_tokens")
