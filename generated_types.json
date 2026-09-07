@@ -5024,6 +5024,36 @@
           }
         ]
       },
+      "NamedScore": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "NullableSavedFunctionId": {
         "anyOf": [
           {
@@ -8124,6 +8154,70 @@
             "title": "global"
           }
         ]
+      },
+      "ScoreObject": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The score name. Defaults to the function name for a single score."
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "score"
+        ]
+      },
+      "ScoreResult": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ScoreObject"
+          },
+          {
+            "$ref": "#/components/schemas/NamedScore"
+          },
+          {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NamedScore"
+            },
+            "description": "Multiple scores. Each score must have a unique name."
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "The return value of a scorer function."
       },
       "ServiceToken": {
         "type": "object",

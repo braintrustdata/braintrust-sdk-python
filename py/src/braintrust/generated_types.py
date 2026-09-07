@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 719572142fc24803) -- do not modify"""
+"""Auto-generated file (content hash 52c1e6b1a10f5644) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -60,6 +60,7 @@ from ._generated_types import (
     MCPServer,
     MessageRole,
     ModelParams,
+    NamedScore,
     NullableSavedFunctionId,
     ObjectReference,
     ObjectReferenceNullish,
@@ -97,6 +98,8 @@ from ._generated_types import (
     Role,
     RunEval,
     SavedFunctionId,
+    ScoreObject,
+    ScoreResult,
     ServiceToken,
     SpanAttributes,
     SpanIFrame,
@@ -185,6 +188,7 @@ __all__ = [
     "MCPServer",
     "MessageRole",
     "ModelParams",
+    "NamedScore",
     "NullableSavedFunctionId",
     "ObjectReference",
     "ObjectReferenceNullish",
@@ -224,6 +228,8 @@ __all__ = [
     "SSEConsoleEventData",
     "SSEProgressEventData",
     "SavedFunctionId",
+    "ScoreObject",
+    "ScoreResult",
     "ServiceToken",
     "SpanAttributes",
     "SpanIFrame",

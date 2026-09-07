@@ -1507,6 +1507,12 @@ class ModelParamsModelParams4(TypedDict):
     reasoning_budget: NotRequired[float | None]
 
 
+class NamedScore(TypedDict):
+    name: str
+    score: NotRequired[float | bool | None]
+    metadata: NotRequired[Mapping[str, Any] | None]
+
+
 class NullableSavedFunctionIdNullableSavedFunctionId(TypedDict):
     type: Literal['function']
     id: str
@@ -2480,6 +2486,23 @@ class SavedFunctionIdSavedFunctionId1(TypedDict):
 SavedFunctionId: TypeAlias = (
     SavedFunctionIdSavedFunctionId | SavedFunctionIdSavedFunctionId1
 )
+
+
+class ScoreObject(TypedDict):
+    name: NotRequired[str | None]
+    """
+    The score name. Defaults to the function name for a single score.
+    """
+    score: float | bool | None
+    metadata: NotRequired[Mapping[str, Any] | None]
+
+
+ScoreResult: TypeAlias = (
+    ScoreObject | NamedScore | float | bool | Sequence[NamedScore] | None
+)
+"""
+The return value of a scorer function.
+"""
 
 
 class ServiceToken(TypedDict):
