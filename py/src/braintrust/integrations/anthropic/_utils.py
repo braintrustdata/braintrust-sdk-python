@@ -91,6 +91,13 @@ def extract_anthropic_usage(
     if cache_creation_breakdown:
         metrics.pop("prompt_cache_creation_tokens", None)
 
+    output_tokens_details = _try_to_dict(usage.get("output_tokens_details"))
+    if include_output and output_tokens_details is not None:
+        # Anthropic reports extended-thinking usage as a subset of output_tokens, under the
+        # nested output_tokens_details.thinking_tokens field. Surface it as the normalized
+        # completion_reasoning_tokens metric (matching the OpenAI/pydantic-ai integrations).
+        _set_numeric_metric(metrics, "completion_reasoning_tokens", output_tokens_details.get("thinking_tokens"))
+
     server_tool_use = _try_to_dict(usage.get("server_tool_use"))
     if server_tool_use is not None:
         for source_name, value in server_tool_use.items():

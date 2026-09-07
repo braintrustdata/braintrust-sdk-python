@@ -449,6 +449,26 @@ def test_anthropic_messages_create_prompt_cache_1h_metrics(memory_logger):
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_messages_create_reasoning_tokens_metrics(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Extended-thinking usage requires the latest Anthropic SDK cassette")
+
+    client = wrap_anthropic(_get_client())
+    response = client.messages.create(
+        model=LATEST_MODEL,
+        max_tokens=2048,
+        thinking={"type": "enabled", "budget_tokens": 1024},
+        messages=[{"role": "user", "content": "What is 17 * 23? Think it through, then give the number."}],
+    )
+
+    thinking_tokens = response.usage.output_tokens_details.thinking_tokens
+    assert thinking_tokens > 0
+
+    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    assert span["metrics"]["completion_reasoning_tokens"] == thinking_tokens
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
 def test_anthropic_messages_create_with_image_attachment_input(memory_logger):
     assert not memory_logger.pop()
 
