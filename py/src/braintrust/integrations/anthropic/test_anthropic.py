@@ -473,6 +473,7 @@ async def test_anthropic_messages_reasoning_tokens_metrics(
         "messages": [{"role": "user", "content": "What is 17 * 23? Think it through, then give the number."}],
     }
     events = []
+    text = ""
     if mode == "create":
         response = await client.messages.create(**params) if is_async else client.messages.create(**params)
         text = "".join(block.text for block in response.content if block.type == "text")
