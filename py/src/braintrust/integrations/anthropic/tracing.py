@@ -131,10 +131,7 @@ class AsyncMessages(Wrapper):
                 span.log(error=e)
                 raise
             finally:
-                msg = traced_stream._get_final_traced_message()
-                if msg:
-                    ttft = traced_stream._get_time_to_first_token()
-                    _log_message_to_span(msg, span, time_to_first_token=ttft)
+                traced_stream._log_final_message()
                 span.end()
 
         return async_stream()
@@ -690,10 +687,7 @@ class TracedMessageStreamManager(Wrapper):
 
     def __close(self, exc_type, exc_value, traceback):
         tms = self.__traced_message_stream
-        msg = tms._get_final_traced_message()
-        if msg:
-            ttft = tms._get_time_to_first_token()
-            _log_message_to_span(msg, self.__span, time_to_first_token=ttft)
+        tms._log_final_message()
         if exc_type:
             log_exc_info_to_span(self.__span, exc_type, exc_value, traceback)
         self.__span.end()
@@ -711,11 +705,14 @@ class TracedMessageStream(Wrapper):
         self.__request_start_time = request_start_time
         self.__time_to_first_token: float | None = None
 
-    def _get_final_traced_message(self):
-        return self.__snapshot
-
-    def _get_time_to_first_token(self):
-        return self.__time_to_first_token
+    def _log_final_message(self):
+        if self.__snapshot:
+            _log_message_to_span(
+                self.__snapshot,
+                self.__span,
+                time_to_first_token=self.__time_to_first_token,
+                metrics_override=self.__metrics,
+            )
 
     def __await__(self):
         return self.__msg_stream.__await__()
@@ -761,6 +758,14 @@ class TracedMessageStream(Wrapper):
             self.__time_to_first_token = time.time() - self.__request_start_time
 
         self.__snapshot = accumulate_event(event=m, current_snapshot=self.__snapshot)
+
+        if m.type == "message_delta":
+            # Anthropic <0.122.0 drops output_tokens_details when accumulating
+            # events. Keep the reported reasoning count separately, without
+            # mutating SDK objects or changing completion/prompt token totals.
+            metrics, _ = extract_anthropic_usage(m.usage)
+            if "completion_reasoning_tokens" in metrics:
+                self.__metrics["completion_reasoning_tokens"] = metrics["completion_reasoning_tokens"]
 
 
 class TracedManagedAgentsEventStream(Wrapper):
@@ -1499,9 +1504,13 @@ def _message_output(message, *, include_parsed_output: bool = False):
     return output or None
 
 
-def _log_message_to_span(message, span, time_to_first_token: float | None = None, *, include_parsed_output=False):
+def _log_message_to_span(
+    message, span, time_to_first_token: float | None = None, *, include_parsed_output=False, metrics_override=None
+):
     usage = getattr(message, "usage", {})
     metrics, metadata = extract_anthropic_usage(usage)
+    if metrics_override:
+        metrics.update(metrics_override)
 
     if time_to_first_token is not None:
         metrics["time_to_first_token"] = time_to_first_token
