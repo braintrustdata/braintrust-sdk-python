@@ -1,0 +1,132 @@
+interactions:
+- request:
+    body: '{"max_tokens":2048,"messages":[{"role":"user","content":"What is 17 * 23?
+      Think it through, then give the number."}],"model":"claude-haiku-4-5-20251001","stream":true,"thinking":{"type":"enabled","budget_tokens":1024}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '218'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 0.48.0
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - Linux
+      x-stainless-package-version:
+      - 0.48.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.6
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_011Cep4CYQrfbDgk2SQV7Pg6\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":1,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"}}
+        \             }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}
+        \         }\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"Let\"}
+        \            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        me calculate 17 * 23.\\n\\nI can break this down:\\n17 * 23 = 17 * (20 + 3)\\n=
+        17 * 20 + 17\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        * 3\\n= 340 + 51\\n= 391\\n\\nAlternatively:\\n17 * 23 = (10 + 7) * 23\\n=
+        10 * \"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"23
+        + 7 * 23\\n= 230 + 161\\n= 391\\n\\nLet me verify once more:\\n17 * 23\\n=
+        17 * 20 + 17\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"
+        * 3\\n= 340 + 51\\n= 391\\n\\nYes, 391 is correct.\"}              }\n\nevent:
+        content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"EpQECpoBCBEYAipANHewmm1S9pfqd1f1NsPz65CoWBhVOSwzlz/tlzNmt6Gy8dLhvJIBWf+6g+1OtMYk6Y0MChVFM+UgtHHETYe5uTIZY2xhdWRlLWhhaWt1LTQtNS0yMDI1MTAwMTgAQgh0aGlua2luZ1okMjc3OTY2NjgtNzM1MS00MGFjLWFjYzQtMDI0YWVlODk5NWE1qAHL0/rUBhIMDR1e8EblmM3G5OWPGgw7w7Gd652yQDx11zIiMIx53xS7pyMhznnwemeMXxcCpDElb+NGKf7IsSyk11z5GQV3Ai4lekthU4Dj0NqOYyqmAokwZrvXTihY4pgUsBYv5debbZRd/SwxB0m5YVmFx5cACZ59uK62Pjtw0rtEONiwuCzVCNpoJIPLzHrxPCLEQBhmBAyOyMEK+yq1H+de7FHKc7vHqdE9GBbjYQZyHvHG/X7mtUNU43DT2G59r2XqGV2T+WMWTEckg0l5SMVIwmu+RBEV/Tx5rNdzCPaVwucgiir28W3lqIIRJfto072ISzAf2t0tRck/WE+6Uv76qjHY95OTTmBNxqCtCnD6NL+RK6oeRTCfL4mYbyWol0pjCnu+8Mu2D231pq3Xy4BUac2x54H1i5uw8EbtsJ3bTwolgOQMP/L5cyB7Ea6hAhAqeuJKmB0VyHZe/CfPbxBBwrXt126jv/SHuARq8ehpEmfWYT2FAVFbfRgB\"}
+        \   }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0
+        \              }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"#
+        Calculating 17 \xD7 23\\n\\nBreaking\"}  }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        it down:\\n- 17 \xD7 23 = 17 \xD7 (20 + 3)\\n- = (17 \xD7 20) + (17 \xD7 3)\\n-
+        = 340 \"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"+
+        51\\n- = **391**\\n\\nThe answer is **391**.\"}      }\n\nevent: content_block_stop\ndata:
+        {\"type\":\"content_block_stop\",\"index\":1}\n\nevent: message_delta\ndata:
+        {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null},\"usage\":{\"input_tokens\":54,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":250,\"output_tokens_details\":{\"thinking_tokens\":169}}
+        \             }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"   }\n\n"
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-09-07T12:10:50Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-09-07T12:10:50Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-09-07T12:10:50Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-09-07T12:10:50Z'
+      anthropic-workspace-id:
+      - wrkspc_01J8hau4yJ2SKvtbeP9drm9A
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3759ccebeba4c80-IAD
+      connection:
+      - keep-alive
+      content-length:
+      - '3650'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Mon, 07 Sep 2026 12:10:50 GMT
+      request-id:
+      - req_011Cep4CXdj2dbuiKhQRa6T1
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-91d778ba9a76bedf9b72507b165b7243-44d7f2c5c22c3c82-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

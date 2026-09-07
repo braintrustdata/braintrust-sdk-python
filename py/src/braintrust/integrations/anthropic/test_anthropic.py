@@ -15,6 +15,7 @@ from braintrust import Attachment, logger
 from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthropic
 from braintrust.integrations.anthropic._utils import _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.anthropic.tracing import (
+    TracedMessageStream,
     _get_input_from_kwargs,
     _get_metadata_from_kwargs,
     _log_message_to_span,
@@ -446,6 +447,158 @@ def test_anthropic_messages_create_prompt_cache_1h_metrics(memory_logger):
     assert (
         span["metrics"]["prompt_cache_creation_1h_tokens"] == response.usage.cache_creation.ephemeral_1h_input_tokens
     )
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_async", [False, True], ids=["sync", "async"])
+@pytest.mark.parametrize(
+    "mode,vcr_cassette_name",
+    [
+        ("create", "test_anthropic_messages_create_reasoning_tokens_metrics"),
+        ("create_stream", "test_anthropic_messages_stream_reasoning_tokens_metrics"),
+        ("stream", "test_anthropic_messages_stream_reasoning_tokens_metrics"),
+        ("text_stream", "test_anthropic_messages_stream_reasoning_tokens_metrics"),
+    ],
+    ids=["create", "create_stream", "stream", "text_stream"],
+)
+async def test_anthropic_messages_reasoning_tokens_metrics(
+    memory_logger, vcr_cassette, vcr_cassette_name, mode, is_async
+):
+    client = wrap_anthropic(_get_async_client() if is_async else _get_client())
+    params = {
+        "model": LATEST_MODEL,
+        "max_tokens": 2048,
+        "thinking": {"type": "enabled", "budget_tokens": 1024},
+        "messages": [{"role": "user", "content": "What is 17 * 23? Think it through, then give the number."}],
+    }
+    events = []
+    text = ""
+    if mode == "create":
+        response = await client.messages.create(**params) if is_async else client.messages.create(**params)
+        text = "".join(block.text for block in response.content if block.type == "text")
+    elif mode == "create_stream":
+        if is_async:
+            stream = await client.messages.create(**params, stream=True)
+            events = [event async for event in stream]
+        else:
+            with client.messages.create(**params, stream=True) as stream:
+                events = list(stream)
+    elif is_async:
+        async with client.messages.stream(**params) as stream:
+            if mode == "text_stream":
+                text = "".join([chunk async for chunk in stream.text_stream])
+            else:
+                events = [event async for event in stream]
+    else:
+        with client.messages.stream(**params) as stream:
+            if mode == "text_stream":
+                text = "".join(stream.text_stream)
+            else:
+                events = list(stream)
+
+    if events:
+        assert events[0].type == "message_start"
+        assert events[-1].type == "message_stop"
+        text = "".join(
+            event.delta.text
+            for event in events
+            if event.type == "content_block_delta" and event.delta.type == "text_delta"
+        )
+    assert "391" in text
+
+    # Read expected usage from the wire, independently of the SDK's accumulator:
+    # older SDKs retain unknown fields on events but discard them from snapshots.
+    body = vcr_cassette.responses[0]["body"]["string"]
+    if isinstance(body, bytes):
+        body = body.decode()
+    if mode == "create":
+        usage = json.loads(body)["usage"]
+    else:
+        usage = {}
+        for line in body.splitlines():
+            if line.startswith("data: "):
+                event = json.loads(line[6:])
+                if event["type"] == "message_start":
+                    usage.update(event["message"]["usage"])
+                elif event["type"] == "message_delta":
+                    usage.update(event["usage"])
+
+    thinking_tokens = usage["output_tokens_details"]["thinking_tokens"]
+    assert thinking_tokens > 0
+    spans = memory_logger.pop()
+    assert len(spans) == 1
+    span = spans[0]
+    assert span["span_attributes"]["name"] == f"anthropic.messages.{'create' if mode == 'create' else 'stream'}"
+    assert span["span_attributes"]["type"] == "llm"
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "anthropic-auto"
+    assert span["metadata"]["model"] == LATEST_MODEL
+    assert span["metadata"]["provider"] == "anthropic"
+    assert span["input"] == params["messages"]
+    assert any(block["type"] == "thinking" for block in span["output"]["content"])
+    assert "".join(block["text"] for block in span["output"]["content"] if block["type"] == "text") == text
+    metrics = span["metrics"]
+    assert metrics["completion_reasoning_tokens"] == thinking_tokens
+    assert metrics["completion_tokens"] == usage["output_tokens"]
+    assert metrics["prompt_tokens"] == (
+        usage["input_tokens"] + usage["cache_creation_input_tokens"] + usage["cache_read_input_tokens"]
+    )
+    assert metrics["tokens"] == metrics["prompt_tokens"] + usage["output_tokens"]
+    assert metrics["time_to_first_token"] >= 0
+
+
+@pytest.mark.parametrize("final_thinking_tokens", [None, 0, 17])
+def test_anthropic_stream_reasoning_tokens_are_cumulative(memory_logger, final_thinking_tokens):
+    # Supplemental coverage for repeated/omitted usage fields and explicit zero,
+    # which the real-response regression above cannot deterministically request.
+    events = [
+        anthropic.types.RawMessageStartEvent.model_validate(
+            {
+                "type": "message_start",
+                "message": {
+                    "id": "msg_test",
+                    "type": "message",
+                    "role": "assistant",
+                    "model": LATEST_MODEL,
+                    "content": [],
+                    "usage": {
+                        "input_tokens": 11,
+                        "cache_read_input_tokens": 3,
+                        "cache_creation_input_tokens": 2,
+                        "output_tokens": 1,
+                        "output_tokens_details": {"thinking_tokens": 1},
+                    },
+                },
+            }
+        )
+    ]
+    for output_tokens, thinking_tokens in [(10, 5), (30, final_thinking_tokens)]:
+        events.append(
+            anthropic.types.RawMessageDeltaEvent.model_validate(
+                {
+                    "type": "message_delta",
+                    "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                    "usage": {
+                        "output_tokens": output_tokens,
+                        "output_tokens_details": (
+                            {"thinking_tokens": thinking_tokens} if thinking_tokens is not None else None
+                        ),
+                    },
+                }
+            )
+        )
+    original_events = [event.model_dump() for event in events]
+    with logger.start_span(name="reasoning usage") as span:
+        stream = TracedMessageStream(iter(events), span, time.time())
+        assert list(stream) == events
+        stream._log_final_message()
+
+    assert [event.model_dump() for event in events] == original_events
+    metrics = memory_logger.pop()[0]["metrics"]
+    assert metrics["completion_reasoning_tokens"] == (5 if final_thinking_tokens is None else final_thinking_tokens)
+    assert metrics["prompt_tokens"] == 16
+    assert metrics["completion_tokens"] == 30
+    assert metrics["tokens"] == 46
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
