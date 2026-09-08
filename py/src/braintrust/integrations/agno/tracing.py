@@ -1245,7 +1245,12 @@ def _get_function_name(instance) -> str:
 
 
 def _function_call_metadata(instance: Any) -> dict[str, Any]:
-    """Best-effort metadata extraction for a FunctionCall. Contains instrumentation errors."""
+    """Allowlist tool identity fields, containing instrumentation errors.
+
+    Never collect ``_build_entrypoint_args()`` for logging: injected runtime
+    objects (including Agent, Team, and RunContext) can contain credentials or
+    private state. Agno owns injecting those objects when executing the tool.
+    """
     metadata: dict[str, Any] = {}
     try:
         metadata["name"] = instance.function.name
@@ -1253,12 +1258,6 @@ def _function_call_metadata(instance: Any) -> dict[str, Any]:
         pass
     try:
         metadata["entrypoint"] = instance.function.entrypoint.__name__
-    except Exception:
-        pass
-    try:
-        entrypoint_args = instance._build_entrypoint_args()
-        if entrypoint_args:
-            metadata.update(entrypoint_args)
     except Exception:
         pass
     return metadata
