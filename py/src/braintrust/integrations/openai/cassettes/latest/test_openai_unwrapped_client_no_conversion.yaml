@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.6.0
+      - OpenAI/Python 3.8.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.8.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,18 +34,18 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIy0Du3Bzww7K4yC4jQGb4qAcqd3C\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788189261,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-ELuyMzGciJlCvomQJSuPOpFFXOOP6\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788892598,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"The image is a solid shade of red.\",\n
-        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
-        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        8513,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 8522,\n    \"prompt_tokens_details\":
+        \"assistant\",\n        \"content\": \"The image is red.\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        8513,\n    \"completion_tokens\": 5,\n    \"total_tokens\": 8518,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 2944,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
@@ -60,17 +60,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33cfc038f8939f0-YYZ
+      - a3800f52db53f54f-YYZ
       connection:
       - keep-alive
       content-length:
-      - '847'
+      - '830'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:14:22 GMT
+      - Tue, 08 Sep 2026 18:36:38 GMT
       openai-processing-ms:
-      - '619'
+      - '473'
       openai-version:
       - '2020-10-01'
       server:
@@ -102,7 +102,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_74154d6a7b1c4a23b201501f28e6be70
+      - req_f63528ebcb6c4ada9335e10e9763beea
     status:
       code: 200
       message: OK

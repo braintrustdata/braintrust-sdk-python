@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.36.0
+      - pydantic-ai/2.40.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.9.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,21 +33,21 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_09df3823679d690b006a959d7a984c87d2b73f9b76cbf29fec\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1788190074,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0d5972aff305f958006aa05508792887d2bd4d6c3aa0b9918f\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1788892424,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1788190075,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1788892425,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_09df3823679d690b006a959d7b421887d2be396a6bbd7b1f07\",\n
+        \     \"id\": \"fc_0d5972aff305f958006aa05509313487d2a18a2b0f0c3052ed\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"city\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_3D7XU3nw5jXVCz2mDPMYNDl0\",\n
+        \"{\\\"city\\\":\\\"Paris\\\"}\",\n      \"call_id\": \"call_jcvm1LMGHGZkQq3Ig4o3NC6H\",\n
         \     \"name\": \"get_weather\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n
         \ \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -81,7 +81,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d0fdddfa4e080-YYZ
+      - a3800b14880c90e5-YYZ
       connection:
       - keep-alive
       content-length:
@@ -89,9 +89,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:27:55 GMT
+      - Tue, 08 Sep 2026 18:33:45 GMT
       openai-processing-ms:
-      - '860'
+      - '985'
       openai-version:
       - '2020-10-01'
       server:
@@ -115,12 +115,12 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_aba2044130834cb8bbc5aaae2aacee89
+      - req_e4a50288369040bea6d1f24a47ec7e40
     status:
       code: 200
       message: OK
 - request:
-    body: '{"input":[{"role":"user","content":"What''s the weather in Paris?"},{"name":"get_weather","arguments":"{\"city\":\"Paris\"}","call_id":"call_3D7XU3nw5jXVCz2mDPMYNDl0","type":"function_call"},{"type":"function_call_output","call_id":"call_3D7XU3nw5jXVCz2mDPMYNDl0","output":"It''s
+    body: '{"input":[{"role":"user","content":"What''s the weather in Paris?"},{"name":"get_weather","arguments":"{\"city\":\"Paris\"}","call_id":"call_jcvm1LMGHGZkQq3Ig4o3NC6H","type":"function_call"},{"type":"function_call_output","call_id":"call_jcvm1LMGHGZkQq3Ig4o3NC6H","output":"It''s
       sunny in Paris"}],"max_output_tokens":200,"model":"gpt-4o-mini","stream":false,"tool_choice":"auto","tools":[{"name":"get_weather","parameters":{"additionalProperties":false,"properties":{"city":{"type":"string"}},"required":["city"],"type":"object"},"type":"function","description":null,"strict":true}]}'
     headers:
       accept:
@@ -136,7 +136,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.36.0
+      - pydantic-ai/2.40.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -146,7 +146,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.9.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -154,19 +154,19 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0d83fc997e80b138006a959d7b9c5c87d28f0efb6ef9ceb253\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1788190075,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0e9e966ac60faede006aa055099ea487d2bab03659a61875df\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1788892425,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1788190076,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1788892426,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0d83fc997e80b138006a959d7bf52c87d2a5472567aa4ea784\",\n
+        \     \"id\": \"msg_0e9e966ac60faede006aa05509eec887d2839957603c53d7fd\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"The weather in Paris
@@ -203,7 +203,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33d0fe42d0fe080-YYZ
+      - a3800b1babde90e5-YYZ
       connection:
       - keep-alive
       content-length:
@@ -211,9 +211,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:27:56 GMT
+      - Tue, 08 Sep 2026 18:33:46 GMT
       openai-processing-ms:
-      - '731'
+      - '610'
       openai-version:
       - '2020-10-01'
       server:
@@ -231,13 +231,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999720'
+      - '149999722'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_9290a4684c10414c9e24a74bc9b55657
+      - req_9ad3d83acecf445d8b1fe795754d99a1
     status:
       code: 200
       message: OK

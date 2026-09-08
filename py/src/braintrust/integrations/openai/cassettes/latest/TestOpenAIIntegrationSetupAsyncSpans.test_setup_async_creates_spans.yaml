@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.6.0
+      - AsyncOpenAI/Python 3.8.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.8.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,22 +33,22 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EIy07tpjGG24nRTExVfHstvwpj4WW\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788189255,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-ELuyGAyDO4Ej7g4tCTW8pwtibl5dT\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1788892592,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hello! How can I assist you today?\",\n
+        \"assistant\",\n        \"content\": \"Hi there! How can I assist you today?\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
         null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        10,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 19,\n    \"prompt_tokens_details\":
+        10,\n    \"completion_tokens\": 10,\n    \"total_tokens\": 20,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_1d2403c701\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_62666fb687\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -59,17 +59,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33cfbddfeb81d7b-YYZ
+      - a3800f2a6c88ab5d-YYZ
       connection:
       - keep-alive
       content-length:
-      - '840'
+      - '844'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:14:15 GMT
+      - Tue, 08 Sep 2026 18:36:32 GMT
       openai-processing-ms:
-      - '497'
+      - '411'
       openai-version:
       - '2020-10-01'
       server:
@@ -95,7 +95,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_111a9eed45ff488fa88ed13d3f2dd298
+      - req_215fd9a109464a9091785c16a16cdae1
     status:
       code: 200
       message: OK

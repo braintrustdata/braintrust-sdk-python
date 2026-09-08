@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.6.0
+      - OpenAI/Python 3.8.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.8.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,44 +34,33 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_00af532c4ecb1d0d006a95996b2d2087d295a103ccd09ebc13\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1788189035,\n  \"status\":
+      string: "{\n  \"id\": \"resp_089375313ff42b9a006aa054dd2e3087d29cb99e9b37085969\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1788892381,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1788189036,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1788892383,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_00af532c4ecb1d0d006a95996b4c7c87d282aa24ac56cce95f\",\n
+        \     \"id\": \"ws_089375313ff42b9a006aa054dd89a887d2a911253c5f49715c\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_00af532c4ecb1d0d006a95996bd9cc87d28ee63c2cee5df292\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_089375313ff42b9a006aa054de29c887d2a545420aacb8e93c\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [],\n          \"logprobs\": [],\n          \"text\": \"As of 5:10\\u202fPM
-        on August 31, 2026, in Paris, the weather is light rain with a temperature
-        of 74\\u00b0F (24\\u00b0C).\\n\\n## Weather for Paris, \\u00cele-de-France,
-        France:\\nCurrent Conditions: Light rain, 74\\u00b0F (24\\u00b0C)\\n\\nDaily
-        Forecast:\\n* Monday, August 31: Low: 57\\u00b0F (14\\u00b0C), High: 75\\u00b0F
-        (24\\u00b0C), Description: A little rain late this morning; breezy followed
-        by a brief shower or two this afternoon\\n* Tuesday, September 1: Low: 56\\u00b0F
-        (14\\u00b0C), High: 74\\u00b0F (23\\u00b0C), Description: Delightful with
-        clouds and sunshine\\n* Wednesday, September 2: Low: 58\\u00b0F (14\\u00b0C),
-        High: 77\\u00b0F (25\\u00b0C), Description: Delightful with times of sun and
-        clouds\\n* Thursday, September 3: Low: 62\\u00b0F (17\\u00b0C), High: 80\\u00b0F
-        (27\\u00b0C), Description: Mostly cloudy and warm\\n* Friday, September 4:
-        Low: 63\\u00b0F (17\\u00b0C), High: 84\\u00b0F (29\\u00b0C), Description:
-        Sunny and very warm\\n* Saturday, September 5: Low: 61\\u00b0F (16\\u00b0C),
-        High: 80\\u00b0F (27\\u00b0C), Description: Warm and less humid with partial
-        sunshine\\n* Sunday, September 6: Low: 61\\u00b0F (16\\u00b0C), High: 84\\u00b0F
-        (29\\u00b0C), Description: Very warm with sun and some clouds\\n \"\n        }\n
-        \     ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
+        [\n            {\n              \"type\": \"url_citation\",\n              \"end_index\":
+        210,\n              \"start_index\": 123,\n              \"title\": \"Weather
+        for Paris, Paris, France\",\n              \"url\": \"https://www.timeanddate.com/weather/france/paris?utm_source=openai\"\n
+        \           }\n          ],\n          \"logprobs\": [],\n          \"text\":
+        \"As of 8:33\\u202fPM CEST on September 8, 2026, in Paris, France, the weather
+        is mostly cloudy with a temperature of 73\\u00b0F (23\\u00b0C). ([timeanddate.com](https://www.timeanddate.com/weather/france/paris?utm_source=openai))
+        \"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
         \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
@@ -90,8 +79,8 @@ interactions:
         \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
         \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
         {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 315,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 638\n  },\n  \"user\": null,\n  \"metadata\":
+        \   \"output_tokens\": 65,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
+        0\n    },\n    \"total_tokens\": 388\n  },\n  \"user\": null,\n  \"metadata\":
         {}\n}"
     headers:
       access-control-expose-headers:
@@ -103,17 +92,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33cf67d69e9d5a9-YYZ
+      - a3800a050957ab6a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3915'
+      - '3234'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:10:36 GMT
+      - Tue, 08 Sep 2026 18:33:03 GMT
       openai-processing-ms:
-      - '1300'
+      - '2157'
       openai-version:
       - '2020-10-01'
       server:
@@ -125,7 +114,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_1a558dfff6bc4ca8addbae195350bf8a
+      - req_2603a5528c834635abb0d5397259fee0
     status:
       code: 200
       message: OK
