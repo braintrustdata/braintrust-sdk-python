@@ -442,6 +442,109 @@ async def test_run_evaluator_with_many_scorers():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("is_async", [False, True])
+@pytest.mark.parametrize(
+    "score_result",
+    [
+        {"score": 1.0},
+        {"score": None},
+        {"score": 0.0, "metadata": {"reason": "No match"}},
+        {"name": "custom", "score": 0.5, "metadata": {"reason": "Partial match"}},
+        {"name": "", "score": 1.0},
+        {"name": "skipped"},
+    ],
+)
+async def test_run_evaluator_normalizes_single_dict_score(
+    score_result, is_async, with_memory_logger, with_simulate_login
+):
+    original_result = score_result.copy()
+
+    def scorer(input_value, output, expected):
+        return score_result
+
+    async def async_scorer(input_value, output, expected):
+        return score_result
+
+    scorer_fn = async_scorer if is_async else scorer
+    expected_scores = {score_result.get("name", scorer_fn.__name__): score_result.get("score")}
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-single-dict-score",
+        data=[EvalCase(input=1, expected=1)],
+        task=lambda input_value: input_value,
+        scores=[scorer_fn],
+        experiment_name=None,
+        metadata=None,
+        summarize_scores=False,
+    )
+    exp = init_test_exp("test-single-dict-score", "test-project")
+    result = await run_evaluator(exp, evaluator, None, [])
+
+    assert result.results[0].scores == expected_scores
+    assert "scorer_errors" not in result.results[0].metadata
+    assert score_result == original_result
+    score_spans = [log for log in with_memory_logger.pop() if log.get("span_attributes", {}).get("type") == "score"]
+    assert len(score_spans) == 1
+    assert score_spans[0]["scores"] == expected_scores
+    assert score_spans[0]["output"] == {"score": score_result.get("score")}
+    assert score_spans[0].get("metadata", {}) == score_result.get("metadata", {})
+
+
+@pytest.mark.asyncio
+async def test_run_evaluator_preserves_named_dict_subclass():
+    class PercentageScore(dict):
+        def items(self):
+            for key, value in super().items():
+                yield key, value / 100 if key == "score" else value
+
+    def scorer(input_value, output, expected):
+        return PercentageScore(name="percentage", score=80)
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-dict-subclass-score",
+        data=[EvalCase(input=1, expected=1)],
+        task=lambda input_value: input_value,
+        scores=[scorer],
+        experiment_name=None,
+        metadata=None,
+    )
+    result = await run_evaluator(None, evaluator, None, [])
+
+    assert result.results[0].scores == {"percentage": 0.8}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "score_result",
+    [
+        [{"score": 1.0}],
+        [{"name": "named", "score": 1.0}, {"score": 0.5}],
+        {},
+        {"metadata": {"reason": "Missing score"}},
+        {"score": 2.0},
+    ],
+)
+async def test_run_evaluator_rejects_invalid_dict_scores(score_result):
+    def scorer(input_value, output, expected):
+        return score_result
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-invalid-dict-scores",
+        data=[EvalCase(input=1, expected=1)],
+        task=lambda input_value: input_value,
+        scores=[scorer],
+        experiment_name=None,
+        metadata=None,
+    )
+    result = await run_evaluator(None, evaluator, None, [])
+
+    assert result.results[0].scores == {}
+    assert "valid Score object" in result.results[0].metadata["scorer_errors"]["scorer"]
+
+
+@pytest.mark.asyncio
 async def test_run_evaluator_normalizes_list_of_dict_scores():
     data = [
         EvalCase(input=1, expected=1),

@@ -54,6 +54,23 @@ class Score(SerializableDataClass):
             )
 
 
+class _ScoreDictFields(TypedDict):
+    score: float | None
+    metadata: NotRequired[Metadata]
+
+
+class ScoreDict(_ScoreDictFields):
+    """A single score result. When omitted, name defaults to the scorer's name."""
+
+    name: NotRequired[str]
+
+
+class NamedScoreDict(_ScoreDictFields):
+    """A score result with an explicit name, required when returning multiple scores."""
+
+    name: str
+
+
 class ScoreLike(Protocol):
     @property
     def name(self) -> str: ...

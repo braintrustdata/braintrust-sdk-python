@@ -51,7 +51,17 @@ from .parameters import (
     validate_parameters,
 )
 from .resource_manager import ResourceManager
-from .score import Classification, ClassificationItem, Score, ScoreLike, is_classification, is_score, is_scorer
+from .score import (
+    Classification,
+    ClassificationItem,
+    NamedScoreDict,
+    Score,
+    ScoreDict,
+    ScoreLike,
+    is_classification,
+    is_score,
+    is_scorer,
+)
 from .serializable_data_class import SerializableDataClass
 from .span_types import SpanTypeAttribute
 from .types._eval import EvalCaseDict, EvalCaseDictNoOutput, ExperimentDatasetEvent
@@ -224,7 +234,9 @@ class EvalScorerArgs(SerializableDataClass, Generic[Input, Output, Expected]):
     tags: Sequence[str] | None = None
 
 
-OneOrMoreScores = float | int | bool | None | ScoreLike | Sequence[ScoreLike]
+OneOrMoreScores = (
+    float | int | bool | None | ScoreLike | ScoreDict | NamedScoreDict | Sequence[ScoreLike | NamedScoreDict]
+)
 OneOrMoreClassifications = None | Classification | Mapping[str, Any] | list[Classification | Mapping[str, Any]]
 
 
@@ -336,7 +348,9 @@ class Evaluator(Generic[Input, Output, Expected]):
     scores: Sequence[EvalScorer[Input, Output, Expected]]
     """
     A list of scorers to evaluate the results of the task. Each scorer can be a Scorer object or a function
-    that takes `input`, `output`, and `expected` arguments and returns a `Score` object. The function can be async.
+    that takes `input`, `output`, and `expected` arguments. It can return a number, a `Score` object,
+    a `ScoreDict`, or a sequence of named scores. A single dict can omit `name` to use the scorer's name;
+    each score in a sequence must include a name. The function can be async.
     """
 
     experiment_name: str | None
@@ -854,7 +868,8 @@ async def EvalAsync(
     :param data: Returns an iterator over the evaluation dataset. Each element of the iterator should be a `EvalCase`.
     :param task: Runs the evaluation task on a single input. The `hooks` object can be used to add metadata to the evaluation.
     :param scores: A list of scorers to evaluate the results of the task. Each scorer can be a Scorer object or a function
-    that takes an `EvalScorerArgs` object and returns a `Score` object.
+    that returns a number, a `Score` object, a `ScoreDict`, or a sequence of named scores.
+    A single dict can omit `name` to use the scorer's name; each score in a sequence must include a name.
     :param experiment_name: (Optional) Experiment name. If not specified, a name will be generated automatically.
     :param trial_count: The number of times to run the evaluator per input. This is useful for evaluating applications that
     have non-deterministic behavior and gives you both a stronger aggregate measure and a sense of the variance in the results.
@@ -982,7 +997,8 @@ def Eval(
     :param data: Returns an iterator over the evaluation dataset. Each element of the iterator should be a `EvalCase`.
     :param task: Runs the evaluation task on a single input. The `hooks` object can be used to add metadata to the evaluation.
     :param scores: A list of scorers to evaluate the results of the task. Each scorer can be a Scorer object or a function
-    that takes an `EvalScorerArgs` object and returns a `Score` object.
+    that returns a number, a `Score` object, a `ScoreDict`, or a sequence of named scores.
+    A single dict can omit `name` to use the scorer's name; each score in a sequence must include a name.
     :param experiment_name: (Optional) Experiment name. If not specified, a name will be generated automatically.
     :param trial_count: The number of times to run the evaluator per input. This is useful for evaluating applications that
     have non-deterministic behavior and gives you both a stronger aggregate measure and a sense of the variance in the results.
@@ -1510,6 +1526,8 @@ async def _run_evaluator_internal_impl(
 
             result = await call_user_fn(event_loop, score, **kwargs)
             if isinstance(result, dict):
+                if "name" not in result and "score" in result:
+                    result = {"name": name, **result}
                 result = _normalize_score(result, "When returning a dict, it must be a valid Score object.")
 
             if isinstance(result, Iterable) and not isinstance(result, (str, bytes, Mapping)):
@@ -1965,6 +1983,8 @@ __all__ = [
     "EvalCase",
     "EvalHooks",
     "Evaluator",
+    "NamedScoreDict",
     "Reporter",
     "Score",
+    "ScoreDict",
 ]
