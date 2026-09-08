@@ -1361,7 +1361,9 @@ class ResponseWrapper:
                     current_output = output[output_index]
 
                     if result.type == "response.output_item.done":
-                        current_output["status"] = result.item.status
+                        status = getattr(result.item, "status", None)
+                        if status is not None:
+                            current_output["status"] = status
                         continue
 
                     if result.type == "response.output_item.delta":
