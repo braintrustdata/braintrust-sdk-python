@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS02MDI1MTIyZTYwN2UxNThhYTQ5ODA0M2I3Njg1MjczOA0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tNjAyNTEyMmU2
-      MDdlMTU4YWE0OTgwNDNiNzY4NTI3MzgNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTYwMjUxMjJlNjA3ZTE1OGFhNDk4MDQzYjc2ODUyNzM4
+      LS1kNDE5NjkzNmFlNzc2OTAwNmM0Y2NmMWNkOWNiZDBlMA0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tZDQxOTY5MzZh
+      ZTc3NjkwMDZjNGNjZjFjZDljYmQwZTANCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLWQ0MTk2OTM2YWU3NzY5MDA2YzRjY2YxY2Q5Y2JkMGUw
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tNjAyNTEyMmU2MDdlMTU4YWE0OTgwNDNiNzY4NTI3MzgtLQ0K
+      Ci0tZDQxOTY5MzZhZTc3NjkwMDZjNGNjZjFjZDljYmQwZTAtLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=6025122e607e158aa498043b76852738
+      - multipart/form-data; boundary=d4196936ae7769006c4ccf1cd9cbd0e0
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.6.0
+      - OpenAI/Python 3.8.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.8.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -602,15 +602,16 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"B\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"ora\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"
-        Bora\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"Bora Bora.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\u0905\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0938\u094D\u0925\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\u093F\u0930\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0924\u093E\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.done\",\"text\":\"\u0905\u0938\u094D\u0925\u093F\u0930\u0924\u093E\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -623,15 +624,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33cfb760aeafcd9-YYZ
+      - a3800eaa08daab3c-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 31 Aug 2026 15:13:59 GMT
+      - Tue, 08 Sep 2026 18:36:11 GMT
       openai-processing-ms:
-      - '287'
+      - '429'
       openai-version:
       - '2020-10-01'
       server:
@@ -651,7 +652,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_46a19d9700c444cebb420d0708fb0481
+      - req_cc9ea5c724e64960ba3c7189a15afe51
     status:
       code: 200
       message: OK

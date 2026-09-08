@@ -1,10 +1,10 @@
 interactions:
 - request:
     body: !!binary |
-      LS0xNzUxYmMxYmIwZTQwMjFkMWM0NjhlZTEwMDI0ZGQwNA0KQ29udGVudC1EaXNwb3NpdGlvbjog
-      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tMTc1MWJjMWJi
-      MGU0MDIxZDFjNDY4ZWUxMDAyNGRkMDQNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
-      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTE3NTFiYzFiYjBlNDAyMWQxYzQ2OGVlMTAwMjRkZDA0
+      LS00OGRiMWE0M2QzZWU3MmYxNDg0OWQ1NmQ0NDE2YjFlYw0KQ29udGVudC1EaXNwb3NpdGlvbjog
+      Zm9ybS1kYXRhOyBuYW1lPSJtb2RlbCINCg0KZ3B0LTRvLXRyYW5zY3JpYmUNCi0tNDhkYjFhNDNk
+      M2VlNzJmMTQ4NDlkNTZkNDQxNmIxZWMNCkNvbnRlbnQtRGlzcG9zaXRpb246IGZvcm0tZGF0YTsg
+      bmFtZT0ic3RyZWFtIg0KDQp0cnVlDQotLTQ4ZGIxYTQzZDNlZTcyZjE0ODQ5ZDU2ZDQ0MTZiMWVj
       DQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0i
       dGVzdF9hdWRpby53YXYiDQpDb250ZW50LVR5cGU6IGF1ZGlvL3gtd2F2DQoNClJJRkYkfQAAV0FW
       RWZtdCAQAAAAAQABAIA+AAAAfQAAAgAQAGRhdGEAfQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -569,7 +569,7 @@ interactions:
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN
-      Ci0tMTc1MWJjMWJiMGU0MDIxZDFjNDY4ZWUxMDAyNGRkMDQtLQ0K
+      Ci0tNDhkYjFhNDNkM2VlNzJmMTQ4NDlkNTZkNDQxNmIxZWMtLQ0K
     headers:
       accept:
       - application/json
@@ -580,11 +580,11 @@ interactions:
       content-length:
       - '32415'
       content-type:
-      - multipart/form-data; boundary=1751bc1bb0e4021d1c468ee10024dd04
+      - multipart/form-data; boundary=48db1a43d3ee72f14849d56d4416b1ec
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.6.0
+      - OpenAI/Python 3.8.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -594,7 +594,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.8.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -602,15 +602,14 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.6
     method: POST
     uri: https://api.openai.com/v1/audio/transcriptions
   response:
     body:
-      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"\u0647\u062F\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.delta\",\"delta\":\"\u0623\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\"
-        \u0627\u0644\u0631\u062C\u0644\"}\r\n\r\ndata: {\"type\":\"transcript.text.delta\",\"delta\":\".\"}\r\n\r\ndata:
-        {\"type\":\"transcript.text.done\",\"text\":\"\u0647\u062F\u0623 \u0627\u0644\u0631\u062C\u0644.\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":16,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":6}}\r\n\r\ndata:
+      string: "data: {\"type\":\"transcript.text.delta\",\"delta\":\"Good\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.delta\",\"delta\":\" afternoon\"}\r\n\r\ndata:
+        {\"type\":\"transcript.text.done\",\"text\":\"Good afternoon\",\"usage\":{\"type\":\"tokens\",\"total_tokens\":14,\"input_tokens\":10,\"input_token_details\":{\"text_tokens\":0,\"audio_tokens\":10},\"output_tokens\":4}}\r\n\r\ndata:
         [DONE]\r\n\r\n"
     headers:
       access-control-expose-headers:
@@ -623,15 +622,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33cfb718a1336b5-YYZ
+      - a3800ea50c5a39d5-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Mon, 31 Aug 2026 15:13:58 GMT
+      - Tue, 08 Sep 2026 18:36:11 GMT
       openai-processing-ms:
-      - '464'
+      - '417'
       openai-version:
       - '2020-10-01'
       server:
@@ -651,7 +650,7 @@ interactions:
       x-ratelimit-reset-requests:
       - 6ms
       x-request-id:
-      - req_cfc9de2072324fc28ee35f20030768d9
+      - req_ce3337e17d3949d4978dabe8adf28d8f
     status:
       code: 200
       message: OK
