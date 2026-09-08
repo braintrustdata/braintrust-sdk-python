@@ -63,7 +63,6 @@ if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"
 from .audit import *
 from .auto import auto_instrument as auto_instrument
 from .dataset_pipeline import *
-from .durable_eval import *
 from .framework import *
 from .framework2 import *
 from .functions.invoke import *
@@ -88,3 +87,4 @@ from .sandbox import SandboxConfig as SandboxConfig
 from .sandbox import register_sandbox as register_sandbox
 from .util import BT_IS_ASYNC_ATTRIBUTE as BT_IS_ASYNC_ATTRIBUTE
 from .util import MarkAsyncWrapper as MarkAsyncWrapper
+from .workflow_eval import *
