@@ -37,6 +37,7 @@ def _create_transport(
             session=session,
             adapter=adapter,
             enable_sdk_retries=enable_sdk_retries,
+            request_timeout=BraintrustEnv.HTTP_TIMEOUT.get(None),
             persist_cookies=False,
         ),
         True,

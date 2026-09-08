@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, call, patch
 import braintrust
 import exceptiongroup
 import pytest
+import requests
 from braintrust import (
     Attachment,
     BaseAttachment,
@@ -507,6 +508,24 @@ def test_load_prompt_uses_explicit_api_key_without_changing_global_login():
     assert called_options.api_key == "prompt-api-key"
     assert called_options.org_name is None
     assert logger._state.login_token == original_login_token
+
+
+@pytest.mark.parametrize("configured_timeout", [0.25, 120.0])
+def test_load_prompt_preserves_configured_http_timeout(monkeypatch, configured_timeout):
+    monkeypatch.setenv("BRAINTRUST_HTTP_TIMEOUT", str(configured_timeout))
+    simulate_login()
+    response = requests.Response()
+    response.status_code = 200
+    response.url = "https://api.example.com/v1/prompt"
+    response.headers["Content-Type"] = "application/json"
+    response._content = json.dumps(_prompt_response("saved-prompt")).encode()
+
+    assert logger._state._client is not None
+    with patch.object(logger._state._client.transport.session, "request", return_value=response) as request:
+        prompt = braintrust.load_prompt(project="test-project", slug="saved-prompt")
+        assert prompt.slug == "saved-prompt"
+
+    assert request.call_args.kwargs["timeout"] == configured_timeout
 
 
 def test_load_prompt_by_id_reports_an_empty_response_as_not_found():

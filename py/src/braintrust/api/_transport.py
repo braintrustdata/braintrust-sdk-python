@@ -1,5 +1,6 @@
 """Legacy and policy-aware HTTP transport primitives for the Braintrust SDK."""
 
+import dataclasses
 import datetime
 import http.cookiejar
 import logging
@@ -203,6 +204,7 @@ class Transport:
         session: requests.Session | None = None,
         adapter: HTTPAdapter | None = None,
         enable_sdk_retries: bool | None = None,
+        request_timeout: float | None = None,
         persist_cookies: bool = True,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
@@ -215,6 +217,9 @@ class Transport:
         if not persist_cookies and self._owns_session:
             self.session.cookies.set_policy(_RejectCookiesPolicy())
         self._sdk_retries_enabled = not custom_transport if enable_sdk_retries is None else enable_sdk_retries
+        if request_timeout is not None and request_timeout <= 0:
+            raise ValueError("request_timeout must be positive")
+        self._request_timeout = request_timeout
         if adapter is not None:
             self.session.mount("http://", adapter)
             self.session.mount("https://", adapter)
@@ -268,6 +273,17 @@ class Transport:
     ) -> requests.Response:
         method = method.upper()
         policy = retry_policy or RetryPolicy.for_mode(retry_mode)
+        if retry_policy is None and self._request_timeout is not None:
+            max_elapsed_time = policy.max_elapsed_time
+            if max_elapsed_time is not None:
+                # Preserve the policy's retry budget beyond the first attempt
+                # when the configured per-request timeout exceeds its default.
+                max_elapsed_time += max(0, self._request_timeout - policy.timeout)
+            policy = dataclasses.replace(
+                policy,
+                timeout=self._request_timeout,
+                max_elapsed_time=max_elapsed_time,
+            )
 
         replay_safe = retry_mode in (RetryMode.SAFE_READ, RetryMode.IDEMPOTENT_WRITE)
         body_replayable = _request_body_is_replayable(data, kwargs.get("files"))
