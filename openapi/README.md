@@ -16,7 +16,7 @@ make check-api-client-codegen
 ```
 
 The check regenerates in a temporary directory and reports drift without changing the worktree.
-Currently selected tags are Projects, Experiments, and Datasets. Each tag produces one resource and
+Currently selected tags are Projects, Experiments, Datasets, and Prompts. Each tag produces one resource and
 operation registry. Models used by one resource stay in that resource's model module; shared models
 live in `models/common.py`; unreachable models are omitted.
 
