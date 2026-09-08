@@ -50,6 +50,17 @@ BRAINTRUST_API_KEY=<YOUR_BRAINTRUST_API_KEY> braintrust eval eval_hello.py
 
 # Check env var at import time for auto-instrumentation
 import os
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    # These names must precede the generated wildcard so type checkers keep the
+    # runtime resource classes for the four names shared by both modules.
+    from .logger import Dataset as Dataset  # noqa: I001
+    from .logger import Experiment as Experiment
+    from .logger import Project as Project
+    from .logger import Prompt as Prompt
+    from .generated_types import *
 
 
 if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"):
@@ -60,6 +71,7 @@ if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"
     except Exception:
         pass  # Never break on import
 
+from . import generated_types as _generated_types  # noqa: I001
 from .audit import *
 from .auto import auto_instrument as auto_instrument
 from .dataset_pipeline import *
@@ -67,8 +79,14 @@ from .framework import *
 from .framework2 import *
 from .functions.invoke import *
 from .functions.stream import *
-from .generated_types import *
-from .integrations.ai_sdk import setup_ai_sdk as setup_ai_sdk
+
+# Keep this before the logger wildcard so its existing runtime collision
+# precedence remains unchanged while new generated names are picked up.
+for _name in _generated_types.__all__:
+    if _name not in {"Dataset", "Experiment", "Project", "Prompt"}:
+        globals()[_name] = getattr(_generated_types, _name)
+
+from .integrations.ai_sdk import setup_ai_sdk as setup_ai_sdk  # noqa: I001
 from .integrations.anthropic import wrap_anthropic as wrap_anthropic
 from .integrations.instructor import wrap_instructor as wrap_instructor
 from .integrations.litellm import wrap_litellm as wrap_litellm
@@ -77,6 +95,10 @@ from .integrations.openrouter import wrap_openrouter as wrap_openrouter
 from .integrations.pydantic_ai import setup_pydantic_ai as setup_pydantic_ai
 from .logger import *
 from .logger import (
+    Dataset as Dataset,
+    Experiment as Experiment,
+    Project as Project,
+    Prompt as Prompt,
     _internal_get_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
     _internal_reset_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
     _internal_with_custom_background_logger,  # noqa: F401 # type: ignore[reportUnusedImport]
