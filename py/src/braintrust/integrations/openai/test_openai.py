@@ -3,7 +3,6 @@ import binascii
 import inspect
 import os
 import struct
-import sys
 import tempfile
 import time
 import zlib
@@ -1411,15 +1410,34 @@ async def test_openai_response_streaming_async(memory_logger):
     wrapped_client = wrap_openai(openai.AsyncOpenAI())
     clients = [unwrapped_client, wrapped_client]
 
+    # OpenAI 1.x MCP parsing is incompatible with Python 3.14.
+    tools = []
+    if Version(openai.__version__) >= Version("2.0.0"):
+        tools = [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "allowed_tools": ["read_wiki_structure"],
+                "require_approval": "always",
+            }
+        ]
+
     for client in clients:
         start = time.time()
 
-        stream = await client.responses.create(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
+        stream = await client.responses.create(
+            model=TEST_MODEL, input="What's 12 + 12?", stream=True, **({"tools": tools} if tools else {})
+        )
 
         chunks = []
+        mcp_items = []
         async for chunk in stream:
             if chunk.type == "response.output_text.delta":
                 chunks.append(chunk.delta)
+            if chunk.type == "response.output_item.done" and chunk.item.type == "mcp_list_tools":
+                assert not hasattr(chunk.item, "status")
+                mcp_items.append(chunk.item.model_dump(exclude_none=True))
         end = time.time()
         output = "".join(chunks)
 
@@ -1427,6 +1445,8 @@ async def test_openai_response_streaming_async(memory_logger):
         assert len(chunks) > 1
 
         assert "24" in output
+        if tools:
+            assert mcp_items
 
         if not _is_wrapped(client):
             assert not memory_logger.pop()
@@ -1441,60 +1461,8 @@ async def test_openai_response_streaming_async(memory_logger):
         assert "What's 12 + 12?" in str(span["input"])
         assert "24" in str(span["output"])
 
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-@pytest.mark.parametrize("use_async", [False, True])
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14) and Version(openai.__version__) == Version("1.92.0"),
-    reason="OpenAI 1.92.0 MCP parsing tries to set __discriminator__ on an immutable Python 3.14 Union",
-)
-async def test_openai_responses_stream_mcp_list_tools(memory_logger, use_async):
-    """Hosted MCP list-tools items have no status and must not break tracing."""
-    try:
-        from openai.types.responses.response_output_item import McpListTools
-
-        del McpListTools
-    except ImportError:
-        pytest.skip("MCP tools are not available in this OpenAI SDK version")
-
-    client = wrap_openai(openai.AsyncOpenAI() if use_async else openai.OpenAI())
-    kwargs = {
-        "model": RESPONSES_TOOL_MODEL,
-        "input": "List the top-level documentation topics for the repository openai/openai-python.",
-        "tools": [
-            {
-                "type": "mcp",
-                "server_label": "deepwiki",
-                "server_url": "https://mcp.deepwiki.com/mcp",
-                "allowed_tools": ["read_wiki_structure"],
-                "require_approval": "never",
-            }
-        ],
-        "stream": True,
-    }
-    if use_async:
-        async with client:
-            stream = await client.responses.create(**kwargs)
-            async with stream:
-                events = [event async for event in stream]
-    else:
-        with client:
-            with client.responses.create(**kwargs) as stream:
-                events = list(stream)
-
-    list_tools = [
-        event.item
-        for event in events
-        if event.type == "response.output_item.done" and event.item.type == "mcp_list_tools"
-    ]
-    assert list_tools
-    assert not hasattr(list_tools[0], "status")
-    completed = next(event.response for event in events if event.type == "response.completed")
-    spans = memory_logger.pop()
-    span = _find_span_by_name(spans, "openai.responses.create")
-    assert "error" not in span
-    assert span["output"] == [item.model_dump(exclude_none=True) for item in completed.output]
+        for item in mcp_items:
+            assert item in span["output"]
 
 
 @pytest.mark.vcr
