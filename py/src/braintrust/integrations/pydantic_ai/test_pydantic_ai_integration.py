@@ -45,6 +45,23 @@ def memory_logger():
         yield bgl
 
 
+def _model_with_customization_counter():
+    from pydantic_ai.models import infer_model
+
+    inferred_model = infer_model(MODEL)
+    customization_calls = []
+
+    class SideEffectModel(type(inferred_model)):
+        def __str__(self):
+            return MODEL
+
+        def customize_request_parameters(self, model_request_parameters):
+            customization_calls.append(model_request_parameters)
+            return super().customize_request_parameters(model_request_parameters)
+
+    return SideEffectModel(inferred_model.model_name), customization_calls
+
+
 def _assert_metrics_are_valid(metrics, start, end):
     """Assert that metrics contain expected fields and values."""
     assert "start" in metrics
@@ -648,18 +665,20 @@ async def test_agent_with_tools(memory_logger):
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_direct_model_request(memory_logger, direct):
-    """Test direct API model_request()."""
+    """Test direct API model_request() without tracing changing model preparation."""
     assert not memory_logger.pop()
 
+    model, customization_calls = _model_with_customization_counter()
     messages = [ModelRequest(parts=[UserPromptPart(content=TEST_PROMPT)])]
 
     start = time.time()
-    response = await direct.model_request(model=MODEL, messages=messages)
+    response = await direct.model_request(model=model, messages=messages)
     end = time.time()
 
     # Verify response
     assert response.parts
     assert "4" in str(response.parts[0].content)
+    assert len(customization_calls) == 1
 
     # Check spans
     spans = memory_logger.pop()
@@ -759,17 +778,19 @@ async def test_direct_model_request_stream(memory_logger, direct):
     """Test direct API model_request_stream() - verifies time_to_first_token is captured."""
     assert not memory_logger.pop()
 
+    model, customization_calls = _model_with_customization_counter()
     messages = [ModelRequest(parts=[UserPromptPart(content="Count from 1 to 3")])]
 
     start = time.time()
     chunk_count = 0
-    async with direct.model_request_stream(model=MODEL, messages=messages) as stream:
+    async with direct.model_request_stream(model=model, messages=messages) as stream:
         async for chunk in stream:
             chunk_count += 1
     end = time.time()
 
-    # Verify we got chunks
+    # Verify we got chunks and tracing did not rerun request customization.
     assert chunk_count > 0
+    assert len(customization_calls) == 1
 
     # Check spans
     spans = memory_logger.pop()
