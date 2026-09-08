@@ -25,6 +25,7 @@ from braintrust import (
     init_logger,
     logger,
 )
+from braintrust.api import BraintrustTransportError
 from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.git_fields import GitMetadataSettings, RepoInfo
 from braintrust.gitutil import get_repo_info
@@ -56,7 +57,7 @@ from braintrust.test_helpers import (
 )
 from braintrust.util import AugmentedHTTPError
 from requests import HTTPError
-from requests.exceptions import SSLError
+from requests.exceptions import ConnectionError, SSLError
 
 
 def test_login_to_state_uses_env_braintrust_api_key(tmp_path, monkeypatch):
@@ -577,6 +578,38 @@ def test_load_prompt_does_not_fall_back_to_cache_for_non_transient_errors(server
         )
         with pytest.raises(type(server_error)):
             _ = second_prompt.slug
+
+
+def test_load_prompt_falls_back_to_cache_for_transient_wrapped_transport_errors():
+    simulate_login()
+    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
+    request_client = MagicMock()
+    server_error = BraintrustTransportError(
+        method="GET",
+        url="https://api.example.com/v1/prompt",
+        attempts=1,
+        retryable=False,
+    )
+    server_error.__cause__ = ConnectionError("custom adapter exhausted its retries")
+    request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), server_error]
+
+    with (
+        patch.object(logger._state, "_prompt_cache", prompt_cache),
+        patch.object(logger, "_login_loader_client", return_value=request_client),
+    ):
+        first_prompt = braintrust.load_prompt(
+            project="test-project",
+            slug="saved-prompt",
+            api_key="prompt-api-key",
+        )
+        assert first_prompt.slug == "saved-prompt"
+
+        cached_prompt = braintrust.load_prompt(
+            project="test-project",
+            slug="saved-prompt",
+            api_key="prompt-api-key",
+        )
+        assert cached_prompt.slug == "saved-prompt"
 
 
 def test_load_prompt_uses_same_api_keys_cache_for_transient_errors():

@@ -222,6 +222,25 @@ class Transport:
         self._monotonic = monotonic
         self._wall_clock = wall_clock
 
+    def _set_adapter(self, adapter: HTTPAdapter) -> None:
+        """Install a caller-owned adapter and delegate retries to it."""
+
+        previous_injected_adapter = self._injected_adapter
+        replaced_owned_adapters = {
+            mounted
+            for mounted in self.session.adapters.values()
+            if self._owns_session and mounted is not previous_injected_adapter and mounted is not adapter
+        }
+
+        self._injected_adapter = adapter
+        self._sdk_retries_enabled = False
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
+        mounted_adapters = set(self.session.adapters.values())
+        for replaced_adapter in replaced_owned_adapters - mounted_adapters:
+            replaced_adapter.close()
+
     def close(self) -> None:
         if self._owns_session:
             _unmount_adapter(self.session, self._injected_adapter)

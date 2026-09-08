@@ -874,6 +874,14 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
     if _state._api_conn:
         _state._api_conn._set_adapter(adapter=adapter)
         _state._api_conn._reset()
+    if _state._client:
+        _state._client.transport._set_adapter(adapter)
+
+    # Per-credential loader resources may have been created with the previous
+    # adapter. Eviction closes them once any active requests release their lease;
+    # subsequent loads recreate them with the new global adapter.
+    _state._loader_login_cache.clear()
+    _state._loader_api_client_cache.clear()
 
 
 # Sometimes we'd like to launch network requests concurrently. We provide a
@@ -2014,8 +2022,8 @@ def _is_loader_cache_fallback_error(error: BaseException) -> bool:
 
         if isinstance(current, (json.JSONDecodeError, BraintrustJSONDecodeError)):
             return False
-        if isinstance(current, BraintrustTransportError):
-            return current.retryable
+        if isinstance(current, BraintrustTransportError) and current.retryable:
+            return True
 
         status_code = getattr(current, "status_code", None)
         if status_code is None:
