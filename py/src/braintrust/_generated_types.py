@@ -2596,6 +2596,7 @@ SpanType: TypeAlias = Literal[
     'preprocessor',
     'classifier',
     'review',
+    'log',
 ]
 """
 Type of the span, for display purposes only
