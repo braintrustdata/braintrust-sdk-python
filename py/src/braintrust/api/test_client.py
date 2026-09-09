@@ -225,11 +225,12 @@ def test_login_to_state_hydrates_isolated_legacy_connections(monkeypatch):
     assert isinstance(state.proxy_conn().adapter, RetryRequestExceptionsAdapter)
 
 
-def test_legacy_adapter_mutation_keeps_characterized_target_scope(monkeypatch):
+def test_adapter_mutation_updates_existing_connections_and_generated_client(monkeypatch):
     state = BraintrustState()
     state.app_url = "https://app.example.com"
     state.api_url = "https://api.example.com"
     state.proxy_url = "https://proxy.example.com"
+    state._client = BraintrustClient(api_key="secret", api_url=state.api_url)
     monkeypatch.setattr(logger, "_state", state)
     monkeypatch.setattr(logger, "_http_adapter", None)
 
@@ -237,11 +238,16 @@ def test_legacy_adapter_mutation_keeps_characterized_target_scope(monkeypatch):
     api_connection = state.api_conn()
     proxy_connection = state.proxy_conn()
     adapter = HTTPAdapter()
-    logger.set_http_adapter(adapter)
+    try:
+        logger.set_http_adapter(adapter)
 
-    assert app_connection.adapter is adapter
-    assert api_connection.adapter is adapter
-    assert proxy_connection.adapter is None
+        assert app_connection.adapter is adapter
+        assert api_connection.adapter is adapter
+        assert proxy_connection.adapter is None
+        assert state._client.transport.session.adapters["http://"] is adapter
+        assert state._client.transport.session.adapters["https://"] is adapter
+    finally:
+        state._client.close()
 
 
 def test_state_concurrent_lazy_access_bootstraps_once(monkeypatch):

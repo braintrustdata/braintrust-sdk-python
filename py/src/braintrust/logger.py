@@ -451,7 +451,10 @@ class _LoaderLoginOptions:
     cache_namespace: str
 
 
-class _LoaderLoginEntry:
+_LoaderResource = TypeVar("_LoaderResource", HTTPConnection, BraintrustClient)
+
+
+class _LoaderLoginEntry(Generic[_LoaderResource]):
     """One credential's loader login, tracking who is responsible for closing it.
 
     The login runs outside the cache lock, so an entry can be evicted while its
@@ -461,13 +464,13 @@ class _LoaderLoginEntry:
     connection that another caller is still issuing a request on.
     """
 
-    def __init__(self, factory: Callable[[], HTTPConnection]):
-        self._lazy: LazyValue[HTTPConnection] = LazyValue(factory, use_mutex=True)
+    def __init__(self, factory: Callable[[], _LoaderResource]):
+        self._lazy: LazyValue[_LoaderResource] = LazyValue(factory, use_mutex=True)
         self._lock = threading.Lock()
         self._evicted = False
         self._active = 0
 
-    def acquire(self) -> HTTPConnection:
+    def acquire(self) -> _LoaderResource:
         with self._lock:
             self._active += 1
         try:
@@ -499,7 +502,11 @@ class _LoaderLoginEntry:
 class BraintrustState:
     def __init__(self):
         self.id = str(uuid.uuid4())
-        self._loader_login_cache: LRUCache[str, _LoaderLoginEntry] = LRUCache(
+        self._loader_login_cache: LRUCache[str, _LoaderLoginEntry[HTTPConnection]] = LRUCache(
+            max_size=16,
+            on_remove=self._evict_loader_login_entry,
+        )
+        self._loader_api_client_cache: LRUCache[str, _LoaderLoginEntry[BraintrustClient]] = LRUCache(
             max_size=16,
             on_remove=self._evict_loader_login_entry,
         )
@@ -585,6 +592,7 @@ class BraintrustState:
 
     def reset_login_info(self):
         self._loader_login_cache.clear()
+        self._loader_api_client_cache.clear()
 
         self.app_url: str | None = None
         self.app_public_url: str | None = None
@@ -604,7 +612,7 @@ class BraintrustState:
         self._user_info: Mapping[str, Any] | None = None
 
     @staticmethod
-    def _evict_loader_login_entry(_key: str, entry: "_LoaderLoginEntry") -> None:
+    def _evict_loader_login_entry(_key: str, entry: "_LoaderLoginEntry[_LoaderResource]") -> None:
         entry.evict()
 
     def reset_parent_state(self):
@@ -666,6 +674,7 @@ class BraintrustState:
     def copy_state(self, other: "BraintrustState"):
         """Copy login information from another BraintrustState instance."""
         self._loader_login_cache.clear()
+        self._loader_api_client_cache.clear()
         self.__dict__.update(
             {
                 k: v
@@ -684,6 +693,7 @@ class BraintrustState:
                     "_context_manager_lock",
                     "_client_lock",
                     "_loader_login_cache",
+                    "_loader_api_client_cache",
                 )
             }
         )
@@ -759,36 +769,63 @@ class BraintrustState:
             self._user_info = self.api_conn().get_json("ping")
         return self._user_info
 
-    @contextlib.contextmanager
-    def loader_conn(self, options: "_LoaderLoginOptions") -> "Iterator[HTTPConnection]":
-        """Yield the API connection for one loader call, releasing it on exit.
-
-        The global login's connection is shared and outlives the call, so it is
-        yielded as-is. A per-credential connection is owned by its cache entry,
-        which needs the release to know when an evicted one is safe to close.
-        """
-
-        if (
+    def _uses_active_loader_login(self, options: "_LoaderLoginOptions") -> bool:
+        return (
             self.logged_in
             and self.login_token == options.api_key
             and self.app_url == options.app_url
             and (options.org_name is None or self.org_name == options.org_name)
-        ):
+        )
+
+    @contextlib.contextmanager
+    def _cached_loader_resource(
+        self,
+        cache: "LRUCache[str, _LoaderLoginEntry[_LoaderResource]]",
+        cache_key: str,
+        factory: "Callable[[], _LoaderResource]",
+    ) -> "Iterator[_LoaderResource]":
+        with self._client_lock:
+            try:
+                entry = cache.get(cache_key)
+            except KeyError:
+                entry = _LoaderLoginEntry(factory)
+                cache.set(cache_key, entry)
+
+        resource = entry.acquire()
+        try:
+            yield resource
+        finally:
+            entry.release()
+
+    @contextlib.contextmanager
+    def loader_conn(self, options: "_LoaderLoginOptions") -> "Iterator[HTTPConnection]":
+        """Yield the API connection for one loader call, releasing it on exit."""
+
+        if self._uses_active_loader_login(options):
             yield self.api_conn()
             return
 
-        with self._client_lock:
-            try:
-                entry = self._loader_login_cache.get(options.cache_namespace)
-            except KeyError:
-                entry = _LoaderLoginEntry(lambda: _login_loader_conn(options))
-                self._loader_login_cache.set(options.cache_namespace, entry)
-
-        conn = entry.acquire()
-        try:
+        with self._cached_loader_resource(
+            self._loader_login_cache,
+            options.cache_namespace,
+            lambda: _login_loader_conn(options),
+        ) as conn:
             yield conn
-        finally:
-            entry.release()
+
+    @contextlib.contextmanager
+    def loader_api_client(self, options: "_LoaderLoginOptions") -> "Iterator[BraintrustOpenApiClient]":
+        """Yield the generated API client for one loader call, releasing it on exit."""
+
+        if self._uses_active_loader_login(options):
+            yield self.api_client()
+            return
+
+        with self._cached_loader_resource(
+            self._loader_api_client_cache,
+            options.cache_namespace,
+            lambda: _login_loader_client(options),
+        ) as client:
+            yield client.openapi
 
     def global_bg_logger(self) -> "_BackgroundLogger":
         return getattr(self._override_bg_logger, "logger", None) or self._global_bg_logger.get()
@@ -837,6 +874,14 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
     if _state._api_conn:
         _state._api_conn._set_adapter(adapter=adapter)
         _state._api_conn._reset()
+    if _state._client:
+        _state._client.transport._set_adapter(adapter)
+
+    # Per-credential loader resources may have been created with the previous
+    # adapter. Eviction closes them once any active requests release their lease;
+    # subsequent loads recreate them with the new global adapter.
+    _state._loader_login_cache.clear()
+    _state._loader_api_client_cache.clear()
 
 
 # Sometimes we'd like to launch network requests concurrently. We provide a
@@ -1977,8 +2022,8 @@ def _is_loader_cache_fallback_error(error: BaseException) -> bool:
 
         if isinstance(current, (json.JSONDecodeError, BraintrustJSONDecodeError)):
             return False
-        if isinstance(current, BraintrustTransportError):
-            return current.retryable
+        if isinstance(current, BraintrustTransportError) and current.retryable:
+            return True
 
         status_code = getattr(current, "status_code", None)
         if status_code is None:
@@ -2041,24 +2086,21 @@ def load_prompt(
         )
         cache_namespace = login_options.cache_namespace
         try:
-            with _state.loader_conn(login_options) as conn:
+            with _state.loader_api_client(login_options) as api_client:
                 if id:
-                    # Load prompt by ID using the /v1/prompt/{id} endpoint
-                    prompt_args = _populate_args({}, version=version, environment=effective_environment)
-                    response = conn.get_json(f"/v1/prompt/{id}", prompt_args)
-                    # Wrap single prompt response in objects array to match list API format
-                    if response is not None:
-                        response = {"objects": [response]}
+                    resp_prompt = api_client.prompts.get_prompt_id(
+                        id,
+                        version=str(version) if version is not None else None,
+                        environment=effective_environment,
+                    )
                 else:
-                    args = _populate_args(
-                        {},
+                    response = api_client.prompts.get_prompt(
                         project_name=project,
                         project_id=project_id,
                         slug=slug,
-                        version=version,
+                        version=str(version) if version is not None else None,
                         environment=effective_environment,
                     )
-                    response = conn.get_json("/v1/prompt", args)
         except Exception as server_error:
             if not _is_loader_cache_fallback_error(server_error):
                 raise
@@ -2087,19 +2129,17 @@ def load_prompt(
                     raise ValueError(
                         f"Prompt {slug} (version {version or 'latest'}) not found in {project or project_id} (not found on server or in local cache): {cache_error}"
                     ) from server_error
-        if response is None or "objects" not in response or len(response["objects"]) == 0:
-            if id:
+        if id:
+            if resp_prompt is None:
                 raise ValueError(f"Prompt with id {id} not found.")
-            else:
+        else:
+            if response is None or "objects" not in response or len(response["objects"]) == 0:
                 raise ValueError(f"Prompt {slug} not found in project {project or project_id}.")
-        elif len(response["objects"]) > 1:
-            if id:
-                raise ValueError(f"Multiple prompts found with id {id}. This should never happen.")
-            else:
+            if len(response["objects"]) > 1:
                 raise ValueError(
                     f"Multiple prompts found with slug {slug} in project {project or project_id}. This should never happen."
                 )
-        resp_prompt = response["objects"][0]
+            resp_prompt = response["objects"][0]
         prompt = PromptSchema.from_dict_deep(resp_prompt)
         try:
             if id:
@@ -2390,6 +2430,11 @@ def _authenticated_api_conn(api_url: str, api_key: str) -> HTTPConnection:
     conn.set_token(api_key)
     conn.make_long_lived()
     return conn
+
+
+def _login_loader_client(options: _LoaderLoginOptions) -> BraintrustClient:
+    client, _ = _login_with_api_key(app_url=options.app_url, api_key=options.api_key, org_name=options.org_name)
+    return client
 
 
 def _login_loader_conn(options: _LoaderLoginOptions) -> HTTPConnection:

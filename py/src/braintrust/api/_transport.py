@@ -1,5 +1,6 @@
 """Legacy and policy-aware HTTP transport primitives for the Braintrust SDK."""
 
+import dataclasses
 import datetime
 import http.cookiejar
 import logging
@@ -203,6 +204,7 @@ class Transport:
         session: requests.Session | None = None,
         adapter: HTTPAdapter | None = None,
         enable_sdk_retries: bool | None = None,
+        request_timeout: float | None = None,
         persist_cookies: bool = True,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
@@ -215,12 +217,34 @@ class Transport:
         if not persist_cookies and self._owns_session:
             self.session.cookies.set_policy(_RejectCookiesPolicy())
         self._sdk_retries_enabled = not custom_transport if enable_sdk_retries is None else enable_sdk_retries
+        if request_timeout is not None and request_timeout <= 0:
+            raise ValueError("request_timeout must be positive")
+        self._request_timeout = request_timeout
         if adapter is not None:
             self.session.mount("http://", adapter)
             self.session.mount("https://", adapter)
         self._sleep = sleep
         self._monotonic = monotonic
         self._wall_clock = wall_clock
+
+    def _set_adapter(self, adapter: HTTPAdapter) -> None:
+        """Install a caller-owned adapter and delegate retries to it."""
+
+        previous_injected_adapter = self._injected_adapter
+        replaced_owned_adapters = {
+            mounted
+            for mounted in self.session.adapters.values()
+            if self._owns_session and mounted is not previous_injected_adapter and mounted is not adapter
+        }
+
+        self._injected_adapter = adapter
+        self._sdk_retries_enabled = False
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
+        mounted_adapters = set(self.session.adapters.values())
+        for replaced_adapter in replaced_owned_adapters - mounted_adapters:
+            replaced_adapter.close()
 
     def close(self) -> None:
         if self._owns_session:
@@ -249,6 +273,17 @@ class Transport:
     ) -> requests.Response:
         method = method.upper()
         policy = retry_policy or RetryPolicy.for_mode(retry_mode)
+        if retry_policy is None and self._request_timeout is not None:
+            max_elapsed_time = policy.max_elapsed_time
+            if max_elapsed_time is not None:
+                # Preserve the policy's retry budget beyond the first attempt
+                # when the configured per-request timeout exceeds its default.
+                max_elapsed_time += max(0, self._request_timeout - policy.timeout)
+            policy = dataclasses.replace(
+                policy,
+                timeout=self._request_timeout,
+                max_elapsed_time=max_elapsed_time,
+            )
 
         replay_safe = retry_mode in (RetryMode.SAFE_READ, RetryMode.IDEMPOTENT_WRITE)
         body_replayable = _request_body_is_replayable(data, kwargs.get("files"))

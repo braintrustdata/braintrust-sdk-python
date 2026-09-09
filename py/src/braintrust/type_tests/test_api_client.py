@@ -7,6 +7,7 @@ from braintrust.api.types import (
     CreateDataset,
     CreateExperiment,
     CreateProject,
+    CreatePrompt,
     Dataset,
     Experiment,
     FetchDatasetEventsResponse,
@@ -15,11 +16,14 @@ from braintrust.api.types import (
     GetDatasetResponse,
     GetExperimentResponse,
     GetProjectResponse,
+    GetPromptResponse,
     InsertDatasetEventRequest,
     PatchDataset,
     PatchExperiment,
     PatchProject,
+    PatchPrompt,
     Project,
+    Prompt,
     SummarizeDatasetResponse,
     SummarizeExperimentResponse,
 )
@@ -41,6 +45,28 @@ if TYPE_CHECKING:
     fetched_project: Project = openapi_client.projects.get_project_id(project["id"])
     updated_project: Project = openapi_client.projects.patch_project_id(project["id"], body=patch_project)
     deleted_project: Project = openapi_client.projects.delete_project_id(project["id"])
+
+    create_prompt: CreatePrompt = {
+        "project_id": project["id"],
+        "name": "Typed prompt",
+        "slug": "typed-prompt",
+        "prompt_data": {
+            "prompt": {
+                "type": "chat",
+                "messages": [{"role": "user", "content": "Hello {{name}}"}],
+            },
+            "options": {"model": "gpt-5-mini"},
+        },
+    }
+    prompt: Prompt = openapi_client.prompts.post_prompt(body=create_prompt)
+    replaced_prompt: Prompt = openapi_client.prompts.put_prompt(body=create_prompt)
+    prompts: GetPromptResponse = openapi_client.prompts.get_prompt(
+        project_id=project["id"], slug=prompt["slug"], limit=1
+    )
+    fetched_prompt: Prompt = openapi_client.prompts.get_prompt_id(prompt["id"], version=prompt["_xact_id"])
+    patch_prompt: PatchPrompt = {"description": "updated"}
+    updated_prompt: Prompt = openapi_client.prompts.patch_prompt_id(prompt["id"], body=patch_prompt)
+    deleted_prompt: Prompt = openapi_client.prompts.delete_prompt_id(prompt["id"])
 
     create_dataset: CreateDataset = {"project_id": project["id"], "name": "typed-dataset"}
     dataset: Dataset = openapi_client.datasets.post_dataset(body=create_dataset)

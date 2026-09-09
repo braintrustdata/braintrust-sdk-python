@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, call, patch
 import braintrust
 import exceptiongroup
 import pytest
+import requests
 from braintrust import (
     Attachment,
     BaseAttachment,
@@ -25,6 +26,7 @@ from braintrust import (
     init_logger,
     logger,
 )
+from braintrust.api import BraintrustTransportError
 from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.git_fields import GitMetadataSettings, RepoInfo
 from braintrust.gitutil import get_repo_info
@@ -56,7 +58,7 @@ from braintrust.test_helpers import (
 )
 from braintrust.util import AugmentedHTTPError
 from requests import HTTPError
-from requests.exceptions import SSLError
+from requests.exceptions import ConnectionError, SSLError
 
 
 def test_login_to_state_uses_env_braintrust_api_key(tmp_path, monkeypatch):
@@ -96,6 +98,26 @@ def test_loader_request_state_closes_connections_on_eviction_and_reset():
     state.reset_login_info()
 
     second_conn.close.assert_called_once()
+
+
+def test_loader_request_state_closes_openapi_clients_on_eviction_and_reset():
+    state = BraintrustState()
+    state._loader_api_client_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
+    first_client = MagicMock()
+    second_client = MagicMock()
+
+    with patch.object(logger, "_login_loader_client", side_effect=[first_client, second_client]):
+        with state.loader_api_client(_loader_options("first-api-key", "first")) as api_client:
+            assert api_client is first_client.openapi
+        with state.loader_api_client(_loader_options("second-api-key", "second")) as api_client:
+            assert api_client is second_client.openapi
+
+    first_client.close.assert_called_once()
+    second_client.close.assert_not_called()
+
+    state.reset_login_info()
+
+    second_client.close.assert_called_once()
 
 
 def test_loader_request_state_closes_state_evicted_while_login_is_pending():
@@ -460,12 +482,12 @@ def test_load_prompt_uses_explicit_api_key_without_changing_global_login():
     simulate_login()
     original_login_token = logger._state.login_token
     prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    request_conn = MagicMock()
-    request_conn.get_json.return_value = _prompt_response("saved-prompt")
+    request_client = MagicMock()
+    request_client.openapi.prompts.get_prompt.return_value = _prompt_response("saved-prompt")
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_loader_conn", return_value=request_conn) as mock_login_conn,
+        patch.object(logger, "_login_loader_client", return_value=request_client) as mock_login_client,
     ):
         prompt = braintrust.load_prompt(
             project="test-project",
@@ -474,11 +496,47 @@ def test_load_prompt_uses_explicit_api_key_without_changing_global_login():
         )
         assert prompt.slug == "saved-prompt"
 
-    (called_options,) = mock_login_conn.call_args.args
+    request_client.openapi.prompts.get_prompt.assert_called_once_with(
+        project_name="test-project",
+        project_id=None,
+        slug="saved-prompt",
+        version=None,
+        environment=None,
+    )
+    (called_options,) = mock_login_client.call_args.args
     assert called_options.app_url == logger._state.app_url
     assert called_options.api_key == "prompt-api-key"
     assert called_options.org_name is None
     assert logger._state.login_token == original_login_token
+
+
+@pytest.mark.parametrize("configured_timeout", [0.25, 120.0])
+def test_load_prompt_preserves_configured_http_timeout(monkeypatch, configured_timeout):
+    monkeypatch.setenv("BRAINTRUST_HTTP_TIMEOUT", str(configured_timeout))
+    simulate_login()
+    response = requests.Response()
+    response.status_code = 200
+    response.url = "https://api.example.com/v1/prompt"
+    response.headers["Content-Type"] = "application/json"
+    response._content = json.dumps(_prompt_response("saved-prompt")).encode()
+
+    assert logger._state._client is not None
+    with patch.object(logger._state._client.transport.session, "request", return_value=response) as request:
+        prompt = braintrust.load_prompt(project="test-project", slug="saved-prompt")
+        assert prompt.slug == "saved-prompt"
+
+    assert request.call_args.kwargs["timeout"] == configured_timeout
+
+
+def test_load_prompt_by_id_reports_an_empty_response_as_not_found():
+    simulate_login()
+    mock_api_client = MagicMock()
+    mock_api_client.prompts.get_prompt_id.return_value = None
+
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
+        prompt = braintrust.load_prompt(id="missing-prompt")
+        with pytest.raises(ValueError, match="Prompt with id missing-prompt not found"):
+            _ = prompt.id
 
 
 def test_load_parameters_uses_explicit_api_key_without_changing_global_login():
@@ -518,12 +576,12 @@ def test_load_parameters_uses_explicit_api_key_without_changing_global_login():
 def test_load_prompt_does_not_fall_back_to_cache_for_non_transient_errors(server_error):
     simulate_login()
     prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    request_conn = MagicMock()
-    request_conn.get_json.side_effect = [_prompt_response("saved-prompt"), server_error]
+    request_client = MagicMock()
+    request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), server_error]
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_loader_conn", return_value=request_conn),
+        patch.object(logger, "_login_loader_client", return_value=request_client),
     ):
         first_prompt = braintrust.load_prompt(
             project="test-project",
@@ -541,15 +599,47 @@ def test_load_prompt_does_not_fall_back_to_cache_for_non_transient_errors(server
             _ = second_prompt.slug
 
 
-def test_load_prompt_uses_same_api_keys_cache_for_transient_errors():
+def test_load_prompt_falls_back_to_cache_for_transient_wrapped_transport_errors():
     simulate_login()
     prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    request_conn = MagicMock()
-    request_conn.get_json.side_effect = [_prompt_response("saved-prompt"), _http_error(500)]
+    request_client = MagicMock()
+    server_error = BraintrustTransportError(
+        method="GET",
+        url="https://api.example.com/v1/prompt",
+        attempts=1,
+        retryable=False,
+    )
+    server_error.__cause__ = ConnectionError("custom adapter exhausted its retries")
+    request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), server_error]
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_loader_conn", return_value=request_conn),
+        patch.object(logger, "_login_loader_client", return_value=request_client),
+    ):
+        first_prompt = braintrust.load_prompt(
+            project="test-project",
+            slug="saved-prompt",
+            api_key="prompt-api-key",
+        )
+        assert first_prompt.slug == "saved-prompt"
+
+        cached_prompt = braintrust.load_prompt(
+            project="test-project",
+            slug="saved-prompt",
+            api_key="prompt-api-key",
+        )
+        assert cached_prompt.slug == "saved-prompt"
+
+
+def test_load_prompt_uses_same_api_keys_cache_for_transient_errors():
+    simulate_login()
+    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
+    request_client = MagicMock()
+    request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), _http_error(500)]
+
+    with (
+        patch.object(logger._state, "_prompt_cache", prompt_cache),
+        patch.object(logger, "_login_loader_client", return_value=request_client),
     ):
         first_prompt = braintrust.load_prompt(
             project="test-project",
@@ -569,18 +659,18 @@ def test_load_prompt_uses_same_api_keys_cache_for_transient_errors():
 def test_load_prompt_does_not_use_another_api_keys_transient_fallback_cache():
     simulate_login()
     prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    first_conn = MagicMock()
-    first_conn.get_json.return_value = _prompt_response("saved-prompt")
-    second_conn = MagicMock()
-    second_conn.get_json.side_effect = _http_error(500)
-    conns = {"first-api-key": first_conn, "second-api-key": second_conn}
+    first_client = MagicMock()
+    first_client.openapi.prompts.get_prompt.return_value = _prompt_response("saved-prompt")
+    second_client = MagicMock()
+    second_client.openapi.prompts.get_prompt.side_effect = _http_error(500)
+    clients = {"first-api-key": first_client, "second-api-key": second_client}
 
     def login_for_api_key(options):
-        return conns[options.api_key]
+        return clients[options.api_key]
 
     with (
         patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_loader_conn", side_effect=login_for_api_key),
+        patch.object(logger, "_login_loader_client", side_effect=login_for_api_key),
     ):
         first_prompt = braintrust.load_prompt(
             project="test-project",
@@ -600,22 +690,22 @@ def test_load_prompt_does_not_use_another_api_keys_transient_fallback_cache():
 
 @pytest.mark.asyncio
 async def test_load_prompt_async_eagerly_fetches_prompt(with_simulate_login):
-    mock_api_conn = MagicMock()
-    mock_api_conn.get_json.return_value = _prompt_response("saved-prompt")
+    mock_api_client = MagicMock()
+    mock_api_client.prompts.get_prompt.return_value = _prompt_response("saved-prompt")
 
-    with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
         prompt = await braintrust.load_prompt_async(
             project="test-project",
             slug="saved-prompt",
         )
 
         # Unlike load_prompt(), load_prompt_async() resolves the prompt metadata before returning.
-        mock_api_conn.get_json.assert_called_once_with(
-            "/v1/prompt",
-            {
-                "project_name": "test-project",
-                "slug": "saved-prompt",
-            },
+        mock_api_client.prompts.get_prompt.assert_called_once_with(
+            project_name="test-project",
+            project_id=None,
+            slug="saved-prompt",
+            version=None,
+            environment=None,
         )
         assert prompt.slug == "saved-prompt"
         assert prompt.build(name="Ada")["messages"][0]["content"] == "Hello Ada"
@@ -623,29 +713,29 @@ async def test_load_prompt_async_eagerly_fetches_prompt(with_simulate_login):
 
 @pytest.mark.asyncio
 async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
-    mock_api_conn = MagicMock()
+    mock_api_client = MagicMock()
     barrier = threading.Barrier(2, timeout=1)
 
-    def get_json(_path, args):
+    def get_prompt(**kwargs):
         barrier.wait()
-        return _prompt_response(args["slug"])
+        return _prompt_response(kwargs["slug"])
 
-    mock_api_conn.get_json.side_effect = get_json
+    mock_api_client.prompts.get_prompt.side_effect = get_prompt
 
-    with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
         prompt1, prompt2 = await asyncio.gather(
             braintrust.load_prompt_async(project="test-project", slug="prompt-1"),
             braintrust.load_prompt_async(project="test-project", slug="prompt-2"),
         )
 
     assert [prompt1.slug, prompt2.slug] == ["prompt-1", "prompt-2"]
-    assert mock_api_conn.get_json.call_count == 2
+    assert mock_api_client.prompts.get_prompt.call_count == 2
 
 
 class TestLogger(TestCase):
     def test_load_prompt_prefers_version_over_environment_for_project_slug(self):
-        mock_api_conn = MagicMock()
-        mock_api_conn.get_json.return_value = {
+        mock_api_client = MagicMock()
+        mock_api_client.prompts.get_prompt.return_value = {
             "objects": [
                 {
                     "id": "prompt-123",
@@ -667,7 +757,7 @@ class TestLogger(TestCase):
         }
 
         simulate_login()
-        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+        with patch.object(logger._state, "api_client", return_value=mock_api_client):
             prompt = braintrust.load_prompt(
                 project="test-project",
                 slug="saved-prompt",
@@ -676,18 +766,17 @@ class TestLogger(TestCase):
             )
             assert prompt.slug == "saved-prompt"
 
-        mock_api_conn.get_json.assert_called_once_with(
-            "/v1/prompt",
-            {
-                "project_name": "test-project",
-                "slug": "saved-prompt",
-                "version": "v1",
-            },
+        mock_api_client.prompts.get_prompt.assert_called_once_with(
+            project_name="test-project",
+            project_id=None,
+            slug="saved-prompt",
+            version="v1",
+            environment=None,
         )
 
     def test_load_prompt_prefers_version_over_environment_for_id(self):
-        mock_api_conn = MagicMock()
-        mock_api_conn.get_json.return_value = {
+        mock_api_client = MagicMock()
+        mock_api_client.prompts.get_prompt_id.return_value = {
             "id": "prompt-123",
             "project_id": "project-123",
             "name": "Saved prompt",
@@ -705,7 +794,7 @@ class TestLogger(TestCase):
         }
 
         simulate_login()
-        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+        with patch.object(logger._state, "api_client", return_value=mock_api_client):
             prompt = braintrust.load_prompt(
                 id="prompt-123",
                 version="v1",
@@ -713,9 +802,10 @@ class TestLogger(TestCase):
             )
             assert prompt.id == "prompt-123"
 
-        mock_api_conn.get_json.assert_called_once_with(
-            "/v1/prompt/prompt-123",
-            {"version": "v1"},
+        mock_api_client.prompts.get_prompt_id.assert_called_once_with(
+            "prompt-123",
+            version="v1",
+            environment=None,
         )
 
     def test_load_parameters_returns_remote_object(self):

@@ -37,6 +37,7 @@ def _create_transport(
             session=session,
             adapter=adapter,
             enable_sdk_retries=enable_sdk_retries,
+            request_timeout=BraintrustEnv.HTTP_TIMEOUT.get(None),
             persist_cookies=False,
         ),
         True,
@@ -157,11 +158,13 @@ class BraintrustOpenApiClient:
         from ._generated.datasets import DatasetsAPI
         from ._generated.experiments import ExperimentsAPI
         from ._generated.projects import ProjectsAPI
+        from ._generated.prompts import PromptsAPI
 
         self.api_key = api_key
         self.datasets = DatasetsAPI(self.transport, self.router, api_key)
         self.experiments = ExperimentsAPI(self.transport, self.router, api_key)
         self.projects = ProjectsAPI(self.transport, self.router, api_key)
+        self.prompts = PromptsAPI(self.transport, self.router, api_key)
 
     def close(self) -> None:
         """Close the transport when it was created by this client."""
