@@ -1410,15 +1410,34 @@ async def test_openai_response_streaming_async(memory_logger):
     wrapped_client = wrap_openai(openai.AsyncOpenAI())
     clients = [unwrapped_client, wrapped_client]
 
+    # OpenAI 1.x MCP parsing is incompatible with Python 3.14.
+    tools = []
+    if Version(openai.__version__) >= Version("2.0.0"):
+        tools = [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "allowed_tools": ["read_wiki_structure"],
+                "require_approval": "always",
+            }
+        ]
+
     for client in clients:
         start = time.time()
 
-        stream = await client.responses.create(model=TEST_MODEL, input="What's 12 + 12?", stream=True)
+        stream = await client.responses.create(
+            model=TEST_MODEL, input="What's 12 + 12?", stream=True, **({"tools": tools} if tools else {})
+        )
 
         chunks = []
+        mcp_items = []
         async for chunk in stream:
             if chunk.type == "response.output_text.delta":
                 chunks.append(chunk.delta)
+            if chunk.type == "response.output_item.done" and chunk.item.type == "mcp_list_tools":
+                assert not hasattr(chunk.item, "status")
+                mcp_items.append(chunk.item.model_dump(exclude_none=True))
         end = time.time()
         output = "".join(chunks)
 
@@ -1426,6 +1445,8 @@ async def test_openai_response_streaming_async(memory_logger):
         assert len(chunks) > 1
 
         assert "24" in output
+        if tools:
+            assert mcp_items
 
         if not _is_wrapped(client):
             assert not memory_logger.pop()
@@ -1439,6 +1460,9 @@ async def test_openai_response_streaming_async(memory_logger):
         assert span["metadata"]["stream"] == True
         assert "What's 12 + 12?" in str(span["input"])
         assert "24" in str(span["output"])
+
+        for item in mcp_items:
+            assert item in span["output"]
 
 
 @pytest.mark.vcr
