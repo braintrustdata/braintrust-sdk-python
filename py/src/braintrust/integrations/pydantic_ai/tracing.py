@@ -9,7 +9,7 @@ from contextlib import AbstractAsyncContextManager
 from typing import Any
 
 from braintrust.integrations.utils import _materialize_attachment
-from braintrust.logger import _internal_get_global_state
+from braintrust.logger import _internal_get_global_state, current_span
 from braintrust.logger import start_span as _bt_start_span
 
 
@@ -429,7 +429,6 @@ def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any)
 
     messages = args[0] if len(args) > 0 else kwargs.get("messages")
     model_settings = args[1] if len(args) > 1 else kwargs.get("model_settings")
-    model_request_parameters = args[2] if len(args) > 2 else kwargs.get("model_request_parameters")
 
     shaped_messages = _shape_messages(messages)
 
@@ -440,18 +439,29 @@ def _build_model_class_input_and_metadata(instance: Any, args: Any, kwargs: Any)
     metadata = _build_model_metadata(model_name, provider, model_settings=None)
     if model_settings is not None:
         metadata["invocation_params"] = model_settings
-    # Provider customization resolves inferred strictness and schema transformations used on the wire.
-    customize_request_parameters = getattr(instance, "customize_request_parameters", None)
-    if model_request_parameters is not None and callable(customize_request_parameters):
-        try:
-            model_request_parameters = customize_request_parameters(model_request_parameters)
-        except Exception as e:
-            logger.debug(f"Failed to customize model request parameters for tracing: {e}")
-    tools = _extract_model_request_tools(model_request_parameters)
-    if tools:
-        metadata["tools"] = tools
 
     return model_name, display_name, input_data, metadata
+
+
+def _model_prepare_request_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    prepared = wrapped(*args, **kwargs)
+    span = current_span()
+    if getattr(span, "_instrumentation", None) != _INSTRUMENTATION or not span.name.startswith("chat "):
+        return prepared
+
+    try:
+        model_request_parameters = prepared[1] if isinstance(prepared, tuple) and len(prepared) > 1 else None
+        tools = _extract_model_request_tools(model_request_parameters)
+    except Exception as e:
+        logger.debug(f"Failed to extract prepared model request parameters for tracing: {e}")
+        return prepared
+
+    if tools:
+        # prepare_request() runs inside the traced request/request_stream call, so
+        # this captures Pydantic AI's normal customization result without invoking
+        # a potentially stateful customization hook a second time.
+        span.log(metadata={"tools": tools})
+    return prepared
 
 
 def _wrap_concrete_model_class(model_class: Any):
@@ -486,6 +496,8 @@ def _wrap_concrete_model_class(model_class: Any):
 
     wrap_function_wrapper(model_class, "request", model_request_wrapper)
     wrap_function_wrapper(model_class, "request_stream", model_request_stream_wrapper)
+    if hasattr(model_class, "prepare_request"):
+        wrap_function_wrapper(model_class, "prepare_request", _model_prepare_request_wrapper)
     return model_class
 
 
