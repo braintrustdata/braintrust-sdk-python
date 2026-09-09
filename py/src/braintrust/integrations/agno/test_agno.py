@@ -131,8 +131,9 @@ def test_agno_agent_tools_metadata_placement(memory_logger):
     Agent = agent_module.Agent
     OpenAIChat = openai_module.OpenAIChat
 
-    def get_weather(city: str) -> str:
+    def get_weather(agent: Agent, city: str) -> str:
         """Return the current weather for *city*."""
+        assert agent.name == "Weather Agent"
         return f"The weather in {city} is 72F and sunny."
 
     assert not memory_logger.pop()
@@ -148,6 +149,10 @@ def test_agno_agent_tools_metadata_placement(memory_logger):
     assert response and response.content
 
     spans = memory_logger.pop()
+    tool_spans = [s for s in spans if s["span_attributes"]["type"].value == "tool"]
+    assert len(tool_spans) == 1
+    assert tool_spans[0]["input"] == {"city": "Paris"}
+    assert tool_spans[0]["metadata"] == {"name": "get_weather", "entrypoint": "get_weather"}
     llm_spans = [s for s in spans if s["span_attributes"]["type"].value == "llm"]
     assert llm_spans, "expected at least one llm span"
 
