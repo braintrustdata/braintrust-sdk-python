@@ -1,6 +1,7 @@
 import ast
 import copy
 import re
+import runpy
 
 import pytest
 from openapi_codegen import (
@@ -46,13 +47,17 @@ def test_pinned_selected_spec_operations_match_generated_registries():
     config = load_config(CONFIG_PATH)
     spec = read_and_verify_spec(config, SPEC_PATH)
     selected_tags = config["endpoint_generator"]["generated_tags"]
+    specialized_operations = set(config["endpoint_generator"]["specialized_operations"])
 
     for tag in selected_tags:
         expected = {
             operation["operationId"]
             for path_item in spec["paths"].values()
             for method, operation in path_item.items()
-            if method != "options" and isinstance(operation, dict) and tag in operation.get("tags", [])
+            if method != "options"
+            and isinstance(operation, dict)
+            and tag in operation.get("tags", [])
+            and operation["operationId"] not in specialized_operations
         }
         tree = ast.parse((GENERATED_ROOT / f"{_snake_case(tag)}.py").read_text())
         registry = next(
@@ -84,6 +89,98 @@ def test_pinned_selected_spec_operations_match_generated_registries():
             and node.value.func.id == "Operation"
             for node in tree.body
         )
+
+
+def test_inline_models_do_not_take_component_names(tmp_path, codegen_config, minimal_spec):
+    minimal_spec["components"]["schemas"].update(
+        {
+            "Function": {
+                "type": "object",
+                "properties": {"id": {"type": "string"}},
+                "required": ["id"],
+            },
+            "ToolCall": {
+                "type": "object",
+                "properties": {
+                    "function": {
+                        "type": "object",
+                        "properties": {"name": {"type": "string"}},
+                        "required": ["name"],
+                    }
+                },
+                "required": ["function"],
+            },
+        }
+    )
+    minimal_spec["components"]["schemas"]["Widget"]["properties"].update(
+        {
+            "saved_function": {"$ref": "#/components/schemas/Function"},
+            "tool_call": {"$ref": "#/components/schemas/ToolCall"},
+        }
+    )
+
+    generated = _generate(tmp_path, "inline-model-collision", codegen_config, minimal_spec)
+    models = _models_text(generated)
+
+    assert "class Function(TypedDict):" in models
+    assert "class ToolCallFunction(TypedDict):" in models
+    assert "function: ToolCallFunction" in models
+
+
+def test_contextual_inline_model_names_cannot_replace_components(tmp_path, codegen_config, minimal_spec):
+    minimal_spec["components"]["schemas"].update(
+        {
+            "Function": {"type": "object", "properties": {"id": {"type": "string"}}},
+            "ToolCallFunction": {
+                "type": "object",
+                "properties": {"existing": {"type": "boolean"}},
+            },
+            "ToolCall": {
+                "type": "object",
+                "properties": {
+                    "function": {
+                        "type": "object",
+                        "properties": {"name": {"type": "string"}},
+                    }
+                },
+            },
+        }
+    )
+    minimal_spec["components"]["schemas"]["Widget"]["properties"].update(
+        {
+            "saved_function": {"$ref": "#/components/schemas/Function"},
+            "tool_call": {"$ref": "#/components/schemas/ToolCall"},
+            "existing": {"$ref": "#/components/schemas/ToolCallFunction"},
+        }
+    )
+
+    with pytest.raises(
+        CodegenError,
+        match="Contextual inline model 'ToolCallFunction'.*component schema 'ToolCallFunction'",
+    ):
+        _generate(tmp_path, "contextual-name-component-collision", codegen_config, minimal_spec)
+
+
+def test_specialized_operations_are_not_generated(tmp_path, codegen_config, minimal_spec):
+    minimal_spec["paths"]["/widgets"] = {
+        "get": {
+            "operationId": "getWidgets",
+            "tags": ["Widgets"],
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Widget"}}},
+                }
+            },
+        }
+    }
+    codegen_config["endpoint_generator"]["specialized_operations"] = ["getWidget"]
+
+    generated = _generate(tmp_path, "specialized-operation", codegen_config, minimal_spec)
+    bindings = (generated / "widgets.py").read_text()
+
+    assert "def get_widgets(" in bindings
+    assert "def get_widget(" not in bindings
 
 
 def test_declarative_post_reads_use_safe_read_retry_mode(tmp_path, codegen_config, minimal_spec):
@@ -300,18 +397,24 @@ def test_leading_underscore_model_fields_preserve_wire_names(tmp_path, codegen_c
         "_pagination_key",
         "_parent_id",
         "_xact_id",
+        "__schema",
     )
     widget = minimal_spec["components"]["schemas"]["Widget"]
     widget["properties"].update({name: {"type": "string"} for name in wire_names})
-    widget["required"].append("_xact_id")
+    widget["required"].extend(["_xact_id", "__schema"])
 
     generated = _generate(tmp_path, "leading-underscore-fields", codegen_config, minimal_spec)
     models = _models_text(generated)
 
     for name in wire_names:
-        assert f"    {name}:" in models
-    assert "    _xact_id: str" in models
+        assert f'        "{name}":' in models
+    assert '        "_xact_id": str,' in models
+    assert '        "__schema": str,' in models
     assert "field_" not in models
+
+    generated_types = runpy.run_path(str(generated / "models" / "widgets.py"))
+    assert "__schema" in generated_types["Widget"].__required_keys__
+    assert "_Widget__schema" not in generated_types["Widget"].__required_keys__
 
 
 def test_nullable_and_missing_fields_remain_distinct(tmp_path, codegen_config, minimal_spec):

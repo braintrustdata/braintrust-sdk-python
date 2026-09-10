@@ -21,20 +21,24 @@ print(json.dumps(sorted(name for name in sys.modules if name.startswith('braintr
 def test_generated_models_import_on_supported_python():
     from braintrust.api._generated import datasets as dataset_bindings
     from braintrust.api._generated import experiments as experiment_bindings
+    from braintrust.api._generated import functions as function_bindings
     from braintrust.api._generated import models
     from braintrust.api._generated import projects as project_bindings
     from braintrust.api._generated import prompts as prompt_bindings
 
     assert is_typeddict(models.Dataset)
     assert is_typeddict(models.Experiment)
+    assert is_typeddict(models.Function)
     assert is_typeddict(models.Project)
     assert is_typeddict(models.Prompt)
     assert models.DatasetIdParam is str
     assert models.ExperimentIdParam is str
+    assert models.FunctionIdParam is str
     assert models.ProjectIdParam is str
     assert models.PromptIdParam is str
     assert get_type_hints(dataset_bindings.DatasetsAPI.get_dataset)["return"] is models.GetDatasetResponse
     assert get_type_hints(experiment_bindings.ExperimentsAPI.get_experiment)["return"] is models.GetExperimentResponse
+    assert get_type_hints(function_bindings.FunctionsAPI.get_function)["return"] is models.GetFunctionResponse
     assert get_type_hints(project_bindings.ProjectsAPI.get_project)["return"] is models.GetProjectResponse
     assert get_type_hints(prompt_bindings.PromptsAPI.get_prompt)["return"] is models.GetPromptResponse
 
@@ -47,10 +51,12 @@ def test_generated_package_content_is_installed():
     assert generated.joinpath("models", "common.py").is_file()
     assert generated.joinpath("models", "datasets.py").is_file()
     assert generated.joinpath("models", "experiments.py").is_file()
+    assert generated.joinpath("models", "functions.py").is_file()
     assert generated.joinpath("models", "projects.py").is_file()
     assert generated.joinpath("models", "prompts.py").is_file()
     assert generated.joinpath("datasets.py").is_file()
     assert generated.joinpath("experiments.py").is_file()
+    assert generated.joinpath("functions.py").is_file()
     assert generated.joinpath("projects.py").is_file()
     assert generated.joinpath("prompts.py").is_file()
 
@@ -61,4 +67,4 @@ def test_rest_and_logging_type_surfaces_have_reviewed_overlap():
 
     overlap = set(generated_types.__all__) & set(types.__all__)
 
-    assert overlap == {"Dataset", "Experiment", "Project", "Prompt"}
+    assert overlap == {"Dataset", "Experiment", "Function", "Project", "Prompt"}

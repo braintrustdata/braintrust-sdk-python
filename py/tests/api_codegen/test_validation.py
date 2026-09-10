@@ -129,6 +129,13 @@ def test_media_types_and_success_statuses_are_validated(minimal_spec, codegen_co
         validate_spec(spec, codegen_config)
 
 
+def test_specialized_operations_must_belong_to_generated_tags(minimal_spec, codegen_config):
+    codegen_config["endpoint_generator"]["specialized_operations"] = ["missingOperation"]
+
+    with pytest.raises(CodegenError, match="specialized_operations.*missingOperation"):
+        validate_spec(minimal_spec, codegen_config)
+
+
 def test_safe_reads_must_reference_generated_post_operations(minimal_spec, codegen_config):
     codegen_config["endpoint_generator"]["safe_reads"] = ["missingOperation"]
 
@@ -264,6 +271,7 @@ def test_malformed_specs_and_configs_raise_actionable_errors(minimal_spec, codeg
     for key in (
         "safe_reads",
         "idempotent_writes",
+        "specialized_operations",
         "supported_request_media_types",
         "supported_response_media_types",
         "supported_success_statuses",
@@ -272,7 +280,7 @@ def test_malformed_specs_and_configs_raise_actionable_errors(minimal_spec, codeg
         del broken["endpoint_generator"][key]
         message = (
             f"endpoint_generator.{key} must be a unique list"
-            if key in {"safe_reads", "idempotent_writes"}
+            if key in {"safe_reads", "idempotent_writes", "specialized_operations"}
             else f"endpoint_generator.{key} must be a non-empty list"
         )
         with pytest.raises(CodegenError, match=message):

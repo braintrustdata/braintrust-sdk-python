@@ -157,12 +157,14 @@ class BraintrustOpenApiClient:
     def _initialize_services(self, api_key: str) -> None:
         from ._generated.datasets import DatasetsAPI
         from ._generated.experiments import ExperimentsAPI
+        from ._generated.functions import FunctionsAPI
         from ._generated.projects import ProjectsAPI
         from ._generated.prompts import PromptsAPI
 
         self.api_key = api_key
         self.datasets = DatasetsAPI(self.transport, self.router, api_key)
         self.experiments = ExperimentsAPI(self.transport, self.router, api_key)
+        self.functions = FunctionsAPI(self.transport, self.router, api_key)
         self.projects = ProjectsAPI(self.transport, self.router, api_key)
         self.prompts = PromptsAPI(self.transport, self.router, api_key)
 

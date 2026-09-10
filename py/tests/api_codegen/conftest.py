@@ -16,6 +16,7 @@ def codegen_config():
     config["endpoint_generator"]["generated_tags"] = ["Widgets"]
     config["endpoint_generator"]["safe_reads"] = []
     config["endpoint_generator"]["idempotent_writes"] = []
+    config["endpoint_generator"]["specialized_operations"] = []
     return config
 
 

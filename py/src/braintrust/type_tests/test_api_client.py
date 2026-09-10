@@ -6,6 +6,7 @@ from braintrust.api import BraintrustClient, BraintrustOpenApiClient, EndpointRo
 from braintrust.api.types import (
     CreateDataset,
     CreateExperiment,
+    CreateFunction,
     CreateProject,
     CreatePrompt,
     Dataset,
@@ -13,13 +14,16 @@ from braintrust.api.types import (
     FetchDatasetEventsResponse,
     FetchEventsRequest,
     FetchExperimentEventsResponse,
+    Function,
     GetDatasetResponse,
     GetExperimentResponse,
+    GetFunctionResponse,
     GetProjectResponse,
     GetPromptResponse,
     InsertDatasetEventRequest,
     PatchDataset,
     PatchExperiment,
+    PatchFunction,
     PatchProject,
     PatchPrompt,
     Project,
@@ -67,6 +71,27 @@ if TYPE_CHECKING:
     patch_prompt: PatchPrompt = {"description": "updated"}
     updated_prompt: Prompt = openapi_client.prompts.patch_prompt_id(prompt["id"], body=patch_prompt)
     deleted_prompt: Prompt = openapi_client.prompts.delete_prompt_id(prompt["id"])
+
+    create_function: CreateFunction = {
+        "project_id": project["id"],
+        "name": "Typed parameters",
+        "slug": "typed-parameters",
+        "function_type": "parameters",
+        "function_data": {
+            "type": "parameters",
+            "data": {"prefix": "hello"},
+            "__schema": {"type": "object", "properties": {}},
+        },
+    }
+    function: Function = openapi_client.functions.post_function(body=create_function)
+    replaced_function: Function = openapi_client.functions.put_function(body=create_function)
+    functions: GetFunctionResponse = openapi_client.functions.get_function(
+        project_id=project["id"], slug=function["slug"], limit=1
+    )
+    fetched_function: Function = openapi_client.functions.get_function_id(function["id"], version=function["_xact_id"])
+    patch_function: PatchFunction = {"description": "updated"}
+    updated_function: Function = openapi_client.functions.patch_function_id(function["id"], body=patch_function)
+    deleted_function: Function = openapi_client.functions.delete_function_id(function["id"])
 
     create_dataset: CreateDataset = {"project_id": project["id"], "name": "typed-dataset"}
     dataset: Dataset = openapi_client.datasets.post_dataset(body=create_dataset)
