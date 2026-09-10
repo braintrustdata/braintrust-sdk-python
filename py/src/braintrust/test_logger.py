@@ -1396,6 +1396,107 @@ def test_logger_log_accepts_model_dump_metadata(with_memory_logger):
     assert logs[0]["metadata"] == {"foo": "bar"}
 
 
+def test_logger_emit_log_without_active_span(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    first_id = test_logger.emit_log(
+        body="Payment failed",
+        level="error",
+        metadata={"payment_id": "pay_123"},
+    )
+    second_id = test_logger.emit_log(body="Retrying payment", level="info")
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 2
+    first, second = logs
+    assert first_id == first["id"]
+    assert second_id == second["id"]
+    assert first["id"] != second["id"]
+    assert first["span_id"] != second["span_id"]
+    assert first["root_span_id"] == second["root_span_id"]
+    assert not first.get("span_parents")
+    assert first["output"] == "Payment failed"
+    assert first["error"] == "Payment failed"
+    assert first["metadata"] == {"payment_id": "pay_123"}
+    assert first["span_attributes"]["name"] == "Log"
+    assert first["span_attributes"]["type"] == "log"
+    assert first["metrics"]["start"] == first["metrics"]["end"]
+    assert first["context"]["otel"]["signal"] == "logs"
+    assert first["context"]["otel"]["log"] == {
+        "time_unix_nano": str(round(first["metrics"]["start"] * 1_000_000_000)),
+        "severity_number": 17,
+        "severity_text": "ERROR",
+    }
+    assert "error" not in second
+    assert second["context"]["otel"]["log"]["severity_number"] == 9
+
+
+def test_logger_emit_log_uses_distinct_baseline_trace_per_logger(with_memory_logger):
+    first_logger = init_test_logger(f"{__name__}-first")
+    second_logger = init_test_logger(f"{__name__}-second")
+
+    first_logger.info("first")
+    second_logger.info("second")
+
+    first, second = with_memory_logger.pop()
+    assert first["root_span_id"] != second["root_span_id"]
+
+
+def test_logger_emit_log_uses_active_span(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    with test_logger.start_span(name="owner") as owner:
+        log_id = test_logger.emit_log(body="Inside span", level="debug", metadata={"attempt": 1})
+
+    rows = with_memory_logger.pop()
+    log_row = next(row for row in rows if row["id"] == log_id)
+    owner_row = next(row for row in rows if row["span_attributes"]["name"] == "owner")
+    assert log_row["id"] != owner_row["id"]
+    assert log_row["span_id"] == owner_row["span_id"]
+    assert log_row["root_span_id"] == owner_row["root_span_id"]
+    assert not log_row.get("span_parents")
+    assert log_row["context"]["otel"]["log"]["severity_number"] == 5
+
+
+@pytest.mark.parametrize(
+    ("level", "severity_number"),
+    [("trace", 1), ("debug", 5), ("info", 9), ("warn", 13), ("error", 17), ("fatal", 21)],
+)
+def test_logger_emit_log_maps_otel_log_levels(with_memory_logger, level, severity_number):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.emit_log(body="message", level=level)
+
+    [row] = with_memory_logger.pop()
+    assert row["context"]["otel"]["log"]["severity_number"] == severity_number
+    assert row["context"]["otel"]["log"]["severity_text"] == level.upper()
+
+
+@pytest.mark.parametrize(
+    ("method_name", "severity_number"),
+    [("trace", 1), ("debug", 5), ("info", 9), ("warn", 13), ("error", 17), ("fatal", 21)],
+)
+def test_logger_log_level_helpers(with_memory_logger, method_name, severity_number):
+    test_logger = init_test_logger(__name__)
+
+    log_id = getattr(test_logger, method_name)("message", metadata={"source": method_name})
+
+    [row] = with_memory_logger.pop()
+    assert row["id"] == log_id
+    assert row["output"] == "message"
+    assert row["metadata"] == {"source": method_name}
+    assert row["context"]["otel"]["log"]["severity_number"] == severity_number
+
+
+def test_logger_emit_log_rejects_invalid_level(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    with pytest.raises(ValueError, match="Invalid log level"):
+        test_logger.emit_log(body="message", level="warning")
+
+    assert with_memory_logger.pop() == []
+
+
 def test_experiment_log_accepts_model_dump_metadata(with_memory_logger):
     experiment = init_test_exp("test-experiment", "test-project")
 

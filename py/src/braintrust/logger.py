@@ -131,6 +131,16 @@ LOGS3_OVERFLOW_REFERENCE_TYPE = "logs3_overflow"
 # 6 MB for the AWS lambda gateway (from our own testing).
 DEFAULT_MAX_REQUEST_SIZE = 6 * 1024 * 1024
 
+LogLevel = Literal["trace", "debug", "info", "warn", "error", "fatal"]
+_OTEL_LOG_LEVELS: dict[LogLevel, int] = {
+    "trace": 1,
+    "debug": 5,
+    "info": 9,
+    "warn": 13,
+    "error": 17,
+    "fatal": 21,
+}
+
 
 @dataclasses.dataclass
 class Logs3OverflowInputRow:
@@ -5854,6 +5864,7 @@ class Logger(Exportable):
         # fallbacks when generating links
         self._link_args = link_args
         self.state = state or _state
+        self._baseline_trace_id = self.state.id_generator.get_trace_id()
 
     @property
     def org_id(self) -> str:
@@ -5931,6 +5942,84 @@ class Logger(Exportable):
             self.flush()
 
         return span.id
+
+    def emit_log(
+        self,
+        body: Any,
+        level: LogLevel,
+        metadata: Metadata | None = None,
+    ) -> str:
+        """Capture a log record, associating it with the active span when one exists.
+
+        The log is stored as an independent row. If a Braintrust or OpenTelemetry
+        span is active, the row reuses its span and trace IDs for correlation.
+        Otherwise, the row uses this logger's baseline trace ID.
+
+        :param body: The log body. May be any JSON-serializable value.
+        :param level: The OpenTelemetry log severity: ``trace``, ``debug``,
+            ``info``, ``warn``, ``error``, or ``fatal``.
+        :param metadata: Optional JSON-serializable attributes for the log.
+        :returns: The unique ID of the captured log row.
+        """
+        if level not in _OTEL_LOG_LEVELS:
+            valid_levels = ", ".join(_OTEL_LOG_LEVELS)
+            raise ValueError(f"Invalid log level {level!r}. Expected one of: {valid_levels}")
+
+        captured_at = time.time()
+        span_info = self.state.context_manager.get_current_span_info()
+        severity_number = _OTEL_LOG_LEVELS[level]
+        span = self._start_span_impl(
+            name="Log",
+            type=SpanTypeAttribute.LOG,
+            start_time=captured_at,
+            set_current=False,
+            span_id=span_info.span_id if span_info else None,
+            root_span_id=span_info.trace_id if span_info else self._baseline_trace_id,
+            lookup_span_parent=False,
+            output=body,
+            error=body if severity_number >= _OTEL_LOG_LEVELS["error"] and isinstance(body, str) else None,
+            metadata=metadata,
+            context={
+                "otel": {
+                    "signal": "logs",
+                    "log": {
+                        "time_unix_nano": str(round(captured_at * 1_000_000_000)),
+                        "severity_number": severity_number,
+                        "severity_text": level.upper(),
+                    },
+                }
+            },
+        )
+        span.end(end_time=captured_at)
+
+        if not self.async_flush:
+            self.flush()
+
+        return span.id
+
+    def trace(self, body: Any, metadata: Metadata | None = None) -> str:
+        """Capture a log at OpenTelemetry TRACE severity."""
+        return self.emit_log(body=body, level="trace", metadata=metadata)
+
+    def debug(self, body: Any, metadata: Metadata | None = None) -> str:
+        """Capture a log at OpenTelemetry DEBUG severity."""
+        return self.emit_log(body=body, level="debug", metadata=metadata)
+
+    def info(self, body: Any, metadata: Metadata | None = None) -> str:
+        """Capture a log at OpenTelemetry INFO severity."""
+        return self.emit_log(body=body, level="info", metadata=metadata)
+
+    def warn(self, body: Any, metadata: Metadata | None = None) -> str:
+        """Capture a log at OpenTelemetry WARN severity."""
+        return self.emit_log(body=body, level="warn", metadata=metadata)
+
+    def error(self, body: Any, metadata: Metadata | None = None) -> str:
+        """Capture a log at OpenTelemetry ERROR severity."""
+        return self.emit_log(body=body, level="error", metadata=metadata)
+
+    def fatal(self, body: Any, metadata: Metadata | None = None) -> str:
+        """Capture a log at OpenTelemetry FATAL severity."""
+        return self.emit_log(body=body, level="fatal", metadata=metadata)
 
     def log_feedback(
         self,

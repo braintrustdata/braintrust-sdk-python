@@ -23,6 +23,16 @@ def accepts_logger_metadata(logger: Logger) -> None:
     logger.log(metadata=PydanticV2Metadata())
     logger.log(metadata=PydanticV1Metadata())
 
+    logger.emit_log(body="message", level="info", metadata=mapping_metadata)
+    logger.emit_log(body="message", level="info", metadata=PydanticV2Metadata())
+    logger.emit_log(body="message", level="info", metadata=PydanticV1Metadata())
+    logger.trace("message", metadata=mapping_metadata)
+    logger.debug("message", metadata=PydanticV2Metadata())
+    logger.info("message", metadata=PydanticV1Metadata())
+    logger.warn("message", metadata=mapping_metadata)
+    logger.error("message", metadata=PydanticV2Metadata())
+    logger.fatal("message", metadata=PydanticV1Metadata())
+
     logger.log_feedback(id="event-id", metadata=mapping_metadata)
     logger.log_feedback(id="event-id", metadata=PydanticV2Metadata())
     logger.log_feedback(id="event-id", metadata=PydanticV1Metadata())
