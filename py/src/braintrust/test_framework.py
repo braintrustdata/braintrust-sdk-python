@@ -227,6 +227,42 @@ async def test_run_evaluator_basic():
 
 
 @pytest.mark.asyncio
+async def test_run_evaluator_strips_review_assignment_metadata():
+    seen_metadata = None
+
+    def task(input_value, hooks):
+        nonlocal seen_metadata
+        seen_metadata = dict(hooks.metadata)
+        return input_value * 2
+
+    evaluator = Evaluator(
+        project_name="test-project",
+        eval_name="test-evaluator",
+        data=[
+            EvalCase(
+                input=1,
+                metadata={
+                    "keep": "yes",
+                    "~__bt_assignments": ["user-id"],
+                    "~__bt_review_lists": {
+                        "__bt_default_review_list": {"status": "PENDING"},
+                    },
+                },
+            )
+        ],
+        task=task,
+        scores=[],
+        experiment_name=None,
+        metadata=None,
+    )
+
+    result = await run_evaluator(experiment=None, evaluator=evaluator, position=None, filters=[])
+
+    assert seen_metadata == {"keep": "yes"}
+    assert result.results[0].metadata == {"keep": "yes"}
+
+
+@pytest.mark.asyncio
 async def test_eval_case_id_and_tags_are_passed_to_scorers():
     scorer_args = None
 
