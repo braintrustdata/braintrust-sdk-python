@@ -152,7 +152,12 @@ def validate_spec(spec: Mapping[str, Any], config: Mapping[str, Any]) -> Validat
     endpoint = _endpoint_config(config)
     all_operations = list(_iter_operations(spec))
     _validate_unique_operation_ids(all_operations)
-    operations = _selected_operations(all_operations, endpoint["generated_tags"])
+    _validate_specialized_operations(all_operations, endpoint)
+    operations = _selected_operations(
+        all_operations,
+        endpoint["generated_tags"],
+        endpoint["specialized_operations"],
+    )
     reference_roots = []
     for _, _, _, operation, path_item in operations:
         reference_roots.append(operation)
@@ -209,12 +214,62 @@ def _generated_operation_tags(operation: Mapping[str, Any], generated_tags: Sequ
 def _selected_operations(
     operations: Sequence[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]],
     generated_tags: Sequence[str],
+    specialized_operations: Sequence[str],
 ) -> List[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]]:
+    specialized = set(specialized_operations)
     return [
         operation_entry
         for operation_entry in operations
-        if operation_entry[0] != "options" and _generated_operation_tags(operation_entry[3], generated_tags)
+        if operation_entry[0] != "options"
+        and operation_entry[2] not in specialized
+        and _generated_operation_tags(operation_entry[3], generated_tags)
     ]
+
+
+def _extract_colliding_inline_models(spec: Mapping[str, Any]) -> Dict[str, Any]:
+    """Give anonymous object models contextual names when they collide with components."""
+
+    rewritten = copy.deepcopy(spec)
+    schemas = rewritten.get("components", {}).get("schemas", {})
+    component_names = {_python_type_name(name): name for name in schemas}
+    extracted: Dict[str, Mapping[str, Any]] = {}
+
+    def visit(value: Any, owner: str, path: List[str]) -> None:
+        if isinstance(value, dict):
+            properties = value.get("properties")
+            if isinstance(properties, dict):
+                for property_name, schema in list(properties.items()):
+                    if not isinstance(property_name, str) or not isinstance(schema, dict):
+                        continue
+                    if (
+                        "$ref" not in schema
+                        and (schema.get("type") == "object" or isinstance(schema.get("properties"), dict))
+                        and _python_type_name(property_name) in component_names
+                    ):
+                        extracted_name = _python_type_name("_".join([owner, *path, property_name]))
+                        colliding_component = component_names.get(extracted_name)
+                        if colliding_component is not None:
+                            raise CodegenError(
+                                f"Contextual inline model {extracted_name!r} collides with component schema "
+                                f"{colliding_component!r}"
+                            )
+                        previous = extracted.setdefault(extracted_name, schema)
+                        if previous != schema:
+                            raise CodegenError(f"Conflicting extracted inline model {extracted_name!r}")
+                        properties[property_name] = {"$ref": f"#/components/schemas/{extracted_name}"}
+                    else:
+                        visit(schema, owner, [*path, property_name])
+            for key, child in value.items():
+                if key != "properties":
+                    visit(child, owner, path)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child, owner, path)
+
+    for name, schema in list(schemas.items()):
+        visit(schema, name, [])
+    schemas.update(extracted)
+    return rewritten
 
 
 def _slice_model_spec(spec: Mapping[str, Any], operation_ids: Set[str]) -> Dict[str, Any]:
@@ -410,7 +465,7 @@ def generate_tree(output_root: Path, config: Mapping[str, Any], spec: Mapping[st
     report = validate_spec(spec, config)
     operations, inline_models = _collect_generated_operations(spec, config)
     selected_spec = _slice_model_spec(spec, {operation.operation_id for operation in operations})
-    model_spec = _with_inline_models(selected_spec, inline_models)
+    model_spec = _with_inline_models(_extract_colliding_inline_models(selected_spec), inline_models)
     output_root.mkdir(parents=True, exist_ok=True)
     selected_spec_path = output_root.parent / "selected-spec.json"
     monolithic_models_path = output_root.parent / "models.py"
@@ -528,6 +583,64 @@ def _leading_underscore_field_aliases(value: Any) -> Dict[str, str]:
     return dict(sorted(aliases.items()))
 
 
+def _rewrite_dunder_typeddicts(path: Path) -> None:
+    """Use functional TypedDict syntax when class syntax would mangle a wire key."""
+
+    source = path.read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    lines = source.splitlines(keepends=True)
+    offsets = [0]
+    for line in lines:
+        offsets.append(offsets[-1] + len(line))
+
+    replacements: List[Tuple[int, int, str]] = []
+    for node in tree.body:
+        if not isinstance(node, ast.ClassDef):
+            continue
+        fields = [
+            statement
+            for statement in node.body
+            if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name)
+        ]
+        if not any(field.target.id.startswith("__") and not field.target.id.endswith("__") for field in fields):
+            continue
+        if len(node.bases) != 1 or not isinstance(node.bases[0], ast.Name) or node.bases[0].id != "TypedDict":
+            raise CodegenError(f"Generated TypedDict {node.name!r} with a dunder field has unsupported bases")
+        unsupported = [
+            statement
+            for statement in node.body
+            if not isinstance(statement, ast.AnnAssign)
+            and not (isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Constant))
+        ]
+        if unsupported or node.keywords:
+            raise CodegenError(f"Generated TypedDict {node.name!r} with a dunder field has unsupported contents")
+
+        field_lines = []
+        for field in fields:
+            annotation = ast.get_source_segment(source, field.annotation)
+            if annotation is None:
+                raise CodegenError(f"Could not recover annotation for {node.name}.{field.target.id}")
+            field_lines.append(f"        {field.target.id!r}: {annotation},")
+        replacement = "\n".join(
+            [
+                f"{node.name} = TypedDict(",
+                f"    {node.name!r},",
+                "    {",
+                *field_lines,
+                "    },",
+                ")",
+            ]
+        )
+        start = offsets[node.lineno - 1] + node.col_offset
+        end = offsets[node.end_lineno - 1] + node.end_col_offset
+        replacements.append((start, end, replacement))
+
+    for start, end, replacement in reversed(replacements):
+        source = source[:start] + replacement + source[end:]
+    if replacements:
+        path.write_text(source, encoding="utf-8")
+
+
 def _generate_models(spec_path: Path, output_path: Path, config: Mapping[str, Any]) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     header = _generated_header(config, "CONTENT_HASH_PLACEHOLDER").rstrip()
@@ -552,6 +665,7 @@ def _generate_models(spec_path: Path, output_path: Path, config: Mapping[str, An
         raise CodegenError(f"datamodel-code-generator failed: {detail}") from exc
     if not output_path.is_file():
         raise CodegenError("datamodel-code-generator did not emit the model module")
+    _rewrite_dunder_typeddicts(output_path)
     model_paths = [output_path]
     # datamodel-code-generator's own formatter pass is not a fixed point; one pinned Ruff pass over
     # the complete module tree makes the committed output stable and finalizes each content hash.
@@ -602,6 +716,24 @@ def _model_package_source(model_modules: Mapping[str, str]) -> str:
     lines.extend(f"    {name!r}," for name in sorted(model_modules))
     lines.extend(["]", ""])
     return "\n".join(lines)
+
+
+def _validate_specialized_operations(
+    operations: Sequence[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]],
+    endpoint: Mapping[str, Any],
+) -> None:
+    configured = set(endpoint["specialized_operations"])
+    tagged_operation_ids = {
+        operation_id
+        for method, _, operation_id, operation, _ in operations
+        if method != "options" and _generated_operation_tags(operation, endpoint["generated_tags"])
+    }
+    stale = configured - tagged_operation_ids
+    if stale:
+        operation_id = sorted(stale)[0]
+        raise CodegenError(
+            f"endpoint_generator.specialized_operations references an operation outside generated tags {operation_id!r}"
+        )
 
 
 def _validate_selected_operations(
@@ -669,10 +801,13 @@ def _collect_generated_operations(
     idempotent_writes = set(endpoint["idempotent_writes"])
     operations: List[GeneratedOperation] = []
     inline_models: Dict[str, Mapping[str, Any]] = {}
-    for method, path, operation_id, operation, path_item in _iter_operations(spec):
+    selected_operations = _selected_operations(
+        list(_iter_operations(spec)),
+        endpoint["generated_tags"],
+        endpoint["specialized_operations"],
+    )
+    for method, path, operation_id, operation, path_item in selected_operations:
         operation_generated_tags = _generated_operation_tags(operation, endpoint["generated_tags"])
-        if method == "options" or not operation_generated_tags:
-            continue
         parameters = _operation_parameters(path_item, operation, spec)
         request_body_type, request_body_required = _operation_request_body(operation, spec)
         response_type, statuses, json_statuses, inline_schema = _operation_response(operation_id, operation, spec)
@@ -992,7 +1127,7 @@ def _endpoint_config(config: Mapping[str, Any]) -> Mapping[str, Any]:
         or len(generated_tags) != len(set(generated_tags))
     ):
         raise CodegenError("endpoint_generator.generated_tags must be a unique list of non-empty strings")
-    for key in ("safe_reads", "idempotent_writes"):
+    for key in ("safe_reads", "idempotent_writes", "specialized_operations"):
         values = endpoint.get(key)
         if (
             not isinstance(values, list)

@@ -81,25 +81,6 @@ def _loader_options(api_key: str, cache_namespace: str) -> logger._LoaderLoginOp
     )
 
 
-def test_loader_request_state_closes_connections_on_eviction_and_reset():
-    state = BraintrustState()
-    state._loader_login_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
-    first_conn = MagicMock()
-    second_conn = MagicMock()
-    with patch.object(logger, "_login_loader_conn", side_effect=[first_conn, second_conn]):
-        with state.loader_conn(_loader_options("first-api-key", "first")):
-            pass
-        with state.loader_conn(_loader_options("second-api-key", "second")):
-            pass
-
-    first_conn.close.assert_called_once()
-    second_conn.close.assert_not_called()
-
-    state.reset_login_info()
-
-    second_conn.close.assert_called_once()
-
-
 def test_loader_request_state_closes_openapi_clients_on_eviction_and_reset():
     state = BraintrustState()
     state._loader_api_client_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
@@ -118,57 +99,6 @@ def test_loader_request_state_closes_openapi_clients_on_eviction_and_reset():
     state.reset_login_info()
 
     second_client.close.assert_called_once()
-
-
-def test_loader_request_state_closes_state_evicted_while_login_is_pending():
-    state = BraintrustState()
-    state._loader_login_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
-    pending_conn = MagicMock()
-    login_started = threading.Event()
-    release_login = threading.Event()
-
-    def login(options):
-        if options.api_key == "slow-api-key":
-            login_started.set()
-            assert release_login.wait(5)
-            return pending_conn
-        return MagicMock()
-
-    def run_slow_login():
-        with state.loader_conn(_loader_options("slow-api-key", "first")):
-            pass
-
-    with patch.object(logger, "_login_loader_conn", side_effect=login):
-        thread = threading.Thread(target=run_slow_login)
-        thread.start()
-        try:
-            assert login_started.wait(5)
-            # Evicts "first" while its login is still in flight, so the cache can no
-            # longer close whatever that login resolves into.
-            with state.loader_conn(_loader_options("fast-api-key", "second")):
-                pass
-        finally:
-            release_login.set()
-            thread.join(5)
-
-    assert not thread.is_alive()
-    pending_conn.close.assert_called_once()
-
-
-def test_loader_request_state_defers_close_until_last_holder_releases():
-    state = BraintrustState()
-    state._loader_login_cache = LRUCache(max_size=1, on_remove=state._evict_loader_login_entry)
-    conn = MagicMock()
-
-    with patch.object(logger, "_login_loader_conn", side_effect=[conn, MagicMock()]):
-        with state.loader_conn(_loader_options("first-api-key", "first")):
-            # Evicting while the caller is still issuing its request must not close
-            # the connection out from under it.
-            with state.loader_conn(_loader_options("second-api-key", "second")):
-                pass
-            conn.close.assert_not_called()
-
-    conn.close.assert_called_once()
 
 
 class TestInit(TestCase):
@@ -543,12 +473,12 @@ def test_load_parameters_uses_explicit_api_key_without_changing_global_login():
     simulate_login()
     original_login_token = logger._state.login_token
     parameters_cache = ParametersCache(memory_cache=LRUCache(max_size=10))
-    request_conn = MagicMock()
-    request_conn.get_json.return_value = _parameters_response("saved-parameters")
+    request_client = MagicMock()
+    request_client.openapi.functions.get_function.return_value = _parameters_response("saved-parameters")
 
     with (
         patch.object(logger._state, "_parameters_cache", parameters_cache),
-        patch.object(logger, "_login_loader_conn", return_value=request_conn) as mock_login_conn,
+        patch.object(logger, "_login_loader_client", return_value=request_client) as mock_login_client,
     ):
         parameters = braintrust.load_parameters(
             project="test-project",
@@ -557,11 +487,48 @@ def test_load_parameters_uses_explicit_api_key_without_changing_global_login():
         )
 
     assert parameters.data == {"prefix": "saved-parameters"}
-    (called_options,) = mock_login_conn.call_args.args
+    request_client.openapi.functions.get_function.assert_called_once_with(
+        project_name="test-project",
+        project_id=None,
+        slug="saved-parameters",
+        version=None,
+        environment=None,
+    )
+    (called_options,) = mock_login_client.call_args.args
     assert called_options.app_url == logger._state.app_url
     assert called_options.api_key == "parameters-api-key"
     assert called_options.org_name is None
     assert logger._state.login_token == original_login_token
+
+
+def test_load_parameters_filters_non_parameter_functions():
+    simulate_login()
+    mock_api_client = MagicMock()
+    parameter = _parameters_response("saved-parameters")["objects"][0]
+    mock_api_client.functions.get_function.return_value = {
+        "objects": [
+            {"id": "scorer-123", "function_data": {"type": "global"}},
+            parameter,
+        ]
+    }
+
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
+        parameters = braintrust.load_parameters(project="test-project", slug="saved-parameters")
+
+    assert parameters.id == "parameters-saved-parameters"
+    assert parameters.data == {"prefix": "saved-parameters"}
+
+
+def test_load_parameters_rejects_non_parameter_function():
+    simulate_login()
+    mock_api_client = MagicMock()
+    mock_api_client.functions.get_function.return_value = {
+        "objects": [{"id": "scorer-123", "function_data": {"type": "global"}}]
+    }
+
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
+        with pytest.raises(ValueError, match="Parameters saved-parameters not found"):
+            braintrust.load_parameters(project="test-project", slug="saved-parameters")
 
 
 @pytest.mark.parametrize(
@@ -809,8 +776,8 @@ class TestLogger(TestCase):
         )
 
     def test_load_parameters_returns_remote_object(self):
-        mock_api_conn = MagicMock()
-        mock_api_conn.get_json.return_value = {
+        mock_api_client = MagicMock()
+        mock_api_client.functions.get_function.return_value = {
             "objects": [
                 {
                     "id": "params-123",
@@ -834,7 +801,7 @@ class TestLogger(TestCase):
         }
 
         simulate_login()
-        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+        with patch.object(logger._state, "api_client", return_value=mock_api_client):
             parameters = braintrust.load_parameters(project="test-project", slug="saved-parameters")
 
         assert isinstance(parameters, RemoteEvalParameters)
@@ -857,8 +824,8 @@ class TestLogger(TestCase):
         )
 
     def test_load_parameters_prefers_version_over_environment_for_project_slug(self):
-        mock_api_conn = MagicMock()
-        mock_api_conn.get_json.return_value = {
+        mock_api_client = MagicMock()
+        mock_api_client.functions.get_function.return_value = {
             "objects": [
                 {
                     "id": "params-123",
@@ -882,7 +849,7 @@ class TestLogger(TestCase):
         }
 
         simulate_login()
-        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+        with patch.object(logger._state, "api_client", return_value=mock_api_client):
             parameters = braintrust.load_parameters(
                 project="test-project",
                 slug="saved-parameters",
@@ -891,17 +858,17 @@ class TestLogger(TestCase):
             )
 
         assert parameters.version == "v1"
-        mock_api_conn.get_json.assert_called_once()
-        assert mock_api_conn.get_json.call_args.args[0] == "/v1/function"
-        assert mock_api_conn.get_json.call_args.args[1]["project_name"] == "test-project"
-        assert mock_api_conn.get_json.call_args.args[1]["slug"] == "saved-parameters"
-        assert mock_api_conn.get_json.call_args.args[1]["version"] == "v1"
-        assert mock_api_conn.get_json.call_args.args[1]["function_type"] == "parameters"
-        assert "environment" not in mock_api_conn.get_json.call_args.args[1]
+        mock_api_client.functions.get_function.assert_called_once_with(
+            project_name="test-project",
+            project_id=None,
+            slug="saved-parameters",
+            version="v1",
+            environment=None,
+        )
 
     def test_load_parameters_prefers_version_over_environment_for_id(self):
-        mock_api_conn = MagicMock()
-        mock_api_conn.get_json.return_value = {
+        mock_api_client = MagicMock()
+        mock_api_client.functions.get_function_id.return_value = {
             "id": "params-123",
             "project_id": "project-123",
             "name": "Saved parameters",
@@ -921,7 +888,7 @@ class TestLogger(TestCase):
         }
 
         simulate_login()
-        with patch.object(logger._state, "api_conn", return_value=mock_api_conn):
+        with patch.object(logger._state, "api_client", return_value=mock_api_client):
             parameters = braintrust.load_parameters(
                 id="params-123",
                 version="v1",
@@ -929,10 +896,11 @@ class TestLogger(TestCase):
             )
 
         assert parameters.id == "params-123"
-        mock_api_conn.get_json.assert_called_once()
-        assert mock_api_conn.get_json.call_args.args[0] == "/v1/function/params-123"
-        assert mock_api_conn.get_json.call_args.args[1]["version"] == "v1"
-        assert "environment" not in mock_api_conn.get_json.call_args.args[1]
+        mock_api_client.functions.get_function_id.assert_called_once_with(
+            "params-123",
+            version="v1",
+            environment=None,
+        )
 
     def test_extract_attachments_no_op(self):
         attachments: list[BaseAttachment] = []

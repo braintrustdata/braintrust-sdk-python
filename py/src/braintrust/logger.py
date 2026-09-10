@@ -463,7 +463,7 @@ class _LoaderLoginOptions:
     cache_namespace: str
 
 
-_LoaderResource = TypeVar("_LoaderResource", HTTPConnection, BraintrustClient)
+_LoaderResource = TypeVar("_LoaderResource", bound=BraintrustClient)
 
 
 class _LoaderLoginEntry(Generic[_LoaderResource]):
@@ -514,10 +514,6 @@ class _LoaderLoginEntry(Generic[_LoaderResource]):
 class BraintrustState:
     def __init__(self):
         self.id = str(uuid.uuid4())
-        self._loader_login_cache: LRUCache[str, _LoaderLoginEntry[HTTPConnection]] = LRUCache(
-            max_size=16,
-            on_remove=self._evict_loader_login_entry,
-        )
         self._loader_api_client_cache: LRUCache[str, _LoaderLoginEntry[BraintrustClient]] = LRUCache(
             max_size=16,
             on_remove=self._evict_loader_login_entry,
@@ -603,7 +599,6 @@ class BraintrustState:
         self._otel_flush_callback: Any | None = None
 
     def reset_login_info(self):
-        self._loader_login_cache.clear()
         self._loader_api_client_cache.clear()
 
         self.app_url: str | None = None
@@ -685,7 +680,6 @@ class BraintrustState:
 
     def copy_state(self, other: "BraintrustState"):
         """Copy login information from another BraintrustState instance."""
-        self._loader_login_cache.clear()
         self._loader_api_client_cache.clear()
         self.__dict__.update(
             {
@@ -704,7 +698,6 @@ class BraintrustState:
                     "_last_otel_setting",
                     "_context_manager_lock",
                     "_client_lock",
-                    "_loader_login_cache",
                     "_loader_api_client_cache",
                 )
             }
@@ -810,21 +803,6 @@ class BraintrustState:
             entry.release()
 
     @contextlib.contextmanager
-    def loader_conn(self, options: "_LoaderLoginOptions") -> "Iterator[HTTPConnection]":
-        """Yield the API connection for one loader call, releasing it on exit."""
-
-        if self._uses_active_loader_login(options):
-            yield self.api_conn()
-            return
-
-        with self._cached_loader_resource(
-            self._loader_login_cache,
-            options.cache_namespace,
-            lambda: _login_loader_conn(options),
-        ) as conn:
-            yield conn
-
-    @contextlib.contextmanager
     def loader_api_client(self, options: "_LoaderLoginOptions") -> "Iterator[BraintrustOpenApiClient]":
         """Yield the generated API client for one loader call, releasing it on exit."""
 
@@ -892,7 +870,6 @@ def set_http_adapter(adapter: HTTPAdapter) -> None:
     # Per-credential loader resources may have been created with the previous
     # adapter. Eviction closes them once any active requests release their lease;
     # subsequent loads recreate them with the new global adapter.
-    _state._loader_login_cache.clear()
     _state._loader_api_client_cache.clear()
 
 
@@ -2265,7 +2242,6 @@ def load_parameters(
 
     effective_environment = None if version is not None else environment
     should_fall_back_to_cache = version is None and effective_environment is None
-    query_args = _populate_args({}, version=version, environment=effective_environment)
     login_options = _resolve_loader_login_options(
         app_url=app_url,
         api_key=api_key,
@@ -2274,20 +2250,22 @@ def load_parameters(
     cache_namespace = login_options.cache_namespace
 
     try:
-        with _state.loader_conn(login_options) as conn:
+        with _state.loader_api_client(login_options) as api_client:
             if id:
-                response = conn.get_json(f"/v1/function/{id}", query_args)
-                if response is not None:
-                    response = {"objects": [response]}
+                function = api_client.functions.get_function_id(
+                    id,
+                    version=str(version) if version is not None else None,
+                    environment=effective_environment,
+                )
+                response = {"objects": [function]} if function is not None else None
             else:
-                args = _populate_args(
-                    {"function_type": "parameters"},
+                response = api_client.functions.get_function(
                     project_name=project,
                     project_id=project_id,
                     slug=slug,
-                    **query_args,
+                    version=str(version) if version is not None else None,
+                    environment=effective_environment,
                 )
-                response = conn.get_json("/v1/function", args)
     except Exception as server_error:
         if not _is_loader_cache_fallback_error(server_error):
             raise
@@ -2313,6 +2291,16 @@ def load_parameters(
             raise ValueError(
                 f"Parameters {slug} not found in {project or project_id} (not found on server or in local cache): {cache_error}"
             ) from server_error
+
+    if response is not None and "objects" in response:
+        response = {
+            **response,
+            "objects": [
+                function
+                for function in response["objects"]
+                if function.get("function_data", {}).get("type") == "parameters"
+            ],
+        }
 
     if response is None or "objects" not in response or len(response["objects"]) == 0:
         if id:
@@ -2447,16 +2435,6 @@ def _authenticated_api_conn(api_url: str, api_key: str) -> HTTPConnection:
 def _login_loader_client(options: _LoaderLoginOptions) -> BraintrustClient:
     client, _ = _login_with_api_key(app_url=options.app_url, api_key=options.api_key, org_name=options.org_name)
     return client
-
-
-def _login_loader_conn(options: _LoaderLoginOptions) -> HTTPConnection:
-    client, login_result = _login_with_api_key(
-        app_url=options.app_url, api_key=options.api_key, org_name=options.org_name
-    )
-    try:
-        return _authenticated_api_conn(login_result.api_url, options.api_key)
-    finally:
-        client.close()
 
 
 def login_to_state(

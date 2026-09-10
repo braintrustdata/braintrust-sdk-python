@@ -16,15 +16,17 @@ make check-api-client-codegen
 ```
 
 The check regenerates in a temporary directory and reports drift without changing the worktree.
-Currently selected tags are Projects, Experiments, Datasets, and Prompts. Each tag produces one resource and
-operation registry. Models used by one resource stay in that resource's model module; shared models
+Currently selected tags are Projects, Experiments, Datasets, Prompts, and Functions. Each tag produces one resource
+and operation registry. Models used by one resource stay in that resource's model module; shared models
 live in `models/common.py`; unreachable models are omitted.
 
 Method and inline-response names come directly from normalized OpenAPI `operationId` values. Generated
 models preserve exact wire keys, including leading underscores, and methods do not add implicit request
 defaults. GET and HEAD operations use the safe-read retry policy.
 Logical POST reads and verified idempotent writes must be listed explicitly in `safe_reads` and
-`idempotent_writes`; all other writes are non-retrying.
+`idempotent_writes`; all other writes are non-retrying. Operations listed in `specialized_operations`
+remain on their handwritten SDK paths and are excluded from the generic generated resource. Anonymous
+nested objects that collide with component names receive contextual names, keeping component names stable.
 
 ## Refresh the snapshot
 

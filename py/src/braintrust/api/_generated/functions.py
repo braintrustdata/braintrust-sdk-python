@@ -4,9 +4,9 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: f74abab6482c7f8968add98f0d9d92fd904ff8bcd882c95698778efc1c466ce3
+# Content SHA-256: c1a850487c10705bba39e61f347b1599f7138baef68035558e5fb06e7598636c
 
-"""Generated Prompts REST operations and resource."""
+"""Generated Functions REST operations and resource."""
 
 from typing import cast
 
@@ -24,13 +24,20 @@ from .models.common import (
     Slug,
     StartingAfter,
 )
-from .models.prompts import CreatePrompt, GetPromptResponse, PatchPrompt, Prompt, PromptIdParam, PromptName
+from .models.functions import (
+    CreateFunction,
+    Function,
+    FunctionIdParam,
+    FunctionName,
+    GetFunctionResponse,
+    PatchFunction,
+)
 
 
-POST_PROMPT = Operation(
-    operation_id="postPrompt",
+POST_FUNCTION = Operation(
+    operation_id="postFunction",
     method="POST",
-    path="/v1/prompt",
+    path="/v1/function",
     parameters=(),
     has_request_body=True,
     success_statuses=(200,),
@@ -39,10 +46,10 @@ POST_PROMPT = Operation(
 )
 
 
-PUT_PROMPT = Operation(
-    operation_id="putPrompt",
+PUT_FUNCTION = Operation(
+    operation_id="putFunction",
     method="PUT",
-    path="/v1/prompt",
+    path="/v1/function",
     parameters=(),
     has_request_body=True,
     success_statuses=(200,),
@@ -51,10 +58,10 @@ PUT_PROMPT = Operation(
 )
 
 
-GET_PROMPT = Operation(
-    operation_id="getPrompt",
+GET_FUNCTION = Operation(
+    operation_id="getFunction",
     method="GET",
-    path="/v1/prompt",
+    path="/v1/function",
     parameters=(
         Parameter(
             argument_name="limit",
@@ -81,8 +88,8 @@ GET_PROMPT = Operation(
             required=False,
         ),
         Parameter(
-            argument_name="prompt_name",
-            name="prompt_name",
+            argument_name="function_name",
+            name="function_name",
             location="query",
             required=False,
         ),
@@ -130,14 +137,14 @@ GET_PROMPT = Operation(
 )
 
 
-GET_PROMPT_ID = Operation(
-    operation_id="getPromptId",
+GET_FUNCTION_ID = Operation(
+    operation_id="getFunctionId",
     method="GET",
-    path="/v1/prompt/{prompt_id}",
+    path="/v1/function/{function_id}",
     parameters=(
         Parameter(
-            argument_name="prompt_id",
-            name="prompt_id",
+            argument_name="function_id",
+            name="function_id",
             location="path",
             required=True,
         ),
@@ -161,14 +168,14 @@ GET_PROMPT_ID = Operation(
 )
 
 
-PATCH_PROMPT_ID = Operation(
-    operation_id="patchPromptId",
+PATCH_FUNCTION_ID = Operation(
+    operation_id="patchFunctionId",
     method="PATCH",
-    path="/v1/prompt/{prompt_id}",
+    path="/v1/function/{function_id}",
     parameters=(
         Parameter(
-            argument_name="prompt_id",
-            name="prompt_id",
+            argument_name="function_id",
+            name="function_id",
             location="path",
             required=True,
         ),
@@ -180,14 +187,14 @@ PATCH_PROMPT_ID = Operation(
 )
 
 
-DELETE_PROMPT_ID = Operation(
-    operation_id="deletePromptId",
+DELETE_FUNCTION_ID = Operation(
+    operation_id="deleteFunctionId",
     method="DELETE",
-    path="/v1/prompt/{prompt_id}",
+    path="/v1/function/{function_id}",
     parameters=(
         Parameter(
-            argument_name="prompt_id",
-            name="prompt_id",
+            argument_name="function_id",
+            name="function_id",
             location="path",
             required=True,
         ),
@@ -200,69 +207,69 @@ DELETE_PROMPT_ID = Operation(
 
 
 OPERATIONS = {
-    "postPrompt": POST_PROMPT,
-    "putPrompt": PUT_PROMPT,
-    "getPrompt": GET_PROMPT,
-    "getPromptId": GET_PROMPT_ID,
-    "patchPromptId": PATCH_PROMPT_ID,
-    "deletePromptId": DELETE_PROMPT_ID,
+    "postFunction": POST_FUNCTION,
+    "putFunction": PUT_FUNCTION,
+    "getFunction": GET_FUNCTION,
+    "getFunctionId": GET_FUNCTION_ID,
+    "patchFunctionId": PATCH_FUNCTION_ID,
+    "deleteFunctionId": DELETE_FUNCTION_ID,
 }
 
 
-class PromptsAPI(ResourceAPI):
-    """Generated Prompts REST API."""
+class FunctionsAPI(ResourceAPI):
+    """Generated Functions REST API."""
 
-    def post_prompt(
+    def post_function(
         self,
         *,
-        body: "CreatePrompt",
-    ) -> "Prompt":
+        body: "CreateFunction",
+    ) -> "Function":
         return cast(
-            "Prompt",
+            "Function",
             self.execute(
-                POST_PROMPT,
+                POST_FUNCTION,
                 body=body,
             ),
         )
 
-    def put_prompt(
+    def put_function(
         self,
         *,
-        body: "CreatePrompt",
-    ) -> "Prompt":
+        body: "CreateFunction",
+    ) -> "Function":
         return cast(
-            "Prompt",
+            "Function",
             self.execute(
-                PUT_PROMPT,
+                PUT_FUNCTION,
                 body=body,
             ),
         )
 
-    def get_prompt(
+    def get_function(
         self,
         *,
         limit: "AppLimitParam | None" = None,
         starting_after: "StartingAfter | None" = None,
         ending_before: "EndingBefore | None" = None,
         ids: "Ids | None" = None,
-        prompt_name: "PromptName | None" = None,
+        function_name: "FunctionName | None" = None,
         project_name: "ProjectName | None" = None,
         project_id: "ProjectIdQuery | None" = None,
         slug: "Slug | None" = None,
         version: "PromptVersion | None" = None,
         environment: "PromptEnvironment | None" = None,
         org_name: "OrgName | None" = None,
-    ) -> "GetPromptResponse":
+    ) -> "GetFunctionResponse":
         return cast(
-            "GetPromptResponse",
+            "GetFunctionResponse",
             self.execute(
-                GET_PROMPT,
+                GET_FUNCTION,
                 query_parameters={
                     "limit": limit,
                     "starting_after": starting_after,
                     "ending_before": ending_before,
                     "ids": ids,
-                    "prompt_name": prompt_name,
+                    "function_name": function_name,
                     "project_name": project_name,
                     "project_id": project_id,
                     "slug": slug,
@@ -273,45 +280,45 @@ class PromptsAPI(ResourceAPI):
             ),
         )
 
-    def get_prompt_id(
+    def get_function_id(
         self,
-        prompt_id: "PromptIdParam",
+        function_id: "FunctionIdParam",
         *,
         version: "PromptVersion | None" = None,
         environment: "PromptEnvironment | None" = None,
-    ) -> "Prompt":
+    ) -> "Function":
         return cast(
-            "Prompt",
+            "Function",
             self.execute(
-                GET_PROMPT_ID,
-                path_parameters={"prompt_id": prompt_id},
+                GET_FUNCTION_ID,
+                path_parameters={"function_id": function_id},
                 query_parameters={"version": version, "environment": environment},
             ),
         )
 
-    def patch_prompt_id(
+    def patch_function_id(
         self,
-        prompt_id: "PromptIdParam",
+        function_id: "FunctionIdParam",
         *,
-        body: "PatchPrompt | None" = None,
-    ) -> "Prompt":
+        body: "PatchFunction | None" = None,
+    ) -> "Function":
         return cast(
-            "Prompt",
+            "Function",
             self.execute(
-                PATCH_PROMPT_ID,
-                path_parameters={"prompt_id": prompt_id},
+                PATCH_FUNCTION_ID,
+                path_parameters={"function_id": function_id},
                 body=body,
             ),
         )
 
-    def delete_prompt_id(
+    def delete_function_id(
         self,
-        prompt_id: "PromptIdParam",
-    ) -> "Prompt":
+        function_id: "FunctionIdParam",
+    ) -> "Function":
         return cast(
-            "Prompt",
+            "Function",
             self.execute(
-                DELETE_PROMPT_ID,
-                path_parameters={"prompt_id": prompt_id},
+                DELETE_FUNCTION_ID,
+                path_parameters={"function_id": function_id},
             ),
         )

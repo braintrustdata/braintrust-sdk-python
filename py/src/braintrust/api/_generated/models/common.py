@@ -4,7 +4,7 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 4f4034d79da55f9379228307ac3f68923c3c0ef40d89c07614d9f141d6cf9862
+# Content SHA-256: 7296a2e10cecbbc7116e3a28f496a1170697047817c46f0528b3586c02da920c
 
 from typing import Any, Literal, TypeAlias, TypedDict
 from typing_extensions import NotRequired
@@ -14,6 +14,90 @@ AppLimitParam: TypeAlias = int | None
 """
 Limit the number of objects to return
 """
+
+
+class ChatCompletionContentPartFileFile(TypedDict):
+    file_data: NotRequired[str]
+    file_id: NotRequired[str]
+    filename: NotRequired[str]
+
+
+class CacheControl(TypedDict):
+    ttl: NotRequired[Literal["5m", "1h"]]
+    type: Literal["ephemeral"]
+
+
+class ChatCompletionContentPartFileWithTitle(TypedDict):
+    cache_control: NotRequired[CacheControl]
+    file: ChatCompletionContentPartFileFile
+    type: Literal["file"]
+
+
+class ImageUrl(TypedDict):
+    detail: NotRequired[Literal["auto"] | Literal["low"] | Literal["high"]]
+    url: str
+
+
+class ChatCompletionContentPartImageWithTitle(TypedDict):
+    cache_control: NotRequired[CacheControl]
+    image_url: ImageUrl
+    type: Literal["image_url"]
+
+
+class ChatCompletionContentPartText(TypedDict):
+    cache_control: NotRequired[CacheControl]
+    text: NotRequired[str]
+    type: Literal["text"]
+
+
+class ChatCompletionContentPartTextWithTitle(TypedDict):
+    cache_control: NotRequired[CacheControl]
+    text: NotRequired[str]
+    type: Literal["text"]
+
+
+class ChatCompletionMessageParam1(TypedDict):
+    content: NotRequired[str | Sequence[ChatCompletionContentPartText]]
+    name: NotRequired[str]
+    role: Literal["system"]
+
+
+class FunctionCall(TypedDict):
+    arguments: str
+    name: str
+
+
+class ChatCompletionMessageParam4(TypedDict):
+    content: NotRequired[str | Sequence[ChatCompletionContentPartText]]
+    role: Literal["tool"]
+    tool_call_id: NotRequired[str]
+
+
+class ChatCompletionMessageParam5(TypedDict):
+    content: str | None
+    name: str
+    role: Literal["function"]
+
+
+class ChatCompletionMessageParam6(TypedDict):
+    content: NotRequired[str | Sequence[ChatCompletionContentPartText]]
+    name: NotRequired[str]
+    role: Literal["developer"]
+
+
+class ChatCompletionMessageParam7(TypedDict):
+    content: NotRequired[str | None]
+    role: Literal["model"]
+
+
+class ChatCompletionMessageReasoning(TypedDict):
+    content: NotRequired[str | None]
+    id: NotRequired[str | None]
+
+
+class ChatCompletionMessageToolCallFunction(TypedDict):
+    arguments: str
+    name: str
 
 
 class Metadata(TypedDict):
@@ -80,6 +164,23 @@ FunctionTypeEnum: TypeAlias = (
 The type of global function. Defaults to 'scorer'.
 """
 
+FunctionTypeEnumNullish: TypeAlias = (
+    Literal[
+        "llm",
+        "scorer",
+        "task",
+        "tool",
+        "custom_view",
+        "preprocessor",
+        "facet",
+        "classifier",
+        "tag",
+        "parameters",
+        "sandbox",
+    ]
+    | None
+)
+
 Ids: TypeAlias = str | Sequence[str]
 """
 Filter search results to a particular set of object IDs. To specify a list of IDs, include the query param multiple times
@@ -117,6 +218,53 @@ Since a paginated fetch query returns results in order from latest to earliest, 
 """
 
 
+class FunctionCall1(TypedDict):
+    name: str
+
+
+class ModelParams2(TypedDict):
+    max_tokens: float
+    max_tokens_to_sample: NotRequired[float]
+    """
+    This is a legacy parameter that should not be used.
+    """
+    reasoning_budget: NotRequired[float]
+    reasoning_enabled: NotRequired[bool]
+    stop_sequences: NotRequired[Sequence[str]]
+    temperature: float
+    top_k: NotRequired[float]
+    top_p: NotRequired[float]
+    use_cache: NotRequired[bool]
+
+
+class ModelParams3(TypedDict):
+    maxOutputTokens: NotRequired[float]
+    reasoning_budget: NotRequired[float]
+    reasoning_enabled: NotRequired[bool]
+    temperature: NotRequired[float]
+    topK: NotRequired[float]
+    topP: NotRequired[float]
+    use_cache: NotRequired[bool]
+
+
+class ModelParams4(TypedDict):
+    reasoning_budget: NotRequired[float]
+    reasoning_enabled: NotRequired[bool]
+    temperature: NotRequired[float]
+    topK: NotRequired[float]
+    use_cache: NotRequired[bool]
+
+
+class ModelParams5(TypedDict):
+    reasoning_budget: NotRequired[float]
+    reasoning_enabled: NotRequired[bool]
+    use_cache: NotRequired[bool]
+
+
+class ModelParamsToolChoiceFunction(TypedDict):
+    name: str
+
+
 class ObjectReferenceNullish(TypedDict):
     _xact_id: NotRequired[str | None]
     """
@@ -145,6 +293,38 @@ OrgName: TypeAlias = str
 Filter search results to within a particular organization
 """
 
+
+class PreprocessorId1(TypedDict):
+    id: str
+    type: Literal["function"]
+    version: NotRequired[str]
+    """
+    The version of the function
+    """
+
+
+class PreprocessorId2(TypedDict):
+    function_type: NotRequired[Literal["preprocessor"]]
+    """
+    The type of global function. Defaults to 'preprocessor'.
+    """
+    name: str
+    type: Literal["global"]
+
+
+class PreprocessorId3(TypedDict):
+    code: str
+    """
+    The complete JavaScript preprocessor implementation, including its handler.
+    """
+    type: Literal["inline"]
+
+
+PreprocessorId: TypeAlias = PreprocessorId1 | PreprocessorId2 | PreprocessorId3 | None
+"""
+For prompt-backed functions: the saved, global, or inline preprocessor to use for trace template variables. Set to null to disable preprocessing. If omitted, the traced project's default preprocessor will be used, falling back to the global 'thread' preprocessor.
+"""
+
 ProjectIdQuery: TypeAlias = str
 """
 Project id
@@ -154,6 +334,134 @@ ProjectName: TypeAlias = str
 """
 Name of the project to search for
 """
+
+
+class PromptBlockDataNullish2(TypedDict):
+    content: str
+    type: Literal["completion"]
+
+
+class Mcp(TypedDict):
+    enabled_tools: NotRequired[Sequence[str] | None]
+    """
+    If omitted, all tools are enabled
+    """
+    id: str
+    is_disabled: NotRequired[bool]
+    type: Literal["id"]
+
+
+class Mcp1(TypedDict):
+    enabled_tools: NotRequired[Sequence[str] | None]
+    """
+    If omitted, all tools are enabled
+    """
+    is_disabled: NotRequired[bool]
+    type: Literal["url"]
+    url: str
+
+
+class Origin2(TypedDict):
+    project_id: NotRequired[str]
+    prompt_id: NotRequired[str]
+    prompt_version: NotRequired[str]
+
+
+class ToolFunction1(TypedDict):
+    id: str
+    type: Literal["function"]
+    version: NotRequired[str]
+    """
+    The version of the function
+    """
+
+
+class ToolFunction2(TypedDict):
+    function_type: NotRequired[FunctionTypeEnum]
+    name: str
+    type: Literal["global"]
+
+
+class ToolFunction3(TypedDict):
+    pass
+
+
+class ToolFunction4(ToolFunction1, ToolFunction3):
+    pass
+
+
+class ToolFunction5(ToolFunction2, ToolFunction3):
+    pass
+
+
+class ToolFunction6(ToolFunction1, ToolFunction3):
+    pass
+
+
+class ToolFunction7(ToolFunction2, ToolFunction3):
+    pass
+
+
+ToolFunction: TypeAlias = ToolFunction4 | ToolFunction5 | ToolFunction6 | ToolFunction7
+
+PromptEnvironment: TypeAlias = str
+"""
+Filter by environment slug. Cannot be used together with `version`.
+
+For `GET /v1/prompt`, environment resolution currently requires the request to match a single prompt. If multiple prompts match, the endpoint returns `400` (for example when `limit=1` is not set). Use `limit=1` or other filters (for example `slug`, `project_id`) to narrow results.
+"""
+
+
+class PromptParserNullish(TypedDict):
+    allow_no_match: NotRequired[bool]
+    """
+    If true, adds a 'No match' option. When selected, no tag is deposited.
+    """
+    allow_skip: NotRequired[bool]
+    """
+    If true, adds a 'Skip' option. When selected, the scorer returns null.
+    """
+    choice: NotRequired[Sequence[str]]
+    """
+    List of valid choices without score mapping. Used by classifiers that deposit output to tags.
+    """
+    choice_scores: NotRequired[Mapping[str, float]]
+    """
+    Map of choices to scores (0-1). Used by scorers.
+    """
+    type: Literal["llm_classifier"]
+    use_cot: bool
+
+
+PromptVersion: TypeAlias = str
+"""
+Retrieve prompt at a specific version.
+
+The version id can either be a transaction id (e.g. '1000192656880881099') or a version identifier (e.g. '81cd05ee665fdfb3').
+"""
+
+
+class ResponseFormatJsonSchema(TypedDict):
+    description: NotRequired[str]
+    name: str
+    schema: NotRequired[Mapping[str, Any] | str]
+    strict: NotRequired[bool | None]
+
+
+class ResponseFormatNullish1(TypedDict):
+    type: Literal["json_object"]
+
+
+class ResponseFormatNullish2(TypedDict):
+    json_schema: ResponseFormatJsonSchema
+    type: Literal["json_schema"]
+
+
+class ResponseFormatNullish3(TypedDict):
+    type: Literal["text"]
+
+
+ResponseFormatNullish: TypeAlias = ResponseFormatNullish1 | ResponseFormatNullish2 | ResponseFormatNullish3 | None
 
 
 class SavedFunctionId1(TypedDict):
@@ -176,6 +484,11 @@ SavedFunctionId: TypeAlias = SavedFunctionId1 | SavedFunctionId2 | None
 Optional function identifier that produced the classification
 """
 
+Slug: TypeAlias = str
+"""
+Retrieve prompt with a specific slug
+"""
+
 StartingAfter: TypeAlias = str
 """
 Pagination cursor id.
@@ -189,6 +502,24 @@ Retrieve a snapshot of events from a past time
 
 The version id is essentially a filter on the latest event transaction id. You can use the `max_xact_id` returned by a past fetch as the version to reproduce that exact fetch.
 """
+
+ChatCompletionContentPart: TypeAlias = (
+    ChatCompletionContentPartTextWithTitle
+    | ChatCompletionContentPartImageWithTitle
+    | ChatCompletionContentPartFileWithTitle
+)
+
+
+class ChatCompletionMessageParam2(TypedDict):
+    content: NotRequired[str | Sequence[ChatCompletionContentPart]]
+    name: NotRequired[str]
+    role: Literal["user"]
+
+
+class ChatCompletionMessageToolCall(TypedDict):
+    function: ChatCompletionMessageToolCallFunction
+    id: str
+    type: Literal["function"]
 
 
 class Classification(TypedDict):
@@ -217,3 +548,81 @@ class FetchEventsRequest(TypedDict):
     max_root_span_id: NotRequired[MaxRootSpanId | None]
     max_xact_id: NotRequired[MaxXactId | None]
     version: NotRequired[Version | None]
+
+
+class ToolChoice(TypedDict):
+    function: ModelParamsToolChoiceFunction
+    type: Literal["function"]
+
+
+class ModelParams1(TypedDict):
+    frequency_penalty: NotRequired[float]
+    function_call: NotRequired[Literal["auto"] | Literal["none"] | FunctionCall1]
+    max_completion_tokens: NotRequired[float]
+    """
+    The successor to max_tokens
+    """
+    max_tokens: NotRequired[float]
+    n: NotRequired[float]
+    presence_penalty: NotRequired[float]
+    reasoning_budget: NotRequired[float]
+    reasoning_effort: NotRequired[Literal["none", "minimal", "low", "medium", "high"]]
+    reasoning_enabled: NotRequired[bool]
+    response_format: NotRequired[ResponseFormatNullish]
+    stop: NotRequired[Sequence[str]]
+    temperature: NotRequired[float]
+    tool_choice: NotRequired[Literal["auto"] | Literal["none"] | Literal["required"] | ToolChoice]
+    top_p: NotRequired[float]
+    use_cache: NotRequired[bool]
+    verbosity: NotRequired[Literal["low", "medium", "high"]]
+
+
+ModelParams: TypeAlias = ModelParams1 | ModelParams2 | ModelParams3 | ModelParams4 | ModelParams5
+
+
+class PromptOptionsNullish(TypedDict):
+    endpoint_name: NotRequired[str | None]
+    model: NotRequired[str]
+    params: NotRequired[ModelParams]
+    position: NotRequired[str]
+
+
+class ChatCompletionMessageParam3(TypedDict):
+    content: NotRequired[str | Sequence[ChatCompletionContentPartText] | None]
+    function_call: NotRequired[FunctionCall | None]
+    name: NotRequired[str | None]
+    reasoning: NotRequired[Sequence[ChatCompletionMessageReasoning] | None]
+    reasoning_signature: NotRequired[str | None]
+    role: Literal["assistant"]
+    tool_calls: NotRequired[Sequence[ChatCompletionMessageToolCall] | None]
+
+
+ChatCompletionMessageParam: TypeAlias = (
+    ChatCompletionMessageParam1
+    | ChatCompletionMessageParam2
+    | ChatCompletionMessageParam3
+    | ChatCompletionMessageParam4
+    | ChatCompletionMessageParam5
+    | ChatCompletionMessageParam6
+    | ChatCompletionMessageParam7
+)
+
+
+class PromptBlockDataNullish1(TypedDict):
+    messages: Sequence[ChatCompletionMessageParam]
+    tools: NotRequired[str]
+    type: Literal["chat"]
+
+
+PromptBlockDataNullish: TypeAlias = PromptBlockDataNullish1 | PromptBlockDataNullish2 | None
+
+
+class PromptDataNullish(TypedDict):
+    mcp: NotRequired[Mapping[str, Mcp | Mcp1] | None]
+    options: NotRequired[PromptOptionsNullish | None]
+    origin: NotRequired[Origin2 | None]
+    parser: NotRequired[PromptParserNullish | None]
+    preprocessor: NotRequired[PreprocessorId]
+    prompt: NotRequired[PromptBlockDataNullish]
+    template_format: NotRequired[Literal["mustache", "nunjucks", "none"] | None]
+    tool_functions: NotRequired[Sequence[ToolFunction] | None]
