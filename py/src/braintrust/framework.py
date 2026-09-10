@@ -72,6 +72,11 @@ Input = TypeVar("Input")
 Output = TypeVar("Output")
 Expected = TypeVar("Expected")
 
+REVIEW_ASSIGNMENT_METADATA_KEYS = {
+    "~__bt_assignments",
+    "~__bt_review_lists",
+}
+
 
 # https://stackoverflow.com/questions/287871/how-do-i-print-colored-text-to-the-terminal
 class bcolors:
@@ -1254,6 +1259,12 @@ class DictEvalHooks(dict[str, Any]):
         return self._parameters
 
 
+def _strip_review_assignment_metadata(metadata: Metadata | None) -> Metadata:
+    if not metadata:
+        return {}
+    return {k: v for k, v in metadata.items() if k not in REVIEW_ASSIGNMENT_METADATA_KEYS}
+
+
 def init_experiment(
     project_name: str | None = None, experiment_name: str | None = None, set_current: bool = False, **kwargs: Any
 ) -> Experiment:
@@ -1609,7 +1620,7 @@ async def _run_evaluator_internal_impl(
         if isinstance(datum, dict):
             datum = EvalCase.from_dict(datum)
 
-        metadata = {**(datum.metadata or {})}
+        metadata = _strip_review_assignment_metadata(datum.metadata)
         output = None
         error = None
         exc_info = None
