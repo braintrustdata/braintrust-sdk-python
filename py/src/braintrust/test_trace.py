@@ -1,18 +1,167 @@
 """Tests for Trace functionality."""
 
+import os
+
+import braintrust
 import pytest
-from braintrust.trace import CachedSpanFetcher, LocalTrace, SpanData, SpanFetcher
+from braintrust.git_fields import GitMetadataSettings
+from braintrust.logger import DATA_API_VERSION, BraintrustState
+from braintrust.span_cache import CachedSpan
+from braintrust.trace import (
+    CachedSpanFetcher,
+    LocalTrace,
+    SpanData,
+    SpanFetcher,
+    _matches_span_filters,
+    _normalize_span_filters,
+)
 
 
-# Helper to create mock spans
-def make_span(span_id: str, span_type: str, **extra) -> SpanData:
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "query", "body"])
+@pytest.mark.asyncio
+async def test_span_filters_backend_parity(vcr_cassette):
+    state = BraintrustState()
+    experiment = braintrust.init(
+        project="python-sdk-vcr-tests",
+        experiment="span-filters-backend-parity-v2",
+        update=True,
+        api_key=os.environ.get("BRAINTRUST_API_KEY", "sk-dummy-for-vcr-replay"),
+        git_metadata_settings=GitMetadataSettings(collect="none"),
+        state=state,
+        set_current=False,
+    )
+    experiment._get_state()
+    root = "span-filters-root"
+    spans = [
+        SpanData(span_id=root, span_attributes={"name": "root", "type": "task"}),
+        SpanData(
+            span_id="search",
+            span_attributes={"name": "search", "type": "tool"},
+            metrics={"start": 100, "end": 102},
+            metadata={"request": {"region": "us", "model": None}, "flag": True},
+        ),
+        SpanData(
+            span_id="failed",
+            span_attributes={"name": "search", "type": "tool"},
+            error="failed",
+            metrics={"start": 100, "end": 105},
+            metadata={"request": {"region": "eu", "model": "test"}, "flag": 1},
+        ),
+        SpanData(
+            span_id="lookup",
+            span_attributes={"name": "lookup", "type": "llm"},
+            error="",
+            metrics={"start": 100, "end": 100.5},
+            metadata={"request": {}},
+        ),
+        SpanData(span_id="open", span_attributes={"name": "open", "type": "tool"}, metrics={"start": 100}),
+        SpanData(
+            span_id="scorer",
+            span_attributes={"name": "search", "type": "score", "purpose": "scorer"},
+            metrics={"start": 100, "end": 102},
+        ),
+    ]
+    rows = [
+        dict(
+            span.to_dict(),
+            id=span.span_id,
+            root_span_id=root,
+            experiment_id=experiment.id,
+            span_parents=[] if span.span_id == root else [root],
+        )
+        for span in spans
+    ]
+    state.api_conn().post("/logs3", json={"rows": rows, "api_version": DATA_API_VERSION}).raise_for_status()
+
+    async def get_state():
+        return state
+
+    remote = CachedSpanFetcher(
+        object_type="experiment", object_id=experiment.id, root_span_id=root, get_state=get_state
+    )
+    cases = [
+        ({"span_type": ["tool"]}, {"search", "failed", "open"}),
+        ({"name": ["search", "lookup"]}, {"search", "failed", "lookup"}),
+        ({"has_error": True}, {"failed", "lookup"}),
+        ({"has_error": False}, {root, "search", "open"}),
+        ({"metadata": {"request": {"region": "us"}}}, {"search"}),
+        ({"metadata": {"request": {"model": None}}}, {root, "search", "lookup", "open"}),
+        ({"metadata": {"flag": True}}, {"search"}),
+        ({"metadata": {"flag": 1}}, {"failed"}),
+        ({"duration": {"min": 2, "max": 5}}, {"search", "failed"}),
+        ({"duration": {"max": 0.5}}, {"lookup"}),
+        ({"name": ["search"], "has_error": False, "duration": {"min": 2, "max": 2}}, {"search"}),
+        ({"name": []}, set()),
+        ({"span_type": []}, set()),
+        ({"metadata": {}}, {root, "search", "failed", "lookup", "open"}),
+        ({"metadata": {"request": {}}}, {root, "search", "failed", "lookup", "open"}),
+        ({"duration": {}}, {root, "search", "failed", "lookup", "open"}),
+        ({"duration": {"min": -1}}, {"search", "failed", "lookup"}),
+        ({"duration": {"min": 5, "max": 2}}, set()),
+    ]
+    # Fetch each filter before populating the complete remote cache.
+    backend_results = [await remote.get_spans(filters=filters) for filters, _ in cases]
+    await remote.get_spans()
+    local = LocalTrace("experiment", experiment.id, root, None, state)
+    state.span_cache.start()
+    try:
+        for span in spans:
+            state.span_cache.queue_write(root, span.span_id, CachedSpan.from_dict(span.to_dict()))
+
+        request_count = (len(vcr_cassette.requests), vcr_cassette.play_count)
+        for (filters, expected), backend in zip(cases, backend_results):
+            assert {span.span_id for span in backend} == expected, filters
+            assert {span.span_id for span in await remote.get_spans(filters=filters)} == expected, filters
+            assert {span.span_id for span in await local.get_spans(filters=filters)} == expected, filters
+        assert {
+            span.span_id for span in await local.get_spans(filters={"name": ["search"]}, include_scorers=True)
+        } == {"search", "failed", "scorer"}
+        assert (len(vcr_cassette.requests), vcr_cassette.play_count) == request_count
+    finally:
+        state.span_cache.stop()
+        state.span_cache.dispose()
+    assert {span.span_id for span in await remote.get_spans(filters={"name": ["search"]}, include_scorers=True)} == {
+        "search",
+        "failed",
+        "scorer",
+    }
+
+
+# Helper to create span data
+def make_span(span_id: str, span_type: str, *, name: str | None = None, **extra) -> SpanData:
+    span_attributes = {"type": span_type}
+    if name is not None:
+        span_attributes["name"] = name
     return SpanData(
         span_id=span_id,
         input={"text": f"input-{span_id}"},
         output={"text": f"output-{span_id}"},
-        span_attributes={"type": span_type},
+        span_attributes=span_attributes,
         **extra,
     )
+
+
+@pytest.mark.parametrize(
+    ("metadata", "expected"),
+    [
+        (None, True),
+        ({}, True),
+        ({"request": None}, True),
+        ({"request": {}}, True),
+        ({"request": {"model": None}}, True),
+        ({"request": {"model": "gpt-5"}}, False),
+    ],
+)
+def test_null_metadata_filter_matches_missing_paths(metadata, expected):
+    filters = _normalize_span_filters({"metadata": {"request": {"model": None}}})
+    assert _matches_span_filters(SpanData(metadata=metadata), filters) is expected
+    assert not _matches_span_filters(SpanData(metadata=metadata), {"metadata": {"request": {"model": "other"}}})
+
+
+@pytest.mark.parametrize("actual, expected", [(True, 1), (1, True), ([True], [1]), ([{"flag": True}], [{"flag": 1}])])
+def test_metadata_filters_do_not_coerce_booleans(actual, expected):
+    assert not _matches_span_filters(SpanData(metadata={"value": actual}), {"metadata": {"value": expected}})
+    assert _matches_span_filters(SpanData(metadata={"value": actual}), {"metadata": {"value": actual}})
 
 
 class TestCachedSpanFetcher:
@@ -29,7 +178,7 @@ class TestCachedSpanFetcher:
 
         call_count = 0
 
-        async def fetch_fn(span_type):
+        async def fetch_fn(filters):
             nonlocal call_count
             call_count += 1
             return mock_spans
@@ -50,47 +199,30 @@ class TestCachedSpanFetcher:
             make_span("llm-2", "llm"),
         ]
 
-        async def fetch_fn(span_type):
+        async def fetch_fn(filters):
+            span_type = filters.get("span_type")
             if span_type:
                 return [s for s in all_spans if s.span_attributes["type"] in span_type]
             return all_spans
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-        await fetcher.get_spans(["llm"])
+        await fetcher.get_spans(filters={"span_type": ["llm"]})
         result = await fetcher.get_spans()
 
         span_ids = [s.span_id for s in result]
         assert sorted(span_ids) == ["fn-1", "llm-1", "llm-2"]
         assert len(span_ids) == len(set(span_ids)), f"duplicate spans: {span_ids}"
 
-    @pytest.mark.asyncio
-    async def test_fetch_preserves_span_result_fields(self):
-        """Test that fetched spans preserve fields needed for full trace attachments."""
-        mock_spans = [
-            make_span(
-                "span-1",
-                "tool",
-                expected={"answer": "ok"},
-                error={"message": "boom"},
-                metrics={"start": 1, "end": 2},
-                scores={"quality": 0},
-                tags=["debug"],
-            )
-        ]
-
-        async def fetch_fn(span_type):
-            del span_type
-            return mock_spans
-
-        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-        result = await fetcher.get_spans()
-
-        assert result[0].expected == {"answer": "ok"}
-        assert result[0].error == {"message": "boom"}
-        assert result[0].metrics == {"start": 1, "end": 2}
-        assert result[0].scores == {"quality": 0}
-        assert result[0].tags == ["debug"]
-        assert result[0].to_dict()["error"] == {"message": "boom"}
+    def test_span_data_roundtrip(self):
+        row = {
+            "span_id": "tool-span",
+            "expected": {"answer": "ok"},
+            "error": "boom",
+            "metrics": {"start": 1, "end": 2},
+            "scores": {"quality": 0},
+            "tags": ["debug"],
+        }
+        assert SpanData.from_dict(row).to_dict() == row
 
     @pytest.mark.asyncio
     async def test_fetch_specific_span_types(self):
@@ -99,167 +231,74 @@ class TestCachedSpanFetcher:
 
         call_count = 0
 
-        async def fetch_fn(span_type):
+        async def fetch_fn(filters):
             nonlocal call_count
             call_count += 1
-            assert span_type == ["llm"]
+            assert filters == {"span_type": ["llm"]}
             return llm_spans
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-        result = await fetcher.get_spans(span_type=["llm"])
+        result = await fetcher.get_spans(filters={"span_type": ["llm"]})
 
         assert call_count == 1
         assert len(result) == 2
 
+    @pytest.mark.parametrize(
+        ("span_type", "expected_ids"),
+        [
+            (None, ["span-1", "span-2", "span-3", "span-4"]),
+            (["llm"], ["span-1", "span-4"]),
+            (["llm", "tool"], ["span-1", "span-3", "span-4"]),
+            (["nonexistent"], []),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_return_cached_spans_after_fetching_all(self):
-        """Test that cached spans are returned without re-fetching after fetching all."""
-        mock_spans = [
-            make_span("span-1", "llm"),
-            make_span("span-2", "function"),
-        ]
+    async def test_full_cache_answers_any_span_type_query(self, span_type, expected_ids):
+        """One unfiltered fetch makes the cache authoritative for every span type.
 
-        call_count = 0
-
-        async def fetch_fn(span_type):
-            nonlocal call_count
-            call_count += 1
-            return mock_spans
-
-        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-
-        # First call - fetches
-        await fetcher.get_spans()
-        assert call_count == 1
-
-        # Second call - should use cache
-        result = await fetcher.get_spans()
-        assert call_count == 1  # Still 1
-        assert len(result) == 2
-
-    @pytest.mark.asyncio
-    async def test_return_cached_spans_for_previously_fetched_types(self):
-        """Test that previously fetched types are returned from cache."""
-        llm_spans = [make_span("span-1", "llm"), make_span("span-2", "llm")]
-
-        call_count = 0
-
-        async def fetch_fn(span_type):
-            nonlocal call_count
-            call_count += 1
-            return llm_spans
-
-        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-
-        # First call - fetches llm spans
-        await fetcher.get_spans(span_type=["llm"])
-        assert call_count == 1
-
-        # Second call for same type - should use cache
-        result = await fetcher.get_spans(span_type=["llm"])
-        assert call_count == 1  # Still 1
-        assert len(result) == 2
-
-    @pytest.mark.asyncio
-    async def test_only_fetch_missing_span_types(self):
-        """Test that only missing span types are fetched."""
-        llm_spans = [make_span("span-1", "llm")]
-        function_spans = [make_span("span-2", "function")]
-
-        call_count = 0
-
-        async def fetch_fn(span_type):
-            nonlocal call_count
-            call_count += 1
-            if span_type == ["llm"]:
-                return llm_spans
-            elif span_type == ["function"]:
-                return function_spans
-            return []
-
-        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-
-        # First call - fetches llm spans
-        await fetcher.get_spans(span_type=["llm"])
-        assert call_count == 1
-
-        # Second call for both types - should only fetch function
-        result = await fetcher.get_spans(span_type=["llm", "function"])
-        assert call_count == 2
-        assert len(result) == 2
-
-    @pytest.mark.asyncio
-    async def test_no_refetch_after_fetching_all_spans(self):
-        """Test that no re-fetching occurs after fetching all spans."""
-        all_spans = [
-            make_span("span-1", "llm"),
-            make_span("span-2", "function"),
-            make_span("span-3", "tool"),
-        ]
-
-        call_count = 0
-
-        async def fetch_fn(span_type):
-            nonlocal call_count
-            call_count += 1
-            return all_spans
-
-        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-
-        # Fetch all spans
-        await fetcher.get_spans()
-        assert call_count == 1
-
-        # Subsequent filtered calls should use cache
-        llm_result = await fetcher.get_spans(span_type=["llm"])
-        assert call_count == 1  # Still 1
-        assert len(llm_result) == 1
-        assert llm_result[0].span_id == "span-1"
-
-        function_result = await fetcher.get_spans(span_type=["function"])
-        assert call_count == 1  # Still 1
-        assert len(function_result) == 1
-        assert function_result[0].span_id == "span-2"
-
-    @pytest.mark.asyncio
-    async def test_filter_by_multiple_span_types_from_cache(self):
-        """Test filtering by multiple span types from cache."""
+        Including types that turn out to be absent: an empty result is a real answer here,
+        not a cache miss to be retried against the server.
+        """
         all_spans = [
             make_span("span-1", "llm"),
             make_span("span-2", "function"),
             make_span("span-3", "tool"),
             make_span("span-4", "llm"),
         ]
+        call_count = 0
 
-        async def fetch_fn(span_type):
+        async def fetch_fn(filters):
+            nonlocal call_count
+            call_count += 1
             return all_spans
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-
-        # Fetch all first
         await fetcher.get_spans()
 
-        # Filter for llm and tool
-        result = await fetcher.get_spans(span_type=["llm", "tool"])
-        assert len(result) == 3
-        assert {s.span_id for s in result} == {"span-1", "span-3", "span-4"}
+        result = await fetcher.get_spans(filters={"span_type": span_type} if span_type else None)
+
+        assert call_count == 1
+        assert sorted(span.span_id for span in result) == expected_ids
 
     @pytest.mark.asyncio
-    async def test_return_empty_for_nonexistent_span_type(self):
-        """Test that empty array is returned for non-existent span type."""
-        all_spans = [make_span("span-1", "llm")]
+    async def test_partial_cache_fetches_only_missing_types(self):
+        """A type already in the cache is never re-requested, only the types missing from it."""
+        by_type = {"llm": [make_span("span-1", "llm")], "function": [make_span("span-2", "function")]}
+        requested = []
 
-        async def fetch_fn(span_type):
-            return all_spans
+        async def fetch_fn(filters):
+            requested.append(filters["span_type"])
+            return [span for t in filters["span_type"] for span in by_type.get(t, [])]
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
 
-        # Fetch all first
-        await fetcher.get_spans()
+        assert [s.span_id for s in await fetcher.get_spans(filters={"span_type": ["llm"]})] == ["span-1"]
+        assert [s.span_id for s in await fetcher.get_spans(filters={"span_type": ["llm"]})] == ["span-1"]
+        result = await fetcher.get_spans(filters={"span_type": ["llm", "function"]})
 
-        # Query for non-existent type
-        result = await fetcher.get_spans(span_type=["nonexistent"])
-        assert len(result) == 0
+        assert sorted(span.span_id for span in result) == ["span-1", "span-2"]
+        # The second call was served from cache; the third asked only for what it lacked.
+        assert requested == [["llm"], ["function"]]
 
     @pytest.mark.asyncio
     async def test_handle_spans_with_no_type(self):
@@ -270,7 +309,7 @@ class TestCachedSpanFetcher:
             SpanData(span_id="span-3", input={}),  # No span_attributes
         ]
 
-        async def fetch_fn(span_type):
+        async def fetch_fn(filters):
             return spans
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
@@ -280,75 +319,77 @@ class TestCachedSpanFetcher:
         assert len(result) == 3
 
         # Spans without type go into "" bucket
-        no_type_result = await fetcher.get_spans(span_type=[""])
+        no_type_result = await fetcher.get_spans(filters={"span_type": [""]})
         assert len(no_type_result) == 2
 
+    @pytest.mark.parametrize("filters", [None, {"span_type": ["llm"]}])
     @pytest.mark.asyncio
-    async def test_empty_then_populated_refetches(self):
-        """Test that empty results don't permanently cache, allowing re-fetch when data becomes available."""
-        call_count = 0
-        spans = [make_span("span-1", "llm"), make_span("span-2", "function")]
+    async def test_empty_results_are_not_cached(self, filters):
+        """An empty fetch caches nothing, so spans logged later are still picked up.
 
-        async def fetch_fn(span_type):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                return []
-            return spans
-
-        fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
-
-        # First call returns empty
-        result1 = await fetcher.get_spans()
-        assert len(result1) == 0
-        assert call_count == 1
-
-        # Second call should re-fetch since first was empty
-        result2 = await fetcher.get_spans()
-        assert call_count == 2
-        assert len(result2) == 2
-        assert {s.span_id for s in result2} == {"span-1", "span-2"}
-
-    @pytest.mark.asyncio
-    async def test_empty_results_with_type_filter(self):
-        """Test that type-filtered fetches handle empty results correctly."""
+        The cache records which types it holds by the spans it saw, so a fetch that returned
+        nothing leaves no trace and the next call goes back to the server.
+        """
         call_count = 0
 
-        async def fetch_fn(span_type):
+        async def fetch_fn(_filters):
             nonlocal call_count
             call_count += 1
-            if call_count == 1:
-                return []
-            return [make_span("span-1", "llm")]
+            return [] if call_count == 1 else [make_span("span-1", "llm")]
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
 
-        # First call with type filter returns empty
-        result1 = await fetcher.get_spans(span_type=["llm"])
-        assert len(result1) == 0
-
-        # Second call with same type should re-fetch since type wasn't cached with results
-        result2 = await fetcher.get_spans(span_type=["llm"])
+        assert await fetcher.get_spans(filters=filters) == []
+        assert [span.span_id for span in await fetcher.get_spans(filters=filters)] == ["span-1"]
         assert call_count == 2
-        assert len(result2) == 1
 
     @pytest.mark.asyncio
-    async def test_handle_empty_span_type_array(self):
-        """Test that empty spanType array is handled same as undefined."""
-        mock_spans = [make_span("span-1", "llm")]
+    async def test_advanced_filters_are_pushed_down_and_never_cached(self):
+        """Filters the cache cannot reason about go to the fetcher whole, every time.
 
-        call_args = []
+        The cache is partitioned by span type alone, so it cannot tell whether it holds
+        every span matching some other field. Rather than guess, these queries are pushed
+        down in full and their results are used once and discarded.
+        """
+        spans = [
+            make_span("errored", "tool", name="search", error={"message": "boom"}),
+            make_span("successful", "tool", name="search"),
+        ]
+        received = []
 
-        async def fetch_fn(span_type):
-            call_args.append(span_type)
-            return mock_spans
+        async def fetch_fn(filters):
+            received.append(filters)
+            return [span for span in spans if _matches_span_filters(span, filters)]
 
         fetcher = CachedSpanFetcher(fetch_fn=fetch_fn)
+        filters = {"span_type": ["tool"], "has_error": True}
 
-        result = await fetcher.get_spans(span_type=[])
+        first = await fetcher.get_spans(filters=filters)
+        second = await fetcher.get_spans(filters=filters)
 
-        assert call_args[0] is None or call_args[0] == []
-        assert len(result) == 1
+        # Handed down whole, returned unchanged (no second, client-side filtering pass),
+        # and re-fetched rather than served from the first call's results.
+        assert received == [filters, filters]
+        assert [span.span_id for span in first] == ["errored"]
+        assert [span.span_id for span in second] == ["errored"]
+
+    @pytest.mark.parametrize(
+        ("filters", "message"),
+        [
+            ({"span_type": "tool"}, "span_type"),
+            ({"name": [1]}, "name"),
+            ({"has_error": "yes"}, "has_error"),
+            ({"metadata": []}, "metadata"),
+            ({"metadata": {1: "value"}}, "metadata"),
+            ({"duration": {"min": "slow"}}, "duration"),
+            ({"duration": {"min": float("nan")}}, "duration"),
+            ({"duration": {"minimum": 1}}, "duration"),
+            ({"unknown": True}, "Unsupported"),
+        ],
+    )
+    def test_rejects_invalid_advanced_filters(self, filters, message):
+        with pytest.raises(ValueError, match=message):
+            _normalize_span_filters(filters)
 
     @pytest.mark.parametrize(
         ("brainstore_realtime", "expected"),
@@ -393,14 +434,34 @@ class TestCachedSpanFetcher:
         assert calls[0]["json"]["brainstore_realtime"] is False
 
 
-class _DummySpanCache:
-    def get_by_root_span_id(self, root_span_id: str):
-        return None
+@pytest.mark.asyncio
+@pytest.mark.filterwarnings("error::DeprecationWarning")
+async def test_span_type_argument_compatibility():
+    state = BraintrustState()
+    state.span_cache.start()
+    try:
+        for span_id, span_type in (("tool", "tool"), ("llm", "llm")):
+            state.span_cache.queue_write(
+                "root", span_id, CachedSpan(span_id=span_id, span_attributes={"type": span_type})
+            )
+        trace = LocalTrace("experiment", "experiment", "root", None, state)
+        for filters in (None, {}):
+            assert {span.span_id for span in await trace.get_spans(filters=filters)} == {"tool", "llm"}
+        assert {span.span_id for span in await trace.get_spans(span_type=[])} == {"tool", "llm"}
+        assert [span.span_id for span in await trace.get_spans(["tool"])] == ["tool"]
+        assert [span.span_id for span in await trace.get_spans(span_type=["llm"], filters={"has_error": False})] == [
+            "llm"
+        ]
+        assert await trace.get_spans(filters={"span_type": []}) == []
+        with pytest.raises(ValueError, match="span_type"):
+            await trace.get_spans(["tool"], filters={"span_type": ["llm"]})
+    finally:
+        state.span_cache.stop()
+        state.span_cache.dispose()
 
 
 class _DummyState:
     def __init__(self, api_calls=None):
-        self.span_cache = _DummySpanCache()
         self.api_calls = api_calls
 
     def login(self):
