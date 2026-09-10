@@ -122,6 +122,22 @@ def test_mixed_otel_bt_tracing_with_bt_logger_first(otel_fixture):
     assert s2_span_id in s3["span_parents"]
 
 
+def test_emit_log_uses_active_otel_span(otel_fixture):
+    logger = init_test_logger(__name__)
+    tracer = otel_fixture.tracer
+    memory_logger = otel_fixture.memory_logger
+
+    with tracer.start_as_current_span("owner") as owner:
+        log_id = logger.emit_log(body="Inside OTel span", level="info")
+        owner_context = owner.get_span_context()
+
+    [log_row] = memory_logger.pop()
+    assert log_row["id"] == log_id
+    assert log_row["span_id"] == format(owner_context.span_id, "016x")
+    assert log_row["root_span_id"] == format(owner_context.trace_id, "032x")
+    assert not log_row.get("span_parents")
+
+
 def test_mixed_otel_bt_tracing_with_experiment_parent(otel_fixture):
     experiment = init_test_exp("otel-bt-mixed", "test-mixed-tracing-experiment")
     tracer = otel_fixture.tracer
