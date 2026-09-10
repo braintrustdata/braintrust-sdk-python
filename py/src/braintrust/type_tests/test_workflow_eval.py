@@ -3,8 +3,8 @@
 from typing import TypedDict
 
 import pytest
-from braintrust import (
-    EvalCase,
+from braintrust import EvalCase
+from braintrust.workflow_eval import (
     WorkflowEval,
     WorkflowEvalMemoryStore,
     WorkflowScorer,
