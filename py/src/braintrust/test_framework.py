@@ -4,7 +4,7 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMetadata
+from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMetadata, parent_context
 from braintrust.util import LazyValue
 
 from .framework import (
@@ -67,6 +67,59 @@ def reporting_task(input_value, hooks):
 
 def test_eval_case_from_dict_preserves_valid_origin():
     assert EvalCase.from_dict({"input": 1, "origin": SOURCE_ORIGIN}).origin == SOURCE_ORIGIN
+
+
+@pytest.mark.parametrize("upsert_id", ["eval-row", None, ""])
+@pytest.mark.parametrize("as_dict", [True, False], ids=["dict", "dataclass"])
+@pytest.mark.parametrize("use_experiment", [True, False], ids=["experiment", "parent-context"])
+@pytest.mark.parametrize(("trial_count", "row_trial_count"), [(1, None), (3, None), (1, 3), (3, 1)])
+@pytest.mark.asyncio
+async def test_run_evaluator_upsert_id(
+    upsert_id, as_dict, use_experiment, trial_count, row_trial_count, with_memory_logger, with_simulate_login
+):
+    experiment = init_test_exp("test-upsert", "test-project")
+    expected_trials = row_trial_count if row_trial_count is not None else trial_count
+    root_ids = []
+    for input_value in [1, 2]:
+        data = {"input": input_value, "id": "dataset-row", "origin": SOURCE_ORIGIN, "trial_count": row_trial_count}
+        if upsert_id is not None:
+            data["upsert_id"] = upsert_id
+        evaluator = Evaluator(
+            project_name="test-project",
+            eval_name="test-upsert",
+            data=[data if as_dict else EvalCase(**data)],
+            task=lambda input_value, hooks: [input_value * 2, hooks.trial_index],
+            scores=[],
+            experiment_name=None,
+            metadata=None,
+            summarize_scores=False,
+            trial_count=trial_count,
+        )
+        with parent_context(experiment.export()):
+            await run_evaluator(
+                experiment=experiment if use_experiment else None,
+                evaluator=evaluator,
+                position=None,
+                filters=[],
+            )
+        logs = with_memory_logger.pop()
+        roots = [log for log in logs if not log["span_parents"]]
+        children = [log for log in logs if log["span_parents"]]
+        assert len(roots) == len(children) == expected_trials
+        assert sorted(root["output"] for root in roots) == [
+            [input_value * 2, trial_index] for trial_index in range(expected_trials)
+        ]
+        assert all(root["origin"] == SOURCE_ORIGIN for root in roots)
+        root_outputs = {root["root_span_id"]: root["output"] for root in roots}
+        assert all(child["output"] == root_outputs[child["root_span_id"]] for child in children)
+        root_ids.append({root["output"][1]: root["id"] for root in roots})
+
+    if upsert_id:
+        assert root_ids[0] == root_ids[1]
+        assert root_ids[0][0] == upsert_id
+    else:
+        assert set(root_ids[0].values()).isdisjoint(root_ids[1].values())
+        assert all("dataset-row" not in ids.values() for ids in root_ids)
 
 
 @pytest.mark.parametrize(

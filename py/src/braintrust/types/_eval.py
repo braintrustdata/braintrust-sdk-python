@@ -34,6 +34,7 @@ class EvalCaseDictNoOutput(Generic[Input], TypedDict):
     _xact_id: NotRequired[str | None]
     created: NotRequired[str | None]
     origin: NotRequired[ObjectReference | None]
+    upsert_id: NotRequired[str | None]
 
 
 class EvalCaseDict(Generic[Input, Expected], EvalCaseDictNoOutput[Input]):
@@ -57,3 +58,4 @@ class ExperimentDatasetEvent(TypedDict):
     tags: Sequence[str] | None
     created: NotRequired[str | None]
     origin: NotRequired[ObjectReference | None]
+    upsert_id: NotRequired[str | None]
