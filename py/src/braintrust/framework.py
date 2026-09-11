@@ -104,6 +104,7 @@ class EvalCase(SerializableDataClass, Generic[Input, Expected]):
     _xact_id: str | None = None
     created: str | None = None
     origin: ObjectReference | None = None
+    upsert_id: str | None = None
 
 
 # Inheritance doesn't quite work for dataclasses, so we redefine the fields
@@ -1648,6 +1649,8 @@ async def _run_evaluator_internal_impl(
             tags=tags,
             **({"origin": origin} if origin is not None else {}),
         )
+        if datum.upsert_id:
+            base_event["id"] = datum.upsert_id
 
         if experiment:
             root_span = experiment.start_span(**base_event)

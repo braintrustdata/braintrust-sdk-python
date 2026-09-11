@@ -4,7 +4,7 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMetadata
+from braintrust.logger import BraintrustState, Dataset, ObjectMetadata, ProjectDatasetMetadata, parent_context
 from braintrust.util import LazyValue
 
 from .framework import (
@@ -67,6 +67,47 @@ def reporting_task(input_value, hooks):
 
 def test_eval_case_from_dict_preserves_valid_origin():
     assert EvalCase.from_dict({"input": 1, "origin": SOURCE_ORIGIN}).origin == SOURCE_ORIGIN
+
+
+@pytest.mark.parametrize("upsert_id", ["eval-row", None, ""])
+@pytest.mark.parametrize("as_dict", [True, False], ids=["dict", "dataclass"])
+@pytest.mark.parametrize("use_experiment", [True, False], ids=["experiment", "parent-context"])
+@pytest.mark.asyncio
+async def test_run_evaluator_upsert_id(upsert_id, as_dict, use_experiment, with_memory_logger, with_simulate_login):
+    experiment = init_test_exp("test-upsert", "test-project")
+    root_ids = []
+    for input_value in [1, 2]:
+        data = {"input": input_value, "id": "dataset-row", "origin": SOURCE_ORIGIN}
+        if upsert_id is not None:
+            data["upsert_id"] = upsert_id
+        evaluator = Evaluator(
+            project_name="test-project",
+            eval_name="test-upsert",
+            data=[data if as_dict else EvalCase(**data)],
+            task=reporting_task,
+            scores=[],
+            experiment_name=None,
+            metadata=None,
+            summarize_scores=False,
+        )
+        with parent_context(experiment.export()):
+            await run_evaluator(
+                experiment=experiment if use_experiment else None,
+                evaluator=evaluator,
+                position=None,
+                filters=[],
+            )
+        roots = [log for log in with_memory_logger.pop() if not log["span_parents"]]
+        assert len(roots) == 1
+        assert roots[0]["output"] == input_value * 2
+        assert roots[0]["origin"] == SOURCE_ORIGIN
+        root_ids.append(roots[0]["id"])
+
+    if upsert_id:
+        assert root_ids == [upsert_id, upsert_id]
+    else:
+        assert root_ids[0] != root_ids[1]
+        assert "dataset-row" not in root_ids
 
 
 @pytest.mark.parametrize(
