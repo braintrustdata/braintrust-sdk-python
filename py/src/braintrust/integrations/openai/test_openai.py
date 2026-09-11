@@ -83,6 +83,16 @@ def _supports_response_web_search_tools() -> bool:
     return True
 
 
+def _supports_agents_api() -> bool:
+    try:
+        from openai.resources.beta.agents.sessions.sessions import Sessions
+
+        del Sessions
+    except ImportError:
+        return False
+    return True
+
+
 @pytest.mark.vcr
 def test_openai_chat_metrics(memory_logger):
     assert not memory_logger.pop()
@@ -478,6 +488,74 @@ def test_openai_responses_web_search_tool_spans_stream(memory_logger):
     assert tool_span["span_parents"] == [llm_spans[0]["span_id"]]
     assert tool_span["metadata"]["tool_type"] == "web_search_call"
     assert tool_span["metadata"]["status"] == web_search_call.status
+
+
+@pytest.mark.parametrize("is_async", (False, True), ids=("sync", "async"))
+@pytest.mark.vcr
+def test_openai_agents_session_stream(memory_logger, is_async):
+    if not _supports_agents_api():
+        pytest.skip("OpenAI Agents API is not available in this SDK version")
+
+    input_text = "Reply with 25." if is_async else "Run `printf 24` in the terminal."
+    environment_type = "none" if is_async else "openai_hosted"
+    expected_text = "25" if is_async else "24"
+    instructions = (
+        "Answer with only the requested number."
+        if is_async
+        else "Run the requested command, then answer with only its output."
+    )
+    client = wrap_openai(AsyncOpenAI() if is_async else openai.OpenAI())
+    sessions = getattr(client.beta, "agents").sessions
+    params = dict(
+        agent={
+            "model": "gpt-6-astra",
+            "instructions": instructions,
+        },
+        environment={"type": environment_type},
+        input=input_text,
+        stream=True,
+    )
+
+    if is_async:
+
+        async def collect_events():
+            stream = await sessions.create(**params)
+            async with stream:
+                return [event async for event in stream]
+
+        events = asyncio.run(collect_events())
+    else:
+        with sessions.create(**params) as stream:
+            events = list(stream)
+
+    completed = next(
+        event for event in events if event.type == "agent.session.turn.completed" and event.turn.subagent_id is None
+    )
+
+    spans = memory_logger.pop()
+    task_spans = _find_spans_by_type(spans, SpanTypeAttribute.TASK)
+    tool_spans = _find_spans_by_type(spans, SpanTypeAttribute.TOOL)
+
+    assert len(task_spans) == 1
+    task_span = task_spans[0]
+    assert task_span["span_attributes"]["name"] == "openai.agents.sessions.create"
+    assert task_span["input"] == input_text
+    assert expected_text in task_span["output"]
+    assert task_span["metadata"]["provider"] == "openai"
+    assert task_span["metadata"]["model"] == "gpt-6-astra"
+    assert task_span["metadata"]["environment_type"] == environment_type
+    assert task_span["metadata"]["session_id"] == completed.session_id
+    assert task_span["metadata"]["turn_id"] == completed.turn_id
+    assert task_span["metadata"]["status"] == "completed"
+    assert task_span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
+    assert task_span["metrics"]["time_to_first_token"] >= 0
+
+    if not is_async:
+        command_span = _find_span_by_name(tool_spans, "command_execution")
+        assert command_span["span_parents"] == [task_span["span_id"]]
+        assert "printf 24" in command_span["input"]["command"]
+        assert "24" in command_span["output"]["output"]
+        assert command_span["metadata"]["status"] == "completed"
 
 
 @pytest.mark.vcr

@@ -548,6 +548,21 @@ def _responses_raw_parse_wrapper(wrapped, instance, args, kwargs):
     return ResponseWrapper(wrapped, None, "openai.responses.parse", return_raw=True).create(*args, **kwargs)
 
 
+def _agents_session_create_wrapper(wrapped, instance, args, kwargs):
+    # Non-streaming session creation only submits detached work. The Agents API
+    # delivers a complete turn through this invocation only when stream=True.
+    if kwargs.get("stream") is not True:
+        return wrapped(*args, **kwargs)
+
+    if _is_async_callable(wrapped):
+
+        async def call():
+            return await AgentSessionWrapper(None, wrapped).acreate(*args, **kwargs)
+
+        return call()
+    return AgentSessionWrapper(wrapped, None).create(*args, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Core tracing wrappers
 # ---------------------------------------------------------------------------
@@ -1128,6 +1143,305 @@ def _log_response_tool_spans(output: Any, *, parent_export: str | None) -> None:
             output_data = _response_tool_span_output(item)
             if output_data is not None:
                 tool_span.log(output=output_data)
+
+
+_AGENT_TOOL_ITEM_INPUT_KEYS = {
+    "command_execution": ("command", "cwd"),
+    "mcp_call": ("arguments",),
+    "web_search_call": ("action",),
+    "create_subagent_call": ("content", "model", "reasoning_effort"),
+    "send_subagent_input_call": ("content", "recipient_agent_id"),
+    "resume_subagent_call": ("recipient_agent_id",),
+    "wait_for_subagents_call": ("recipient_agent_ids",),
+    "interrupt_subagent_call": ("recipient_agent_id",),
+    "close_subagent_call": ("recipient_agent_id",),
+}
+
+_AGENT_TOOL_ITEM_OUTPUT_KEYS = {
+    "command_execution": ("output", "exit_code", "duration_ms"),
+    "mcp_call": ("output",),
+}
+
+_AGENT_TURN_EVENTS = {
+    "agent.session.turn.created",
+    "agent.session.turn.in_progress",
+    "agent.session.turn.completed",
+    "agent.session.turn.failed",
+    "agent.session.turn.cancelled",
+}
+
+_AGENT_TERMINAL_TURN_EVENTS = {
+    "agent.session.turn.completed",
+    "agent.session.turn.failed",
+    "agent.session.turn.cancelled",
+}
+
+
+def _normalize_agent_tools(tools: Any) -> Any:
+    """Normalize function definitions while leaving built-in tool config untouched."""
+    if not isinstance(tools, (list, tuple)):
+        return tools
+
+    normalized = None
+    for index, tool in enumerate(tools):
+        if not isinstance(tool, dict) or tool.get("type") != "function":
+            continue
+        if normalized is None:
+            normalized = list(tools)
+        normalized[index] = {
+            "type": "function",
+            "function": clean_nones(
+                {
+                    "name": tool.get("name"),
+                    "description": tool.get("description"),
+                    "parameters": tool.get("parameters"),
+                }
+            ),
+        }
+    return normalized if normalized is not None else tools
+
+
+def _agent_session_params(params: dict[str, Any]) -> dict[str, Any]:
+    metadata: dict[str, Any] = {"provider": "openai"}
+    agent = params.get("agent")
+    if isinstance(agent, dict):
+        metadata.update(
+            clean_nones(
+                {
+                    key: agent.get(key)
+                    for key in ("model", "instructions", "reasoning", "service_tier", "text", "multi_agent")
+                }
+            )
+        )
+        tools = agent.get("tools")
+        if tools:
+            metadata["tools"] = _normalize_agent_tools(tools)
+
+    agent_id = params.get("agent_id")
+    if agent_id is not None and not _is_not_given(agent_id):
+        metadata["agent_id"] = agent_id
+
+    metadata["environment_type"] = params["environment"]["type"]
+
+    return {
+        "input": _process_attachments_in_input(params.get("input")),
+        "metadata": metadata,
+    }
+
+
+def _agent_tool_span_name(item: Any) -> str:
+    server_label = getattr(item, "server_label", None)
+    name = getattr(item, "name", None)
+    if server_label and name:
+        return f"{server_label}.{name}"
+    return str(name or item.type)
+
+
+def _agent_tool_span_data(item: Any, keys: tuple[str, ...]) -> Any:
+    values = clean_nones({key: getattr(item, key, None) for key in keys})
+    if not values:
+        return None
+    if keys == ("arguments",):
+        return values["arguments"]
+    return values
+
+
+def _agent_tool_span_metadata(item: Any) -> dict[str, Any]:
+    return clean_nones(
+        {
+            "tool_type": item.type,
+            "tool_id": item.id,
+            "call_id": getattr(item, "call_id", None),
+            "status": item.status,
+            "turn_id": item.turn_id,
+            "server_label": getattr(item, "server_label", None),
+            "agent_id": getattr(item, "agent_id", None),
+            "sender_agent_id": getattr(item, "sender_agent_id", None),
+        }
+    )
+
+
+def _agent_tool_span_error(item: Any) -> Any:
+    error = getattr(item, "error", None)
+    if error is not None:
+        return error
+    if item.status == "failed":
+        return "Agent tool call failed"
+    return None
+
+
+class _AgentSessionTrace:
+    """Accumulate one directly streamed Agents API turn into a task span."""
+
+    def __init__(self, span: Span, start_time: float) -> None:
+        self.span = span
+        self.start_time = start_time
+        self.parent_export = span.export()
+        self.root_turn_id: str | None = None
+        self.tool_start_times: dict[str, float] = {}
+        self.first_token_logged = False
+        self.finished = False
+
+    def observe(self, event: Any) -> None:
+        event_type = event.type
+        if event_type in {"agent.session.created", "agent.session.in_progress", "agent.session.idle"}:
+            self._observe_session(event.session)
+
+        if event_type in _AGENT_TURN_EVENTS and event.turn.subagent_id is None:
+            self.root_turn_id = event.turn_id
+            if event_type in _AGENT_TERMINAL_TURN_EVENTS:
+                self._observe_terminal_turn(event)
+
+        if event_type in {"agent.session.turn.output_text.delta", "agent.session.turn.output_text.done"}:
+            if event.turn_id == self.root_turn_id and not self.first_token_logged:
+                text = getattr(event, "delta", None) or getattr(event, "text", None)
+                if text:
+                    self.span.log(metrics={"time_to_first_token": time.time() - self.start_time})
+                    self.first_token_logged = True
+
+        if event_type == "agent.session.turn.item.added":
+            item = event.item
+            if item.type in _AGENT_TOOL_ITEM_INPUT_KEYS:
+                self.tool_start_times[item.id] = time.time()
+
+        if event_type == "agent.session.turn.item.done":
+            self._observe_completed_item(event.item)
+
+        if event_type == "error":
+            self.span.log(error=event.error)
+        elif event_type == "agent.session.failed":
+            self.span.log(error=event.session.error or "Agent session failed")
+        elif event_type == "agent.session.environment.failed":
+            self.span.log(error=event.environment.error or "Agent session environment failed")
+
+    def _observe_session(self, session: Any) -> None:
+        self.span.log(
+            metadata=clean_nones(
+                {
+                    "session_id": session.id,
+                    "agent_id": session.agent.id,
+                    "model": session.agent.model,
+                    "agent_name": session.agent.name,
+                    "environment_type": session.environment.type,
+                }
+            )
+        )
+
+    def _observe_completed_item(self, item: Any) -> None:
+        if item.type == "message" and item.phase == "final_answer":
+            if item.turn_id == self.root_turn_id:
+                self.span.log(output="".join(part.text for part in item.content))
+            return
+
+        if item.type not in _AGENT_TOOL_ITEM_INPUT_KEYS:
+            return
+
+        start_time = self.tool_start_times.pop(item.id, None)
+        with start_span(
+            name=_agent_tool_span_name(item),
+            type=SpanTypeAttribute.TOOL,
+            start_time=start_time,
+            set_current=False,
+            parent=self.parent_export,
+            input=_agent_tool_span_data(item, _AGENT_TOOL_ITEM_INPUT_KEYS[item.type]),
+            metadata=_agent_tool_span_metadata(item),
+        ) as tool_span:
+            error = _agent_tool_span_error(item)
+            if error is not None:
+                tool_span.log(error=error)
+            output = _agent_tool_span_data(item, _AGENT_TOOL_ITEM_OUTPUT_KEYS.get(item.type, ()))
+            if output is not None:
+                tool_span.log(output=output)
+
+    def _observe_terminal_turn(self, event: Any) -> None:
+        turn = event.turn
+        self.span.log(
+            metadata=clean_nones(
+                {
+                    "session_id": event.session_id,
+                    "turn_id": event.turn_id,
+                    "agent_id": turn.agent_id,
+                    "status": turn.status,
+                }
+            )
+        )
+        self.span.log(metrics=_parse_metrics_from_usage(event.usage or turn.usage))
+        if turn.status == "failed":
+            self.span.log(error=turn.error or "Agent turn failed")
+        elif turn.status == "cancelled":
+            self.span.log(error="Agent turn cancelled")
+
+    def finish(self) -> None:
+        if self.finished:
+            return
+        self.finished = True
+        self.span.end()
+
+
+class AgentSessionWrapper:
+    def __init__(self, create_fn: Callable[..., Any] | None, acreate_fn: Callable[..., Any] | None) -> None:
+        self.create_fn = create_fn
+        self.acreate_fn = acreate_fn
+
+    def create(self, *args: Any, **kwargs: Any) -> Any:
+        params = _agent_session_params(kwargs)
+        span = start_span(
+            name="openai.agents.sessions.create",
+            span_attributes={"type": SpanTypeAttribute.TASK},
+            **params,
+        )
+        start_time = time.time()
+        try:
+            stream = self.create_fn(*args, **kwargs)
+        except Exception as error:
+            span.log(error=error)
+            span.end()
+            raise
+
+        trace = _AgentSessionTrace(span, start_time)
+
+        def gen():
+            try:
+                for event in stream:
+                    trace.observe(event)
+                    yield event
+            except Exception as error:
+                span.log(error=error)
+                raise
+            finally:
+                trace.finish()
+
+        return _TracedStream(stream, gen(), trace.finish)
+
+    async def acreate(self, *args: Any, **kwargs: Any) -> Any:
+        params = _agent_session_params(kwargs)
+        span = start_span(
+            name="openai.agents.sessions.create",
+            span_attributes={"type": SpanTypeAttribute.TASK},
+            **params,
+        )
+        start_time = time.time()
+        try:
+            stream = await self.acreate_fn(*args, **kwargs)
+        except Exception as error:
+            span.log(error=error)
+            span.end()
+            raise
+
+        trace = _AgentSessionTrace(span, start_time)
+
+        async def gen():
+            try:
+                async for event in stream:
+                    trace.observe(event)
+                    yield event
+            except Exception as error:
+                span.log(error=error)
+                raise
+            finally:
+                trace.finish()
+
+        return _AsyncTracedStream(stream, gen(), trace.finish)
 
 
 class ResponseWrapper:
