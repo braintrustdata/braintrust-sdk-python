@@ -7,6 +7,7 @@ from braintrust.integrations.base import CompositeFunctionWrapperPatcher, Functi
 from wrapt import BoundFunctionWrapper, FunctionWrapper
 
 from .tracing import (
+    _agents_session_create_wrapper,
     _audio_speech_create_wrapper,
     _audio_transcription_create_wrapper,
     _audio_translation_create_wrapper,
@@ -84,6 +85,36 @@ def _make_method_patchers(
         },
     )
     return sync_patcher, async_patcher, instance_patcher
+
+
+# ---------------------------------------------------------------------------
+# Agents API sessions
+# ---------------------------------------------------------------------------
+
+_agents_session_create_sync, _agents_session_create_async, _wrap_agents_session_create = _make_method_patchers(
+    name_prefix="openai.agents.sessions.create",
+    target_module="openai.resources.beta.agents.sessions.sessions",
+    sync_class="Sessions",
+    async_class="AsyncSessions",
+    method="create",
+    wrapper=_agents_session_create_wrapper,
+    wrap_name="openai.wrap.agents.sessions.create",
+)
+
+
+class AgentsSessionsPatcher(CompositeFunctionWrapperPatcher):
+    """Patch streamed OpenAI Agents API session creation for tracing."""
+
+    name = "openai.agents.sessions"
+    sub_patchers = (
+        _agents_session_create_sync,
+        _agents_session_create_async,
+    )
+
+
+class _WrapAgentsSessions(CompositeFunctionWrapperPatcher):
+    name = "openai.wrap.agents.sessions"
+    sub_patchers = (_wrap_agents_session_create,)
 
 
 # ---------------------------------------------------------------------------
@@ -416,6 +447,7 @@ class _WrapResponsesRaw(CompositeFunctionWrapperPatcher):
 # ---------------------------------------------------------------------------
 
 _WRAP_TARGETS: tuple[tuple[str, type[CompositeFunctionWrapperPatcher]], ...] = (
+    ("beta.agents.sessions", _WrapAgentsSessions),
     ("chat.completions", _WrapChatCompletions),
     ("embeddings", _WrapEmbeddings),
     ("moderations", _WrapModerations),
