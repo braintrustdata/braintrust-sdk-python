@@ -7,6 +7,7 @@ import json
 import re
 import sys
 import traceback
+import uuid
 import warnings
 from collections import defaultdict
 from collections.abc import Awaitable, Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
@@ -1650,7 +1651,11 @@ async def _run_evaluator_internal_impl(
             **({"origin": origin} if origin is not None else {}),
         )
         if datum.upsert_id:
-            base_event["id"] = datum.upsert_id
+            base_event["id"] = (
+                datum.upsert_id
+                if trial_index == 0
+                else str(uuid.uuid5(uuid.NAMESPACE_URL, f"braintrust:eval:{datum.upsert_id}:trial:{trial_index}"))
+            )
 
         if experiment:
             root_span = experiment.start_span(**base_event)
