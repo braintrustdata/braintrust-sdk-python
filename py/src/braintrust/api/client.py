@@ -1,14 +1,47 @@
 """Synchronous Braintrust API clients."""
 
-from typing import Any
+from threading import Lock
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import requests
 from requests.adapters import HTTPAdapter
 
 from ..env import BraintrustEnv, resolve_app_url
 from ._routing import EndpointRouter
+from ._service import ResourceAPI
 from ._transport import HTTPConnection, Transport
 from .auth import AuthAPI
+
+
+if TYPE_CHECKING:
+    from ._generated.acls import AclsAPI
+    from ._generated.agents import AgentsAPI
+    from ._generated.ai_secrets import AiSecretsAPI
+    from ._generated.api_keys import ApiKeysAPI
+    from ._generated.dataset_snapshots import DatasetSnapshotsAPI
+    from ._generated.datasets import DatasetsAPI
+    from ._generated.env_vars import EnvVarsAPI
+    from ._generated.environments import EnvironmentsAPI
+    from ._generated.experiments import ExperimentsAPI
+    from ._generated.functions import FunctionsAPI
+    from ._generated.groups import GroupsAPI
+    from ._generated.mcp_servers import McpServersAPI
+    from ._generated.org_automations import OrgAutomationsAPI
+    from ._generated.organizations import OrganizationsAPI
+    from ._generated.project_automations import ProjectAutomationsAPI
+    from ._generated.project_groups import ProjectGroupsAPI
+    from ._generated.project_scores import ProjectScoresAPI
+    from ._generated.project_tags import ProjectTagsAPI
+    from ._generated.projects import ProjectsAPI
+    from ._generated.prompts import PromptsAPI
+    from ._generated.roles import RolesAPI
+    from ._generated.service_tokens import ServiceTokensAPI
+    from ._generated.span_iframes import SpanIframesAPI
+    from ._generated.users import UsersAPI
+    from ._generated.views import ViewsAPI
+
+
+_ServiceT = TypeVar("_ServiceT", bound=ResourceAPI)
 
 
 def _resolve_api_key(api_key: str | None) -> str:
@@ -104,8 +137,9 @@ class BraintrustClient:
 class BraintrustOpenApiClient:
     """Synchronous resource-oriented client for the Braintrust REST API.
 
-    Construction performs no network requests. Use :class:`BraintrustClient`
-    when authentication and generated resources should share one transport.
+    Construction performs no network requests. Generated resources are imported and cached on
+    first access. Use :class:`BraintrustClient` when authentication and generated resources should
+    share one transport.
     """
 
     def __init__(
@@ -135,7 +169,7 @@ class BraintrustOpenApiClient:
             api_url=resolved_api_url,
             proxy_url=resolved_proxy_url,
         )
-        self._initialize_services(resolved_api_key)
+        self._initialize_service_cache(resolved_api_key)
 
     @classmethod
     def from_transport(
@@ -151,22 +185,171 @@ class BraintrustOpenApiClient:
         client._owns_transport = False
         client.transport = transport
         client.router = router
-        client._initialize_services(HTTPConnection.sanitize_token(api_key))
+        client._initialize_service_cache(HTTPConnection.sanitize_token(api_key))
         return client
 
-    def _initialize_services(self, api_key: str) -> None:
+    def _initialize_service_cache(self, api_key: str) -> None:
+        self.api_key = api_key
+        self._services: dict[str, ResourceAPI] = {}
+        self._services_lock = Lock()
+
+    def _service(self, name: str, service_type: type[_ServiceT]) -> _ServiceT:
+        with self._services_lock:
+            service = self._services.get(name)
+            if service is None:
+                service = service_type(self.transport, self.router, self.api_key)
+                self._services[name] = service
+        return cast(_ServiceT, service)
+
+    @property
+    def acls(self) -> "AclsAPI":
+        from ._generated.acls import AclsAPI
+
+        return self._service("acls", AclsAPI)
+
+    @property
+    def agents(self) -> "AgentsAPI":
+        from ._generated.agents import AgentsAPI
+
+        return self._service("agents", AgentsAPI)
+
+    @property
+    def ai_secrets(self) -> "AiSecretsAPI":
+        from ._generated.ai_secrets import AiSecretsAPI
+
+        return self._service("ai_secrets", AiSecretsAPI)
+
+    @property
+    def api_keys(self) -> "ApiKeysAPI":
+        from ._generated.api_keys import ApiKeysAPI
+
+        return self._service("api_keys", ApiKeysAPI)
+
+    @property
+    def dataset_snapshots(self) -> "DatasetSnapshotsAPI":
+        from ._generated.dataset_snapshots import DatasetSnapshotsAPI
+
+        return self._service("dataset_snapshots", DatasetSnapshotsAPI)
+
+    @property
+    def datasets(self) -> "DatasetsAPI":
         from ._generated.datasets import DatasetsAPI
+
+        return self._service("datasets", DatasetsAPI)
+
+    @property
+    def env_vars(self) -> "EnvVarsAPI":
+        from ._generated.env_vars import EnvVarsAPI
+
+        return self._service("env_vars", EnvVarsAPI)
+
+    @property
+    def environments(self) -> "EnvironmentsAPI":
+        from ._generated.environments import EnvironmentsAPI
+
+        return self._service("environments", EnvironmentsAPI)
+
+    @property
+    def experiments(self) -> "ExperimentsAPI":
         from ._generated.experiments import ExperimentsAPI
+
+        return self._service("experiments", ExperimentsAPI)
+
+    @property
+    def functions(self) -> "FunctionsAPI":
         from ._generated.functions import FunctionsAPI
+
+        return self._service("functions", FunctionsAPI)
+
+    @property
+    def groups(self) -> "GroupsAPI":
+        from ._generated.groups import GroupsAPI
+
+        return self._service("groups", GroupsAPI)
+
+    @property
+    def mcp_servers(self) -> "McpServersAPI":
+        from ._generated.mcp_servers import McpServersAPI
+
+        return self._service("mcp_servers", McpServersAPI)
+
+    @property
+    def org_automations(self) -> "OrgAutomationsAPI":
+        from ._generated.org_automations import OrgAutomationsAPI
+
+        return self._service("org_automations", OrgAutomationsAPI)
+
+    @property
+    def organizations(self) -> "OrganizationsAPI":
+        from ._generated.organizations import OrganizationsAPI
+
+        return self._service("organizations", OrganizationsAPI)
+
+    @property
+    def project_automations(self) -> "ProjectAutomationsAPI":
+        from ._generated.project_automations import ProjectAutomationsAPI
+
+        return self._service("project_automations", ProjectAutomationsAPI)
+
+    @property
+    def project_groups(self) -> "ProjectGroupsAPI":
+        from ._generated.project_groups import ProjectGroupsAPI
+
+        return self._service("project_groups", ProjectGroupsAPI)
+
+    @property
+    def project_scores(self) -> "ProjectScoresAPI":
+        from ._generated.project_scores import ProjectScoresAPI
+
+        return self._service("project_scores", ProjectScoresAPI)
+
+    @property
+    def project_tags(self) -> "ProjectTagsAPI":
+        from ._generated.project_tags import ProjectTagsAPI
+
+        return self._service("project_tags", ProjectTagsAPI)
+
+    @property
+    def projects(self) -> "ProjectsAPI":
         from ._generated.projects import ProjectsAPI
+
+        return self._service("projects", ProjectsAPI)
+
+    @property
+    def prompts(self) -> "PromptsAPI":
         from ._generated.prompts import PromptsAPI
 
-        self.api_key = api_key
-        self.datasets = DatasetsAPI(self.transport, self.router, api_key)
-        self.experiments = ExperimentsAPI(self.transport, self.router, api_key)
-        self.functions = FunctionsAPI(self.transport, self.router, api_key)
-        self.projects = ProjectsAPI(self.transport, self.router, api_key)
-        self.prompts = PromptsAPI(self.transport, self.router, api_key)
+        return self._service("prompts", PromptsAPI)
+
+    @property
+    def roles(self) -> "RolesAPI":
+        from ._generated.roles import RolesAPI
+
+        return self._service("roles", RolesAPI)
+
+    @property
+    def service_tokens(self) -> "ServiceTokensAPI":
+        from ._generated.service_tokens import ServiceTokensAPI
+
+        return self._service("service_tokens", ServiceTokensAPI)
+
+    @property
+    def span_iframes(self) -> "SpanIframesAPI":
+        from ._generated.span_iframes import SpanIframesAPI
+
+        return self._service("span_iframes", SpanIframesAPI)
+
+    @property
+    def users(self) -> "UsersAPI":
+        from ._generated.users import UsersAPI
+
+        return self._service("users", UsersAPI)
+
+    @property
+    def views(self) -> "ViewsAPI":
+        from ._generated.views import ViewsAPI
+
+        return self._service("views", ViewsAPI)
 
     def close(self) -> None:
         """Close the transport when it was created by this client."""

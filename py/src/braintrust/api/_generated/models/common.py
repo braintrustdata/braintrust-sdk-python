@@ -4,15 +4,46 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 7296a2e10cecbbc7116e3a28f496a1170697047817c46f0528b3586c02da920c
+# Content SHA-256: 530642e00dbd8338380c8a8417e4227cd7a9ebf6e4f719e9de88dc43c17fe38e
 
-from typing import Any, Literal, TypeAlias, TypedDict
 from typing_extensions import NotRequired
+from typing import Any, Literal, TypeAlias, TypedDict
 from collections.abc import Mapping, Sequence
+
+AclObjectId: TypeAlias = str
+"""
+The id of the object the ACL applies to
+"""
+
+AclObjectType: TypeAlias = Literal[
+    "organization",
+    "project",
+    "experiment",
+    "dataset",
+    "prompt",
+    "prompt_session",
+    "group",
+    "role",
+    "org_member",
+    "project_log",
+    "org_project",
+    "org_audit_logs",
+    "project_group",
+    "ai_secret",
+    "org_ai_secret",
+]
+"""
+The object type that the ACL applies to
+"""
 
 AppLimitParam: TypeAlias = int | None
 """
 Limit the number of objects to return
+"""
+
+AutomationStatus: TypeAlias = Literal["active", "paused"]
+"""
+Whether the automation is active or paused.
 """
 
 
@@ -181,6 +212,31 @@ FunctionTypeEnumNullish: TypeAlias = (
     | None
 )
 
+
+class GroupScope(TypedDict):
+    group_by: str
+    """
+    Field path to group by, e.g. metadata.session_id
+    """
+    idle_seconds: NotRequired[float]
+    """
+    Optional: trigger after this many seconds of inactivity
+    """
+    interval_seconds: NotRequired[float]
+    """
+    Maximum time range to include when constructing a group
+    """
+    max_traces: NotRequired[int]
+    """
+    Maximum number of traces to include when constructing a group (default/max: 64)
+    """
+    placement: Literal["first", "each"]
+    """
+    Which trace or traces to write grouped scorer results to
+    """
+    type: Literal["group"]
+
+
 Ids: TypeAlias = str | Sequence[str]
 """
 Filter search results to a particular set of object IDs. To specify a list of IDs, include the query param multiple times
@@ -291,6 +347,22 @@ class ObjectReferenceNullish(TypedDict):
 OrgName: TypeAlias = str
 """
 Filter search results to within a particular organization
+"""
+
+Permission: TypeAlias = Literal[
+    "create",
+    "read",
+    "update",
+    "delete",
+    "create_acls",
+    "read_acls",
+    "update_acls",
+    "delete_acls",
+]
+"""
+Each permission permits a certain type of operation on an object in the system
+
+Permissions can be assigned to to objects on an individual basis, or grouped into roles
 """
 
 
@@ -463,6 +535,11 @@ class ResponseFormatNullish3(TypedDict):
 
 ResponseFormatNullish: TypeAlias = ResponseFormatNullish1 | ResponseFormatNullish2 | ResponseFormatNullish3 | None
 
+RetentionObjectType: TypeAlias = Literal["project_logs", "experiment", "dataset"]
+"""
+The object type that the retention policy applies to
+"""
+
 
 class SavedFunctionId1(TypedDict):
     id: str
@@ -489,12 +566,26 @@ Slug: TypeAlias = str
 Retrieve prompt with a specific slug
 """
 
+
+class SpanScope(TypedDict):
+    type: Literal["span"]
+
+
 StartingAfter: TypeAlias = str
 """
 Pagination cursor id.
 
 For example, if the final item in the last page you fetched had an id of `foo`, pass `starting_after=foo` to fetch the next page. Note: you may only pass one of `starting_after` and `ending_before`
 """
+
+
+class TraceScope(TypedDict):
+    idle_seconds: NotRequired[float]
+    """
+    Consider trace complete after this many seconds of inactivity (default: 30)
+    """
+    type: Literal["trace"]
+
 
 Version: TypeAlias = str
 """
@@ -520,6 +611,18 @@ class ChatCompletionMessageToolCall(TypedDict):
     function: ChatCompletionMessageToolCallFunction
     id: str
     type: Literal["function"]
+
+
+class Config4(TypedDict):
+    event_type: Literal["retention"]
+    """
+    The type of automation.
+    """
+    object_type: RetentionObjectType
+    retention_days: int
+    """
+    The number of days to retain the object
+    """
 
 
 class Classification(TypedDict):

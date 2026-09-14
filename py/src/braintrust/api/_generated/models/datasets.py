@@ -4,10 +4,10 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: fe1bb0191579f947158765086824d9cae75fd00b00e19be91e64fb89914ea3ae
+# Content SHA-256: cc58640b43335aa96cdce169d657c0c508e19c285568b1622854013dc7cddedd
 
-from typing import Any, Literal, TypeAlias, TypedDict
 from typing_extensions import NotRequired
+from typing import Any, Literal, TypeAlias, TypedDict
 from collections.abc import Mapping, Sequence
 
 from .common import Classification, FieldArrayDeleteItem, Metadata, ObjectReferenceNullish

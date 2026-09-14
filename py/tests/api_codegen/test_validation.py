@@ -37,6 +37,11 @@ def test_only_allowlisted_operations_are_validated(minimal_spec, codegen_config)
         }
     }
 
+    codegen_config["endpoint_generator"]["unsupported_tags"] = {
+        "CORS": "Browser preflight is not a resource API.",
+        "Proxy": "Proxy operations require specialized streaming support.",
+    }
+
     report = validate_spec(spec, codegen_config)
 
     assert report.operation_count == 1
@@ -65,6 +70,7 @@ def test_duplicate_operation_ids_fail_when_only_one_operation_is_selected(minima
     }
     spec["paths"]["/proxy"] = {"get": duplicate}
     spec["components"]["schemas"]["Unselected"] = {"type": "string"}
+    codegen_config["endpoint_generator"]["unsupported_tags"] = {"Proxy": "Specialized proxy transport."}
 
     with pytest.raises(CodegenError, match="Duplicate operationId"):
         validate_spec(spec, codegen_config)
@@ -127,6 +133,83 @@ def test_media_types_and_success_statuses_are_validated(minimal_spec, codegen_co
     content["application/octet-stream"] = content.pop("application/json")
     with pytest.raises(CodegenError, match="unsupported success response media type"):
         validate_spec(spec, codegen_config)
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [None, 1, "Widgets", {"Widgets": True}, [], [""], ["Widgets", 1]],
+)
+def test_operation_tags_must_be_a_non_empty_string_list(minimal_spec, codegen_config, tags):
+    minimal_spec["paths"]["/widgets/{widget_id}"]["get"]["tags"] = tags
+
+    with pytest.raises(CodegenError, match="Operation 'getWidget' tags must be a list of non-empty strings"):
+        validate_spec(minimal_spec, codegen_config)
+
+
+def test_absent_operation_tags_are_ignored(minimal_spec, codegen_config):
+    minimal_spec["paths"]["/untagged"] = {
+        "get": {
+            "operationId": "getUntagged",
+            "responses": {"200": {"description": "Unselected response is not validated"}},
+        }
+    }
+
+    assert validate_spec(minimal_spec, codegen_config).operation_count == 1
+
+
+def test_every_openapi_tag_must_be_generated_or_documented(minimal_spec, codegen_config):
+    minimal_spec["paths"]["/internal"] = {
+        "get": {
+            "operationId": "getInternal",
+            "tags": ["Internal"],
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "content": {"application/json": {"schema": {"type": "string"}}},
+                }
+            },
+        }
+    }
+
+    with pytest.raises(CodegenError, match="unreviewed OpenAPI tags.*Internal"):
+        validate_spec(minimal_spec, codegen_config)
+
+    codegen_config["endpoint_generator"]["unsupported_tags"] = {"Internal": "Not a public resource."}
+    assert validate_spec(minimal_spec, codegen_config).operation_count == 1
+
+    codegen_config["endpoint_generator"]["generated_tags"].append("Internal")
+    with pytest.raises(CodegenError, match="both generated and unsupported.*Internal"):
+        validate_spec(minimal_spec, codegen_config)
+
+
+def test_unsupported_tags_require_reasons_and_must_exist(minimal_spec, codegen_config):
+    codegen_config["endpoint_generator"]["unsupported_tags"] = {"Internal": ""}
+    with pytest.raises(CodegenError, match="unsupported_tags must map tag names to non-empty reasons"):
+        validate_config(codegen_config, check_installed_tools=False)
+
+    codegen_config["endpoint_generator"]["unsupported_tags"] = {"Internal": "Not a public resource."}
+    with pytest.raises(CodegenError, match="unsupported_tags contains unknown tags.*Internal"):
+        validate_spec(minimal_spec, codegen_config)
+
+
+def test_parameter_all_of_metadata_wrapper_is_supported(minimal_spec, codegen_config):
+    minimal_spec["paths"]["/widgets/{widget_id}"]["get"]["parameters"].append(
+        {
+            "name": "kinds",
+            "in": "query",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "allOf": [
+                        {"type": "string", "enum": ["first", "second"]},
+                        {"title": "widget_kind"},
+                    ]
+                },
+            },
+        }
+    )
+
+    assert validate_spec(minimal_spec, codegen_config).operation_count == 1
 
 
 def test_specialized_operations_must_belong_to_generated_tags(minimal_spec, codegen_config):
@@ -259,6 +342,7 @@ def test_malformed_specs_and_configs_raise_actionable_errors(minimal_spec, codeg
     # A spec without any components is empty, not malformed -- it must not blow up on a missing key.
     empty_config = copy.deepcopy(codegen_config)
     empty_config["endpoint_generator"]["generated_tags"] = []
+    empty_config["endpoint_generator"]["unsupported_tags"] = {}
     assert validate_spec({"openapi": "3.0.3", "paths": {}}, empty_config).schema_count == 0
     with pytest.raises(CodegenError, match="components.schemas must be an object"):
         validate_spec({"openapi": "3.0.3", "paths": {}, "components": {"schemas": []}}, empty_config)
@@ -272,6 +356,7 @@ def test_malformed_specs_and_configs_raise_actionable_errors(minimal_spec, codeg
         "safe_reads",
         "idempotent_writes",
         "specialized_operations",
+        "unsupported_tags",
         "supported_request_media_types",
         "supported_response_media_types",
         "supported_success_statuses",
@@ -281,7 +366,11 @@ def test_malformed_specs_and_configs_raise_actionable_errors(minimal_spec, codeg
         message = (
             f"endpoint_generator.{key} must be a unique list"
             if key in {"safe_reads", "idempotent_writes", "specialized_operations"}
-            else f"endpoint_generator.{key} must be a non-empty list"
+            else (
+                "endpoint_generator.unsupported_tags must map tag names to non-empty reasons"
+                if key == "unsupported_tags"
+                else f"endpoint_generator.{key} must be a non-empty list"
+            )
         )
         with pytest.raises(CodegenError, match=message):
             validate_spec(minimal_spec, broken)

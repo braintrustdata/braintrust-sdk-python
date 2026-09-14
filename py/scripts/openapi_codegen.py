@@ -152,6 +152,7 @@ def validate_spec(spec: Mapping[str, Any], config: Mapping[str, Any]) -> Validat
     endpoint = _endpoint_config(config)
     all_operations = list(_iter_operations(spec))
     _validate_unique_operation_ids(all_operations)
+    _validate_reviewed_tags(all_operations, endpoint)
     _validate_specialized_operations(all_operations, endpoint)
     operations = _selected_operations(
         all_operations,
@@ -170,9 +171,6 @@ def validate_spec(spec: Mapping[str, Any], config: Mapping[str, Any]) -> Validat
     for method, path, operation_id, operation, path_item in operations:
         if not operation_id or not OPERATION_ID_RE.fullmatch(operation_id):
             raise CodegenError(f"Operation {method.upper()} {path} has an invalid operationId: {operation_id!r}")
-        tags = operation.get("tags")
-        if not isinstance(tags, list) or not tags or not all(isinstance(tag, str) and tag.strip() for tag in tags):
-            raise CodegenError(f"Operation {operation_id!r} must have usable tags")
         if len(_generated_operation_tags(operation, endpoint["generated_tags"])) != 1:
             raise CodegenError(f"Operation {operation_id!r} must have exactly one generated OpenAPI tag")
         generated_name = _python_type_name(operation_id)
@@ -203,12 +201,18 @@ def validate_spec(spec: Mapping[str, Any], config: Mapping[str, Any]) -> Validat
     return ValidationReport(len(operations), len(schemas))
 
 
-def _generated_operation_tags(operation: Mapping[str, Any], generated_tags: Sequence[str]) -> List[str]:
-    tags = operation.get("tags")
-    if not isinstance(tags, list):
+def _operation_tags(operation: Mapping[str, Any]) -> List[str]:
+    if "tags" not in operation:
         return []
+    tags = operation["tags"]
+    if not isinstance(tags, list) or not tags or not all(isinstance(tag, str) and tag.strip() for tag in tags):
+        raise CodegenError(f"Operation {operation.get('operationId')!r} tags must be a list of non-empty strings")
+    return tags
+
+
+def _generated_operation_tags(operation: Mapping[str, Any], generated_tags: Sequence[str]) -> List[str]:
     selected_tags = set(generated_tags)
-    return [tag for tag in tags if isinstance(tag, str) and tag in selected_tags]
+    return [tag for tag in _operation_tags(operation) if tag in selected_tags]
 
 
 def _selected_operations(
@@ -709,13 +713,56 @@ def _model_package_source(model_modules: Mapping[str, str]) -> str:
     for name, module in model_modules.items():
         by_module.setdefault(module, []).append(name)
 
-    lines = ['"""Generated private model types with stable package-level imports."""', ""]
+    lines = [
+        '"""Generated private model types with lazy package-level imports."""',
+        "",
+        "from importlib import import_module",
+        "from typing import TYPE_CHECKING, Any",
+        "",
+        "",
+        "if TYPE_CHECKING:",
+    ]
     for module, names in sorted(by_module.items()):
-        lines.append(f"from .{module} import {', '.join(sorted(names))}")
-    lines.extend(["", "", "__all__ = ["])
+        lines.append(f"    from .{module} import {', '.join(sorted(names))}")
+    lines.extend(["", "", "_MODEL_MODULES = {"])
+    lines.extend(f"    {name!r}: {module!r}," for name, module in sorted(model_modules.items()))
+    lines.extend(["}", "", "", "__all__ = ["])
     lines.extend(f"    {name!r}," for name in sorted(model_modules))
-    lines.extend(["]", ""])
+    lines.extend(
+        [
+            "]",
+            "",
+            "",
+            "def __getattr__(name: str) -> Any:",
+            "    try:",
+            "        module_name = _MODEL_MODULES[name]",
+            "    except KeyError:",
+            '        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None',
+            '    value = getattr(import_module(f"{__name__}.{module_name}"), name)',
+            "    globals()[name] = value",
+            "    return value",
+            "",
+        ]
+    )
     return "\n".join(lines)
+
+
+def _validate_reviewed_tags(
+    operations: Sequence[Tuple[str, str, Any, Mapping[str, Any], Mapping[str, Any]]],
+    endpoint: Mapping[str, Any],
+) -> None:
+    spec_tags = {tag for _, _, _, operation, _ in operations for tag in _operation_tags(operation)}
+    generated_tags = set(endpoint["generated_tags"])
+    unsupported_tags = set(endpoint["unsupported_tags"])
+    overlap = generated_tags & unsupported_tags
+    if overlap:
+        raise CodegenError(f"OpenAPI tags cannot be both generated and unsupported: {sorted(overlap)}")
+    unreviewed = spec_tags - generated_tags - unsupported_tags
+    if unreviewed:
+        raise CodegenError(f"OpenAPI spec contains unreviewed OpenAPI tags: {sorted(unreviewed)}")
+    stale = unsupported_tags - spec_tags
+    if stale:
+        raise CodegenError(f"endpoint_generator.unsupported_tags contains unknown tags: {sorted(stale)}")
 
 
 def _validate_specialized_operations(
@@ -923,7 +970,7 @@ def _schema_annotation(schema: Mapping[str, Any], spec: Mapping[str, Any]) -> st
         choices = resolved.get("oneOf", resolved.get("anyOf", []))
         annotation = " | ".join(_schema_annotation(choice, spec) for choice in choices) or "Any"
     elif "allOf" in resolved:
-        choices = resolved["allOf"]
+        choices = _structural_all_of_choices(resolved["allOf"])
         annotation = _schema_annotation(choices[0], spec) if len(choices) == 1 else "Any"
     else:
         schema_type = resolved.get("type")
@@ -1135,6 +1182,12 @@ def _endpoint_config(config: Mapping[str, Any]) -> Mapping[str, Any]:
             or len(values) != len(set(values))
         ):
             raise CodegenError(f"endpoint_generator.{key} must be a unique list of non-empty strings")
+    unsupported_tags = endpoint.get("unsupported_tags")
+    if not isinstance(unsupported_tags, dict) or not all(
+        isinstance(tag, str) and tag and isinstance(reason, str) and reason.strip()
+        for tag, reason in unsupported_tags.items()
+    ):
+        raise CodegenError("endpoint_generator.unsupported_tags must map tag names to non-empty reasons")
     for key in ("supported_request_media_types", "supported_response_media_types", "supported_success_statuses"):
         values = endpoint.get(key)
         if not isinstance(values, list) or not values or not all(isinstance(value, str) for value in values):
@@ -1302,6 +1355,15 @@ def _validate_parameters(
 
 def _parameter_schema_kinds(schema: Mapping[str, Any], spec: Mapping[str, Any]) -> Set[str]:
     schema = _resolve_object(schema, spec)
+    all_of = schema.get("allOf")
+    if isinstance(all_of, list):
+        kinds: Set[str] = set()
+        for choice in _structural_all_of_choices(all_of):
+            kinds.update(_parameter_schema_kinds(choice, spec))
+        if kinds:
+            return kinds
+        raise CodegenError("Query parameter allOf must contain a structural schema")
+
     choices = schema.get("oneOf", schema.get("anyOf"))
     if isinstance(choices, list):
         kinds: Set[str] = set()
@@ -1320,6 +1382,24 @@ def _parameter_schema_kinds(schema: Mapping[str, Any], spec: Mapping[str, Any]) 
             raise CodegenError("Query parameter arrays must contain scalar values")
         return {"array"}
     raise CodegenError(f"Unsupported query parameter schema type {schema_type!r}")
+
+
+def _structural_all_of_choices(choices: Sequence[Any]) -> List[Mapping[str, Any]]:
+    structural_keywords = {
+        "$ref",
+        "allOf",
+        "anyOf",
+        "enum",
+        "items",
+        "oneOf",
+        "properties",
+        "type",
+    }
+    return [
+        choice
+        for choice in choices
+        if isinstance(choice, dict) and any(keyword in choice for keyword in structural_keywords)
+    ]
 
 
 def _validate_component_names(schemas: Mapping[str, Any]) -> None:
