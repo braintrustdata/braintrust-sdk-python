@@ -713,12 +713,37 @@ def _model_package_source(model_modules: Mapping[str, str]) -> str:
     for name, module in model_modules.items():
         by_module.setdefault(module, []).append(name)
 
-    lines = ['"""Generated private model types with stable package-level imports."""', ""]
+    lines = [
+        '"""Generated private model types with lazy package-level imports."""',
+        "",
+        "from importlib import import_module",
+        "from typing import TYPE_CHECKING, Any",
+        "",
+        "",
+        "if TYPE_CHECKING:",
+    ]
     for module, names in sorted(by_module.items()):
-        lines.append(f"from .{module} import {', '.join(sorted(names))}")
-    lines.extend(["", "", "__all__ = ["])
+        lines.append(f"    from .{module} import {', '.join(sorted(names))}")
+    lines.extend(["", "", "_MODEL_MODULES = {"])
+    lines.extend(f"    {name!r}: {module!r}," for name, module in sorted(model_modules.items()))
+    lines.extend(["}", "", "", "__all__ = ["])
     lines.extend(f"    {name!r}," for name in sorted(model_modules))
-    lines.extend(["]", ""])
+    lines.extend(
+        [
+            "]",
+            "",
+            "",
+            "def __getattr__(name: str) -> Any:",
+            "    try:",
+            "        module_name = _MODEL_MODULES[name]",
+            "    except KeyError:",
+            '        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None',
+            '    value = getattr(import_module(f"{__name__}.{module_name}"), name)',
+            "    globals()[name] = value",
+            "    return value",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 

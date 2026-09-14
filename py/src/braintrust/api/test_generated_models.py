@@ -2,6 +2,7 @@ import importlib.resources
 import json
 import subprocess
 import sys
+import threading
 from typing import get_type_hints, is_typeddict
 
 
@@ -70,6 +71,55 @@ def test_generated_models_import_on_supported_python():
     assert get_type_hints(function_bindings.FunctionsAPI.get_function)["return"] is models.GetFunctionResponse
     assert get_type_hints(project_bindings.ProjectsAPI.get_project)["return"] is models.GetProjectResponse
     assert get_type_hints(prompt_bindings.PromptsAPI.get_prompt)["return"] is models.GetPromptResponse
+
+
+def test_openapi_client_lazily_loads_and_caches_generated_resources():
+    script = """
+import json
+import sys
+from braintrust.api import BraintrustOpenApiClient
+
+client = BraintrustOpenApiClient(api_key="test-key", api_url="https://api.example.com")
+before = sorted(name for name in sys.modules if name.startswith("braintrust.api._generated"))
+first = client.projects
+second = client.projects
+after = sorted(name for name in sys.modules if name.startswith("braintrust.api._generated"))
+print(json.dumps({"before": before, "cached": first is second, "after": after}))
+client.close()
+"""
+
+    result = subprocess.run([sys.executable, "-c", script], check=True, capture_output=True, text=True)
+    loaded = json.loads(result.stdout)
+
+    assert loaded["before"] == []
+    assert loaded["cached"] is True
+    assert "braintrust.api._generated.projects" in loaded["after"]
+    assert "braintrust.api._generated.models.projects" in loaded["after"]
+    assert "braintrust.api._generated.datasets" not in loaded["after"]
+    assert "braintrust.api._generated.models.datasets" not in loaded["after"]
+    assert "braintrust.api._generated.models.project_automations" not in loaded["after"]
+
+
+def test_openapi_client_caches_one_resource_across_threads():
+    from braintrust.api import BraintrustOpenApiClient
+
+    client = BraintrustOpenApiClient(api_key="test-key", api_url="https://api.example.com")
+    barrier = threading.Barrier(8)
+    resources = []
+
+    def load_projects():
+        barrier.wait()
+        resources.append(client.projects)
+
+    threads = [threading.Thread(target=load_projects) for _ in range(barrier.parties)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    client.close()
+
+    assert len(resources) == barrier.parties
+    assert all(resource is resources[0] for resource in resources)
 
 
 def test_openapi_client_exposes_only_reviewed_generated_resources():

@@ -117,23 +117,14 @@ def test_generated_tags_are_wired_to_openapi_client():
     openapi_client = next(
         node for node in client_tree.body if isinstance(node, ast.ClassDef) and node.name == "BraintrustOpenApiClient"
     )
-    initializer = next(
-        node
+    lazy_resources = {
+        node.name
         for node in openapi_client.body
-        if isinstance(node, ast.FunctionDef) and node.name == "_initialize_services"
-    )
-    initialized_resources = {
-        target.attr
-        for node in initializer.body
-        if isinstance(node, ast.Assign)
-        for target in node.targets
-        if isinstance(target, ast.Attribute)
-        and isinstance(target.value, ast.Name)
-        and target.value.id == "self"
-        and target.attr != "api_key"
+        if isinstance(node, ast.FunctionDef)
+        and any(isinstance(decorator, ast.Name) and decorator.id == "property" for decorator in node.decorator_list)
     }
 
-    assert initialized_resources == expected_resources
+    assert lazy_resources == expected_resources
 
 
 def test_public_rest_types_match_generated_request_and_response_models():
@@ -335,8 +326,12 @@ def test_multiple_generated_resources_partition_shared_models_deterministically(
     assert "from .models.common import Widget" in (generated / "widgets.py").read_text()
     assert "from .models.gadgets import Gadget" in (generated / "gadgets.py").read_text()
     model_exports = (generated / "models" / "__init__.py").read_text()
+    assert "if TYPE_CHECKING:" in model_exports
     assert "from .common import Widget, WidgetDetails" in model_exports
     assert "from .gadgets import Gadget" in model_exports
+    assert '"Gadget": "gadgets"' in model_exports
+    assert '"Widget": "common"' in model_exports
+    assert "def __getattr__(name: str) -> Any:" in model_exports
 
 
 def test_unreachable_models_are_omitted_but_transitive_references_are_kept(tmp_path, codegen_config, minimal_spec):
