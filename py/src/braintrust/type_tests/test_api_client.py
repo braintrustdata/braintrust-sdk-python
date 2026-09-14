@@ -40,6 +40,28 @@ if TYPE_CHECKING:
     org_id: str = discovery.organization.id
     org_name: str = discovery.organization.name
     api_url: str | None = client.router.api_url
+
+    openapi_client.acls.get_acl_id("acl-id")
+    openapi_client.agents.get_agent()
+    openapi_client.ai_secrets.get_ai_secret()
+    openapi_client.api_keys.get_api_key()
+    openapi_client.dataset_snapshots.get_dataset_snapshot()
+    openapi_client.env_vars.get_env_var()
+    openapi_client.environments.list_environments()
+    openapi_client.groups.get_group()
+    openapi_client.mcp_servers.get_mcp_server()
+    openapi_client.org_automations.get_org_automation()
+    openapi_client.organizations.get_organization()
+    openapi_client.project_automations.get_project_automation()
+    openapi_client.project_groups.get_project_group()
+    openapi_client.project_scores.get_project_score(score_type=["slider", "categorical"])
+    openapi_client.project_tags.get_project_tag()
+    openapi_client.roles.get_role()
+    openapi_client.service_tokens.get_service_token()
+    openapi_client.span_iframes.get_span_iframe()
+    openapi_client.users.get_user()
+    openapi_client.views.get_view_id("view-id", "project", "project-id")
+
     create_project: CreateProject = {"name": "typed-project"}
     patch_project: PatchProject = {"description": "updated"}
     project: Project = openapi_client.projects.post_project(body=create_project)

@@ -4,34 +4,19 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: 8f75af48b162ca2c86ab19fb6a4850e12eac3b9e2376887cad73109e42c833e5
+# Content SHA-256: 04002c71fe10c51256fdf3fadcd561b422c1c63cd5674c4dd626311b12eed113
 
-from typing import Any, Literal, TypeAlias, TypedDict
 from typing_extensions import NotRequired
+from typing import Any, Literal, TypeAlias, TypedDict
 from collections.abc import Mapping, Sequence
 
-from .common import ChatCompletionMessageParam, FunctionTypeEnum, FunctionTypeEnumNullish, PromptDataNullish
-
-AclObjectType: TypeAlias = Literal[
-    "organization",
-    "project",
-    "experiment",
-    "dataset",
-    "prompt",
-    "prompt_session",
-    "group",
-    "role",
-    "org_member",
-    "project_log",
-    "org_project",
-    "org_audit_logs",
-    "project_group",
-    "ai_secret",
-    "org_ai_secret",
-]
-"""
-The object type that the ACL applies to
-"""
+from .common import (
+    AclObjectType,
+    ChatCompletionMessageParam,
+    FunctionTypeEnum,
+    FunctionTypeEnumNullish,
+    PromptDataNullish,
+)
 
 
 class Facet(TypedDict):

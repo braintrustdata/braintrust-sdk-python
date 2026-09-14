@@ -5,10 +5,12 @@ import runpy
 
 import pytest
 from openapi_codegen import (
+    _NON_MODEL_ANNOTATION_NAMES,
     CONFIG_PATH,
     GENERATED_ROOT,
     SPEC_PATH,
     CodegenError,
+    _collect_generated_operations,
     _snake_case,
     atomic_replace_tree,
     compare_generated,
@@ -37,6 +39,7 @@ def test_generation_is_byte_for_byte_deterministic(tmp_path, codegen_config, min
 
 def test_generation_selects_generated_tag_regardless_of_tag_order(tmp_path, codegen_config, minimal_spec):
     minimal_spec["paths"]["/widgets/{widget_id}"]["get"]["tags"] = ["Internal", "Widgets"]
+    codegen_config["endpoint_generator"]["unsupported_tags"] = {"Internal": "Not a public resource."}
 
     generated = _generate(tmp_path, "secondary-generated-tag", codegen_config, minimal_spec)
 
@@ -89,6 +92,71 @@ def test_pinned_selected_spec_operations_match_generated_registries():
             and node.value.func.id == "Operation"
             for node in tree.body
         )
+
+
+def test_pinned_unsupported_tags_are_explicit_and_proxy_is_excluded():
+    config = load_config(CONFIG_PATH)
+    endpoint_config = config["endpoint_generator"]
+
+    assert set(endpoint_config["unsupported_tags"]) == {
+        "CORS",
+        "CrossObject",
+        "Evals",
+        "Logs",
+        "Other",
+        "Proxy",
+    }
+    assert "Proxy" not in endpoint_config["generated_tags"]
+    assert not (GENERATED_ROOT / "proxy.py").exists()
+
+
+def test_generated_tags_are_wired_to_openapi_client():
+    config = load_config(CONFIG_PATH)
+    expected_resources = {_snake_case(tag) for tag in config["endpoint_generator"]["generated_tags"]}
+    client_tree = ast.parse((GENERATED_ROOT.parent / "client.py").read_text())
+    openapi_client = next(
+        node for node in client_tree.body if isinstance(node, ast.ClassDef) and node.name == "BraintrustOpenApiClient"
+    )
+    initializer = next(
+        node
+        for node in openapi_client.body
+        if isinstance(node, ast.FunctionDef) and node.name == "_initialize_services"
+    )
+    initialized_resources = {
+        target.attr
+        for node in initializer.body
+        if isinstance(node, ast.Assign)
+        for target in node.targets
+        if isinstance(target, ast.Attribute)
+        and isinstance(target.value, ast.Name)
+        and target.value.id == "self"
+        and target.attr != "api_key"
+    }
+
+    assert initialized_resources == expected_resources
+
+
+def test_public_rest_types_match_generated_request_and_response_models():
+    config = load_config(CONFIG_PATH)
+    spec = read_and_verify_spec(config, SPEC_PATH)
+    operations, _ = _collect_generated_operations(spec, config)
+    expected = set()
+    for operation in operations:
+        for type_name in (operation.request_body_type, operation.response_type):
+            if type_name:
+                expected.update(re.findall(r"\b[A-Z][A-Za-z0-9_]*\b", type_name))
+    expected -= _NON_MODEL_ANNOTATION_NAMES
+
+    public_types_path = GENERATED_ROOT.parent / "types" / "__init__.py"
+    public_types_tree = ast.parse(public_types_path.read_text())
+    public_all = next(
+        node.value
+        for node in public_types_tree.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "__all__" for target in node.targets)
+    )
+    assert isinstance(public_all, ast.List)
+    assert {element.value for element in public_all.elts if isinstance(element, ast.Constant)} == expected
 
 
 def test_inline_models_do_not_take_component_names(tmp_path, codegen_config, minimal_spec):

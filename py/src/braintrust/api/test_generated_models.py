@@ -5,6 +5,35 @@ import sys
 from typing import get_type_hints, is_typeddict
 
 
+GENERATED_RESOURCE_NAMES = (
+    "acls",
+    "agents",
+    "ai_secrets",
+    "api_keys",
+    "dataset_snapshots",
+    "datasets",
+    "env_vars",
+    "environments",
+    "experiments",
+    "functions",
+    "groups",
+    "mcp_servers",
+    "org_automations",
+    "organizations",
+    "project_automations",
+    "project_groups",
+    "project_scores",
+    "project_tags",
+    "projects",
+    "prompts",
+    "roles",
+    "service_tokens",
+    "span_iframes",
+    "users",
+    "views",
+)
+
+
 def test_import_braintrust_is_lazy_about_generated_api_modules():
     script = """
 import json
@@ -43,22 +72,26 @@ def test_generated_models_import_on_supported_python():
     assert get_type_hints(prompt_bindings.PromptsAPI.get_prompt)["return"] is models.GetPromptResponse
 
 
+def test_openapi_client_exposes_only_reviewed_generated_resources():
+    from braintrust.api import BraintrustOpenApiClient
+
+    with BraintrustOpenApiClient(api_key="test-key", api_url="https://api.example.com") as client:
+        assert all(hasattr(client, resource_name) for resource_name in GENERATED_RESOURCE_NAMES)
+        assert not any(
+            hasattr(client, resource_name)
+            for resource_name in ("cors", "cross_object", "evals", "logs", "other", "proxy")
+        )
+
+
 def test_generated_package_content_is_installed():
     generated = importlib.resources.files("braintrust.api._generated")
 
     assert generated.joinpath("__init__.py").is_file()
     assert generated.joinpath("models", "__init__.py").is_file()
     assert generated.joinpath("models", "common.py").is_file()
-    assert generated.joinpath("models", "datasets.py").is_file()
-    assert generated.joinpath("models", "experiments.py").is_file()
-    assert generated.joinpath("models", "functions.py").is_file()
-    assert generated.joinpath("models", "projects.py").is_file()
-    assert generated.joinpath("models", "prompts.py").is_file()
-    assert generated.joinpath("datasets.py").is_file()
-    assert generated.joinpath("experiments.py").is_file()
-    assert generated.joinpath("functions.py").is_file()
-    assert generated.joinpath("projects.py").is_file()
-    assert generated.joinpath("prompts.py").is_file()
+    for resource_name in GENERATED_RESOURCE_NAMES:
+        assert generated.joinpath("models", f"{resource_name}.py").is_file()
+        assert generated.joinpath(f"{resource_name}.py").is_file()
 
 
 def test_rest_and_logging_type_surfaces_have_reviewed_overlap():
@@ -67,4 +100,29 @@ def test_rest_and_logging_type_surfaces_have_reviewed_overlap():
 
     overlap = set(generated_types.__all__) & set(types.__all__)
 
-    assert overlap == {"Dataset", "Experiment", "Function", "Project", "Prompt"}
+    assert overlap == {
+        "AISecret",
+        "Acl",
+        "Agent",
+        "ApiKey",
+        "Dataset",
+        "DatasetSnapshot",
+        "EnvVar",
+        "Experiment",
+        "Function",
+        "Group",
+        "MCPServer",
+        "OrgAutomation",
+        "Organization",
+        "Project",
+        "ProjectAutomation",
+        "ProjectGroup",
+        "ProjectScore",
+        "ProjectTag",
+        "Prompt",
+        "Role",
+        "ServiceToken",
+        "SpanIFrame",
+        "User",
+        "View",
+    }

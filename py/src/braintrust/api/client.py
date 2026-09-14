@@ -155,18 +155,59 @@ class BraintrustOpenApiClient:
         return client
 
     def _initialize_services(self, api_key: str) -> None:
+        from ._generated.acls import AclsAPI
+        from ._generated.agents import AgentsAPI
+        from ._generated.ai_secrets import AiSecretsAPI
+        from ._generated.api_keys import ApiKeysAPI
+        from ._generated.dataset_snapshots import DatasetSnapshotsAPI
         from ._generated.datasets import DatasetsAPI
+        from ._generated.env_vars import EnvVarsAPI
+        from ._generated.environments import EnvironmentsAPI
         from ._generated.experiments import ExperimentsAPI
         from ._generated.functions import FunctionsAPI
+        from ._generated.groups import GroupsAPI
+        from ._generated.mcp_servers import McpServersAPI
+        from ._generated.org_automations import OrgAutomationsAPI
+        from ._generated.organizations import OrganizationsAPI
+        from ._generated.project_automations import ProjectAutomationsAPI
+        from ._generated.project_groups import ProjectGroupsAPI
+        from ._generated.project_scores import ProjectScoresAPI
+        from ._generated.project_tags import ProjectTagsAPI
         from ._generated.projects import ProjectsAPI
         from ._generated.prompts import PromptsAPI
+        from ._generated.roles import RolesAPI
+        from ._generated.service_tokens import ServiceTokensAPI
+        from ._generated.span_iframes import SpanIframesAPI
+        from ._generated.users import UsersAPI
+        from ._generated.views import ViewsAPI
 
+        service_args = (self.transport, self.router, api_key)
         self.api_key = api_key
-        self.datasets = DatasetsAPI(self.transport, self.router, api_key)
-        self.experiments = ExperimentsAPI(self.transport, self.router, api_key)
-        self.functions = FunctionsAPI(self.transport, self.router, api_key)
-        self.projects = ProjectsAPI(self.transport, self.router, api_key)
-        self.prompts = PromptsAPI(self.transport, self.router, api_key)
+        self.acls = AclsAPI(*service_args)
+        self.agents = AgentsAPI(*service_args)
+        self.ai_secrets = AiSecretsAPI(*service_args)
+        self.api_keys = ApiKeysAPI(*service_args)
+        self.dataset_snapshots = DatasetSnapshotsAPI(*service_args)
+        self.datasets = DatasetsAPI(*service_args)
+        self.env_vars = EnvVarsAPI(*service_args)
+        self.environments = EnvironmentsAPI(*service_args)
+        self.experiments = ExperimentsAPI(*service_args)
+        self.functions = FunctionsAPI(*service_args)
+        self.groups = GroupsAPI(*service_args)
+        self.mcp_servers = McpServersAPI(*service_args)
+        self.org_automations = OrgAutomationsAPI(*service_args)
+        self.organizations = OrganizationsAPI(*service_args)
+        self.project_automations = ProjectAutomationsAPI(*service_args)
+        self.project_groups = ProjectGroupsAPI(*service_args)
+        self.project_scores = ProjectScoresAPI(*service_args)
+        self.project_tags = ProjectTagsAPI(*service_args)
+        self.projects = ProjectsAPI(*service_args)
+        self.prompts = PromptsAPI(*service_args)
+        self.roles = RolesAPI(*service_args)
+        self.service_tokens = ServiceTokensAPI(*service_args)
+        self.span_iframes = SpanIframesAPI(*service_args)
+        self.users = UsersAPI(*service_args)
+        self.views = ViewsAPI(*service_args)
 
     def close(self) -> None:
         """Close the transport when it was created by this client."""

@@ -4,10 +4,10 @@
 # datamodel-code-generator: 0.72.4
 # ruff: 0.15.21
 # Generator Python: 3.14
-# Content SHA-256: c31f920240f9bc3c3f3c225ca78b62abfaed5892c1fd3eedf11f231ef7e2d83e
+# Content SHA-256: df42dc8e0c114ae0d22a847726c364f9b37f9f99778a6a9d34d427f288f93354
 
-from typing import Any, Literal, TypeAlias, TypedDict
 from typing_extensions import NotRequired
+from typing import Any, Literal, TypeAlias, TypedDict
 from collections.abc import Mapping, Sequence
 
 from .common import FunctionTypeEnum

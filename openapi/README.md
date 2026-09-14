@@ -16,9 +16,36 @@ make check-api-client-codegen
 ```
 
 The check regenerates in a temporary directory and reports drift without changing the worktree.
-Currently selected tags are Projects, Experiments, Datasets, Prompts, and Functions. Each tag produces one resource
-and operation registry. Models used by one resource stay in that resource's model module; shared models
-live in `models/common.py`; unreachable models are omitted.
+The reviewed generated surface includes these tags:
+
+- core resources: Projects, Experiments, Datasets, Prompts, and Functions;
+- access and organization resources: Acls, Groups, ProjectGroups, Roles, Users, Organizations,
+  ApiKeys, and ServiceTokens;
+- configuration resources: AiSecrets, EnvVars, Environments, and McpServers;
+- project resources: Agents, ProjectAutomations, OrgAutomations, ProjectScores, ProjectTags,
+  SpanIframes, and Views; and
+- versioned data resources: DatasetSnapshots.
+
+Each tag produces one resource and operation registry. Models used by one resource stay in that
+resource's model module; shared models live in `models/common.py`; unreachable models are omitted.
+
+Every tag in the pinned spec must be either selected or present in `unsupported_tags` in
+`config.json` with a rationale. The intentionally unsupported tags are:
+
+- **CORS:** browser preflight `OPTIONS` operations are transport concerns rather than callable
+  resource methods.
+- **CrossObject:** cross-object event insertion belongs to the specialized at-least-once
+  log-ingestion path.
+- **Evals:** eval launch is a long-running, payload-dependent workflow that can stream and needs a
+  specialized client.
+- **Logs:** project-log event ingestion, fetching, and feedback remain on the specialized logging
+  path.
+- **Other:** the unauthenticated, text-only hello-world endpoint is a service diagnostic rather
+  than a public REST resource.
+- **Proxy:** provider passthrough needs proxy-target routing, streaming, and provider-specific
+  response behavior. Its catch-all `proxy{path+}` operation ID is also not a valid Python
+  identifier. Proxy remains on specialized SDK paths and is deliberately absent from generated
+  modules and `BraintrustOpenApiClient`.
 
 Method and inline-response names come directly from normalized OpenAPI `operationId` values. Generated
 models preserve exact wire keys, including leading underscores, and methods do not add implicit request
