@@ -17,37 +17,36 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.22.0 gl-python/3.14.6
+      - google-genai-sdk/2.23.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.22.0 gl-python/3.14.6
+      - google-genai-sdk/2.23.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The document is a test PDF file that
-        contains a few sentences. Specifically, it says: \\\"This is a test PDF. It
-        contains only a few sentences.\\\"\"\n          }\n        ],\n        \"role\":
-        \"model\"\n      },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n
-        \   }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 265,\n    \"candidatesTokenCount\":
-        32,\n    \"totalTokenCount\": 297,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n      {\n
-        \       \"modality\": \"DOCUMENT\",\n        \"tokenCount\": 258\n      }\n
-        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"01SgapmCE_6p1MkP9LfpoAw\"\n}\n"
+        [\n          {\n            \"text\": \"The document states: \\\"This is a
+        test PDF. It contains only a few sentences.\\\"\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"STOP\",\n
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        265,\n    \"candidatesTokenCount\": 18,\n    \"totalTokenCount\": 283,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 7\n      },\n
+        \     {\n        \"modality\": \"DOCUMENT\",\n        \"tokenCount\": 258\n
+        \     }\n    ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\":
+        \"gemini-2.5-flash-lite\",\n  \"responseId\": \"mfinarXxDLPf_uMP-8yasQk\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '767'
+      - '702'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 08 Sep 2026 18:32:53 GMT
+      - Mon, 14 Sep 2026 13:37:30 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=2028
+      - gfet4t7; dur=969
       transfer-encoding:
       - chunked
       vary:

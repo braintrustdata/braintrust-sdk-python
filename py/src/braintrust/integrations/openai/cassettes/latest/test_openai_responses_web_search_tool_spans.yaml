@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.8.0
+      - OpenAI/Python 3.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.8.0
+      - 3.13.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,54 +34,64 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_089375313ff42b9a006aa054dd2e3087d29cb99e9b37085969\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1788892381,\n  \"status\":
+      string: "{\n  \"id\": \"resp_076adefbc2141272006aa7f8b51cb487d2b5fceadb5aaf5e51\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1789393077,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1788892383,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1789393078,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4.1-mini-2025-04-14\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"ws_089375313ff42b9a006aa054dd89a887d2a911253c5f49715c\",\n
+        \     \"id\": \"ws_076adefbc2141272006aa7f8b5636487d2aa74032ec63cd6ef\",\n
         \     \"type\": \"web_search_call\",\n      \"status\": \"completed\",\n      \"action\":
         {\n        \"type\": \"search\",\n        \"queries\": [\n          \"Search
         the web for the current weather in Paris and answer in one sentence.\"\n        ],\n
         \       \"query\": \"Search the web for the current weather in Paris and answer
-        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_089375313ff42b9a006aa054de29c887d2a545420aacb8e93c\",\n
+        in one sentence.\"\n      }\n    },\n    {\n      \"id\": \"msg_076adefbc2141272006aa7f8b5ea1c87d288bbcef8bf5b0a55\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
-        [\n            {\n              \"type\": \"url_citation\",\n              \"end_index\":
-        210,\n              \"start_index\": 123,\n              \"title\": \"Weather
-        for Paris, Paris, France\",\n              \"url\": \"https://www.timeanddate.com/weather/france/paris?utm_source=openai\"\n
-        \           }\n          ],\n          \"logprobs\": [],\n          \"text\":
-        \"As of 8:33\\u202fPM CEST on September 8, 2026, in Paris, France, the weather
-        is mostly cloudy with a temperature of 73\\u00b0F (23\\u00b0C). ([timeanddate.com](https://www.timeanddate.com/weather/france/paris?utm_source=openai))
-        \"\n        }\n      ],\n      \"role\": \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\":
-        true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
-        null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
-        \   \"context\": null,\n    \"effort\": null,\n    \"summary\": null\n  },\n
-        \ \"safety_identifier\": null,\n  \"service_tier\": \"auto\",\n  \"store\":
-        true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\":
-        \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n  \"tool_choice\":
-        {\n    \"type\": \"web_search_preview\"\n  },\n  \"tool_usage\": {\n    \"image_gen\":
-        {\n      \"input_tokens\": 0,\n      \"input_tokens_details\": {\n        \"image_tokens\":
-        0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\": 0,\n      \"output_tokens_details\":
-        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"total_tokens\":
-        0\n    },\n    \"web_search\": {\n      \"num_requests\": 1\n    }\n  },\n
-        \ \"tools\": [\n    {\n      \"type\": \"web_search_preview\",\n      \"search_content_types\":
-        [\n        \"text\"\n      ],\n      \"search_context_size\": \"low\",\n      \"user_location\":
-        {\n        \"type\": \"approximate\",\n        \"city\": null,\n        \"country\":
-        \"US\",\n        \"region\": null,\n        \"timezone\": null\n      }\n
-        \   }\n  ],\n  \"top_logprobs\": 0,\n  \"top_p\": 1.0,\n  \"truncation\":
-        \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 323,\n    \"input_tokens_details\":
-        {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\": 0\n    },\n
-        \   \"output_tokens\": 65,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\":
-        0\n    },\n    \"total_tokens\": 388\n  },\n  \"user\": null,\n  \"metadata\":
-        {}\n}"
+        [],\n          \"logprobs\": [],\n          \"text\": \"As of 3:37\\u202fPM
+        on Monday, September 14, 2026, in Paris, France, the weather is sunny with
+        a temperature of 82\\u00b0F (28\\u00b0C).\\n\\n## Weather for Paris, Paris,
+        France:\\nCurrent Conditions: Sunny, 82\\u00b0F (28\\u00b0C)\\n\\nDaily Forecast:\\n*
+        Monday, September 14: Low: 63\\u00b0F (17\\u00b0C), High: 83\\u00b0F (29\\u00b0C),
+        Description: Very warm with clouds breaking for some sun\\n* Tuesday, September
+        15: Low: 56\\u00b0F (14\\u00b0C), High: 90\\u00b0F (32\\u00b0C), Description:
+        Mostly sunny and hot; possible danger of dehydration and heatstroke while
+        doing strenuous activities\\n* Wednesday, September 16: Low: 52\\u00b0F (11\\u00b0C),
+        High: 71\\u00b0F (22\\u00b0C), Description: Partly sunny and pleasant\\n*
+        Thursday, September 17: Low: 53\\u00b0F (12\\u00b0C), High: 69\\u00b0F (20\\u00b0C),
+        Description: Becoming cloudy\\n* Friday, September 18: Low: 57\\u00b0F (14\\u00b0C),
+        High: 71\\u00b0F (21\\u00b0C), Description: Partly sunny and pleasant\\n*
+        Saturday, September 19: Low: 59\\u00b0F (15\\u00b0C), High: 77\\u00b0F (25\\u00b0C),
+        Description: A little rain in the morning; otherwise, cloudy and warm\\n*
+        Sunday, September 20: Low: 60\\u00b0F (15\\u00b0C), High: 78\\u00b0F (26\\u00b0C),
+        Description: Mostly cloudy and very warm\\n \"\n        }\n      ],\n      \"role\":
+        \"assistant\"\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\":
+        0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
+        \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
+        null,\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\":
+        \"auto\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\":
+        {\n      \"type\": \"text\"\n    },\n    \"verbosity\": \"medium\"\n  },\n
+        \ \"tool_choice\": {\n    \"type\": \"web_search_preview\"\n  },\n  \"tool_usage\":
+        {\n    \"image_gen\": {\n      \"input_tokens\": 0,\n      \"input_tokens_details\":
+        {\n        \"image_tokens\": 0,\n        \"text_tokens\": 0\n      },\n      \"output_tokens\":
+        0,\n      \"output_tokens_details\": {\n        \"image_tokens\": 0,\n        \"text_tokens\":
+        0\n      },\n      \"total_tokens\": 0\n    },\n    \"web_search\": {\n      \"num_requests\":
+        1\n    }\n  },\n  \"tools\": [\n    {\n      \"type\": \"web_search_preview\",\n
+        \     \"search_content_types\": [\n        \"text\"\n      ],\n      \"search_context_size\":
+        \"low\",\n      \"user_location\": {\n        \"type\": \"approximate\",\n
+        \       \"city\": null,\n        \"country\": \"US\",\n        \"region\":
+        null,\n        \"timezone\": null\n      }\n    }\n  ],\n  \"top_logprobs\":
+        0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
+        323,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n
+        \     \"cached_tokens\": 0\n    },\n    \"output_tokens\": 313,\n    \"output_tokens_details\":
+        {\n      \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 636\n  },\n
+        \ \"user\": null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -92,17 +102,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3800a050957ab6a-YYZ
+      - a3afca0b4fb7e910-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3234'
+      - '3933'
       content-type:
       - application/json
       date:
-      - Tue, 08 Sep 2026 18:33:03 GMT
+      - Mon, 14 Sep 2026 13:37:59 GMT
       openai-processing-ms:
-      - '2157'
+      - '1935'
       openai-version:
       - '2020-10-01'
       server:
@@ -114,7 +124,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_2603a5528c834635abb0d5397259fee0
+      - req_bc2f0725c8d1449c88f0ea6d9ed3ccc1
     status:
       code: 200
       message: OK

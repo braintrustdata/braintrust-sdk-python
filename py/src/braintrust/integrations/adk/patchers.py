@@ -90,13 +90,38 @@ class FlowRunAsyncPatcher(CompositeFunctionWrapperPatcher):
 # ---------------------------------------------------------------------------
 
 
-class ToolCallAsyncPatcher(FunctionWrapperPatcher):
-    """Patch ADK's central async tool execution helper for tracing."""
+class _ToolCallerCallToolAsyncSubPatcher(FunctionWrapperPatcher):
+    """Patch ``_tool_caller._call_tool_async`` (ADK >= 2.9.0).
 
-    name = "adk.tool.call_async"
+    ADK 2.9.0 moved tool execution out of ``llm_flows.functions`` into the
+    ``llm_flows._tool_caller`` module. ``functions`` re-exports the helper, but
+    the call sites live in ``_tool_caller`` and resolve the module-global name,
+    so the wrapper has to be installed on ``_tool_caller`` itself.
+    """
+
+    name = "adk.tool.call_async.tool_caller"
+    target_module = "google.adk.flows.llm_flows._tool_caller"
+    target_path = "_call_tool_async"
+    wrapper = _tool_call_async_wrapper
+
+
+class _FunctionsCallToolAsyncSubPatcher(FunctionWrapperPatcher):
+    """Patch ``functions.__call_tool_async`` (ADK < 2.9.0)."""
+
+    name = "adk.tool.call_async.functions"
     target_module = "google.adk.flows.llm_flows.functions"
     target_path = "__call_tool_async"
     wrapper = _tool_call_async_wrapper
+    # Yield to the ``_tool_caller`` target when both exist so a single tool
+    # execution never produces two tool spans.
+    superseded_by = (_ToolCallerCallToolAsyncSubPatcher,)
+
+
+class ToolCallAsyncPatcher(CompositeFunctionWrapperPatcher):
+    """Patch ADK's central async tool execution helper for tracing."""
+
+    name = "adk.tool.call_async"
+    sub_patchers = (_ToolCallerCallToolAsyncSubPatcher, _FunctionsCallToolAsyncSubPatcher)
 
 
 # ---------------------------------------------------------------------------

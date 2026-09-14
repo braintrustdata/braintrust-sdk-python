@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.8.0
+      - OpenAI/Python 3.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.8.0
+      - 3.13.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,18 +33,18 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-ELuyEcMHYuD3EXdX5ODWK5y3h2yUs\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1788892590,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EO1DiejLAvLkBglzQUsdZRkaYJYQN\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1789393270,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"Hi! How can I assist you today?\",\n
+        \"assistant\",\n        \"content\": \"Hi there! How can I assist you today?\",\n
         \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
         null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        9,\n    \"completion_tokens\": 9,\n    \"total_tokens\": 18,\n    \"prompt_tokens_details\":
+        9,\n    \"completion_tokens\": 10,\n    \"total_tokens\": 19,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
@@ -59,17 +59,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3800f202e2bf8ac-YYZ
+      - a3afcec34a4657af-YYZ
       connection:
       - keep-alive
       content-length:
-      - '836'
+      - '843'
       content-type:
       - application/json
       date:
-      - Tue, 08 Sep 2026 18:36:30 GMT
+      - Mon, 14 Sep 2026 13:41:11 GMT
       openai-processing-ms:
-      - '549'
+      - '557'
       openai-version:
       - '2020-10-01'
       server:
@@ -89,13 +89,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '29999'
       x-ratelimit-remaining-tokens:
-      - '149999995'
+      - '149999997'
       x-ratelimit-reset-requests:
       - 2ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_22bdd27c61c54e30997702be642c93ab
+      - req_88c3e1dfdf8e445ca7cd5352de4a2c25
     status:
       code: 200
       message: OK

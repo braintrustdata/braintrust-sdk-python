@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.8.0
+      - AsyncOpenAI/Python 3.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.8.0
+      - 3.13.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,116 +33,116 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
       string: 'event: response.created
 
-        data: {"type":"response.created","response":{"id":"resp_06ccf38958b01034006aa098911a8087d28ff8528403e34840","object":"response","created_at":1788909713,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
+        data: {"type":"response.created","response":{"id":"resp_014761089b2c4e00006aa7f8e7be5487d288f92777a6ad125f","object":"response","created_at":1789393127,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
 
 
         event: response.in_progress
 
-        data: {"type":"response.in_progress","response":{"id":"resp_06ccf38958b01034006aa098911a8087d28ff8528403e34840","object":"response","created_at":1788909713,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
+        data: {"type":"response.in_progress","response":{"id":"resp_014761089b2c4e00006aa7f8e7be5487d288f92777a6ad125f","object":"response","created_at":1789393127,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"mcpl_06ccf38958b01034006aa0989125f087d2848ddc0ee09329ab","type":"mcp_list_tools","server_label":"deepwiki","tools":[]},"output_index":0,"sequence_number":2}
+        data: {"type":"response.output_item.added","item":{"id":"mcpl_014761089b2c4e00006aa7f8e8582487d28cc8ca15cdd775d0","type":"mcp_list_tools","server_label":"deepwiki","tools":[]},"output_index":0,"sequence_number":2}
 
 
         event: response.mcp_list_tools.in_progress
 
-        data: {"type":"response.mcp_list_tools.in_progress","item_id":"mcpl_06ccf38958b01034006aa0989125f087d2848ddc0ee09329ab","output_index":0,"sequence_number":3}
+        data: {"type":"response.mcp_list_tools.in_progress","item_id":"mcpl_014761089b2c4e00006aa7f8e8582487d28cc8ca15cdd775d0","output_index":0,"sequence_number":3}
 
 
         event: response.mcp_list_tools.completed
 
-        data: {"type":"response.mcp_list_tools.completed","item_id":"mcpl_06ccf38958b01034006aa0989125f087d2848ddc0ee09329ab","output_index":0,"sequence_number":4}
+        data: {"type":"response.mcp_list_tools.completed","item_id":"mcpl_014761089b2c4e00006aa7f8e8582487d28cc8ca15cdd775d0","output_index":0,"sequence_number":4}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"mcpl_06ccf38958b01034006aa0989125f087d2848ddc0ee09329ab","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
+        data: {"type":"response.output_item.done","item":{"id":"mcpl_014761089b2c4e00006aa7f8e8582487d28cc8ca15cdd775d0","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
         a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
         repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"},"name":"read_wiki_structure"}]},"output_index":0,"sequence_number":5}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","type":"message","status":"in_progress","content":[],"role":"assistant"},"output_index":1,"sequence_number":6}
+        data: {"type":"response.output_item.added","item":{"id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","type":"message","status":"in_progress","content":[],"role":"assistant"},"output_index":1,"sequence_number":6}
 
 
         event: response.content_part.added
 
-        data: {"type":"response.content_part.added","content_index":0,"item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":7}
+        data: {"type":"response.content_part.added","content_index":0,"item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":7}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"vqmKGiLisz5W6b","output_index":1,"sequence_number":8}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"8SbK3rgCXVqaqI","output_index":1,"sequence_number":8}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" +","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"h4Vxieebukfsaz","output_index":1,"sequence_number":9}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" +","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"Iig9Sdxng4z8ZC","output_index":1,"sequence_number":9}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"bxDa7uDU9BsnKZz","output_index":1,"sequence_number":10}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"TKGJOB0xFc6jTKB","output_index":1,"sequence_number":10}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"XBqAgthqw0xcnB","output_index":1,"sequence_number":11}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"uGgZJBW0KVMq4m","output_index":1,"sequence_number":11}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" equals","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"04fuQ28iA","output_index":1,"sequence_number":12}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" equals","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"H3FB2ts31","output_index":1,"sequence_number":12}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"BmiazVca9N1f2WU","output_index":1,"sequence_number":13}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"JUoymTE34DHJxgd","output_index":1,"sequence_number":13}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"24","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"WRhOwd3GATuql7","output_index":1,"sequence_number":14}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":"24","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"GOPN3vFn1m0qxo","output_index":1,"sequence_number":14}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":".","item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"obfuscation":"YIinO5GazJ2UY3P","output_index":1,"sequence_number":15}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":".","item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"obfuscation":"NOAJlXCEE8r0k0X","output_index":1,"sequence_number":15}
 
 
         event: response.output_text.done
 
-        data: {"type":"response.output_text.done","content_index":0,"item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","logprobs":[],"output_index":1,"sequence_number":16,"text":"12
+        data: {"type":"response.output_text.done","content_index":0,"item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","logprobs":[],"output_index":1,"sequence_number":16,"text":"12
         + 12 equals 24."}
 
 
         event: response.content_part.done
 
-        data: {"type":"response.content_part.done","content_index":0,"item_id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":"12
+        data: {"type":"response.content_part.done","content_index":0,"item_id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":"12
         + 12 equals 24."},"sequence_number":17}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
+        data: {"type":"response.output_item.done","item":{"id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
         + 12 equals 24."}],"role":"assistant"},"output_index":1,"sequence_number":18}
 
 
         event: response.completed
 
-        data: {"type":"response.completed","response":{"id":"resp_06ccf38958b01034006aa098911a8087d28ff8528403e34840","object":"response","created_at":1788909713,"status":"completed","background":false,"completed_at":1788909714,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"mcpl_06ccf38958b01034006aa0989125f087d2848ddc0ee09329ab","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
+        data: {"type":"response.completed","response":{"id":"resp_014761089b2c4e00006aa7f8e7be5487d288f92777a6ad125f","object":"response","created_at":1789393127,"status":"completed","background":false,"completed_at":1789393129,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"mcpl_014761089b2c4e00006aa7f8e8582487d28cc8ca15cdd775d0","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
         a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"},"name":"read_wiki_structure"}]},{"id":"msg_06ccf38958b01034006aa098927a0487d2aec0e480666faf96","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"},"name":"read_wiki_structure"}]},{"id":"msg_014761089b2c4e00006aa7f8e97b0087d29d5ae35ca9d53cd4","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
         + 12 equals 24."}],"role":"assistant"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":{"input_tokens":85,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":10,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":95},"user":null,"metadata":{}},"sequence_number":19}
 
 
@@ -157,15 +157,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a381b1269a6a3905-YYZ
+      - a3afcb47ea9160a9-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 08 Sep 2026 23:21:53 GMT
+      - Mon, 14 Sep 2026 13:38:49 GMT
       openai-processing-ms:
-      - '567'
+      - '1771'
       openai-version:
       - '2020-10-01'
       server:
@@ -176,8 +176,20 @@ interactions:
       - chunked
       x-content-type-options:
       - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999895'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
       x-request-id:
-      - req_53948c35db81430590bd175666672139
+      - req_041f1bd41973407582312825c2f24a5e
     status:
       code: 200
       message: OK
@@ -197,7 +209,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.8.0
+      - AsyncOpenAI/Python 3.13.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -207,7 +219,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.8.0
+      - 3.13.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -215,116 +227,116 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
       string: 'event: response.created
 
-        data: {"type":"response.created","response":{"id":"resp_0fb513985fbbb65f006aa09893017c87d2884090cdbc544d26","object":"response","created_at":1788909715,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
+        data: {"type":"response.created","response":{"id":"resp_086ed75a29427f7f006aa7f8ea2f0087d286c31b10fc5c17f8","object":"response","created_at":1789393130,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
 
 
         event: response.in_progress
 
-        data: {"type":"response.in_progress","response":{"id":"resp_0fb513985fbbb65f006aa09893017c87d2884090cdbc544d26","object":"response","created_at":1788909715,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
+        data: {"type":"response.in_progress","response":{"id":"resp_086ed75a29427f7f006aa7f8ea2f0087d286c31b10fc5c17f8","object":"response","created_at":1789393130,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"auto","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"mcpl_0fb513985fbbb65f006aa098931d5087d292370cf4771aeec0","type":"mcp_list_tools","server_label":"deepwiki","tools":[]},"output_index":0,"sequence_number":2}
+        data: {"type":"response.output_item.added","item":{"id":"mcpl_086ed75a29427f7f006aa7f8eaf66c87d2b9b527d3e5095671","type":"mcp_list_tools","server_label":"deepwiki","tools":[]},"output_index":0,"sequence_number":2}
 
 
         event: response.mcp_list_tools.in_progress
 
-        data: {"type":"response.mcp_list_tools.in_progress","item_id":"mcpl_0fb513985fbbb65f006aa098931d5087d292370cf4771aeec0","output_index":0,"sequence_number":3}
+        data: {"type":"response.mcp_list_tools.in_progress","item_id":"mcpl_086ed75a29427f7f006aa7f8eaf66c87d2b9b527d3e5095671","output_index":0,"sequence_number":3}
 
 
         event: response.mcp_list_tools.completed
 
-        data: {"type":"response.mcp_list_tools.completed","item_id":"mcpl_0fb513985fbbb65f006aa098931d5087d292370cf4771aeec0","output_index":0,"sequence_number":4}
+        data: {"type":"response.mcp_list_tools.completed","item_id":"mcpl_086ed75a29427f7f006aa7f8eaf66c87d2b9b527d3e5095671","output_index":0,"sequence_number":4}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"mcpl_0fb513985fbbb65f006aa098931d5087d292370cf4771aeec0","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
+        data: {"type":"response.output_item.done","item":{"id":"mcpl_086ed75a29427f7f006aa7f8eaf66c87d2b9b527d3e5095671","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
         a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
         repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"},"name":"read_wiki_structure"}]},"output_index":0,"sequence_number":5}
 
 
         event: response.output_item.added
 
-        data: {"type":"response.output_item.added","item":{"id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","type":"message","status":"in_progress","content":[],"role":"assistant"},"output_index":1,"sequence_number":6}
+        data: {"type":"response.output_item.added","item":{"id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","type":"message","status":"in_progress","content":[],"role":"assistant"},"output_index":1,"sequence_number":6}
 
 
         event: response.content_part.added
 
-        data: {"type":"response.content_part.added","content_index":0,"item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":7}
+        data: {"type":"response.content_part.added","content_index":0,"item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":""},"sequence_number":7}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"F9vp6CM8FfETMi","output_index":1,"sequence_number":8}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"cltlE0B0Sc30Pm","output_index":1,"sequence_number":8}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" +","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"98ln7PKkv84tv1","output_index":1,"sequence_number":9}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" +","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"5pghpexAaOQq0u","output_index":1,"sequence_number":9}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"yH324xqRVUtOwVJ","output_index":1,"sequence_number":10}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"5QpeNzmA7DHpZKf","output_index":1,"sequence_number":10}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"ssJiAF7YgYulLb","output_index":1,"sequence_number":11}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":"12","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"TNCHF2WVUx2BwL","output_index":1,"sequence_number":11}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" equals","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"WElHEUK6s","output_index":1,"sequence_number":12}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" equals","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"4loXQcCLX","output_index":1,"sequence_number":12}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"9BgPwwpNPWFVR4q","output_index":1,"sequence_number":13}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":" ","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"DvLOJaj8qUTcc05","output_index":1,"sequence_number":13}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":"24","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"7yM2ZA5uz8UreV","output_index":1,"sequence_number":14}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":"24","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"6wkC6PuiS8TPC6","output_index":1,"sequence_number":14}
 
 
         event: response.output_text.delta
 
-        data: {"type":"response.output_text.delta","content_index":0,"delta":".","item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"obfuscation":"K8ZMPF72VIdNRVD","output_index":1,"sequence_number":15}
+        data: {"type":"response.output_text.delta","content_index":0,"delta":".","item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"obfuscation":"TNSn9jLAqYUNzXY","output_index":1,"sequence_number":15}
 
 
         event: response.output_text.done
 
-        data: {"type":"response.output_text.done","content_index":0,"item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","logprobs":[],"output_index":1,"sequence_number":16,"text":"12
+        data: {"type":"response.output_text.done","content_index":0,"item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","logprobs":[],"output_index":1,"sequence_number":16,"text":"12
         + 12 equals 24."}
 
 
         event: response.content_part.done
 
-        data: {"type":"response.content_part.done","content_index":0,"item_id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":"12
+        data: {"type":"response.content_part.done","content_index":0,"item_id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","output_index":1,"part":{"type":"output_text","annotations":[],"logprobs":[],"text":"12
         + 12 equals 24."},"sequence_number":17}
 
 
         event: response.output_item.done
 
-        data: {"type":"response.output_item.done","item":{"id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
+        data: {"type":"response.output_item.done","item":{"id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
         + 12 equals 24."}],"role":"assistant"},"output_index":1,"sequence_number":18}
 
 
         event: response.completed
 
-        data: {"type":"response.completed","response":{"id":"resp_0fb513985fbbb65f006aa09893017c87d2884090cdbc544d26","object":"response","created_at":1788909715,"status":"completed","background":false,"completed_at":1788909716,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"mcpl_0fb513985fbbb65f006aa098931d5087d292370cf4771aeec0","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
+        data: {"type":"response.completed","response":{"id":"resp_086ed75a29427f7f006aa7f8ea2f0087d286c31b10fc5c17f8","object":"response","created_at":1789393130,"status":"completed","background":false,"completed_at":1789393132,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"max_tool_calls":null,"model":"gpt-4o-mini-2024-07-18","moderation":null,"output":[{"id":"mcpl_086ed75a29427f7f006aa7f8eaf66c87d2b9b527d3e5095671","type":"mcp_list_tools","server_label":"deepwiki","tools":[{"annotations":{"read_only":false},"description":"Get
         a list of documentation topics for a GitHub repository.","input_schema":{"properties":{"repoName":{"description":"GitHub
-        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"},"name":"read_wiki_structure"}]},{"id":"msg_0fb513985fbbb65f006aa098946e3c87d2811df54f92dba674","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
+        repository in owner/repo format (e.g. \"facebook/react\").","type":"string"}},"required":["repoName"],"type":"object"},"name":"read_wiki_structure"}]},{"id":"msg_086ed75a29427f7f006aa7f8ec3a3487d29cb9860ecf039895","type":"message","status":"completed","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"12
         + 12 equals 24."}],"role":"assistant"}],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":null,"prompt_cache_retention":"in_memory","reasoning":{"context":null,"effort":null,"summary":null},"safety_identifier":null,"service_tier":"default","store":true,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tool_usage":{"image_gen":{"input_tokens":0,"input_tokens_details":{"image_tokens":0,"text_tokens":0},"output_tokens":0,"output_tokens_details":{"image_tokens":0,"text_tokens":0},"total_tokens":0},"web_search":{"num_requests":0}},"tools":[{"type":"mcp","allowed_tools":["read_wiki_structure"],"headers":null,"require_approval":"always","server_description":null,"server_label":"deepwiki","server_url":"https://mcp.deepwiki.com/mcp"}],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":{"input_tokens":85,"input_tokens_details":{"cache_write_tokens":0,"cached_tokens":0},"output_tokens":10,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":95},"user":null,"metadata":{}},"sequence_number":19}
 
 
@@ -339,15 +351,15 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a381b1361c9736ca-YYZ
+      - a3afcb56db4fb405-YYZ
       connection:
       - keep-alive
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Tue, 08 Sep 2026 23:21:55 GMT
+      - Mon, 14 Sep 2026 13:38:52 GMT
       openai-processing-ms:
-      - '628'
+      - '2070'
       openai-version:
       - '2020-10-01'
       server:
@@ -358,8 +370,20 @@ interactions:
       - chunked
       x-content-type-options:
       - nosniff
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999897'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
       x-request-id:
-      - req_45479b32d96a4a0186629b4fda8f22e7
+      - req_5f5811da9997467981af42fbef295b3d
     status:
       code: 200
       message: OK
