@@ -3937,7 +3937,7 @@ class TopicAutomationConfig(TypedDict):
     """
     relabel_overlap_seconds: NotRequired[float | None]
     """
-    How much recent history to relabel after a new topic map version becomes active
+    Deprecated. How much recent history to relabel after a new topic map version becomes active. Data planes v2.15.0 and later ignore this and apply a topic map version after the first only to traces classified once it is active.
     """
     backfill_time_range: NotRequired[
         str | TopicAutomationConfigBackfillTimeRange | None
