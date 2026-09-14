@@ -142,6 +142,13 @@ _OTEL_LOG_LEVELS: dict[LogLevel, int] = {
 }
 
 
+class _LogTemplateParameters(dict[str, object]):
+    """Preserve placeholders whose values were not provided."""
+
+    def __missing__(self, key: str) -> str:
+        return "{" + key + "}"
+
+
 @dataclasses.dataclass
 class Logs3OverflowInputRow:
     object_ids: dict[str, Any]
@@ -5947,7 +5954,8 @@ class Logger(Exportable):
         self,
         body: Any,
         level: LogLevel,
-        metadata: Metadata | None = None,
+        metadata: dict[str, Any] | None = None,
+        **parameters: object,
     ) -> str:
         """Capture a log record, associating it with the active span when one exists.
 
@@ -5955,15 +5963,38 @@ class Logger(Exportable):
         span is active, the row reuses its span and trace IDs for correlation.
         Otherwise, the row uses this logger's baseline trace ID.
 
-        :param body: The log body. May be any JSON-serializable value.
+        String bodies may contain ``str.format``-style placeholders. Keyword
+        parameters are interpolated into the body and retained in metadata along
+        with the original template. Missing parameters remain as placeholders.
+
+        :param body: The log body. May be any JSON-serializable value when no
+            template parameters are provided.
         :param level: The OpenTelemetry log severity: ``trace``, ``debug``,
             ``info``, ``warn``, ``error``, or ``fatal``.
         :param metadata: Optional JSON-serializable attributes for the log.
+        :param parameters: Values for named placeholders in a string body.
         :returns: The unique ID of the captured log row.
         """
         if level not in _OTEL_LOG_LEVELS:
             valid_levels = ", ".join(_OTEL_LOG_LEVELS)
             raise ValueError(f"Invalid log level {level!r}. Expected one of: {valid_levels}")
+
+        rendered_body = body
+        rendered_metadata = metadata
+        if parameters:
+            if not isinstance(body, str):
+                raise TypeError("Log body must be a string when template parameters are provided")
+            rendered_metadata = dict(metadata) if metadata is not None else {}
+            rendered_metadata.update(
+                {f"braintrust.template.parameter.{key}": value for key, value in parameters.items()}
+            )
+            rendered_metadata["braintrust.template"] = body
+            try:
+                rendered_body = body.format_map(_LogTemplateParameters(parameters))
+            except Exception:
+                # Logging should not disrupt the application because a template
+                # contains malformed braces or an unsupported format specifier.
+                rendered_body = body
 
         captured_at = time.time()
         span_info = self.state.context_manager.get_current_span_info()
@@ -5976,9 +6007,13 @@ class Logger(Exportable):
             span_id=span_info.span_id if span_info else None,
             root_span_id=span_info.trace_id if span_info else self._baseline_trace_id,
             lookup_span_parent=False,
-            output=body,
-            error=body if severity_number >= _OTEL_LOG_LEVELS["error"] and isinstance(body, str) else None,
-            metadata=metadata,
+            output=rendered_body,
+            error=(
+                rendered_body
+                if severity_number >= _OTEL_LOG_LEVELS["error"] and isinstance(rendered_body, str)
+                else None
+            ),
+            metadata=rendered_metadata,
             context={
                 "otel": {
                     "signal": "logs",
@@ -5997,29 +6032,29 @@ class Logger(Exportable):
 
         return span.id
 
-    def trace(self, body: Any, metadata: Metadata | None = None) -> str:
+    def trace(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
         """Capture a log at OpenTelemetry TRACE severity."""
-        return self.emit_log(body=body, level="trace", metadata=metadata)
+        return self.emit_log(body=body, level="trace", metadata=metadata, **parameters)
 
-    def debug(self, body: Any, metadata: Metadata | None = None) -> str:
+    def debug(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
         """Capture a log at OpenTelemetry DEBUG severity."""
-        return self.emit_log(body=body, level="debug", metadata=metadata)
+        return self.emit_log(body=body, level="debug", metadata=metadata, **parameters)
 
-    def info(self, body: Any, metadata: Metadata | None = None) -> str:
+    def info(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
         """Capture a log at OpenTelemetry INFO severity."""
-        return self.emit_log(body=body, level="info", metadata=metadata)
+        return self.emit_log(body=body, level="info", metadata=metadata, **parameters)
 
-    def warn(self, body: Any, metadata: Metadata | None = None) -> str:
+    def warn(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
         """Capture a log at OpenTelemetry WARN severity."""
-        return self.emit_log(body=body, level="warn", metadata=metadata)
+        return self.emit_log(body=body, level="warn", metadata=metadata, **parameters)
 
-    def error(self, body: Any, metadata: Metadata | None = None) -> str:
+    def error(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
         """Capture a log at OpenTelemetry ERROR severity."""
-        return self.emit_log(body=body, level="error", metadata=metadata)
+        return self.emit_log(body=body, level="error", metadata=metadata, **parameters)
 
-    def fatal(self, body: Any, metadata: Metadata | None = None) -> str:
+    def fatal(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
         """Capture a log at OpenTelemetry FATAL severity."""
-        return self.emit_log(body=body, level="fatal", metadata=metadata)
+        return self.emit_log(body=body, level="fatal", metadata=metadata, **parameters)
 
     def log_feedback(
         self,
