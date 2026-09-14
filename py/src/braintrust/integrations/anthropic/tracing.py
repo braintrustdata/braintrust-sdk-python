@@ -1,3 +1,4 @@
+import inspect
 import logging
 import time
 import warnings
@@ -39,6 +40,22 @@ except ImportError:
     def accumulate_event(event=None, current_snapshot=None, **kwargs):
         warnings.warn("braintrust: missing method: anthropic.lib.streaming._messages.accumulate_event")
         return current_snapshot
+
+
+def _accumulate_event_accepts_json_bufs() -> bool:
+    """Return whether ``accumulate_event`` takes the ``json_bufs`` keyword.
+
+    anthropic>=1.5.0 buffers partial tool-input JSON per content block in a
+    caller-owned ``json_bufs`` dict and requires the keyword; older releases
+    reject it.
+    """
+    try:
+        return "json_bufs" in inspect.signature(accumulate_event).parameters
+    except (TypeError, ValueError):
+        return False
+
+
+_ACCUMULATE_EVENT_ACCEPTS_JSON_BUFS = _accumulate_event_accepts_json_bufs()
 
 
 # Anthropic model parameters that we want to track as span metadata.
@@ -699,6 +716,8 @@ class TracedMessageStream(Wrapper):
     def __init__(self, msg_stream, span, request_start_time: float):
         super().__init__(msg_stream)
         self.__msg_stream = msg_stream
+        # Per-stream partial JSON buffers for anthropic>=1.5.0 accumulate_event.
+        self.__json_bufs: dict[int, bytes] = {}
         self.__span = span
         self.__metrics = {}
         self.__snapshot = None
@@ -757,7 +776,8 @@ class TracedMessageStream(Wrapper):
         if self.__time_to_first_token is None:
             self.__time_to_first_token = time.time() - self.__request_start_time
 
-        self.__snapshot = accumulate_event(event=m, current_snapshot=self.__snapshot)
+        accumulate_kwargs = {"json_bufs": self.__json_bufs} if _ACCUMULATE_EVENT_ACCEPTS_JSON_BUFS else {}
+        self.__snapshot = accumulate_event(event=m, current_snapshot=self.__snapshot, **accumulate_kwargs)
 
         if m.type == "message_delta":
             # Anthropic <0.122.0 drops output_tokens_details when accumulating

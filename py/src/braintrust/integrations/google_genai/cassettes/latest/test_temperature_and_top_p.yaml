@@ -17,37 +17,35 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.22.0 gl-python/3.14.6
+      - google-genai-sdk/2.23.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.22.0 gl-python/3.14.6
+      - google-genai-sdk/2.23.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"Here are a few creative sparks, playing
-        with different angles:\\n\\n**Playing with Metaphor & Sensory Details:**\\n\\n*
-        \\\"The silence between the stars hummed a tune only forgotten dreams could
-        hear.\\\"\\n* \\\"Her laughter was a cascade of spilled\"\n          }\n        ],\n
-        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
-        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
-        5,\n    \"candidatesTokenCount\": 50,\n    \"totalTokenCount\": 55,\n    \"promptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 5\n      }\n
-        \   ],\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n
-        \ \"responseId\": \"3lSgatfsE5GZ9MoP9o-78QU\"\n}\n"
+        [\n          {\n            \"text\": \"The universe is a vast, silent symphony,
+        and we are but fleeting notes, each a unique vibration in the grand, cosmic
+        melody.\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
+        \     \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n  \"usageMetadata\":
+        {\n    \"promptTokenCount\": 5,\n    \"candidatesTokenCount\": 27,\n    \"totalTokenCount\":
+        32,\n    \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 5\n      }\n    ],\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash-lite\",\n  \"responseId\": \"pPinatSMOean1MkPw9yX4Qg\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '792'
+      - '670'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Tue, 08 Sep 2026 18:33:02 GMT
+      - Mon, 14 Sep 2026 13:37:41 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=429
+      - gfet4t7; dur=403
       transfer-encoding:
       - chunked
       vary:

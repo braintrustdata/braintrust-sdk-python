@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - pydantic-ai/2.40.0
+      - pydantic-ai/2.43.0
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.9.0
+      - 3.13.0
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -34,22 +34,22 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0231a6b4cb953d60006aa054f09b5887d2a3034bad0851e0f0\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1788892400,\n  \"status\":
+      string: "{\n  \"id\": \"resp_046d2c554d4eb68d006aa7f8ab9f6487d2b7e409c198f92578\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1789393067,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1788892401,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1789393068,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": 200,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"fc_0231a6b4cb953d60006aa054f10cf887d2a14ba02d4e0650e9\",\n
+        \     \"id\": \"fc_046d2c554d4eb68d006aa7f8ac1f6087d2a1dd0f0b3dbf9bb4\",\n
         \     \"type\": \"function_call\",\n      \"status\": \"completed\",\n      \"arguments\":
-        \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"10 + 15 equals 25 because you
-        are simply adding the two numbers together.\\\"}\",\n      \"call_id\": \"call_Cp9IVzu8bjOFckIl5wSCT2fv\",\n
+        \"{\\\"answer\\\":25,\\\"explanation\\\":\\\"The sum of 10 and 15 is calculated
+        by simply adding the two numbers together.\\\"}\",\n      \"call_id\": \"call_TKHAOTgRCdwMwF6EuGdVEFWR\",\n
         \     \"name\": \"final_result\"\n    }\n  ],\n  \"parallel_tool_calls\":
         true,\n  \"presence_penalty\": 0.0,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\":
         null,\n  \"prompt_cache_retention\": \"in_memory\",\n  \"reasoning\": {\n
@@ -72,8 +72,8 @@ interactions:
         false\n      },\n      \"strict\": true\n    }\n  ],\n  \"top_logprobs\":
         0,\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\":
         60,\n    \"input_tokens_details\": {\n      \"cache_write_tokens\": 0,\n      \"cached_tokens\":
-        0\n    },\n    \"output_tokens\": 27,\n    \"output_tokens_details\": {\n
-        \     \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 87\n  },\n  \"user\":
+        0\n    },\n    \"output_tokens\": 28,\n    \"output_tokens_details\": {\n
+        \     \"reasoning_tokens\": 0\n    },\n    \"total_tokens\": 88\n  },\n  \"user\":
         null,\n  \"metadata\": {}\n}"
     headers:
       access-control-expose-headers:
@@ -85,17 +85,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3800a7f4a134c9b-YYZ
+      - a3afc9d00ceb964a-YYZ
       connection:
       - keep-alive
       content-length:
-      - '2539'
+      - '2543'
       content-type:
       - application/json
       date:
-      - Tue, 08 Sep 2026 18:33:21 GMT
+      - Mon, 14 Sep 2026 13:37:48 GMT
       openai-processing-ms:
-      - '856'
+      - '911'
       openai-version:
       - '2020-10-01'
       server:
@@ -119,7 +119,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_5e5872f2d06b448a8cac3e1b736be7e7
+      - req_d4fd552cbc6c428d8456582f098dd808
     status:
       code: 200
       message: OK

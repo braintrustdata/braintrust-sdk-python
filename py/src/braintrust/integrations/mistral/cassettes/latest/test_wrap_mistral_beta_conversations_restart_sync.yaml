@@ -15,12 +15,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/2.10.0
     method: POST
     uri: https://api.mistral.ai/v1/conversations
   response:
     body:
-      string: '{"object":"conversation.response","conversation_id":"conv_019fcd8f6e1976d29be7694da20716d3","outputs":[{"object":"entry","type":"message.output","created_at":"2026-08-04T16:15:57.488331Z","completed_at":"2026-08-04T16:15:57.502239Z","model":"mistral-small-latest","id":"msg_019fcd8f703074d69c08aae5d52d839e","role":"assistant","content":"10"}],"usage":{"prompt_tokens":16,"completion_tokens":3,"total_tokens":19},"guardrails":null}'
+      string: '{"object":"conversation.response","conversation_id":"conv_01a0a0233c377676b0f99e68a286b3cc","outputs":[{"object":"entry","type":"message.output","created_at":"2026-09-14T13:37:39.123920Z","completed_at":"2026-09-14T13:37:39.140834Z","model":"mistral-small-latest","id":"msg_01a0a0233d33775f819c1a2e23812fb1","role":"assistant","content":"10"}],"usage":{"prompt_tokens":16,"completion_tokens":3,"total_tokens":19},"guardrails":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -29,7 +29,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edd1c7cf2713b-YYZ
+      - a3afc9980cfd34dc-YYZ
       connection:
       - keep-alive
       content-length:
@@ -37,9 +37,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:57 GMT
+      - Mon, 14 Sep 2026 13:37:39 GMT
       mistral-correlation-id:
-      - 019fcd8f-6e06-7ed9-ba34-4f5a004ec3a9
+      - 01a0a023-3b44-79a5-a539-7d816c3ae1ea
       server:
       - cloudflare
       strict-transport-security:
@@ -49,22 +49,22 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '583'
+      - '306'
       x-kong-proxy-latency:
-      - '10'
+      - '230'
       x-kong-request-id:
-      - 019fcd8f-6e06-7ed9-ba34-4f5a004ec3a9
+      - 01a0a023-3b44-79a5-a539-7d816c3ae1ea
       x-kong-upstream-latency:
-      - '585'
+      - '308'
       x-ratelimit-limit-tokens-minute:
-      - '500000'
+      - '20000'
       x-ratelimit-remaining-tokens-minute:
-      - '499364'
+      - '19332'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"from_entry_id":"msg_019fcd8f703074d69c08aae5d52d839e","inputs":"What
+    body: '{"from_entry_id":"msg_01a0a0233d33775f819c1a2e23812fb1","inputs":"What
       is 6+6? Reply with just the number.","stream":false,"store":true,"handoff_execution":"server"}'
     headers:
       accept:
@@ -80,12 +80,12 @@ interactions:
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.9.0
+      - mistral-client-python/2.10.0
     method: POST
-    uri: https://api.mistral.ai/v1/conversations/conv_019fcd8f6e1976d29be7694da20716d3/restart
+    uri: https://api.mistral.ai/v1/conversations/conv_01a0a0233c377676b0f99e68a286b3cc/restart
   response:
     body:
-      string: '{"object":"conversation.response","conversation_id":"conv_019fcd8f711973dc876a7554ad583c97","outputs":[{"object":"entry","type":"message.output","created_at":"2026-08-04T16:15:58.209543Z","completed_at":"2026-08-04T16:15:58.225833Z","model":"mistral-small-latest","id":"msg_019fcd8f730171208d5fcc66888b2113","role":"assistant","content":"12"}],"usage":{"prompt_tokens":34,"completion_tokens":3,"total_tokens":37},"guardrails":null}'
+      string: '{"object":"conversation.response","conversation_id":"conv_01a0a0233e3575959b19e086ea9275c4","outputs":[{"object":"entry","type":"message.output","created_at":"2026-09-14T13:37:39.624559Z","completed_at":"2026-09-14T13:37:39.637833Z","model":"mistral-small-latest","id":"msg_01a0a0233f287509a95a7a40f1ea0019","role":"assistant","content":"12"}],"usage":{"prompt_tokens":34,"completion_tokens":3,"total_tokens":37},"guardrails":null}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -94,7 +94,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a25edd210af3713b-YYZ
+      - a3afc99c5cb434dc-YYZ
       connection:
       - keep-alive
       content-length:
@@ -102,9 +102,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 04 Aug 2026 16:15:58 GMT
+      - Mon, 14 Sep 2026 13:37:39 GMT
       mistral-correlation-id:
-      - 019fcd8f-70e5-7b50-a6d1-b462f0b70723
+      - 01a0a023-3df8-78f8-ad4e-d6f30fd11fd5
       server:
       - cloudflare
       strict-transport-security:
@@ -114,17 +114,17 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '568'
+      - '332'
       x-kong-proxy-latency:
-      - '17'
+      - '16'
       x-kong-request-id:
-      - 019fcd8f-70e5-7b50-a6d1-b462f0b70723
+      - 01a0a023-3df8-78f8-ad4e-d6f30fd11fd5
       x-kong-upstream-latency:
-      - '569'
+      - '333'
       x-ratelimit-limit-tokens-minute:
-      - '500000'
+      - '20000'
       x-ratelimit-remaining-tokens-minute:
-      - '499327'
+      - '19295'
     status:
       code: 200
       message: OK

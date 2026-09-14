@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"model":"mistral-ocr-latest","document":{"image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","type":"image_url"},"include_blocks":false}'
+    body: '{"model":"mistral-ocr-latest","document":{"image_url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==","type":"image_url"},"include_blocks":true}'
     headers:
       accept:
       - application/json
@@ -9,65 +9,18 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '218'
+      - '217'
       content-type:
       - application/json
       host:
       - api.mistral.ai
       user-agent:
-      - mistral-client-python/2.7.0
+      - mistral-client-python/2.10.0
     method: POST
     uri: https://api.mistral.ai/v1/ocr
   response:
     body:
-      string: '{"pages":[{"index":0,"markdown":"|  In millions | Net cash provided
-        by operating activities | Net cash provided by operating activities | Net
-        sales | Net sales | Net sales | Total revenues | Net sales | Net sales | Net
-        sales | Net sales | Net sales  |\n| --- | --- | --- | --- | --- | --- | ---
-        | --- | --- | --- | --- | --- |\n|  Total revenues | Total revenues | Net
-        sales | Net sales | Net sales | Total revenues | Net sales | Net sales | Net
-        sales | Total revenues | Total revenues | Net sales  |\n|  Total revenues
-        | Total revenues | Net sales | Net sales | Total revenues | Net sales | Net
-        sales | Net sales | Net sales | Net sales | Net sales | Net sales  |\n|  Total
-        revenues | Total revenues | Net sales | Net sales | Net sales | Total revenues
-        | Net sales | Net sales | Net sales | Net sales | Net sales | Total revenues  |\n|  Total
-        revenues | Total revenues | Net sales | Net sales | Total revenues | Net sales
-        | Total revenues | Net sales | Net sales | Net sales | Net sales | Total revenues  |\n|  Total
-        revenues | Total revenues | Total revenues | Net sales | Net sales | Total
-        revenues | Total revenues | Net sales | Net sales | Total revenues | Net sales
-        | Total revenues  |\n|  Total revenues | Total revenues | Net sales | Total
-        revenues | Total revenues | Total revenues | Net sales | Net sales | Net sales
-        | Total revenues | Net sales | Net sales  |\n|  Total revenues | Total revenues
-        | Total revenues | Net sales | Total revenues | Total revenues | Net sales
-        | Net sales | Net sales | Total revenues | Total revenues | Net sales  |\n|  Total
-        revenues | Total revenues | Net sales | Total revenues | Total revenues |
-        Net sales | Net sales | Total revenues | Net sales | Net sales | Total revenues
-        | Total revenues  |\n|  Net sales | Total revenues | Total revenues | Total
-        revenues | Total revenues | Net sales | Net sales | Total revenues | Net sales
-        | Net sales | Total revenues | Total revenues  |\n|  Total revenues | Total
-        revenues | Total revenues | Total revenues | Total revenues | Net sales |
-        Net sales | Total revenues | Net sales | Net sales | Total revenues | Total
-        revenues  |\n|  Net sales | Total revenues | Total revenues | Total revenues
-        | Net sales | Net sales | Total revenues | Net sales | Net sales | Net sales
-        | Total revenues | Total revenues  |\n|  Total revenues | Total revenues |
-        Net sales | Total revenues | Total revenues | Total revenues | Total revenues
-        | Net sales | Net sales | Net sales | Total revenues | Total revenues  |\n|  Net
-        sales | Total revenues | Total revenues | Net sales | Total revenues | Total
-        revenues | Total revenues | Net sales | Total revenues | Total revenues |
-        Total revenues | Total revenues  |\n|  Total revenues | Total revenues | Total
-        revenues | Net sales | Total revenues | Total revenues | Net sales | Total
-        revenues | Net sales | Net sales | Total revenues | Total revenues  |\n|  Total
-        revenues | Total revenues | Total revenues | Total revenues | Total revenues
-        | Total revenues | Total revenues | Total revenues | Net sales | Net sales
-        | Total revenues | Total revenues  |\n|  Total revenues | Total revenues |
-        Total revenues | Total revenues | Total revenues | Total revenues | Total
-        revenues | Total revenues | Total revenues | Total revenues | Net sales |
-        Total revenues  |\n|  Total revenues | Total revenues | Total revenues | Total
-        revenues | Total revenues | Total revenues | Total revenues | Total revenues
-        | Net sales | Total revenues | Total revenues | Total revenues  |\n|  Total
-        revenues | Total revenues | Total revenues | Total revenues | Total revenues
-        | Total revenues | Total revenues | Total revenues | Total revenues | Total
-        revenues | Total revenues | Total revenues  |","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null,"blocks":null}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
+      string: '{"pages":[{"index":0,"markdown":"","images":[],"tables":[],"hyperlinks":[],"header":null,"footer":null,"dimensions":{"dpi":200,"height":1,"width":1},"confidence_scores":null,"blocks":[]}],"model":"mistral-ocr-latest","document_annotation":null,"usage_info":{"pages_processed":1,"doc_size_bytes":70}}'
     headers:
       access-control-allow-origin:
       - '*'
@@ -76,17 +29,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a1e608394f3ae34e-SJC
+      - a3afc9e61b94ac4c-YYZ
       connection:
       - keep-alive
       content-length:
-      - '3946'
+      - '299'
       content-type:
       - application/json
       date:
-      - Tue, 21 Jul 2026 00:19:09 GMT
+      - Mon, 14 Sep 2026 13:37:51 GMT
       mistral-correlation-id:
-      - 019f820a-6023-7417-a827-719b7cf0a777
+      - 01a0a023-6c22-79b0-838e-ef1b0a4285ed
       server:
       - cloudflare
       strict-transport-security:
@@ -96,19 +49,19 @@ interactions:
       x-content-type-options:
       - nosniff
       x-envoy-upstream-service-time:
-      - '3114'
+      - '161'
       x-kong-proxy-latency:
-      - '8'
+      - '275'
       x-kong-request-id:
-      - 019f820a-6023-7417-a827-719b7cf0a777
+      - 01a0a023-6c22-79b0-838e-ef1b0a4285ed
       x-kong-upstream-latency:
-      - '3115'
+      - '163'
       x-ratelimit-limit-ocr-pages-minute:
-      - '625'
+      - '60'
       x-ratelimit-ocr-pages-query-cost:
       - '1'
       x-ratelimit-remaining-ocr-pages-minute:
-      - '623'
+      - '58'
     status:
       code: 200
       message: OK

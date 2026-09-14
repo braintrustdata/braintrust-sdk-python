@@ -17,19 +17,19 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 internal v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.22.0 gl-python/3.14.6
+      - google-genai-sdk/2.23.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChdBRldnYXRXLUtxMnVfUFVQcXZHRHVBSRIXQUZXZ2F0Vy1LcTJ1X1BVUHF2R0R1QUk","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
+        data: {"interaction":{"id":"v1_Chd5ZmluYXFMTkh1T3FfUFVQdG9QOTRBSRIXeWZpbmFxTE5IdU9xX1BVUHRvUDk0QUk","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChdBRldnYXRXLUtxMnVfUFVQcXZHRHVBSRIXQUZXZ2F0Vy1LcTJ1X1BVUHF2R0R1QUk","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_Chd5ZmluYXFMTkh1T3FfUFVQdG9QOTRBSRIXeWZpbmFxTE5IdU9xX1BVUHRvUDk0QUk","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
@@ -39,7 +39,7 @@ interactions:
 
         event: step.delta
 
-        data: {"index":0,"delta":{"signature":"CmUBEU0yD2z2zBN18ap7/tGmY+czWWUmZeRKoVsCARX1vVY8H7mqpfZmZOe5Cs1IafnRQvQ4BMmWupTiwso8NlNFTcOQ93IxNn/AVYO2s4jKuCAhk4utqcHew+0lcQ3jaSnr1Xrh2AqvAQERTTIPFMjD9LQAT9WOdDHpcJQPjLpH0crj2JmfzRLdrNs+Q3bh4WFlWE+wo4X2vT+EdAEEWpafnmSpC8yV1QdLDTQREUujFipTfG8tK7tC24s2vBWKC1mO1h72xLUIyeMcPA0VRKdsZ5K5myub0F1KsN3ZcQi7HXHydmirjo5oKuaIgvSmViyS52IUNiR4UkJJgpyjhwVxDtBnx//Oel6Hln3kT2OLuHiHlw3y8vsKMQERTTIP6ffeGW3ym4Vi48AHhwYUAMccfRGlUZKNV6Gn0VG5ffIifiNqNBi3Y+uP4A0=","type":"thought_signature"},"event_type":"step.delta"}
+        data: {"index":0,"delta":{"signature":"ClsBEU0yD6UMLmgQpIGIqrZ36Mw5JcDQnHlBs/A/3ZPtS4x3m/dSQnPG5kbeA8IVNjpb5s22VetQ5pKZ32QC9zUcK5YyhScFY9st0JhcTUp27CKD3OOiuqrIx2xlCqgBARFNMg9LmmhxJ9tjBUhiom/jUHgQVvcTibxirwke5EYvZzPcnNk9GX7Qv66Sovo9RYlCa/GyLNEaGnW2NLqKZOOg++kIeEStQsWc2p7++yUujtZJBEictTixWZHsKwchAPu4reKfjuIYgO0XWrPhUvY8Yo7yGh9spkoG+RKFY3+Kwh+y8tO2IIZb0/NJpSq4ziixg+Da847j9HjcGEPmOlDaxxNdyGuhCq4BARFNMg+UyrZcTazv2uC0Lc9yGDddCnbDHIhZdHuYaD7d/IG1y3W3kiAywWS8kgzZibhcDE5zyhppc4pXu+F9jvLCIwwhdsPA+2mgxPc7FRfzmXoMpi2XSPgyjNVdEbBKwkmE39xJxnMXrGJXN7hEOhtUeUgeHi2pZn+S/oDSDqrg+0KZGPSXjVG6+p+JTX0CblHHkEkZ6n3F+AqUcu74f/1yIaITiDdg2GhTWc5g","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -54,7 +54,7 @@ interactions:
 
         event: step.delta
 
-        data: {"index":1,"delta":{"text":"Hi!","type":"text"},"event_type":"step.delta"}
+        data: {"index":1,"delta":{"text":"Hi there!","type":"text"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -64,7 +64,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChdBRldnYXRXLUtxMnVfUFVQcXZHRHVBSRIXQUZXZ2F0Vy1LcTJ1X1BVUHF2R0R1QUk","status":"completed","usage":{"total_tokens":80,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":69},"created":"2026-09-08T18:33:37Z","updated":"2026-09-08T18:33:37Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_Chd5ZmluYXFMTkh1T3FfUFVQdG9QOTRBSRIXeWZpbmFxTE5IdU9xX1BVUHRvUDk0QUk","status":"completed","usage":{"total_tokens":116,"total_input_tokens":9,"input_tokens_by_modality":[{"modality":"text","tokens":9}],"total_cached_tokens":0,"total_output_tokens":3,"total_tool_use_tokens":0,"total_thought_tokens":104},"created":"2026-09-14T13:38:18Z","updated":"2026-09-14T13:38:18Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -77,15 +77,15 @@ interactions:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1967'
+      - '2119'
       content-type:
       - text/event-stream
       date:
-      - Tue, 08 Sep 2026 18:33:36 GMT
+      - Mon, 14 Sep 2026 13:38:17 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=110
+      - gfet4t7; dur=141
       transfer-encoding:
       - chunked
       vary:
