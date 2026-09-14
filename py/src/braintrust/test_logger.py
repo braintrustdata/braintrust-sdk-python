@@ -1456,6 +1456,57 @@ def test_logger_log_level_helpers(with_memory_logger, method_name, severity_numb
     assert row["context"]["otel"]["log"]["severity_number"] == severity_number
 
 
+def test_logger_log_helpers_render_template_parameters(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    log_id = test_logger.info(
+        "User {user_id} paid {amount:.2f} with {method}",
+        metadata={"source": "checkout"},
+        user_id="user-123",
+        amount=12.5,
+    )
+
+    [row] = with_memory_logger.pop()
+    assert row["id"] == log_id
+    assert row["output"] == "User user-123 paid 12.50 with {method}"
+    assert row["metadata"] == {
+        "source": "checkout",
+        "braintrust.template.parameter.user_id": "user-123",
+        "braintrust.template.parameter.amount": 12.5,
+        "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
+    }
+
+
+def test_logger_error_uses_rendered_template_as_error(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.error("Payment {payment_id} failed", payment_id="pay-123")
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "Payment pay-123 failed"
+    assert row["error"] == "Payment pay-123 failed"
+
+
+def test_logger_log_helpers_do_not_format_without_parameters(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.info('{"key": "{value}"}')
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == '{"key": "{value}"}'
+    assert not row.get("metadata")
+
+
+def test_logger_log_template_parameters_are_safely_serialized(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.warn("Request failed: {error}", error=ValueError("bad request"))
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "Request failed: bad request"
+    assert row["metadata"]["braintrust.template.parameter.error"] == "bad request"
+
+
 def test_logger_emit_log_rejects_invalid_level(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
