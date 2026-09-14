@@ -433,7 +433,8 @@ def _partition_model_source(
 
     common_names = {name for name, tags in owners.items() if len(tags) > 1}
     module_for_name = {
-        name: "common" if name in common_names else _snake_case(next(iter(tags))) for name, tags in owners.items()
+        name: "common" if name in common_names else generated_resource_name(next(iter(tags)))
+        for name, tags in owners.items()
     }
 
     def source_for(node: ast.stmt) -> str:
@@ -467,7 +468,7 @@ def _partition_model_source(
 def generate_tree(output_root: Path, config: Mapping[str, Any], spec: Mapping[str, Any]) -> ValidationReport:
     validate_config(config)
     report = validate_spec(spec, config)
-    operations, inline_models = _collect_generated_operations(spec, config)
+    operations, inline_models = collect_generated_operations(spec, config)
     selected_spec = _slice_model_spec(spec, {operation.operation_id for operation in operations})
     model_spec = _with_inline_models(_extract_colliding_inline_models(selected_spec), inline_models)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -840,7 +841,7 @@ def _operation_retry_mode(method: str, operation_id: str, safe_reads: Set[str], 
     return "NONE"
 
 
-def _collect_generated_operations(
+def collect_generated_operations(
     spec: Mapping[str, Any], config: Mapping[str, Any]
 ) -> Tuple[List[GeneratedOperation], List[Tuple[str, Mapping[str, Any]]]]:
     endpoint = _endpoint_config(config)
@@ -1002,7 +1003,7 @@ def _generate_resources(
 
     generated_paths = []
     for tag, tag_operations in sorted(by_tag.items()):
-        resource_path = root / f"{_snake_case(tag)}.py"
+        resource_path = root / f"{generated_resource_name(tag)}.py"
         _write_generated_file(resource_path, _resource_module_source(tag, tag_operations, model_modules), config)
         generated_paths.append(resource_path)
     return generated_paths
@@ -1141,6 +1142,12 @@ def _python_argument_name(value: str) -> str:
     if keyword.iskeyword(result):
         result += "_"
     return result
+
+
+def generated_resource_name(tag: str) -> str:
+    """Return the Python client property and module name for an OpenAPI tag."""
+
+    return _snake_case(tag)
 
 
 def _snake_case(value: str) -> str:

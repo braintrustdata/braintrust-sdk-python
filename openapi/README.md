@@ -15,7 +15,8 @@ make generate-api-client
 make check-api-client-codegen
 ```
 
-The check regenerates in a temporary directory and reports drift without changing the worktree.
+The check regenerates in a temporary directory and reports drift without changing the worktree. Generation also synchronizes the reviewed resource, method, and type inventories in the [public REST API client README](../py/src/braintrust/api/README.md).
+
 The reviewed generated surface includes these tags:
 
 - core resources: Projects, Experiments, Datasets, Prompts, and Functions;
@@ -70,6 +71,6 @@ BRAINTRUST_OPENAPI_ROOT=../../braintrust-openapi make fetch-openapi-spec
 ```
 
 The checkout must be at the commit pinned in `config.json`, and its spec must match the pinned hash.
-To update the snapshot, update the commit and hash in `config.json`, fetch, regenerate, and review both
-the upstream spec diff and generated-source diff. Validation and generation apply only to selected tags
-and their transitively reachable schemas.
+To update the snapshot manually, update the commit and hash in `config.json`, fetch, regenerate, and review both the upstream spec diff and generated-source diff. Validation and generation apply only to selected tags and their transitively reachable schemas.
+
+The scheduled and manually dispatchable [OpenAPI spec updates workflow](../.github/workflows/openapi-spec-updates.yml) checks the latest upstream commit that changed the spec. When the pin changes, it updates the snapshot, regenerates the client and public reference, runs codegen, runtime, and type tests, and opens or updates a review PR containing operation/schema summaries and a link to the upstream diff. The workflow never auto-merges its PR. If generation or validation fails, it still opens the update PR with the failure status and then fails the workflow so the new API shape can be reviewed explicitly.
