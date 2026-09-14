@@ -1384,6 +1384,7 @@ class AgentSessionWrapper:
         self.acreate_fn = acreate_fn
 
     def create(self, *args: Any, **kwargs: Any) -> Any:
+        raw_requested = _raw_response_requested(kwargs)
         params = _agent_session_params(kwargs)
         span = start_span(
             name="openai.agents.sessions.create",
@@ -1392,7 +1393,12 @@ class AgentSessionWrapper:
         )
         start_time = time.time()
         try:
-            stream = self.create_fn(*args, **kwargs)
+            create_response = self.create_fn(*args, **kwargs)
+            if raw_requested:
+                stream = create_response.parse()
+                log_headers(create_response, span)
+            else:
+                stream = create_response
         except Exception as error:
             span.log(error=error)
             span.end()
@@ -1411,9 +1417,13 @@ class AgentSessionWrapper:
             finally:
                 trace.finish()
 
-        return _TracedStream(stream, gen(), trace.finish)
+        traced_stream = _TracedStream(stream, gen(), trace.finish)
+        if raw_requested:
+            return _RawResponseWithTracedStream(create_response, traced_stream)
+        return traced_stream
 
     async def acreate(self, *args: Any, **kwargs: Any) -> Any:
+        raw_requested = _raw_response_requested(kwargs)
         params = _agent_session_params(kwargs)
         span = start_span(
             name="openai.agents.sessions.create",
@@ -1422,7 +1432,16 @@ class AgentSessionWrapper:
         )
         start_time = time.time()
         try:
-            stream = await self.acreate_fn(*args, **kwargs)
+            create_response = await self.acreate_fn(*args, **kwargs)
+            parse_was_awaitable = False
+            if raw_requested:
+                stream = create_response.parse()
+                if inspect.isawaitable(stream):
+                    parse_was_awaitable = True
+                    stream = await stream
+                log_headers(create_response, span)
+            else:
+                stream = create_response
         except Exception as error:
             span.log(error=error)
             span.end()
@@ -1441,7 +1460,14 @@ class AgentSessionWrapper:
             finally:
                 trace.finish()
 
-        return _AsyncTracedStream(stream, gen(), trace.finish)
+        traced_stream = _AsyncTracedStream(stream, gen(), trace.finish)
+        if raw_requested:
+            return _RawResponseWithTracedStream(
+                create_response,
+                traced_stream,
+                async_parse=parse_was_awaitable,
+            )
+        return traced_stream
 
 
 class ResponseWrapper:

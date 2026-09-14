@@ -519,13 +519,21 @@ def test_openai_agents_session_stream(memory_logger, is_async):
     if is_async:
 
         async def collect_events():
-            stream = await sessions.create(**params)
-            async with stream:
-                return [event async for event in stream]
+            async with sessions.with_streaming_response.create(**params) as raw_response:
+                assert raw_response.headers
+                parse_result = raw_response.parse()
+                assert inspect.isawaitable(parse_result)
+                stream = await parse_result
+                assert stream.response
+                async with stream:
+                    return [event async for event in stream]
 
         events = asyncio.run(collect_events())
     else:
-        with sessions.create(**params) as stream:
+        raw_response = sessions.with_raw_response.create(**params)
+        assert raw_response.headers
+        with raw_response.parse() as stream:
+            assert stream.response
             events = list(stream)
 
     completed = next(
@@ -549,6 +557,7 @@ def test_openai_agents_session_stream(memory_logger, is_async):
     assert task_span["metadata"]["status"] == "completed"
     assert task_span["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
     assert task_span["metrics"]["time_to_first_token"] >= 0
+    assert task_span["metrics"]["start"] <= task_span["metrics"]["end"]
 
     if not is_async:
         command_span = _find_span_by_name(tool_spans, "command_execution")
