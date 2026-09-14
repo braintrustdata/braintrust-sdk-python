@@ -1,0 +1,155 @@
+interactions:
+- request:
+    body: '{"environment":{"type":"none"},"agent":{"model":"gpt-6-astra","instructions":"Answer
+      with only the requested number."},"input":"Reply with 25.","stream":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '158'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      openai-beta:
+      - agents=v1
+      user-agent:
+      - AsyncOpenAI/Python 3.13.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.13.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/agents/sessions
+  response:
+    body:
+      string: 'event: agent.session.created
+
+        data: {"type":"agent.session.created","event_id":"evt_59a75bd26f154cd08a190a511cb3a5a80369118dd4ae45dcaf","session":{"metadata":{},"id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","object":"agent.session","created_at":1789149657,"last_active_at":1789149657,"status":"in_progress","required_actions":[],"error":null,"agent":{"id":"agent_cf663404a9484214ad27b9a2464e03fea78653a0f3544816bd","name":null,"model":"gpt-6-astra","reasoning":{"effort":"medium","summary":null},"text":{"format":{"type":"text"},"verbosity":"medium"},"service_tier":"auto","instructions":"Answer
+        with only the requested number.","tools":[],"multi_agent":{"enabled":false,"max_concurrent_subagents":null}},"environment":{"type":"none"},"vault_ids":[],"usage":null}}
+
+
+        event: agent.session.turn.created
+
+        data: {"type":"agent.session.turn.created","event_id":"evt_840c3c730c7a49009d0ca9bd8fe66718dac6c143efeb40c1b3","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","turn":{"id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","object":"agent.session.turn","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","agent_id":"agent_cf663404a9484214ad27b9a2464e03fea78653a0f3544816bd","subagent_id":null,"status":"queued","created_at":1789149661,"started_at":null,"completed_at":null,"error":null,"usage":null}}
+
+
+        event: agent.session.turn.item.added
+
+        data: {"type":"agent.session.turn.item.added","event_id":"evt_87fbce7250214075abb78d6032e29945ba81cef327c14f3695","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","output_index":null,"item":{"type":"message","id":"msg_d90d03c8e2ff600c2e32095b65697a5df0e58ca4744c0bc998","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","role":"user","content":[{"type":"input_text","text":"Reply
+        with 25."}],"status":"completed","phase":null}}
+
+
+        event: agent.session.in_progress
+
+        data: {"type":"agent.session.in_progress","event_id":"evt_96779b9c47bc4252800ba02e0580135a239359f8289945e593","session":{"metadata":{},"id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","object":"agent.session","created_at":1789149657,"last_active_at":1789149657,"status":"in_progress","required_actions":[],"error":null,"agent":{"id":"agent_cf663404a9484214ad27b9a2464e03fea78653a0f3544816bd","name":null,"model":"gpt-6-astra","reasoning":{"effort":"medium","summary":null},"text":{"format":{"type":"text"},"verbosity":"medium"},"service_tier":"auto","instructions":"Answer
+        with only the requested number.","tools":[],"multi_agent":{"enabled":false,"max_concurrent_subagents":null}},"environment":{"type":"none"},"vault_ids":[],"usage":null}}
+
+
+        event: agent.session.turn.in_progress
+
+        data: {"type":"agent.session.turn.in_progress","event_id":"evt_a60d7ad468b1425c906b8a52a1aff739a0d1c5dea25c4d5b80","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","turn":{"id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","object":"agent.session.turn","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","agent_id":"agent_cf663404a9484214ad27b9a2464e03fea78653a0f3544816bd","subagent_id":null,"status":"in_progress","created_at":1789149661,"started_at":1789149661,"completed_at":null,"error":null,"usage":null}}
+
+
+        event: agent.session.turn.item.added
+
+        data: {"type":"agent.session.turn.item.added","event_id":"evt_90753d7413ff40999c49e58021d7b74c799ab60209204cc4b9","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","output_index":0,"item":{"type":"message","id":"msg_01402b651ba1b38d016aa441df081087d1a8b8a2dcf19960b3","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","role":"assistant","content":[],"status":"in_progress","phase":"final_answer"}}
+
+
+        event: agent.session.turn.content_part.added
+
+        data: {"type":"agent.session.turn.content_part.added","event_id":"evt_9f066441eb0344d798e4dccd13904314918428e5c5db458387","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","item_id":"msg_01402b651ba1b38d016aa441df081087d1a8b8a2dcf19960b3","output_index":0,"content_index":0,"part":{"type":"output_text","text":""}}
+
+
+        event: agent.session.turn.output_text.delta
+
+        data: {"type":"agent.session.turn.output_text.delta","event_id":"evt_306aebbed4ce42f79a451155a17036ccf08cdb7d7ff8479a96","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","item_id":"msg_01402b651ba1b38d016aa441df081087d1a8b8a2dcf19960b3","output_index":0,"content_index":0,"delta":"25"}
+
+
+        event: agent.session.turn.output_text.done
+
+        data: {"type":"agent.session.turn.output_text.done","event_id":"evt_7c2e923ce4404960a1b87304d6c2fb36d525f6859c4e4b9480","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","item_id":"msg_01402b651ba1b38d016aa441df081087d1a8b8a2dcf19960b3","output_index":0,"content_index":0,"text":"25"}
+
+
+        event: agent.session.turn.content_part.done
+
+        data: {"type":"agent.session.turn.content_part.done","event_id":"evt_6dd20767810040d4b4cb3075461a72968b3e923c03f84b7a83","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","item_id":"msg_01402b651ba1b38d016aa441df081087d1a8b8a2dcf19960b3","output_index":0,"content_index":0,"part":{"type":"output_text","text":"25"}}
+
+
+        event: agent.session.turn.item.done
+
+        data: {"type":"agent.session.turn.item.done","event_id":"evt_0b83e6e583a34450a0192047a7b2f5baa1b0cf4cebfb427d90","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","output_index":0,"item":{"type":"message","id":"msg_01402b651ba1b38d016aa441df081087d1a8b8a2dcf19960b3","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","role":"assistant","status":"completed","content":[{"type":"output_text","text":"25"}],"phase":"final_answer"}}
+
+
+        event: agent.session.turn.completed
+
+        data: {"type":"agent.session.turn.completed","event_id":"evt_e6be0ba2851342c7a4b895180a2bb0e7e62a70bda57248938f","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","turn_id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","turn":{"id":"turn_04f1304d204a6379006aa441dfcbfc819192643e3f3b4c97d3","object":"agent.session.turn","session_id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","agent_id":"agent_cf663404a9484214ad27b9a2464e03fea78653a0f3544816bd","subagent_id":null,"status":"completed","created_at":1789149661,"started_at":1789149661,"completed_at":1789149664,"error":null,"usage":null},"usage":null}
+
+
+        event: agent.session.idle
+
+        data: {"type":"agent.session.idle","event_id":"evt_727f3cd32758438ba96fa291752d5bf5c393775dc62744b5ba","session":{"metadata":{},"id":"sess_04f1304d204a6379006aa441d997b88191a32759374fa62538","object":"agent.session","created_at":1789149657,"last_active_at":1789149657,"status":"idle","required_actions":[],"error":null,"agent":{"id":"agent_cf663404a9484214ad27b9a2464e03fea78653a0f3544816bd","name":null,"model":"gpt-6-astra","reasoning":{"effort":"medium","summary":null},"text":{"format":{"type":"text"},"verbosity":"medium"},"service_tier":"auto","instructions":"Answer
+        with only the requested number.","tools":[],"multi_agent":{"enabled":false,"max_concurrent_subagents":null}},"environment":{"type":"none"},"vault_ids":[],"usage":null}}
+
+
+        '
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - x-request-id,openai-processing-ms,openai-version,openai-organization,openai-project
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a398932a8ff9a0c2-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Fri, 11 Sep 2026 18:00:58 GMT
+      openai-processing-ms:
+      - '2019'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - origin, access-control-request-method, access-control-request-headers
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-request-id:
+      - req_d2192778fb7b420396699ce543812d01
+    status:
+      code: 201
+      message: Created
+version: 1

@@ -3,6 +3,7 @@
 from braintrust.integrations.base import BaseIntegration
 
 from .patchers import (
+    AgentsSessionsPatcher,
     AudioSpeechPatcher,
     AudioTranscriptionsPatcher,
     AudioTranslationsPatcher,
@@ -20,6 +21,7 @@ class OpenAIIntegration(BaseIntegration):
     name = "openai"
     import_names = ("openai",)
     patchers = (
+        AgentsSessionsPatcher,
         ChatCompletionsPatcher,
         EmbeddingsPatcher,
         ModerationsPatcher,

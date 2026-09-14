@@ -1,0 +1,181 @@
+interactions:
+- request:
+    body: '{"environment":{"type":"openai_hosted"},"agent":{"model":"gpt-6-astra","instructions":"Run
+      the requested command, then answer with only its output."},"input":"Run `printf
+      24` in the terminal.","stream":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '207'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      openai-beta:
+      - agents=v1
+      user-agent:
+      - OpenAI/Python 3.13.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 3.13.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/agents/sessions
+  response:
+    body:
+      string: 'event: agent.session.created
+
+        data: {"type":"agent.session.created","event_id":"evt_125f266c14464226b396d2150adbed5ba38f5fa1a4bb475384","session":{"metadata":{},"id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","object":"agent.session","created_at":1789149350,"last_active_at":1789149350,"status":"idle","required_actions":[],"error":null,"agent":{"id":"agent_dd743e0ac47b4c428b1910a0b603c9cdc603a4e4282a4e028d","name":null,"model":"gpt-6-astra","reasoning":{"effort":"medium","summary":null},"text":{"format":{"type":"text"},"verbosity":"medium"},"service_tier":"auto","instructions":"Run
+        the requested command, then answer with only its output.","tools":[],"multi_agent":{"enabled":false,"max_concurrent_subagents":null}},"environment":{"type":"openai_hosted","id":"ccarenv_b64_Y2NhcmVudl82YWE0NDBhNmRhNWM4MTkxYmQ0NmYxMGEyYzgzMGVlMw","packages":{"python":[],"system":[],"npm":[]},"network":{"access":"enabled","allowed_domains":[]},"capability_directories":[],"skills":[],"plugins":[],"files":[]},"vault_ids":[],"usage":null}}
+
+
+        event: agent.session.turn.created
+
+        data: {"type":"agent.session.turn.created","event_id":"evt_cb74a913175d4a0b9b2262ab3051503db84214f777b741efb3","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","turn":{"id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","object":"agent.session.turn","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","agent_id":"agent_dd743e0ac47b4c428b1910a0b603c9cdc603a4e4282a4e028d","subagent_id":null,"status":"queued","created_at":1789149359,"started_at":null,"completed_at":null,"error":null,"usage":null}}
+
+
+        event: agent.session.turn.item.added
+
+        data: {"type":"agent.session.turn.item.added","event_id":"evt_f0a1e97254b244e79302ac490370cd99be9c75987aa341e49f","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","output_index":null,"item":{"type":"message","id":"msg_9c3b4c3795cf12c91eb75916a5f9e2649252daf4d787774be0","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","role":"user","content":[{"type":"input_text","text":"Run
+        `printf 24` in the terminal."}],"status":"completed","phase":null}}
+
+
+        event: agent.session.in_progress
+
+        data: {"type":"agent.session.in_progress","event_id":"evt_0b8e7607fd4446e988e96952dc71ff19b3fe7611da2d45fba2","session":{"metadata":{},"id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","object":"agent.session","created_at":1789149350,"last_active_at":1789149350,"status":"in_progress","required_actions":[],"error":null,"agent":{"id":"agent_dd743e0ac47b4c428b1910a0b603c9cdc603a4e4282a4e028d","name":null,"model":"gpt-6-astra","reasoning":{"effort":"medium","summary":null},"text":{"format":{"type":"text"},"verbosity":"medium"},"service_tier":"auto","instructions":"Run
+        the requested command, then answer with only its output.","tools":[],"multi_agent":{"enabled":false,"max_concurrent_subagents":null}},"environment":{"type":"openai_hosted","id":"ccarenv_b64_Y2NhcmVudl82YWE0NDBhNmRhNWM4MTkxYmQ0NmYxMGEyYzgzMGVlMw","packages":{"python":[],"system":[],"npm":[]},"network":{"access":"enabled","allowed_domains":[]},"capability_directories":[],"skills":[],"plugins":[],"files":[]},"vault_ids":[],"usage":null}}
+
+
+        event: agent.session.turn.in_progress
+
+        data: {"type":"agent.session.turn.in_progress","event_id":"evt_922a69ed00d64d8a918f3439b126beb51211507a37f14bf2b2","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","turn":{"id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","object":"agent.session.turn","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","agent_id":"agent_dd743e0ac47b4c428b1910a0b603c9cdc603a4e4282a4e028d","subagent_id":null,"status":"in_progress","created_at":1789149359,"started_at":1789149359,"completed_at":null,"error":null,"usage":null}}
+
+
+        :
+
+
+        event: agent.session.environment.ready
+
+        data: {"type":"agent.session.environment.ready","event_id":"evt_d06069af7d0d446abf0acc2d8be74ad0e871eecd6c7b4c31b2","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":null,"environment":{"id":"ccarenv_b64_Y2NhcmVudl82YWE0NDBhNmRhNWM4MTkxYmQ0NmYxMGEyYzgzMGVlMw","type":"openai_hosted","status":"ready","error":null}}
+
+
+        event: agent.session.turn.item.added
+
+        data: {"type":"agent.session.turn.item.added","event_id":"evt_614e4be5289946baaebdd8b29595b99669e84a60784f4afebf","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","output_index":0,"item":{"type":"command_execution","id":"call_dluR63csbEuWrfnAqgobFUDn","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","command":"/bin/bash
+        -lc ''printf 24''","cwd":"/workspace","status":"in_progress","output":null,"exit_code":null,"duration_ms":null}}
+
+
+        event: agent.session.turn.item.done
+
+        data: {"type":"agent.session.turn.item.done","event_id":"evt_401e5b626b504a86a58ff369b919ced9d4ff9d1f3b1b4af08d","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","output_index":0,"item":{"type":"command_execution","id":"call_dluR63csbEuWrfnAqgobFUDn","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","command":"/bin/bash
+        -lc ''printf 24''","cwd":"/workspace","status":"completed","output":"24","exit_code":null,"duration_ms":null}}
+
+
+        event: agent.session.environment.connected
+
+        data: {"type":"agent.session.environment.connected","event_id":"evt_77f470a5c89f406184eaa549659fae32cbe31aa292e249268b","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":null,"environment":{"id":"ccarenv_b64_Y2NhcmVudl82YWE0NDBhNmRhNWM4MTkxYmQ0NmYxMGEyYzgzMGVlMw","type":"openai_hosted","status":"connected","error":null}}
+
+
+        event: agent.session.turn.item.added
+
+        data: {"type":"agent.session.turn.item.added","event_id":"evt_f3a5b28451c349c6a53049b2c3463c8f9989a854025e43f09e","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","output_index":1,"item":{"type":"message","id":"msg_0284123ca05485d1016aa440c8b79487d1bdf4525e4d5e70d3","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","role":"assistant","content":[],"status":"in_progress","phase":"final_answer"}}
+
+
+        event: agent.session.turn.content_part.added
+
+        data: {"type":"agent.session.turn.content_part.added","event_id":"evt_b96cffe2e63c45ae9a97816f104dd2641e44aa318fcd46bdaf","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","item_id":"msg_0284123ca05485d1016aa440c8b79487d1bdf4525e4d5e70d3","output_index":1,"content_index":0,"part":{"type":"output_text","text":""}}
+
+
+        event: agent.session.turn.output_text.delta
+
+        data: {"type":"agent.session.turn.output_text.delta","event_id":"evt_494678af9762416aa1c2830b2e5455d48f0375012f544b8f8c","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","item_id":"msg_0284123ca05485d1016aa440c8b79487d1bdf4525e4d5e70d3","output_index":1,"content_index":0,"delta":"24"}
+
+
+        event: agent.session.turn.output_text.done
+
+        data: {"type":"agent.session.turn.output_text.done","event_id":"evt_a3290bd50f4c440c838758c099919d5ccb0355d841fc4f64b7","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","item_id":"msg_0284123ca05485d1016aa440c8b79487d1bdf4525e4d5e70d3","output_index":1,"content_index":0,"text":"24"}
+
+
+        event: agent.session.turn.content_part.done
+
+        data: {"type":"agent.session.turn.content_part.done","event_id":"evt_8eb0e1c3ce6e407a9bcb02ddc100600c6bc2d00f535b45d083","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","item_id":"msg_0284123ca05485d1016aa440c8b79487d1bdf4525e4d5e70d3","output_index":1,"content_index":0,"part":{"type":"output_text","text":"24"}}
+
+
+        event: agent.session.turn.item.done
+
+        data: {"type":"agent.session.turn.item.done","event_id":"evt_fb5750359ae447cbabba02f608809014f99a587fa63f44649f","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","output_index":1,"item":{"type":"message","id":"msg_0284123ca05485d1016aa440c8b79487d1bdf4525e4d5e70d3","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","role":"assistant","status":"completed","content":[{"type":"output_text","text":"24"}],"phase":"final_answer"}}
+
+
+        event: agent.session.turn.completed
+
+        data: {"type":"agent.session.turn.completed","event_id":"evt_2f44ae53b2714e5787a864282f8246c1119d03c7672e484683","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","turn_id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","turn":{"id":"turn_0c2c2a6c88586215006aa440b15da48191922c4badbe3e7d46","object":"agent.session.turn","session_id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","agent_id":"agent_dd743e0ac47b4c428b1910a0b603c9cdc603a4e4282a4e028d","subagent_id":null,"status":"completed","created_at":1789149359,"started_at":1789149359,"completed_at":1789149386,"error":null,"usage":null},"usage":null}
+
+
+        event: agent.session.idle
+
+        data: {"type":"agent.session.idle","event_id":"evt_5fcbaf9c335a463e99ba46594200f7aeb6cdf87eafef4f7a95","session":{"metadata":{},"id":"sess_0c2c2a6c88586215006aa440a6d4e48191aa692519badcb6ab","object":"agent.session","created_at":1789149350,"last_active_at":1789149350,"status":"idle","required_actions":[],"error":null,"agent":{"id":"agent_dd743e0ac47b4c428b1910a0b603c9cdc603a4e4282a4e028d","name":null,"model":"gpt-6-astra","reasoning":{"effort":"medium","summary":null},"text":{"format":{"type":"text"},"verbosity":"medium"},"service_tier":"auto","instructions":"Run
+        the requested command, then answer with only its output.","tools":[],"multi_agent":{"enabled":false,"max_concurrent_subagents":null}},"environment":{"type":"openai_hosted","id":"ccarenv_b64_Y2NhcmVudl82YWE0NDBhNmRhNWM4MTkxYmQ0NmYxMGEyYzgzMGVlMw","packages":{"python":[],"system":[],"npm":[]},"network":{"access":"enabled","allowed_domains":[]},"capability_directories":[],"skills":[],"plugins":[],"files":[]},"vault_ids":[],"usage":null}}
+
+
+        '
+    headers:
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - x-request-id,openai-processing-ms,openai-version,openai-organization,openai-project
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3988ba06f0bbf5d-YYZ
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream
+      date:
+      - Fri, 11 Sep 2026 17:55:59 GMT
+      openai-processing-ms:
+      - '10447'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - origin, access-control-request-method, access-control-request-headers
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-request-id:
+      - req_b6071ace19894c9c97f03396978b6937
+    status:
+      code: 201
+      message: Created
+version: 1
