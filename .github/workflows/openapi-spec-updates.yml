@@ -1,0 +1,96 @@
+name: OpenAPI spec updates
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # Mondays at 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: openapi-spec-updates
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python-env
+
+      - name: Update pinned specification
+        id: update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mise exec -- python py/scripts/update-openapi-spec.py \
+            --summary-file "$RUNNER_TEMP/openapi-update.md" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate client and public reference
+        id: generate
+        if: steps.update.outputs.changed == 'true'
+        continue-on-error: true
+        run: mise exec -- make -C py generate-api-client
+
+      - name: Run codegen tests
+        id: codegen
+        if: steps.update.outputs.changed == 'true'
+        continue-on-error: true
+        run: mise exec -- make -C py test-api-codegen
+
+      - name: Run REST client runtime tests
+        id: runtime
+        if: steps.update.outputs.changed == 'true'
+        continue-on-error: true
+        run: mise exec -- make -C py test-core
+
+      - name: Run public API type tests
+        id: types
+        if: steps.update.outputs.changed == 'true'
+        continue-on-error: true
+        run: mise exec -- uv run --project ./py nox -f ./py/noxfile.py -s test_types
+
+      - name: Add validation results to pull request body
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GENERATE_OUTCOME: ${{ steps.generate.outcome }}
+          CODEGEN_OUTCOME: ${{ steps.codegen.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+          TYPES_OUTCOME: ${{ steps.types.outcome }}
+        run: |
+          {
+            echo
+            echo "### Workflow results"
+            echo
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| Regeneration | \`$GENERATE_OUTCOME\` |"
+            echo "| Codegen tests | \`$CODEGEN_OUTCOME\` |"
+            echo "| Runtime tests | \`$RUNTIME_OUTCOME\` |"
+            echo "| Type tests | \`$TYPES_OUTCOME\` |"
+          } >> "$RUNNER_TEMP/openapi-update.md"
+
+      - name: Create pull request
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          commit-message: "chore(api): update pinned OpenAPI spec"
+          branch: auto/update-openapi-spec
+          title: "chore(api): update pinned OpenAPI spec"
+          body-path: ${{ runner.temp }}/openapi-update.md
+          delete-branch: true
+
+      - name: Fail when automated validation did not pass
+        if: >-
+          steps.update.outputs.changed == 'true' &&
+          (steps.generate.outcome != 'success' ||
+          steps.codegen.outcome != 'success' ||
+          steps.runtime.outcome != 'success' ||
+          steps.types.outcome != 'success')
+        run: |
+          echo "The update PR was created, but at least one automated validation failed."
+          exit 1

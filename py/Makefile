@@ -41,9 +41,11 @@ fetch-openapi-spec:
 
 generate-api-client:
 	uv run --no-default-groups --group api-codegen python scripts/generate-api-client.py
+	$(PYTHON) scripts/generate-api-docs.py
 
 check-api-client-codegen:
 	uv run --no-default-groups --group api-codegen python scripts/generate-api-client.py --check
+	$(PYTHON) scripts/generate-api-docs.py --check
 
 test-api-codegen:
 	uv run nox -s test_api_codegen
@@ -91,8 +93,8 @@ help:
 	@echo "  build               - Build Python package"
 	@echo "  check-stale-cassettes - Detect orphaned cassette version directories"
 	@echo "  fetch-openapi-spec  - Fetch the hash-verified pinned OpenAPI spec"
-	@echo "  generate-api-client - Generate private REST API models from the pinned spec"
-	@echo "  check-api-client-codegen - Check committed REST API models for drift"
+	@echo "  generate-api-client - Generate the REST API client and public reference from the pinned spec"
+	@echo "  check-api-client-codegen - Check the committed REST API client and public reference for drift"
 	@echo "  test-api-codegen    - Run OpenAPI validator and generator tests"
 	@echo "  sync-pytest-pin     - Sync [dependency-groups].test pytest pin from matrix"
 	@echo "  clean               - Remove build artifacts"

@@ -2,6 +2,9 @@ import ast
 import copy
 import re
 import runpy
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 from openapi_codegen import (
@@ -10,11 +13,11 @@ from openapi_codegen import (
     GENERATED_ROOT,
     SPEC_PATH,
     CodegenError,
-    _collect_generated_operations,
-    _snake_case,
     atomic_replace_tree,
+    collect_generated_operations,
     compare_generated,
     generate_tree,
+    generated_resource_name,
     load_config,
     read_and_verify_spec,
 )
@@ -62,7 +65,7 @@ def test_pinned_selected_spec_operations_match_generated_registries():
             and tag in operation.get("tags", [])
             and operation["operationId"] not in specialized_operations
         }
-        tree = ast.parse((GENERATED_ROOT / f"{_snake_case(tag)}.py").read_text())
+        tree = ast.parse((GENERATED_ROOT / f"{generated_resource_name(tag)}.py").read_text())
         registry = next(
             node.value
             for node in tree.body
@@ -94,6 +97,12 @@ def test_pinned_selected_spec_operations_match_generated_registries():
         )
 
 
+def test_public_api_readme_matches_reviewed_python_surface():
+    script = Path(__file__).resolve().parents[2] / "scripts" / "generate-api-docs.py"
+
+    subprocess.run([sys.executable, str(script), "--check"], check=True)
+
+
 def test_pinned_unsupported_tags_are_explicit_and_proxy_is_excluded():
     config = load_config(CONFIG_PATH)
     endpoint_config = config["endpoint_generator"]
@@ -112,7 +121,7 @@ def test_pinned_unsupported_tags_are_explicit_and_proxy_is_excluded():
 
 def test_generated_tags_are_wired_to_openapi_client():
     config = load_config(CONFIG_PATH)
-    expected_resources = {_snake_case(tag) for tag in config["endpoint_generator"]["generated_tags"]}
+    expected_resources = {generated_resource_name(tag) for tag in config["endpoint_generator"]["generated_tags"]}
     client_tree = ast.parse((GENERATED_ROOT.parent / "client.py").read_text())
     openapi_client = next(
         node for node in client_tree.body if isinstance(node, ast.ClassDef) and node.name == "BraintrustOpenApiClient"
@@ -130,7 +139,7 @@ def test_generated_tags_are_wired_to_openapi_client():
 def test_public_rest_types_match_generated_request_and_response_models():
     config = load_config(CONFIG_PATH)
     spec = read_and_verify_spec(config, SPEC_PATH)
-    operations, _ = _collect_generated_operations(spec, config)
+    operations, _ = collect_generated_operations(spec, config)
     expected = set()
     for operation in operations:
         for type_name in (operation.request_body_type, operation.response_type):
