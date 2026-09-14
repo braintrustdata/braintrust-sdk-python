@@ -16,6 +16,7 @@ import pytest
 from braintrust.framework import EvalAsync, EvalCase, EvalResultWithSummary
 from braintrust.generated_types import ObjectReference
 from braintrust.score import Score
+from braintrust.types._eval import EvalCaseDict, EvalCaseDictNoOutput
 
 
 # --- Domain types for testing ---
@@ -141,3 +142,17 @@ async def test_eval_origin_types():
         no_send_logs=True,
     )
     assert result.results[0].origin == origin
+
+
+def test_eval_upsert_id_types() -> None:
+    eval_case: EvalCase[str, str] = EvalCase(input="case", upsert_id="case-root")
+    assert eval_case.upsert_id == "case-root"
+    dict_case: EvalCaseDictNoOutput[str] = {"input": "dictionary", "upsert_id": "dict-root"}
+    expected_case: EvalCaseDict[str, str] = {
+        "input": "expected",
+        "expected": "expected",
+        "upsert_id": "expected-root",
+    }
+
+    assert EvalCase.from_dict(dict(dict_case)).upsert_id == "dict-root"
+    assert EvalCase.from_dict(dict(expected_case)).upsert_id == "expected-root"
