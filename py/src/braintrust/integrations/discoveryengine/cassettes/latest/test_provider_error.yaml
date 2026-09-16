@@ -1,0 +1,57 @@
+interactions:
+- request:
+    body: "{\n  \"query\": \"test\",\n  \"records\": [\n    {\n      \"id\": \"empty\"\n
+      \   }\n  ]\n}"
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '73'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+      x-goog-api-client:
+      - gl-python/3.14.7 grpc/1.84.0 gax/2.37.0 gapic/0.20.3 pb/7.36.1 cred-type/u
+      x-goog-request-params:
+      - ranking_config=projects/sdk-dev-508013/locations/global/rankingConfigs/default_ranking_config
+    method: POST
+    uri: https://discoveryengine.googleapis.com/v1/projects/sdk-dev-508013/locations/global/rankingConfigs/default_ranking_config:rank?%24alt=json%3Benum-encoding%3Dint
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"RankRequest.records(0).title()
+        and RankRequest.records(0).content() are empty at the same time.\",\n    \"status\":
+        \"INVALID_ARGUMENT\"\n  }\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 16 Sep 2026 17:45:01 GMT
+      Server:
+      - ESF
+      Server-Timing:
+      - gfet4t7; dur=71
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '185'
+    status:
+      code: 400
+      message: Bad Request
+version: 1

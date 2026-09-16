@@ -1,0 +1,44 @@
+{
+  "method": "check_grounding",
+  "requests": [
+    {
+      "grounding_config": "projects/sdk-dev-508013/locations/global/groundingConfigs/default_grounding_config",
+      "answer_candidate": "Braintrust evaluates AI applications.",
+      "facts": [
+        {
+          "fact_text": "Braintrust is a platform for evaluating AI applications.",
+          "attributes": {}
+        }
+      ],
+      "user_labels": {}
+    }
+  ],
+  "responses": [
+    {
+      "support_score": 0.99110764,
+      "cited_chunks": [
+        {
+          "chunk_text": "Braintrust is a platform for evaluating AI applications.",
+          "source": "0",
+          "index": 0,
+          "source_metadata": {},
+          "uri": "",
+          "title": "",
+          "domain": ""
+        }
+      ],
+      "claims": [
+        {
+          "start_pos": 0,
+          "end_pos": 37,
+          "claim_text": "Braintrust evaluates AI applications.",
+          "citation_indices": [
+            0
+          ],
+          "grounding_check_required": true
+        }
+      ],
+      "cited_facts": []
+    }
+  ]
+}

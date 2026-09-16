@@ -1,0 +1,60 @@
+interactions:
+- request:
+    body: "{\n  \"model\": \"semantic-ranker-512@latest\",\n  \"topN\": 1,\n  \"query\":
+      \"What is Braintrust?\",\n  \"records\": [\n    {\n      \"id\": \"1\",\n      \"content\":
+      \"Braintrust is a platform for evaluating and monitoring AI applications.\"\n
+      \   },\n    {\n      \"id\": \"2\",\n      \"content\": \"The moon orbits the
+      Earth.\"\n    }\n  ]\n}"
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '306'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+      x-goog-api-client:
+      - gl-python/3.14.7 grpc/1.84.0 gax/2.37.0 gapic/0.20.3 pb/7.36.1 cred-type/u
+      x-goog-request-params:
+      - ranking_config=projects/sdk-dev-508013/locations/global/rankingConfigs/default_ranking_config
+    method: POST
+    uri: https://discoveryengine.googleapis.com/v1/projects/sdk-dev-508013/locations/global/rankingConfigs/default_ranking_config:rank?%24alt=json%3Benum-encoding%3Dint
+  response:
+    body:
+      string: "{\n  \"records\": [\n    {\n      \"id\": \"1\",\n      \"content\":
+        \"Braintrust is a platform for evaluating and monitoring AI applications.\",\n
+        \     \"score\": 0.8597\n    }\n  ]\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 16 Sep 2026 17:37:35 GMT
+      Server:
+      - ESF
+      Server-Timing:
+      - gfet4t7; dur=105
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '166'
+    status:
+      code: 200
+      message: OK
+version: 1
