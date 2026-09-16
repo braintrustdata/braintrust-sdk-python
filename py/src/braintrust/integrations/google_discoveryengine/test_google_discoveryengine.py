@@ -23,9 +23,9 @@ from google.oauth2.credentials import Credentials
 
 def _resource(request, cassette_dir, env_name, cassette_name, separator):
     if request.config.getoption("--vcr-record") == "all":
-        value = os.getenv(f"BRAINTRUST_DISCOVERYENGINE_{env_name}")
+        value = os.getenv(f"BRAINTRUST_GOOGLE_DISCOVERYENGINE_{env_name}")
         if not value:
-            pytest.fail(f"Set BRAINTRUST_DISCOVERYENGINE_{env_name} to record Discovery Engine tests")
+            pytest.fail(f"Set BRAINTRUST_GOOGLE_DISCOVERYENGINE_{env_name} to record Discovery Engine tests")
         return value
     cassette = yaml.safe_load((Path(cassette_dir) / cassette_name).read_text())
     resource = urlsplit(cassette["interactions"][0]["request"]["uri"]).path.removeprefix("/v1/")
@@ -81,8 +81,8 @@ def vcr_config():
 @pytest.fixture(scope="session")
 def credentials(request):
     if request.config.getoption("--vcr-record") == "all":
-        if not os.getenv("BRAINTRUST_DISCOVERYENGINE_PROJECT"):
-            pytest.fail("Set BRAINTRUST_DISCOVERYENGINE_PROJECT to record Discovery Engine tests")
+        if not os.getenv("BRAINTRUST_GOOGLE_DISCOVERYENGINE_PROJECT"):
+            pytest.fail("Set BRAINTRUST_GOOGLE_DISCOVERYENGINE_PROJECT to record Discovery Engine tests")
         # Refresh outside the recorded HTTP call; credentials never enter cassettes.
         token = subprocess.check_output(
             ["gcloud", "auth", "application-default", "print-access-token"], text=True
@@ -115,18 +115,21 @@ def rank_request(LOCATION):
 @pytest.mark.vcr("test_rank.yaml")
 @pytest.mark.parametrize("mode", ["manual", "manual_then_setup", "setup_then_manual"])
 def test_rank(memory_logger, credentials, rank_request, mode):
-    from braintrust.integrations.discoveryengine import setup_discoveryengine, wrap_discoveryengine
+    from braintrust.integrations.google_discoveryengine import (
+        setup_google_discoveryengine,
+        wrap_google_discoveryengine,
+    )
 
     client = discoveryengine.RankServiceClient(transport="rest", credentials=credentials)
     untouched = discoveryengine.RankServiceClient(transport="rest", credentials=credentials)
     original = untouched.rank
     if mode == "setup_then_manual":
-        assert setup_discoveryengine()
-        assert setup_discoveryengine()
-    assert wrap_discoveryengine(client) is client
-    assert wrap_discoveryengine(client) is client
+        assert setup_google_discoveryengine()
+        assert setup_google_discoveryengine()
+    assert wrap_google_discoveryengine(client) is client
+    assert wrap_google_discoveryengine(client) is client
     if mode == "manual_then_setup":
-        assert setup_discoveryengine()
+        assert setup_google_discoveryengine()
     if mode == "manual":
         assert untouched.rank == original
         assert not hasattr(untouched.rank, "__wrapped__")
@@ -135,7 +138,7 @@ def test_rank(memory_logger, credentials, rank_request, mode):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["span_attributes"]["name"] == "discoveryengine.rank"
+    assert span["span_attributes"]["name"] == "google_discoveryengine.rank"
     assert span["span_attributes"]["type"] == "llm"
     assert span["metadata"]["provider"] == "google"
     assert span["metadata"]["model"] == "semantic-ranker-512@latest"
@@ -143,7 +146,7 @@ def test_rank(memory_logger, credentials, rank_request, mode):
     assert span["output"][0]["id"] == "1"
     assert span["output"][0]["score"] == result.records[0].score
     assert not {"tokens", "prompt_tokens", "completion_tokens"} & span["metrics"].keys()
-    assert span["context"]["span_origin"]["instrumentation"]["name"] == "discoveryengine-auto"
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-discoveryengine-auto"
 
 
 QUERY = "What was Alphabet's revenue in 2022?"
@@ -153,13 +156,13 @@ def _assert_generation_span(memory_logger, method, text):
     spans = memory_logger.pop()
     assert len(spans) == 1
     span = spans[0]
-    assert span["span_attributes"]["name"] == f"discoveryengine.{method}"
+    assert span["span_attributes"]["name"] == f"google_discoveryengine.{method}"
     assert span["span_attributes"]["type"] == "llm"
     assert span["metadata"]["provider"] == "google"
     assert "model" not in span["metadata"]
     assert span["output"][0]["message"]["content"] == text
     assert not {"tokens", "prompt_tokens", "completion_tokens"} & span["metrics"].keys()
-    assert span["context"]["span_origin"]["instrumentation"]["name"] == "discoveryengine-auto"
+    assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-discoveryengine-auto"
     json.dumps({key: span[key] for key in ("input", "output", "metadata")})
     return span
 
@@ -234,7 +237,7 @@ def test_check_grounding(memory_logger, credentials, LOCATION):
     assert result.support_score > 0
     spans = memory_logger.pop()
     assert len(spans) == 1
-    assert spans[0]["span_attributes"]["name"] == "discoveryengine.check_grounding"
+    assert spans[0]["span_attributes"]["name"] == "google_discoveryengine.check_grounding"
     assert spans[0]["output"]["support_score"] == result.support_score
 
 
@@ -260,7 +263,7 @@ async def test_async_grpc(
     LOCATION,
     SERVING_CONFIG,
 ):
-    from braintrust.integrations.discoveryengine._test_grpc import grpc_cassette
+    from braintrust.integrations.google_discoveryengine._test_grpc import grpc_cassette
 
     auto_instrument()
     if method in ("answer_query", "stream_answer_query", "converse_conversation"):
@@ -314,11 +317,11 @@ async def test_async_grpc(
         spans = memory_logger.pop()
         assert len(spans) == 1
         span = spans[0]
-        assert span["span_attributes"]["name"] == f"discoveryengine.{method}"
+        assert span["span_attributes"]["name"] == f"google_discoveryengine.{method}"
         assert span["span_attributes"]["type"] == "llm"
         assert span["metadata"]["provider"] == "google"
         assert "model" not in span["metadata"]
-        assert span["context"]["span_origin"]["instrumentation"]["name"] == "discoveryengine-auto"
+        assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-discoveryengine-auto"
         assert span["metrics"]["end"] >= span["metrics"]["start"]
         assert not {"tokens", "prompt_tokens", "completion_tokens"} & span["metrics"].keys()
         if method in ("answer_query", "stream_answer_query", "converse_conversation"):
@@ -347,7 +350,7 @@ async def test_async_grpc(
 
 @pytest.fixture(autouse=True)
 def restore_methods():
-    from braintrust.integrations.discoveryengine.patchers import PATCHERS
+    from braintrust.integrations.google_discoveryengine.patchers import PATCHERS
 
     originals = []
     for patcher in PATCHERS:
@@ -365,8 +368,8 @@ def restore_methods():
 def test_patch_scope():
     import inspect
 
-    from braintrust.integrations.discoveryengine import setup_discoveryengine
-    from braintrust.integrations.discoveryengine.patchers import PATCHERS
+    from braintrust.integrations.google_discoveryengine import setup_google_discoveryengine
+    from braintrust.integrations.google_discoveryengine.patchers import PATCHERS
     from google.cloud import discoveryengine_v1alpha, discoveryengine_v1beta
 
     untouched = [
@@ -383,7 +386,7 @@ def test_patch_scope():
         (discoveryengine_v1beta.RankServiceClient, "rank"),
     ]
     originals = [inspect.getattr_static(cls, name) for cls, name in untouched]
-    assert setup_discoveryengine()
+    assert setup_google_discoveryengine()
     for (cls, name), original in zip(untouched, originals):
         assert inspect.getattr_static(cls, name) is original
     for patcher in PATCHERS:
@@ -396,9 +399,9 @@ def test_patch_scope():
 @pytest.mark.vcr("test_answer_query[True].yaml")
 def test_stream_close_preserves_parent(memory_logger, credentials, SERVING_CONFIG):
     from braintrust import current_span, start_span
-    from braintrust.integrations.discoveryengine import wrap_discoveryengine
+    from braintrust.integrations.google_discoveryengine import wrap_google_discoveryengine
 
-    client = wrap_discoveryengine(
+    client = wrap_google_discoveryengine(
         discoveryengine.ConversationalSearchServiceClient(transport="rest", credentials=credentials)
     )
     with start_span(name="caller") as parent:
@@ -418,7 +421,9 @@ def test_stream_close_preserves_parent(memory_logger, credentials, SERVING_CONFI
         assert current_span() is parent
     spans = memory_logger.pop()
     assert len(spans) == 2
-    child = next(span for span in spans if span["span_attributes"]["name"] == "discoveryengine.stream_answer_query")
+    child = next(
+        span for span in spans if span["span_attributes"]["name"] == "google_discoveryengine.stream_answer_query"
+    )
     parent_row = next(span for span in spans if span["span_attributes"]["name"] == "caller")
     assert child["span_parents"] == [parent_row["span_id"]]
     assert "end" in child["metrics"]
@@ -427,15 +432,15 @@ def test_stream_close_preserves_parent(memory_logger, credentials, SERVING_CONFI
 def test_auto_instrument_subprocess():
     from braintrust.integrations.test_utils import verify_autoinstrument_script
 
-    verify_autoinstrument_script("test_auto_discoveryengine.py")
+    verify_autoinstrument_script("test_auto_google_discoveryengine.py")
 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize("asynchronous_mode", [True, False])
 def test_answer_requested_model(memory_logger, credentials, asynchronous_mode, SERVING_CONFIG):
-    from braintrust.integrations.discoveryengine import setup_discoveryengine
+    from braintrust.integrations.google_discoveryengine import setup_google_discoveryengine
 
-    setup_discoveryengine()
+    setup_google_discoveryengine()
     client = discoveryengine.ConversationalSearchServiceClient(transport="rest", credentials=credentials)
     from google.api_core.exceptions import BadRequest
 
@@ -464,14 +469,14 @@ def test_answer_requested_model(memory_logger, credentials, asynchronous_mode, S
 
 @pytest.mark.vcr("test_rank.yaml")
 def test_normalization_failure_does_not_change_result(memory_logger, credentials, monkeypatch, rank_request):
-    from braintrust.integrations.discoveryengine import setup_discoveryengine, tracing
+    from braintrust.integrations.google_discoveryengine import setup_google_discoveryengine, tracing
 
     def broken(*args):
         raise ValueError("injected extraction failure")
 
     monkeypatch.setattr(tracing, "_prepare", broken)
     monkeypatch.setattr(tracing, "_output", broken)
-    setup_discoveryengine()
+    setup_google_discoveryengine()
     client = discoveryengine.RankServiceClient(transport="rest", credentials=credentials)
     result = client.rank(request=rank_request, retry=None)
     assert result.records[0].id == "1"
@@ -483,11 +488,13 @@ def test_normalization_failure_does_not_change_result(memory_logger, credentials
 @pytest.mark.parametrize("consume", ["read", "cancel", "aclose"])
 async def test_async_stream_lifecycle(memory_logger, credentials, vcr_cassette_dir, consume, SERVING_CONFIG):
     from braintrust import current_span, start_span
-    from braintrust.integrations.discoveryengine import wrap_discoveryengine
-    from braintrust.integrations.discoveryengine._test_grpc import grpc_cassette
+    from braintrust.integrations.google_discoveryengine import wrap_google_discoveryengine
+    from braintrust.integrations.google_discoveryengine._test_grpc import grpc_cassette
     from grpc.aio import EOF
 
-    client = wrap_discoveryengine(discoveryengine.ConversationalSearchServiceAsyncClient(credentials=credentials))
+    client = wrap_google_discoveryengine(
+        discoveryengine.ConversationalSearchServiceAsyncClient(credentials=credentials)
+    )
     payload = discoveryengine.AnswerQueryRequest(
         serving_config=SERVING_CONFIG,
         query={"text": QUERY},
@@ -524,7 +531,7 @@ async def test_async_stream_lifecycle(memory_logger, credentials, vcr_cassette_d
         spans = memory_logger.pop()
         assert len(spans) == 2
         child = next(
-            span for span in spans if span["span_attributes"]["name"] == "discoveryengine.stream_answer_query"
+            span for span in spans if span["span_attributes"]["name"] == "google_discoveryengine.stream_answer_query"
         )
         parent_row = next(span for span in spans if span["span_attributes"]["name"] == "caller")
         assert child["span_parents"] == [parent_row["span_id"]]
@@ -541,9 +548,9 @@ async def test_async_stream_lifecycle(memory_logger, credentials, vcr_cassette_d
 
 @pytest.mark.vcr
 def test_rank_output_limit(memory_logger, credentials, LOCATION):
-    from braintrust.integrations.discoveryengine import setup_discoveryengine
+    from braintrust.integrations.google_discoveryengine import setup_google_discoveryengine
 
-    setup_discoveryengine()
+    setup_google_discoveryengine()
     client = discoveryengine.RankServiceClient(transport="rest", credentials=credentials)
     result = client.rank(
         request={
@@ -577,10 +584,10 @@ def error_request(stream, LOCATION, SERVING_CONFIG):
     [(False, "test_provider_error"), (True, "test_stream_provider_error")],
 )
 def test_provider_error(memory_logger, credentials, stream, error_request, vcr_cassette_name):
-    from braintrust.integrations.discoveryengine import setup_discoveryengine
+    from braintrust.integrations.google_discoveryengine import setup_google_discoveryengine
     from google.api_core.exceptions import BadRequest, InternalServerError
 
-    setup_discoveryengine()
+    setup_google_discoveryengine()
     client_type = discoveryengine.ConversationalSearchServiceClient if stream else discoveryengine.RankServiceClient
     client = client_type(transport="rest", credentials=credentials)
     method = client.stream_answer_query if stream else client.rank
@@ -597,11 +604,11 @@ def test_provider_error(memory_logger, credentials, stream, error_request, vcr_c
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stream", [False, True])
 async def test_async_provider_error(memory_logger, credentials, request, vcr_cassette_dir, stream, error_request):
-    from braintrust.integrations.discoveryengine import setup_discoveryengine
-    from braintrust.integrations.discoveryengine._test_grpc import grpc_cassette
+    from braintrust.integrations.google_discoveryengine import setup_google_discoveryengine
+    from braintrust.integrations.google_discoveryengine._test_grpc import grpc_cassette
     from google.api_core.exceptions import InternalServerError, InvalidArgument
 
-    setup_discoveryengine()
+    setup_google_discoveryengine()
     client_type = (
         discoveryengine.ConversationalSearchServiceAsyncClient if stream else discoveryengine.RankServiceAsyncClient
     )

@@ -15,7 +15,7 @@ from wrapt import ObjectProxy
 
 
 _LOG = logging.getLogger(__name__)
-_INSTRUMENTATION = "discoveryengine-auto"
+_INSTRUMENTATION = "google-discoveryengine-auto"
 _MAX_RANK_RESULTS = 100
 _ANSWER_DETAILS = ("citations", "references", "grounding_supports", "related_questions", "answer_skipped_reasons")
 
@@ -139,7 +139,7 @@ def _safe_extract(fn, *args, default=None):
 def _start(method, request):
     span_input, metadata = _safe_extract(_prepare, method, request, default=(None, {"provider": "google"}))
     return start_span(
-        name=f"discoveryengine.{method}",
+        name=f"google_discoveryengine.{method}",
         type="llm",
         input=span_input,
         metadata=metadata,

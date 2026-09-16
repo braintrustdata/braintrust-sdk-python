@@ -269,8 +269,8 @@ Do not try to force ordinary HTTP VCR patterns onto Claude Agent SDK subprocess 
 ## Discovery Engine Recording
 
 Discovery Engine tests use HTTP VCR for sync REST calls and the test-only
-`integrations/discoveryengine/_test_grpc.py` helper for async gRPC calls. Both
-recording formats live under `py/src/braintrust/integrations/discoveryengine/cassettes/<version>/`.
+`integrations/google_discoveryengine/_test_grpc.py` helper for async gRPC calls. Both
+recording formats live under `py/src/braintrust/integrations/google_discoveryengine/cassettes/<version>/`.
 
 ### Prerequisites
 
@@ -303,9 +303,9 @@ sample PDFs at `gs://cloud-samples-data/gen-app-builder/search/alphabet-investor
 Wait for indexing to finish before recording.
 
 ```sh
-export BRAINTRUST_DISCOVERYENGINE_PROJECT="your-project"
-export BRAINTRUST_DISCOVERYENGINE_APP="your-app-id"
-export BRAINTRUST_DISCOVERYENGINE_DATASTORE="your-datastore-id"
+export BRAINTRUST_GOOGLE_DISCOVERYENGINE_PROJECT="your-project"
+export BRAINTRUST_GOOGLE_DISCOVERYENGINE_APP="your-app-id"
+export BRAINTRUST_GOOGLE_DISCOVERYENGINE_DATASTORE="your-datastore-id"
 ```
 
 ### Record and replay
@@ -315,13 +315,13 @@ both REST and gRPC; the gRPC helper otherwise requires an existing cassette.
 
 ```sh
 # REST ranking, including manual/setup entry-point coverage.
-mise exec -- nox -s 'test_discoveryengine(latest)' -- --vcr-record=all -k 'test_rank and not test_rank_output_limit'
+mise exec -- nox -s 'test_google_discoveryengine(latest)' -- --vcr-record=all -k 'test_rank and not test_rank_output_limit'
 
 # Async gRPC ranking.
-mise exec -- nox -s 'test_discoveryengine(latest)' -- --vcr-record=all -k 'test_async_grpc and rank'
+mise exec -- nox -s 'test_google_discoveryengine(latest)' -- --vcr-record=all -k 'test_async_grpc and rank'
 
 # Verify all recordings without network access to Google.
-mise exec -- nox -R -s 'test_discoveryengine(latest)' -- --vcr-record=none
+mise exec -- nox -R -s 'test_google_discoveryengine(latest)' -- --vcr-record=none
 ```
 
 Playback derives resource paths from the checked-in REST cassettes and ignores

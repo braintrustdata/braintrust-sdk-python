@@ -9,8 +9,8 @@ from .claude_agent_sdk import ClaudeAgentSDKIntegration
 from .cohere import CohereIntegration
 from .crewai import CrewAIIntegration
 from .cursor_sdk import CursorSDKIntegration
-from .discoveryengine import DiscoveryEngineIntegration
 from .dspy import DSPyIntegration
+from .google_discoveryengine import GoogleDiscoveryEngineIntegration
 from .google_genai import GoogleGenAIIntegration
 from .huggingface_hub import HuggingFaceHubIntegration
 from .instructor import InstructorIntegration
@@ -42,7 +42,7 @@ __all__ = [
     "CrewAIIntegration",
     "CursorSDKIntegration",
     "DSPyIntegration",
-    "DiscoveryEngineIntegration",
+    "GoogleDiscoveryEngineIntegration",
     "GoogleGenAIIntegration",
     "HuggingFaceHubIntegration",
     "InstructorIntegration",

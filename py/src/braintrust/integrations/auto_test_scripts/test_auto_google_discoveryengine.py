@@ -24,9 +24,9 @@ RankServiceClient = None
 if sys.argv[1] == "before":
     from google.cloud.discoveryengine_v1 import RankServiceClient
 
-options["discoveryengine"] = True
-assert auto_instrument(**options) == {"discoveryengine": True}
-assert auto_instrument(**options) == {"discoveryengine": True}
+options["google_discoveryengine"] = True
+assert auto_instrument(**options) == {"google_discoveryengine": True}
+assert auto_instrument(**options) == {"google_discoveryengine": True}
 from google.auth.credentials import AnonymousCredentials
 
 
@@ -34,13 +34,15 @@ if sys.argv[1] == "after":
     from google.cloud.discoveryengine_v1 import RankServiceClient
 
 
-cassette_dir = Path(_versioned_cassette_dir(str(Path(__file__).parent.parent / "discoveryengine" / "cassettes")))
+cassette_dir = Path(
+    _versioned_cassette_dir(str(Path(__file__).parent.parent / "google_discoveryengine" / "cassettes"))
+)
 cassette = yaml.safe_load((cassette_dir / "test_rank.yaml").read_text())
 ranking_config = urlsplit(cassette["interactions"][0]["request"]["uri"]).path.removeprefix("/v1/").split(":rank")[0]
 
 assert RankServiceClient is not None
 with autoinstrument_test_context(
-    "test_rank", integration="discoveryengine", vcr_config={"record_mode": "none"}
+    "test_rank", integration="google_discoveryengine", vcr_config={"record_mode": "none"}
 ) as memory_logger:
     client = RankServiceClient(transport="rest", credentials=AnonymousCredentials())
     result = client.rank(
@@ -60,4 +62,4 @@ with autoinstrument_test_context(
     spans = memory_logger.pop()
     assert len(spans) == 1
     assert spans[0]["metadata"]["provider"] == "google"
-    assert spans[0]["context"]["span_origin"]["instrumentation"]["name"] == "discoveryengine-auto"
+    assert spans[0]["context"]["span_origin"]["instrumentation"]["name"] == "google-discoveryengine-auto"
