@@ -139,7 +139,7 @@ def test_rank(memory_logger, credentials, rank_request, mode):
     assert len(spans) == 1
     span = spans[0]
     assert span["span_attributes"]["name"] == "google_discoveryengine.rank"
-    assert span["span_attributes"]["type"] == "llm"
+    assert span["span_attributes"]["type"] == "task"
     assert span["metadata"]["provider"] == "google"
     assert span["metadata"]["model"] == "semantic-ranker-512@latest"
     assert span["input"]["query"] == "What is Braintrust?"
@@ -238,6 +238,7 @@ def test_check_grounding(memory_logger, credentials, LOCATION):
     spans = memory_logger.pop()
     assert len(spans) == 1
     assert spans[0]["span_attributes"]["name"] == "google_discoveryengine.check_grounding"
+    assert spans[0]["span_attributes"]["type"] == "task"
     assert spans[0]["output"]["support_score"] == result.support_score
 
 
@@ -318,7 +319,7 @@ async def test_async_grpc(
         assert len(spans) == 1
         span = spans[0]
         assert span["span_attributes"]["name"] == f"google_discoveryengine.{method}"
-        assert span["span_attributes"]["type"] == "llm"
+        assert span["span_attributes"]["type"] == ("task" if method in ("rank", "check_grounding") else "llm")
         assert span["metadata"]["provider"] == "google"
         assert "model" not in span["metadata"]
         assert span["context"]["span_origin"]["instrumentation"]["name"] == "google-discoveryengine-auto"

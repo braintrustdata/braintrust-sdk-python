@@ -140,7 +140,7 @@ def _start(method, request):
     span_input, metadata = _safe_extract(_prepare, method, request, default=(None, {"provider": "google"}))
     return start_span(
         name=f"google_discoveryengine.{method}",
-        type="llm",
+        type="task" if method in ("rank", "check_grounding") else "llm",
         input=span_input,
         metadata=metadata,
         internal={"instrumentation": _INSTRUMENTATION},
