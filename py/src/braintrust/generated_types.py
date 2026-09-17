@@ -1,4 +1,4 @@
-"""Auto-generated file (content hash 71b5715e9b2fb9f0) -- do not modify"""
+"""Auto-generated file (content hash 00a5cbc989890b20) -- do not modify"""
 
 from ._generated_types import (
     Acl,
@@ -20,6 +20,7 @@ from ._generated_types import (
     ChatCompletionContentPartFileFile,
     ChatCompletionContentPartFileWithTitle,
     ChatCompletionContentPartImageWithTitle,
+    ChatCompletionContentPartInputAudioWithTitle,
     ChatCompletionContentPartText,
     ChatCompletionContentPartTextWithTitle,
     ChatCompletionMessageParam,
@@ -148,6 +149,7 @@ __all__ = [
     "ChatCompletionContentPartFileFile",
     "ChatCompletionContentPartFileWithTitle",
     "ChatCompletionContentPartImageWithTitle",
+    "ChatCompletionContentPartInputAudioWithTitle",
     "ChatCompletionContentPartText",
     "ChatCompletionContentPartTextWithTitle",
     "ChatCompletionMessageParam",
