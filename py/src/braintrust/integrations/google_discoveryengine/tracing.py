@@ -7,6 +7,7 @@ conversion; neither complete responses nor streams are serialized to JSON here.
 
 import logging
 import time
+import weakref
 from collections.abc import Mapping
 from itertools import islice
 
@@ -195,6 +196,9 @@ class _AnswerStream(ObjectProxy):
     def __init__(self, stream, state):
         super().__init__(stream)
         self._self_state = state
+        # Retain only trace state, not the proxy/provider stream. GC can finalize
+        # partial output while the provider handles its own transport cleanup.
+        weakref.finalize(self, state.finish)
         self._self_iterator = iter(stream)
 
     def __iter__(self):
@@ -232,6 +236,9 @@ class _AsyncAnswerStream(ObjectProxy):
     def __init__(self, stream, state):
         super().__init__(stream)
         self._self_state = state
+        # Retain only trace state, not the proxy/provider stream. GC can finalize
+        # partial output while the provider handles its own transport cleanup.
+        weakref.finalize(self, state.finish)
         self._self_iterator = None
 
     def __aiter__(self):

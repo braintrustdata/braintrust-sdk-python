@@ -1,8 +1,10 @@
 """Real Discovery Engine responses, recorded over REST and gRPC."""
 
+import gc
 import json
 import os
 import subprocess
+import weakref
 from contextlib import nullcontext
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -398,7 +400,8 @@ def test_patch_scope():
 
 
 @pytest.mark.vcr("test_answer_query[True].yaml")
-def test_stream_close_preserves_parent(memory_logger, credentials, SERVING_CONFIG):
+@pytest.mark.parametrize("consume", ["close", "abandon", "unstarted"])
+def test_stream_lifecycle(memory_logger, credentials, SERVING_CONFIG, consume):
     from braintrust import current_span, start_span
     from braintrust.integrations.google_discoveryengine import wrap_google_discoveryengine
 
@@ -415,10 +418,20 @@ def test_stream_close_preserves_parent(memory_logger, credentials, SERVING_CONFI
             retry=None,
         )
         assert current_span() is parent
-        next(stream)
+        chunks = []
+        if consume != "unstarted":
+            for chunk in stream:
+                chunks.append(chunk)
+                if chunk.answer.answer_text:
+                    break
         assert current_span() is parent
-        stream.close()
-        stream.close()
+        if consume == "close":
+            stream.close()
+            stream.close()
+        stream_ref = weakref.ref(stream)
+        del stream
+        gc.collect()
+        assert stream_ref() is None
         assert current_span() is parent
     spans = memory_logger.pop()
     assert len(spans) == 2
@@ -427,7 +440,10 @@ def test_stream_close_preserves_parent(memory_logger, credentials, SERVING_CONFI
     )
     parent_row = next(span for span in spans if span["span_attributes"]["name"] == "caller")
     assert child["span_parents"] == [parent_row["span_id"]]
+    assert child["output"][0]["message"]["content"] == "".join(chunk.answer.answer_text for chunk in chunks)
     assert "end" in child["metrics"]
+    gc.collect()
+    assert memory_logger.pop() == []
 
 
 def test_auto_instrument_subprocess():
@@ -486,7 +502,7 @@ def test_normalization_failure_does_not_change_result(memory_logger, credentials
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("consume", ["read", "cancel", "aclose"])
+@pytest.mark.parametrize("consume", ["read", "cancel", "aclose", "abandon", "unstarted"])
 async def test_async_stream_lifecycle(memory_logger, credentials, vcr_cassette_dir, consume, SERVING_CONFIG):
     from braintrust import current_span, start_span
     from braintrust.integrations.google_discoveryengine import wrap_google_discoveryengine
@@ -521,13 +537,21 @@ async def test_async_stream_lifecycle(memory_logger, credentials, vcr_cassette_d
                     chunks.append(chunk)
                     assert current_span() is parent
                 assert await stream.read() is EOF
-            else:
-                chunks.append(await stream.__anext__())
+            elif consume != "unstarted":
+                async for chunk in stream:
+                    chunks.append(chunk)
+                    if chunk.answer.answer_text:
+                        break
                 if consume == "cancel":
                     assert stream.cancel()
-                else:
+                elif consume == "aclose":
                     await stream.aclose()
-                assert stream.cancelled()
+                if consume in ("cancel", "aclose"):
+                    assert stream.cancelled()
+            stream_ref = weakref.ref(stream)
+            del stream
+            gc.collect()
+            assert stream_ref() is None
             assert current_span() is parent
         spans = memory_logger.pop()
         assert len(spans) == 2
@@ -543,6 +567,8 @@ async def test_async_stream_lifecycle(memory_logger, credentials, vcr_cassette_d
         )
         assert child["output"][0]["message"]["content"] == expected_text
         assert "end" in child["metrics"]
+        gc.collect()
+        assert memory_logger.pop() == []
     finally:
         await client.transport.close()
 
