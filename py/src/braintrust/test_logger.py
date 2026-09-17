@@ -1384,19 +1384,14 @@ def test_logger_emit_log_without_active_span(with_memory_logger):
     assert first["root_span_id"] == second["root_span_id"]
     assert not first.get("span_parents")
     assert first["output"] == "Payment failed"
-    assert first["error"] == "Payment failed"
-    assert first["metadata"] == {"payment_id": "pay_123"}
+    assert "error" not in first
+    assert first["metadata"] == {"payment_id": "pay_123", "braintrust.log_level": "error"}
     assert first["span_attributes"]["name"] == "Log"
     assert first["span_attributes"]["type"] == "log"
     assert first["metrics"]["start"] == first["metrics"]["end"]
-    assert first["context"]["otel"]["signal"] == "logs"
-    assert first["context"]["otel"]["log"] == {
-        "time_unix_nano": str(round(first["metrics"]["start"] * 1_000_000_000)),
-        "severity_number": 17,
-        "severity_text": "ERROR",
-    }
+    assert "otel" not in first.get("context", {})
     assert "error" not in second
-    assert second["context"]["otel"]["log"]["severity_number"] == 9
+    assert second["metadata"] == {"braintrust.log_level": "info"}
 
 
 def test_logger_emit_log_enqueues_single_row(with_memory_logger):
@@ -1434,28 +1429,22 @@ def test_logger_emit_log_uses_active_span(with_memory_logger):
     assert log_row["span_id"] == owner_row["span_id"]
     assert log_row["root_span_id"] == owner_row["root_span_id"]
     assert not log_row.get("span_parents")
-    assert log_row["context"]["otel"]["log"]["severity_number"] == 5
+    assert log_row["metadata"] == {"attempt": 1, "braintrust.log_level": "debug"}
+    assert "otel" not in log_row.get("context", {})
 
 
-@pytest.mark.parametrize(
-    ("level", "severity_number"),
-    [("trace", 1), ("debug", 5), ("info", 9), ("warn", 13), ("error", 17), ("fatal", 21)],
-)
-def test_logger_emit_log_maps_otel_log_levels(with_memory_logger, level, severity_number):
+@pytest.mark.parametrize("level", ["trace", "debug", "info", "warn", "error", "fatal"])
+def test_logger_emit_log_adds_log_level_metadata(with_memory_logger, level):
     test_logger = init_test_logger(__name__)
 
     test_logger.emit_log(body="message", level=level)
 
     [row] = with_memory_logger.pop()
-    assert row["context"]["otel"]["log"]["severity_number"] == severity_number
-    assert row["context"]["otel"]["log"]["severity_text"] == level.upper()
+    assert row["metadata"] == {"braintrust.log_level": level}
 
 
-@pytest.mark.parametrize(
-    ("method_name", "severity_number"),
-    [("trace", 1), ("debug", 5), ("info", 9), ("warn", 13), ("error", 17), ("fatal", 21)],
-)
-def test_logger_log_level_helpers(with_memory_logger, method_name, severity_number):
+@pytest.mark.parametrize("method_name", ["trace", "debug", "info", "warn", "error", "fatal"])
+def test_logger_log_level_helpers(with_memory_logger, method_name):
     test_logger = init_test_logger(__name__)
 
     log_id = getattr(test_logger, method_name)("message", metadata={"source": method_name})
@@ -1463,8 +1452,7 @@ def test_logger_log_level_helpers(with_memory_logger, method_name, severity_numb
     [row] = with_memory_logger.pop()
     assert row["id"] == log_id
     assert row["output"] == "message"
-    assert row["metadata"] == {"source": method_name}
-    assert row["context"]["otel"]["log"]["severity_number"] == severity_number
+    assert row["metadata"] == {"source": method_name, "braintrust.log_level": method_name}
 
 
 def test_logger_log_helpers_render_template_parameters(with_memory_logger):
@@ -1485,17 +1473,18 @@ def test_logger_log_helpers_render_template_parameters(with_memory_logger):
         "braintrust.template.parameter.user_id": "user-123",
         "braintrust.template.parameter.amount": 12.5,
         "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
+        "braintrust.log_level": "info",
     }
 
 
-def test_logger_error_uses_rendered_template_as_error(with_memory_logger):
+def test_logger_error_renders_template_without_error_field(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
     test_logger.error("Payment {payment_id} failed", payment_id="pay-123")
 
     [row] = with_memory_logger.pop()
     assert row["output"] == "Payment pay-123 failed"
-    assert row["error"] == "Payment pay-123 failed"
+    assert "error" not in row
 
 
 def test_logger_log_helpers_do_not_format_without_parameters(with_memory_logger):
@@ -1505,7 +1494,7 @@ def test_logger_log_helpers_do_not_format_without_parameters(with_memory_logger)
 
     [row] = with_memory_logger.pop()
     assert row["output"] == '{"key": "{value}"}'
-    assert not row.get("metadata")
+    assert row["metadata"] == {"braintrust.log_level": "info"}
 
 
 def test_logger_log_template_parameters_are_safely_serialized(with_memory_logger):
@@ -1516,6 +1505,7 @@ def test_logger_log_template_parameters_are_safely_serialized(with_memory_logger
     [row] = with_memory_logger.pop()
     assert row["output"] == "Request failed: bad request"
     assert row["metadata"]["braintrust.template.parameter.error"] == "bad request"
+    assert row["metadata"]["braintrust.log_level"] == "warn"
 
 
 def test_logger_emit_log_rejects_invalid_level(with_memory_logger):

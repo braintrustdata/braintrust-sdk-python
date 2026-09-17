@@ -132,14 +132,7 @@ LOGS3_OVERFLOW_REFERENCE_TYPE = "logs3_overflow"
 DEFAULT_MAX_REQUEST_SIZE = 6 * 1024 * 1024
 
 LogLevel = Literal["trace", "debug", "info", "warn", "error", "fatal"]
-_OTEL_LOG_LEVELS: dict[LogLevel, int] = {
-    "trace": 1,
-    "debug": 5,
-    "info": 9,
-    "warn": 13,
-    "error": 17,
-    "fatal": 21,
-}
+_LOG_LEVELS: tuple[LogLevel, ...] = ("trace", "debug", "info", "warn", "error", "fatal")
 
 
 class _LogTemplateParameters(dict[str, object]):
@@ -6048,12 +6041,11 @@ class Logger(Exportable):
         metadata: dict[str, Any] | None,
         captured_at: float,
     ) -> str:
-        if level not in _OTEL_LOG_LEVELS:
-            valid_levels = ", ".join(_OTEL_LOG_LEVELS)
+        if level not in _LOG_LEVELS:
+            valid_levels = ", ".join(_LOG_LEVELS)
             raise ValueError(f"Invalid log level {level!r}. Expected one of: {valid_levels}")
 
         span_info = self.state.context_manager.get_current_span_info()
-        severity_number = _OTEL_LOG_LEVELS[level]
         span = self._start_span_impl(
             name="Log",
             type=SpanTypeAttribute.LOG,
@@ -6063,20 +6055,9 @@ class Logger(Exportable):
             root_span_id=span_info.trace_id if span_info else self._baseline_trace_id,
             lookup_span_parent=False,
             output=body,
-            error=(body if severity_number >= _OTEL_LOG_LEVELS["error"] and isinstance(body, str) else None),
-            metadata=metadata,
+            metadata={**(metadata or {}), "braintrust.log_level": level},
             metrics={"end": captured_at},
             created=datetime.datetime.fromtimestamp(captured_at, datetime.timezone.utc).isoformat(),
-            context={
-                "otel": {
-                    "signal": "logs",
-                    "log": {
-                        "time_unix_nano": str(round(captured_at * 1_000_000_000)),
-                        "severity_number": severity_number,
-                        "severity_text": level.upper(),
-                    },
-                }
-            },
         )
 
         if not self.async_flush:
@@ -6085,27 +6066,27 @@ class Logger(Exportable):
         return span.id
 
     def trace(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
-        """Capture a log at OpenTelemetry TRACE severity."""
+        """Capture a trace-level log."""
         return self.emit_log(body=body, level="trace", metadata=metadata, **parameters)
 
     def debug(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
-        """Capture a log at OpenTelemetry DEBUG severity."""
+        """Capture a debug-level log."""
         return self.emit_log(body=body, level="debug", metadata=metadata, **parameters)
 
     def info(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
-        """Capture a log at OpenTelemetry INFO severity."""
+        """Capture an info-level log."""
         return self.emit_log(body=body, level="info", metadata=metadata, **parameters)
 
     def warn(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
-        """Capture a log at OpenTelemetry WARN severity."""
+        """Capture a warn-level log."""
         return self.emit_log(body=body, level="warn", metadata=metadata, **parameters)
 
     def error(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
-        """Capture a log at OpenTelemetry ERROR severity."""
+        """Capture an error-level log."""
         return self.emit_log(body=body, level="error", metadata=metadata, **parameters)
 
     def fatal(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
-        """Capture a log at OpenTelemetry FATAL severity."""
+        """Capture a fatal-level log."""
         return self.emit_log(body=body, level="fatal", metadata=metadata, **parameters)
 
     def log_feedback(

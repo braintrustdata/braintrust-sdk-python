@@ -28,12 +28,9 @@ def test_handler_forwards_log_record(with_memory_logger):
     assert row["output"] == "Payment pay_123 failed"
     assert row["created"] == "1970-01-01T00:20:34.500000+00:00"
     assert row["metrics"] == {"start": 1234.5, "end": 1234.5}
-    assert row["context"]["otel"]["log"] == {
-        "time_unix_nano": "1234500000000",
-        "severity_number": 13,
-        "severity_text": "WARN",
-    }
+    assert "otel" not in row.get("context", {})
     assert row["metadata"] == {
+        "braintrust.log_level": "warn",
         "braintrust.template": "Payment %s failed",
         "braintrust.template.parameter.0": "pay_123",
         "code.file.path": "/app/checkout.py",
@@ -62,7 +59,7 @@ def test_handler_maps_python_log_levels(with_memory_logger, python_level, braint
     handler.handle(record)
 
     [row] = with_memory_logger.pop()
-    assert row["context"]["otel"]["log"]["severity_text"] == braintrust_level.upper()
+    assert row["metadata"]["braintrust.log_level"] == braintrust_level
 
 
 def test_handler_forwards_exception_info(with_memory_logger):
@@ -79,7 +76,7 @@ def test_handler_forwards_exception_info(with_memory_logger):
     [row] = with_memory_logger.pop()
     assert row["output"].startswith("Charge failed\nTraceback (most recent call last):")
     assert row["output"].endswith("ValueError: invalid payment")
-    assert row["error"] == row["output"]
+    assert "error" not in row
 
 
 @pytest.mark.parametrize("logger_name", ["braintrust.logger", "urllib3.connectionpool"])
