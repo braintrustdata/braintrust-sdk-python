@@ -8,6 +8,7 @@ import contextvars
 import dataclasses
 import datetime
 import hashlib
+import importlib
 import inspect
 import io
 import json
@@ -134,12 +135,54 @@ DEFAULT_MAX_REQUEST_SIZE = 6 * 1024 * 1024
 LogLevel = Literal["trace", "debug", "info", "warn", "error", "fatal"]
 _LOG_LEVELS: tuple[LogLevel, ...] = ("trace", "debug", "info", "warn", "error", "fatal")
 
+_TEMPLATELIB = importlib.import_module("string.templatelib") if sys.version_info >= (3, 14) else None
+
 
 class _LogTemplateParameters(dict[str, object]):
     """Preserve placeholders whose values were not provided."""
 
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
+
+
+def _is_t_string(value: Any) -> bool:
+    return _TEMPLATELIB is not None and isinstance(value, _TEMPLATELIB.Template)
+
+
+def _render_t_string(template: Any) -> tuple[str, str, dict[str, object]]:
+    """Render a Python 3.14 t-string and retain its template structure."""
+    assert _TEMPLATELIB is not None
+
+    rendered_parts: list[str] = []
+    template_parts: list[str] = []
+    parameters: dict[str, object] = {}
+
+    for index, (literal, interpolation) in enumerate(zip(template.strings, template.interpolations)):
+        rendered_parts.append(literal)
+        template_parts.append(literal.replace("{", "{{").replace("}", "}}"))
+
+        placeholder = "{" + interpolation.expression
+        if interpolation.conversion is not None:
+            placeholder += "!" + interpolation.conversion
+        if interpolation.format_spec:
+            placeholder += ":" + interpolation.format_spec
+        placeholder += "}"
+        template_parts.append(placeholder)
+
+        parameter_name = interpolation.expression.strip() or str(index)
+        parameters[parameter_name] = interpolation.value
+        try:
+            converted = _TEMPLATELIB.convert(interpolation.value, interpolation.conversion)
+            rendered_parts.append(format(converted, interpolation.format_spec))
+        except Exception:
+            # Logging should not disrupt the application because an interpolation
+            # uses an unsupported conversion or format specifier.
+            rendered_parts.append(placeholder)
+
+    final_literal = template.strings[-1]
+    rendered_parts.append(final_literal)
+    template_parts.append(final_literal.replace("{", "{{").replace("}", "}}"))
+    return "".join(rendered_parts), "".join(template_parts), parameters
 
 
 @dataclasses.dataclass
@@ -6001,9 +6044,12 @@ class Logger(Exportable):
         String bodies may contain ``str.format``-style placeholders. Keyword
         parameters are interpolated into the body and retained in metadata along
         with the original template. Missing parameters remain as placeholders.
+        On Python 3.14 and newer, ``string.templatelib.Template`` bodies are
+        rendered using their embedded interpolation values, which are also
+        retained in metadata.
 
-        :param body: The log body. May be any JSON-serializable value when no
-            template parameters are provided.
+        :param body: The log body. May be a Python 3.14+ t-string or any
+            JSON-serializable value when no template parameters are provided.
         :param level: The OpenTelemetry log severity: ``trace``, ``debug``,
             ``info``, ``warn``, ``error``, or ``fatal``.
         :param metadata: Optional JSON-serializable attributes for the log.
@@ -6012,7 +6058,16 @@ class Logger(Exportable):
         """
         rendered_body = body
         rendered_metadata = metadata
-        if parameters:
+        if _is_t_string(body):
+            if parameters:
+                raise TypeError("T-string bodies already contain their interpolation values")
+            rendered_body, template, t_string_parameters = _render_t_string(body)
+            rendered_metadata = dict(metadata) if metadata is not None else {}
+            rendered_metadata.update(
+                {f"braintrust.template.parameter.{key}": value for key, value in t_string_parameters.items()}
+            )
+            rendered_metadata["braintrust.template"] = template
+        elif parameters:
             if not isinstance(body, str):
                 raise TypeError("Log body must be a string when template parameters are provided")
             rendered_metadata = dict(metadata) if metadata is not None else {}

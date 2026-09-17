@@ -2,10 +2,12 @@
 # pyright: reportPrivateUsage=false
 import asyncio
 import builtins
+import importlib
 import inspect
 import json
 import logging
 import os
+import sys
 import threading
 import time
 from collections.abc import AsyncGenerator
@@ -1475,6 +1477,44 @@ def test_logger_log_helpers_render_template_parameters(with_memory_logger):
         "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
         "braintrust.log_level": "info",
     }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+def test_logger_log_helpers_render_t_string(with_memory_logger):
+    templatelib = importlib.import_module("string.templatelib")
+    template = templatelib.Template(
+        "User ",
+        templatelib.Interpolation("user-123", "user_id"),
+        " paid ",
+        templatelib.Interpolation(12.5, "amount", "r", ">8"),
+        " with {card}",
+    )
+    test_logger = init_test_logger(__name__)
+
+    log_id = test_logger.info(template, metadata={"source": "checkout"})
+
+    [row] = with_memory_logger.pop()
+    assert row["id"] == log_id
+    assert row["output"] == "User user-123 paid     12.5 with {card}"
+    assert row["metadata"] == {
+        "source": "checkout",
+        "braintrust.template.parameter.user_id": "user-123",
+        "braintrust.template.parameter.amount": 12.5,
+        "braintrust.template": "User {user_id} paid {amount!r:>8} with {{card}}",
+        "braintrust.log_level": "info",
+    }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+def test_logger_t_string_rejects_keyword_template_parameters(with_memory_logger):
+    templatelib = importlib.import_module("string.templatelib")
+    template = templatelib.Template("User ", templatelib.Interpolation("user-123", "user_id"))
+    test_logger = init_test_logger(__name__)
+
+    with pytest.raises(TypeError, match="already contain their interpolation values"):
+        test_logger.info(template, user_id="other-user")
+
+    assert with_memory_logger.pop() == []
 
 
 def test_logger_error_renders_template_without_error_field(with_memory_logger):
