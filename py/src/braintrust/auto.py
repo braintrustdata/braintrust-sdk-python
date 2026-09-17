@@ -20,6 +20,7 @@ from braintrust.integrations import (
     CrewAIIntegration,
     CursorSDKIntegration,
     DSPyIntegration,
+    GoogleDiscoveryEngineIntegration,
     GoogleGenAIIntegration,
     HuggingFaceHubIntegration,
     InstructorIntegration,
@@ -64,6 +65,7 @@ def auto_instrument(
     ai_sdk: bool = True,
     pydantic_ai: bool = True,
     google_genai: bool = True,
+    google_discoveryengine: bool = True,
     instructor: bool = True,
     openrouter: bool = True,
     mistral: bool = True,
@@ -102,6 +104,7 @@ def auto_instrument(
         litellm: Enable LiteLLM instrumentation (default: True)
         ai_sdk: Enable Vercel AI SDK for Python instrumentation (default: True)
         pydantic_ai: Enable Pydantic AI instrumentation (default: True)
+        google_discoveryengine: Enable Google Discovery Engine v1 instrumentation (default: True)
         google_genai: Enable Google GenAI instrumentation (default: True)
         instructor: Enable Instructor (structured-output) instrumentation (default: True)
         openrouter: Enable OpenRouter instrumentation (default: True)
@@ -184,6 +187,8 @@ def auto_instrument(
         results["pydantic_ai"] = _instrument_integration(PydanticAIIntegration)
     if google_genai:
         results["google_genai"] = _instrument_integration(GoogleGenAIIntegration)
+    if google_discoveryengine:
+        results["google_discoveryengine"] = _instrument_integration(GoogleDiscoveryEngineIntegration)
     if instructor:
         results["instructor"] = _instrument_integration(InstructorIntegration)
     if openrouter:

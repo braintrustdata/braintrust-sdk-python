@@ -569,6 +569,17 @@ def test_google_genai(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/google_genai/test_google_genai.py", version=version)
 
 
+GOOGLE_DISCOVERYENGINE_VERSIONS = _get_matrix_versions("google-cloud-discoveryengine")
+
+
+@nox.session()
+@nox.parametrize("version", GOOGLE_DISCOVERYENGINE_VERSIONS, ids=GOOGLE_DISCOVERYENGINE_VERSIONS)
+def test_google_discoveryengine(session, version):
+    _install_test_deps(session)
+    _install_matrix_dep(session, "google-cloud-discoveryengine", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/google_discoveryengine", version=version)
+
+
 DSPY_VERSIONS = _get_matrix_versions("dspy")
 
 

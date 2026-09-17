@@ -1,0 +1,58 @@
+interactions:
+- request:
+    body: "{\n  \"query\": {\n    \"text\": \"What was Alphabet's revenue in 2022?\"\n
+      \ },\n  \"answerGenerationSpec\": {\n    \"modelSpec\": {\n      \"modelVersion\":
+      \"stable\"\n    }\n  },\n  \"asynchronousMode\": true\n}"
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '188'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+      x-goog-api-client:
+      - gl-python/3.14.7 grpc/1.84.0 gax/2.37.0 gapic/0.20.3 pb/7.36.1 cred-type/u
+      x-goog-request-params:
+      - serving_config=projects/sdk-dev-508013/locations/global/collections/default_collection/engines/braintrust-sdk-test_1789580029521/servingConfigs/default_search
+    method: POST
+    uri: https://discoveryengine.googleapis.com/v1/projects/sdk-dev-508013/locations/global/collections/default_collection/engines/braintrust-sdk-test_1789580029521/servingConfigs/default_search:answer?%24alt=json%3Benum-encoding%3Dint
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Request contains
+        an invalid argument: asynchronous mode is deprecated.\",\n    \"status\":
+        \"INVALID_ARGUMENT\"\n  }\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 16 Sep 2026 17:46:53 GMT
+      Server:
+      - ESF
+      Server-Timing:
+      - gfet4t7; dur=104
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '160'
+    status:
+      code: 400
+      message: Bad Request
+version: 1

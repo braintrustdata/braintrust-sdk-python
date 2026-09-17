@@ -10,6 +10,7 @@ from .cohere import CohereIntegration
 from .crewai import CrewAIIntegration
 from .cursor_sdk import CursorSDKIntegration
 from .dspy import DSPyIntegration
+from .google_discoveryengine import GoogleDiscoveryEngineIntegration
 from .google_genai import GoogleGenAIIntegration
 from .huggingface_hub import HuggingFaceHubIntegration
 from .instructor import InstructorIntegration
@@ -41,6 +42,7 @@ __all__ = [
     "CrewAIIntegration",
     "CursorSDKIntegration",
     "DSPyIntegration",
+    "GoogleDiscoveryEngineIntegration",
     "GoogleGenAIIntegration",
     "HuggingFaceHubIntegration",
     "InstructorIntegration",

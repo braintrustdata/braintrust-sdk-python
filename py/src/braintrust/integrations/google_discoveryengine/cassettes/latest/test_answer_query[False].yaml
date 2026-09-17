@@ -1,0 +1,423 @@
+interactions:
+- request:
+    body: "{\n  \"query\": {\n    \"text\": \"What was Alphabet's revenue in 2022?\"\n
+      \ },\n  \"answerGenerationSpec\": {\n    \"includeCitations\": true\n  }\n}"
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '133'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.34.2
+      x-goog-api-client:
+      - gl-python/3.14.7 grpc/1.84.0 gax/2.37.0 gapic/0.20.3 pb/7.36.1 cred-type/u
+      x-goog-request-params:
+      - serving_config=projects/sdk-dev-508013/locations/global/collections/default_collection/engines/braintrust-sdk-test_1789580029521/servingConfigs/default_search
+    method: POST
+    uri: https://discoveryengine.googleapis.com/v1/projects/sdk-dev-508013/locations/global/collections/default_collection/engines/braintrust-sdk-test_1789580029521/servingConfigs/default_search:answer?%24alt=json%3Benum-encoding%3Dint
+  response:
+    body:
+      string: "{\n  \"answer\": {\n    \"state\": 3,\n    \"answerText\": \"Alphabet's
+        total revenue in 2022 was $282,836 million. This represents a 10% increase
+        year-over-year, or 14% in constant currency.\\n\\nHere's a breakdown of Alphabet's
+        2022 revenues by segment and type:\\n\\n**By Segment:**\\n*   Google Services:
+        $253,528 million\\n*   Google Cloud: $26,280 million\\n*   Other Bets: $1,068
+        million\\n*   Hedging gains (losses): $1,960 million\\n\\n**By Type (within
+        Google Services):**\\n*   Google Search & other: $162,450 million\\n*   YouTube
+        ads: $29,243 million\\n*   Google Network: $32,780 million\\n*   Google advertising
+        (total): $224,473 million\\n*   Google other: $29,055 million\\n\\n**By Geography:**\\n*
+        \  United States: $134,814 million (48%)\\n*   EMEA (Europe, Middle East,
+        and Africa): $82,062 million (29%)\\n*   APAC (Asia-Pacific): $47,024 million
+        (16%)\\n*   Other Americas: $16,976 million (6%)\\n*   Hedging gains (losses):
+        $1,960 million (1%)\\n\\nAlphabet's CFO, Ruth Porat, stated that Q4 2022 consolidated
+        revenues were $76 billion, up 1% year over year, or up 7% in constant currency,
+        and the full year 2022 revenue was $283 billion, up 10%, or up 14% in constant
+        currency.\\n\\nFor the first quarter of 2022, Alphabet reported revenues of
+        $68,011 million, a 23% year-over-year growth. In the third quarter of 2022,
+        revenues were $69.1 billion, up 6% versus the prior year or up 11% on a constant
+        currency basis.\",\n    \"citations\": [\n      {\n        \"endIndex\": \"54\",\n
+        \       \"sources\": [\n          {\n            \"referenceId\": \"0\"\n
+        \         },\n          {\n            \"referenceId\": \"4\"\n          },\n
+        \         {\n            \"referenceId\": \"8\"\n          },\n          {\n
+        \           \"referenceId\": \"9\"\n          }\n        ]\n      },\n      {\n
+        \       \"startIndex\": \"55\",\n        \"endIndex\": \"130\",\n        \"sources\":
+        [\n          {\n            \"referenceId\": \"2\"\n          }\n        ]\n
+        \     },\n      {\n        \"startIndex\": \"217\",\n        \"endIndex\":
+        \"254\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"8\"\n          },\n          {\n            \"referenceId\": \"9\"\n          }\n
+        \       ]\n      },\n      {\n        \"startIndex\": \"255\",\n        \"endIndex\":
+        \"288\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"8\"\n          },\n          {\n            \"referenceId\": \"9\"\n          }\n
+        \       ]\n      },\n      {\n        \"startIndex\": \"289\",\n        \"endIndex\":
+        \"319\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"8\"\n          },\n          {\n            \"referenceId\": \"9\"\n          }\n
+        \       ]\n      },\n      {\n        \"startIndex\": \"320\",\n        \"endIndex\":
+        \"362\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"8\"\n          },\n          {\n            \"referenceId\": \"9\"\n          }\n
+        \       ]\n      },\n      {\n        \"startIndex\": \"402\",\n        \"endIndex\":
+        \"445\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"9\"\n          }\n        ]\n      },\n      {\n        \"startIndex\":
+        \"446\",\n        \"endIndex\": \"478\",\n        \"sources\": [\n          {\n
+        \           \"referenceId\": \"9\"\n          }\n        ]\n      },\n      {\n
+        \       \"startIndex\": \"479\",\n        \"endIndex\": \"514\",\n        \"sources\":
+        [\n          {\n            \"referenceId\": \"9\"\n          }\n        ]\n
+        \     },\n      {\n        \"startIndex\": \"515\",\n        \"endIndex\":
+        \"563\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"9\"\n          }\n        ]\n      },\n      {\n        \"startIndex\":
+        \"564\",\n        \"endIndex\": \"597\",\n        \"sources\": [\n          {\n
+        \           \"referenceId\": \"9\"\n          }\n        ]\n      },\n      {\n
+        \       \"startIndex\": \"617\",\n        \"endIndex\": \"658\",\n        \"sources\":
+        [\n          {\n            \"referenceId\": \"9\"\n          }\n        ]\n
+        \     },\n      {\n        \"startIndex\": \"659\",\n        \"endIndex\":
+        \"724\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"9\"\n          }\n        ]\n      },\n      {\n        \"startIndex\":
+        \"725\",\n        \"endIndex\": \"771\",\n        \"sources\": [\n          {\n
+        \           \"referenceId\": \"9\"\n          }\n        ]\n      },\n      {\n
+        \       \"startIndex\": \"772\",\n        \"endIndex\": \"812\",\n        \"sources\":
+        [\n          {\n            \"referenceId\": \"9\"\n          }\n        ]\n
+        \     },\n      {\n        \"startIndex\": \"813\",\n        \"endIndex\":
+        \"860\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"9\"\n          }\n        ]\n      },\n      {\n        \"startIndex\":
+        \"862\",\n        \"endIndex\": \"1091\",\n        \"sources\": [\n          {\n
+        \           \"referenceId\": \"2\"\n          }\n        ]\n      },\n      {\n
+        \       \"startIndex\": \"1093\",\n        \"endIndex\": \"1199\",\n        \"sources\":
+        [\n          {\n            \"referenceId\": \"1\"\n          }\n        ]\n
+        \     },\n      {\n        \"startIndex\": \"1200\",\n        \"endIndex\":
+        \"1326\",\n        \"sources\": [\n          {\n            \"referenceId\":
+        \"5\"\n          }\n        ]\n      }\n    ],\n    \"references\": [\n      {\n
+        \       \"chunkInfo\": {\n          \"content\": \"ALPHABET INC. ANNUAL REPORT
+        45 PART II\\nITEM\_8\_\_FINANCIAL STATEMENTS AND SUPPLEMENTARY DATA Alphabet
+        Inc. CONSOLIDATED STATEMENTS OF INCOME (In millions, except per share amounts)
+        Year Ended December 31,\\n2020 2021 2022 Revenues $ 182,527 $ 257,637 $ 282,836
+        Costs and expenses:\\nCost of revenues 84,732 110,939 126,203 Research and
+        development 27,573 31,562 39,500 Sales and marketing 17,946 22,912 26,567
+        General and administrative 11,052 13,510 15,724 Total costs and expenses 141,303
+        178,923 207,994 Income from operations 41,224 78,714 74,842 Other income (expense),
+        net 6,858 12,020 (3,514) Income before income taxes 48,082 90,734 71,328 Provision
+        for income taxes 7,813 14,701 11,356 Net income $ 40,269 $ 76,033 $ 59,972
+        Basic net income per share of Class A, Class B, and Class C stock $ 2.96 $
+        5.69 $ 4.59 Diluted net income per share of Class A, Class B, and Class C
+        stock $ 2.93 $ 5.61 $ 4.56 See accompanying notes. \",\n          \"relevanceScore\":
+        0.9,\n          \"documentMetadata\": {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/276cee4c4086600303bc561483691f9a\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022_alphabet_annual_report.pdf\",\n
+        \           \"title\": \"2022_alphabet_annual_report\",\n            \"pageIdentifier\":
+        \"83\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\":
+        {\n          \"content\": \"Alphabet Announces First Quarter 2022 Results\\nMOUNTAIN
+        VIEW, Calif. \u2013 April 26, 2022 \u2013 Alphabet Inc. (NASDAQ: GOOG, GOOGL)
+        today announced financial\\nresults for the quarter ended March 31, 2022.
+        Sundar Pichai, CEO of Alphabet and Google, said: \u201CQ1 saw strong growth
+        in Search and Cloud, in particular, which\\nare both helping people and businesses
+        as the digital transformation continues. We\u2019ll keep investing in great\\nproducts
+        and services, and creating opportunities for partners and local communities
+        around the world.\u201D Ruth Porat, CFO of Alphabet and Google, said: \u201CWe
+        are pleased with Q1 revenue growth of 23% year over year. We\\ncontinue to
+        make considered investments in Capex, R&D and talent to support long-term
+        value creation for all\\nstakeholders.\u201D Q1 2022 financial highlights\\nThe
+        following table summarizes our consolidated financial results for the quarters
+        ended March 31, 2021 and 2022\\n(in millions, except for per share information
+        and percentages; unaudited). Quarter Ended March 31,\\n2021 2022 Revenues
+        $ 55,314 $ 68,011 Change in revenues year over year 34 % 23 % Change in constant
+        currency revenues year over year(1) 32 % 26 % Operating income $ 16,437 $
+        20,094 Operating margin 30 % 30 % Other income (expense), net $ 4,846 $ (1,160)
+        Net income $ 17,930 $ 16,436 \",\n          \"relevanceScore\": 0.9,\n          \"documentMetadata\":
+        {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/c201efed2be20c6a4116611ea16be9cd\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q1_alphabet_earnings_release.pdf\",\n
+        \           \"title\": \"GOOG Exhibit 99.1 Q1 2022\",\n            \"pageIdentifier\":
+        \"1\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\": {\n
+        \         \"content\": \"Alphabet Announces Fourth Quarter and Fiscal Year
+        2022 Results\\nMOUNTAIN VIEW, Calif. \u2013 February 2, 2023 \u2013 Alphabet
+        Inc. (NASDAQ: GOOG, GOOGL) today announced financial\\nresults for the quarter
+        and fiscal year ended December 31, 2022. Sundar Pichai, CEO of Alphabet and
+        Google, said: \u201COur long-term investments in deep computer science make
+        us\\nextremely well-positioned as AI reaches an inflection point, and I\u2019m
+        excited by the AI-driven leaps we\u2019re about to unveil\\nin Search and
+        beyond. There\u2019s also great momentum in Cloud, YouTube subscriptions,
+        and our Pixel devices. We\u2019re\\non an important journey to re-engineer
+        our cost structure in a durable way and to build financially sustainable,
+        vibrant,\\ngrowing businesses across Alphabet.\u201D Ruth Porat, CFO of Alphabet
+        and Google, said: \u201COur Q4 consolidated revenues were $76 billion, up
+        1% year over year,\\nor up 7% in constant currency, and $283 billion for the
+        full year 2022, up 10%, or up 14% in constant currency. We\\nhave significant
+        work underway to improve all aspects of our cost structure, in support of
+        our investments in our\\nhighest growth priorities to deliver long-term, profitable
+        growth.\u201D \",\n          \"relevanceScore\": 0.8,\n          \"documentMetadata\":
+        {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/513da7d1b9f7739087606aadc626f2dc\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q4_alphabet_earnings_release.pdf\",\n
+        \           \"title\": \"GOOG Exhibit 99.1 Q4 2022\",\n            \"pageIdentifier\":
+        \"1\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\": {\n
+        \         \"content\": \"Alphabet Announces Third Quarter 2023 Results\\nMOUNTAIN
+        VIEW, Calif. \u2013 October 24, 2023 \u2013 Alphabet Inc. (NASDAQ: GOOG, GOOGL)
+        today announced\\nfinancial results for the quarter ended September 30, 2023.
+        Sundar Pichai, CEO, said: \u201CI\u2019m pleased with our financial results
+        and our product momentum this quarter, with AI\\ndriven innovations across
+        Search, YouTube, Cloud, our Pixel devices and more. We\u2019re continuing
+        to focus on\\nmaking AI more helpful for everyone; there\u2019s exciting progress
+        and lots more to come.\u201D Ruth Porat, President and Chief Investment Officer;
+        CFO said: \u201CThe fundamental strength of our business was\\napparent again
+        in Q3, with $77 billion in revenue, up 11% year over year, driven by meaningful
+        growth in Search\\nand YouTube, and momentum in Cloud. We continue to focus
+        on judicious capital allocation to deliver sustainable\\nfinancial value.\u201D
+        Q3 2023 Financial Highlights (unaudited)\\nThe following table summarizes
+        our consolidated financial results for the quarters ended September 30, 2022
+        and\\n2023 (in millions, except for per share information and percentages).
+        Quarter Ended September 30,\\n2022 2023 Revenues $ 69,092 $ 76,693 Change
+        in revenues year over year 6 % 11 % Change in constant currency revenues year
+        over year(1) 11 % 11 % Operating income $ 17,135 $ 21,343 Operating margin
+        25 % \",\n          \"relevanceScore\": 0.8,\n          \"documentMetadata\":
+        {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/4c7389ffaf06b73e6e380eac7a39ea17\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2023q3-alphabet-earnings-release.pdf\",\n
+        \           \"title\": \"GOOG Exhibit 99.1 Q3 2023\",\n            \"pageIdentifier\":
+        \"1\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\": {\n
+        \         \"content\": \"Alphabet Inc. Consolidated Statements of Income Year
+        Ended December 31, (in millions, except per share amounts) 2021 2022 2023
+        Revenues $ 257,637 $ 282,836 $ 307,394 Costs and expenses:\\nCost of revenues
+        110,939 126,203 133,332 Research and development 31,562 39,500 45,427 Sales
+        and marketing 22,912 26,567 27,917 General and administrative 13,510 15,724
+        16,425 Total costs and expenses 178,923 207,994 223,101 Income from operations
+        78,714 74,842 84,293 Other income (expense), net 12,020 (3,514) 1,424 Income
+        before income taxes 90,734 71,328 85,717 Provision for income taxes 14,701
+        11,356 11,922 Net income $ 76,033 $ 59,972 $ 73,795 Basic net income per share
+        of Class A, Class B, and Class C stock $ 5.69 $ 4.59 $ 5.84 Diluted net income
+        per share of Class A, Class B, and Class C stock $ 5.61 $ 4.56 $ 5.80 See
+        accompanying notes. 50 Alphabet 2023 Annual Report Part I Part II Part III
+        Part IV \",\n          \"relevanceScore\": 0.8,\n          \"documentMetadata\":
+        {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/3c617f6f4b023305d82916f0093ca13d\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/goog023-alphabet-2023-annual-report-web-1.pdf\",\n
+        \           \"title\": \"goog023-alphabet-2023-annual-report-web-1\",\n            \"pageIdentifier\":
+        \"60\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\":
+        {\n          \"content\": \"Alphabet Announces Third Quarter 2022 Results\\nMOUNTAIN
+        VIEW, Calif. \u2013 October 25, 2022 \u2013 Alphabet Inc. (NASDAQ: GOOG, GOOGL)
+        today announced\\nfinancial results for the quarter ended September 30, 2022.
+        Sundar Pichai, CEO of Alphabet and Google, said: \u201CWe\u2019re sharpening
+        our focus on a clear set of product and\\nbusiness priorities. Product announcements
+        we\u2019ve made in just the past month alone have shown that very clearly,\\nincluding
+        significant improvements to both Search and Cloud, powered by AI, and new
+        ways to monetize YouTube\\nShorts. We are focused on both investing responsibly
+        for the long term and being responsive to the economic\\nenvironment.\u201D
+        Ruth Porat, CFO of Alphabet and Google, said: \u201COur third quarter revenues
+        were $69.1 billion, up 6% versus last\\nyear or up 11% on a constant currency
+        basis. Financial results for the third quarter reflect healthy fundamental\\ngrowth
+        in Search and momentum in Cloud, while affected by foreign exchange. We\u2019re
+        working to realign resources\\nto fuel our highest growth priorities.\u201D
+        Q3 2022 financial highlights\\nThe following table summarizes our consolidated
+        financial results for the quarters ended September 30, 2021 and\\n2022 (in
+        millions, except for per share information and percentages; unaudited). Quarter
+        Ended September 30,\\n2021 2022 Revenues $ 65,118 $ 69,092 Change in revenues
+        year over year 41 % \",\n          \"relevanceScore\": 0.8,\n          \"documentMetadata\":
+        {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/2eab9446e934f432e3df7808af857300\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q3_alphabet_earnings_release.pdf\",\n
+        \           \"title\": \"GOOG Exhibit 99.1 Q3 2022\",\n            \"pageIdentifier\":
+        \"1\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\": {\n
+        \         \"content\": \"Alphabet Inc. CONSOLIDATED STATEMENTS OF CASH FLOWS\\n(In
+        millions, unaudited)\\nQuarter Ended September 30, Year to Date September
+        30, 2021 2022 2021 2022 Operating activities\\nNet income $ 18,936 $ 13,910
+        $ 55,391 $ 46,348 Adjustments:\\nDepreciation and impairment of property and\\nequipment
+        3,085 3,933 8,340 11,222 Amortization and impairment of intangible assets
+        219 113 662 505 Stock-based compensation expense 3,874 4,976 11,422 14,262
+        Deferred income taxes (1,287) (1,920) 192 (6,157) (Gain) loss on debt and
+        equity securities, net (2,158) 1,378 (9,792) 3,856 Other 64 167 (199) 369
+        Changes in assets and liabilities, net of effects of\\nacquisitions:\\nAccounts
+        receivable (2,409) (97) (3,276) 2,298 Income taxes, net 3,041 (609) 2,744
+        (862) Other assets (1,255) (2,647) (1,447) (4,268) Accounts payable 238 1,907
+        (874) 735 Accrued expenses and other liabilities 2,562 2,210 2,763 491 Accrued
+        revenue share 357 (80) 386 (1,022) Deferred revenue 272 112 406 104 Net cash
+        provided by operating activities 25,539 23,353 66,718 67,881 Investing activities\\nPurchases
+        of property and equipment (6,819) (7,276) (18,257) (23,890) Purchases of marketable
+        securities (34,497) (17,054) (95,106) (67,253) Maturities and sales of marketable
+        securities 31,459 28,713 92,126 84,087 Purchases of non-marketable securities
+        \",\n          \"relevanceScore\": 0.8,\n          \"documentMetadata\": {\n
+        \           \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/2eab9446e934f432e3df7808af857300\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q3_alphabet_earnings_release.pdf\",\n
+        \           \"title\": \"GOOG Exhibit 99.1 Q3 2022\",\n            \"pageIdentifier\":
+        \"6\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\": {\n
+        \         \"content\": \"Alphabet Inc. CONSOLIDATED STATEMENTS OF CASH FLOWS\\n(In
+        millions, unaudited)\\nQuarter Ended June 30, Year To Date June 30,\\n2021
+        2022 2021 2022 Operating activities\\nNet income $ 18,525 $ 16,002 $ 36,455
+        $ 32,438 Adjustments:\\nDepreciation and impairment of property and equipment
+        2,730 3,698 5,255 7,289 Amortization and impairment of intangible assets 215
+        201 443 392 Stock-based compensation expense 3,803 4,782 7,548 9,286 Deferred
+        income taxes 379 (2,147) 1,479 (4,237) (Gain) loss on debt and equity securities,
+        net (2,883) 1,041 (7,634) 2,478 Other (8) 62 (263) 202 Changes in assets and
+        liabilities, net of effects of acquisitions:\\nAccounts receivable (3,661)
+        (1,969) (867) 2,395 Income taxes, net (1,082) (4,073) (297) (253) Other assets
+        (199) (845) (192) (1,621) Accounts payable (130) 1,201 (1,112) (1,172) Accrued
+        expenses and other liabilities 3,731 1,497 201 (1,719) Accrued revenue share
+        473 (114) 29 (942) Deferred revenue (3) 86 134 (8) Net cash provided by operating
+        activities 21,890 19,422 41,179 44,528 Investing activities\\nPurchases of
+        property and equipment (5,496) (6,828) (11,438) (16,614) Purchases of marketable
+        securities (24,183) (21,737) (60,609) (50,199) \",\n          \"relevanceScore\":
+        0.8,\n          \"documentMetadata\": {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/376dab8cf7b3807296f2bf1c6228e078\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q2_alphabet_earnings_release.pdf\",\n
+        \           \"title\": \"GOOG Exhibit 99.1 Q2 2022\",\n            \"pageIdentifier\":
+        \"6\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\": {\n
+        \         \"content\": \"The associated costs,\\nincluding depreciation and
+        impairment, are allocated to operating segments as a service cost generally
+        based on usage or headcount. Unallocated corporate costs primarily include
+        corporate initiatives, corporate shared costs, such as finance and legal,
+        including certain\\nfines and settlements, as well as costs associated with
+        certain shared R&D activities. Additionally, hedging gains (losses) related
+        to\\nrevenue are included in corporate costs. As AI is critical to delivering
+        our mission of bringing our breakthrough innovations into the real world,
+        beginning in January 2023, we\\nwill update our segment reporting relating
+        to certain of Alphabet\u2019s AI activities. DeepMind, previously reported
+        within Other Bets, will\\nbe reported as part of Alphabet\u2019s corporate
+        costs, reflecting its increasing collaboration with Google Services, Google
+        Cloud, and\\nOther Bets. Prior periods will be recast to conform to the revised
+        presentation. Our operating segments are not evaluated using asset information.
+        The following table presents information about our segments (in millions):
+        Year Ended December 31,\\n2020 2021 2022 Revenues:\\nGoogle Services $ 168,635
+        $ 237,529 $ 253,528 Google Cloud 13,059 19,206 26,280 Other Bets 657 753 1,068
+        Hedging gains (losses) 176 149 1,960 Total revenues $ 182,527 $ 257,637 $
+        282,836 Operating income (loss):\\nGoogle Services $ 54,606 $ 91,855 $ 86,572
+        Google Cloud (5,607) (3,099) (2,968) Other Bets \",\n          \"relevanceScore\":
+        0.8,\n          \"documentMetadata\": {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/276cee4c4086600303bc561483691f9a\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022_alphabet_annual_report.pdf\",\n
+        \           \"title\": \"2022_alphabet_annual_report\",\n            \"pageIdentifier\":
+        \"119\"\n          }\n        }\n      },\n      {\n        \"chunkInfo\":
+        {\n          \"content\": \"56 ALPHABET INC. ANNUAL REPORT PART II\\nITEM\_8\_\_FINANCIAL
+        STATEMENTS AND SUPPLEMENTARY DATA Note 2. Revenues\\nDisaggregated Revenues\\nThe
+        following table presents revenues disaggregated by type (in millions): Year
+        Ended December 31,\\n2020 2021 2022 Google Search & other $ 104,062 $ 148,951
+        $ 162,450 YouTube ads 19,772 28,845 29,243 Google Network 23,090 31,701 32,780
+        Google advertising 146,924 209,497 224,473 Google other 21,711 28,032 29,055
+        Google Services total 168,635 237,529 253,528 Google Cloud 13,059 19,206 26,280
+        Other Bets 657 753 1,068 Hedging gains (losses) 176 149 1,960 Total revenues
+        $ 182,527 $ 257,637 $ 282,836\\nNo individual customer or groups of affiliated
+        customers represented more than 10% of our revenues in 2020, 2021, or 2022.
+        The following table presents revenues disaggregated by geography, based on
+        the addresses of our customers (in millions):\\nYear Ended December 31, 2020
+        2021 2022 United States $ 85,014 47 % $ 117,854 46 % $ 134,814 48% EMEA(1)
+        55,370 30 79,107 31 82,062 29 APAC(1) 32,550 18 46,123 18 47,024 16 Other
+        Americas(1) 9,417 5 14,404 5 16,976 6 Hedging gains (losses) 176 0 149 0 1,960
+        1 Total revenues $ 182,527 100% $ 257,637 100 % $ 282,836 100% \",\n          \"relevanceScore\":
+        0.8,\n          \"documentMetadata\": {\n            \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/276cee4c4086600303bc561483691f9a\",\n
+        \           \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022_alphabet_annual_report.pdf\",\n
+        \           \"title\": \"2022_alphabet_annual_report\",\n            \"pageIdentifier\":
+        \"94\"\n          }\n        }\n      }\n    ],\n    \"steps\": [\n      {\n
+        \       \"state\": 3,\n        \"description\": \"Rephrase the query and search.\",\n
+        \       \"actions\": [\n          {\n            \"searchAction\": {\n              \"query\":
+        \"What was Alphabet's revenue in 2022?\"\n            },\n            \"observation\":
+        {\n              \"searchResults\": [\n                {\n                  \"document\":
+        \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/513da7d1b9f7739087606aadc626f2dc\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q4_alphabet_earnings_release.pdf\",\n
+        \                 \"title\": \"GOOG Exhibit 99.1 Q4 2022\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"... \\u003cb\\u003eAlphabet\\u003c/b\\u003e.\u201D
+        Ruth Porat, CFO of \\u003cb\\u003eAlphabet\\u003c/b\\u003e and Google, said:
+        \u201COur Q4 consolidated \\u003cb\\u003erevenues\\u003c/b\\u003e were $76
+        billion, up 1% year over year, or up 7% in constant currency&nbsp;...\",\n
+        \                     \"snippetStatus\": \"SUCCESS\"\n                    }\n
+        \                 ]\n                },\n                {\n                  \"document\":
+        \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/c201efed2be20c6a4116611ea16be9cd\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q1_alphabet_earnings_release.pdf\",\n
+        \                 \"title\": \"GOOG Exhibit 99.1 Q1 2022\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"\u2013 April
+        26, \\u003cb\\u003e2022\\u003c/b\\u003e \u2013 \\u003cb\\u003eAlphabet\\u003c/b\\u003e
+        Inc. (NASDAQ: GOOG ... \\u003cb\\u003erevenue\\u003c/b\\u003e growth of 23%
+        year over year. ... Quarter Ended March 31, 2021 \\u003cb\\u003e2022 Revenues\\u003c/b\\u003e
+        $ 55,314 $ 68,011 Change in&nbsp;...\",\n                      \"snippetStatus\":
+        \"SUCCESS\"\n                    }\n                  ]\n                },\n
+        \               {\n                  \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/376dab8cf7b3807296f2bf1c6228e078\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q2_alphabet_earnings_release.pdf\",\n
+        \                 \"title\": \"GOOG Exhibit 99.1 Q2 2022\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"\u2013 July
+        26, \\u003cb\\u003e2022\\u003c/b\\u003e \u2013 \\u003cb\\u003eAlphabet\\u003c/b\\u003e
+        Inc. (NASDAQ: GOOG ... Quarter Ended June 30, 2021 \\u003cb\\u003e2022 Revenues\\u003c/b\\u003e
+        $ 61,880 $ 69,685 Change in \\u003cb\\u003erevenues\\u003c/b\\u003e ... \\u003cb\\u003erevenue\\u003c/b\\u003e
+        growth rates by 3.7%.\",\n                      \"snippetStatus\": \"SUCCESS\"\n
+        \                   }\n                  ]\n                },\n                {\n
+        \                 \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/4a4eabb0cefc954375df0bd9eec85c96\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2023q4-alphabet-earnings-release.pdf\",\n
+        \                 \"title\": \"2023q4-alphabet-earnings-release\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"... \\u003cb\\u003eRevenues\\u003c/b\\u003e
+        As Reported Less Hedging Effect Less FX Effect Constant Currency \\u003cb\\u003e2022\\u003c/b\\u003e
+        2023 \\u003cb\\u003eRevenues\\u003c/b\\u003e United States $ 134,814 $ 146,286
+        $ 0 $ 146,286 9 % 0 % 9&nbsp;...\",\n                      \"snippetStatus\":
+        \"SUCCESS\"\n                    }\n                  ]\n                },\n
+        \               {\n                  \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/2eab9446e934f432e3df7808af857300\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022Q3_alphabet_earnings_release.pdf\",\n
+        \                 \"title\": \"GOOG Exhibit 99.1 Q3 2022\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"\\u003cb\\u003eAlphabet\\u003c/b\\u003e
+        Announces Third Quarter \\u003cb\\u003e2022\\u003c/b\\u003e Results MOUNTAIN
+        VIEW, Calif. \u2013 October 25, \\u003cb\\u003e2022\\u003c/b\\u003e \u2013
+        \\u003cb\\u003eAlphabet\\u003c/b\\u003e Inc. ... Quarter Ended September 30,
+        2021 \\u003cb\\u003e2022 Revenues\\u003c/b\\u003e $ 65,118&nbsp;...\",\n                      \"snippetStatus\":
+        \"SUCCESS\"\n                    }\n                  ]\n                },\n
+        \               {\n                  \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/276cee4c4086600303bc561483691f9a\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2022_alphabet_annual_report.pdf\",\n
+        \                 \"title\": \"2022_alphabet_annual_report\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"... \\u003cb\\u003eAlphabet&#39;s\\u003c/b\\u003e
+        AI activities. DeepMind, previously reported within Other Bets, will be reported
+        as part of \\u003cb\\u003eAlphabet&#39;s\\u003c/b\\u003e corporate costs,
+        reflecting its increasing&nbsp;...\",\n                      \"snippetStatus\":
+        \"SUCCESS\"\n                    }\n                  ]\n                },\n
+        \               {\n                  \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/3c617f6f4b023305d82916f0093ca13d\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/goog023-alphabet-2023-annual-report-web-1.pdf\",\n
+        \                 \"title\": \"goog023-alphabet-2023-annual-report-web-1\",\n
+        \                 \"snippetInfo\": [\n                    {\n                      \"snippet\":
+        \"... \\u003cb\\u003e2022\\u003c/b\\u003e 2023 \\u003cb\\u003eRevenues\\u003c/b\\u003e
+        $ 257,637 $ 282,836 $ 307,394 Costs and expenses: Cost of \\u003cb\\u003erevenues\\u003c/b\\u003e
+        110,939 126,203 133,332 Research and development 31,562 39,500 45,427&nbsp;...\",\n
+        \                     \"snippetStatus\": \"SUCCESS\"\n                    }\n
+        \                 ]\n                },\n                {\n                  \"document\":
+        \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/404cb139d857b704a13ee3d8e0c6c5fb\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2021Q4_alphabet_earnings_release.pdf\",\n
+        \                 \"title\": \"GOOG Exhibit 99.1 Q4 2021\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"\\u003cb\\u003eAlphabet\\u003c/b\\u003e
+        Announces Fourth Quarter and Fiscal Year 2021 Results MOUNTAIN VIEW, Calif.
+        \u2013 February 1, \\u003cb\\u003e2022\\u003c/b\\u003e \u2013 \\u003cb\\u003eAlphabet\\u003c/b\\u003e
+        Inc. ... \\u003cb\\u003erevenue\\u003c/b\\u003e growth from Google Cloud.\",\n
+        \                     \"snippetStatus\": \"SUCCESS\"\n                    }\n
+        \                 ]\n                },\n                {\n                  \"document\":
+        \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/e0ac436b3f82b7df8fc94580f3a84b0a\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2023q1-alphabet-earnings-release.pdf\",\n
+        \                 \"title\": \"GOOG Exhibit 99.1 Q1 2023\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"Ruth Porat,
+        CFO of \\u003cb\\u003eAlphabet\\u003c/b\\u003e and Google, said: \u201CResilience
+        in Search and momentum in Cloud resulted in Q1 consolidated \\u003cb\\u003erevenues\\u003c/b\\u003e
+        of $69.8 billion, up 3% year over&nbsp;...\",\n                      \"snippetStatus\":
+        \"SUCCESS\"\n                    }\n                  ]\n                },\n
+        \               {\n                  \"document\": \"projects/479238727071/locations/global/collections/default_collection/dataStores/braintrust-sdk-test-docs_1789580119475/branches/0/documents/4c7389ffaf06b73e6e380eac7a39ea17\",\n
+        \                 \"uri\": \"gs://cloud-samples-data/gen-app-builder/search/alphabet-investor-pdfs/2023q3-alphabet-earnings-release.pdf\",\n
+        \                 \"title\": \"GOOG Exhibit 99.1 Q3 2023\",\n                  \"snippetInfo\":
+        [\n                    {\n                      \"snippet\": \"\\u003cb\\u003eAlphabet\\u003c/b\\u003e
+        Announces Third Quarter 2023 Results MOUNTAIN VIEW, Calif. ... \\u003cb\\u003erevenue\\u003c/b\\u003e,
+        up 11% year over year, driven by ... \\u003cb\\u003e2022\\u003c/b\\u003e and
+        2023 (in millions, except for per&nbsp;...\",\n                      \"snippetStatus\":
+        \"SUCCESS\"\n                    }\n                  ]\n                }\n
+        \             ]\n            }\n          }\n        ]\n      }\n    ]\n  },\n
+        \ \"answerQueryToken\": \"NMwKDAjDravVBhCSk66vARIkNmFiNDUxYWMtMDAwMC0yOGQ5LWJhYjctMDg5ZTA4MjUyYzgw\"\n}\n"
+    headers:
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Wed, 16 Sep 2026 17:49:55 GMT
+      Server:
+      - ESF
+      Server-Timing:
+      - gfet4t7; dur=7587
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      - X-Origin
+      - Referer
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-XSS-Protection:
+      - '0'
+      content-length:
+      - '32045'
+    status:
+      code: 200
+      message: OK
+version: 1

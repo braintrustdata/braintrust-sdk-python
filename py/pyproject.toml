@@ -267,6 +267,7 @@ lint = [
     "dspy",
     "google-adk",
     "google-genai",
+    "google-cloud-discoveryengine",
     "instructor",
     "litellm>=1.83.10",
     "livekit-agents",
@@ -462,6 +463,9 @@ latest = "google-genai==2.23.0"
 "1.75.0" = "google-genai==1.75.0"
 "1.30.0" = "google-genai==1.30.0"
 
+[tool.braintrust.matrix.google-cloud-discoveryengine]
+latest = "google-cloud-discoveryengine==0.20.3"
+
 [tool.braintrust.matrix.dspy]
 latest = "dspy==3.3.1"
 "2.6.0" = "dspy==2.6.0"
@@ -571,6 +575,7 @@ cursor_sdk = ["cursor-sdk"]
 crewai = ["crewai"]
 dspy = ["dspy"]
 google_genai = ["google-genai"]
+google_discoveryengine = ["google-cloud-discoveryengine"]
 huggingface_hub = ["huggingface-hub"]
 harbor = ["harbor"]
 instructor = ["instructor"]
@@ -604,6 +609,7 @@ cursor-sdk = "cursor_sdk"
 dspy = "dspy"
 google-adk = "google.adk"
 google-genai = "google.genai"
+google-cloud-discoveryengine = "google.cloud.discoveryengine_v1"
 litellm = "litellm"
 livekit-agents = "livekit.agents"
 mistralai = "mistralai"
