@@ -1,4 +1,4 @@
-VERSION = "0.40.0"
+VERSION = "0.41.0"
 RELEASE_CHANNEL = "source"
 
 # this will be templated during the build
