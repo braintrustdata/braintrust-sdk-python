@@ -25,6 +25,7 @@ except ModuleNotFoundError as e:
         )
     )
 
+from ..bt_json import bt_dumps
 from ..framework import (
     EvalAsync,
     EvalHooks,
@@ -369,10 +370,10 @@ def make_scorer(
             "mode": "auto",
             "strict": True,
         }
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         if project_id:
             headers["x-bt-project-id"] = project_id
-        result = state.proxy_conn().post("function/invoke", json=request, headers=headers)
+        result = state.proxy_conn().post("function/invoke", data=bt_dumps(request).encode("utf-8"), headers=headers)
         result.raise_for_status()
         data = result.json()
         return data
