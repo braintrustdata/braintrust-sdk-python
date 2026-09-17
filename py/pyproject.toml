@@ -278,6 +278,7 @@ lint = [
     "huggingface-hub",
     "numpy",
     "strands-agents",
+    "typesafe-sdk",
     "temporalio",
     "pydantic-ai",
     "opentelemetry-instrumentation-openai==0.59.1",
@@ -498,6 +499,9 @@ latest = "openrouter==1.1.139"
 latest = "mistralai==2.10.0"
 "1.12.4" = "mistralai==1.12.4"
 
+[tool.braintrust.matrix.typesafe-sdk]
+latest = "typesafe-sdk==0.6.0"
+
 [tool.braintrust.matrix.huggingface-hub]
 # Floor pinned to 0.32.0: the earliest release that exposes the
 # ``provider="auto"`` routing mode the integration relies on for multi-
@@ -585,6 +589,7 @@ openrouter = ["openrouter"]
 pipecat = ["pipecat-ai"]
 pydantic_ai = ["pydantic-ai-integration", "pydantic-ai-wrap-openai"]
 strands = ["strands-agents"]
+typesafe = ["typesafe-sdk"]
 
 [tool.braintrust.vendor-packages]
 ai-sdk = "ai"
@@ -615,3 +620,4 @@ pipecat-ai = "pipecat"
 strands-agents = "strands"
 temporalio = "temporalio"
 transformers = "transformers"
+typesafe-sdk = "typesafe_sdk"

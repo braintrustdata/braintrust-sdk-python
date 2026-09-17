@@ -1,0 +1,45 @@
+interactions:
+- request:
+    body: '{"state":"The package arrived intact and on time.","model":"jev-latest","questions":{"positive":{"type":"noul","instructions":"Is
+      this feedback positive?"}}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      connection:
+      - keep-alive
+      content-length:
+      - '157'
+      content-type:
+      - application/json
+      host:
+      - api.typesafe.ai
+      user-agent:
+      - typesafe-sdk/0.6.0
+      x-typesafe-runtime:
+      - python/3.14.7 (darwin; arm64)
+      x-typesafe-sdk:
+      - typesafe-sdk/0.6.0
+    method: POST
+    uri: https://api.typesafe.ai/v1/systemone
+  response:
+    body:
+      string: '{"model":"jev-1.13.0","answers":{"positive":{"type":"noul","noul":0.97}},"usage":{"input_tokens":279,"output_tokens":20}}'
+    headers:
+      content-length:
+      - '121'
+      content-type:
+      - application/json
+      date:
+      - Thu, 17 Sep 2026 12:52:51 GMT
+      server:
+      - istio-envoy
+      x-envoy-upstream-service-time:
+      - '85'
+      x-typesafe-request-id:
+      - req_01a0af6d5347794dbeed366e073ddbfe
+    status:
+      code: 200
+      message: OK
+version: 1

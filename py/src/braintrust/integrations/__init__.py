@@ -26,6 +26,7 @@ from .pydantic_ai import PydanticAIIntegration
 from .strands import StrandsIntegration
 from .temporal import TemporalIntegration
 from .transformers import TransformersIntegration
+from .typesafe import TypeSafeIntegration
 
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "StrandsIntegration",
     "TemporalIntegration",
     "TransformersIntegration",
+    "TypeSafeIntegration",
 ]
