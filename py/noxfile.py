@@ -694,6 +694,18 @@ def test_mistral(session, version):
     _run_tests(session, f"{INTEGRATION_DIR}/mistral/test_mistral.py", version=version)
 
 
+TYPESAFE_VERSIONS = _get_matrix_versions("typesafe-sdk")
+
+
+@nox.session()
+@nox.parametrize("version", TYPESAFE_VERSIONS, ids=TYPESAFE_VERSIONS)
+def test_typesafe(session, version):
+    """Test the TypeSafe SDK integration."""
+    _install_test_deps(session)
+    _install_matrix_dep(session, "typesafe-sdk", version)
+    _run_tests(session, f"{INTEGRATION_DIR}/typesafe/test_typesafe.py", version=version)
+
+
 HUGGINGFACE_HUB_VERSIONS = _get_matrix_versions("huggingface-hub")
 
 

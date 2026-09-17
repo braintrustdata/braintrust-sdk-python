@@ -37,6 +37,7 @@ from braintrust.integrations import (
     StrandsIntegration,
     TemporalIntegration,
     TransformersIntegration,
+    TypeSafeIntegration,
 )
 from braintrust.integrations.base import BaseIntegration
 
@@ -88,6 +89,7 @@ def auto_instrument(
     temporal: bool = True,
     livekit_agents: bool = True,
     pipecat: bool = True,
+    typesafe: bool = True,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -128,6 +130,7 @@ def auto_instrument(
         temporal: Enable Temporal instrumentation (default: True)
         livekit_agents: Enable LiveKit Agents instrumentation (default: True)
         pipecat: Enable Pipecat AI instrumentation (default: True)
+        typesafe: Enable TypeSafe instrumentation (default: True)
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -233,6 +236,8 @@ def auto_instrument(
         results["livekit_agents"] = _instrument_integration(LiveKitAgentsIntegration)
     if pipecat:
         results["pipecat"] = _instrument_integration(PipecatIntegration)
+    if typesafe:
+        results["typesafe"] = _instrument_integration(TypeSafeIntegration)
 
     return results
 
