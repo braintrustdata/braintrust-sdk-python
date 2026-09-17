@@ -6017,10 +6017,6 @@ class Logger(Exportable):
         :param parameters: Values for named placeholders in a string body.
         :returns: The unique ID of the captured log row.
         """
-        if level not in _OTEL_LOG_LEVELS:
-            valid_levels = ", ".join(_OTEL_LOG_LEVELS)
-            raise ValueError(f"Invalid log level {level!r}. Expected one of: {valid_levels}")
-
         rendered_body = body
         rendered_metadata = metadata
         if parameters:
@@ -6038,7 +6034,24 @@ class Logger(Exportable):
                 # contains malformed braces or an unsupported format specifier.
                 rendered_body = body
 
-        captured_at = time.time()
+        return self._emit_log_record(
+            body=rendered_body,
+            level=level,
+            metadata=rendered_metadata,
+            captured_at=time.time(),
+        )
+
+    def _emit_log_record(
+        self,
+        body: Any,
+        level: LogLevel,
+        metadata: dict[str, Any] | None,
+        captured_at: float,
+    ) -> str:
+        if level not in _OTEL_LOG_LEVELS:
+            valid_levels = ", ".join(_OTEL_LOG_LEVELS)
+            raise ValueError(f"Invalid log level {level!r}. Expected one of: {valid_levels}")
+
         span_info = self.state.context_manager.get_current_span_info()
         severity_number = _OTEL_LOG_LEVELS[level]
         span = self._start_span_impl(
@@ -6049,14 +6062,11 @@ class Logger(Exportable):
             span_id=span_info.span_id if span_info else None,
             root_span_id=span_info.trace_id if span_info else self._baseline_trace_id,
             lookup_span_parent=False,
-            output=rendered_body,
-            error=(
-                rendered_body
-                if severity_number >= _OTEL_LOG_LEVELS["error"] and isinstance(rendered_body, str)
-                else None
-            ),
-            metadata=rendered_metadata,
+            output=body,
+            error=(body if severity_number >= _OTEL_LOG_LEVELS["error"] and isinstance(body, str) else None),
+            metadata=metadata,
             metrics={"end": captured_at},
+            created=datetime.datetime.fromtimestamp(captured_at, datetime.timezone.utc).isoformat(),
             context={
                 "otel": {
                     "signal": "logs",
