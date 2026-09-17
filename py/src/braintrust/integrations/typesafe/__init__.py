@@ -3,6 +3,7 @@
 from typing import Any
 
 from .integration import TypeSafeIntegration
+from .patchers import AsyncSystemOnePatcher, SystemOnePatcher
 
 
 def setup_typesafe() -> bool:
@@ -12,8 +13,10 @@ def setup_typesafe() -> bool:
 
 def wrap_typesafe(client: Any) -> Any:
     """Instrument a TypeSafe sync or async client in place."""
-    TypeSafeIntegration.setup()
-    return client
+    from typesafe_sdk import AsyncTypeSafeClient
+
+    patcher = AsyncSystemOnePatcher if isinstance(client, AsyncTypeSafeClient) else SystemOnePatcher
+    return patcher.wrap_target(client)
 
 
 __all__ = [

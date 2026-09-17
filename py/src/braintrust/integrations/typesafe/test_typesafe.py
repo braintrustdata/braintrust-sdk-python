@@ -33,7 +33,10 @@ def _assert_span(span, *, question_ids):
 
 @pytest.mark.vcr
 def test_wrap_typesafe_system_one_sync(memory_logger):
-    with wrap_typesafe(TypeSafeClient(api_key=os.environ["TYPESAFE_API_KEY"])) as client:
+    with (
+        wrap_typesafe(TypeSafeClient(api_key=os.environ["TYPESAFE_API_KEY"])) as client,
+        TypeSafeClient(api_key=os.environ["TYPESAFE_API_KEY"]) as unwrapped_client,
+    ):
         response = client.system_one(
             state="The package arrived intact and on time.",
             questions={
@@ -49,6 +52,10 @@ def test_wrap_typesafe_system_one_sync(memory_logger):
         with pytest.raises(TypeSafeError, match="At least one question is required") as raised:
             client.system_one(state="hello", questions={})
         error_spans = memory_logger.pop()
+
+        with pytest.raises(TypeSafeError, match="At least one question is required"):
+            unwrapped_client.system_one(state="hello", questions={})
+        unwrapped_spans = memory_logger.pop()
 
     assert 0 <= response.nouls["positive"].noul <= 1
     assert len(spans) == 1
@@ -68,15 +75,16 @@ def test_wrap_typesafe_system_one_sync(memory_logger):
     assert len(error_spans) == 1
     assert "At least one question is required" in error_spans[0]["error"]
     assert raised.value.__class__.__module__.startswith("typesafe_sdk")
+    assert unwrapped_spans == []
 
 
 @pytest.mark.asyncio
 @pytest.mark.vcr
 async def test_setup_typesafe_system_one_async(memory_logger):
-    assert setup_typesafe()
-    assert setup_typesafe()
-
-    async with AsyncTypeSafeClient(api_key=os.environ["TYPESAFE_API_KEY"]) as client:
+    async with (
+        wrap_typesafe(AsyncTypeSafeClient(api_key=os.environ["TYPESAFE_API_KEY"])) as client,
+        AsyncTypeSafeClient(api_key=os.environ["TYPESAFE_API_KEY"]) as unwrapped_client,
+    ):
         response = await client.system_one(
             state={"message": "I was charged twice. Please refund the duplicate charge today."},
             questions={
@@ -91,9 +99,20 @@ async def test_setup_typesafe_system_one_async(memory_logger):
                 "duplicate_charge": Noul(instructions={"question": "Does the customer report a duplicate charge?"}),
             },
         )
+        spans = memory_logger.pop()
+
+        with pytest.raises(TypeSafeError, match="At least one question is required"):
+            await unwrapped_client.system_one(state="hello", questions={})
+        assert memory_logger.pop() == []
+
+        assert setup_typesafe()
+        assert setup_typesafe()
+
+        with pytest.raises(TypeSafeError, match="At least one question is required"):
+            await unwrapped_client.system_one(state="hello", questions={})
+        setup_spans = memory_logger.pop()
 
     assert set(response.answers) == {"category", "urgency", "duplicate_charge"}
-    spans = memory_logger.pop()
     assert len(spans) == 1
     _assert_span(spans[0], question_ids=["category", "urgency", "duplicate_charge"])
     assert [question["type"] for question in spans[0]["input"]["questions"]] == [
@@ -101,6 +120,8 @@ async def test_setup_typesafe_system_one_async(memory_logger):
         "score",
         "noul",
     ]
+    assert len(setup_spans) == 1
+    assert "At least one question is required" in setup_spans[0]["error"]
 
 
 def test_auto_instrument_typesafe_subprocess():
