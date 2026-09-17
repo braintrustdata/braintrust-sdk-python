@@ -373,6 +373,22 @@ class ChatCompletionContentPartImageWithTitle(TypedDict):
     cache_control: NotRequired[ChatCompletionContentPartImageWithTitleCacheControl | None]
 
 
+class ChatCompletionContentPartInputAudioWithTitleInputAudio(TypedDict):
+    data: str
+    format: Literal['wav', 'mp3']
+
+
+class ChatCompletionContentPartInputAudioWithTitleCacheControl(TypedDict):
+    type: Literal['ephemeral']
+    ttl: NotRequired[Literal['5m', '1h'] | None]
+
+
+class ChatCompletionContentPartInputAudioWithTitle(TypedDict):
+    input_audio: ChatCompletionContentPartInputAudioWithTitleInputAudio
+    type: Literal['input_audio']
+    cache_control: NotRequired[ChatCompletionContentPartInputAudioWithTitleCacheControl | None]
+
+
 class ChatCompletionContentPartTextCacheControl(TypedDict):
     type: Literal['ephemeral']
     ttl: NotRequired[Literal['5m', '1h'] | None]
@@ -1861,6 +1877,11 @@ class ProjectAutomationConfig4(TypedDict):
     """
 
 
+class ProjectAutomationRuntimeBlock(TypedDict):
+    reason: str
+    model: str
+
+
 class ProjectGroup(TypedDict):
     id: str
     """
@@ -3300,6 +3321,7 @@ class AttachmentStatus(TypedDict):
 ChatCompletionContentPart: TypeAlias = (
     ChatCompletionContentPartTextWithTitle
     | ChatCompletionContentPartImageWithTitle
+    | ChatCompletionContentPartInputAudioWithTitle
     | ChatCompletionContentPartFileWithTitle
 )
 
@@ -4201,6 +4223,7 @@ class ProjectAutomation(TypedDict):
     """
     The configuration for the automation rule
     """
+    runtime_block: NotRequired[ProjectAutomationRuntimeBlock | None]
 
 
 class ProjectLogsEvent(TypedDict):
