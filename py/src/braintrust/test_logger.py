@@ -1399,6 +1399,17 @@ def test_logger_emit_log_without_active_span(with_memory_logger):
     assert second["context"]["otel"]["log"]["severity_number"] == 9
 
 
+def test_logger_emit_log_enqueues_single_row(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.info("Payment completed", metadata={"payment_id": "pay_123"})
+
+    assert len(with_memory_logger.logs) == 1
+    [row] = with_memory_logger.pop()
+    assert row["metrics"]["start"] == row["metrics"]["end"]
+    assert row["_is_merge"] is False
+
+
 def test_logger_emit_log_uses_distinct_baseline_trace_per_logger(with_memory_logger):
     first_logger = init_test_logger(f"{__name__}-first")
     second_logger = init_test_logger(f"{__name__}-second")

@@ -6056,6 +6056,7 @@ class Logger(Exportable):
                 else None
             ),
             metadata=rendered_metadata,
+            metrics={"end": captured_at},
             context={
                 "otel": {
                     "signal": "logs",
@@ -6067,7 +6068,6 @@ class Logger(Exportable):
                 }
             },
         )
-        span.end(end_time=captured_at)
 
         if not self.async_flush:
             self.flush()
