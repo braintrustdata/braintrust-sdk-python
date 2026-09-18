@@ -31,6 +31,11 @@ def _is_ignored_logger(name: str) -> bool:
     return any(name == prefix or name.startswith(f"{prefix}.") for prefix in _IGNORED_LOGGER_PREFIXES)
 
 
+class _InternalLogFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not _is_ignored_logger(record.name)
+
+
 def _record_metadata(record: logging.LogRecord) -> dict[str, Any]:
     metadata = {
         key: value
@@ -66,11 +71,12 @@ class BraintrustLogHandler(logging.Handler):
     def __init__(self, logger: Logger, level: int | str = logging.NOTSET):
         super().__init__(level=level)
         self._logger = logger
+        # Handler.handle() runs filters before acquiring its lock. Filtering
+        # internal transport logs here prevents a shutdown flush from waiting
+        # on a worker thread blocked on that same lock.
+        self.addFilter(_InternalLogFilter())
 
     def emit(self, record: logging.LogRecord) -> None:
-        if _is_ignored_logger(record.name):
-            return
-
         try:
             self._logger._emit_log_record(
                 body=self.format(record),

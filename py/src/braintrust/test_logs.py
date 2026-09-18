@@ -1,5 +1,7 @@
+import concurrent.futures
 import logging
 import sys
+from unittest.mock import MagicMock
 
 import pytest
 from braintrust.logs import BraintrustLogHandler
@@ -88,3 +90,17 @@ def test_handler_ignores_internal_transport_loggers(with_memory_logger, logger_n
     handler.handle(record)
 
     assert with_memory_logger.pop() == []
+
+
+def test_handler_ignores_internal_logs_before_acquiring_lock():
+    handler = BraintrustLogHandler(MagicMock())
+    record = logging.LogRecord("urllib3.connectionpool", logging.DEBUG, __file__, 1, "internal", (), None)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+    handler.acquire()
+    future = executor.submit(handler.handle, record)
+    try:
+        assert future.result(timeout=1) is False
+    finally:
+        handler.release()
+        executor.shutdown(wait=True)
