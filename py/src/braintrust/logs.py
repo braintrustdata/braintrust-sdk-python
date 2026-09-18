@@ -1,6 +1,7 @@
 """Adapters for forwarding standard-library log records to Braintrust."""
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 from .api._transport import _is_internal_http_transport
@@ -32,6 +33,18 @@ def _is_ignored_logger(name: str) -> bool:
     return any(name == prefix or name.startswith(f"{prefix}.") for prefix in _IGNORED_LOGGER_PREFIXES)
 
 
+def _uses_named_percent_parameters(template: str) -> bool:
+    search_from = 0
+    while (placeholder_index := template.find("%(", search_from)) >= 0:
+        percent_run_start = placeholder_index
+        while percent_run_start > 0 and template[percent_run_start - 1] == "%":
+            percent_run_start -= 1
+        if (placeholder_index - percent_run_start) % 2 == 0:
+            return True
+        search_from = placeholder_index + 2
+    return False
+
+
 class _InternalLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         return not _is_ignored_logger(record.name) and not _is_internal_http_transport()
@@ -46,7 +59,11 @@ def _record_metadata(record: logging.LogRecord) -> dict[str, Any]:
 
     if record.args and isinstance(record.msg, str):
         metadata["braintrust.template"] = record.msg
-        parameters = record.args.items() if isinstance(record.args, dict) else enumerate(record.args)
+        if isinstance(record.args, Mapping) and _uses_named_percent_parameters(record.msg):
+            parameters = record.args.items()
+        else:
+            positional_args = (record.args,) if isinstance(record.args, Mapping) else record.args
+            parameters = enumerate(positional_args)
         metadata.update({f"braintrust.template.parameter.{key}": value for key, value in parameters})
 
     metadata.update(

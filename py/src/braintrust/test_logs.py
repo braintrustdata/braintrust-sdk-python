@@ -44,6 +44,38 @@ def test_handler_forwards_log_record(with_memory_logger):
     assert row["span_attributes"]["log_level"] == "warn"
 
 
+@pytest.mark.parametrize(
+    ("template", "expected_output", "expected_parameters"),
+    [
+        ("payload=%s", "payload={'id': 1}", {"braintrust.template.parameter.0": {"id": 1}}),
+        ("payload=%(id)s", "payload=1", {"braintrust.template.parameter.id": 1}),
+        (
+            "literal=%%(id)s payload=%s",
+            "literal=%(id)s payload={'id': 1}",
+            {"braintrust.template.parameter.0": {"id": 1}},
+        ),
+    ],
+)
+def test_handler_distinguishes_positional_and_named_mapping_arguments(
+    with_memory_logger, template, expected_output, expected_parameters
+):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("app", logging.INFO, __file__, 1, template, ({"id": 1},), None)
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == expected_output
+    assert row["metadata"] == {
+        "braintrust.template": template,
+        **expected_parameters,
+        "code.file.path": __file__,
+        "code.function.name": None,
+        "code.line.number": 1,
+        "logger.name": "app",
+    }
+
+
 def test_handler_preserves_unix_epoch_timestamp(with_memory_logger):
     handler = BraintrustLogHandler(init_test_logger(__name__))
     record = logging.LogRecord("app", logging.INFO, __file__, 1, "message", (), None)
