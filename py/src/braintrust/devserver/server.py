@@ -370,6 +370,8 @@ def make_scorer(
             "strict": True,
         }
         headers = {"Accept": "application/json"}
+        if state.org_name:
+            headers["x-bt-org-name"] = state.org_name
         if project_id:
             headers["x-bt-project-id"] = project_id
         result = state.proxy_conn().post("function/invoke", json=request, headers=headers)
