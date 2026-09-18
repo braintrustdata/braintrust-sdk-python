@@ -30,7 +30,6 @@ def test_handler_forwards_log_record(with_memory_logger):
     assert row["metrics"] == {"start": 1234.5, "end": 1234.5}
     assert "otel" not in row.get("context", {})
     assert row["metadata"] == {
-        "braintrust.log_level": "warn",
         "braintrust.template": "Payment %s failed",
         "braintrust.template.parameter.0": "pay_123",
         "code.file.path": "/app/checkout.py",
@@ -39,6 +38,7 @@ def test_handler_forwards_log_record(with_memory_logger):
         "customer_id": "cus_123",
         "logger.name": "payments.checkout",
     }
+    assert row["span_attributes"]["log_level"] == "warn"
 
 
 @pytest.mark.parametrize(
@@ -59,7 +59,8 @@ def test_handler_maps_python_log_levels(with_memory_logger, python_level, braint
     handler.handle(record)
 
     [row] = with_memory_logger.pop()
-    assert row["metadata"]["braintrust.log_level"] == braintrust_level
+    assert row["span_attributes"]["log_level"] == braintrust_level
+    assert "braintrust.log_level" not in row.get("metadata", {})
 
 
 def test_handler_forwards_exception_info(with_memory_logger):

@@ -6104,13 +6104,14 @@ class Logger(Exportable):
         span = self._start_span_impl(
             name="Log",
             type=SpanTypeAttribute.LOG,
+            span_attributes={"log_level": level},
             start_time=captured_at,
             set_current=False,
             span_id=span_info.span_id if span_info else None,
             root_span_id=span_info.trace_id if span_info else self._baseline_trace_id,
             lookup_span_parent=False,
             output=body,
-            metadata={**(metadata or {}), "braintrust.log_level": level},
+            metadata=metadata,
             metrics={"end": captured_at},
             created=datetime.datetime.fromtimestamp(captured_at, datetime.timezone.utc).isoformat(),
         )
