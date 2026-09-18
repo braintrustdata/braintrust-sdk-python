@@ -6113,7 +6113,7 @@ class Logger(Exportable):
         span = self._start_span_impl(
             name="Log",
             type=SpanTypeAttribute.LOG,
-            span_attributes={"log_level": level},
+            span_attributes={"name": None, "log_level": level},
             start_time=captured_at,
             set_current=False,
             span_id=span_info.span_id if span_info else None,

@@ -1388,7 +1388,7 @@ def test_logger_emit_log_without_active_span(with_memory_logger):
     assert first["output"] == "Payment failed"
     assert "error" not in first
     assert first["metadata"] == {"payment_id": "pay_123"}
-    assert first["span_attributes"]["name"] == "Log"
+    assert "name" not in first["span_attributes"]
     assert first["span_attributes"]["type"] == "log"
     assert first["span_attributes"]["log_level"] == "error"
     assert first["metrics"]["start"] == first["metrics"]["end"]
