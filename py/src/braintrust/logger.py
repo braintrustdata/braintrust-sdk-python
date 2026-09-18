@@ -4882,7 +4882,7 @@ class SpanImpl(Span):
 
         internal_data: dict[str, Any] = dict(
             metrics=dict(
-                start=start_time or time.time(),
+                start=start_time if start_time is not None else time.time(),
             ),
             # Set type first, in case they override it in `span_attributes`.
             span_attributes=dict(**{"type": type, "name": name, **span_attributes}, exec_counter=exec_counter),

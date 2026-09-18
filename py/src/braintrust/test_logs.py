@@ -43,6 +43,18 @@ def test_handler_forwards_log_record(with_memory_logger):
     assert row["span_attributes"]["log_level"] == "warn"
 
 
+def test_handler_preserves_unix_epoch_timestamp(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("app", logging.INFO, __file__, 1, "message", (), None)
+    record.created = 0
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["created"] == "1970-01-01T00:00:00+00:00"
+    assert row["metrics"] == {"start": 0, "end": 0}
+
+
 @pytest.mark.parametrize(
     ("python_level", "braintrust_level"),
     [
