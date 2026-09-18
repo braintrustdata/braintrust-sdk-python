@@ -1511,6 +1511,27 @@ def test_logger_log_helpers_render_t_string(with_memory_logger):
 
 
 @pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+def test_logger_t_string_retains_repeated_expression_values(with_memory_logger):
+    templatelib = importlib.import_module("string.templatelib")
+    template = templatelib.Template(
+        templatelib.Interpolation(1, "next(it)"),
+        " ",
+        templatelib.Interpolation(2, "next(it)"),
+    )
+    test_logger = init_test_logger(__name__)
+
+    test_logger.info(template)
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "1 2"
+    assert row["metadata"] == {
+        "braintrust.template": "{next(it)} {next(it)}",
+        "braintrust.template.parameter.next(it).0": 1,
+        "braintrust.template.parameter.next(it).1": 2,
+    }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
 def test_logger_t_string_rejects_keyword_template_parameters(with_memory_logger):
     templatelib = importlib.import_module("string.templatelib")
     template = templatelib.Template("User ", templatelib.Interpolation("user-123", "user_id"))

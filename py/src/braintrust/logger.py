@@ -22,6 +22,7 @@ import traceback
 import types
 import uuid
 from abc import ABC, abstractmethod
+from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from functools import partial, wraps
 from multiprocessing import cpu_count
@@ -156,8 +157,13 @@ def _render_t_string(template: Any) -> tuple[str, str, dict[str, object]]:
     rendered_parts: list[str] = []
     template_parts: list[str] = []
     parameters: dict[str, object] = {}
+    parameter_names = [
+        interpolation.expression.strip() or str(index) for index, interpolation in enumerate(template.interpolations)
+    ]
+    parameter_name_counts = Counter(parameter_names)
+    parameter_name_occurrences: Counter[str] = Counter()
 
-    for index, (literal, interpolation) in enumerate(zip(template.strings, template.interpolations)):
+    for parameter_name, literal, interpolation in zip(parameter_names, template.strings, template.interpolations):
         rendered_parts.append(literal)
         template_parts.append(literal.replace("{", "{{").replace("}", "}}"))
 
@@ -169,7 +175,10 @@ def _render_t_string(template: Any) -> tuple[str, str, dict[str, object]]:
         placeholder += "}"
         template_parts.append(placeholder)
 
-        parameter_name = interpolation.expression.strip() or str(index)
+        if parameter_name_counts[parameter_name] > 1:
+            occurrence = parameter_name_occurrences[parameter_name]
+            parameter_name_occurrences[parameter_name] += 1
+            parameter_name = f"{parameter_name}.{occurrence}"
         parameters[parameter_name] = interpolation.value
         try:
             converted = _TEMPLATELIB.convert(interpolation.value, interpolation.conversion)
