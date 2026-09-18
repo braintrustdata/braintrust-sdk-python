@@ -10,6 +10,7 @@ aliasing pattern.
 import braintrust
 import pytest
 from braintrust import (
+    BraintrustLogHandler,
     auto_instrument,
     setup_ai_sdk,
     setup_pydantic_ai,
@@ -21,6 +22,7 @@ from braintrust import (
 
 
 _PUBLIC_SYMBOLS = [
+    ("BraintrustLogHandler", BraintrustLogHandler),
     ("auto_instrument", auto_instrument),
     ("wrap_anthropic", wrap_anthropic),
     ("wrap_litellm", wrap_litellm),

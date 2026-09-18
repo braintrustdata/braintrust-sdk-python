@@ -1,0 +1,163 @@
+import concurrent.futures
+import logging
+import sys
+from unittest.mock import MagicMock
+
+import pytest
+from braintrust.api._transport import HTTPConnection
+from braintrust.logs import BraintrustLogHandler
+from braintrust.test_helpers import init_test_logger, with_memory_logger  # noqa: F401
+
+
+def test_handler_forwards_log_record(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord(
+        name="payments.checkout",
+        level=logging.WARNING,
+        pathname="/app/checkout.py",
+        lineno=42,
+        msg="Payment %s failed",
+        args=("pay_123",),
+        exc_info=None,
+        func="charge",
+    )
+    record.created = 1234.5
+    record.customer_id = "cus_123"
+
+    handler.handle(record)
+
+    assert len(with_memory_logger.logs) == 1
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "Payment pay_123 failed"
+    assert row["created"] == "1970-01-01T00:20:34.500000+00:00"
+    assert row["metrics"] == {"start": 1234.5, "end": 1234.5}
+    assert "otel" not in row.get("context", {})
+    assert row["metadata"] == {
+        "braintrust.template": "Payment %s failed",
+        "braintrust.template.parameter.0": "pay_123",
+        "code.file.path": "/app/checkout.py",
+        "code.function.name": "charge",
+        "code.line.number": 42,
+        "customer_id": "cus_123",
+        "logger.name": "payments.checkout",
+    }
+    assert row["span_attributes"]["log_level"] == "warn"
+
+
+@pytest.mark.parametrize(
+    ("template", "expected_output", "expected_parameters"),
+    [
+        ("payload=%s", "payload={'id': 1}", {"braintrust.template.parameter.0": {"id": 1}}),
+        ("payload=%(id)s", "payload=1", {"braintrust.template.parameter.id": 1}),
+        (
+            "literal=%%(id)s payload=%s",
+            "literal=%(id)s payload={'id': 1}",
+            {"braintrust.template.parameter.0": {"id": 1}},
+        ),
+    ],
+)
+def test_handler_distinguishes_positional_and_named_mapping_arguments(
+    with_memory_logger, template, expected_output, expected_parameters
+):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("app", logging.INFO, __file__, 1, template, ({"id": 1},), None)
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == expected_output
+    assert row["metadata"] == {
+        "braintrust.template": template,
+        **expected_parameters,
+        "code.file.path": __file__,
+        "code.function.name": None,
+        "code.line.number": 1,
+        "logger.name": "app",
+    }
+
+
+def test_handler_preserves_unix_epoch_timestamp(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("app", logging.INFO, __file__, 1, "message", (), None)
+    record.created = 0
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["created"] == "1970-01-01T00:00:00+00:00"
+    assert row["metrics"] == {"start": 0, "end": 0}
+
+
+@pytest.mark.parametrize(
+    ("python_level", "braintrust_level"),
+    [
+        (1, "trace"),
+        (logging.DEBUG, "debug"),
+        (logging.INFO, "info"),
+        (logging.WARNING, "warn"),
+        (logging.ERROR, "error"),
+        (logging.CRITICAL, "fatal"),
+    ],
+)
+def test_handler_maps_python_log_levels(with_memory_logger, python_level, braintrust_level):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("app", python_level, __file__, 1, "message", (), None)
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["span_attributes"]["log_level"] == braintrust_level
+    assert "braintrust.log_level" not in row.get("metadata", {})
+
+
+def test_handler_forwards_exception_info(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+
+    try:
+        raise ValueError("invalid payment")
+    except ValueError:
+        record = logging.LogRecord("payments", logging.ERROR, __file__, 1, "Charge failed", (), None)
+        record.exc_info = sys.exc_info()
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["output"].startswith("Charge failed\nTraceback (most recent call last):")
+    assert row["output"].endswith("ValueError: invalid payment")
+    assert "error" not in row
+
+
+def test_handler_ignores_braintrust_loggers(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("braintrust.logger", logging.ERROR, __file__, 1, "internal", (), None)
+
+    handler.handle(record)
+
+    assert with_memory_logger.pop() == []
+
+
+def test_handler_forwards_application_urllib3_logs(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("urllib3.connectionpool", logging.DEBUG, __file__, 1, "request", (), None)
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "request"
+    assert row["metadata"]["logger.name"] == "urllib3.connectionpool"
+
+
+def test_handler_ignores_internal_logs_before_acquiring_lock():
+    handler = BraintrustLogHandler(MagicMock())
+    record = logging.LogRecord("urllib3.connectionpool", logging.DEBUG, __file__, 1, "internal", (), None)
+    connection = HTTPConnection("")
+    connection.session.get = MagicMock(side_effect=lambda *_args, **_kwargs: handler.handle(record))
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+    handler.acquire()
+    future = executor.submit(connection.get, "https://api.braintrust.dev")
+    try:
+        assert future.result(timeout=1) is False
+    finally:
+        handler.release()
+        executor.shutdown(wait=True)
