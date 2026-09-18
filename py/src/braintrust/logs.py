@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from .api._transport import _is_internal_http_transport
 from .logger import Logger, LogLevel
 
 
@@ -10,7 +11,7 @@ _STANDARD_LOG_RECORD_ATTRIBUTES = frozenset(vars(logging.LogRecord("", logging.N
     "asctime",
     "message",
 }
-_IGNORED_LOGGER_PREFIXES = ("braintrust", "urllib3")
+_IGNORED_LOGGER_PREFIXES = ("braintrust",)
 
 
 def _log_level(level: int) -> LogLevel:
@@ -33,7 +34,7 @@ def _is_ignored_logger(name: str) -> bool:
 
 class _InternalLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        return not _is_ignored_logger(record.name)
+        return not _is_ignored_logger(record.name) and not _is_internal_http_transport()
 
 
 def _record_metadata(record: logging.LogRecord) -> dict[str, Any]:
@@ -64,8 +65,8 @@ class BraintrustLogHandler(logging.Handler):
     """Forward Python ``logging`` records to a Braintrust logger.
 
     Attach this handler explicitly with ``logging.Logger.addHandler``. Records
-    emitted by Braintrust and its HTTP transport are ignored to prevent logging
-    recursion.
+    emitted by Braintrust or while its HTTP transport is active are ignored to
+    prevent logging recursion.
     """
 
     def __init__(self, logger: Logger, level: int | str = logging.NOTSET):

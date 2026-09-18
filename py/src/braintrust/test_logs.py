@@ -4,6 +4,7 @@ import sys
 from unittest.mock import MagicMock
 
 import pytest
+from braintrust.api._transport import HTTPConnection
 from braintrust.logs import BraintrustLogHandler
 from braintrust.test_helpers import init_test_logger, with_memory_logger  # noqa: F401
 
@@ -94,23 +95,35 @@ def test_handler_forwards_exception_info(with_memory_logger):
     assert "error" not in row
 
 
-@pytest.mark.parametrize("logger_name", ["braintrust.logger", "urllib3.connectionpool"])
-def test_handler_ignores_internal_transport_loggers(with_memory_logger, logger_name):
+def test_handler_ignores_braintrust_loggers(with_memory_logger):
     handler = BraintrustLogHandler(init_test_logger(__name__))
-    record = logging.LogRecord(logger_name, logging.ERROR, __file__, 1, "internal", (), None)
+    record = logging.LogRecord("braintrust.logger", logging.ERROR, __file__, 1, "internal", (), None)
 
     handler.handle(record)
 
     assert with_memory_logger.pop() == []
 
 
+def test_handler_forwards_application_urllib3_logs(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    record = logging.LogRecord("urllib3.connectionpool", logging.DEBUG, __file__, 1, "request", (), None)
+
+    handler.handle(record)
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "request"
+    assert row["metadata"]["logger.name"] == "urllib3.connectionpool"
+
+
 def test_handler_ignores_internal_logs_before_acquiring_lock():
     handler = BraintrustLogHandler(MagicMock())
     record = logging.LogRecord("urllib3.connectionpool", logging.DEBUG, __file__, 1, "internal", (), None)
+    connection = HTTPConnection("")
+    connection.session.get = MagicMock(side_effect=lambda *_args, **_kwargs: handler.handle(record))
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
     handler.acquire()
-    future = executor.submit(handler.handle, record)
+    future = executor.submit(connection.get, "https://api.braintrust.dev")
     try:
         assert future.result(timeout=1) is False
     finally:
