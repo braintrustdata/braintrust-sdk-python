@@ -1,3 +1,4 @@
+import functools
 import importlib.metadata
 import os
 from typing import Any, TypedDict
@@ -98,6 +99,7 @@ def merge_span_origin_context(
     return merged
 
 
+@functools.cache
 def _sdk_version() -> str:
     try:
         return importlib.metadata.version("braintrust")
