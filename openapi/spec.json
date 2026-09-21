@@ -29,6 +29,104 @@
       }
     },
     "schemas": {
+      "ScoreObject": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The score name. Defaults to the function name for a single score."
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            }
+          }
+        },
+        "required": [
+          "score"
+        ]
+      },
+      "NamedScore": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            }
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ScoreResult": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ScoreObject"
+          },
+          {
+            "$ref": "#/components/schemas/NamedScore"
+          },
+          {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NamedScore"
+            },
+            "description": "Multiple scores. Each score must have a unique name."
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "The return value of a scorer function."
+      },
       "ProjectIdParam": {
         "type": "string",
         "format": "uuid",
@@ -849,6 +947,7 @@
           "preprocessor",
           "classifier",
           "review",
+          "log",
           null
         ],
         "description": "Type of the span, for display purposes only"
@@ -4663,6 +4762,14 @@
           },
           "function_type": {
             "$ref": "#/components/schemas/FunctionTypeEnumNullish"
+          },
+          "environment_slugs": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            },
+            "description": "A list of environment slugs to assign the prompt to. Each slug must reference an existing environment; if any slug does not exist, the entire request fails and the prompt is not created."
           }
         },
         "required": [
@@ -18216,7 +18323,7 @@
           {}
         ],
         "operationId": "postPrompt",
-        "description": "Create a new prompt. If there is an existing prompt in the project with the same slug as the one specified in the request, will return the existing prompt unmodified",
+        "description": "Create a new prompt. If there is an existing prompt in the project with the same slug as the one specified in the request, a new version of the prompt will be appended and returned",
         "summary": "Create prompt",
         "requestBody": {
           "description": "Any desired information about the new prompt object",
@@ -18335,7 +18442,7 @@
           {}
         ],
         "operationId": "putPrompt",
-        "description": "Create or replace prompt. If there is an existing prompt in the project with the same slug as the one specified in the request, will replace the existing prompt with the provided fields",
+        "description": "Create or replace prompt. If there is an existing prompt in the project with the same slug as the one specified in the request, a new version of the prompt will be appended and returned",
         "summary": "Create or replace prompt",
         "requestBody": {
           "description": "Any desired information about the new prompt object",
@@ -28286,7 +28393,7 @@
           {}
         ],
         "operationId": "postFunction",
-        "description": "Create a new function. If there is an existing function in the project with the same slug as the one specified in the request, will return the existing function unmodified",
+        "description": "Create a new function. If there is an existing function in the project with the same slug as the one specified in the request, a new version of the function will be appended and returned",
         "summary": "Create function",
         "requestBody": {
           "description": "Any desired information about the new function object",
@@ -28405,7 +28512,7 @@
           {}
         ],
         "operationId": "putFunction",
-        "description": "Create or replace function. If there is an existing function in the project with the same slug as the one specified in the request, will replace the existing function with the provided fields",
+        "description": "Create or replace function. If there is an existing function in the project with the same slug as the one specified in the request, a new version of the function will be appended and returned",
         "summary": "Create or replace function",
         "requestBody": {
           "description": "Any desired information about the new function object",
@@ -29178,7 +29285,7 @@
         },
         "responses": {
           "200": {
-            "description": "Function invocation response",
+            "description": "Function invocation response. Scorer results follow the ScoreResult schema: a single score defaults to the function name when unnamed; arrays require a unique name for every score.",
             "content": {
               "application/json": {
                 "schema": {
