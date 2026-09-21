@@ -10,11 +10,12 @@ import atexit
 import json
 import os
 import tempfile
+import threading
 import uuid
 from typing import Any
 
 from braintrust.types import Metadata
-from braintrust.util import clean_nones, merge_dicts
+from braintrust.util import LazyValue, clean_nones, merge_dicts
 
 
 # Global registry of active span caches for process exit cleanup
@@ -117,6 +118,9 @@ class SpanCache:
         self._root_span_index: set[str] = set()
         # Buffer for pending writes
         self._write_buffer: list[DiskSpanRecord] = []
+        # Unresolved customized exports must be cached before a trace read returns.
+        self._pending_records: dict[str, dict[object, LazyValue[dict[str, Any]]]] = {}
+        self._pending_lock = threading.Lock()
 
     def disable(self) -> None:
         """
@@ -124,6 +128,8 @@ class SpanCache:
         OTEL is registered, since OTEL spans won't be in the cache.
         """
         self._explicitly_disabled = True
+        with self._pending_lock:
+            self._pending_records.clear()
 
     def start(self) -> None:
         """
@@ -147,6 +153,8 @@ class SpanCache:
         if self._active_eval_count <= 0:
             self._active_eval_count = 0
             self._enabled = False
+            with self._pending_lock:
+                self._pending_records.clear()
 
     @property
     def disabled(self) -> bool:
@@ -195,6 +203,19 @@ class SpanCache:
 
             atexit.register(cleanup_all_caches)
 
+    def _track_pending_record(self, root_span_id: str, key: object, record: LazyValue[dict[str, Any]]) -> None:
+        with self._pending_lock:
+            if not self.disabled:
+                self._pending_records.setdefault(root_span_id, {})[key] = record
+
+    def _forget_pending_record(self, root_span_id: str, key: object) -> None:
+        with self._pending_lock:
+            pending = self._pending_records.get(root_span_id)
+            if pending is not None:
+                pending.pop(key, None)
+                if not pending:
+                    del self._pending_records[root_span_id]
+
     def queue_write(self, root_span_id: str, span_id: str, data: CachedSpan) -> None:
         """
         Write a span to the cache.
@@ -241,6 +262,13 @@ class SpanCache:
         """
         if self.disabled:
             return None
+
+        # Do not hold the pending lock while resolving: the background publisher
+        # may already be resolving a record and needs the lock to mark it complete.
+        with self._pending_lock:
+            pending = tuple(self._pending_records.get(root_span_id, {}).values())
+        for record in pending:
+            record.get()
 
         # Quick check using in-memory index
         if root_span_id not in self._root_span_index:
@@ -302,6 +330,8 @@ class SpanCache:
         but will be ignored on reads.
         """
         self._root_span_index.discard(root_span_id)
+        with self._pending_lock:
+            self._pending_records.pop(root_span_id, None)
 
     def clear_all(self) -> None:
         """Clear all cached data and remove the cache file."""
@@ -327,6 +357,8 @@ class SpanCache:
 
         # Clear pending writes
         self._write_buffer.clear()
+        with self._pending_lock:
+            self._pending_records.clear()
 
         if self._cache_file_path and os.path.exists(self._cache_file_path):
             try:

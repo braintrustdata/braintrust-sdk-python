@@ -18,7 +18,11 @@ if len(sys.argv) == 1:
     print("SUCCESS")
     sys.exit(0)
 
-options = {name: False for name in inspect.signature(auto_instrument).parameters}
+options = {
+    name: False
+    for name, parameter in inspect.signature(auto_instrument).parameters.items()
+    if isinstance(parameter.default, bool)
+}
 assert auto_instrument(**options) == {}
 RankServiceClient = None
 if sys.argv[1] == "before":

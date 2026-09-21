@@ -101,6 +101,7 @@ from .propagation import (
 )
 from .queue import DEFAULT_QUEUE_SIZE, LogQueue
 from .serializable_data_class import SerializableDataClass
+from .span_customizer import SpanCustomizer, _customize_span_export, _get_span_customizers, _MaskingCustomizer
 from .span_identifier_v3 import SpanComponentsV3, SpanObjectTypeV3
 from .span_identifier_v4 import SpanComponentsV4
 from .span_origin import SpanOriginEnvironment, detect_environment, merge_span_origin_context
@@ -123,10 +124,6 @@ from .util import (
 )
 from .xact_ids import prettify_xact
 
-
-# Fields that should be passed to the masking function
-# Note: "tags" field is intentionally excluded, but can be added if needed
-REDACTION_FIELDS = ["input", "output", "expected", "metadata", "context", "scores", "metrics"]
 
 DATA_API_VERSION = 2
 LOGS3_OVERFLOW_REFERENCE_TYPE = "logs3_overflow"
@@ -1002,40 +999,6 @@ def utf8_byte_length(value: str) -> int:
     return len(value.encode("utf-8"))
 
 
-class _MaskingError:
-    """Internal class to signal masking errors that need special handling."""
-
-    def __init__(self, field_name: str, error_type: str):
-        self.field_name = field_name
-        self.error_type = error_type
-        self.error_msg = f"ERROR: Failed to mask field '{field_name}' - {error_type}"
-
-
-def _apply_masking_to_field(masking_function: Callable[[Any], Any], data: Any, field_name: str) -> Any:
-    """Apply masking function to data and handle errors gracefully.
-
-    If the masking function raises an exception, returns an error message.
-    Returns _MaskingError for scores/metrics fields to signal they should be dropped.
-    """
-    try:
-        return masking_function(data)
-    except Exception as mask_error:
-        # Return a generic error message without the stack trace to avoid leaking PII
-        error_type = type(mask_error).__name__
-
-        # For scores and metrics fields, return a special error object
-        # to signal the field should be dropped and error logged
-        if field_name in ["scores", "metrics"]:
-            return _MaskingError(field_name, error_type)
-
-        # For metadata field that expects dict type, return a dict with error key
-        if field_name == "metadata":
-            return {"error": f"ERROR: Failed to mask field '{field_name}' - {error_type}"}
-
-        # For other fields, return the error message as a string
-        return f"ERROR: Failed to mask field '{field_name}' - {error_type}"
-
-
 class _BackgroundLogger(ABC):
     @abstractmethod
     def log(self, *args: LazyValue[dict[str, Any]]) -> None:
@@ -1050,7 +1013,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
     def __init__(self):
         self.lock = threading.Lock()
         self.logs = []
-        self.masking_function: Callable[[Any], Any] | None = None
+        self._export_customizers: tuple[SpanCustomizer, ...] = ()
         self.upload_attempts: list[BaseAttachment] = []  # Track upload attempts
 
     def enforce_queue_size_limit(self, enforce: bool) -> None:
@@ -1062,7 +1025,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
 
     def set_masking_function(self, masking_function: Callable[[Any], Any] | None) -> None:
         """Set the masking function for the memory logger."""
-        self.masking_function = masking_function
+        self._export_customizers = (_MaskingCustomizer(masking_function),) if masking_function is not None else ()
 
     def flush(self, batch_size: int | None = None):
         """Flush the memory logger, extracting attachments and tracking upload attempts."""
@@ -1093,28 +1056,8 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             # here
             batch = merge_row_batch(logs)
 
-            # Apply masking after merge, similar to HTTPBackgroundLogger
-            if self.masking_function:
-                for i in range(len(batch)):
-                    item = batch[i]
-                    masked_item = item.copy()
-
-                    # Only mask specific fields if they exist
-                    for field in REDACTION_FIELDS:
-                        if field in item:
-                            masked_value = _apply_masking_to_field(self.masking_function, item[field], field)
-                            if isinstance(masked_value, _MaskingError):
-                                # Drop the field and add error message
-                                if field in masked_item:
-                                    del masked_item[field]
-                                if "error" in masked_item:
-                                    masked_item["error"] = f"{masked_item['error']}; {masked_value.error_msg}"
-                                else:
-                                    masked_item["error"] = masked_value.error_msg
-                            else:
-                                masked_item[field] = masked_value
-
-                    batch[i] = masked_item
+            if self._export_customizers:
+                batch = [_customize_span_export(item, self._export_customizers) for item in batch]
 
             return batch
 
@@ -1129,7 +1072,7 @@ BACKGROUND_LOGGER_BASE_SLEEP_TIME_S = 1.0
 class _HTTPBackgroundLogger:
     def __init__(self, api_conn: LazyValue[HTTPConnection]):
         self.api_conn = api_conn
-        self.masking_function: Callable[[Any], Any] | None = None
+        self._export_customizers: tuple[SpanCustomizer, ...] = ()
         self.outfile = sys.stderr
         self.flush_lock = threading.RLock()
         self._max_request_size_override: int | None = None
@@ -1318,28 +1261,9 @@ class _HTTPBackgroundLogger:
                 unwrapped_items = [item.get() for item in wrapped_items]
                 merged_items = merge_row_batch(unwrapped_items)
 
-                # Apply masking after merging but before sending to backend
-                if self.masking_function:
-                    for item_idx in range(len(merged_items)):
-                        item = merged_items[item_idx]
-                        masked_item = item.copy()
-
-                        # Only mask specific fields if they exist
-                        for field in REDACTION_FIELDS:
-                            if field in item:
-                                masked_value = _apply_masking_to_field(self.masking_function, item[field], field)
-                                if isinstance(masked_value, _MaskingError):
-                                    # Drop the field and add error message
-                                    if field in masked_item:
-                                        del masked_item[field]
-                                    if "error" in masked_item:
-                                        masked_item["error"] = f"{masked_item['error']}; {masked_value.error_msg}"
-                                    else:
-                                        masked_item["error"] = masked_value.error_msg
-                                else:
-                                    masked_item[field] = masked_value
-
-                        merged_items[item_idx] = masked_item
+                # Logger-local hooks run after instrumentation hooks and merging.
+                if self._export_customizers:
+                    merged_items = [_customize_span_export(item, self._export_customizers) for item in merged_items]
 
                 attachments: list["BaseAttachment"] = []
                 for item in merged_items:
@@ -1553,7 +1477,7 @@ class _HTTPBackgroundLogger:
 
     def set_masking_function(self, masking_function: Callable[[Any], Any] | None):
         """Set or update the masking function."""
-        self.masking_function = masking_function
+        self._export_customizers = (_MaskingCustomizer(masking_function),) if masking_function is not None else ()
 
 
 def _internal_reset_global_state() -> None:
@@ -2565,6 +2489,8 @@ def set_masking_function(masking_function: Callable[[Any], Any] | None) -> None:
     """
     Set a global masking function that will be applied to all logged data before sending to Braintrust.
     The masking function will be applied after records are merged but before they are sent to the backend.
+    Internally, masking is a logger-local export customizer that runs after instrumentation
+    customizers and also covers manually logged records.
 
     :param masking_function: A function that takes a JSON-serializable object and returns a masked version.
                            Set to None to disable masking.
@@ -4975,27 +4901,45 @@ class SpanImpl(Span):
         if serializable_partial_record.get("metrics", {}).get("end") is not None:
             self._logged_end_time = serializable_partial_record["metrics"]["end"]
 
-        # Write to local span cache for scorer access
-        # Only cache experiment spans - regular logs don't need caching
-        if self.parent_object_type == SpanObjectTypeV3.EXPERIMENT:
+        # Snapshot at log time so the span cache and the export agree on whether
+        # (and how) this record is customized.
+        customizers = _get_span_customizers() if self._instrumentation != "braintrust-python-logger" else ()
+        pending_cache_key = (
+            object()
+            if customizers
+            and self.parent_object_type == SpanObjectTypeV3.EXPERIMENT
+            and not self.state.span_cache.disabled
+            else None
+        )
+
+        def write_span_cache(record: dict[str, Any]) -> None:
+            # Write to local span cache for scorer access
+            # Only cache experiment spans - regular logs don't need caching
+            if self.parent_object_type != SpanObjectTypeV3.EXPERIMENT:
+                return
             from braintrust.span_cache import CachedSpan
 
             cached_span = CachedSpan(
                 span_id=self.span_id,
-                input=serializable_partial_record.get("input"),
-                output=serializable_partial_record.get("output"),
-                metadata=serializable_partial_record.get("metadata"),
+                input=record.get("input"),
+                output=record.get("output"),
+                metadata=record.get("metadata"),
                 span_parents=self.span_parents,
-                span_attributes=serializable_partial_record.get("span_attributes"),
-                error=serializable_partial_record.get("error"),
-                metrics=serializable_partial_record.get("metrics"),
-                tags=serializable_partial_record.get("tags"),
+                span_attributes=record.get("span_attributes"),
+                error=record.get("error"),
+                metrics=record.get("metrics"),
+                tags=record.get("tags"),
             )
             self.state.span_cache.queue_write(self.root_span_id, self.span_id, cached_span)
 
+        # Customized records are cached after export customization instead, so
+        # local scorers never see content that a customizer redacted.
+        if not customizers:
+            write_span_cache(serializable_partial_record)
+
         def compute_record() -> dict[str, Any]:
             exporter = _get_exporter()
-            return dict(
+            record = dict(
                 **serializable_partial_record,
                 **{k: v.get() for k, v in lazy_partial_record.items()},
                 **exporter(
@@ -5003,8 +4947,22 @@ class SpanImpl(Span):
                     object_id=self.parent_object_id.get(),
                 ).object_id_fields(),
             )
+            # Resolve and customize inside the cached LazyValue: every incremental
+            # instrumentation record is transformed once, before the background
+            # logger merges, masks, extracts attachments, or retries delivery.
+            if customizers:
+                record = _customize_span_export(record, customizers)
+                write_span_cache(record)
+                if pending_cache_key is not None:
+                    self.state.span_cache._forget_pending_record(self.root_span_id, pending_cache_key)
+            return record
 
-        self.state.global_bg_logger().log(LazyValue(compute_record, use_mutex=False))
+        # Cache readers and the publisher share resolution, including the cache
+        # write, so concurrent reads cannot customize a record twice.
+        lazy_record = LazyValue(compute_record, use_mutex=pending_cache_key is not None)
+        if pending_cache_key is not None:
+            self.state.span_cache._track_pending_record(self.root_span_id, pending_cache_key, lazy_record)
+        self.state.global_bg_logger().log(lazy_record)
 
     def log_feedback(self, **event: Any) -> None:
         return _log_feedback_impl(

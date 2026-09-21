@@ -5,6 +5,7 @@ Provides one-line instrumentation for supported libraries.
 """
 
 import logging
+from collections.abc import Sequence
 from contextlib import contextmanager
 
 from braintrust.integrations import (
@@ -40,6 +41,7 @@ from braintrust.integrations import (
     TypeSafeIntegration,
 )
 from braintrust.integrations.base import BaseIntegration
+from braintrust.span_customizer import SpanCustomizer, set_span_customizers
 
 
 __all__ = ["auto_instrument"]
@@ -90,6 +92,7 @@ def auto_instrument(
     livekit_agents: bool = True,
     pipecat: bool = True,
     typesafe: bool = True,
+    span_customizers: Sequence[SpanCustomizer] | None = None,
 ) -> dict[str, bool]:
     """
     Auto-instrument supported AI/ML libraries for Braintrust tracing.
@@ -131,6 +134,9 @@ def auto_instrument(
         livekit_agents: Enable LiveKit Agents instrumentation (default: True)
         pipecat: Enable Pipecat AI instrumentation (default: True)
         typesafe: Enable TypeSafe instrumentation (default: True)
+        span_customizers: Ordered synchronous export customizers for instrumentation
+            spans. Copies and replaces the global list when provided; None leaves
+            existing configuration unchanged. Pass [] to disable.
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.
@@ -176,6 +182,9 @@ def auto_instrument(
         client.models.generate_content(model="gemini-2.0-flash", contents="Hello!")
         ```
     """
+    if span_customizers is not None:
+        set_span_customizers(span_customizers)
+
     results: dict[str, bool] = {}
 
     if openai:

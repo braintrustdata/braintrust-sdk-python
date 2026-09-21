@@ -9,7 +9,18 @@ from braintrust.integrations.utils import (
     _pcm_to_wav,
     _resolve_audio_attachment_options,
 )
-from braintrust.logger import NOOP_SPAN, Attachment, SpanTypeAttribute, current_span, start_span
+from braintrust.logger import NOOP_SPAN, Attachment, SpanTypeAttribute, current_span
+from braintrust.logger import start_span as _bt_start_span
+
+
+_INSTRUMENTATION = "pipecat-auto"
+
+
+def start_span(*args, **kwargs):
+    internal = dict(kwargs.get("internal") or {})
+    internal.setdefault("instrumentation", _INSTRUMENTATION)
+    kwargs["internal"] = internal
+    return _bt_start_span(*args, **kwargs)
 
 
 try:
