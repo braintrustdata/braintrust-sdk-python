@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 from braintrust.framework import _evals
@@ -234,6 +235,57 @@ def test_eval_error_handling(client, api_key, org_name):
     error = response.json()
     assert "error" in error
     assert "not found" in error["error"].lower()
+
+
+def test_remote_scorer_serializes_readonly_attachments(monkeypatch):
+    from braintrust.devserver.server import make_scorer
+    from braintrust.logger import BraintrustState, ReadonlyAttachment
+
+    attachment_reference = {
+        "type": "braintrust_attachment",
+        "filename": "document.pdf",
+        "content_type": "application/pdf",
+        "key": "attachment-key",
+    }
+    attachment = ReadonlyAttachment(attachment_reference)
+
+    response = MagicMock()
+    response.json.return_value = {"score": 1}
+    proxy_conn = MagicMock()
+    proxy_conn.post.return_value = response
+
+    state = BraintrustState()
+    monkeypatch.setattr(state, "proxy_conn", lambda: proxy_conn)
+
+    scorer = make_scorer(state, "remote-scorer", {"function_id": "scorer-id"}, project_id="project-id")
+    result = scorer(
+        input={"file": attachment},
+        output="extracted text",
+        expected="expected text",
+        metadata={"source": "test"},
+    )
+
+    assert result == {"score": 1}
+    response.raise_for_status.assert_called_once_with()
+    proxy_conn.post.assert_called_once()
+
+    args, kwargs = proxy_conn.post.call_args
+    assert args == ("function/invoke",)
+    assert set(kwargs) == {"data", "headers"}
+    assert kwargs["headers"] == {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "x-bt-project-id": "project-id",
+    }
+    assert isinstance(kwargs["data"], bytes)
+
+    request = json.loads(kwargs["data"].decode("utf-8"))
+    assert request["input"] == {
+        "input": {"file": attachment_reference},
+        "output": "extracted text",
+        "expected": "expected text",
+        "metadata": {"source": "test"},
+    }
 
 
 @pytest.mark.skipif(not HAS_PYDANTIC, reason="pydantic not installed")
