@@ -1,3 +1,4 @@
+import importlib.machinery
 import sys
 import types
 
@@ -73,3 +74,30 @@ def test_import_optional_module_prefers_sys_modules(monkeypatch):
 def test_import_optional_module_imports_when_absent():
     assert _import_optional_module("json") is sys.modules["json"]
     assert _import_optional_module("braintrust_module_that_does_not_exist") is None
+
+
+def test_import_optional_module_waits_for_initializing_module(monkeypatch):
+    """A half-built module must not short-circuit the import machinery.
+
+    The loader puts a module in sys.modules *before* running its body, so
+    during a concurrent import the attributes a patcher looks for do not
+    exist yet. Returning it would make the target look absent and silently
+    skip instrumentation, so we must fall through and let import_module
+    block on the per-module lock.
+    """
+    partial = types.ModuleType("braintrust_partial_sdk")
+    partial.__spec__ = importlib.machinery.ModuleSpec("braintrust_partial_sdk", loader=None)
+    partial.__spec__._initializing = True
+    monkeypatch.setitem(sys.modules, "braintrust_partial_sdk", partial)
+
+    finished = types.ModuleType("braintrust_partial_sdk")
+    monkeypatch.setattr(
+        "braintrust.integrations.base.importlib.import_module",
+        lambda name: finished,
+    )
+
+    assert _import_optional_module("braintrust_partial_sdk") is finished
+
+    # Once initialization completes the shortcut applies again.
+    partial.__spec__._initializing = False
+    assert _import_optional_module("braintrust_partial_sdk") is partial

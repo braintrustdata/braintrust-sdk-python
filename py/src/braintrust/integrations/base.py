@@ -630,14 +630,23 @@ class BaseIntegration(ABC):
 def _import_optional_module(name: str) -> Any | None:
     """Return the named module, or ``None`` when it cannot be imported.
 
-    ``sys.modules`` is consulted first so an already-imported module never
-    reacquires the import lock. Patcher resolution calls this for every
-    patcher on every ``setup()``, and on CPython 3.10 that lock traffic can
-    trip the interpreter's own re-entrancy bookkeeping, surfacing as
-    ``KeyError: <thread id>`` from ``importlib._bootstrap``.
+    A module that is already imported is returned straight from
+    ``sys.modules`` so it never reacquires the import lock. Patcher resolution
+    calls this for every patcher on every ``setup()``, and CPython 3.10's
+    ``_find_and_load`` locks unconditionally, so that traffic can trip the
+    interpreter's own re-entrancy bookkeeping and surface as
+    ``KeyError: <thread id>`` from ``importlib._bootstrap``. (3.11+ added this
+    same shortcut upstream.)
+
+    The ``_initializing`` check is what makes the shortcut safe: a module whose
+    body is still executing is already in ``sys.modules`` but does not have its
+    attributes yet, so returning it would make patch targets look absent and
+    silently skip instrumentation. Falling through to ``import_module`` blocks
+    on the per-module lock until the other thread finishes. This mirrors the
+    predicate CPython uses for the same decision.
     """
     module = sys.modules.get(name)
-    if module is not None:
+    if module is not None and not getattr(getattr(module, "__spec__", None), "_initializing", False):
         return module
     try:
         return importlib.import_module(name)
