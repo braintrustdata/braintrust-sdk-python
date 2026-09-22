@@ -1,7 +1,7 @@
 import sys
 import types
 
-from braintrust.integrations.base import _resolve_attr_path
+from braintrust.integrations.base import _import_optional_module, _resolve_attr_path
 
 
 def _make_lazy_module(name, exports):
@@ -51,3 +51,25 @@ def test_resolve_attr_path_does_not_invoke_descriptors_on_classes():
 
 def test_resolve_attr_path_walks_real_submodules():
     assert _resolve_attr_path(sys.modules["braintrust.integrations.base"], "BasePatcher") is not None
+
+
+def test_import_optional_module_prefers_sys_modules(monkeypatch):
+    """An already-imported module must not go back through importlib.
+
+    Re-acquiring the import lock for every patcher on every setup() is what
+    trips CPython 3.10's re-entrancy bookkeeping.
+    """
+    sentinel = types.ModuleType("braintrust_fake_sdk")
+    monkeypatch.setitem(sys.modules, "braintrust_fake_sdk", sentinel)
+
+    def explode(name):  # pragma: no cover - must never be reached
+        raise AssertionError(f"import_module should not be called for {name}")
+
+    monkeypatch.setattr("braintrust.integrations.base.importlib.import_module", explode)
+
+    assert _import_optional_module("braintrust_fake_sdk") is sentinel
+
+
+def test_import_optional_module_imports_when_absent():
+    assert _import_optional_module("json") is sys.modules["json"]
+    assert _import_optional_module("braintrust_module_that_does_not_exist") is None
