@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - AsyncOpenAI/Python 3.6.0
+      - AsyncOpenAI/Python 3.16.2
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.6.0
+      - 3.16.2
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -33,14 +33,14 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.3
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"error\": {\n    \"message\": \"The requested model 'braintrust-model-that-does-not-exist'
-        does not exist.\",\n    \"type\": \"invalid_request_error\",\n    \"param\":
-        \"model\",\n    \"code\": \"model_not_found\"\n  }\n}"
+      string: "{\n  \"error\": {\n    \"message\": \"The model `braintrust-model-that-does-not-exist`
+        does not exist or you do not have access to it.\",\n    \"type\": \"invalid_request_error\",\n
+        \   \"param\": null,\n    \"code\": \"model_not_found\"\n  }\n}"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -51,28 +51,30 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a33cf5fa5de9aaf7-YYZ
+      - a3f21798c9424f4e-EWR
       connection:
       - keep-alive
       content-length:
-      - '202'
+      - '221'
       content-type:
       - application/json
       date:
-      - Mon, 31 Aug 2026 15:10:14 GMT
+      - Tue, 22 Sep 2026 14:45:13 GMT
       openai-processing-ms:
-      - '325'
+      - '121'
       openai-version:
       - '2020-10-01'
       server:
       - cloudflare
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
       x-content-type-options:
       - nosniff
       x-request-id:
-      - req_d13c3da23c9f474faf147940e20102b6
+      - req_7f29c5c394474977b8dcc84478591451
     status:
-      code: 400
-      message: Bad Request
+      code: 404
+      message: Not Found
 version: 1

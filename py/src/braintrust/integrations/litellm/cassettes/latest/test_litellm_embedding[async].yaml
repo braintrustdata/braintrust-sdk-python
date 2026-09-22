@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"This is a test","model":"text-embedding-ada-002","encoding_format":"float"}'
+    body: '{"model":"text-embedding-ada-002","input":"This is a test"}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '85'
+      - '59'
       content-type:
       - application/json
       host:
@@ -35,7 +35,7 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/embeddings
   response:
@@ -438,13 +438,13 @@ interactions:
       CF-Cache-Status:
       - DYNAMIC
       CF-Ray:
-      - a3800a20fcd5b5e5-YYZ
+      - a3f217fc292d80d3-EWR
       Connection:
       - keep-alive
       Content-Type:
       - application/json
       Date:
-      - Tue, 08 Sep 2026 18:33:05 GMT
+      - Tue, 22 Sep 2026 14:45:29 GMT
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -452,7 +452,7 @@ interactions:
       Transfer-Encoding:
       - chunked
       Via:
-      - envoy-router-canary-65c5cb67bc-mr45k
+      - envoy-router-57c56456f9-pm9mb
       X-Content-Type-Options:
       - nosniff
       alt-svc:
@@ -462,7 +462,7 @@ interactions:
       openai-model:
       - text-embedding-ada-002-v2
       openai-processing-ms:
-      - '65'
+      - '58'
       openai-version:
       - '2020-10-01'
       x-engine-geography:
@@ -476,13 +476,13 @@ interactions:
       x-ratelimit-remaining-requests:
       - '9999'
       x-ratelimit-remaining-tokens:
-      - '9999997'
+      - '9999996'
       x-ratelimit-reset-requests:
       - 6ms
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_faf007c453a24a059e5451f2cac3a19c
+      - req_c0f2362b32dc4e4a92cbb0b654f29e21
     status:
       code: 200
       message: OK

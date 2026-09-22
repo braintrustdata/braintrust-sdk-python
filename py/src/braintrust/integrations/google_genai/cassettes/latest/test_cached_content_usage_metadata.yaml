@@ -116,16 +116,16 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/cachedContents
   response:
     body:
-      string: "{\n  \"name\": \"cachedContents/fqa2xwu1390zd6c5cty46zu6gjsn331juqulaumq\",\n
-        \ \"model\": \"models/gemini-2.5-flash\",\n  \"createTime\": \"2026-09-14T13:38:08.291349Z\",\n
-        \ \"updateTime\": \"2026-09-14T13:38:08.291349Z\",\n  \"expireTime\": \"2026-09-14T13:43:07.979580978Z\",\n
+      string: "{\n  \"name\": \"cachedContents/rjgh8he7iqon0280i222daohbbxufd39pvb176w2\",\n
+        \ \"model\": \"models/gemini-2.5-flash\",\n  \"createTime\": \"2026-09-22T14:45:52.370664Z\",\n
+        \ \"updateTime\": \"2026-09-22T14:45:52.370664Z\",\n  \"expireTime\": \"2026-09-22T14:50:52.051735318Z\",\n
         \ \"displayName\": \"braintrust-google-genai-vcr-test\",\n  \"usageMetadata\":
         {\n    \"totalTokenCount\": 1502\n  }\n}\n"
     headers:
@@ -136,11 +136,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 14 Sep 2026 13:38:08 GMT
+      - Tue, 22 Sep 2026 14:45:52 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=439
+      - gfet4t7; dur=470
       transfer-encoding:
       - chunked
       vary:
@@ -158,7 +158,7 @@ interactions:
       message: OK
 - request:
     body: '{"contents": [{"parts": [{"text": "In one sentence, why is the sky blue?"}],
-      "role": "user"}], "cachedContent": "cachedContents/fqa2xwu1390zd6c5cty46zu6gjsn331juqulaumq",
+      "role": "user"}], "cachedContent": "cachedContents/rjgh8he7iqon0280i222daohbbxufd39pvb176w2",
       "generationConfig": {"maxOutputTokens": 100}}'
     headers:
       accept:
@@ -174,37 +174,37 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"The sky is blue because molecules
-        scatter blue light.\"\n          }\n        ],\n        \"role\": \"model\"\n
-        \     },\n      \"finishReason\": \"STOP\",\n      \"index\": 0\n    }\n  ],\n
-        \ \"usageMetadata\": {\n    \"promptTokenCount\": 1513,\n    \"candidatesTokenCount\":
-        10,\n    \"totalTokenCount\": 1590,\n    \"cachedContentTokenCount\": 1502,\n
-        \   \"promptTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
-        \       \"tokenCount\": 1513\n      }\n    ],\n    \"cacheTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 1502\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 67,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"wPinatmSGsfV_uMP0vyb-Ac\"\n}\n"
+        [\n          {\n            \"text\": \"The sky is blue\"\n          }\n        ],\n
+        \       \"role\": \"model\"\n      },\n      \"finishReason\": \"MAX_TOKENS\",\n
+        \     \"index\": 0\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        1513,\n    \"candidatesTokenCount\": 4,\n    \"totalTokenCount\": 1609,\n
+        \   \"cachedContentTokenCount\": 1502,\n    \"promptTokensDetails\": [\n      {\n
+        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 1513\n      }\n    ],\n
+        \   \"cacheTokensDetails\": [\n      {\n        \"modality\": \"TEXT\",\n
+        \       \"tokenCount\": 1502\n      }\n    ],\n    \"thoughtsTokenCount\":
+        92,\n    \"serviceTier\": \"standard\"\n  },\n  \"modelVersion\": \"gemini-2.5-flash\",\n
+        \ \"responseId\": \"oJSyauLXIaOt1MkP4q7VkAU\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '775'
+      - '742'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 14 Sep 2026 13:38:09 GMT
+      - Tue, 22 Sep 2026 14:45:53 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=939
+      - gfet4t7; dur=953
       transfer-encoding:
       - chunked
       vary:
@@ -236,11 +236,11 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
     method: DELETE
-    uri: https://generativelanguage.googleapis.com/v1beta/cachedContents/fqa2xwu1390zd6c5cty46zu6gjsn331juqulaumq
+    uri: https://generativelanguage.googleapis.com/v1beta/cachedContents/rjgh8he7iqon0280i222daohbbxufd39pvb176w2
   response:
     body:
       string: '{}
@@ -254,11 +254,11 @@ interactions:
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 14 Sep 2026 13:38:09 GMT
+      - Tue, 22 Sep 2026 14:45:53 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=100
+      - gfet4t7; dur=156
       transfer-encoding:
       - chunked
       vary:

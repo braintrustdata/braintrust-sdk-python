@@ -652,5 +652,15 @@ def _resolve_attr_path(root: Any, path: str) -> Any | None:
         try:
             current = inspect.getattr_static(current, part)
         except AttributeError:
-            return None
+            # ``getattr_static`` never invokes a module-level ``__getattr__``,
+            # so PEP 562 lazy re-exports look absent.  openai >= 3.16.1 ships
+            # its resource packages that way, which would silently skip the
+            # patchers targeting e.g. ``openai.resources.chat.completions``.
+            # Modules carry no descriptors, so a plain getattr is safe here.
+            if not inspect.ismodule(current):
+                return None
+            try:
+                current = getattr(current, part)
+            except AttributeError:
+                return None
     return current

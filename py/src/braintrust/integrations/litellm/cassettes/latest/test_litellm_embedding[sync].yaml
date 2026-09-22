@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"input":"This is a test","model":"text-embedding-ada-002","encoding_format":"float"}'
+    body: '{"model":"text-embedding-ada-002","input":"This is a test"}'
     headers:
       accept:
       - application/json
@@ -9,7 +9,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '85'
+      - '59'
       content-type:
       - application/json
       host:
@@ -35,7 +35,7 @@ interactions:
       x-stainless-runtime:
       - CPython
       x-stainless-runtime-version:
-      - 3.14.6
+      - 3.14.7
     method: POST
     uri: https://api.openai.com/v1/embeddings
   response:
@@ -440,7 +440,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3800a1d9866ac82-YYZ
+      - a3f217f9bcb2377a-EWR
       connection:
       - keep-alive
       content-length:
@@ -448,11 +448,11 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 08 Sep 2026 18:33:05 GMT
+      - Tue, 22 Sep 2026 14:45:29 GMT
       openai-model:
       - text-embedding-ada-002-v2
       openai-processing-ms:
-      - '71'
+      - '61'
       openai-version:
       - '2020-10-01'
       server:
@@ -462,7 +462,7 @@ interactions:
       transfer-encoding:
       - chunked
       via:
-      - envoy-router-549769d6d7-c4q27
+      - envoy-router-cf59d85b4-gr4rx
       x-content-type-options:
       - nosniff
       x-engine-geography:
@@ -482,7 +482,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_a254645a57ed421490fead1045ee0f8e
+      - req_cca167be2b794dc39a85044a3e39762f
     status:
       code: 200
       message: OK

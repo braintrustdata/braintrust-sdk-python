@@ -15,7 +15,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.13.0
+      - OpenAI/Python 3.16.2
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -25,7 +25,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.13.0
+      - 3.16.2
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -38,14 +38,14 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_062a169180142bea006aa7f8f358d087d2934a16fbdafce98a\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1789393139,\n  \"status\":
+      string: "{\n  \"id\": \"resp_066b6c97cbae7e89006ab294d9897c87d2a3c5de80fcb81c8f\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1790088409,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1789393139,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1790088410,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         \"Just the number please\",\n  \"max_output_tokens\": null,\n  \"max_tool_calls\":
         null,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n
-        \ \"output\": [\n    {\n      \"id\": \"msg_062a169180142bea006aa7f8f3b85887d28d0626cd58eafc15\",\n
+        \ \"output\": [\n    {\n      \"id\": \"msg_066b6c97cbae7e89006ab294da545887d28ad82b1989741896\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"24\"\n        }\n
@@ -77,7 +77,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afcb9008fe8e83-YYZ
+      - a3f219eefbffe56c-EWR
       connection:
       - keep-alive
       content-length:
@@ -85,9 +85,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 14 Sep 2026 13:39:00 GMT
+      - Tue, 22 Sep 2026 14:46:50 GMT
       openai-processing-ms:
-      - '748'
+      - '1223'
       openai-version:
       - '2020-10-01'
       server:
@@ -111,7 +111,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_e4fc89e3510b4b9c98e80881b7667a38
+      - req_e9789a6ac1cf4d649de875b99a623790
     status:
       code: 200
       message: OK
@@ -131,7 +131,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.13.0
+      - OpenAI/Python 3.16.2
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -141,7 +141,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.13.0
+      - 3.16.2
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -154,19 +154,19 @@ interactions:
     uri: https://api.openai.com/v1/responses
   response:
     body:
-      string: "{\n  \"id\": \"resp_0613a9421d9063d6006aa7f8f44c8087d2acfccb135d52ac7f\",\n
-        \ \"object\": \"response\",\n  \"created_at\": 1789393140,\n  \"status\":
+      string: "{\n  \"id\": \"resp_0c407773aaf605be006ab294dae98487d28177f43289c703f7\",\n
+        \ \"object\": \"response\",\n  \"created_at\": 1790088410,\n  \"status\":
         \"completed\",\n  \"background\": false,\n  \"billing\": {\n    \"payer\":
-        \"developer\"\n  },\n  \"completed_at\": 1789393141,\n  \"error\": null,\n
+        \"developer\"\n  },\n  \"completed_at\": 1790088411,\n  \"error\": null,\n
         \ \"frequency_penalty\": 0.0,\n  \"incomplete_details\": null,\n  \"instructions\":
         null,\n  \"max_output_tokens\": null,\n  \"max_tool_calls\": null,\n  \"model\":
         \"gpt-4o-mini-2024-07-18\",\n  \"moderation\": null,\n  \"output\": [\n    {\n
-        \     \"id\": \"msg_0613a9421d9063d6006aa7f8f4a73087d29aed5d05b404a42b\",\n
+        \     \"id\": \"msg_0c407773aaf605be006ab294dbae1c87d2b99b2b5f93b68197\",\n
         \     \"type\": \"message\",\n      \"status\": \"completed\",\n      \"content\":
         [\n        {\n          \"type\": \"output_text\",\n          \"annotations\":
         [],\n          \"logprobs\": [],\n          \"text\": \"{\\\"value\\\":24,\\\"reasoning\\\":\\\"12
-        plus 12 equals 24 because when you add the two numbers together, you combine
-        their values.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
+        plus 12 equals 24 because when you combine the two numbers, you add their
+        values together.\\\"}\"\n        }\n      ],\n      \"role\": \"assistant\"\n
         \   }\n  ],\n  \"parallel_tool_calls\": true,\n  \"presence_penalty\": 0.0,\n
         \ \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"prompt_cache_retention\":
         \"in_memory\",\n  \"reasoning\": {\n    \"context\": null,\n    \"effort\":
@@ -201,7 +201,7 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afcb96580c8e83-YYZ
+      - a3f219f7be50e56c-EWR
       connection:
       - keep-alive
       content-length:
@@ -209,9 +209,9 @@ interactions:
       content-type:
       - application/json
       date:
-      - Mon, 14 Sep 2026 13:39:01 GMT
+      - Tue, 22 Sep 2026 14:46:52 GMT
       openai-processing-ms:
-      - '953'
+      - '1270'
       openai-version:
       - '2020-10-01'
       server:
@@ -235,7 +235,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_371f60b45bfa44fb8190f712c3e55f8d
+      - req_e5355cf555ed4bdfb8c8608d5c210c68
     status:
       code: 200
       message: OK

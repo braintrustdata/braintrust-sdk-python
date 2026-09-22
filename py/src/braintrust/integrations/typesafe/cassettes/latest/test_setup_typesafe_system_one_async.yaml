@@ -1,9 +1,9 @@
 interactions:
 - request:
     body: '{"state":{"message":"I was charged twice. Please refund the duplicate charge
-      today."},"model":"jev-latest","questions":{"category":{"type":"choice","criteria":{"billing":null,"technical":null,"other":null},"instructions":"Which
-      team should handle this?"},"urgency":{"type":"score","criteria":["routine","soon","urgent"],"instructions":"How
-      urgent is this request?"},"duplicate_charge":{"type":"noul","instructions":{"question":"Does
+      today."},"model":"jev-latest","questions":{"category":{"type":"choice","instructions":"Which
+      team should handle this?","criteria":{"billing":null,"technical":null,"other":null}},"urgency":{"type":"score","instructions":"How
+      urgent is this request?","criteria":["routine","soon","urgent"]},"duplicate_charge":{"type":"noul","instructions":{"question":"Does
       the customer report a duplicate charge?"}}}}'
     headers:
       accept:
@@ -19,29 +19,29 @@ interactions:
       host:
       - api.typesafe.ai
       user-agent:
-      - typesafe-sdk/0.6.0
+      - typesafe-sdk/0.7.0
       x-typesafe-runtime:
       - python/3.14.7 (darwin; arm64)
       x-typesafe-sdk:
-      - typesafe-sdk/0.6.0
+      - typesafe-sdk/0.7.0
     method: POST
     uri: https://api.typesafe.ai/v1/systemone
   response:
     body:
-      string: '{"model":"jev-1.13.0","answers":{"category":{"type":"choice","choice":"billing","confidence":1.0,"probabilities":{"technical":0.0,"billing":1.0,"other":0.0}},"urgency":{"type":"score","score":1.82,"confidence":0.72,"legend":{"0":"routine","1":"soon","2":"urgent"},"probabilities":{"0":0.0,"1":0.18,"2":0.82}},"duplicate_charge":{"type":"noul","noul":0.99}},"usage":{"input_tokens":370,"output_tokens":70}}'
+      string: '{"model":"jev-1.13.0","answers":{"category":{"type":"choice","choice":"billing","confidence":1.0,"probabilities":{"technical":0.0,"billing":1.0,"other":0.0}},"urgency":{"type":"score","score":1.78,"confidence":0.67,"legend":{"0":"routine","1":"soon","2":"urgent"},"probabilities":{"0":0.0,"1":0.22,"2":0.78}},"duplicate_charge":{"type":"noul","noul":0.99}},"usage":{"input_tokens":370,"output_tokens":70}}'
     headers:
       content-length:
       - '405'
       content-type:
       - application/json
       date:
-      - Thu, 17 Sep 2026 12:52:51 GMT
+      - Tue, 22 Sep 2026 14:45:10 GMT
       server:
       - istio-envoy
       x-envoy-upstream-service-time:
-      - '52'
+      - '132'
       x-typesafe-request-id:
-      - req_01a0af6d50b674cca358fa74d3b6e185
+      - req_01a0c993f0b57238bb5b0d6f611be2bf
     status:
       code: 200
       message: OK

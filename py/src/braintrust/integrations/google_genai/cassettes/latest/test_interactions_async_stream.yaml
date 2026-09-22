@@ -17,19 +17,19 @@ interactions:
       user-agent:
       - speakeasy-sdk/python 2.4.1-preview.5 internal v1beta google-genai
       x-goog-api-client:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/interactions
   response:
     body:
       string: 'event: interaction.created
 
-        data: {"interaction":{"id":"v1_ChcwX2luYXNYaElPQ0IxTWtQeHIza2tBcxIXMF9pbmFzWGhJT0NCMU1rUHhyM2trQXM","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
+        data: {"interaction":{"id":"v1_Chd0SlN5YW9YZEtjclFqTWNQamRuSGtRSRIXdEpTeWFvWGRLY3JRak1jUGpkbkhrUUk","status":"in_progress","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.created"}
 
 
         event: interaction.status_update
 
-        data: {"interaction_id":"v1_ChcwX2luYXNYaElPQ0IxTWtQeHIza2tBcxIXMF9pbmFzWGhJT0NCMU1rUHhyM2trQXM","status":"in_progress","event_type":"interaction.status_update"}
+        data: {"interaction_id":"v1_Chd0SlN5YW9YZEtjclFqTWNQamRuSGtRSRIXdEpTeWFvWGRLY3JRak1jUGpkbkhrUUk","status":"in_progress","event_type":"interaction.status_update"}
 
 
         event: step.start
@@ -39,7 +39,7 @@ interactions:
 
         event: step.delta
 
-        data: {"index":0,"delta":{"signature":"ClUBEU0yD/pcch6yxgMp/RHVD+06UQGFpXzyFMRuiNmQyb88JiKhVHdVJEXY28or0DtL9j6uckQVlmBsrCvN0HRbbuIC9wkVlX+jf4B/VkzfBS1FcyVOClsBEU0yD5ck3NT7lug64URm8uhZ7lBZu8IlxXZqjMPdYDHSn5YRWTa42v6MhP20+3ytbyHBORjJONFGuAo+elBJUiewuuNP+PonIfimN3XNOCgFz7VX1/Q2sojQ","type":"thought_signature"},"event_type":"step.delta"}
+        data: {"index":0,"delta":{"signature":"ClUBaRR9E9JOY+3BxUmPhyvzt8bHuaNxPwwI79fxMKJoPzwQNBXsc/UY9I1xLlOEyoVMJm3DX7EuO7bS20n19rVwu7X3bx6/9iZE8sK3JLo+JdokOCnxCisBaRR9E7E07+Bpsq22OTiwlXNA5xAnUPvq4cHe8+5YEDrcRv5e0FVaqAt1","type":"thought_signature"},"event_type":"step.delta"}
 
 
         event: step.stop
@@ -64,7 +64,7 @@ interactions:
 
         event: interaction.completed
 
-        data: {"interaction":{"id":"v1_ChcwX2luYXNYaElPQ0IxTWtQeHIza2tBcxIXMF9pbmFzWGhJT0NCMU1rUHhyM2trQXM","status":"completed","usage":{"total_tokens":39,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":32},"created":"2026-09-14T13:38:28Z","updated":"2026-09-14T13:38:28Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
+        data: {"interaction":{"id":"v1_Chd0SlN5YW9YZEtjclFqTWNQamRuSGtRSRIXdEpTeWFvWGRLY3JRak1jUGpkbkhrUUk","status":"completed","usage":{"total_tokens":24,"total_input_tokens":5,"input_tokens_by_modality":[{"modality":"text","tokens":5}],"total_cached_tokens":0,"total_output_tokens":2,"total_tool_use_tokens":0,"total_thought_tokens":17},"created":"2026-09-22T14:46:13Z","updated":"2026-09-22T14:46:13Z","service_tier":"standard","object":"interaction","model":"gemini-2.5-flash"},"event_type":"interaction.completed"}
 
 
         event: done
@@ -77,15 +77,15 @@ interactions:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '1763'
+      - '1699'
       content-type:
       - text/event-stream
       date:
-      - Mon, 14 Sep 2026 13:38:27 GMT
+      - Tue, 22 Sep 2026 14:46:12 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=244
+      - gfet4t7; dur=125
       transfer-encoding:
       - chunked
       vary:

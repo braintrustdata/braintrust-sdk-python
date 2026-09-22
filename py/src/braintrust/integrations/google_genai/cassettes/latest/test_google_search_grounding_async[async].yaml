@@ -17,24 +17,17 @@ interactions:
       host:
       - generativelanguage.googleapis.com
       user-agent:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
       x-goog-api-client:
-      - google-genai-sdk/2.23.0 gl-python/3.14.7
+      - google-genai-sdk/2.24.0 gl-python/3.14.7
     method: POST
     uri: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   response:
     body:
       string: "{\n  \"candidates\": [\n    {\n      \"content\": {\n        \"parts\":
-        [\n          {\n            \"text\": \"As of October 1, 2025, the estimated
-        population of Tokyo is 14.273 million people. Tokyo is Japan's most populous
-        prefecture, accounting for approximately 11.6% of the country's total population.\\n\\nIt's
-        important to distinguish between different definitions of Tokyo's population:\\n*
-        \  **Tokyo Metropolis (or Tokyo prefecture):** The figure of 14.273 million
-        refers to this administrative area.\\n*   **Tokyo's 23 wards:** These wards,
-        which constituted the historical city of Tokyo, had an approximate population
-        of 9,262,046 in 2016.\\n*   **Greater Tokyo Area:** This much larger metropolitan
-        area,\"\n          }\n        ],\n        \"role\": \"model\"\n      },\n
-        \     \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\":
+        [\n          {\n            \"text\": \"The population of Tokyo varies depending
+        on the specific area being\"\n          }\n        ],\n        \"role\": \"model\"\n
+        \     },\n      \"finishReason\": \"MAX_TOKENS\",\n      \"index\": 0,\n      \"groundingMetadata\":
         {\n        \"searchEntryPoint\": {\n          \"renderedContent\": \"\\u003cstyle\\u003e\\n.container
         {\\n  align-items: center;\\n  border-radius: 8px;\\n  display: flex;\\n  font-family:
         Google Sans, Roboto, sans-serif;\\n  font-size: 14px;\\n  line-height: 20px;\\n
@@ -98,53 +91,32 @@ interactions:
         \   \\u003c/svg\\u003e\\n    \\u003cdiv class=\\\"gradient-container\\\"\\u003e\\u003cdiv
         class=\\\"gradient\\\"\\u003e\\u003c/div\\u003e\\u003c/div\\u003e\\n  \\u003c/div\\u003e\\n
         \ \\u003cdiv class=\\\"carousel\\\"\\u003e\\n    \\u003ca class=\\\"chip\\\"
-        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHbxyf3dxpFxATMTsTwQ1LGSJ7QhLDi_neu-0AYyAr36WMvdjsKsgJGPjM61HBd7o8dm1yI-kCtk3TMwN0xiRZg7Aby-KRluJh5Fkt_-3kTnUPiBdgD2QPmfwRwbkCQeABfNaGhpEkphW9Aqwa8yvrt4eY5p9xGu4MAqbRsFfdXPnhpep0KT6zIBgkkIa98QJg_94qDwxColMWnJX4OyA==\\\"\\u003ecurrent
-        population of Tokyo\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
-        \       },\n        \"groundingChunks\": [\n          {\n            \"web\":
-        {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQERlQORM8N8Ya4JgLd-tQzmRBT86zOTWcKzpey1Py94v6tmmvwVIOSLXGwAYQbu99zbHiQq2v1T0XiIT44_4OlUm5mFaAi3540KmSGFNILFHqQsnDStVv1zIYiXRjGD5XjY6-B2wWHje9Kar8eV_kImzw==\",\n
-        \             \"title\": \"tokyo.lg.jp\"\n            }\n          },\n          {\n
-        \           \"web\": {\n              \"uri\": \"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGUujU0wk7unPeKec4YPh1pmx1Pd2XwbMhckC8JF1vNnHT3KuTVpk4sVgAMjLPs4d_NrEjHo17MxMxcu81XYDISy6kiRCvYTYKt0KA9_JdLZVXgRFLkyVRHm1DXeQ4jttR1q4ZcNkDBBaWeIeTh1iE=\",\n
-        \             \"title\": \"worldpopulationreview.com\"\n            }\n          }\n
-        \       ],\n        \"groundingSupports\": [\n          {\n            \"segment\":
-        {\n              \"endIndex\": 82,\n              \"text\": \"As of October
-        1, 2025, the estimated population of Tokyo is 14.273 million people.\"\n            },\n
-        \           \"groundingChunkIndices\": [\n              0\n            ]\n
-        \         },\n          {\n            \"segment\": {\n              \"startIndex\":
-        83,\n              \"endIndex\": 195,\n              \"text\": \"Tokyo is
-        Japan's most populous prefecture, accounting for approximately 11.6% of the
-        country's total population.\"\n            },\n            \"groundingChunkIndices\":
-        [\n              0\n            ]\n          },\n          {\n            \"segment\":
-        {\n              \"startIndex\": 197,\n              \"endIndex\": 392,\n
-        \             \"text\": \"It's important to distinguish between different
-        definitions of Tokyo's population:\\n*   **Tokyo Metropolis (or Tokyo prefecture):**
-        The figure of 14.273 million refers to this administrative area.\"\n            },\n
-        \           \"groundingChunkIndices\": [\n              0\n            ]\n
-        \         },\n          {\n            \"segment\": {\n              \"startIndex\":
-        393,\n              \"endIndex\": 531,\n              \"text\": \"*   **Tokyo's
-        23 wards:** These wards, which constituted the historical city of Tokyo, had
-        an approximate population of 9,262,046 in 2016.\"\n            },\n            \"groundingChunkIndices\":
-        [\n              1\n            ]\n          }\n        ],\n        \"webSearchQueries\":
-        [\n          \"current population of Tokyo\"\n        ]\n      }\n    }\n
-        \ ],\n  \"usageMetadata\": {\n    \"promptTokenCount\": 11,\n    \"candidatesTokenCount\":
-        173,\n    \"totalTokenCount\": 406,\n    \"promptTokensDetails\": [\n      {\n
-        \       \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n      }\n    ],\n
-        \   \"toolUsePromptTokenCount\": 67,\n    \"toolUsePromptTokensDetails\":
-        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 67\n
-        \     }\n    ],\n    \"thoughtsTokenCount\": 155,\n    \"serviceTier\": \"standard\"\n
-        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"wfinarWqKIW1_PUPsurx2A0\"\n}\n"
+        href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGZGDtvuAYAXLtfntU-qqjq5LMWvmf_6Xp4pOMwDAIVLIMP6g7E5594Hb2AWCRdRbcR542EgENUCIh7I4fze28-jgu5ULPIrwIWdYJpPQ06lmJsiNO-quGU916YDKnDR230Bu5vFGkkz77kURkfMEMWw4L5q_u5omurfdFxlArhX-DKNx9mKoHCr763qgxio5l3GVbLDdbK0g==\\\"\\u003eTokyo
+        population 2024\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHdqeCPnhac9InS4-8qbzMsYwyVR8MtXBHTZJfew4dlYKAAq7dOand1mJPLEU7268_1vnCenfRxZG27Af64qBxGtc3UXwPCWh_Wk6PxCvetrCdO2xUgjrLnElCwA20cWstvn_CmTeArzCohUsdzcuPCcG86Qw-cL1Jxv6cKkSNP26cIDrG3jBl6SSSr25sCOtWU8NJ7zyxS_budwOLdmw==\\\"\\u003ecurrent
+        population of Tokyo\\u003c/a\\u003e\\n    \\u003ca class=\\\"chip\\\" href=\\\"https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEmt9hHptaEY-sgIbaerTCCX6qWS9vl60kEhE4jSwTSHMlf6L0kzO7Ot6EzAXIS_sOi4S96HH1tBuACbAs7UgUQnDr7JkDnqmb7MmGiI7d3SaYDz5NQlxd-B93IDxtKgpC5XuoFyFjl_f3cwTtbWFoGPrq-msHrQROepqFC0oC5yIx4IlUv37eOu4N2lmr_BynZuT8uZzGnQA==\\\"\\u003eTokyo
+        population 2025\\u003c/a\\u003e\\n  \\u003c/div\\u003e\\n\\u003c/div\\u003e\\n\"\n
+        \       },\n        \"webSearchQueries\": [\n          \"current population
+        of Tokyo\",\n          \"Tokyo population 2024\",\n          \"Tokyo population
+        2025\"\n        ]\n      }\n    }\n  ],\n  \"usageMetadata\": {\n    \"promptTokenCount\":
+        11,\n    \"candidatesTokenCount\": 44,\n    \"totalTokenCount\": 576,\n    \"promptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 11\n
+        \     }\n    ],\n    \"toolUsePromptTokenCount\": 140,\n    \"toolUsePromptTokensDetails\":
+        [\n      {\n        \"modality\": \"TEXT\",\n        \"tokenCount\": 140\n
+        \     }\n    ],\n    \"thoughtsTokenCount\": 381,\n    \"serviceTier\": \"standard\"\n
+        \ },\n  \"modelVersion\": \"gemini-2.5-flash\",\n  \"responseId\": \"oZSyav3tMoqa_uMPko6cSA\"\n}\n"
     headers:
       alt-svc:
       - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
       content-length:
-      - '8828'
+      - '6908'
       content-type:
       - application/json; charset=UTF-8
       date:
-      - Mon, 14 Sep 2026 13:38:12 GMT
+      - Tue, 22 Sep 2026 14:45:57 GMT
       server:
       - scaffolding on HTTPServer2
       server-timing:
-      - gfet4t7; dur=2964
+      - gfet4t7; dur=3423
       transfer-encoding:
       - chunked
       vary:
