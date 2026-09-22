@@ -1,0 +1,222 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"developer","content":"Use get_weather to find the
+      weather. Report the result briefly."},{"role":"user","content":"What''s the
+      weather in Paris?"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      the current weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false},"external_execution":true}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '452'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EQwNycVojyV7quFl5dsiaFyMZocSf\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790089670,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_cZ74oYpJTM2KSoWWVrlsxUuk\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
+        \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
+        \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 64,\n    \"completion_tokens\":
+        14,\n    \"total_tokens\": 78,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_b494cd1199\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3f238b78e7bb12a-EWR
+      connection:
+      - keep-alive
+      content-length:
+      - '1084'
+      content-type:
+      - application/json
+      date:
+      - Tue, 22 Sep 2026 15:07:50 GMT
+      openai-processing-ms:
+      - '427'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999975'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_d9da24ac0e7d48158d9b91ecd7199672
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"developer","content":"Use get_weather to find the
+      weather. Report the result briefly."},{"role":"user","content":"What''s the
+      weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_cZ74oYpJTM2KSoWWVrlsxUuk","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_cZ74oYpJTM2KSoWWVrlsxUuk"}],"model":"gpt-4o-mini","stream":true,"stream_options":{"include_usage":true},"tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      the current weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false},"external_execution":true}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '795'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "data: {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"refusal\":null},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"swYRVZH5V\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"The\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"1JQjgjtJ\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        weather\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"HIU\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        in\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"wkJQ23HM\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        Paris\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"9gMla\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        is\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"qngEhQa2\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        \"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"cy7QdisExe\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"72\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"6SZ1o5sMB\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"\xB0F\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"4x8hyf54b\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        and\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"3o3sfI8\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"
+        sunny\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"6NSrc\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\".\"},\"logprobs\":null,\"finish_reason\":null}],\"usage\":null,\"obfuscation\":\"atKgN9uRCH\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[{\"index\":0,\"delta\":{},\"logprobs\":null,\"finish_reason\":\"stop\"}],\"usage\":null,\"obfuscation\":\"zemjl\"}\n\ndata:
+        {\"id\":\"chatcmpl-EQwO0tPZSAgUMCJMbexscN1Rg3Fqp\",\"object\":\"chat.completion.chunk\",\"created\":1790089672,\"model\":\"gpt-4o-mini-2024-07-18\",\"service_tier\":\"default\",\"system_fingerprint\":\"fp_b494cd1199\",\"choices\":[],\"usage\":{\"prompt_tokens\":97,\"completion_tokens\":12,\"total_tokens\":109,\"prompt_tokens_details\":{\"cached_tokens\":0,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}},\"obfuscation\":\"JJ3xgzXh3\"}\n\ndata:
+        [DONE]\n\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3f238bb1b56b12a-EWR
+      connection:
+      - keep-alive
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Tue, 22 Sep 2026 15:07:52 GMT
+      openai-processing-ms:
+      - '1362'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999962'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_c6b4ec4c9fd246ae8ce24ed855a2547c
+    status:
+      code: 200
+      message: OK
+version: 1
