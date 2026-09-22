@@ -71,6 +71,8 @@ def test_agno_simple_agent_execution(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans, got {len(spans)}"
 
     root_span = spans[0]
+    assert response.session_id
+    assert root_span["metadata"]["session_id"] == response.session_id
     assert root_span["context"]["span_origin"]["instrumentation"]["name"] == "agno-auto"
     assert root_span["span_attributes"]["name"] == "Author Agent.run"
     assert root_span["span_attributes"]["type"].value == "task"
@@ -116,6 +118,93 @@ def test_agno_simple_agent_execution(memory_logger):
         llm_span["metrics"]["tokens"]
         == llm_span["metrics"]["prompt_tokens"] + llm_span["metrics"]["completion_tokens"]
     )
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "component,async_mode,stream",
+    [
+        pytest.param("agent", False, False, id="response-sync-agent"),
+        pytest.param("agent", True, False, id="response-async-agent"),
+        pytest.param("agent", False, True, id="stream-sync-agent"),
+        pytest.param("agent", True, True, id="stream-async-agent"),
+        # Team uses the same dispatch wrappers; cover both patch targets without
+        # repeating every return contract already exercised by Agent.
+        pytest.param("team", False, False, id="response-sync-team"),
+        pytest.param("team", True, True, id="stream-async-team"),
+    ],
+)
+async def test_agno_resume_session_id(memory_logger, component, async_mode, stream):
+    from agno.agent import Agent
+    from agno.models.openai import OpenAIChat
+    from agno.team import Team
+    from agno.tools import tool
+
+    cls = Agent if component == "agent" else Team
+    if not hasattr(cls, "continue_run"):
+        pytest.skip("This Agno version does not support team continuation")
+
+    @tool(external_execution=True)
+    def get_weather(city: str) -> str:
+        """Get the current weather for a city."""
+        raise AssertionError("The client must execute this tool")
+
+    instance = cls(
+        name="Weather Assistant",
+        model=OpenAIChat(id="gpt-4o-mini"),
+        tools=[get_weather],
+        instructions="Use get_weather to find the weather. Report the result briefly.",
+        session_id="configured-session",
+        **({"members": []} if component == "team" else {}),
+    )
+    if async_mode:
+        paused = await instance.arun("What's the weather in Paris?", session_id="run-session")
+    else:
+        paused = instance.run("What's the weather in Paris?")
+    assert paused.is_paused
+    original = memory_logger.pop()[0]
+    assert paused.session_id == ("run-session" if async_mode else "configured-session")
+    assert original["metadata"]["session_id"] == paused.session_id
+
+    # Older Agno uses updated_tools; newer versions use requirements.
+    if getattr(paused, "requirements", None):
+        for requirement in paused.requirements:
+            requirement.set_external_execution_result("The weather in Paris is 72F and sunny.")
+        continuation = {"requirements": paused.requirements}
+    else:
+        for execution in paused.tools:
+            if execution.external_execution_required:
+                execution.result = "The weather in Paris is 72F and sunny."
+        continuation = {"updated_tools": paused.tools}
+
+    # Resume without an ambient parent, as in a separate AG-UI request.
+    assert logger.current_span() == logger.NOOP_SPAN
+    method = instance.acontinue_run if async_mode else instance.continue_run
+    result = method(paused, stream=stream, **continuation)
+    if isawaitable(result):
+        result = await result
+    if stream:
+        if async_mode:
+            chunks = [chunk async for chunk in result]
+        else:
+            chunks = list(result)
+        assert chunks
+    else:
+        assert result.content
+        assert not result.is_paused
+
+    resumed = memory_logger.pop()
+    root = resumed[0]
+    assert root["span_attributes"]["type"].value == "task"
+    assert root["metadata"]["session_id"] == paused.session_id
+    assert root["root_span_id"] != original["root_span_id"]
+    assert root["span_attributes"]["name"] == f"Weather Assistant.{'a' if async_mode else ''}continue_run"
+    assert root["context"]["span_origin"]["instrumentation"]["name"] == "agno-auto"
+    llm_spans = [s for s in resumed if s["span_attributes"]["type"].value == "llm"]
+    assert llm_spans
+    assert all(s["span_parents"] == [root["span_id"]] for s in llm_spans)
+    assert logger.current_span() == logger.NOOP_SPAN
 
 
 @pytest.mark.vcr

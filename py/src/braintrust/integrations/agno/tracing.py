@@ -313,9 +313,17 @@ AGNO_METRICS_MAP = {
 }
 
 
+def _session_metadata(source: Any) -> dict[str, str]:
+    """Read the session ID without serializing a run response or event."""
+    session_id = source.get("session_id") if isinstance(source, dict) else getattr(source, "session_id", None)
+    return {"session_id": session_id} if isinstance(session_id, str) and session_id else {}
+
+
 def extract_metadata(instance: Any, component: str) -> dict[str, Any]:
     """Extract metadata from any component (model, agent, team)."""
     metadata = {"component": component}
+    if component in ("agent", "team"):
+        metadata.update(_session_metadata(instance))
 
     if component == "model":
         if hasattr(instance, "id") and instance.id:
@@ -633,7 +641,7 @@ def _trace_sync_stream(result: Any, span: Any, start: float):
             all_chunks = []
             for chunk in result:
                 if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
                     first = False
                 all_chunks.append(chunk)
                 yield chunk
@@ -661,7 +669,7 @@ def _trace_async_stream(result: Any, span: Any, start: float):
             all_chunks = []
             async for chunk in result:
                 if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
                     first = False
                 all_chunks.append(chunk)
                 yield chunk
@@ -701,10 +709,14 @@ def _agent_run_private_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
         name=f"{agent_name}.run",
         type=SpanTypeAttribute.TASK,
         input=input_data,
-        metadata={**omit(kwargs, list(input_data.keys())), **extract_metadata(instance, "agent")},
+        metadata={
+            **omit(kwargs, list(input_data.keys())),
+            **extract_metadata(instance, "agent"),
+            **_session_metadata(run_response),
+        },
     ) as span:
         result = wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result))
+        span.log(output=result, metrics=extract_metrics(result), metadata=_session_metadata(result))
         return result
 
 
@@ -718,10 +730,14 @@ async def _agent_arun_private_wrapper(wrapped: Any, instance: Any, args: Any, kw
         name=f"{agent_name}.arun",
         type=SpanTypeAttribute.TASK,
         input=input_data,
-        metadata={**omit(kwargs, list(input_data.keys())), **extract_metadata(instance, "agent")},
+        metadata={
+            **omit(kwargs, list(input_data.keys())),
+            **extract_metadata(instance, "agent"),
+            **_session_metadata(run_response),
+        },
     ) as span:
         result = await wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result))
+        span.log(output=result, metrics=extract_metrics(result), metadata=_session_metadata(result))
         return result
 
 
@@ -737,7 +753,11 @@ def _agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             name=f"{agent_name}.run_stream",
             type=SpanTypeAttribute.TASK,
             input={"run_response": run_response, "run_messages": run_messages},
-            metadata={**omit(kwargs, ["run_response", "run_messages"]), **extract_metadata(instance, "agent")},
+            metadata={
+                **omit(kwargs, ["run_response", "run_messages"]),
+                **extract_metadata(instance, "agent"),
+                **_session_metadata(run_response),
+            },
         )
         span.set_current()
         should_unset = True
@@ -746,7 +766,7 @@ def _agent_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             all_chunks = []
             for chunk in wrapped(*args, **kwargs):
                 if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
                     first = False
                 all_chunks.append(chunk)
                 yield chunk
@@ -778,7 +798,11 @@ def _agent_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
             name=f"{agent_name}.arun_stream",
             type=SpanTypeAttribute.TASK,
             input={"run_response": run_response, "input": input},
-            metadata={**omit(kwargs, ["run_response", "input"]), **extract_metadata(instance, "agent")},
+            metadata={
+                **omit(kwargs, ["run_response", "input"]),
+                **extract_metadata(instance, "agent"),
+                **_session_metadata(run_response),
+            },
         )
         span.set_current()
         should_unset = True
@@ -787,7 +811,7 @@ def _agent_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: A
             all_chunks = []
             async for chunk in wrapped(*args, **kwargs):
                 if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
                     first = False
                 all_chunks.append(chunk)
                 yield chunk
@@ -817,10 +841,14 @@ def _team_run_private_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
         name=f"{team_name}.run",
         type=SpanTypeAttribute.TASK,
         input=input_data,
-        metadata={**omit(kwargs, list(input_data.keys())), **extract_metadata(instance, "team")},
+        metadata={
+            **omit(kwargs, list(input_data.keys())),
+            **extract_metadata(instance, "team"),
+            **_session_metadata(run_response),
+        },
     ) as span:
         result = wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result))
+        span.log(output=result, metrics=extract_metrics(result), metadata=_session_metadata(result))
         return result
 
 
@@ -834,10 +862,14 @@ async def _team_arun_private_wrapper(wrapped: Any, instance: Any, args: Any, kwa
         name=f"{team_name}.arun",
         type=SpanTypeAttribute.TASK,
         input=input_data,
-        metadata={**omit(kwargs, list(input_data.keys())), **extract_metadata(instance, "team")},
+        metadata={
+            **omit(kwargs, list(input_data.keys())),
+            **extract_metadata(instance, "team"),
+            **_session_metadata(run_response),
+        },
     ) as span:
         result = await wrapped(*args, **kwargs)
-        span.log(output=result, metrics=extract_metrics(result))
+        span.log(output=result, metrics=extract_metrics(result), metadata=_session_metadata(result))
         return result
 
 
@@ -853,7 +885,11 @@ def _team_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
             name=f"{team_name}.run_stream",
             type=SpanTypeAttribute.TASK,
             input={"run_response": run_response, "run_messages": run_messages},
-            metadata={**omit(kwargs, ["run_response", "run_messages"]), **extract_metadata(instance, "team")},
+            metadata={
+                **omit(kwargs, ["run_response", "run_messages"]),
+                **extract_metadata(instance, "team"),
+                **_session_metadata(run_response),
+            },
         )
         span.set_current()
         should_unset = True
@@ -862,7 +898,7 @@ def _team_run_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any
             all_chunks = []
             for chunk in wrapped(*args, **kwargs):
                 if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
                     first = False
                 all_chunks.append(chunk)
                 yield chunk
@@ -894,7 +930,11 @@ def _team_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             name=f"{team_name}.arun_stream",
             type=SpanTypeAttribute.TASK,
             input={"run_response": run_response, "input": input},
-            metadata={**omit(kwargs, ["run_response", "input"]), **extract_metadata(instance, "team")},
+            metadata={
+                **omit(kwargs, ["run_response", "input"]),
+                **extract_metadata(instance, "team"),
+                **_session_metadata(run_response),
+            },
         )
         span.set_current()
         should_unset = True
@@ -903,7 +943,7 @@ def _team_arun_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: An
             all_chunks = []
             async for chunk in wrapped(*args, **kwargs):
                 if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start})
+                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
                     first = False
                 all_chunks.append(chunk)
                 yield chunk
@@ -936,15 +976,22 @@ def _run_public_dispatch_wrapper(
     *,
     default_name: str,
     metadata_component: str,
+    operation: str = "run",
 ) -> Any:
     """Trace a public synchronous `run(...)` dispatch method."""
     component_name = getattr(instance, "name", None) or default_name
-    input_arg = args[0] if len(args) > 0 else kwargs.get("input")
-    input_data = {"input": input_arg}
-    metadata = {**omit(kwargs, ["input"]), **extract_metadata(instance, metadata_component)}
+    input_key = "run_response" if operation == "continue_run" else "input"
+    input_arg = args[0] if len(args) > 0 else kwargs.get(input_key)
+    input_data = {input_key: input_arg}
+    metadata = {
+        **omit(kwargs, [input_key]),
+        **extract_metadata(instance, metadata_component),
+        **(_session_metadata(input_arg) if input_key == "run_response" else {}),
+        **_session_metadata(kwargs),
+    }
 
     span = start_span(
-        name=f"{component_name}.run",
+        name=f"{component_name}.{operation}",
         type=SpanTypeAttribute.TASK,
         input=input_data,
         metadata=metadata,
@@ -955,7 +1002,7 @@ def _run_public_dispatch_wrapper(
         result = wrapped(*args, **kwargs)
         if is_sync_iterator(result):
             return _trace_sync_stream(result, span, start)
-        span.log(output=result, metrics=extract_metrics(result))
+        span.log(output=result, metrics=extract_metrics(result), metadata=_session_metadata(result))
         span.unset_current()
         span.end()
         return result
@@ -974,15 +1021,22 @@ def _arun_public_dispatch_wrapper(
     *,
     default_name: str,
     metadata_component: str,
+    operation: str = "arun",
 ) -> Any:
     """Trace a public `arun(...)` dispatch method across async return contracts."""
     component_name = getattr(instance, "name", None) or default_name
-    input_arg = args[0] if len(args) > 0 else kwargs.get("input")
-    input_data = {"input": input_arg}
-    metadata = {**omit(kwargs, ["input"]), **extract_metadata(instance, metadata_component)}
+    input_key = "run_response" if operation == "acontinue_run" else "input"
+    input_arg = args[0] if len(args) > 0 else kwargs.get(input_key)
+    input_data = {input_key: input_arg}
+    metadata = {
+        **omit(kwargs, [input_key]),
+        **extract_metadata(instance, metadata_component),
+        **(_session_metadata(input_arg) if input_key == "run_response" else {}),
+        **_session_metadata(kwargs),
+    }
 
     span = start_span(
-        name=f"{component_name}.arun",
+        name=f"{component_name}.{operation}",
         type=SpanTypeAttribute.TASK,
         input=input_data,
         metadata=metadata,
@@ -1001,7 +1055,7 @@ def _arun_public_dispatch_wrapper(
                     if is_async_iterator(awaited):
                         should_end_span = False
                         return _trace_async_stream(awaited, span, start)
-                    span.log(output=awaited, metrics=extract_metrics(awaited))
+                    span.log(output=awaited, metrics=extract_metrics(awaited), metadata=_session_metadata(awaited))
                     return awaited
                 except Exception as e:
                     span.log(error=e)
@@ -1016,7 +1070,7 @@ def _arun_public_dispatch_wrapper(
         if is_async_iterator(result):
             return _trace_async_stream(result, span, start)
 
-        span.log(output=result, metrics=extract_metrics(result))
+        span.log(output=result, metrics=extract_metrics(result), metadata=_session_metadata(result))
         span.unset_current()
         span.end()
         return result
@@ -1025,6 +1079,30 @@ def _arun_public_dispatch_wrapper(
         span.unset_current()
         span.end()
         raise
+
+
+def _agent_continue_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    return _run_public_dispatch_wrapper(
+        wrapped, instance, args, kwargs, default_name="Agent", metadata_component="agent", operation="continue_run"
+    )
+
+
+def _agent_acontinue_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    return _arun_public_dispatch_wrapper(
+        wrapped, instance, args, kwargs, default_name="Agent", metadata_component="agent", operation="acontinue_run"
+    )
+
+
+def _team_continue_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    return _run_public_dispatch_wrapper(
+        wrapped, instance, args, kwargs, default_name="Team", metadata_component="team", operation="continue_run"
+    )
+
+
+def _team_acontinue_run_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):
+    return _arun_public_dispatch_wrapper(
+        wrapped, instance, args, kwargs, default_name="Team", metadata_component="team", operation="acontinue_run"
+    )
 
 
 def _agent_run_public_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: Any):

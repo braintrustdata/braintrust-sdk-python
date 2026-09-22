@@ -1,0 +1,262 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"developer","content":"Use get_weather to find the
+      weather. Report the result briefly."},{"role":"user","content":"What''s the
+      weather in Paris?"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      the current weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false},"external_execution":true}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '452'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EQwOdjcGiBz1JHnSrphxocj6KCuDp\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790089711,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_BeDryYZ3sMDuoNdsGHtYtiCq\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"get_weather\",\n
+        \             \"arguments\": \"{\\\"city\\\":\\\"Paris\\\"}\"\n            }\n
+        \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 64,\n    \"completion_tokens\":
+        14,\n    \"total_tokens\": 78,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_b494cd1199\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3f239b698cd41fb-EWR
+      connection:
+      - keep-alive
+      content-length:
+      - '1084'
+      content-type:
+      - application/json
+      date:
+      - Tue, 22 Sep 2026 15:08:32 GMT
+      openai-processing-ms:
+      - '801'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999972'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_3059d1ae071c4b6c80ba707024bdf38d
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"developer","content":"Use get_weather to find the
+      weather. Report the result briefly."},{"role":"user","content":"What''s the
+      weather in Paris?"},{"role":"assistant","tool_calls":[{"id":"call_BeDryYZ3sMDuoNdsGHtYtiCq","function":{"arguments":"{\"city\":\"Paris\"}","name":"get_weather"},"type":"function"}],"content":""},{"role":"tool","content":"The
+      weather in Paris is 72F and sunny.","tool_call_id":"call_BeDryYZ3sMDuoNdsGHtYtiCq"}],"model":"gpt-4o-mini","tools":[{"type":"function","function":{"name":"get_weather","description":"Get
+      the current weather for a city.","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"],"additionalProperties":false},"external_execution":true}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '741'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - OpenAI/Python 2.31.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.31.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-EQwOe1j9pgjGyLqiwGmV8b8fhLbct\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790089712,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The weather in Paris is 72\xB0F and
+        sunny.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 97,\n    \"completion_tokens\": 12,\n
+        \   \"total_tokens\": 109,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_b494cd1199\"\n}\n"
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3f239bcff9c41fb-EWR
+      connection:
+      - keep-alive
+      content-length:
+      - '848'
+      content-type:
+      - application/json
+      date:
+      - Tue, 22 Sep 2026 15:08:32 GMT
+      openai-processing-ms:
+      - '763'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999962'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_8047bae5984346bc915248059d62db73
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"session_id":"3de7b0e6-19fa-4311-860b-b830dad68c07","run_id":"67a9c617-33d0-4aae-a5bb-15168f402d80","data":{"agent_id":"weather-assistant","db_type":null,"model_provider":"OpenAI","model_name":"OpenAIChat","model_id":"gpt-4o-mini","parser_model":null,"output_model":null,"has_tools":true,"has_memory":false,"has_learnings":false,"has_culture":false,"has_reasoning":false,"has_knowledge":false,"has_input_schema":false,"has_output_schema":false,"has_team":false},"sdk_version":"2.4.0","type":"agent"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '500'
+      content-type:
+      - application/json
+      host:
+      - os-api.agno.com
+      user-agent:
+      - agno/2.4.0
+    method: POST
+    uri: https://os-api.agno.com/telemetry/runs
+  response:
+    body:
+      string: '{"message":"Run creation acknowledged: 67a9c617-33d0-4aae-a5bb-15168f402d80","status":"success"}'
+    headers:
+      content-length:
+      - '96'
+      content-type:
+      - application/json
+      cross-origin-opener-policy:
+      - same-origin
+      cross-origin-resource-policy:
+      - same-origin
+      date:
+      - Tue, 22 Sep 2026 15:08:33 GMT
+      permissions-policy:
+      - camera=(), microphone=(), geolocation=()
+      referrer-policy:
+      - strict-origin-when-cross-origin
+      server:
+      - uvicorn
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+version: 1

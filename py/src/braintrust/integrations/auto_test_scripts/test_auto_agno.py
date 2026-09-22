@@ -39,12 +39,17 @@ check_wrapped(Agent, "_run", "run", required=True)
 check_wrapped(Agent, "_arun", "arun", required=True)
 check_wrapped(Agent, "_run_stream", None, required=False)  # Optional - only in 2.4.0
 check_wrapped(Agent, "_arun_stream", None, required=False)  # Optional - only in 2.4.0
+check_wrapped(Agent, None, "continue_run")
+check_wrapped(Agent, None, "acontinue_run")
 
 # Team methods
 check_wrapped(Team, "_run", "run", required=True)
 check_wrapped(Team, "_arun", "arun", required=True)
 check_wrapped(Team, "_run_stream", None, required=False)
 check_wrapped(Team, "_arun_stream", None, required=False)
+for method in ("continue_run", "acontinue_run"):
+    if hasattr(Team, method):
+        check_wrapped(Team, None, method)
 
 # Model methods (all public, all required)
 assert hasattr(Model, "invoke") and hasattr(Model.invoke, "__wrapped__"), "Model.invoke should be wrapped"

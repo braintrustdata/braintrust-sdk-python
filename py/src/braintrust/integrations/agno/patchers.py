@@ -21,9 +21,11 @@ from .eval_tracing import (
     _reliability_run_wrapper,
 )
 from .tracing import (
+    _agent_acontinue_run_wrapper,
     _agent_arun_private_wrapper,
     _agent_arun_public_wrapper,
     _agent_arun_stream_wrapper,
+    _agent_continue_run_wrapper,
     _agent_run_private_wrapper,
     _agent_run_public_wrapper,
     _agent_run_stream_wrapper,
@@ -37,9 +39,11 @@ from .tracing import (
     _model_invoke_wrapper,
     _model_response_stream_wrapper,
     _model_response_wrapper,
+    _team_acontinue_run_wrapper,
     _team_arun_private_wrapper,
     _team_arun_public_wrapper,
     _team_arun_stream_wrapper,
+    _team_continue_run_wrapper,
     _team_run_private_wrapper,
     _team_run_public_wrapper,
     _team_run_stream_wrapper,
@@ -133,11 +137,27 @@ class _AgentArunPublicPatcher(_AgnoFunctionWrapperPatcher):
     superseded_by = (_AgentArunPrivatePatcher, _AgentArunStreamPatcher)
 
 
+class _AgentContinueRunPatcher(_AgnoFunctionWrapperPatcher):
+    name = "agno.agent.continue_run"
+    target_module = "agno.agent"
+    target_path = "Agent.continue_run"
+    wrapper = _agent_continue_run_wrapper
+
+
+class _AgentAcontinueRunPatcher(_AgnoFunctionWrapperPatcher):
+    name = "agno.agent.acontinue_run"
+    target_module = "agno.agent"
+    target_path = "Agent.acontinue_run"
+    wrapper = _agent_acontinue_run_wrapper
+
+
 class AgentPatcher(CompositeFunctionWrapperPatcher):
     """Patch ``agno.agent.Agent`` for tracing."""
 
     name = "agno.agent"
     sub_patchers = (
+        _AgentContinueRunPatcher,
+        _AgentAcontinueRunPatcher,
         _AgentRunPrivatePatcher,
         _AgentRunPublicPatcher,
         _AgentArunPrivatePatcher,
@@ -205,11 +225,27 @@ class _TeamArunPublicPatcher(_AgnoFunctionWrapperPatcher):
     superseded_by = (_TeamArunPrivatePatcher, _TeamArunStreamPatcher)
 
 
+class _TeamContinueRunPatcher(_AgnoFunctionWrapperPatcher):
+    name = "agno.team.continue_run"
+    target_module = "agno.team"
+    target_path = "Team.continue_run"
+    wrapper = _team_continue_run_wrapper
+
+
+class _TeamAcontinueRunPatcher(_AgnoFunctionWrapperPatcher):
+    name = "agno.team.acontinue_run"
+    target_module = "agno.team"
+    target_path = "Team.acontinue_run"
+    wrapper = _team_acontinue_run_wrapper
+
+
 class TeamPatcher(CompositeFunctionWrapperPatcher):
     """Patch ``agno.team.Team`` for tracing."""
 
     name = "agno.team"
     sub_patchers = (
+        _TeamContinueRunPatcher,
+        _TeamAcontinueRunPatcher,
         _TeamRunPrivatePatcher,
         _TeamRunPublicPatcher,
         _TeamArunPrivatePatcher,
