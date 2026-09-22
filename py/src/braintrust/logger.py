@@ -6104,20 +6104,26 @@ class Logger(Exportable):
         level: LogLevel,
         metadata: dict[str, Any] | None,
         captured_at: float,
+        span_id: str | None = None,
+        root_span_id: str | None = None,
+        lookup_current_span: bool = True,
     ) -> str:
         if level not in _LOG_LEVELS:
             valid_levels = ", ".join(_LOG_LEVELS)
             raise ValueError(f"Invalid log level {level!r}. Expected one of: {valid_levels}")
 
-        span_info = self.state.context_manager.get_current_span_info()
+        if lookup_current_span:
+            span_info = self.state.context_manager.get_current_span_info()
+            span_id = span_info.span_id if span_info else None
+            root_span_id = span_info.trace_id if span_info else None
         span = self._start_span_impl(
             name="Log",
             type=SpanTypeAttribute.LOG,
             span_attributes={"name": None, "log_level": level},
             start_time=captured_at,
             set_current=False,
-            span_id=span_info.span_id if span_info else None,
-            root_span_id=span_info.trace_id if span_info else self._baseline_trace_id,
+            span_id=span_id,
+            root_span_id=root_span_id if root_span_id is not None else self._baseline_trace_id,
             lookup_span_parent=False,
             output=body,
             metadata=metadata,

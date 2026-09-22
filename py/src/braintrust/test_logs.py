@@ -3,7 +3,7 @@ import logging
 import logging.handlers
 import queue
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from braintrust.api._transport import HTTPConnection
@@ -209,3 +209,52 @@ def test_handler_ignores_queued_internal_transport_logs(with_memory_logger):
         source_logger.propagate = original_propagate
 
     assert with_memory_logger.pop() == []
+
+
+def test_handler_preserves_queued_template_arguments_and_span_context(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+    handler = BraintrustLogHandler(test_logger)
+    log_queue = queue.Queue()
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+    listener = logging.handlers.QueueListener(log_queue, handler)
+    source_logger = logging.getLogger(f"payments.queue.{__name__}")
+    original_disabled = source_logger.disabled
+    original_level = source_logger.level
+    original_propagate = source_logger.propagate
+
+    source_logger.disabled = False
+    source_logger.setLevel(logging.INFO)
+    source_logger.propagate = False
+    source_logger.addHandler(queue_handler)
+    listener_started = False
+    try:
+        with patch.object(test_logger, "_emit_log_record") as emit_log_record:
+            with test_logger.start_span(name="checkout") as owner:
+                source_logger.info("Payment %s failed", "pay_123")
+                owner_span_id = owner.span_id
+                owner_root_span_id = owner.root_span_id
+
+            # QueueHandler prepares the record on the producer thread before the
+            # listener sees it, including rendering msg and clearing args.
+            assert log_queue.queue[0].args is None
+            listener.start()
+            listener_started = True
+            listener.stop()
+            listener_started = False
+
+            emit_log_record.assert_called_once()
+            call_kwargs = emit_log_record.call_args.kwargs
+    finally:
+        if listener_started:
+            listener.stop()
+        source_logger.removeHandler(queue_handler)
+        source_logger.disabled = original_disabled
+        source_logger.setLevel(original_level)
+        source_logger.propagate = original_propagate
+
+    assert call_kwargs["body"] == "Payment pay_123 failed"
+    assert call_kwargs["span_id"] == owner_span_id
+    assert call_kwargs["root_span_id"] == owner_root_span_id
+    assert call_kwargs["lookup_current_span"] is False
+    assert call_kwargs["metadata"]["braintrust.template"] == "Payment %s failed"
+    assert call_kwargs["metadata"]["braintrust.template.parameter.0"] == "pay_123"
