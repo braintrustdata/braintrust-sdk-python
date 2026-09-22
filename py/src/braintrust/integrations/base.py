@@ -627,21 +627,77 @@ class BaseIntegration(ABC):
         return detect_module_version(module, cls.import_names)
 
 
+# Module names that raised ImportError once. Bounded by the patchers' static
+# target_module attributes.
+_UNIMPORTABLE_MODULES: set[str] = set()
+
+# CPython < 3.12 records "which lock is this thread blocked on" in a single
+# dict slot per thread (``importlib._bootstrap._blocking_on[tid]``) and clears
+# it unconditionally in ``_ModuleLock.acquire``'s finally. When an import
+# nests on one thread -- a meta-path finder importing something while
+# resolving a submodule, say -- the inner frame clears the slot and the outer
+# frame's cleanup raises ``KeyError: <thread id>``. It is a bug in the
+# interpreter, not in the module being imported.
+_IMPORT_LOCK_BOOKKEEPING_IS_BUGGY = sys.version_info < (3, 12)
+
+
+def _import_module_tolerating_lock_bug(name: str) -> Any:
+    """``importlib.import_module`` that retries the interpreter's lock bug.
+
+    Only the spurious ``KeyError`` is handled; ``ImportError`` and every other
+    failure propagate untouched, so a genuinely absent module is still
+    reported as absent rather than papered over.
+    """
+    try:
+        return importlib.import_module(name)
+    except KeyError:
+        if not _IMPORT_LOCK_BOOKKEEPING_IS_BUGGY:
+            raise
+    # The bookkeeping is per-call, so a second attempt normally gets a clean
+    # slot. If the interpreter trips again, report the module as unavailable:
+    # setup() runs inside the caller's application, and skipping one optional
+    # patch target beats raising an interpreter-internal KeyError at them.
+    try:
+        return importlib.import_module(name)
+    except KeyError:
+        if not _IMPORT_LOCK_BOOKKEEPING_IS_BUGGY:
+            raise
+        return None
+
+
 def _import_optional_module(name: str) -> Any | None:
     """Return the named module, or ``None`` when it cannot be imported.
 
-    ``sys.modules`` is consulted first so an already-imported module never
-    reacquires the import lock. Patcher resolution calls this for every
-    patcher on every ``setup()``, and on CPython 3.10 that lock traffic can
-    trip the interpreter's own re-entrancy bookkeeping, surfacing as
-    ``KeyError: <thread id>`` from ``importlib._bootstrap``.
+    A module that is already imported is returned straight from
+    ``sys.modules`` so it never reacquires the import lock. Patcher resolution
+    calls this for every patcher on every ``setup()``, and CPython 3.10's
+    ``_find_and_load`` locks unconditionally, so that traffic can trip the
+    interpreter's own re-entrancy bookkeeping and surface as
+    ``KeyError: <thread id>`` from ``importlib._bootstrap``. (3.11+ added this
+    same shortcut upstream.)
+
+    The ``_initializing`` check is what makes the shortcut safe: a module whose
+    body is still executing is already in ``sys.modules`` but does not have its
+    attributes yet, so returning it would make patch targets look absent and
+    silently skip instrumentation. Falling through to ``import_module`` blocks
+    on the per-module lock until the other thread finishes. This mirrors the
+    predicate CPython uses for the same decision.
     """
     module = sys.modules.get(name)
-    if module is not None:
+    if module is not None and not getattr(getattr(module, "__spec__", None), "_initializing", False):
         return module
+    if name in _UNIMPORTABLE_MODULES:
+        return None
     try:
-        return importlib.import_module(name)
+        return _import_module_tolerating_lock_bug(name)
     except ImportError:
+        # Patchers carry target modules for layouts that only some versions of
+        # a provider ship, so a miss is normal and permanent -- mistralai 2.x,
+        # for example, leaves seven of them unimportable and two setup() calls
+        # retry them ~96 times between them. Each retry takes the import lock,
+        # which is what CPython 3.10 trips over. The sys.modules check above
+        # runs first, so a module that genuinely shows up later is still found.
+        _UNIMPORTABLE_MODULES.add(name)
         return None
 
 
