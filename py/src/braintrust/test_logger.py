@@ -2,10 +2,12 @@
 # pyright: reportPrivateUsage=false
 import asyncio
 import builtins
+import importlib
 import inspect
 import json
 import logging
 import os
+import sys
 import threading
 import time
 from collections.abc import AsyncGenerator
@@ -1362,6 +1364,224 @@ def test_logger_log_accepts_model_dump_metadata(with_memory_logger):
     logs = with_memory_logger.pop()
     assert len(logs) == 1
     assert logs[0]["metadata"] == {"foo": "bar"}
+
+
+def test_logger_emit_log_without_active_span(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    first_id = test_logger.emit_log(
+        body="Payment failed",
+        level="error",
+        metadata={"payment_id": "pay_123"},
+    )
+    second_id = test_logger.emit_log(body="Retrying payment", level="info")
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 2
+    first, second = logs
+    assert first_id == first["id"]
+    assert second_id == second["id"]
+    assert first["id"] != second["id"]
+    assert first["span_id"] != second["span_id"]
+    assert first["root_span_id"] == second["root_span_id"]
+    assert not first.get("span_parents")
+    assert first["output"] == "Payment failed"
+    assert "error" not in first
+    assert first["metadata"] == {"payment_id": "pay_123"}
+    assert "name" not in first["span_attributes"]
+    assert first["span_attributes"]["type"] == "log"
+    assert first["span_attributes"]["log_level"] == "error"
+    assert first["metrics"]["start"] == first["metrics"]["end"]
+    assert "otel" not in first.get("context", {})
+    assert "error" not in second
+    assert not second.get("metadata")
+    assert second["span_attributes"]["log_level"] == "info"
+
+
+def test_logger_emit_log_enqueues_single_row(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.info("Payment completed", metadata={"payment_id": "pay_123"})
+
+    assert len(with_memory_logger.logs) == 1
+    [row] = with_memory_logger.pop()
+    assert row["metrics"]["start"] == row["metrics"]["end"]
+    assert row["_is_merge"] is False
+
+
+def test_logger_emit_log_uses_distinct_baseline_trace_per_logger(with_memory_logger):
+    first_logger = init_test_logger(f"{__name__}-first")
+    second_logger = init_test_logger(f"{__name__}-second")
+
+    first_logger.info("first")
+    second_logger.info("second")
+
+    first, second = with_memory_logger.pop()
+    assert first["root_span_id"] != second["root_span_id"]
+
+
+def test_logger_emit_log_uses_active_span(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    with test_logger.start_span(name="owner") as owner:
+        log_id = test_logger.emit_log(body="Inside span", level="debug", metadata={"attempt": 1})
+
+    rows = with_memory_logger.pop()
+    log_row = next(row for row in rows if row["id"] == log_id)
+    owner_row = next(row for row in rows if row["span_attributes"]["name"] == "owner")
+    assert log_row["id"] != owner_row["id"]
+    assert log_row["span_id"] == owner_row["span_id"]
+    assert log_row["root_span_id"] == owner_row["root_span_id"]
+    assert not log_row.get("span_parents")
+    assert log_row["metadata"] == {"attempt": 1}
+    assert log_row["span_attributes"]["log_level"] == "debug"
+    assert "otel" not in log_row.get("context", {})
+
+
+@pytest.mark.parametrize("level", ["trace", "debug", "info", "warn", "error", "fatal"])
+def test_logger_emit_log_adds_log_level_span_attribute(with_memory_logger, level):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.emit_log(body="message", level=level)
+
+    [row] = with_memory_logger.pop()
+    assert not row.get("metadata")
+    assert row["span_attributes"]["log_level"] == level
+
+
+@pytest.mark.parametrize("method_name", ["trace", "debug", "info", "warn", "error", "fatal"])
+def test_logger_log_level_helpers(with_memory_logger, method_name):
+    test_logger = init_test_logger(__name__)
+
+    log_id = getattr(test_logger, method_name)("message", metadata={"source": method_name})
+
+    [row] = with_memory_logger.pop()
+    assert row["id"] == log_id
+    assert row["output"] == "message"
+    assert row["metadata"] == {"source": method_name}
+    assert row["span_attributes"]["log_level"] == method_name
+
+
+def test_logger_log_helpers_render_template_parameters(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    log_id = test_logger.info(
+        "User {user_id} paid {amount:.2f} with {method}",
+        metadata={"source": "checkout"},
+        user_id="user-123",
+        amount=12.5,
+    )
+
+    [row] = with_memory_logger.pop()
+    assert row["id"] == log_id
+    assert row["output"] == "User user-123 paid 12.50 with {method}"
+    assert row["metadata"] == {
+        "source": "checkout",
+        "braintrust.template.parameter.user_id": "user-123",
+        "braintrust.template.parameter.amount": 12.5,
+        "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
+    }
+    assert row["span_attributes"]["log_level"] == "info"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+def test_logger_log_helpers_render_t_string(with_memory_logger):
+    templatelib = importlib.import_module("string.templatelib")
+    template = templatelib.Template(
+        "User ",
+        templatelib.Interpolation("user-123", "user_id"),
+        " paid ",
+        templatelib.Interpolation(12.5, "amount", "r", ">8"),
+        " with {card}",
+    )
+    test_logger = init_test_logger(__name__)
+
+    log_id = test_logger.info(template, metadata={"source": "checkout"})
+
+    [row] = with_memory_logger.pop()
+    assert row["id"] == log_id
+    assert row["output"] == "User user-123 paid     12.5 with {card}"
+    assert row["metadata"] == {
+        "source": "checkout",
+        "braintrust.template.parameter.user_id": "user-123",
+        "braintrust.template.parameter.amount": 12.5,
+        "braintrust.template": "User {user_id} paid {amount!r:>8} with {{card}}",
+    }
+    assert row["span_attributes"]["log_level"] == "info"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+def test_logger_t_string_retains_repeated_expression_values(with_memory_logger):
+    templatelib = importlib.import_module("string.templatelib")
+    template = templatelib.Template(
+        templatelib.Interpolation(1, "next(it)"),
+        " ",
+        templatelib.Interpolation(2, "next(it)"),
+    )
+    test_logger = init_test_logger(__name__)
+
+    test_logger.info(template)
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "1 2"
+    assert row["metadata"] == {
+        "braintrust.template": "{next(it)} {next(it)}",
+        "braintrust.template.parameter.next(it).0": 1,
+        "braintrust.template.parameter.next(it).1": 2,
+    }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+def test_logger_t_string_rejects_keyword_template_parameters(with_memory_logger):
+    templatelib = importlib.import_module("string.templatelib")
+    template = templatelib.Template("User ", templatelib.Interpolation("user-123", "user_id"))
+    test_logger = init_test_logger(__name__)
+
+    with pytest.raises(TypeError, match="already contain their interpolation values"):
+        test_logger.info(template, user_id="other-user")
+
+    assert with_memory_logger.pop() == []
+
+
+def test_logger_error_renders_template_without_error_field(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.error("Payment {payment_id} failed", payment_id="pay-123")
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "Payment pay-123 failed"
+    assert "error" not in row
+
+
+def test_logger_log_helpers_do_not_format_without_parameters(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.info('{"key": "{value}"}')
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == '{"key": "{value}"}'
+    assert not row.get("metadata")
+    assert row["span_attributes"]["log_level"] == "info"
+
+
+def test_logger_log_template_parameters_are_safely_serialized(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    test_logger.warn("Request failed: {error}", error=ValueError("bad request"))
+
+    [row] = with_memory_logger.pop()
+    assert row["output"] == "Request failed: bad request"
+    assert row["metadata"]["braintrust.template.parameter.error"] == "bad request"
+    assert row["span_attributes"]["log_level"] == "warn"
+
+
+def test_logger_emit_log_rejects_invalid_level(with_memory_logger):
+    test_logger = init_test_logger(__name__)
+
+    with pytest.raises(ValueError, match="Invalid log level"):
+        test_logger.emit_log(body="message", level="warning")
+
+    assert with_memory_logger.pop() == []
 
 
 def test_experiment_log_accepts_model_dump_metadata(with_memory_logger):

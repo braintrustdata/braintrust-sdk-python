@@ -8,6 +8,7 @@ import contextvars
 import dataclasses
 import datetime
 import hashlib
+import importlib
 import inspect
 import io
 import json
@@ -21,6 +22,7 @@ import traceback
 import types
 import uuid
 from abc import ABC, abstractmethod
+from collections import Counter
 from collections.abc import Callable, Iterator, Mapping, MutableMapping, Sequence
 from functools import partial, wraps
 from multiprocessing import cpu_count
@@ -130,6 +132,66 @@ DATA_API_VERSION = 2
 LOGS3_OVERFLOW_REFERENCE_TYPE = "logs3_overflow"
 # 6 MB for the AWS lambda gateway (from our own testing).
 DEFAULT_MAX_REQUEST_SIZE = 6 * 1024 * 1024
+
+LogLevel = Literal["trace", "debug", "info", "warn", "error", "fatal"]
+_LOG_LEVELS: tuple[LogLevel, ...] = ("trace", "debug", "info", "warn", "error", "fatal")
+
+_TEMPLATELIB = importlib.import_module("string.templatelib") if sys.version_info >= (3, 14) else None
+
+
+class _LogTemplateParameters(dict[str, object]):
+    """Preserve placeholders whose values were not provided."""
+
+    def __missing__(self, key: str) -> str:
+        return "{" + key + "}"
+
+
+def _is_t_string(value: Any) -> bool:
+    return _TEMPLATELIB is not None and isinstance(value, _TEMPLATELIB.Template)
+
+
+def _render_t_string(template: Any) -> tuple[str, str, dict[str, object]]:
+    """Render a Python 3.14 t-string and retain its template structure."""
+    assert _TEMPLATELIB is not None
+
+    rendered_parts: list[str] = []
+    template_parts: list[str] = []
+    parameters: dict[str, object] = {}
+    parameter_names = [
+        interpolation.expression.strip() or str(index) for index, interpolation in enumerate(template.interpolations)
+    ]
+    parameter_name_counts = Counter(parameter_names)
+    parameter_name_occurrences: Counter[str] = Counter()
+
+    for parameter_name, literal, interpolation in zip(parameter_names, template.strings, template.interpolations):
+        rendered_parts.append(literal)
+        template_parts.append(literal.replace("{", "{{").replace("}", "}}"))
+
+        placeholder = "{" + interpolation.expression
+        if interpolation.conversion is not None:
+            placeholder += "!" + interpolation.conversion
+        if interpolation.format_spec:
+            placeholder += ":" + interpolation.format_spec
+        placeholder += "}"
+        template_parts.append(placeholder)
+
+        if parameter_name_counts[parameter_name] > 1:
+            occurrence = parameter_name_occurrences[parameter_name]
+            parameter_name_occurrences[parameter_name] += 1
+            parameter_name = f"{parameter_name}.{occurrence}"
+        parameters[parameter_name] = interpolation.value
+        try:
+            converted = _TEMPLATELIB.convert(interpolation.value, interpolation.conversion)
+            rendered_parts.append(format(converted, interpolation.format_spec))
+        except Exception:
+            # Logging should not disrupt the application because an interpolation
+            # uses an unsupported conversion or format specifier.
+            rendered_parts.append(placeholder)
+
+    final_literal = template.strings[-1]
+    rendered_parts.append(final_literal)
+    template_parts.append(final_literal.replace("{", "{{").replace("}", "}}"))
+    return "".join(rendered_parts), "".join(template_parts), parameters
 
 
 @dataclasses.dataclass
@@ -4820,7 +4882,7 @@ class SpanImpl(Span):
 
         internal_data: dict[str, Any] = dict(
             metrics=dict(
-                start=start_time or time.time(),
+                start=start_time if start_time is not None else time.time(),
             ),
             # Set type first, in case they override it in `span_attributes`.
             span_attributes=dict(**{"type": type, "name": name, **span_attributes}, exec_counter=exec_counter),
@@ -5896,6 +5958,7 @@ class Logger(Exportable):
         # fallbacks when generating links
         self._link_args = link_args
         self.state = state or _state
+        self._baseline_trace_id = self.state.id_generator.get_trace_id()
 
     @property
     def org_id(self) -> str:
@@ -5973,6 +6036,129 @@ class Logger(Exportable):
             self.flush()
 
         return span.id
+
+    def emit_log(
+        self,
+        body: Any,
+        level: LogLevel,
+        metadata: dict[str, Any] | None = None,
+        **parameters: object,
+    ) -> str:
+        """Capture a log record, associating it with the active span when one exists.
+
+        The log is stored as an independent row. If a Braintrust or OpenTelemetry
+        span is active, the row reuses its span and trace IDs for correlation.
+        Otherwise, the row uses this logger's baseline trace ID.
+
+        String bodies may contain ``str.format``-style placeholders. Keyword
+        parameters are interpolated into the body and retained in metadata along
+        with the original template. Missing parameters remain as placeholders.
+        On Python 3.14 and newer, ``string.templatelib.Template`` bodies are
+        rendered using their embedded interpolation values, which are also
+        retained in metadata.
+
+        :param body: The log body. May be a Python 3.14+ t-string or any
+            JSON-serializable value when no template parameters are provided.
+        :param level: The OpenTelemetry log severity: ``trace``, ``debug``,
+            ``info``, ``warn``, ``error``, or ``fatal``.
+        :param metadata: Optional JSON-serializable attributes for the log.
+        :param parameters: Values for named placeholders in a string body.
+        :returns: The unique ID of the captured log row.
+        """
+        rendered_body = body
+        rendered_metadata = metadata
+        if _is_t_string(body):
+            if parameters:
+                raise TypeError("T-string bodies already contain their interpolation values")
+            rendered_body, template, t_string_parameters = _render_t_string(body)
+            rendered_metadata = dict(metadata) if metadata is not None else {}
+            rendered_metadata.update(
+                {f"braintrust.template.parameter.{key}": value for key, value in t_string_parameters.items()}
+            )
+            rendered_metadata["braintrust.template"] = template
+        elif parameters:
+            if not isinstance(body, str):
+                raise TypeError("Log body must be a string when template parameters are provided")
+            rendered_metadata = dict(metadata) if metadata is not None else {}
+            rendered_metadata.update(
+                {f"braintrust.template.parameter.{key}": value for key, value in parameters.items()}
+            )
+            rendered_metadata["braintrust.template"] = body
+            try:
+                rendered_body = body.format_map(_LogTemplateParameters(parameters))
+            except Exception:
+                # Logging should not disrupt the application because a template
+                # contains malformed braces or an unsupported format specifier.
+                rendered_body = body
+
+        return self._emit_log_record(
+            body=rendered_body,
+            level=level,
+            metadata=rendered_metadata,
+            captured_at=time.time(),
+        )
+
+    def _emit_log_record(
+        self,
+        body: Any,
+        level: LogLevel,
+        metadata: dict[str, Any] | None,
+        captured_at: float,
+        span_id: str | None = None,
+        root_span_id: str | None = None,
+        lookup_current_span: bool = True,
+    ) -> str:
+        if level not in _LOG_LEVELS:
+            valid_levels = ", ".join(_LOG_LEVELS)
+            raise ValueError(f"Invalid log level {level!r}. Expected one of: {valid_levels}")
+
+        if lookup_current_span:
+            span_info = self.state.context_manager.get_current_span_info()
+            span_id = span_info.span_id if span_info else None
+            root_span_id = span_info.trace_id if span_info else None
+        span = self._start_span_impl(
+            name="Log",
+            type=SpanTypeAttribute.LOG,
+            span_attributes={"name": None, "log_level": level},
+            start_time=captured_at,
+            set_current=False,
+            span_id=span_id,
+            root_span_id=root_span_id if root_span_id is not None else self._baseline_trace_id,
+            lookup_span_parent=False,
+            output=body,
+            metadata=metadata,
+            metrics={"end": captured_at},
+            created=datetime.datetime.fromtimestamp(captured_at, datetime.timezone.utc).isoformat(),
+        )
+
+        if not self.async_flush:
+            self.flush()
+
+        return span.id
+
+    def trace(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
+        """Capture a trace-level log."""
+        return self.emit_log(body=body, level="trace", metadata=metadata, **parameters)
+
+    def debug(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
+        """Capture a debug-level log."""
+        return self.emit_log(body=body, level="debug", metadata=metadata, **parameters)
+
+    def info(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
+        """Capture an info-level log."""
+        return self.emit_log(body=body, level="info", metadata=metadata, **parameters)
+
+    def warn(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
+        """Capture a warn-level log."""
+        return self.emit_log(body=body, level="warn", metadata=metadata, **parameters)
+
+    def error(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
+        """Capture an error-level log."""
+        return self.emit_log(body=body, level="error", metadata=metadata, **parameters)
+
+    def fatal(self, body: Any, metadata: dict[str, Any] | None = None, **parameters: object) -> str:
+        """Capture a fatal-level log."""
+        return self.emit_log(body=body, level="fatal", metadata=metadata, **parameters)
 
     def log_feedback(
         self,

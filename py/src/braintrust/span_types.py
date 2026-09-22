@@ -19,6 +19,7 @@ class SpanTypeAttribute(str, Enum):
     CLASSIFIER = "classifier"
     REVIEW = "review"
     QUESTION = "question"
+    LOG = "log"
 
 
 class SpanPurpose(str, Enum):

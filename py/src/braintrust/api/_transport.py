@@ -1,5 +1,7 @@
 """Legacy and policy-aware HTTP transport primitives for the Braintrust SDK."""
 
+import contextlib
+import contextvars
 import dataclasses
 import datetime
 import http.cookiejar
@@ -28,6 +30,21 @@ from .policies import RetryMode, RetryPolicy, is_retryable_request_exception
 
 
 logger = logging.getLogger(__name__)
+
+_INTERNAL_HTTP_TRANSPORT = contextvars.ContextVar("braintrust_internal_http_transport", default=False)
+
+
+@contextlib.contextmanager
+def _internal_http_transport():
+    token = _INTERNAL_HTTP_TRANSPORT.set(True)
+    try:
+        yield
+    finally:
+        _INTERNAL_HTTP_TRANSPORT.reset(token)
+
+
+def _is_internal_http_transport() -> bool:
+    return _INTERNAL_HTTP_TRANSPORT.get()
 
 
 class _RejectCookiesPolicy(http.cookiejar.DefaultCookiePolicy):
@@ -159,19 +176,24 @@ class HTTPConnection:
             self.session.headers.update({"Authorization": f"Bearer {self.token}"})
 
     def get(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
-        return self.session.get(_urljoin(self.base_url, path), *args, **kwargs)
+        with _internal_http_transport():
+            return self.session.get(_urljoin(self.base_url, path), *args, **kwargs)
 
     def post(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
-        return self.session.post(_urljoin(self.base_url, path), *args, **kwargs)
+        with _internal_http_transport():
+            return self.session.post(_urljoin(self.base_url, path), *args, **kwargs)
 
     def patch(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
-        return self.session.patch(_urljoin(self.base_url, path), *args, **kwargs)
+        with _internal_http_transport():
+            return self.session.patch(_urljoin(self.base_url, path), *args, **kwargs)
 
     def put(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
-        return self.session.put(_urljoin(self.base_url, path), *args, **kwargs)
+        with _internal_http_transport():
+            return self.session.put(_urljoin(self.base_url, path), *args, **kwargs)
 
     def delete(self, path: str, *args: Any, **kwargs: Any) -> requests.Response:
-        return self.session.delete(_urljoin(self.base_url, path), *args, **kwargs)
+        with _internal_http_transport():
+            return self.session.delete(_urljoin(self.base_url, path), *args, **kwargs)
 
     def get_json(self, object_type: str, args: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
         resp = self.get(f"/{object_type}", params=args)
@@ -305,17 +327,18 @@ class Transport:
             attempt_timeout = min(policy.timeout, remaining) if remaining is not None else policy.timeout
 
             try:
-                response = self.session.request(
-                    method,
-                    url,
-                    params=params,
-                    json=json,
-                    data=data,
-                    headers=headers,
-                    timeout=attempt_timeout,
-                    stream=stream,
-                    **kwargs,
-                )
+                with _internal_http_transport():
+                    response = self.session.request(
+                        method,
+                        url,
+                        params=params,
+                        json=json,
+                        data=data,
+                        headers=headers,
+                        timeout=attempt_timeout,
+                        stream=stream,
+                        **kwargs,
+                    )
             except requests.exceptions.RequestException as exc:
                 if not is_retryable_request_exception(exc):
                     error = BraintrustTransportError(method=method, url=url, attempts=attempt, retryable=False)

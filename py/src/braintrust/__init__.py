@@ -81,6 +81,7 @@ from .logger import (
     _internal_reset_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
     _internal_with_custom_background_logger,  # noqa: F401 # type: ignore[reportUnusedImport]
 )
+from .logs import BraintrustLogHandler as BraintrustLogHandler
 from .sandbox import RegisteredSandboxFunction as RegisteredSandboxFunction
 from .sandbox import RegisterSandboxResult as RegisterSandboxResult
 from .sandbox import SandboxConfig as SandboxConfig
