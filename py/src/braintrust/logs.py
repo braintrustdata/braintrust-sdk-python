@@ -33,16 +33,29 @@ def _is_ignored_logger(name: str) -> bool:
     return any(name == prefix or name.startswith(f"{prefix}.") for prefix in _IGNORED_LOGGER_PREFIXES)
 
 
-def _uses_named_percent_parameters(template: str) -> bool:
-    search_from = 0
-    while (placeholder_index := template.find("%(", search_from)) >= 0:
-        percent_run_start = placeholder_index
-        while percent_run_start > 0 and template[percent_run_start - 1] == "%":
-            percent_run_start -= 1
-        if (placeholder_index - percent_run_start) % 2 == 0:
-            return True
-        search_from = placeholder_index + 2
-    return False
+def _percent_parameter_kinds(template: str) -> tuple[bool, bool]:
+    uses_positional = False
+    uses_named = False
+    index = 0
+    while index < len(template):
+        if template[index] != "%":
+            index += 1
+            continue
+
+        percent_run_start = index
+        while index < len(template) and template[index] == "%":
+            index += 1
+        if (index - percent_run_start) % 2 == 0 or index == len(template):
+            continue
+
+        if template[index] == "(":
+            uses_named = True
+        else:
+            uses_positional = True
+        if uses_positional and uses_named:
+            break
+
+    return uses_positional, uses_named
 
 
 class _InternalLogFilter(logging.Filter):
@@ -59,11 +72,15 @@ def _record_metadata(record: logging.LogRecord) -> dict[str, Any]:
 
     if record.args and isinstance(record.msg, str):
         metadata["braintrust.template"] = record.msg
-        if isinstance(record.args, Mapping) and _uses_named_percent_parameters(record.msg):
-            parameters = record.args.items()
+        if isinstance(record.args, Mapping):
+            uses_positional, uses_named = _percent_parameter_kinds(record.msg)
+            parameters = []
+            if uses_positional or not uses_named:
+                parameters.append((0, record.args))
+            if uses_named:
+                parameters.extend(record.args.items())
         else:
-            positional_args = (record.args,) if isinstance(record.args, Mapping) else record.args
-            parameters = enumerate(positional_args)
+            parameters = enumerate(record.args)
         metadata.update({f"braintrust.template.parameter.{key}": value for key, value in parameters})
 
     metadata.update(

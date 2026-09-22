@@ -50,6 +50,14 @@ def test_handler_forwards_log_record(with_memory_logger):
         ("payload=%s", "payload={'id': 1}", {"braintrust.template.parameter.0": {"id": 1}}),
         ("payload=%(id)s", "payload=1", {"braintrust.template.parameter.id": 1}),
         (
+            "%s %(id)s",
+            "{'id': 1} 1",
+            {
+                "braintrust.template.parameter.0": {"id": 1},
+                "braintrust.template.parameter.id": 1,
+            },
+        ),
+        (
             "literal=%%(id)s payload=%s",
             "literal=%(id)s payload={'id': 1}",
             {"braintrust.template.parameter.0": {"id": 1}},
