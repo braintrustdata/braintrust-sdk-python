@@ -1,4 +1,5 @@
 import importlib.machinery
+import importlib.util
 import sys
 import types
 
@@ -85,9 +86,11 @@ def test_import_optional_module_waits_for_initializing_module(monkeypatch):
     skip instrumentation, so we must fall through and let import_module
     block on the per-module lock.
     """
-    partial = types.ModuleType("braintrust_partial_sdk")
-    partial.__spec__ = importlib.machinery.ModuleSpec("braintrust_partial_sdk", loader=None)
-    partial.__spec__._initializing = True
+    # module_from_spec wires up __spec__ the way the real loader does, so the
+    # flag can be flipped on the spec itself.
+    spec = importlib.machinery.ModuleSpec("braintrust_partial_sdk", loader=None)
+    spec._initializing = True
+    partial = importlib.util.module_from_spec(spec)
     monkeypatch.setitem(sys.modules, "braintrust_partial_sdk", partial)
 
     finished = types.ModuleType("braintrust_partial_sdk")
@@ -99,5 +102,5 @@ def test_import_optional_module_waits_for_initializing_module(monkeypatch):
     assert _import_optional_module("braintrust_partial_sdk") is finished
 
     # Once initialization completes the shortcut applies again.
-    partial.__spec__._initializing = False
+    spec._initializing = False
     assert _import_optional_module("braintrust_partial_sdk") is partial
