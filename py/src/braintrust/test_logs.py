@@ -1,10 +1,16 @@
 import concurrent.futures
 import logging
 import logging.handlers
+import os
 import queue
+import select
+import signal
 import sys
+import threading
+import warnings
 from unittest.mock import MagicMock, patch
 
+import braintrust.logs as braintrust_logs
 import pytest
 from braintrust.api._transport import HTTPConnection
 from braintrust.logs import BraintrustLogHandler
@@ -318,3 +324,51 @@ def test_handler_preserves_queued_template_arguments_and_span_context(with_memor
     assert call_kwargs["lookup_current_span"] is False
     assert call_kwargs["metadata"]["braintrust.template"] == "Payment %s failed"
     assert call_kwargs["metadata"]["braintrust.template.parameter.0"] == "pay_123"
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires POSIX fork")
+def test_record_factory_resets_lock_after_fork():
+    BraintrustLogHandler(init_test_logger(__name__))
+    lock_acquired = threading.Event()
+    release_lock = threading.Event()
+
+    def hold_logging_hooks_lock():
+        with braintrust_logs._LOGGING_HOOKS_LOCK:
+            lock_acquired.set()
+            release_lock.wait()
+
+    lock_holder = threading.Thread(target=hold_logging_hooks_lock)
+    lock_holder.start()
+    assert lock_acquired.wait(timeout=1)
+
+    read_fd, write_fd = os.pipe()
+    child_pid = None
+    child_reaped = False
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            child_pid = os.fork()
+        if child_pid == 0:
+            os.close(read_fd)
+            try:
+                logging.getLogRecordFactory()("app", logging.INFO, __file__, 1, "message", (), None)
+                os.write(write_fd, b"ok")
+            except BaseException:
+                os._exit(1)
+            else:
+                os._exit(0)
+
+        os.close(write_fd)
+        readable, _, _ = select.select([read_fd], [], [], 2)
+        assert readable, "child hung on the inherited logging-hooks lock"
+        assert os.read(read_fd, 2) == b"ok"
+        _, status = os.waitpid(child_pid, 0)
+        child_reaped = True
+        assert os.waitstatus_to_exitcode(status) == 0
+    finally:
+        if child_pid not in (None, 0) and not child_reaped:
+            os.kill(child_pid, signal.SIGKILL)
+            os.waitpid(child_pid, 0)
+        os.close(read_fd)
+        release_lock.set()
+        lock_holder.join(timeout=1)

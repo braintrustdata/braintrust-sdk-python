@@ -1,6 +1,7 @@
 """Adapters for forwarding standard-library log records to Braintrust."""
 
 import logging
+import os
 import threading
 import weakref
 from collections.abc import Mapping
@@ -24,6 +25,15 @@ _SPAN_CONTEXTS_RECORD_ATTRIBUTE = "_braintrust_span_contexts"
 _LOGGING_HOOKS_LOCK = threading.Lock()
 _CONTEXT_MANAGERS: weakref.WeakValueDictionary[str, Any] = weakref.WeakValueDictionary()
 _MISSING = object()
+
+
+def _reset_logging_hooks_lock_after_fork() -> None:
+    global _LOGGING_HOOKS_LOCK
+    _LOGGING_HOOKS_LOCK = threading.Lock()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_logging_hooks_lock_after_fork)
 
 
 def _install_log_record_factory(logger: Logger) -> None:
