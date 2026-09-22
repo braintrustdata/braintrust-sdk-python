@@ -27,6 +27,28 @@ _CONTEXT_MANAGERS: weakref.WeakValueDictionary[str, Any] = weakref.WeakValueDict
 _MISSING = object()
 
 
+def _safe_parameter_repr(value: Any) -> str:
+    try:
+        return repr(value)
+    except Exception:
+        value_type = type(value)
+        return f"<{value_type.__module__}.{value_type.__qualname__} object>"
+
+
+def _safe_template_parameter(value: Any) -> Any:
+    if isinstance(value, (str, float, int, bool)):
+        return value
+    return _safe_parameter_repr(value)
+
+
+def _safe_template_arguments(arguments: Any) -> Any:
+    if isinstance(arguments, tuple):
+        return tuple(_safe_template_parameter(value) for value in arguments)
+    if isinstance(arguments, Mapping):
+        return {_safe_template_parameter(key): _safe_template_parameter(value) for key, value in arguments.items()}
+    return _safe_template_parameter(arguments)
+
+
 def _reset_logging_hooks_lock_after_fork() -> None:
     global _LOGGING_HOOKS_LOCK
     _LOGGING_HOOKS_LOCK = threading.Lock()
@@ -48,7 +70,7 @@ def _install_log_record_factory(logger: Logger) -> None:
             record = current_factory(*args, **kwargs)
             if record.args and isinstance(record.msg, str):
                 setattr(record, _TEMPLATE_RECORD_ATTRIBUTE, record.msg)
-                setattr(record, _TEMPLATE_ARGUMENTS_RECORD_ATTRIBUTE, record.args)
+                setattr(record, _TEMPLATE_ARGUMENTS_RECORD_ATTRIBUTE, _safe_template_arguments(record.args))
 
             with _LOGGING_HOOKS_LOCK:
                 context_managers = tuple(_CONTEXT_MANAGERS.items())

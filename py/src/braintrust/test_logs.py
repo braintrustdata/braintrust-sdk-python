@@ -2,6 +2,7 @@ import concurrent.futures
 import logging
 import logging.handlers
 import os
+import pickle
 import queue
 import select
 import signal
@@ -177,7 +178,7 @@ def test_handler_forwards_application_urllib3_logs(with_memory_logger):
 
 
 def test_handler_ignores_internal_logs_before_acquiring_lock():
-    handler = BraintrustLogHandler(MagicMock())
+    handler = BraintrustLogHandler(init_test_logger(__name__))
     source_logger = logging.getLogger("urllib3.connectionpool")
     original_disabled = source_logger.disabled
     original_level = source_logger.level
@@ -324,6 +325,24 @@ def test_handler_preserves_queued_template_arguments_and_span_context(with_memor
     assert call_kwargs["lookup_current_span"] is False
     assert call_kwargs["metadata"]["braintrust.template"] == "Payment %s failed"
     assert call_kwargs["metadata"]["braintrust.template.parameter.0"] == "pay_123"
+
+
+def test_handler_keeps_queued_records_with_non_pickleable_arguments_pickleable():
+    test_logger = init_test_logger(__name__)
+    handler = BraintrustLogHandler(test_logger)
+    queue_handler = logging.handlers.QueueHandler(queue.Queue())
+    callback = lambda: None  # noqa: E731
+    callback_repr = repr(callback)
+    record = logging.getLogger("app").makeRecord("app", logging.INFO, __file__, 1, "callback=%s", (callback,), None)
+
+    prepared_record = queue_handler.prepare(record)
+    with patch.object(test_logger, "_emit_log_record") as emit_log_record:
+        handler.handle(prepared_record)
+        assert emit_log_record.call_args.kwargs["metadata"]["braintrust.template.parameter.0"] == callback_repr
+
+        restored_record = pickle.loads(pickle.dumps(prepared_record))
+        handler.handle(restored_record)
+        assert emit_log_record.call_args.kwargs["metadata"]["braintrust.template.parameter.0"] == callback_repr
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="requires POSIX fork")
