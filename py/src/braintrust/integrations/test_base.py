@@ -3,6 +3,8 @@ import importlib.util
 import sys
 import types
 
+import pytest
+from braintrust.integrations import base
 from braintrust.integrations.base import _import_optional_module, _resolve_attr_path
 
 
@@ -143,3 +145,58 @@ def test_import_optional_module_still_sees_a_late_arrival(monkeypatch):
     late = types.ModuleType("braintrust_late_sdk")
     monkeypatch.setitem(sys.modules, "braintrust_late_sdk", late)
     assert _import_optional_module("braintrust_late_sdk") is late
+
+
+def test_import_optional_module_survives_the_import_lock_bug(monkeypatch):
+    """CPython < 3.12 can raise KeyError from its own import bookkeeping.
+
+    _blocking_on holds one slot per thread and acquire() clears it
+    unconditionally, so a nested import makes the outer frame's cleanup raise
+    KeyError: <thread id>. That is an interpreter bug, not a signal about the
+    module, and it must not escape into the caller's setup().
+    """
+    monkeypatch.setattr("braintrust.integrations.base._UNIMPORTABLE_MODULES", set())
+    monkeypatch.setattr("braintrust.integrations.base._IMPORT_LOCK_BOOKKEEPING_IS_BUGGY", True)
+
+    recovered = types.ModuleType("braintrust_locky_sdk")
+    calls = []
+
+    def flaky(name):
+        calls.append(name)
+        if len(calls) == 1:
+            raise KeyError(140000000000000)
+        return recovered
+
+    monkeypatch.setattr("braintrust.integrations.base.importlib.import_module", flaky)
+
+    assert _import_optional_module("braintrust_locky_sdk") is recovered
+    assert len(calls) == 2
+
+
+def test_import_optional_module_gives_up_if_the_lock_bug_persists(monkeypatch):
+    """A second KeyError reports the module absent rather than crashing."""
+    monkeypatch.setattr("braintrust.integrations.base._UNIMPORTABLE_MODULES", set())
+    monkeypatch.setattr("braintrust.integrations.base._IMPORT_LOCK_BOOKKEEPING_IS_BUGGY", True)
+
+    def always_keyerror(name):
+        raise KeyError(140000000000000)
+
+    monkeypatch.setattr("braintrust.integrations.base.importlib.import_module", always_keyerror)
+
+    assert _import_optional_module("braintrust_locky_sdk") is None
+    # Not cached as unimportable: the import never actually resolved.
+    assert "braintrust_locky_sdk" not in base._UNIMPORTABLE_MODULES
+
+
+def test_import_optional_module_propagates_keyerror_on_fixed_interpreters(monkeypatch):
+    """On 3.12+ a KeyError is a real error and must not be swallowed."""
+    monkeypatch.setattr("braintrust.integrations.base._UNIMPORTABLE_MODULES", set())
+    monkeypatch.setattr("braintrust.integrations.base._IMPORT_LOCK_BOOKKEEPING_IS_BUGGY", False)
+
+    def boom(name):
+        raise KeyError("a real bug in the module's import")
+
+    monkeypatch.setattr("braintrust.integrations.base.importlib.import_module", boom)
+
+    with pytest.raises(KeyError):
+        _import_optional_module("braintrust_locky_sdk")

@@ -631,6 +631,39 @@ class BaseIntegration(ABC):
 # target_module attributes.
 _UNIMPORTABLE_MODULES: set[str] = set()
 
+# CPython < 3.12 records "which lock is this thread blocked on" in a single
+# dict slot per thread (``importlib._bootstrap._blocking_on[tid]``) and clears
+# it unconditionally in ``_ModuleLock.acquire``'s finally. When an import
+# nests on one thread -- a meta-path finder importing something while
+# resolving a submodule, say -- the inner frame clears the slot and the outer
+# frame's cleanup raises ``KeyError: <thread id>``. It is a bug in the
+# interpreter, not in the module being imported.
+_IMPORT_LOCK_BOOKKEEPING_IS_BUGGY = sys.version_info < (3, 12)
+
+
+def _import_module_tolerating_lock_bug(name: str) -> Any:
+    """``importlib.import_module`` that retries the interpreter's lock bug.
+
+    Only the spurious ``KeyError`` is handled; ``ImportError`` and every other
+    failure propagate untouched, so a genuinely absent module is still
+    reported as absent rather than papered over.
+    """
+    try:
+        return importlib.import_module(name)
+    except KeyError:
+        if not _IMPORT_LOCK_BOOKKEEPING_IS_BUGGY:
+            raise
+    # The bookkeeping is per-call, so a second attempt normally gets a clean
+    # slot. If the interpreter trips again, report the module as unavailable:
+    # setup() runs inside the caller's application, and skipping one optional
+    # patch target beats raising an interpreter-internal KeyError at them.
+    try:
+        return importlib.import_module(name)
+    except KeyError:
+        if not _IMPORT_LOCK_BOOKKEEPING_IS_BUGGY:
+            raise
+        return None
+
 
 def _import_optional_module(name: str) -> Any | None:
     """Return the named module, or ``None`` when it cannot be imported.
@@ -656,7 +689,7 @@ def _import_optional_module(name: str) -> Any | None:
     if name in _UNIMPORTABLE_MODULES:
         return None
     try:
-        return importlib.import_module(name)
+        return _import_module_tolerating_lock_bug(name)
     except ImportError:
         # Patchers carry target modules for layouts that only some versions of
         # a provider ship, so a miss is normal and permanent -- mistralai 2.x,
