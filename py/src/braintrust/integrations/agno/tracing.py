@@ -1,5 +1,6 @@
 import contextvars
 import time
+import weakref
 from contextlib import contextmanager
 from inspect import isawaitable
 from typing import Any
@@ -633,60 +634,168 @@ def _aggregate_workflow_chunks(chunks: list[Any], workflow_run_response: Any | N
 # ---------------------------------------------------------------------------
 
 
-def _trace_sync_stream(result: Any, span: Any, start: float):
-    def _inner():
-        should_unset = True
-        try:
-            first = True
-            all_chunks = []
-            for chunk in result:
-                if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
-                    first = False
-                all_chunks.append(chunk)
-                yield chunk
-            aggregated = _aggregate_agent_chunks(all_chunks)
-            span.log(output=aggregated, metrics=extract_streaming_metrics(aggregated, start))
-        except GeneratorExit:
-            should_unset = False
-            raise
-        except Exception as e:
-            span.log(error=e)
-            raise
-        finally:
-            if should_unset:
-                span.unset_current()
-            span.end()
+class _ContextIterator:
+    """Drive an await iterator in one context, including send/throw after suspension.
 
-    return _inner()
+    Unlike creating a task per chunk, this preserves context tokens across async
+    generator yields and also works on Python 3.10.
+    """
+
+    def __init__(self, iterator: Any, context: contextvars.Context):
+        self.iterator = iterator
+        self.context = context
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.context.run(next, self.iterator)
+
+    def send(self, value):
+        return self.context.run(self.iterator.send, value)
+
+    def throw(self, *args):
+        return self.context.run(self.iterator.throw, *args)
+
+    def close(self):
+        return self.context.run(self.iterator.close)
+
+
+class _ContextAwaitable:
+    def __init__(self, awaitable: Any, context: contextvars.Context):
+        self.awaitable = awaitable
+        self.context = context
+
+    def __await__(self):
+        return _ContextIterator(self.awaitable.__await__(), self.context)
+
+
+class _StreamState:
+    """Trace state only: a GC callback must not retain the stream or its context."""
+
+    def __init__(self, span: Any, start: float):
+        self.span = span
+        self.start = start
+        self.chunks: list[Any] = []
+        self.finished = False
+
+    def record(self, chunk: Any):
+        if not self.chunks:
+            self.span.log(metrics={"time_to_first_token": time.time() - self.start}, metadata=_session_metadata(chunk))
+        self.chunks.append(chunk)
+        return chunk
+
+    def finish(self, error: BaseException | None = None):
+        if self.finished:
+            return
+        self.finished = True
+        try:
+            if error is not None:
+                self.span.log(error=error)
+            aggregated = _aggregate_agent_chunks(self.chunks)
+            self.span.log(output=aggregated, metrics=extract_streaming_metrics(aggregated, self.start))
+        finally:
+            self.chunks.clear()
+            self.span.end()
+
+
+class _TracedSyncStream:
+    def __init__(self, result: Any, span: Any, start: float):
+        self.result = result
+        self.context = contextvars.copy_context()
+        self.state = _StreamState(span, start)
+        # The captured context owns the suspended provider/child spans. Never
+        # leave them active in application code between iterator operations.
+        span.unset_current()
+
+    def __iter__(self):
+        return self
+
+    def _advance(self, method, *args):
+        try:
+            chunk = self.context.run(method, *args)
+        except StopIteration:
+            self.state.finish()
+            raise
+        except BaseException as error:
+            self.state.finish(error)
+            raise
+        return self.state.record(chunk)
+
+    def __next__(self):
+        return self._advance(next, self.result)
+
+    def send(self, value):
+        return self._advance(self.result.send, value)
+
+    def throw(self, *args):
+        return self._advance(self.result.throw, *args)
+
+    def close(self):
+        try:
+            close = getattr(self.result, "close", None)
+            if close is not None:
+                return self.context.run(close)
+        finally:
+            self.state.finish()
+
+    def __del__(self):
+        # Synchronous generator finalizers must also run in the stream's
+        # context, or nested provider spans may reset the caller's context.
+        try:
+            self.close()
+        except BaseException:
+            pass
+
+
+class _TracedAsyncStream:
+    def __init__(self, result: Any, span: Any, start: float):
+        self.result = result
+        self.context = contextvars.copy_context()
+        self.state = _StreamState(span, start)
+        # Only finalize trace state on GC. Leave async transport cleanup to the
+        # provider/runtime; do not schedule event-loop work from a finalizer.
+        weakref.finalize(self, self.state.finish)
+        span.unset_current()
+
+    def __aiter__(self):
+        return self
+
+    async def _advance(self, method, *args):
+        try:
+            chunk = await _ContextAwaitable(self.context.run(method, *args), self.context)
+        except StopAsyncIteration:
+            self.state.finish()
+            raise
+        except BaseException as error:
+            self.state.finish(error)
+            raise
+        return self.state.record(chunk)
+
+    async def __anext__(self):
+        return await self._advance(self.result.__anext__)
+
+    async def asend(self, value):
+        return await self._advance(self.result.asend, value)
+
+    async def athrow(self, *args):
+        return await self._advance(self.result.athrow, *args)
+
+    async def aclose(self):
+        try:
+            close = getattr(self.result, "aclose", None)
+            if close is not None:
+                return await _ContextAwaitable(self.context.run(close), self.context)
+        finally:
+            self.state.finish()
+
+
+def _trace_sync_stream(result: Any, span: Any, start: float):
+    return _TracedSyncStream(result, span, start)
 
 
 def _trace_async_stream(result: Any, span: Any, start: float):
-    async def _inner():
-        should_unset = True
-        try:
-            first = True
-            all_chunks = []
-            async for chunk in result:
-                if first:
-                    span.log(metrics={"time_to_first_token": time.time() - start}, metadata=_session_metadata(chunk))
-                    first = False
-                all_chunks.append(chunk)
-                yield chunk
-            aggregated = _aggregate_agent_chunks(all_chunks)
-            span.log(output=aggregated, metrics=extract_streaming_metrics(aggregated, start))
-        except GeneratorExit:
-            should_unset = False
-            raise
-        except Exception as e:
-            span.log(error=e)
-            raise
-        finally:
-            if should_unset:
-                span.unset_current()
-            span.end()
-
-    return _inner()
+    return _TracedAsyncStream(result, span, start)
 
 
 # ===========================================================================
@@ -1047,8 +1156,10 @@ def _arun_public_dispatch_wrapper(
         result = wrapped(*args, **kwargs)
 
         if isawaitable(result):
+            span.unset_current()
 
             async def _trace_awaitable():
+                span.set_current()
                 should_end_span = True
                 try:
                     awaited = await result

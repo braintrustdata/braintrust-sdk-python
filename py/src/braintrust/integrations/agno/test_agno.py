@@ -4,6 +4,10 @@
 # pyright: reportUnknownParameterType=false
 # pyright: reportUnknownVariableType=false
 # pyright: reportUnknownArgumentType=false
+import asyncio
+import gc
+import time
+
 import pytest
 from braintrust import logger
 from braintrust.integrations.agno import setup_agno
@@ -15,6 +19,7 @@ from braintrust.test_helpers import init_test_logger
 
 from ._test_agno_helpers import (
     PROJECT_NAME,
+    FakeEvent,
     StrictSpan,
     isawaitable,
     make_fake_async_dispatch_component,
@@ -120,22 +125,7 @@ def test_agno_simple_agent_execution(memory_logger):
     )
 
 
-@pytest.mark.vcr
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "component,async_mode,stream",
-    [
-        pytest.param("agent", False, False, id="response-sync-agent"),
-        pytest.param("agent", True, False, id="response-async-agent"),
-        pytest.param("agent", False, True, id="stream-sync-agent"),
-        pytest.param("agent", True, True, id="stream-async-agent"),
-        # Team uses the same dispatch wrappers; cover both patch targets without
-        # repeating every return contract already exercised by Agent.
-        pytest.param("team", False, False, id="response-sync-team"),
-        pytest.param("team", True, True, id="stream-async-team"),
-    ],
-)
-async def test_agno_resume_session_id(memory_logger, component, async_mode, stream):
+async def _pause_agno_run(memory_logger, component, async_mode):
     from agno.agent import Agent
     from agno.models.openai import OpenAIChat
     from agno.team import Team
@@ -178,6 +168,27 @@ async def test_agno_resume_session_id(memory_logger, component, async_mode, stre
                 execution.result = "The weather in Paris is 72F and sunny."
         continuation = {"updated_tools": paused.tools}
 
+    return instance, paused, continuation, original
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "component,async_mode,stream",
+    [
+        pytest.param("agent", False, False, id="response-sync-agent"),
+        pytest.param("agent", True, False, id="response-async-agent"),
+        pytest.param("agent", False, True, id="stream-sync-agent"),
+        pytest.param("agent", True, True, id="stream-async-agent"),
+        # Team uses the same dispatch wrappers; cover both patch targets without
+        # repeating every return contract already exercised by Agent.
+        pytest.param("team", False, False, id="response-sync-team"),
+        pytest.param("team", True, True, id="stream-async-team"),
+    ],
+)
+async def test_agno_resume_session_id(memory_logger, component, async_mode, stream):
+    instance, paused, continuation, original = await _pause_agno_run(memory_logger, component, async_mode)
+
     # Resume without an ambient parent, as in a separate AG-UI request.
     assert logger.current_span() == logger.NOOP_SPAN
     method = instance.acontinue_run if async_mode else instance.continue_run
@@ -205,6 +216,106 @@ async def test_agno_resume_session_id(memory_logger, component, async_mode, stre
     assert llm_spans
     assert all(s["span_parents"] == [root["span_id"]] for s in llm_spans)
     assert logger.current_span() == logger.NOOP_SPAN
+
+
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "async_mode,vcr_cassette_name",
+    [
+        (False, "test_agno_resume_session_id[stream-sync-agent]"),
+        (True, "test_agno_resume_session_id[stream-async-agent]"),
+    ],
+    ids=["sync", "async"],
+)
+@pytest.mark.parametrize("consume", [False, True], ids=["unstarted", "partial"])
+@pytest.mark.parametrize("cleanup", ["close", "gc"])
+async def test_agno_resume_stream_cleanup(memory_logger, async_mode, vcr_cassette_name, consume, cleanup):
+    instance, paused, continuation, _ = await _pause_agno_run(memory_logger, "agent", async_mode)
+    with start_span(name="caller") as parent:
+        method = instance.acontinue_run if async_mode else instance.continue_run
+        stream = method(paused, stream=True, **continuation)
+        if isawaitable(stream):
+            stream = await stream
+        assert logger.current_span() is parent
+        if consume:
+            # Stop after actual content, with the nested model stream suspended.
+            if async_mode:
+                async for chunk in stream:
+                    if getattr(chunk, "content", None):
+                        break
+            else:
+                for chunk in stream:
+                    if getattr(chunk, "content", None):
+                        break
+            assert logger.current_span() is parent
+        if cleanup == "close":
+            if async_mode:
+                await stream.aclose()
+                await stream.aclose()
+            else:
+                stream.close()
+                stream.close()
+        del stream
+        gc.collect()
+        assert logger.current_span() is parent
+        with start_span(name="after"):
+            pass
+
+    spans = memory_logger.pop()
+    root = next(s for s in spans if s["span_attributes"]["name"].endswith("continue_run"))
+    assert root["span_parents"] == [parent.span_id]
+    assert root["metadata"]["session_id"] == paused.session_id
+    assert "end" in root["metrics"]
+    assert bool(root["output"].get("content")) == consume
+    after = next(s for s in spans if s["span_attributes"]["name"] == "after")
+    assert after["span_parents"] == [parent.span_id]
+    gc.collect()
+    assert not memory_logger.pop()
+
+
+@pytest.mark.asyncio
+async def test_agno_async_stream_cancellation_restores_context(memory_logger):
+    # Local coverage for cancellation at an actual await: cassette playback
+    # cannot reliably suspend the provider at a specific point.
+    waiting = asyncio.Event()
+    cleaned_up = asyncio.Event()
+
+    async def source():
+        try:
+            with start_span(name="nested"):
+                yield FakeEvent("RunContent", content="partial")
+                waiting.set()
+                await asyncio.Event().wait()
+        finally:
+            cleaned_up.set()
+
+    with start_span(name="caller") as parent:
+        span = start_span(name="continuation")
+        span.set_current()
+        stream = agno_tracing_module._trace_async_stream(source(), span, time.time())
+        assert (await stream.__anext__()).content == "partial"
+        assert logger.current_span() is parent
+        task = asyncio.create_task(stream.__anext__())
+        await waiting.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert cleaned_up.is_set()
+        assert logger.current_span() is parent
+        await stream.aclose()
+
+    spans = memory_logger.pop()
+    root = next(s for s in spans if s["span_attributes"]["name"] == "continuation")
+    nested = next(s for s in spans if s["span_attributes"]["name"] == "nested")
+    assert root["span_parents"] == [parent.span_id]
+    assert nested["span_parents"] == [root["span_id"]]
+    assert root["output"]["content"] == "partial"
+    assert "end" in root["metrics"]
+    assert "end" in nested["metrics"]
+    del stream
+    gc.collect()
+    assert not memory_logger.pop()
 
 
 @pytest.mark.vcr
