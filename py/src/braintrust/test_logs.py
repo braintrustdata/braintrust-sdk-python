@@ -1,5 +1,7 @@
 import concurrent.futures
 import logging
+import logging.handlers
+import queue
 import sys
 from unittest.mock import MagicMock
 
@@ -169,3 +171,41 @@ def test_handler_ignores_internal_logs_before_acquiring_lock():
     finally:
         handler.release()
         executor.shutdown(wait=True)
+
+
+def test_handler_ignores_queued_internal_transport_logs(with_memory_logger):
+    handler = BraintrustLogHandler(init_test_logger(__name__))
+    log_queue = queue.Queue()
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+    listener = logging.handlers.QueueListener(log_queue, handler)
+    source_logger = logging.getLogger(f"urllib3.connectionpool.{__name__}")
+    original_disabled = source_logger.disabled
+    original_level = source_logger.level
+    original_propagate = source_logger.propagate
+    connection = HTTPConnection("")
+
+    def emit_internal_log(*_args, **_kwargs):
+        record = source_logger.makeRecord(source_logger.name, logging.DEBUG, __file__, 1, "internal", (), None)
+        source_logger.handle(record)
+
+    connection.session.get = MagicMock(side_effect=emit_internal_log)
+
+    source_logger.disabled = False
+    source_logger.setLevel(logging.DEBUG)
+    source_logger.propagate = False
+    source_logger.addHandler(queue_handler)
+    try:
+        connection.get("https://api.braintrust.dev")
+        assert log_queue.qsize() == 1
+        queued_record = log_queue.get_nowait()
+        assert getattr(queued_record, "_braintrust_internal_http_transport", False) is True
+        log_queue.put(queued_record)
+        listener.start()
+    finally:
+        listener.stop()
+        source_logger.removeHandler(queue_handler)
+        source_logger.disabled = original_disabled
+        source_logger.setLevel(original_level)
+        source_logger.propagate = original_propagate
+
+    assert with_memory_logger.pop() == []
