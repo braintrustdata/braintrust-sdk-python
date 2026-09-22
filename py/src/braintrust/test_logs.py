@@ -148,9 +148,22 @@ def test_handler_ignores_braintrust_loggers(with_memory_logger):
 
 def test_handler_forwards_application_urllib3_logs(with_memory_logger):
     handler = BraintrustLogHandler(init_test_logger(__name__))
-    record = logging.LogRecord("urllib3.connectionpool", logging.DEBUG, __file__, 1, "request", (), None)
+    source_logger = logging.getLogger("urllib3.connectionpool")
+    original_disabled = source_logger.disabled
+    original_level = source_logger.level
+    original_propagate = source_logger.propagate
 
-    handler.handle(record)
+    source_logger.disabled = False
+    source_logger.setLevel(logging.DEBUG)
+    source_logger.propagate = False
+    source_logger.addHandler(handler)
+    try:
+        source_logger.debug("request")
+    finally:
+        source_logger.removeHandler(handler)
+        source_logger.disabled = original_disabled
+        source_logger.setLevel(original_level)
+        source_logger.propagate = original_propagate
 
     [row] = with_memory_logger.pop()
     assert row["output"] == "request"
@@ -159,18 +172,29 @@ def test_handler_forwards_application_urllib3_logs(with_memory_logger):
 
 def test_handler_ignores_internal_logs_before_acquiring_lock():
     handler = BraintrustLogHandler(MagicMock())
-    record = logging.LogRecord("urllib3.connectionpool", logging.DEBUG, __file__, 1, "internal", (), None)
+    source_logger = logging.getLogger("urllib3.connectionpool")
+    original_disabled = source_logger.disabled
+    original_level = source_logger.level
+    original_propagate = source_logger.propagate
     connection = HTTPConnection("")
-    connection.session.get = MagicMock(side_effect=lambda *_args, **_kwargs: handler.handle(record))
+    connection.session.get = MagicMock(side_effect=lambda *_args, **_kwargs: source_logger.debug("internal"))
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
+    source_logger.disabled = False
+    source_logger.setLevel(logging.DEBUG)
+    source_logger.propagate = False
+    source_logger.addHandler(handler)
     handler.acquire()
     future = executor.submit(connection.get, "https://api.braintrust.dev")
     try:
-        assert future.result(timeout=1) is False
+        assert future.result(timeout=1) is None
     finally:
         handler.release()
         executor.shutdown(wait=True)
+        source_logger.removeHandler(handler)
+        source_logger.disabled = original_disabled
+        source_logger.setLevel(original_level)
+        source_logger.propagate = original_propagate
 
 
 def test_handler_ignores_queued_internal_transport_logs(with_memory_logger):
@@ -178,15 +202,14 @@ def test_handler_ignores_queued_internal_transport_logs(with_memory_logger):
     log_queue = queue.Queue()
     queue_handler = logging.handlers.QueueHandler(log_queue)
     listener = logging.handlers.QueueListener(log_queue, handler)
-    source_logger = logging.getLogger(f"urllib3.connectionpool.{__name__}")
+    source_logger = logging.getLogger("urllib3.connectionpool")
     original_disabled = source_logger.disabled
     original_level = source_logger.level
     original_propagate = source_logger.propagate
     connection = HTTPConnection("")
 
     def emit_internal_log(*_args, **_kwargs):
-        record = source_logger.makeRecord(source_logger.name, logging.DEBUG, __file__, 1, "internal", (), None)
-        source_logger.handle(record)
+        source_logger.debug("internal")
 
     connection.session.get = MagicMock(side_effect=emit_internal_log)
 
@@ -209,6 +232,43 @@ def test_handler_ignores_queued_internal_transport_logs(with_memory_logger):
         source_logger.propagate = original_propagate
 
     assert with_memory_logger.pop() == []
+
+
+def test_handler_forwards_queued_application_logs_during_transport():
+    test_logger = init_test_logger(__name__)
+    handler = BraintrustLogHandler(test_logger)
+    log_queue = queue.Queue()
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+    listener = logging.handlers.QueueListener(log_queue, handler)
+    source_logger = logging.getLogger(f"application.http.{__name__}")
+    original_disabled = source_logger.disabled
+    original_level = source_logger.level
+    original_propagate = source_logger.propagate
+    connection = HTTPConnection("")
+
+    connection.session.get = MagicMock(side_effect=lambda *_args, **_kwargs: source_logger.info("application"))
+    source_logger.disabled = False
+    source_logger.setLevel(logging.INFO)
+    source_logger.propagate = False
+    source_logger.addHandler(queue_handler)
+    listener_started = False
+    try:
+        with patch.object(test_logger, "_emit_log_record") as emit_log_record:
+            connection.get("https://api.braintrust.dev")
+            listener.start()
+            listener_started = True
+            listener.stop()
+            listener_started = False
+
+            emit_log_record.assert_called_once()
+            assert emit_log_record.call_args.kwargs["body"] == "application"
+    finally:
+        if listener_started:
+            listener.stop()
+        source_logger.removeHandler(queue_handler)
+        source_logger.disabled = original_disabled
+        source_logger.setLevel(original_level)
+        source_logger.propagate = original_propagate
 
 
 def test_handler_preserves_queued_template_arguments_and_span_context(with_memory_logger):

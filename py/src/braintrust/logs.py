@@ -15,33 +15,32 @@ _STANDARD_LOG_RECORD_ATTRIBUTES = frozenset(vars(logging.LogRecord("", logging.N
     "message",
 }
 _IGNORED_LOGGER_PREFIXES = ("braintrust",)
+_URLLIB3_TRANSPORT_LOGGERS = ("urllib3.connectionpool", "urllib3.connection")
 _INTERNAL_HTTP_TRANSPORT_RECORD_ATTRIBUTE = "_braintrust_internal_http_transport"
-_INTERNAL_HTTP_TRANSPORT_FACTORY_ATTRIBUTE = "_braintrust_internal_http_transport_factory"
+_LOG_RECORD_FACTORY_ATTRIBUTE = "_braintrust_log_record_factory"
 _TEMPLATE_RECORD_ATTRIBUTE = "_braintrust_template"
 _TEMPLATE_ARGUMENTS_RECORD_ATTRIBUTE = "_braintrust_template_arguments"
 _SPAN_CONTEXTS_RECORD_ATTRIBUTE = "_braintrust_span_contexts"
-_LOG_RECORD_FACTORY_LOCK = threading.Lock()
+_LOGGING_HOOKS_LOCK = threading.Lock()
 _CONTEXT_MANAGERS: weakref.WeakValueDictionary[str, Any] = weakref.WeakValueDictionary()
 _MISSING = object()
 
 
 def _install_log_record_factory(logger: Logger) -> None:
     context_manager = logger.state.context_manager
-    with _LOG_RECORD_FACTORY_LOCK:
+    with _LOGGING_HOOKS_LOCK:
         _CONTEXT_MANAGERS[logger.state.id] = context_manager
         current_factory = logging.getLogRecordFactory()
-        if getattr(current_factory, _INTERNAL_HTTP_TRANSPORT_FACTORY_ATTRIBUTE, False):
+        if getattr(current_factory, _LOG_RECORD_FACTORY_ATTRIBUTE, False):
             return
 
         def record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
             record = current_factory(*args, **kwargs)
-            if _is_internal_http_transport():
-                setattr(record, _INTERNAL_HTTP_TRANSPORT_RECORD_ATTRIBUTE, True)
             if record.args and isinstance(record.msg, str):
                 setattr(record, _TEMPLATE_RECORD_ATTRIBUTE, record.msg)
                 setattr(record, _TEMPLATE_ARGUMENTS_RECORD_ATTRIBUTE, record.args)
 
-            with _LOG_RECORD_FACTORY_LOCK:
+            with _LOGGING_HOOKS_LOCK:
                 context_managers = tuple(_CONTEXT_MANAGERS.items())
             span_contexts: dict[str, tuple[str, str] | None] = {}
             for state_id, context_manager in context_managers:
@@ -50,8 +49,28 @@ def _install_log_record_factory(logger: Logger) -> None:
             setattr(record, _SPAN_CONTEXTS_RECORD_ATTRIBUTE, span_contexts)
             return record
 
-        setattr(record_factory, _INTERNAL_HTTP_TRANSPORT_FACTORY_ATTRIBUTE, True)
+        setattr(record_factory, _LOG_RECORD_FACTORY_ATTRIBUTE, True)
         logging.setLogRecordFactory(record_factory)
+
+
+class _InternalHTTPTransportMarker(logging.Filter):
+    """Tag Braintrust transport records without hiding them from other handlers."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if _is_internal_http_transport():
+            setattr(record, _INTERNAL_HTTP_TRANSPORT_RECORD_ATTRIBUTE, True)
+        return True
+
+
+_INTERNAL_HTTP_TRANSPORT_MARKER = _InternalHTTPTransportMarker()
+
+
+def _install_internal_http_transport_marker() -> None:
+    with _LOGGING_HOOKS_LOCK:
+        for logger_name in _URLLIB3_TRANSPORT_LOGGERS:
+            source_logger = logging.getLogger(logger_name)
+            if _INTERNAL_HTTP_TRANSPORT_MARKER not in source_logger.filters:
+                source_logger.addFilter(_INTERNAL_HTTP_TRANSPORT_MARKER)
 
 
 def _log_level(level: int) -> LogLevel:
@@ -99,10 +118,8 @@ def _percent_parameter_kinds(template: str) -> tuple[bool, bool]:
 
 class _InternalLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        return (
-            not _is_ignored_logger(record.name)
-            and not getattr(record, _INTERNAL_HTTP_TRANSPORT_RECORD_ATTRIBUTE, False)
-            and not _is_internal_http_transport()
+        return not _is_ignored_logger(record.name) and not getattr(
+            record, _INTERNAL_HTTP_TRANSPORT_RECORD_ATTRIBUTE, False
         )
 
 
@@ -144,14 +161,15 @@ class BraintrustLogHandler(logging.Handler):
     """Forward Python ``logging`` records to a Braintrust logger.
 
     Attach this handler explicitly with ``logging.Logger.addHandler``. Records
-    emitted by Braintrust or while its HTTP transport is active are ignored to
-    prevent logging recursion.
+    emitted by Braintrust or by urllib3 for Braintrust HTTP transport calls are
+    ignored to prevent logging recursion.
     """
 
     def __init__(self, logger: Logger, level: int | str = logging.NOTSET):
         super().__init__(level=level)
         self._logger = logger
         _install_log_record_factory(logger)
+        _install_internal_http_transport_marker()
         # Handler.handle() runs filters before acquiring its lock. Filtering
         # internal transport logs here prevents a shutdown flush from waiting
         # on a worker thread blocked on that same lock.
