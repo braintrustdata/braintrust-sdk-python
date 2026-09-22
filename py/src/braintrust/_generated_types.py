@@ -1622,6 +1622,8 @@ class Organization(TypedDict):
     """
     Date of organization creation
     """
+    archived_at: NotRequired[str | None]
+    deleted_at: NotRequired[str | None]
     image_rendering_mode: NotRequired[ImageRenderingMode | None]
 
 
@@ -1715,14 +1717,16 @@ class ProjectAutomationConfigAction1(TypedDict):
     """
     Publish a Slack mrkdwn digest.
 
-    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
+
+    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
 
     Use this row format exactly:
     • <pattern_url|Pattern title> — `outcome`
 
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
 
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
     """
 
 
@@ -1850,14 +1854,16 @@ class ProjectAutomationConfig4Action1(TypedDict):
     """
     Publish a Slack mrkdwn digest.
 
-    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
+
+    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
 
     Use this row format exactly:
     • <pattern_url|Pattern title> — `outcome`
 
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
 
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
     """
 
 
@@ -2049,9 +2055,17 @@ class ProjectSettings(TypedDict):
     """
     If true, use metrics.start rather than created for monitor chart time bucket dimensions.
     """
+    coding_agent_insights_dashboard: NotRequired[bool | None]
+    """
+    If true, enable the agent insights dashboard for this project.
+    """
     blind_reviews: NotRequired[bool | None]
     """
     If true, hide peer review scores, comments, and aggregate results from reviewers without project update permissions until they submit their own review.
+    """
+    require_all_human_review_scores: NotRequired[bool | None]
+    """
+    If true, automatically complete a review after every assigned reviewer fills all human review scores visible to them.
     """
     default_preprocessor: NotRequired[NullableSavedFunctionId | None]
 
@@ -2617,6 +2631,7 @@ SpanType: TypeAlias = Literal[
     'preprocessor',
     'classifier',
     'review',
+    'question',
     'log',
 ]
 """
@@ -2732,14 +2747,16 @@ class TopicDigestAutomationConfigAction(TypedDict):
     """
     Publish a Slack mrkdwn digest.
 
-    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
+
+    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
 
     Use this row format exactly:
     • <pattern_url|Pattern title> — `outcome`
 
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
 
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
     """
 
 
@@ -3179,14 +3196,16 @@ class WindowedAutomationConfigActions1(TypedDict):
     """
     Publish a Slack mrkdwn digest.
 
-    Include a complete "*Pattern outcomes*" section with one row for every selected Pattern from the run report, including created, updated, unchanged, failed, skipped, and newly inactive outcomes.
+    Pattern selection requirement: include every selected Pattern whose final status is active at the end of this automation run, plus every selected Pattern that changed from active to inactive during this run (a newly inactive outcome). Exclude Patterns that were already inactive before this run and remained inactive. Do not mention excluded Patterns anywhere in the digest, including Highlights. If no selected Patterns meet these criteria, say "No current pattern outcomes." This requirement overrides conflicting formatting guidance.
+
+    Include a complete "*Pattern outcomes*" section with one row for every included Pattern.
 
     Use this row format exactly:
     • <pattern_url|Pattern title> — `outcome`
 
-    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any selected Pattern. If there are no selected Patterns, say "No pattern outcomes."
+    If a Pattern has no URL, use the plain title instead. Do not use GitHub Markdown tables or code-block tables, because links must remain clickable. Do not omit any active selected Pattern.
 
-    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out from this run. Do not introduce new claims beyond the run report.
+    After the outcome list, include a "*Highlights*" section with one very short paragraph, 2-3 sentences maximum. Summarize what changed or what broadly stands out among the included active Patterns. Do not introduce new claims beyond the run report.
     """
 
 
@@ -3922,6 +3941,10 @@ class SpanAttributes(TypedDict):
     purpose: NotRequired[Literal['scorer'] | None]
     """
     A special value that indicates the span was generated by a scoring automation
+    """
+    log_level: NotRequired[Literal['trace', 'debug', 'info', 'warn', 'error', 'fatal'] | None]
+    """
+    Severity level of a log
     """
 
 
