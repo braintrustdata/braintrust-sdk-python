@@ -627,6 +627,11 @@ class BaseIntegration(ABC):
         return detect_module_version(module, cls.import_names)
 
 
+# Module names that raised ImportError once. Bounded by the patchers' static
+# target_module attributes.
+_UNIMPORTABLE_MODULES: set[str] = set()
+
+
 def _import_optional_module(name: str) -> Any | None:
     """Return the named module, or ``None`` when it cannot be imported.
 
@@ -648,9 +653,18 @@ def _import_optional_module(name: str) -> Any | None:
     module = sys.modules.get(name)
     if module is not None and not getattr(getattr(module, "__spec__", None), "_initializing", False):
         return module
+    if name in _UNIMPORTABLE_MODULES:
+        return None
     try:
         return importlib.import_module(name)
     except ImportError:
+        # Patchers carry target modules for layouts that only some versions of
+        # a provider ship, so a miss is normal and permanent -- mistralai 2.x,
+        # for example, leaves seven of them unimportable and two setup() calls
+        # retry them ~96 times between them. Each retry takes the import lock,
+        # which is what CPython 3.10 trips over. The sys.modules check above
+        # runs first, so a module that genuinely shows up later is still found.
+        _UNIMPORTABLE_MODULES.add(name)
         return None
 
 

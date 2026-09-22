@@ -72,7 +72,8 @@ def test_import_optional_module_prefers_sys_modules(monkeypatch):
     assert _import_optional_module("braintrust_fake_sdk") is sentinel
 
 
-def test_import_optional_module_imports_when_absent():
+def test_import_optional_module_imports_when_absent(monkeypatch):
+    monkeypatch.setattr("braintrust.integrations.base._UNIMPORTABLE_MODULES", set())
     assert _import_optional_module("json") is sys.modules["json"]
     assert _import_optional_module("braintrust_module_that_does_not_exist") is None
 
@@ -104,3 +105,41 @@ def test_import_optional_module_waits_for_initializing_module(monkeypatch):
     # Once initialization completes the shortcut applies again.
     spec._initializing = False
     assert _import_optional_module("braintrust_partial_sdk") is partial
+
+
+def _raise_import_error(name):
+    raise ImportError(name)
+
+
+def test_import_optional_module_caches_failures(monkeypatch):
+    """A permanently-absent target must not be retried on every setup().
+
+    Patchers carry target modules for provider layouts that only some
+    versions ship, so misses are normal -- and each retry takes the import
+    lock, which is what CPython 3.10 trips over.
+    """
+    monkeypatch.setattr("braintrust.integrations.base._UNIMPORTABLE_MODULES", set())
+    attempts = []
+
+    def failing(name):
+        attempts.append(name)
+        raise ImportError(name)
+
+    monkeypatch.setattr("braintrust.integrations.base.importlib.import_module", failing)
+
+    assert _import_optional_module("braintrust_absent_sdk") is None
+    assert _import_optional_module("braintrust_absent_sdk") is None
+    assert _import_optional_module("braintrust_absent_sdk") is None
+    assert attempts == ["braintrust_absent_sdk"]
+
+
+def test_import_optional_module_still_sees_a_late_arrival(monkeypatch):
+    """A cached failure must not hide a module that shows up afterwards."""
+    monkeypatch.setattr("braintrust.integrations.base._UNIMPORTABLE_MODULES", set())
+    monkeypatch.setattr("braintrust.integrations.base.importlib.import_module", _raise_import_error)
+
+    assert _import_optional_module("braintrust_late_sdk") is None
+
+    late = types.ModuleType("braintrust_late_sdk")
+    monkeypatch.setitem(sys.modules, "braintrust_late_sdk", late)
+    assert _import_optional_module("braintrust_late_sdk") is late
