@@ -7,40 +7,9 @@ Provides one-line instrumentation for supported libraries.
 import logging
 from collections.abc import Sequence
 from contextlib import contextmanager
+from importlib import import_module
+from typing import Any
 
-from braintrust.integrations import (
-    ADKIntegration,
-    AgentScopeIntegration,
-    AgnoIntegration,
-    AISDKIntegration,
-    AnthropicIntegration,
-    AutoGenIntegration,
-    BedrockRuntimeIntegration,
-    ClaudeAgentSDKIntegration,
-    CohereIntegration,
-    CrewAIIntegration,
-    CursorSDKIntegration,
-    DSPyIntegration,
-    GoogleDiscoveryEngineIntegration,
-    GoogleGenAIIntegration,
-    HuggingFaceHubIntegration,
-    InstructorIntegration,
-    LangChainIntegration,
-    LiteLLMIntegration,
-    LiveKitAgentsIntegration,
-    LlamaIndexIntegration,
-    MistralIntegration,
-    OpenAIAgentsIntegration,
-    OpenAIIntegration,
-    OpenRouterIntegration,
-    PipecatIntegration,
-    PydanticAIIntegration,
-    StrandsIntegration,
-    TemporalIntegration,
-    TransformersIntegration,
-    TypeSafeIntegration,
-)
-from braintrust.integrations.base import BaseIntegration
 from braintrust.span_customizer import SpanCustomizer, set_span_customizers
 
 
@@ -188,70 +157,73 @@ def auto_instrument(
     results: dict[str, bool] = {}
 
     if openai:
-        results["openai"] = _instrument_integration(OpenAIIntegration)
+        results["openai"] = _instrument_integration("openai", "OpenAIIntegration")
     if anthropic:
-        results["anthropic"] = _instrument_integration(AnthropicIntegration)
+        results["anthropic"] = _instrument_integration("anthropic", "AnthropicIntegration")
     if litellm:
-        results["litellm"] = _instrument_integration(LiteLLMIntegration)
+        results["litellm"] = _instrument_integration("litellm", "LiteLLMIntegration")
     if ai_sdk:
-        results["ai_sdk"] = _instrument_integration(AISDKIntegration)
+        results["ai_sdk"] = _instrument_integration("ai_sdk", "AISDKIntegration")
     if pydantic_ai:
-        results["pydantic_ai"] = _instrument_integration(PydanticAIIntegration)
+        results["pydantic_ai"] = _instrument_integration("pydantic_ai", "PydanticAIIntegration")
     if google_genai:
-        results["google_genai"] = _instrument_integration(GoogleGenAIIntegration)
+        results["google_genai"] = _instrument_integration("google_genai", "GoogleGenAIIntegration")
     if google_discoveryengine:
-        results["google_discoveryengine"] = _instrument_integration(GoogleDiscoveryEngineIntegration)
+        results["google_discoveryengine"] = _instrument_integration(
+            "google_discoveryengine", "GoogleDiscoveryEngineIntegration"
+        )
     if instructor:
-        results["instructor"] = _instrument_integration(InstructorIntegration)
+        results["instructor"] = _instrument_integration("instructor", "InstructorIntegration")
     if openrouter:
-        results["openrouter"] = _instrument_integration(OpenRouterIntegration)
+        results["openrouter"] = _instrument_integration("openrouter", "OpenRouterIntegration")
     if mistral:
-        results["mistral"] = _instrument_integration(MistralIntegration)
+        results["mistral"] = _instrument_integration("mistral", "MistralIntegration")
     if huggingface_hub:
-        results["huggingface_hub"] = _instrument_integration(HuggingFaceHubIntegration)
+        results["huggingface_hub"] = _instrument_integration("huggingface_hub", "HuggingFaceHubIntegration")
     if transformers:
-        results["transformers"] = _instrument_integration(TransformersIntegration)
+        results["transformers"] = _instrument_integration("transformers", "TransformersIntegration")
     if agno:
-        results["agno"] = _instrument_integration(AgnoIntegration)
+        results["agno"] = _instrument_integration("agno", "AgnoIntegration")
     if agentscope:
-        results["agentscope"] = _instrument_integration(AgentScopeIntegration)
+        results["agentscope"] = _instrument_integration("agentscope", "AgentScopeIntegration")
     if claude_agent_sdk:
-        results["claude_agent_sdk"] = _instrument_integration(ClaudeAgentSDKIntegration)
+        results["claude_agent_sdk"] = _instrument_integration("claude_agent_sdk", "ClaudeAgentSDKIntegration")
     if cursor_sdk:
-        results["cursor_sdk"] = _instrument_integration(CursorSDKIntegration)
+        results["cursor_sdk"] = _instrument_integration("cursor_sdk", "CursorSDKIntegration")
     if dspy:
-        results["dspy"] = _instrument_integration(DSPyIntegration)
+        results["dspy"] = _instrument_integration("dspy", "DSPyIntegration")
     if adk:
-        results["adk"] = _instrument_integration(ADKIntegration)
+        results["adk"] = _instrument_integration("adk", "ADKIntegration")
     if langchain:
-        results["langchain"] = _instrument_integration(LangChainIntegration)
+        results["langchain"] = _instrument_integration("langchain", "LangChainIntegration")
     if llamaindex:
-        results["llamaindex"] = _instrument_integration(LlamaIndexIntegration)
+        results["llamaindex"] = _instrument_integration("llamaindex", "LlamaIndexIntegration")
     if openai_agents:
-        results["openai_agents"] = _instrument_integration(OpenAIAgentsIntegration)
+        results["openai_agents"] = _instrument_integration("openai_agents", "OpenAIAgentsIntegration")
     if cohere:
-        results["cohere"] = _instrument_integration(CohereIntegration)
+        results["cohere"] = _instrument_integration("cohere", "CohereIntegration")
     if autogen:
-        results["autogen"] = _instrument_integration(AutoGenIntegration)
+        results["autogen"] = _instrument_integration("autogen", "AutoGenIntegration")
     if bedrock:
-        results["bedrock_runtime"] = _instrument_integration(BedrockRuntimeIntegration)
+        results["bedrock_runtime"] = _instrument_integration("bedrock_runtime", "BedrockRuntimeIntegration")
     if crewai:
-        results["crewai"] = _instrument_integration(CrewAIIntegration)
+        results["crewai"] = _instrument_integration("crewai", "CrewAIIntegration")
     if strands:
-        results["strands"] = _instrument_integration(StrandsIntegration)
+        results["strands"] = _instrument_integration("strands", "StrandsIntegration")
     if temporal:
-        results["temporal"] = _instrument_integration(TemporalIntegration)
+        results["temporal"] = _instrument_integration("temporal", "TemporalIntegration")
     if livekit_agents:
-        results["livekit_agents"] = _instrument_integration(LiveKitAgentsIntegration)
+        results["livekit_agents"] = _instrument_integration("livekit_agents", "LiveKitAgentsIntegration")
     if pipecat:
-        results["pipecat"] = _instrument_integration(PipecatIntegration)
+        results["pipecat"] = _instrument_integration("pipecat", "PipecatIntegration")
     if typesafe:
-        results["typesafe"] = _instrument_integration(TypeSafeIntegration)
+        results["typesafe"] = _instrument_integration("typesafe", "TypeSafeIntegration")
 
     return results
 
 
-def _instrument_integration(integration: type[BaseIntegration]) -> bool:
+def _instrument_integration(module_name: str, class_name: str) -> bool:
     with _try_patch():
+        integration: Any = getattr(import_module(f"braintrust.integrations.{module_name}"), class_name)
         return integration.setup()
     return False
