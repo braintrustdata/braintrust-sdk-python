@@ -363,6 +363,15 @@ def test_openai_agents(session, version):
 
 LITELLM_VERSIONS = _get_matrix_versions("litellm")
 
+# LiteLLM >= 1.102.0 fetches model_prices_and_context_window.json from GitHub on
+# import. Recording that lands a ~3MB blob in the cassette, so force the bundled
+# copy instead and keep the fetch off the wire.
+#
+# Only safe where the tests stick to chat completions: the bundled map of an
+# older LiteLLM does not know newer model names, and test_litellm(1.74.0) fails
+# provider resolution for gpt-image-1-mini under it. Scoped to DSPy for now.
+_LITELLM_LOCAL_COST_MAP = {"LITELLM_LOCAL_MODEL_COST_MAP": "True"}
+
 
 @nox.session()
 @nox.parametrize("version", LITELLM_VERSIONS, ids=LITELLM_VERSIONS)
@@ -597,7 +606,7 @@ def test_dspy(session, version):
         # dependency resolution does not select that incompatible release.
         _install_matrix_dep(session, "litellm", LATEST)
     _install_matrix_dep(session, "dspy", version)
-    _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version)
+    _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version, env=_LITELLM_LOCAL_COST_MAP)
 
 
 CREWAI_VERSIONS = _get_matrix_versions("crewai")

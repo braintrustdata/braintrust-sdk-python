@@ -93,10 +93,7 @@ class CallbackPatcher(BasePatcher):
         if target is not None:
             return target
         if cls.target_module is not None:
-            try:
-                return importlib.import_module(cls.target_module)
-            except ImportError:
-                return None
+            return _import_optional_module(cls.target_module)
         return module
 
     @classmethod
@@ -147,10 +144,7 @@ class ClassScanPatcher(BasePatcher):
         if target is not None:
             return target
         if cls.target_module is not None:
-            try:
-                return importlib.import_module(cls.target_module)
-            except ImportError:
-                return None
+            return _import_optional_module(cls.target_module)
         return module
 
     @classmethod
@@ -274,10 +268,7 @@ class FunctionWrapperPatcher(BasePatcher):
         if target is not None:
             return target
         if cls.target_module is not None:
-            try:
-                return importlib.import_module(cls.target_module)
-            except ImportError:
-                return None
+            return _import_optional_module(cls.target_module)
         return module
 
     @classmethod
@@ -636,13 +627,30 @@ class BaseIntegration(ABC):
         return detect_module_version(module, cls.import_names)
 
 
+def _import_optional_module(name: str) -> Any | None:
+    """Return the named module, or ``None`` when it cannot be imported.
+
+    ``sys.modules`` is consulted first so an already-imported module never
+    reacquires the import lock. Patcher resolution calls this for every
+    patcher on every ``setup()``, and on CPython 3.10 that lock traffic can
+    trip the interpreter's own re-entrancy bookkeeping, surfacing as
+    ``KeyError: <thread id>`` from ``importlib._bootstrap``.
+    """
+    module = sys.modules.get(name)
+    if module is not None:
+        return module
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        return None
+
+
 def _import_first_available(import_names: Iterable[str]) -> Any | None:
     """Import and return the first available module from the given names."""
     for import_name in import_names:
-        try:
-            return importlib.import_module(import_name)
-        except ImportError:
-            continue
+        module = _import_optional_module(import_name)
+        if module is not None:
+            return module
     return None
 
 
@@ -652,5 +660,15 @@ def _resolve_attr_path(root: Any, path: str) -> Any | None:
         try:
             current = inspect.getattr_static(current, part)
         except AttributeError:
-            return None
+            # ``getattr_static`` never invokes a module-level ``__getattr__``,
+            # so PEP 562 lazy re-exports look absent.  openai >= 3.16.1 ships
+            # its resource packages that way, which would silently skip the
+            # patchers targeting e.g. ``openai.resources.chat.completions``.
+            # Modules carry no descriptors, so a plain getattr is safe here.
+            if not inspect.ismodule(current):
+                return None
+            try:
+                current = getattr(current, part)
+            except AttributeError:
+                return None
     return current

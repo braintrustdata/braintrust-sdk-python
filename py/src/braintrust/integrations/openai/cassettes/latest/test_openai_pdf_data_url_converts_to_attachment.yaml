@@ -16,7 +16,7 @@ interactions:
       host:
       - api.openai.com
       user-agent:
-      - OpenAI/Python 3.13.0
+      - OpenAI/Python 3.16.2
       x-stainless-arch:
       - arm64
       x-stainless-async:
@@ -26,7 +26,7 @@ interactions:
       x-stainless-os:
       - MacOS
       x-stainless-package-version:
-      - 3.13.0
+      - 3.16.2
       x-stainless-read-timeout:
       - '600'
       x-stainless-retry-count:
@@ -39,23 +39,21 @@ interactions:
     uri: https://api.openai.com/v1/chat/completions
   response:
     body:
-      string: "{\n  \"id\": \"chatcmpl-EO1Dql0BmtVcvK8Jven2BgQZjVI8H\",\n  \"object\":
-        \"chat.completion\",\n  \"created\": 1789393278,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+      string: "{\n  \"id\": \"chatcmpl-EQw6Cg9bMOejSDaLicmqoOQwG2HjP\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1790088568,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
         \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
-        \"assistant\",\n        \"content\": \"It seems that the document 'test.pdf'
-        could not be read for content, indicating that either it is blank or unrecognized
-        in a way that prevents extracting any information. Without any accessible
-        text or images within the document, it's not possible to determine the type
-        of document it is or to provide any further details. \\n\\nIf you have a specific
-        aspect of the document you are interested in or if you can provide more context,
-        feel free to share, and I'll do my best to assist you!\",\n        \"refusal\":
+        \"assistant\",\n        \"content\": \"It seems that the document \\\"test.pdf\\\"
+        contains no extractable text or images based on the initial analysis. As a
+        result, I cannot determine the type of document or its content without further
+        details or specific pages to examine. If you can provide context or clarify
+        what you are looking for, I would be happy to help!\",\n        \"refusal\":
         null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
         \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
-        233,\n    \"completion_tokens\": 98,\n    \"total_tokens\": 331,\n    \"prompt_tokens_details\":
+        233,\n    \"completion_tokens\": 65,\n    \"total_tokens\": 298,\n    \"prompt_tokens_details\":
         {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
         {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
         0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
-        \"default\",\n  \"system_fingerprint\": \"fp_4f8a068d33\"\n}\n"
+        \"default\",\n  \"system_fingerprint\": \"fp_f70887b4d3\"\n}\n"
     headers:
       access-control-expose-headers:
       - X-Request-ID
@@ -66,17 +64,17 @@ interactions:
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a3afcef41e4bddfa-YYZ
+      - a3f21dccac89de94-EWR
       connection:
       - keep-alive
       content-length:
-      - '1294'
+      - '1130'
       content-type:
       - application/json
       date:
-      - Mon, 14 Sep 2026 13:41:21 GMT
+      - Tue, 22 Sep 2026 14:49:29 GMT
       openai-processing-ms:
-      - '3189'
+      - '1712'
       openai-version:
       - '2020-10-01'
       server:
@@ -102,7 +100,7 @@ interactions:
       x-ratelimit-reset-tokens:
       - 0s
       x-request-id:
-      - req_2062763ec95f4573badcaea1bcd41a4a
+      - req_1d04610e1cb845aa917ebb58176273ee
     status:
       code: 200
       message: OK
