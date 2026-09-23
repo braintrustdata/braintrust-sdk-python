@@ -268,6 +268,21 @@ def test_get_metadata_from_kwargs_includes_structured_output_params():
     }
 
 
+def test_get_metadata_from_kwargs_includes_compaction_and_context_management():
+    metadata = _get_metadata_from_kwargs(
+        {
+            "compaction": [{"type": "enabled"}],
+            "context_management": {"edits": [{"type": "clear_tool_uses_20250919"}]},
+        }
+    )
+
+    assert metadata == {
+        "provider": "anthropic",
+        "compaction": [{"type": "enabled"}],
+        "context_management": {"edits": [{"type": "clear_tool_uses_20250919"}]},
+    }
+
+
 def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
     span = unittest.mock.MagicMock()
     message = SimpleNamespace(
@@ -276,6 +291,7 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
         model=MODEL,
         stop_reason="stop_sequence",
         stop_sequence="DONE",
+        stop_details=None,
         usage={
             "input_tokens": 11,
             "output_tokens": 7,
@@ -310,6 +326,26 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
         },
         metadata={},
     )
+
+
+def test_log_message_to_span_includes_refusal_stop_details():
+    span = unittest.mock.MagicMock()
+    message = SimpleNamespace(
+        role="assistant",
+        content=[],
+        model=MODEL,
+        stop_reason="refusal",
+        stop_sequence=None,
+        stop_details={"category": "cyber", "explanation": "unsafe request"},
+        usage={},
+    )
+
+    _log_message_to_span(message, span)
+
+    assert span.log.call_args.kwargs["output"]["stop_details"] == {
+        "category": "cyber",
+        "explanation": "unsafe request",
+    }
 
 
 def test_extract_anthropic_usage_includes_server_tool_use_metrics_from_objects():
@@ -368,6 +404,8 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
                 }
             ),
             "service_tier": "standard",
+            "speed": "fast",
+            "fallback_credit": 0.25,
         }
     )
 
@@ -385,6 +423,8 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
     }
     assert metadata == {
         "usage_service_tier": "standard",
+        "usage_speed": "fast",
+        "usage_fallback_credit": 0.25,
     }
 
 
