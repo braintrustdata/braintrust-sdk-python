@@ -668,7 +668,7 @@ class EnvVar(TypedDict):
     """
     Unique identifier for the environment variable
     """
-    object_type: Literal['organization', 'project', 'function']
+    object_type: Literal['organization', 'project', 'function', 'mcp_server']
     """
     The type of the object the environment variable is scoped for
     """
