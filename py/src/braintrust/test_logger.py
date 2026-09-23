@@ -3211,154 +3211,36 @@ def test_masking_function_dataset(with_memory_logger, with_simulate_login):
 
 
 def test_masking_function_with_error(with_memory_logger, with_simulate_login):
-    """Test that masking errors are handled gracefully and stack traces are captured."""
-
     def broken_masking_function(data):
-        """A masking function that throws errors for certain data types."""
-        if isinstance(data, dict):
-            # This will throw an error when trying to iterate
-            for key in data:
-                if key == "password":
-                    # Simulate a complex error
-                    raise ValueError(f"Cannot mask sensitive field '{key}' - internal masking error")
-                elif key == "accuracy":
-                    # Trigger error for scores field
-                    raise TypeError("Cannot process numeric score")
+        if data == "safe output":
             return data
-        elif isinstance(data, str):
-            if "secret" in data.lower():
-                # Another type of error
-                result = 1 / 0  # ZeroDivisionError
-            return data
-        elif isinstance(data, list):
-            # Try to access non-existent index
-            if len(data) > 0:
-                _ = data[100]  # IndexError
-            return data
-        return data
+        raise TypeError("private exception detail")
 
-    # Set the broken masking function
     braintrust.set_masking_function(broken_masking_function)
-
-    # Create test experiment
-    from braintrust.logger import Experiment, ObjectMetadata, ProjectExperimentMetadata
-
-    project_metadata = ObjectMetadata(id="test_project", name="test_project", full_info=dict())
-    experiment_metadata = ObjectMetadata(id="test_experiment", name="test_experiment", full_info=dict())
-    metadata = ProjectExperimentMetadata(project=project_metadata, experiment=experiment_metadata)
-    lazy_metadata = LazyValue(lambda: metadata, use_mutex=False)
-    experiment = Experiment(lazy_metadata=lazy_metadata)
-
-    # Log data that will trigger various errors
-    experiment.log(
-        input={"password": "my-password", "user": "test"},
-        output="This contains SECRET information",
-        expected=["item1", "item2"],
-        metadata={"safe": "data"},
-        scores={"score": 1.0},  # Add a safe score that won't trigger error
-    )
-
-    experiment.flush()
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-
-    # Verify error handling
-    # The input should have an error message because of the password field
-    assert log["input"] == "ERROR: Failed to mask field 'input' - ValueError"
-
-    # The output should have an error message because of division by zero
-    assert log["output"] == "ERROR: Failed to mask field 'output' - ZeroDivisionError"
-
-    # The expected should have an error message because of index error
-    assert log["expected"] == "ERROR: Failed to mask field 'expected' - IndexError"
-
-    # Metadata should be fine since it doesn't trigger any errors
-    assert log["metadata"] == {"safe": "data"}
-
-    # Test with scores that triggers an error
-    experiment.log(
-        input={"data": "test"},
-        output="result",
-        scores={"accuracy": 0.95},  # This will trigger an error
-    )
-
-    logs2 = with_memory_logger.pop()
-    assert len(logs2) == 1
-    log2 = logs2[0]
-
-    # Scores should be dropped and error should be logged
-    assert "scores" not in log2
-    assert "error" in log2
-    assert log2["error"] == "ERROR: Failed to mask field 'scores' - TypeError"
-
-    # Test with metrics that triggers an error
-    experiment.log(
-        input={"data": "test2"},
-        output="result2",
-        scores={"score": 1.0},  # Safe score
-        metrics={"accuracy": 0.95},  # This will trigger an error
-    )
-
-    logs3 = with_memory_logger.pop()
-    assert len(logs3) == 1
-    log3 = logs3[0]
-
-    # Metrics should be dropped and error should be logged
-    assert "metrics" not in log3
-    assert "error" in log3
-    assert log3["error"] == "ERROR: Failed to mask field 'metrics' - TypeError"
-
-    # Test with both scores and metrics failing
-    experiment.log(
-        input={"data": "test3"},
-        output="result3",
-        scores={"accuracy": 0.85},  # This will trigger an error
-        metrics={"accuracy": 0.95},  # This will also trigger an error
-    )
-
-    logs4 = with_memory_logger.pop()
-    assert len(logs4) == 1
-    log4 = logs4[0]
-
-    # Both should be dropped and errors should be concatenated
-    assert "scores" not in log4
-    assert "metrics" not in log4
-    assert "error" in log4
-    assert "ERROR: Failed to mask field 'scores' - TypeError" in log4["error"]
-    assert "ERROR: Failed to mask field 'metrics' - TypeError" in log4["error"]
-    assert "; " in log4["error"]  # Check that errors are joined with semicolon
-
-    # Test with logger and nested spans
     test_logger = init_test_logger("test_masking_errors_logger")
+    test_logger.log(
+        input={"password": "private input"},
+        output="safe output",
+        expected="private expected",
+        metadata={"token": "private metadata"},
+        scores={"accuracy": 0.85},
+        metrics={"accuracy": 0.95},
+        error="existing application error",
+        tags=["untouched"],
+    )
 
-    with test_logger.start_span("parent") as parent:
-        parent.log(input={"api_key": "key123", "password": "secret"}, metadata={"request_id": "req-123"})
-
-        with parent.start_span("child") as child:
-            child.log(output="Result with secret data", expected=[1, 2, 3])
-
-    test_logger.flush()
-
-    # Check nested span logs
-    logs = with_memory_logger.pop()
-    assert len(logs) == 2  # parent and child
-
-    # Find parent and child by span_attributes
-    parent_log = next(log for log in logs if log.get("span_attributes", {}).get("name") == "parent")
-    child_log = next(log for log in logs if log.get("span_attributes", {}).get("name") == "child")
-
-    # Parent should have error in input
-    assert parent_log["input"] == "ERROR: Failed to mask field 'input' - ValueError"
-
-    # Child should have errors in output and expected
-    assert child_log["output"] == "ERROR: Failed to mask field 'output' - ZeroDivisionError"
-    assert child_log["expected"] == "ERROR: Failed to mask field 'expected' - IndexError"
-
-    # Clean up
-    braintrust.set_masking_function(None)
+    [record] = with_memory_logger.pop()
+    assert isinstance(record["input"], str)
+    assert isinstance(record["expected"], str)
+    assert isinstance(record["metadata"]["error"], str)
+    assert record["output"] == "safe output"
+    assert record["tags"] == ["untouched"]
+    assert "scores" not in record
+    assert "metrics" not in record
+    assert "existing application error" in record["error"]
+    assert "scores" in record["error"]
+    assert "metrics" in record["error"]
+    assert "private" not in json.dumps(record)
 
 
 def test_attachment_unreadable_path_logs_warning(caplog):

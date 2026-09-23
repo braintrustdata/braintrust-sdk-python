@@ -86,5 +86,8 @@ from .sandbox import RegisteredSandboxFunction as RegisteredSandboxFunction
 from .sandbox import RegisterSandboxResult as RegisterSandboxResult
 from .sandbox import SandboxConfig as SandboxConfig
 from .sandbox import register_sandbox as register_sandbox
+from .span_customizer import SpanCustomizer as SpanCustomizer
+from .span_customizer import SpanExportData as SpanExportData
+from .span_customizer import set_span_customizers as set_span_customizers
 from .util import BT_IS_ASYNC_ATTRIBUTE as BT_IS_ASYNC_ATTRIBUTE
 from .util import MarkAsyncWrapper as MarkAsyncWrapper

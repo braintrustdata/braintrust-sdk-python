@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from braintrust import logger
+from braintrust import SpanCustomizer, logger, set_span_customizers
 from braintrust.integrations.pipecat import (
     BraintrustPipecatObserver,
     PipecatIntegration,
@@ -56,6 +56,45 @@ def _single_span(logs, name):
     matches = _spans_named(logs, name)
     assert len(matches) == 1, (name, matches)
     return matches[0]
+
+
+@pytest.mark.asyncio
+async def test_span_customizer_redacts_incremental_tts_input(memory_logger):
+    TTSStartedFrame = _import("pipecat.frames.frames.TTSStartedFrame")
+    TTSTextFrame = _import("pipecat.frames.frames.TTSTextFrame")
+    TTSStoppedFrame = _import("pipecat.frames.frames.TTSStoppedFrame")
+
+    class Redact(SpanCustomizer):
+        def on_span_export(self, data):
+            if "input" in data:
+                data["input"] = "[redacted]"
+            return data
+
+    observer = BraintrustPipecatObserver()
+    set_span_customizers([Redact()])
+    try:
+        await observer.on_pipeline_started()
+        await observer._handle_frame(TTSStartedFrame(context_id="ctx"))
+        first_frame = TTSTextFrame("private first", aggregated_by="sentence", context_id="ctx")
+        await observer._handle_frame(first_frame)
+        initial = memory_logger.pop()
+        pipeline = _single_span(initial, "pipecat_pipeline")
+        tts = _single_span(initial, "tts_response")
+        assert tts["input"] == "[redacted]"
+        assert tts["span_parents"] == [pipeline["span_id"]]
+        assert first_frame.text == "private first"
+
+        second_frame = TTSTextFrame("private second", aggregated_by="sentence", context_id="ctx")
+        await observer._handle_frame(second_frame)
+        await observer._handle_frame(TTSStoppedFrame(context_id="ctx"))
+        await observer.cleanup()
+        updates = memory_logger.pop()
+        updated_tts = next(row for row in updates if row["id"] == tts["id"])
+        assert updated_tts["input"] == "[redacted]"
+        assert updated_tts["span_id"] == tts["span_id"]
+        assert second_frame.text == "private second"
+    finally:
+        set_span_customizers(None)
 
 
 def _pipeline_worker_kwargs(**overrides):

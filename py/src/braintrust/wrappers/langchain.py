@@ -54,6 +54,9 @@ class BraintrustTracer(BaseCallbackHandler):
         else:
             parent_span = braintrust
 
+        internal = dict(kwargs.get("internal") or {})
+        internal.setdefault("instrumentation", "langchain-auto")
+        kwargs["internal"] = internal
         span = parent_span.start_span(name=name, **kwargs)
         langchain_parent.set(span)
         self.spans[run_id] = span
