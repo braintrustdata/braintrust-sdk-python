@@ -28,6 +28,7 @@ AclObjectType: TypeAlias = Literal[
     'project_group',
     'ai_secret',
     'org_ai_secret',
+    'org_account',
 ]
 """
 The object type that the ACL applies to
