@@ -72,6 +72,8 @@ METADATA_PARAMS = (
     "thinking",
     "output_config",
     "output_format",
+    "compaction",
+    "context_management",
 )
 
 
@@ -1512,6 +1514,7 @@ def _message_output(message, *, include_parsed_output: bool = False):
             "model": getattr(message, "model", None),
             "stop_reason": getattr(message, "stop_reason", None),
             "stop_sequence": getattr(message, "stop_sequence", None),
+            "stop_details": getattr(message, "stop_details", None),
         }.items()
         if v is not None
     }

@@ -32,6 +32,8 @@ _ANTHROPIC_USAGE_METADATA_FIELDS = frozenset(
     {
         "service_tier",
         "inference_geo",
+        "speed",
+        "fallback_credit",
     }
 )
 
