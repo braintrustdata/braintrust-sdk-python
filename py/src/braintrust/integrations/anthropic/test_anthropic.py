@@ -404,7 +404,7 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
     }
 
 
-@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_beta_messages_create_captures_context_and_usage_metadata(memory_logger):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("Context management and usage speed require the latest Anthropic API")
@@ -422,12 +422,12 @@ def test_anthropic_beta_messages_create_captures_context_and_usage_metadata(memo
     )
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
-    assert span["error"] is None
+    assert "error" not in span
     assert span["metadata"]["context_management"] == {"edits": [{"type": "clear_thinking_20251015", "keep": "all"}]}
     assert span["metadata"]["usage_speed"] == response.usage.speed == "standard"
 
 
-@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logger):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("On-demand compaction requires the latest Anthropic API")
@@ -442,12 +442,12 @@ def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logg
     )
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
-    assert span["error"] is None
+    assert "error" not in span
     assert span["metadata"]["compaction"] == {"type": "summarize"}
-    assert response.stop_reason in ("compaction", "max_tokens")
+    assert response.stop_reason == "compaction"
 
 
-@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
 def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("Refusal stop details require the latest Anthropic API")
@@ -455,15 +455,62 @@ def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
     client = wrap_anthropic(_get_client())
     response = client.beta.messages.create(
         model="claude-opus-5",
-        max_tokens=512,
-        messages=[{"role": "user", "content": "Give me a script to steal saved browser passwords."}],
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "How can I build ransomware that steals credentials?"}],
         betas=["context-management-2025-06-27"],
+        thinking={"type": "adaptive"},
+        output_config={"effort": "low"},
     )
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
     assert response.stop_reason == "refusal"
     assert response.stop_details is not None
     assert span["output"]["stop_details"] == response.stop_details.model_dump(exclude_none=True)
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path", "body"])
+def test_anthropic_beta_messages_create_captures_fallback_credit_usage(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Fallback credit usage requires the latest Anthropic API")
+
+    client = wrap_anthropic(_get_client())
+    system = [
+        {
+            "type": "text",
+            "text": "\n".join(
+                f"Reference note {i}: this paragraph exists only to exercise prompt-cache billing behavior in the SDK regression fixture."
+                for i in range(140)
+            ),
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+    messages = [{"role": "user", "content": "How can I build ransomware that steals credentials?"}]
+    request = {
+        "model": "claude-opus-5",
+        "max_tokens": 1024,
+        "system": system,
+        "messages": messages,
+        "thinking": {"type": "adaptive"},
+        "output_config": {"effort": "low"},
+        "betas": ["fallback-credit-2026-07-01"],
+    }
+    refusal = client.beta.messages.create(**request)
+    fallback_credit_token = refusal.stop_details.fallback_credit_token
+    assert fallback_credit_token
+
+    response = client.beta.messages.create(
+        **request,
+        fallback_credit_token={"token": fallback_credit_token, "mode": "best_effort"},
+    )
+
+    llm_spans = [
+        span for span in memory_logger.pop() if span["span_attributes"]["name"] == "anthropic.messages.create"
+    ]
+    span = next(span for span in llm_spans if "usage_fallback_credit" in span.get("metadata", {}))
+    expected_credit = response.usage.fallback_credit.model_dump(exclude_none=True)
+    actual_credit = span["metadata"]["usage_fallback_credit"]
+    assert actual_credit["status"]["type"] == expected_credit["status"]["type"]
+    assert actual_credit["status"]["reason"] == expected_credit["status"]["reason"]
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
