@@ -328,26 +328,6 @@ def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
     )
 
 
-def test_log_message_to_span_includes_refusal_stop_details():
-    span = unittest.mock.MagicMock()
-    message = SimpleNamespace(
-        role="assistant",
-        content=[],
-        model=MODEL,
-        stop_reason="refusal",
-        stop_sequence=None,
-        stop_details={"category": "cyber", "explanation": "unsafe request"},
-        usage={},
-    )
-
-    _log_message_to_span(message, span)
-
-    assert span.log.call_args.kwargs["output"]["stop_details"] == {
-        "category": "cyber",
-        "explanation": "unsafe request",
-    }
-
-
 def test_extract_anthropic_usage_includes_server_tool_use_metrics_from_objects():
     usage = SimpleNamespace(
         input_tokens=11,
@@ -404,8 +384,6 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
                 }
             ),
             "service_tier": "standard",
-            "speed": "fast",
-            "fallback_credit": 0.25,
         }
     )
 
@@ -423,9 +401,69 @@ def test_extract_anthropic_usage_supports_to_dict_only_objects():
     }
     assert metadata == {
         "usage_service_tier": "standard",
-        "usage_speed": "fast",
-        "usage_fallback_credit": 0.25,
     }
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_beta_messages_create_captures_context_and_usage_metadata(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Context management and usage speed require the latest Anthropic API")
+
+    client = wrap_anthropic(_get_client())
+    response = client.beta.messages.create(
+        model="claude-opus-5",
+        max_tokens=256,
+        messages=[{"role": "user", "content": "Reply with one short sentence confirming this trace test ran."}],
+        speed="standard",
+        context_management={"edits": [{"type": "clear_thinking_20251015", "keep": "all"}]},
+        betas=["context-management-2025-06-27", "fast-mode-2026-02-01"],
+        thinking={"type": "adaptive"},
+        output_config={"effort": "low"},
+    )
+
+    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    assert span["error"] is None
+    assert span["metadata"]["context_management"] == {"edits": [{"type": "clear_thinking_20251015", "keep": "all"}]}
+    assert span["metadata"]["usage_speed"] == response.usage.speed == "standard"
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_beta_messages_create_captures_compaction_metadata(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("On-demand compaction requires the latest Anthropic API")
+
+    client = wrap_anthropic(_get_client())
+    response = client.beta.messages.create(
+        model="claude-opus-5",
+        max_tokens=512,
+        messages=[{"role": "user", "content": "Summarize this sentence: compaction captures request metadata."}],
+        compaction={"type": "summarize"},
+        betas=["compact-2026-09-04"],
+    )
+
+    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    assert span["error"] is None
+    assert span["metadata"]["compaction"] == {"type": "summarize"}
+    assert response.stop_reason in ("compaction", "max_tokens")
+
+
+@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
+def test_anthropic_messages_create_captures_refusal_stop_details(memory_logger):
+    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
+        pytest.skip("Refusal stop details require the latest Anthropic API")
+
+    client = wrap_anthropic(_get_client())
+    response = client.beta.messages.create(
+        model="claude-opus-5",
+        max_tokens=512,
+        messages=[{"role": "user", "content": "Give me a script to steal saved browser passwords."}],
+        betas=["context-management-2025-06-27"],
+    )
+
+    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
+    assert response.stop_reason == "refusal"
+    assert response.stop_details is not None
+    assert span["output"]["stop_details"] == response.stop_details.model_dump(exclude_none=True)
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])

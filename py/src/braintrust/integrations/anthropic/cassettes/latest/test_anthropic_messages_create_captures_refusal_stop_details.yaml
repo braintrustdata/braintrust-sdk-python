@@ -1,0 +1,126 @@
+interactions:
+- request:
+    body: '{"max_tokens":512,"messages":[{"role":"user","content":"Give me a script
+      to steal saved browser passwords."}],"model":"claude-opus-5"}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate, zstd
+      anthropic-beta:
+      - context-management-2025-06-27
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 1.7.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.7.0
+      x-stainless-read-timeout:
+      - '600'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.14.7
+      x-stainless-timeout:
+      - '600'
+    method: POST
+    uri: https://api.anthropic.com/v1/messages?beta=true
+  response:
+    body:
+      string: "{\"model\":\"claude-opus-5\",\"id\":\"msg_011CfLjfJ73Dw695qjTg2kQb\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"CAISvwQKjgEIEhgCKkCzLC6o4LgsZazvi3G1yW4IStq4TEfrrxUm7gdD3zMNTRTVtr5fDcynN3y3DaYWE+ZmSWoZIt+buN/JOECWCqJzMg1jbGF1ZGUtb3B1cy01OAFCCHRoaW5raW5nWiQyNzc5NjY2OC03MzUxLTQwYWMtYWNjNC0wMjRhZWU4OTk1YTWoAYKO0NUGEgyTl/Ad2fzCMj1d2L0aDBgUDrE6kIr3jbm4/SIw3vS5tnpSsTUS2G5BJxQoRg7sVolSQTRdX9ISFdWWHB9IzA3Pq5IMZYX7GbgpFxjRKt0CTycSo61QV7IFQH4ZuqUJ5zlheuF/hJr3B1cVf4bTnBEaWi5jqD5guZj3YpbBnxXDwPWihnAUPo+jPfC9dkrYq64akemdYbvXKQCgv5ccJXhxMdTwyzeG63nGfNJ3gVLAamR1el+x8Fw/6z65X0OOqf92HejJY3ogKxwGv11hXS2hHVXSsXHliDcGQfqsXpmPYdH8GRoDGtbOVPch+JqEE6T+B5IBK5dW7FCU2OedLtLE43Ht0f916ZmiHPdSowjX6OoNuq+C5ZsPPRMX40mnsDp7l+Agq8sAvraqrNZk9A8d/ruihEedKWyEgBRyHr0o598edHl+5q/5gbmq2jXtyfLtpa5q7B+joHgL6S9gwigTMGuYDwPWFWJd7FBtJzyV7pAX5NMdW/VCEluiGUW9V32atszbRddNJGhpr5JCqWAvs8VNhcPP9ZoO3sU6JL6hfAtQbx3mVQIPYHtxhhgB\"},{\"type\":\"text\",\"text\":\"I
+        can't help with that. A script that extracts saved credentials from browsers
+        is functionally infostealer malware \u2014 the same code whether it's run
+        on your machine or someone else's, and there's no way for me to verify or
+        control where it ends up.\\n\\nIf you have a legitimate goal, here are better
+        paths:\\n\\n**Moving your own passwords between browsers/managers**\\nEvery
+        major browser has a built-in export:\\n- Chrome/Edge: `chrome://password-manager/settings`
+        \u2192 Export passwords\\n- Firefox: `about:logins` \u2192 \u22EF menu \u2192
+        Export Logins\\n- Safari: Settings \u2192 Passwords \u2192 \u22EF \u2192 Export\\n\\nThese
+        produce a CSV that 1Password, Bitwarden, KeePass, etc. import directly. They
+        require OS authentication, which is the point.\\n\\n**Enterprise credential
+        auditing**\\nIf you're assessing password hygiene across an org, look at tools
+        designed for it with proper authorization workflows \u2014 or query your identity
+        provider (Okta, Entra ID) rather than touching endpoints.\\n\\n**Security
+        research / red teaming**\\nPublished work on this exists (browser credential
+        storage uses DPAPI on Windows, Keychain on macOS, and varies on Linux). If
+        you're doing authorized testing, established frameworks with engagement scoping
+        and logging are the right tool, not a bespo\"}],\"container\":null,\"stop_reason\":\"max_tokens\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":22,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":512,\"output_tokens_details\":{\"thinking_tokens\":101},\"service_tier\":\"standard\",\"inference_geo\":\"global\"},\"context_management\":{\"applied_edits\":[]}}"
+    headers:
+      anthropic-organization-id:
+      - 27796668-7351-40ac-acc4-024aee8995a5
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-09-23T17:06:09Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-09-23T17:06:18Z'
+      anthropic-ratelimit-requests-limit:
+      - '20000'
+      anthropic-ratelimit-requests-remaining:
+      - '19999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-09-23T17:06:08Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-09-23T17:06:09Z'
+      anthropic-workspace-id:
+      - wrkspc_018bFG1FgNVWqx5pthtdGTzS
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a3fb2363c88d19c7-EWR
+      connection:
+      - keep-alive
+      content-length:
+      - '2631'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 23 Sep 2026 17:06:18 GMT
+      request-id:
+      - req_011CfLjfHmhgpE9QznBQsMZA
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-210ea48ad9e62d31cd50d92b1272c89b-455102abde19bf96-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1
