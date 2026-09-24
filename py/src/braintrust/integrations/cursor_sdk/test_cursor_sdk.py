@@ -81,37 +81,14 @@ def test_auto_instrument_cursor_sdk_subprocess():
 
 @_REQUIRES_SYNC_BRIDGE
 @pytest.mark.vcr
-def test_characterize_no_downstream_provider_spans(memory_logger, tmp_path):
-    """Cursor's bridge owns provider calls, so no Python provider LLM leaf exists."""
-    import cursor_sdk
-
-    assert OpenAIIntegration.setup()
-    assert AnthropicIntegration.setup()
-
-    workspace = _workspace(tmp_path)
-    with cursor_sdk.CursorClient.launch_bridge(workspace=str(workspace)) as client:
-        with cursor_sdk.Agent.create(
-            model=TEST_MODEL,
-            api_key=_api_key(),
-            local=cursor_sdk.LocalAgentOptions(cwd=str(workspace)),
-            client=client,
-        ) as agent:
-            result = agent.send("Reply with exactly: cursor characterization complete").wait()
-
-    assert result.status == "finished"
-    assert "cursor characterization complete" in result.result.lower()
-    spans = memory_logger.pop()
-    origins = {span["context"]["span_origin"]["instrumentation"]["name"] for span in spans}
-    assert origins == {"cursor-sdk-auto"}
-    assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
-
-
-@_REQUIRES_SYNC_BRIDGE
-@pytest.mark.vcr
 def test_sync_wait_traces_cursor_owned_model_turn(memory_logger, tmp_path):
+    """Cursor's bridge owns provider calls, so no Python provider LLM leaf exists
+    even when provider integrations are enabled."""
     import cursor_sdk
 
     assert CursorSDKIntegration.setup()
+    assert OpenAIIntegration.setup()
+    assert AnthropicIntegration.setup()
     workspace = _workspace(tmp_path)
     with cursor_sdk.CursorClient.launch_bridge(workspace=str(workspace)) as client:
         with cursor_sdk.Agent.create(

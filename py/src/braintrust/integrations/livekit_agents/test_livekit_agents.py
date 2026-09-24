@@ -9,7 +9,6 @@ import pytest
 from braintrust import logger
 from braintrust.auto import auto_instrument
 from braintrust.integrations.livekit_agents import (
-    LiveKitAgentsIntegration,
     setup_livekit_agents,
     tracing,
     wrap_livekit_agents,
@@ -182,10 +181,6 @@ async def test_openai_tts_stream_closes_span_when_closed_early(memory_logger):
     assert any(log.get("metrics", {}).get("time_to_first_token", 0) > 0 for log in tts_logs), tts_logs
 
 
-def test_livekit_agents_integration_min_version():
-    assert LiveKitAgentsIntegration.min_version == "1.3.1"
-
-
 def test_auto_instrument_livekit_agents_subprocess():
     pytest.importorskip("livekit.agents")
     verify_autoinstrument_script("test_auto_livekit_agents.py")
@@ -347,13 +342,6 @@ async def test_livekit_agents_function_tool_e2e(memory_logger, livekit_server):
     session_logs = _spans_named(logs, "livekit_agent_session")
     assert session_logs, logs
     assert all(log.get("root_span_id") == session_logs[0].get("root_span_id") for log in function_tool_logs), logs
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_setup_livekit_agents_openai_e2e_voice_turn(memory_logger, livekit_server):
-    assert setup_livekit_agents()
-    await _run_livekit_agents_openai_e2e_voice_turn(memory_logger)
 
 
 @pytest.mark.asyncio

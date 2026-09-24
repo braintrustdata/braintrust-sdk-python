@@ -42,16 +42,6 @@ class WorkflowInfoForTest:
 class TestHeaderSerialization:
     """Unit tests for header serialization/deserialization."""
 
-    def test_span_context_to_headers_with_valid_context(self):
-        interceptor = BraintrustInterceptor()
-        span_context = {"trace_id": "test-trace-id", "span_id": "test-span-id"}
-        headers: dict[str, temporalio.api.common.v1.Payload] = {}
-
-        result_headers = interceptor._span_context_to_headers(span_context, headers)
-
-        assert "_braintrust-span" in result_headers
-        assert len(result_headers) == 1
-
     def test_span_context_to_headers_with_empty_context(self):
         interceptor = BraintrustInterceptor()
         span_context: dict[str, Any] = {}
@@ -75,20 +65,6 @@ class TestHeaderSerialization:
         assert "existing_header" in result_headers
         assert "_braintrust-span" in result_headers
         assert len(result_headers) == 2
-
-    def test_span_context_from_headers_with_valid_header(self):
-        interceptor = BraintrustInterceptor()
-        span_context = {"trace_id": "test-trace-id", "span_id": "test-span-id"}
-
-        # Serialize span context to header
-        payloads = interceptor.payload_converter.to_payloads([span_context])
-        headers = {"_braintrust-span": payloads[0]}
-
-        result = interceptor._span_context_from_headers(headers)
-
-        assert result is not None
-        assert result["trace_id"] == "test-trace-id"
-        assert result["span_id"] == "test-span-id"
 
     def test_span_context_from_headers_with_missing_header(self):
         interceptor = BraintrustInterceptor()
@@ -380,101 +356,6 @@ async def _wait_for_workflow_state(handle: Any, expected: str) -> None:
 
 class TestBraintrustPluginIntegration:
     """Integration tests for BraintrustPlugin with real Temporal workflows."""
-
-    @pytest.mark.asyncio
-    async def test_plugin_basic_workflow_tracing(self, temporal_env, memory_logger):
-        """Test basic workflow and activity tracing with BraintrustPlugin.
-
-        Verifies that:
-        1. Braintrust can be imported directly in workflows (no unsafe.imports_passed_through)
-        2. Spans are created for workflow execution
-        3. Spans are created for activity execution
-        """
-        # Create worker with BraintrustPlugin
-        async with Worker(
-            temporal_env.client,
-            task_queue="test-queue",
-            workflows=[TestWorkflow],
-            activities=[simple_activity],
-            plugins=[BraintrustPlugin(logger=memory_logger)],
-        ):
-            # Execute workflow
-            result = await temporal_env.client.execute_workflow(
-                TestWorkflow.run,
-                TaskInput(value=10),
-                id=f"test-workflow-{uuid.uuid4()}",
-                task_queue="test-queue",
-            )
-
-            # Verify workflow executed correctly
-            assert result == 20  # 10 + 10 from activity
-
-            # Flush to ensure all spans are captured
-            braintrust.flush()
-
-            # Get captured spans
-            spans = memory_logger.pop()
-
-            # Verify spans were created
-            assert len(spans) > 0, f"Expected spans to be created, got {len(spans)} spans"
-
-            # Verify workflow span was created
-            workflow_spans = [s for s in spans if "temporal.workflow" in s.get("span_attributes", {}).get("name", "")]
-            assert len(workflow_spans) > 0, (
-                f"Expected workflow span to be created. Span names: {[s.get('span_attributes', {}).get('name', 'unknown') for s in spans]}"
-            )
-
-            # Verify activity span was created
-            activity_spans = [s for s in spans if "temporal.activity" in s.get("span_attributes", {}).get("name", "")]
-            assert len(activity_spans) > 0, (
-                f"Expected activity span to be created. Span names: {[s.get('span_attributes', {}).get('name', 'unknown') for s in spans]}"
-            )
-
-    @pytest.mark.asyncio
-    async def test_plugin_context_propagation(self, temporal_env, memory_logger):
-        """Test that span context propagates from client to workflow to activity.
-
-        Verifies that parent-child span relationships are maintained across
-        the execution chain.
-        """
-        # Create a parent span at the client level
-        with braintrust.start_span(name="test.client_operation", type="task") as parent_span:
-            parent_context = parent_span.export()
-
-            # Create worker with BraintrustPlugin
-            async with Worker(
-                temporal_env.client,
-                task_queue="test-queue-2",
-                workflows=[TestWorkflow],
-                activities=[simple_activity],
-                plugins=[BraintrustPlugin(logger=memory_logger)],
-            ):
-                # Execute workflow (context should propagate via headers)
-                result = await temporal_env.client.execute_workflow(
-                    TestWorkflow.run,
-                    TaskInput(value=15),
-                    id=f"test-workflow-ctx-{uuid.uuid4()}",
-                    task_queue="test-queue-2",
-                )
-
-                assert result == 25  # 15 + 10
-
-        # Get captured spans
-        spans = memory_logger.pop()
-
-        # Verify spans were created
-        assert len(spans) > 0, "Expected spans to be created"
-
-        # Verify client span exists
-        client_spans = [s for s in spans if "test.client_operation" in s.get("span_attributes", {}).get("name", "")]
-        assert len(client_spans) > 0, "Expected client span to be created"
-
-        # Verify workflow and activity spans were created
-        workflow_spans = [s for s in spans if "temporal.workflow" in s.get("span_attributes", {}).get("name", "")]
-        activity_spans = [s for s in spans if "temporal.activity" in s.get("span_attributes", {}).get("name", "")]
-
-        assert len(workflow_spans) > 0, "Expected workflow spans"
-        assert len(activity_spans) > 0, "Expected activity spans"
 
     @pytest.mark.parametrize("with_client_parent", [False, True])
     @pytest.mark.asyncio

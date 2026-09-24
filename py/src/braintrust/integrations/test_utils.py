@@ -320,40 +320,31 @@ def test_materialize_attachment_from_bytes_accepts_custom_prefix():
     assert resolved.filename == "document.pdf"
 
 
-def test_materialize_attachment_prefix_handles_mime_suffixes():
-    resolved = _materialize_attachment(b"<svg />", mime_type="image/svg+xml", prefix="image")
-
-    assert isinstance(resolved, _ResolvedAttachment)
-    assert resolved.mime_type == "image/svg+xml"
-    assert resolved.filename == "image.svg"
-
-
-def test_materialize_attachment_from_base64_accepts_data_urls_and_custom_filenames():
-    resolved = _materialize_attachment(
-        "data:image/png;base64,aGVsbG8=",
-        mime_type="image/png",
-        filename="generated_image_0.png",
-    )
+@pytest.mark.parametrize(
+    ("value", "kwargs", "content_type", "filename"),
+    [
+        (
+            "data:image/png;base64,aGVsbG8=",
+            {"mime_type": "image/png", "filename": "generated_image_0.png"},
+            "image/png",
+            "generated_image_0.png",
+        ),
+        ("data:image/png;base64,aGVsbG8=", {"label": "image"}, "image/png", "image.png"),
+        ("data:application/pdf;base64,aGVsbG8=", {}, "application/pdf", "file.pdf"),
+    ],
+    ids=["custom-filename", "label", "non-image-file-prefix"],
+)
+def test_materialize_attachment_from_data_url(value, kwargs, content_type, filename):
+    resolved = _materialize_attachment(value, **kwargs)
 
     assert isinstance(resolved, _ResolvedAttachment)
     assert isinstance(resolved.attachment, Attachment)
-    assert resolved.attachment.reference["content_type"] == "image/png"
-    assert resolved.attachment.reference["filename"] == "generated_image_0.png"
+    assert resolved.attachment.reference["content_type"] == content_type
+    assert resolved.attachment.reference["filename"] == filename
 
 
 def test_materialize_attachment_returns_none_for_invalid_base64_payloads():
     assert _materialize_attachment("aGVsbG8=!", mime_type="image/png") is None
-
-
-def test_materialize_attachment_converts_valid_data_url():
-    data_url = "data:image/png;base64,aGVsbG8="
-
-    resolved = _materialize_attachment(data_url, label="image")
-
-    assert isinstance(resolved, _ResolvedAttachment)
-    assert isinstance(resolved.attachment, Attachment)
-    assert resolved.attachment.reference["content_type"] == "image/png"
-    assert resolved.attachment.reference["filename"] == "image.png"
 
 
 def test_resolved_attachment_multimodal_part_payload_uses_image_url_for_images():
@@ -418,14 +409,6 @@ def test_materialize_attachment_preserves_file_position(tmp_path):
 
 def test_materialize_attachment_preserves_invalid_base64_strings_without_mime_type():
     assert _materialize_attachment("data:image/png;base64,aGVsbG8=!") is None
-
-
-def test_materialize_attachment_uses_file_prefix_for_non_image_mime_types():
-    resolved = _materialize_attachment("data:application/pdf;base64,aGVsbG8=")
-
-    assert isinstance(resolved, _ResolvedAttachment)
-    assert resolved.attachment.reference["content_type"] == "application/pdf"
-    assert resolved.attachment.reference["filename"] == "file.pdf"
 
 
 def test_materialize_attachment_preserves_existing_attachment_filename_over_prefix():

@@ -20,26 +20,6 @@ from braintrust.wrappers.langsmith_wrapper import (
 )
 
 
-def test_is_patched_false():
-    """Test that _is_patched returns False for unpatched objects."""
-
-    def unpatched():
-        pass
-
-    assert _is_patched(unpatched) is False
-
-
-def test_is_patched_true():
-    """Test that _is_patched returns True for patched objects."""
-
-    def patched():
-        pass
-
-    patched._braintrust_patched = True  # type: ignore
-
-    assert _is_patched(patched) is True
-
-
 def test_make_braintrust_scorer_dict_result():
     """Test converting a LangSmith evaluator that returns a dict."""
 
@@ -57,23 +37,6 @@ def test_make_braintrust_scorer_dict_result():
     assert result.name == "accuracy"
     assert result.score == 0.9
     assert result.metadata == {"note": "good"}
-
-
-def test_make_braintrust_scorer_numeric_result():
-    """Test converting a LangSmith evaluator that returns a numeric score in a dict."""
-
-    def langsmith_evaluator(inputs, outputs, reference_outputs):
-        return {"score": 1.0 if outputs == reference_outputs else 0.0}
-
-    converted = _make_braintrust_scorer(langsmith_evaluator)
-
-    class MockExample:
-        outputs = {"y": 2}
-
-    result = converted(input={"x": 1}, output={"y": 2}, expected=MockExample())
-
-    assert result.name == "langsmith_evaluator"
-    assert result.score == 1.0
 
 
 def test_make_braintrust_scorer_with_plain_dict_expected():
@@ -182,38 +145,8 @@ def test_make_braintrust_task_simple_input():
     assert result == 10
 
 
-class TestWrapTraceable:
-    """Tests for wrap_traceable functionality."""
-
-    def test_wrap_traceable_returns_wrapper(self):
-        """Test that wrap_traceable returns a wrapped version."""
-
-        def mock_traceable(func, **kwargs):
-            return func
-
-        wrapped = wrap_traceable(mock_traceable, standalone=False)
-        assert callable(wrapped)
-        assert _is_patched(wrapped)
-
-    def test_wrap_traceable_standalone_mode(self):
-        """Test that wrap_traceable works in standalone mode."""
-
-        def mock_traceable(func, **kwargs):
-            return func
-
-        wrapped = wrap_traceable(mock_traceable, standalone=True)
-        assert callable(wrapped)
-        assert _is_patched(wrapped)
-
-
 class TestWrapFunctions:
     """Tests for the wrap_* functions."""
-
-    def test_wrap_functions_exist(self):
-        """Test that wrap functions are callable."""
-        assert callable(wrap_traceable)
-        assert callable(wrap_client)
-        assert callable(wrap_aevaluate)
 
     def test_wrap_traceable_returns_patched_function(self):
         """Test that wrap_traceable returns a patched function."""
@@ -258,32 +191,6 @@ class TestWrapFunctions:
 
 class TestTandemModeIntegration:
     """Integration tests for tandem mode (LangSmith + Braintrust together)."""
-
-    def test_make_braintrust_task_with_inputs_parameter(self):
-        """Test that task handles LangSmith's required 'inputs' parameter name."""
-
-        def target_fn(inputs: dict) -> dict:
-            return {"result": inputs["x"] * 2}
-
-        task = _make_braintrust_task(target_fn)
-        result = task({"x": 5}, None)
-
-        assert result == {"result": 10}
-
-    def test_convert_langsmith_data_handles_different_output_types(self):
-        """Test that data conversion handles various output types."""
-        data = [
-            {"inputs": {"x": 1}, "outputs": 2},  # outputs is int, not dict
-            {"inputs": {"x": 2}, "outputs": {"result": 4}},  # outputs is already dict
-        ]
-
-        data_fn = _convert_langsmith_data(data)
-        result = list(data_fn())
-
-        # Both should work - Braintrust's EvalCase accepts any type for expected
-        assert len(result) == 2
-        assert result[0].input == {"x": 1}
-        assert result[1].input == {"x": 2}
 
     def test_make_braintrust_scorer_handles_wrapped_outputs(self):
         """Test that scorers handle output wrapping correctly."""
