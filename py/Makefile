@@ -34,7 +34,7 @@ check-stale-cassettes:
 	$(PYTHON) scripts/check-stale-cassettes.py
 
 check-unused-cassettes:
-	$(PYTHON) scripts/check-unused-cassettes.py run $(if $(INTEGRATIONS),$(INTEGRATIONS),--all)
+	$(PYTHON) scripts/check-unused-cassettes.py run $(or $(INTEGRATIONS),--all)
 
 sync-pytest-pin:
 	$(PYTHON) scripts/sync-pytest-pin.py

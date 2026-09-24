@@ -232,7 +232,7 @@ async def test_agent_run_async(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -292,7 +292,7 @@ async def test_wrapper_agent_run_is_traced(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -1657,7 +1657,7 @@ async def test_agent_with_tool_execution(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans, got {len(spans)}"
 
     # Find agent_run span
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
 
     # Verify that toolsets are captured in input with correct tool names
@@ -1740,7 +1740,7 @@ async def test_tool_execution_tracing_does_not_depend_on_message_reconstruction(
     assert "Paris" in str(result.output) or "sunny" in str(result.output)
 
     spans = memory_logger.pop()
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     tool_span = next((s for s in spans if s["span_attributes"].get("name") == "get_weather"), None)
     chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
 
@@ -1794,7 +1794,7 @@ def test_tool_execution_creates_spans(memory_logger):
     spans = memory_logger.pop()
 
     # Find spans by type
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
 
     # Assertions - verify basic tracing works with tools
@@ -2318,7 +2318,7 @@ async def test_no_model_agent_run(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"

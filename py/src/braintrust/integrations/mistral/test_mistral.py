@@ -138,51 +138,53 @@ def _assert_conversation_span(span, expected_input, start, end, *, expected_cont
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
+def _method_refs(*targets):
+    """Snapshot ``{(cls, method): static attr}`` for ``(cls, methods)`` pairs, skipping missing classes."""
+    return {
+        (cls, method): inspect.getattr_static(cls, method)
+        for cls, methods in targets
+        if cls is not None
+        for method in methods
+    }
+
+
 def _core_method_refs():
-    refs = {}
-    for cls, methods in (
+    return _method_refs(
         (Chat, ("complete", "complete_async", "stream", "stream_async")),
         (Embeddings, ("create", "create_async")),
         (Fim, ("complete", "complete_async", "stream", "stream_async")),
         (Agents, ("complete", "complete_async", "stream", "stream_async")),
         (Ocr, ("process", "process_async")),
-    ):
-        for method in methods:
-            refs[(cls, method)] = inspect.getattr_static(cls, method)
-    return refs
+    )
 
 
 def _audio_method_refs():
-    refs = {}
-    for cls, methods in (
+    return _method_refs(
         (Transcriptions, ("complete", "complete_async", "stream", "stream_async")),
-        (Speech, ("complete", "complete_async") if Speech is not None else ()),
-    ):
-        if cls is None:
-            continue
-        for method in methods:
-            refs[(cls, method)] = inspect.getattr_static(cls, method)
-    return refs
+        (Speech, ("complete", "complete_async")),
+    )
 
 
 def _conversation_method_refs():
-    refs = {}
-    for method in (
-        "start",
-        "start_async",
-        "start_stream",
-        "start_stream_async",
-        "append",
-        "append_async",
-        "append_stream",
-        "append_stream_async",
-        "restart",
-        "restart_async",
-        "restart_stream",
-        "restart_stream_async",
-    ):
-        refs[(Conversations, method)] = inspect.getattr_static(Conversations, method)
-    return refs
+    return _method_refs(
+        (
+            Conversations,
+            (
+                "start",
+                "start_async",
+                "start_stream",
+                "start_stream_async",
+                "append",
+                "append_async",
+                "append_stream",
+                "append_stream_async",
+                "restart",
+                "restart_async",
+                "restart_stream",
+                "restart_stream_async",
+            ),
+        ),
+    )
 
 
 def _restore_method_refs(monkeypatch, refs):

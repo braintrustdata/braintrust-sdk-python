@@ -4,7 +4,8 @@ from unittest.mock import ANY
 import pytest
 from braintrust import flush, logger
 from braintrust.integrations.langchain import BraintrustCallbackHandler, set_global_handler
-from braintrust.test_helpers import init_test_logger
+from braintrust.span_types import SpanTypeAttribute
+from braintrust.test_helpers import find_spans_by_type, init_test_logger
 from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -56,7 +57,7 @@ def test_langchain_anthropic_integration(
     spans = memory_logger.pop()
     assert len(spans) > 0
 
-    llm_spans = [span for span in spans if span["span_attributes"].get("type") == "llm"]
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     assert len(llm_spans) > 0, "Should have at least one LLM call"
 
     llm_span = llm_spans[0]
@@ -114,7 +115,7 @@ async def test_async_langchain_invoke(
     assert "3" in result.content.lower()
 
     spans = memory_logger.pop()
-    llm_spans = [span for span in spans if span["span_attributes"].get("type") == "llm"]
+    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
     assert len(llm_spans) == 1
     llm_span = llm_spans[0]
     assert llm_span["metadata"]["model"] == MODEL

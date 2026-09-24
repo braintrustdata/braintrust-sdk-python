@@ -172,17 +172,14 @@ def _assert_timing_metrics_are_valid(metrics, start=None, end=None):
         assert metrics["start"] <= metrics["end"]
 
 
-def _weather_tool():
-    def get_weather(location: str, unit: str = "celsius") -> str:
-        """Get the current weather for a location.
+def get_weather(location: str, unit: str = "celsius") -> str:
+    """Get the current weather for a location.
 
-        Args:
-            location: The city and state, e.g. San Francisco, CA
-            unit: The unit of temperature (celsius or fahrenheit)
-        """
-        return f"22 degrees {unit} and sunny in {location}"
-
-    return get_weather
+    Args:
+        location: The city and state, e.g. San Francisco, CA
+        unit: The unit of temperature (celsius or fahrenheit)
+    """
+    return f"22 degrees {unit} and sunny in {location}"
 
 
 def _has_function_call(responses):
@@ -192,8 +189,8 @@ def _has_function_call(responses):
     )
 
 
-def _assert_tool_use_span(span, model, start, end):
-    assert span["metadata"]["model"] == model
+def _assert_tool_use_span(span, start, end):
+    assert span["metadata"]["model"] == TOOL_MODEL
     assert span["metadata"]["provider"] == "google"
     assert span["metadata"]["tools"], "tools should be surfaced on metadata.tools"
     assert "get_weather" in str(span["metadata"]["tools"])
@@ -688,7 +685,6 @@ def test_image_input_wrapped_in_content(memory_logger):
 def test_tool_use(memory_logger, mode):
     """Test function calling / tool use in sync modes."""
     assert not memory_logger.pop()
-    model = TOOL_MODEL
 
     client = Client()
     start = time.time()
@@ -696,20 +692,20 @@ def test_tool_use(memory_logger, mode):
 
     if mode == "sync":
         response = client.models.generate_content(
-            model=model,
+            model=TOOL_MODEL,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[_weather_tool()],
+                tools=[get_weather],
                 max_output_tokens=500,
             ),
         )
         has_function_call = _has_function_call([response])
     elif mode == "stream":
         stream = client.models.generate_content_stream(
-            model=model,
+            model=TOOL_MODEL,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[_weather_tool()],
+                tools=[get_weather],
                 max_output_tokens=500,
             ),
         )
@@ -724,7 +720,7 @@ def test_tool_use(memory_logger, mode):
     # Automatic function calling may create multiple spans; check the initial request.
     spans = memory_logger.pop()
     assert len(spans) >= 1
-    _assert_tool_use_span(spans[0], model, start, end)
+    _assert_tool_use_span(spans[0], start, end)
 
 
 # Test 3b: Tool Use (Async)
@@ -737,7 +733,6 @@ def test_tool_use(memory_logger, mode):
 async def test_tool_use_async(memory_logger, mode):
     """Test function calling / tool use in async modes."""
     assert not memory_logger.pop()
-    model = TOOL_MODEL
 
     client = Client()
     start = time.time()
@@ -745,20 +740,20 @@ async def test_tool_use_async(memory_logger, mode):
 
     if mode == "async":
         response = await client.aio.models.generate_content(
-            model=model,
+            model=TOOL_MODEL,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[_weather_tool()],
+                tools=[get_weather],
                 max_output_tokens=500,
             ),
         )
         has_function_call = _has_function_call([response])
     elif mode == "async_stream":
         stream = await client.aio.models.generate_content_stream(
-            model=model,
+            model=TOOL_MODEL,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[_weather_tool()],
+                tools=[get_weather],
                 max_output_tokens=500,
             ),
         )
@@ -775,7 +770,7 @@ async def test_tool_use_async(memory_logger, mode):
     # Automatic function calling may create multiple spans; check the initial request.
     spans = memory_logger.pop()
     assert len(spans) >= 1
-    _assert_tool_use_span(spans[0], model, start, end)
+    _assert_tool_use_span(spans[0], start, end)
 
 
 # Test 4: System Prompt

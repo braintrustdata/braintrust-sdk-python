@@ -10,8 +10,9 @@ through ``open()``.
 Each process writes its own ``usage-<pid>-<random>.txt`` file in that directory,
 one path per line, relative to the ``braintrust`` package directory and
 POSIX-style so logs from different runners (including Windows) can be merged.
-Auto-instrument test subprocesses inherit the env var and install the hook
-through :mod:`braintrust.integrations.test_utils`.
+:mod:`braintrust.conftest` calls :func:`install` at import, which also covers
+auto-instrument subprocesses: they inherit the env var and import it through
+:mod:`braintrust.integrations.test_utils`.
 """
 
 import os

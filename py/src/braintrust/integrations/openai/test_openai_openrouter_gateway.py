@@ -13,7 +13,7 @@ import pytest
 from braintrust import logger, wrap_openai
 from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.test_helpers import init_test_logger
-from openai import AsyncOpenAI, OpenAI
+from openai import OpenAI
 
 
 PROJECT_NAME = "test-openrouter"
@@ -29,13 +29,6 @@ def memory_logger():
 
 def _get_client():
     return OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=os.environ.get("OPENROUTER_API_KEY"),
-    )
-
-
-def _get_async_client():
-    return AsyncOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=os.environ.get("OPENROUTER_API_KEY"),
     )

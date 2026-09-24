@@ -8,6 +8,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from braintrust import _test_cassette_usage
 
 
 _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "check-unused-cassettes.py"
@@ -33,15 +34,20 @@ def _run_recorder(tmp_path: Path, code: str, *, enabled: bool = True) -> set[str
     pkg = _make_tree(tmp_path)
     usage_dir = tmp_path / "usage"
     env = {**os.environ, "BRAINTRUST_INTEGRATIONS_DIR": str(pkg / "integrations")}
-    env.pop("BRAINTRUST_CASSETTE_USAGE_DIR", None)
+    env.pop(_test_cassette_usage.USAGE_DIR_ENV, None)
     if enabled:
-        env["BRAINTRUST_CASSETTE_USAGE_DIR"] = str(usage_dir)
+        env[_test_cassette_usage.USAGE_DIR_ENV] = str(usage_dir)
+    # Load the recorder by path: importing the braintrust package would add
+    # ~0.7s per subprocess and the recorder needs nothing from it.
     prelude = textwrap.dedent(
         f"""
+        import importlib.util
         import os
         from pathlib import Path
-        from braintrust import _test_cassette_usage
-        print(_test_cassette_usage.install())
+        spec = importlib.util.spec_from_file_location("recorder", {_test_cassette_usage.__file__!r})
+        recorder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(recorder)
+        print(recorder.install())
         pkg = Path({str(pkg)!r})
         """
     )

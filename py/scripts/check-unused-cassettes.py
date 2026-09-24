@@ -129,7 +129,9 @@ def _nox_command() -> list[str]:
     return [nox] if nox else [sys.executable, "-m", "nox"]
 
 
-def run_sessions(integrations: list[str], usage_dir: pathlib.Path) -> tuple[list[str], dict[str, list[str]]]:
+def run_sessions(
+    integrations: list[str], usage_dir: pathlib.Path, reuse_venv: bool = False
+) -> tuple[list[str], dict[str, list[str]]]:
     """Run every session that reads these integrations' cassettes.
 
     Returns (integrations that ran completely, {integration: [problem sessions]}).
@@ -158,23 +160,27 @@ def run_sessions(integrations: list[str], usage_dir: pathlib.Path) -> tuple[list
     results: dict[str, str] = {}
     for session in sessions:
         print(f"==> nox -s {session}", flush=True)
-        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as report:
-            report_path = report.name
+        # load_usage only reads usage-*.txt, so reports can live alongside the logs.
+        report_path = usage_dir / f"report-{len(results)}.json"
+        proc = subprocess.run(
+            [
+                *_nox_command(),
+                "-s",
+                session,
+                "--report",
+                str(report_path),
+                *(["--reuse-venv=yes"] if reuse_venv else []),
+            ],
+            cwd=_PROJECT_DIR,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
         try:
-            proc = subprocess.run(
-                [*_nox_command(), "-s", session, "--report", report_path],
-                cwd=_PROJECT_DIR,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-            try:
-                outcome = json.loads(pathlib.Path(report_path).read_text())["sessions"][0]["result"]
-            except (OSError, ValueError, KeyError, IndexError):
-                outcome = "success" if proc.returncode == 0 else "failed"
-        finally:
-            pathlib.Path(report_path).unlink(missing_ok=True)
+            outcome = json.loads(report_path.read_text())["sessions"][0]["result"]
+        except (OSError, ValueError, KeyError, IndexError):
+            outcome = "success" if proc.returncode == 0 else "failed"
         results[session] = outcome
         print(f"    {outcome}", flush=True)
         if outcome == "failed":
@@ -211,9 +217,10 @@ def print_report(unused: list[str], clean: bool) -> None:
         print("\nRun with --clean to delete them.")
 
 
-def _resolve_integrations(names: list[str], all_: bool) -> list[str]:
+def _resolve_integrations(names: list[str]) -> list[str]:
+    """Validate integration names; an empty list means all of them."""
     available = integrations_with_cassettes()
-    if all_ or not names:
+    if not names:
         return available
     unknown = sorted(set(names) - set(available))
     if unknown:
@@ -230,6 +237,9 @@ def main() -> None:
     run_parser.add_argument("--all", action="store_true", help="Check every integration with cassettes")
     run_parser.add_argument("--usage-dir", type=pathlib.Path, help="Keep usage logs here instead of a temp dir")
     run_parser.add_argument("--clean", action="store_true", help="Delete unused cassette files")
+    run_parser.add_argument(
+        "--reuse-venv", action="store_true", help="Reuse existing nox virtualenvs instead of recreating them"
+    )
 
     report_parser = sub.add_parser("report", help="Report from existing usage logs")
     report_parser.add_argument("integrations", nargs="*", help="Limit the report to these integrations")
@@ -241,10 +251,10 @@ def main() -> None:
     if args.command == "run":
         if not args.integrations and not args.all:
             parser.error("pass integration names or --all")
-        integrations = _resolve_integrations(args.integrations, args.all)
+        integrations = _resolve_integrations([] if args.all else args.integrations)
         usage_dir = args.usage_dir or pathlib.Path(tempfile.mkdtemp(prefix="cassette-usage-"))
         usage_dir.mkdir(parents=True, exist_ok=True)
-        complete, incomplete = run_sessions(integrations, usage_dir)
+        complete, incomplete = run_sessions(integrations, usage_dir, reuse_venv=args.reuse_venv)
         print()
         if incomplete:
             print("Skipped these integrations because not every session that reads their cassettes succeeded:")
@@ -255,7 +265,7 @@ def main() -> None:
         print_report(unused, args.clean)
         sys.exit(1 if unused or incomplete else 0)
 
-    integrations = _resolve_integrations(args.integrations, False)
+    integrations = _resolve_integrations(args.integrations)
     used = load_usage(args.usage_dir)
     if not used:
         sys.exit(f"No usage recorded in {args.usage_dir}. Run tests with {USAGE_DIR_ENV}={args.usage_dir} first.")

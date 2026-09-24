@@ -1726,7 +1726,7 @@ class TaskNotificationMessage:
     usage: dict[str, Any] | None = None
 
 
-def _task_started(task_id, *, description, uuid, tool_use_id=None, task_type="local_agent"):
+def _task_started(task_id, *, description, uuid, tool_use_id):
     return TaskStartedMessage(
         subtype="task_started",
         data={"subtype": "task_started", "task_id": task_id},
@@ -1735,17 +1735,17 @@ def _task_started(task_id, *, description, uuid, tool_use_id=None, task_type="lo
         uuid=uuid,
         session_id="session-123",
         tool_use_id=tool_use_id,
-        task_type=task_type,
+        task_type="local_agent",
     )
 
 
-def _task_done(task_id, *, summary, uuid, tool_use_id=None, usage=None, status="completed", output_file=""):
+def _task_done(task_id, *, summary, uuid, tool_use_id, usage):
     return TaskNotificationMessage(
         subtype="task_notification",
         data={"subtype": "task_notification", "task_id": task_id},
         task_id=task_id,
-        status=status,
-        output_file=output_file,
+        status="completed",
+        output_file="",
         summary=summary,
         uuid=uuid,
         session_id="session-123",
