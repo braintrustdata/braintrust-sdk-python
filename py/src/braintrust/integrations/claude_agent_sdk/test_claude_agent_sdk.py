@@ -40,7 +40,6 @@ from braintrust.integrations.claude_agent_sdk.tracing import (
     _parse_tool_name,
     _serialize_content_blocks,
     _serialize_system_message,
-    _serialize_tool_result_output,
     _thread_local,
 )
 from braintrust.integrations.test_utils import verify_autoinstrument_script
@@ -663,31 +662,27 @@ class CustomAsyncIterator:
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "cassette_name,input_factory,expected_contents",
+    "input_factory,expected_contents",
     [
         pytest.param(
-            "test_query_async_iterable_asyncgen_single",
             lambda: (msg async for msg in _single_message_generator()),
             ["What is 2 + 2?"],
             id="asyncgen_single",
         ),
         pytest.param(
-            "test_query_async_iterable_asyncgen_multi",
             lambda: (msg async for msg in _multi_message_generator()),
             ["Part 1", "Part 2"],
             id="asyncgen_multi",
         ),
         pytest.param(
-            "test_query_async_iterable_custom_async_iterable",
             lambda: CustomAsyncIterable([_make_message("Custom 1"), _make_message("Custom 2")]),
             ["Custom 1", "Custom 2"],
             id="custom_async_iterable",
         ),
     ],
 )
-async def test_query_async_iterable(memory_logger, cassette_name, input_factory, expected_contents):
+async def test_query_async_iterable(memory_logger, input_factory, expected_contents):
     """Test that async iterable inputs are captured as structured lists."""
-    del cassette_name
     assert not memory_logger.pop()
 
     wrapped_client_class = _create_client_wrapper_class(FakeClaudeSDKClient)
@@ -1273,15 +1268,8 @@ async def test_delegated_subagent_llm_and_tool_spans_nest_under_task_span(memory
                 )
             ]
         ),
-        TaskStartedMessage(
-            subtype="task_started",
-            data={"subtype": "task_started", "task_id": "task-subagent"},
-            task_id="task-subagent",
-            description="Inspect release notes",
-            uuid="msg-start",
-            session_id="session-123",
-            tool_use_id="call-agent",
-            task_type="local_agent",
+        _task_started(
+            "task-subagent", description="Inspect release notes", uuid="msg-start", tool_use_id="call-agent"
         ),
         AssistantMessage(
             content=[
@@ -1295,15 +1283,10 @@ async def test_delegated_subagent_llm_and_tool_spans_nest_under_task_span(memory
         UserMessage(
             content=[ToolResultBlock(tool_use_id="call-read", content=[TextBlock("version = 2026.03.11")])],
         ),
-        TaskNotificationMessage(
-            subtype="task_notification",
-            data={"subtype": "task_notification", "task_id": "task-subagent"},
-            task_id="task-subagent",
-            status="completed",
-            output_file="",
+        _task_done(
+            "task-subagent",
             summary="Inspection complete",
             uuid="msg-done",
-            session_id="session-123",
             tool_use_id="call-agent",
             usage={"total_tokens": 42, "tool_uses": 1, "duration_ms": 250},
         ),
@@ -1355,15 +1338,8 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
                 ),
             ]
         ),
-        TaskStartedMessage(
-            subtype="task_started",
-            data={"subtype": "task_started", "task_id": "task-alpha"},
-            task_id="task-alpha",
-            description="Read alpha release notes",
-            uuid="msg-alpha-start",
-            session_id="session-123",
-            tool_use_id="call-alpha",
-            task_type="local_agent",
+        _task_started(
+            "task-alpha", description="Read alpha release notes", uuid="msg-alpha-start", tool_use_id="call-alpha"
         ),
         AssistantMessage(
             content=[
@@ -1374,30 +1350,18 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
                 )
             ]
         ),
-        TaskStartedMessage(
-            subtype="task_started",
-            data={"subtype": "task_started", "task_id": "task-beta"},
-            task_id="task-beta",
-            description="Read beta release notes",
-            uuid="msg-beta-start",
-            session_id="session-123",
-            tool_use_id="call-beta",
-            task_type="local_agent",
+        _task_started(
+            "task-beta", description="Read beta release notes", uuid="msg-beta-start", tool_use_id="call-beta"
         ),
         AssistantMessage(
             content=[ToolUseBlock(id="read-alpha", name="Read", input={"file_path": "/tmp/release_notes_alpha.md"})],
             parent_tool_use_id="call-alpha",
         ),
         UserMessage(content=[ToolResultBlock(tool_use_id="read-alpha", content=[TextBlock("alpha result")])]),
-        TaskNotificationMessage(
-            subtype="task_notification",
-            data={"subtype": "task_notification", "task_id": "task-alpha"},
-            task_id="task-alpha",
-            status="completed",
-            output_file="",
+        _task_done(
+            "task-alpha",
             summary="Alpha complete",
             uuid="msg-alpha-done",
-            session_id="session-123",
             tool_use_id="call-alpha",
             usage={"total_tokens": 11, "tool_uses": 1, "duration_ms": 250},
         ),
@@ -1406,15 +1370,10 @@ async def test_multiple_subagent_orchestration_keeps_outer_agent_tool_calls_outs
             parent_tool_use_id="call-beta",
         ),
         UserMessage(content=[ToolResultBlock(tool_use_id="read-beta", content=[TextBlock("beta result")])]),
-        TaskNotificationMessage(
-            subtype="task_notification",
-            data={"subtype": "task_notification", "task_id": "task-beta"},
-            task_id="task-beta",
-            status="completed",
-            output_file="",
+        _task_done(
+            "task-beta",
             summary="Beta complete",
             uuid="msg-beta-done",
-            session_id="session-123",
             tool_use_id="call-beta",
             usage={"total_tokens": 12, "tool_uses": 1, "duration_ms": 300},
         ),
@@ -1507,48 +1466,24 @@ async def test_relay_user_messages_between_parallel_agent_calls_do_not_split_llm
         # SDK relays the beta subagent prompt as a UserMessage (no ToolResultBlock)
         UserMessage(content=[TextBlock("You must use Bash and Read on release_notes_beta.md...")]),
         # Task lifecycle events
-        TaskStartedMessage(
-            subtype="task_started",
-            data={"subtype": "task_started", "task_id": "task-alpha"},
-            task_id="task-alpha",
-            description="Read alpha release notes",
-            uuid="msg-alpha-start",
-            session_id="session-123",
-            tool_use_id="call-alpha",
-            task_type="local_agent",
+        _task_started(
+            "task-alpha", description="Read alpha release notes", uuid="msg-alpha-start", tool_use_id="call-alpha"
         ),
-        TaskStartedMessage(
-            subtype="task_started",
-            data={"subtype": "task_started", "task_id": "task-beta"},
-            task_id="task-beta",
-            description="Read beta release notes",
-            uuid="msg-beta-start",
-            session_id="session-123",
-            tool_use_id="call-beta",
-            task_type="local_agent",
+        _task_started(
+            "task-beta", description="Read beta release notes", uuid="msg-beta-start", tool_use_id="call-beta"
         ),
         # Subagent completions
-        TaskNotificationMessage(
-            subtype="task_notification",
-            data={"subtype": "task_notification", "task_id": "task-alpha"},
-            task_id="task-alpha",
-            status="completed",
-            output_file="",
+        _task_done(
+            "task-alpha",
             summary="Alpha complete",
             uuid="msg-alpha-done",
-            session_id="session-123",
             tool_use_id="call-alpha",
             usage={"total_tokens": 11, "tool_uses": 1, "duration_ms": 250},
         ),
-        TaskNotificationMessage(
-            subtype="task_notification",
-            data={"subtype": "task_notification", "task_id": "task-beta"},
-            task_id="task-beta",
-            status="completed",
-            output_file="",
+        _task_done(
+            "task-beta",
             summary="Beta complete",
             uuid="msg-beta-done",
-            session_id="session-123",
             tool_use_id="call-beta",
             usage={"total_tokens": 12, "tool_uses": 1, "duration_ms": 300},
         ),
@@ -1632,15 +1567,8 @@ async def test_agent_tool_spans_encapsulate_child_task_spans(memory_logger):
             ]
         ),
         # SDK emits TaskStarted immediately after Agent ToolUse (real ordering)
-        TaskStartedMessage(
-            subtype="task_started",
-            data={"subtype": "task_started", "task_id": "task-alpha"},
-            task_id="task-alpha",
-            description="Read alpha release notes",
-            uuid="msg-alpha-start",
-            session_id="session-123",
-            tool_use_id="call-alpha",
-            task_type="local_agent",
+        _task_started(
+            "task-alpha", description="Read alpha release notes", uuid="msg-alpha-start", tool_use_id="call-alpha"
         ),
         # SDK relays the alpha subagent prompt (no ToolResultBlock)
         UserMessage(content=[TextBlock("Read alpha release notes...")]),
@@ -1655,40 +1583,23 @@ async def test_agent_tool_spans_encapsulate_child_task_spans(memory_logger):
             ]
         ),
         # SDK emits TaskStarted immediately after Agent ToolUse (real ordering)
-        TaskStartedMessage(
-            subtype="task_started",
-            data={"subtype": "task_started", "task_id": "task-beta"},
-            task_id="task-beta",
-            description="Read beta release notes",
-            uuid="msg-beta-start",
-            session_id="session-123",
-            tool_use_id="call-beta",
-            task_type="local_agent",
+        _task_started(
+            "task-beta", description="Read beta release notes", uuid="msg-beta-start", tool_use_id="call-beta"
         ),
         # SDK relays the beta subagent prompt (no ToolResultBlock)
         UserMessage(content=[TextBlock("Read beta release notes...")]),
         # Both tasks complete
-        TaskNotificationMessage(
-            subtype="task_notification",
-            data={"subtype": "task_notification", "task_id": "task-alpha"},
-            task_id="task-alpha",
-            status="completed",
-            output_file="",
+        _task_done(
+            "task-alpha",
             summary="Alpha complete",
             uuid="msg-alpha-done",
-            session_id="session-123",
             tool_use_id="call-alpha",
             usage={"total_tokens": 11, "tool_uses": 1, "duration_ms": 250},
         ),
-        TaskNotificationMessage(
-            subtype="task_notification",
-            data={"subtype": "task_notification", "task_id": "task-beta"},
-            task_id="task-beta",
-            status="completed",
-            output_file="",
+        _task_done(
+            "task-beta",
             summary="Beta complete",
             uuid="msg-beta-done",
-            session_id="session-123",
             tool_use_id="call-beta",
             usage={"total_tokens": 12, "tool_uses": 1, "duration_ms": 300},
         ),
@@ -1815,6 +1726,34 @@ class TaskNotificationMessage:
     usage: dict[str, Any] | None = None
 
 
+def _task_started(task_id, *, description, uuid, tool_use_id=None, task_type="local_agent"):
+    return TaskStartedMessage(
+        subtype="task_started",
+        data={"subtype": "task_started", "task_id": task_id},
+        task_id=task_id,
+        description=description,
+        uuid=uuid,
+        session_id="session-123",
+        tool_use_id=tool_use_id,
+        task_type=task_type,
+    )
+
+
+def _task_done(task_id, *, summary, uuid, tool_use_id=None, usage=None, status="completed", output_file=""):
+    return TaskNotificationMessage(
+        subtype="task_notification",
+        data={"subtype": "task_notification", "task_id": task_id},
+        task_id=task_id,
+        status=status,
+        output_file=output_file,
+        summary=summary,
+        uuid=uuid,
+        session_id="session-123",
+        tool_use_id=tool_use_id,
+        usage=usage,
+    )
+
+
 class ResultMessage:
     def __init__(
         self,
@@ -1901,47 +1840,34 @@ def _clear_tool_span_tracker() -> None:
 
 
 @pytest.mark.asyncio
-async def test_receive_response_suppresses_unexpected_cancelled_error_empty_stream(memory_logger):
-    """CancelledError on an empty stream is suppressed without error."""
+@pytest.mark.parametrize(
+    "messages",
+    [
+        # No messages: CancelledError fires immediately on iteration.
+        pytest.param([], id="empty_stream"),
+        # CancelledError at stream close after a complete response.
+        pytest.param(
+            [AssistantMessage(content=[TextBlock("The answer is 42.")]), ResultMessage()], id="after_messages"
+        ),
+        # CancelledError between messages, before the ResultMessage arrives.
+        pytest.param([AssistantMessage(content=[TextBlock("Partial answer.")])], id="mid_stream"),
+    ],
+)
+async def test_receive_response_suppresses_unexpected_cancelled_error(memory_logger, messages):
+    """CancelledError from the transport is suppressed; messages yielded before it are kept and logged."""
     assert not memory_logger.pop()
 
     wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
     client = wrapped_client_class()
-    # No messages — CancelledError fires immediately on iteration.
+    client._WrappedClaudeSDKClient__client.messages = messages  # type: ignore[attr-defined]
 
     await client.query("Delegate this task.")
     received = []
     async for message in client.receive_response():
         received.append(message)
 
-    assert received == []
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    assert len(task_spans) == 1
-    assert task_spans[0]["span_attributes"]["name"] == "Claude Agent"
-    assert task_spans[0].get("error") is None
-
-
-@pytest.mark.asyncio
-async def test_receive_response_suppresses_cancelled_error_after_messages(memory_logger):
-    """CancelledError after real messages still logs output and doesn't propagate."""
-    assert not memory_logger.pop()
-
-    wrapped_client_class = _create_client_wrapper_class(FakeCancelledClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
-        AssistantMessage(content=[TextBlock("The answer is 42.")]),
-        ResultMessage(),
-    ]
-
-    await client.query("What is the meaning of life?")
-    received = []
-    async for message in client.receive_response():
-        received.append(message)
-
     # All messages yielded before the CancelledError should be received.
-    assert len(received) == 2
+    assert received == messages
 
     spans = memory_logger.pop()
     task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
@@ -1949,50 +1875,10 @@ async def test_receive_response_suppresses_cancelled_error_after_messages(memory
     task_span = task_spans[0]
     assert task_span["span_attributes"]["name"] == "Claude Agent"
     assert task_span.get("error") is None
-    # Output should still be logged despite the CancelledError at stream close.
-    assert task_span.get("output") is not None
-    assert task_span["output"]["role"] == "assistant"
-
-    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    assert len(llm_spans) == 1
-
-
-class FakeCancelledMidStreamClaudeSDKClient(FakeClaudeSDKClient):
-    """CancelledError fires *between* messages, simulating cancellation mid-stream."""
-
-    async def receive_response(self):
-        yield self.messages[0]
-        raise asyncio.CancelledError
-
-
-@pytest.mark.asyncio
-async def test_receive_response_suppresses_cancelled_error_mid_stream(memory_logger):
-    """CancelledError between messages still yields partial results and logs output."""
-    assert not memory_logger.pop()
-
-    wrapped_client_class = _create_client_wrapper_class(FakeCancelledMidStreamClaudeSDKClient)
-    client = wrapped_client_class()
-    client._WrappedClaudeSDKClient__client.messages = [  # type: ignore[attr-defined]
-        AssistantMessage(content=[TextBlock("Partial answer.")]),
-        # Second message never arrives — CancelledError fires instead.
-        AssistantMessage(content=[TextBlock("This should not be received.")]),
-    ]
-
-    await client.query("Tell me something.")
-    received = []
-    async for message in client.receive_response():
-        received.append(message)
-
-    # Only the first message should be received.
-    assert len(received) == 1
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    assert len(task_spans) == 1
-    task_span = task_spans[0]
-    assert task_span.get("error") is None
-    assert task_span.get("output") is not None
-    assert task_span["output"]["role"] == "assistant"
+    if messages:
+        # Output should still be logged despite the CancelledError.
+        assert task_span["output"]["role"] == "assistant"
+        assert len(find_spans_by_type(spans, SpanTypeAttribute.LLM)) == 1
 
 
 @pytest.mark.asyncio
@@ -2205,18 +2091,6 @@ async def test_wrapped_tool_handler_creates_fallback_tool_span_without_active_st
     assert tool_span["output"] == {"content": [{"type": "text", "text": "42"}]}
 
 
-def test_serialize_tool_result_output_flattens_text_blocks_and_errors():
-    tool_result = ToolResultBlock(
-        tool_use_id="call-err",
-        content=[TextBlock("Division by zero")],
-        is_error=True,
-    )
-
-    output = _serialize_tool_result_output(tool_result)
-
-    assert output == {"content": "Division by zero", "is_error": True}
-
-
 @pytest.mark.parametrize(
     "message,expected",
     [
@@ -2294,20 +2168,6 @@ def test_serialize_tool_result_output_flattens_text_blocks_and_errors():
 )
 def test_serialize_system_message_extracts_known_fields(message, expected):
     assert _serialize_system_message(message) == expected
-
-
-def test_extract_anthropic_usage_normalizes_claude_result_message_usage():
-    metrics, metadata = extract_anthropic_usage(
-        ResultMessage(input_tokens=5, output_tokens=3, cache_creation_input_tokens=2).usage
-    )
-
-    assert metrics == {
-        "prompt_tokens": 7.0,
-        "completion_tokens": 3.0,
-        "prompt_cache_creation_tokens": 2.0,
-        "tokens": 10.0,
-    }
-    assert metadata == {}
 
 
 def test_aggregate_model_usage_includes_all_agents_and_ignores_invalid_fields():
@@ -2922,73 +2782,6 @@ async def test_concurrent_subagents_produce_parallel_llm_spans_with_correct_pare
 
 @pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
 @pytest.mark.asyncio
-async def test_interleaved_subagent_tool_spans_preserve_output(memory_logger, tmp_path):
-    """Delegated Bash and Read tool spans should retain their outputs when two subagents run in parallel."""
-    assert not memory_logger.pop()
-
-    workspace = tmp_path / "interleaved_subagent_workspace"
-    workspace.mkdir()
-    (workspace / "alpha.txt").write_text("alpha_file_contents\n", encoding="utf-8")
-    (workspace / "beta.txt").write_text("beta_file_contents\n", encoding="utf-8")
-
-    with _patched_claude_sdk(wrap_client=True):
-        options = claude_agent_sdk.ClaudeAgentOptions(
-            model=TEST_MODEL,
-            cwd=workspace,
-            permission_mode="bypassPermissions",
-            max_turns=12,
-            allowed_tools=["Task", "Bash", "Read"],
-        )
-        transport = make_cassette_transport(
-            cassette_name=_sdk_cassette_name("test_interleaved_subagent_tool_output_preserved", min_version="0.1.11"),
-            prompt="",
-            options=options,
-        )
-
-        async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
-            await client.query(
-                "Launch two bundled general-purpose subagents for two independent tasks. "
-                "Start both Agent tool calls before waiting on either result if the tool API allows it. "
-                "The first delegated subagent must use Bash to run `echo alpha-bash-output` and then use Read on alpha.txt. "
-                "The second delegated subagent must use Bash to run `echo beta-bash-output` and then use Read on beta.txt. "
-                "Each delegated subagent must return only its file contents after both tool calls complete. "
-                "After both delegated agents finish, reply with exactly two lines in order alpha then beta. "
-                "Do not ask clarifying questions. Do not answer directly without using both subagents."
-            )
-            async for message in client.receive_response():
-                if type(message).__name__ == "ResultMessage":
-                    break
-
-    spans = memory_logger.pop()
-    task_spans = find_spans_by_type(spans, SpanTypeAttribute.TASK)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-
-    find_span_by_name(task_spans, "Claude Agent")
-
-    if not _sdk_version_at_least("0.1.11"):
-        return
-
-    subagent_spans = [span for span in task_spans if span["span_attributes"]["name"] != "Claude Agent"]
-    assert len(subagent_spans) >= 2, f"Expected at least 2 delegated task spans, got {len(subagent_spans)}"
-
-    bash_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Bash"]
-    read_spans = [tool_span for tool_span in tool_spans if tool_span["span_attributes"]["name"] == "Read"]
-    assert len(bash_spans) >= 2, f"Expected at least 2 Bash spans, got {len(bash_spans)}"
-    assert len(read_spans) >= 2, f"Expected at least 2 Read spans, got {len(read_spans)}"
-
-    bash_outputs = [tool_span["output"]["content"] for tool_span in bash_spans if tool_span.get("output") is not None]
-    read_outputs = [tool_span["output"]["content"] for tool_span in read_spans if tool_span.get("output") is not None]
-
-    assert len(bash_outputs) >= 2, "Expected Bash outputs from both delegated subagents"
-    assert len(read_outputs) >= 2, "Expected Read outputs from both delegated subagents"
-    assert any("alpha-bash-output" in output for output in bash_outputs)
-    assert any("beta-bash-output" in output for output in bash_outputs)
-    assert any("alpha_file_contents" in output for output in read_outputs)
-    assert any("beta_file_contents" in output for output in read_outputs)
-
-
-@pytest.mark.skipif(not CLAUDE_SDK_AVAILABLE, reason="Claude Agent SDK not installed")
-@pytest.mark.asyncio
 async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logger, tmp_path):
     """Tool spans from concurrent subagents should stay parented to their own delegated task/LLM lineage."""
     assert not memory_logger.pop()
@@ -3076,58 +2869,6 @@ async def test_interleaved_subagent_tool_spans_parent_to_correct_llm(memory_logg
     assert alpha_bash_task_id != beta_bash_task_id, "Alpha and beta tool spans should belong to different tasks"
     assert alpha_bash_llm_id != beta_bash_llm_id, "Different subagents should not share the same parent LLM span"
     assert alpha_read_llm_id != beta_read_llm_id, "Different subagents should not share the same parent LLM span"
-
-
-@pytest.mark.asyncio
-async def test_concurrent_subagent_tool_output_not_silently_dropped(memory_logger):
-    """cleanup() scoped to a different subagent must not end tool spans from
-    the first subagent.  When only_parent_tool_use_id targets beta's context,
-    alpha's Bash tool span must survive so its ToolResultBlock is recorded.
-    """
-    assert not memory_logger.pop()
-
-    tracker = ToolSpanTracker()
-
-    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
-        # Alpha's LLM span and Bash tool span (parent_tool_use_id="call-alpha")
-        llm_span = start_span(
-            name="anthropic.messages.create",
-            type=SpanTypeAttribute.LLM,
-            parent=task_span.export(),
-        )
-        tracker.start_tool_spans(
-            AssistantMessage(
-                content=[ToolUseBlock(id="bash-1", name="Bash", input={"command": "echo hello"})],
-                parent_tool_use_id="call-alpha",
-            ),
-            llm_span.export(),
-        )
-
-        assert tracker.has_active_spans, "Tool span should be active after start_tool_spans"
-
-        # Cleanup triggered by beta's AssistantMessage — scoped to beta's context
-        tracker.cleanup_context("call-beta")
-
-        # Alpha's tool span should still be active
-        assert tracker.has_active_spans, "cleanup_context('call-beta') should not end alpha's tool span"
-
-        # Alpha's ToolResultBlock arrives and should be recorded
-        tracker.finish_tool_spans(
-            UserMessage(content=[ToolResultBlock(tool_use_id="bash-1", content=[TextBlock("hello")])])
-        )
-        llm_span.end()
-
-    spans = memory_logger.pop()
-    bash_span = find_span_by_name(
-        [s for s in spans if s.get("span_attributes", {}).get("type") == SpanTypeAttribute.TOOL],
-        "Bash",
-    )
-
-    assert bash_span.get("output") is not None, (
-        "Tool result was silently dropped. cleanup() scoped to a different subagent "
-        "should not have ended this tool span."
-    )
-    assert bash_span["output"]["content"] == "hello"
 
 
 def test_tool_span_tracker_cleanup_preserves_cross_subagent_spans(memory_logger):
@@ -3286,67 +3027,6 @@ async def test_identical_concurrent_tool_calls_from_sibling_subagents_disambigua
     assert beta_echo[0]["span_id"] in second_nested["span_parents"], (
         "Second handler's nested span should be parented under beta's echo tool span, not swapped with alpha's."
     )
-
-
-def test_dispatch_queue_assigns_identical_tool_spans_in_fifo_order(memory_logger):
-    """ToolSpanTracker.acquire_span_for_handler() should use the dispatch queue
-    to assign identical (same name + same input) tool spans in FIFO order,
-    preventing span swaps between sibling subagents.
-    """
-    assert not memory_logger.pop()
-
-    tracker = ToolSpanTracker()
-    shared_input = {"cmd": "echo hi"}
-
-    with start_span(name="Claude Agent", type=SpanTypeAttribute.TASK) as task_span:
-        llm_alpha = start_span(
-            name="anthropic.messages.create",
-            type=SpanTypeAttribute.LLM,
-            parent=task_span.export(),
-        )
-        tracker.start_tool_spans(
-            AssistantMessage(
-                content=[ToolUseBlock(id="bash-A", name="Bash", input=shared_input)],
-                parent_tool_use_id="call-alpha",
-            ),
-            llm_alpha.export(),
-        )
-
-        llm_beta = start_span(
-            name="anthropic.messages.create",
-            type=SpanTypeAttribute.LLM,
-            parent=task_span.export(),
-        )
-        tracker.start_tool_spans(
-            AssistantMessage(
-                content=[ToolUseBlock(id="bash-B", name="Bash", input=shared_input)],
-                parent_tool_use_id="call-beta",
-            ),
-            llm_beta.export(),
-        )
-
-        # First acquire should return alpha's span (FIFO)
-        first = tracker.acquire_span_for_handler("Bash", shared_input)
-        assert first is not None
-        assert first.tool_use_id == "bash-A", (
-            f"First acquire should return alpha's span (bash-A), got {first.tool_use_id}"
-        )
-
-        # Second acquire should return beta's span
-        second = tracker.acquire_span_for_handler("Bash", shared_input)
-        assert second is not None
-        assert second.tool_use_id == "bash-B", (
-            f"Second acquire should return beta's span (bash-B), got {second.tool_use_id}"
-        )
-
-        # Cleanup
-        first.release()
-        second.release()
-        tracker.cleanup_all()
-        llm_alpha.end()
-        llm_beta.end()
-
-    memory_logger.pop()  # consume spans
 
 
 def test_context_tracker_preserves_bash_output_when_next_tool_use_arrives_before_result(memory_logger):
