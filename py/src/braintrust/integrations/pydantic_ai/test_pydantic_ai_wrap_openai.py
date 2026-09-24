@@ -1,5 +1,4 @@
 import time
-from typing import Any
 
 import pytest
 from openai import AsyncOpenAI
@@ -61,11 +60,22 @@ def memory_logger():
         yield bgl
 
 
-def _assert_metrics_are_valid(metrics: dict[str, Any]):
+def _assert_wrapped_span(span, start, end):
+    assert span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    assert "name" in span["span_attributes"]
+    assert MODEL in str(span["metadata"])
+    assert TEST_PROMPT in str(span["input"])
+    assert "Rome" in str(span["output"])
+
+    metrics = span["metrics"]
     assert metrics["tokens"] > 0
     assert metrics["prompt_tokens"] > 0
     assert metrics["completion_tokens"] > 0
     assert "time_to_first_token" in metrics
+    assert start <= metrics["start"] <= metrics["end"] <= end
+
+    assert span["span_id"]
+    assert span["root_span_id"]
 
 
 @pytest.mark.vcr
@@ -94,21 +104,7 @@ async def test_pydantic_wrapped_stream(memory_logger):
 
     assert len(spans) == 1
 
-    span = spans[0]
-    assert span["span_attributes"]["type"] == SpanTypeAttribute.LLM
-    assert "name" in span["span_attributes"]
-    assert MODEL in str(span["metadata"])
-    assert TEST_PROMPT in str(span["input"])
-    assert "Rome" in str(span["output"])
-
-    # Verify timing
-    metrics = span["metrics"]
-    _assert_metrics_are_valid(metrics)
-    assert start <= metrics["start"] <= metrics["end"] <= end
-
-    # Verify span relationships
-    assert span["span_id"]
-    assert span["root_span_id"]
+    _assert_wrapped_span(spans[0], start, end)
 
 
 @pytest.mark.vcr
@@ -139,15 +135,4 @@ async def test_pydantic_wrapped_completion(memory_logger):
 
     assert len(spans) == 1
 
-    span = spans[0]
-    assert span["span_attributes"]["type"] == SpanTypeAttribute.LLM
-    assert "name" in span["span_attributes"]
-    assert MODEL in str(span["metadata"])
-    assert TEST_PROMPT in str(span["input"])
-    assert "Rome" in str(span["output"])
-    metrics = span["metrics"]
-    _assert_metrics_are_valid(metrics)
-    assert start <= metrics["start"] <= metrics["end"] <= end
-
-    assert span["span_id"]
-    assert span["root_span_id"]
+    _assert_wrapped_span(spans[0], start, end)

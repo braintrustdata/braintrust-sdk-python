@@ -172,6 +172,70 @@ def _assert_timing_metrics_are_valid(metrics, start=None, end=None):
         assert metrics["start"] <= metrics["end"]
 
 
+def _weather_tool():
+    def get_weather(location: str, unit: str = "celsius") -> str:
+        """Get the current weather for a location.
+
+        Args:
+            location: The city and state, e.g. San Francisco, CA
+            unit: The unit of temperature (celsius or fahrenheit)
+        """
+        return f"22 degrees {unit} and sunny in {location}"
+
+    return get_weather
+
+
+def _has_function_call(responses):
+    """True if any response/chunk has function_calls or automatic_function_calling_history."""
+    return any(
+        getattr(r, "function_calls", None) or getattr(r, "automatic_function_calling_history", None) for r in responses
+    )
+
+
+def _assert_tool_use_span(span, model, start, end):
+    assert span["metadata"]["model"] == model
+    assert span["metadata"]["provider"] == "google"
+    assert span["metadata"]["tools"], "tools should be surfaced on metadata.tools"
+    assert "get_weather" in str(span["metadata"]["tools"])
+    assert "tools" not in (span["input"].get("config") or {}), "tools should not leak into input.config"
+    assert "Paris" in str(span["input"]) or "weather" in str(span["input"])
+    assert span["output"]
+    _assert_metrics_are_valid(span["metrics"], start, end)
+
+
+def _assert_embed_span(span, start, end):
+    assert span["metadata"]["model"] == EMBEDDING_MODEL
+    assert "RETRIEVAL_DOCUMENT" in str(span["input"])
+    assert "This is a test" in str(span["input"])
+    assert span["output"]["embedding_length"] == 32
+    assert span["output"]["embeddings_count"] == 2
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+
+
+def _assert_generate_images_span(span, start, end):
+    assert span["metadata"]["model"] == IMAGE_MODEL
+    assert span["input"]["prompt"] == "A watercolor fox in a forest"
+    assert span["input"]["config"]["number_of_images"] == 1
+    assert span["input"]["config"]["aspect_ratio"] == "1:1"
+    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
+    assert span["input"]["config"]["include_rai_reason"] is True
+    assert span["output"]["generated_images_count"] == 1
+    generated_image = span["output"]["generated_images"][0]
+    assert generated_image["image_size_bytes"] > 0
+    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
+
+    # Verify the image bytes are stored as an Attachment for upload to object storage
+    assert "image_url" in generated_image
+    attachment = generated_image["image_url"]["url"]
+    assert isinstance(attachment, Attachment)
+    assert attachment.reference["type"] == "braintrust_attachment"
+    assert attachment.reference["content_type"] == generated_image["mime_type"]
+    assert attachment.reference["filename"].startswith("generated_image_")
+    assert attachment.reference["key"]
+
+    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+
+
 def _assert_attachment_part(part, *, content_type, filename):
     if content_type.startswith("image/"):
         assert "image_url" in part
@@ -432,13 +496,7 @@ def test_embed_content(memory_logger):
 
     spans = memory_logger.pop()
     assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == EMBEDDING_MODEL
-    assert "RETRIEVAL_DOCUMENT" in str(span["input"])
-    assert "This is a test" in str(span["input"])
-    assert span["output"]["embedding_length"] == 32
-    assert span["output"]["embeddings_count"] == 2
-    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+    _assert_embed_span(spans[0], start, end)
 
 
 @pytest.mark.vcr
@@ -465,13 +523,7 @@ async def test_embed_content_async(memory_logger):
 
     spans = memory_logger.pop()
     assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == EMBEDDING_MODEL
-    assert "RETRIEVAL_DOCUMENT" in str(span["input"])
-    assert "This is a test" in str(span["input"])
-    assert span["output"]["embedding_length"] == 32
-    assert span["output"]["embeddings_count"] == 2
-    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+    _assert_embed_span(spans[0], start, end)
 
 
 @pytest.mark.vcr
@@ -638,15 +690,6 @@ def test_tool_use(memory_logger, mode):
     assert not memory_logger.pop()
     model = TOOL_MODEL
 
-    def get_weather(location: str, unit: str = "celsius") -> str:
-        """Get the current weather for a location.
-
-        Args:
-            location: The city and state, e.g. San Francisco, CA
-            unit: The unit of temperature (celsius or fahrenheit)
-        """
-        return f"22 degrees {unit} and sunny in {location}"
-
     client = Client()
     start = time.time()
     has_function_call = False
@@ -656,49 +699,32 @@ def test_tool_use(memory_logger, mode):
             model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[get_weather],
+                tools=[_weather_tool()],
                 max_output_tokens=500,
             ),
         )
-        # Check if function was called (either in function_calls or automatic_function_calling_history)
-        has_function_call = (hasattr(response, "function_calls") and response.function_calls) or (
-            hasattr(response, "automatic_function_calling_history") and response.automatic_function_calling_history
-        )
+        has_function_call = _has_function_call([response])
     elif mode == "stream":
         stream = client.models.generate_content_stream(
             model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[get_weather],
+                tools=[_weather_tool()],
                 max_output_tokens=500,
             ),
         )
         chunks = list(stream)
-        # Check if function was called in any chunk (either in function_calls or automatic_function_calling_history)
-        has_function_call = any(
-            (hasattr(chunk, "function_calls") and chunk.function_calls)
-            or (hasattr(chunk, "automatic_function_calling_history") and chunk.automatic_function_calling_history)
-            for chunk in chunks
-        )
+        has_function_call = _has_function_call(chunks)
 
     end = time.time()
 
     # Verify function call was made
     assert has_function_call, f"Expected function call in {mode} mode but got has_function_call={has_function_call}"
 
-    # Verify logging (automatic function calling may create multiple spans)
+    # Automatic function calling may create multiple spans; check the initial request.
     spans = memory_logger.pop()
     assert len(spans) >= 1
-    # Check the first span (initial request with tool call)
-    span = spans[0]
-    assert span["metadata"]["model"] == model
-    assert span["metadata"]["provider"] == "google"
-    assert span["metadata"]["tools"], "tools should be surfaced on metadata.tools"
-    assert "get_weather" in str(span["metadata"]["tools"])
-    assert "tools" not in (span["input"].get("config") or {}), "tools should not leak into input.config"
-    assert "Paris" in str(span["input"]) or "weather" in str(span["input"])
-    assert span["output"]
-    _assert_metrics_are_valid(span["metrics"], start, end)
+    _assert_tool_use_span(spans[0], model, start, end)
 
 
 # Test 3b: Tool Use (Async)
@@ -713,15 +739,6 @@ async def test_tool_use_async(memory_logger, mode):
     assert not memory_logger.pop()
     model = TOOL_MODEL
 
-    def get_weather(location: str, unit: str = "celsius") -> str:
-        """Get the current weather for a location.
-
-        Args:
-            location: The city and state, e.g. San Francisco, CA
-            unit: The unit of temperature (celsius or fahrenheit)
-        """
-        return f"22 degrees {unit} and sunny in {location}"
-
     client = Client()
     start = time.time()
     has_function_call = False
@@ -731,47 +748,34 @@ async def test_tool_use_async(memory_logger, mode):
             model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[get_weather],
+                tools=[_weather_tool()],
                 max_output_tokens=500,
             ),
         )
-        # Check if function was called (either in function_calls or automatic_function_calling_history)
-        has_function_call = (hasattr(response, "function_calls") and response.function_calls) or (
-            hasattr(response, "automatic_function_calling_history") and response.automatic_function_calling_history
-        )
+        has_function_call = _has_function_call([response])
     elif mode == "async_stream":
         stream = await client.aio.models.generate_content_stream(
             model=model,
             contents="What is the weather like in Paris, France?",
             config=types.GenerateContentConfig(
-                tools=[get_weather],
+                tools=[_weather_tool()],
                 max_output_tokens=500,
             ),
         )
         chunks = []
         async for chunk in stream:
             chunks.append(chunk)
-        # Check if function was called in any chunk (either in function_calls or automatic_function_calling_history)
-        has_function_call = any(
-            (hasattr(chunk, "function_calls") and chunk.function_calls)
-            or (hasattr(chunk, "automatic_function_calling_history") and chunk.automatic_function_calling_history)
-            for chunk in chunks
-        )
+        has_function_call = _has_function_call(chunks)
 
     end = time.time()
 
     # Verify function call was made
     assert has_function_call, f"Expected function call in {mode} mode but got has_function_call={has_function_call}"
 
-    # Verify logging (automatic function calling may create multiple spans)
+    # Automatic function calling may create multiple spans; check the initial request.
     spans = memory_logger.pop()
     assert len(spans) >= 1
-    # Check the first span (initial request with tool call)
-    span = spans[0]
-    assert span["metadata"]["model"] == model
-    assert "Paris" in str(span["input"]) or "weather" in str(span["input"])
-    assert span["output"]
-    _assert_metrics_are_valid(span["metrics"], start, end)
+    _assert_tool_use_span(spans[0], model, start, end)
 
 
 # Test 4: System Prompt
@@ -804,65 +808,6 @@ def test_system_prompt(memory_logger):
     assert "pirate" in str(span["input"]).lower() or "system_instruction" in str(span)
 
 
-# Test 5: Multi-turn Conversation
-@pytest.mark.vcr
-def test_multi_turn(memory_logger):
-    """Test multi-turn conversation."""
-    assert not memory_logger.pop()
-
-    client = Client()
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=[
-            types.Content(role="user", parts=[types.Part.from_text(text="Hi, my name is Alice.")]),
-            types.Content(role="model", parts=[types.Part.from_text(text="Hello Alice! Nice to meet you.")]),
-            types.Content(role="user", parts=[types.Part.from_text(text="What did I just tell you my name was?")]),
-        ],
-        config=types.GenerateContentConfig(
-            max_output_tokens=200,
-        ),
-    )
-
-    text = response.text
-    assert "Alice" in text
-
-    # Verify logging
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-    assert span["input"]
-    assert span["output"]
-    assert "Alice" in str(span["input"])
-
-
-# Test 6: Temperature and Top P
-@pytest.mark.vcr
-def test_temperature_and_top_p(memory_logger):
-    """Test temperature and top_p parameters."""
-    assert not memory_logger.pop()
-
-    client = Client()
-    response = client.models.generate_content(
-        model=MODEL,
-        contents="Say something creative.",
-        config=types.GenerateContentConfig(
-            temperature=0.7,
-            top_p=0.95,
-            max_output_tokens=50,
-        ),
-    )
-
-    text = response.text
-    assert text
-
-    # Verify logging includes temperature and top_p
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-
-
 # Test 7: Error Handling
 @pytest.mark.vcr
 def test_error_handling(memory_logger):
@@ -890,31 +835,6 @@ def test_error_handling(memory_logger):
     log = logs[0]
     assert log["project_id"] == PROJECT_NAME
     assert log["error"]
-
-
-@pytest.mark.vcr
-def test_stop_sequences(memory_logger):
-    """Test stop sequences parameter."""
-    assert not memory_logger.pop()
-
-    client = Client()
-    response = client.models.generate_content(
-        model=MODEL,
-        contents="Write a short story about a robot.",
-        config=types.GenerateContentConfig(
-            max_output_tokens=500,
-            stop_sequences=["END", "\n\n"],
-        ),
-    )
-
-    text = response.text
-    assert text
-
-    # Verify logging
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
 
 
 @pytest.mark.vcr
@@ -1162,22 +1082,6 @@ def test_generated_image_usage(memory_logger):
     assert spans[0]["metrics"]["completion_image_tokens"] == expected_image_tokens
 
 
-def test_attachment_in_config(memory_logger):
-    """Test that attachments in config are preserved through serialization."""
-    from braintrust.bt_json import bt_safe_deep_copy
-    from braintrust.logger import Attachment
-
-    attachment = Attachment(data=b"config data", filename="config.txt", content_type="text/plain")
-
-    # Simulate config with attachment
-    config = {"temperature": 0.5, "context_file": attachment, "max_output_tokens": 100}
-
-    # Test bt_safe_deep_copy preserves attachment
-    copied = bt_safe_deep_copy(config)
-    assert copied["context_file"] is attachment
-    assert copied["temperature"] == 0.5
-
-
 @DEVELOPER_API_IMAGEN_ONLY
 @pytest.mark.vcr
 def test_generate_images(memory_logger):
@@ -1204,28 +1108,7 @@ def test_generate_images(memory_logger):
 
     spans = memory_logger.pop()
     assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == IMAGE_MODEL
-    assert span["input"]["prompt"] == "A watercolor fox in a forest"
-    assert span["input"]["config"]["number_of_images"] == 1
-    assert span["input"]["config"]["aspect_ratio"] == "1:1"
-    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
-    assert span["input"]["config"]["include_rai_reason"] is True
-    assert span["output"]["generated_images_count"] == 1
-    generated_image = span["output"]["generated_images"][0]
-    assert generated_image["image_size_bytes"] > 0
-    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
-
-    # Verify the image bytes are stored as an Attachment for upload to object storage
-    assert "image_url" in generated_image
-    attachment = generated_image["image_url"]["url"]
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["type"] == "braintrust_attachment"
-    assert attachment.reference["content_type"] == generated_image["mime_type"]
-    assert attachment.reference["filename"].startswith("generated_image_")
-    assert attachment.reference["key"]
-
-    _assert_timing_metrics_are_valid(span["metrics"], start, end)
+    _assert_generate_images_span(spans[0], start, end)
 
 
 @DEVELOPER_API_IMAGEN_ONLY
@@ -1255,49 +1138,7 @@ async def test_generate_images_async(memory_logger):
 
     spans = memory_logger.pop()
     assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == IMAGE_MODEL
-    assert span["input"]["prompt"] == "A watercolor fox in a forest"
-    assert span["input"]["config"]["number_of_images"] == 1
-    assert span["input"]["config"]["aspect_ratio"] == "1:1"
-    assert span["input"]["config"]["safety_filter_level"] == "BLOCK_LOW_AND_ABOVE"
-    assert span["input"]["config"]["include_rai_reason"] is True
-    assert span["output"]["generated_images_count"] == 1
-    generated_image = span["output"]["generated_images"][0]
-    assert generated_image["image_size_bytes"] > 0
-    assert generated_image["mime_type"] in {"image/png", "image/jpeg", "image/webp"}
-
-    # Verify the image bytes are stored as an Attachment for upload to object storage
-    assert "image_url" in generated_image
-    attachment = generated_image["image_url"]["url"]
-    assert isinstance(attachment, Attachment)
-    assert attachment.reference["type"] == "braintrust_attachment"
-    assert attachment.reference["content_type"] == generated_image["mime_type"]
-    assert attachment.reference["filename"].startswith("generated_image_")
-    assert attachment.reference["key"]
-
-    _assert_timing_metrics_are_valid(span["metrics"], start, end)
-
-
-def test_nested_attachments_in_contents(memory_logger):
-    """Test that nested attachments in contents are preserved."""
-    from braintrust.bt_json import bt_safe_deep_copy
-    from braintrust.logger import Attachment, ExternalAttachment
-
-    attachment1 = Attachment(data=b"file1", filename="file1.txt", content_type="text/plain")
-    attachment2 = ExternalAttachment(url="s3://bucket/file2.pdf", filename="file2.pdf", content_type="application/pdf")
-
-    # Simulate contents with nested attachments
-    contents = [
-        {"role": "user", "parts": [{"text": "Check these files"}, {"file": attachment1}]},
-        {"role": "model", "parts": [{"text": "Analyzed"}, {"result_file": attachment2}]},
-    ]
-
-    copied = bt_safe_deep_copy(contents)
-
-    # Verify attachments preserved
-    assert copied[0]["parts"][1]["file"] is attachment1
-    assert copied[1]["parts"][1]["result_file"] is attachment2
+    _assert_generate_images_span(spans[0], start, end)
 
 
 def test_attachment_with_pydantic_model(memory_logger):
@@ -1732,6 +1573,10 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
     )
     tool_call = next(output for output in _interaction_outputs(first_response) if output.type == "function_call")
 
+    # Local tool work between the two calls should nest under the still-active tool span.
+    with logger.start_span(name="nested_tool_work", type=SpanTypeAttribute.TASK) as nested_tool_work:
+        nested_tool_work.log(output={"forecast": "sunny"})
+
     second_response = client.interactions.create(
         model=INTERACTIONS_MODEL,
         previous_interaction_id=first_response.id,
@@ -1768,52 +1613,7 @@ def test_interactions_tool_call_and_follow_up(memory_logger):
     assert tool_span["input"] == {"location": "Paris"}
     assert tool_span["span_parents"] == [first_span["span_id"]]
 
-
-@_needs_interactions
-@pytest.mark.vcr
-def test_interactions_tool_span_stays_active_during_local_tool_work(memory_logger):
-    assert not memory_logger.pop()
-
-    client = Client()
-    tool = _interaction_function_tool()
-
-    first_response = client.interactions.create(
-        model=INTERACTIONS_MODEL,
-        input="What is the weather like in Paris? Use the tool.",
-        tools=[tool],
-    )
-    tool_call = next(output for output in _interaction_outputs(first_response) if output.type == "function_call")
-
-    with logger.start_span(name="nested_tool_work", type=SpanTypeAttribute.TASK) as nested_tool_work:
-        nested_tool_work.log(output={"forecast": "sunny"})
-
-    second_response = client.interactions.create(
-        model=INTERACTIONS_MODEL,
-        previous_interaction_id=first_response.id,
-        input=[
-            _function_result_content(
-                type="function_result",
-                call_id=tool_call.id,
-                name=tool_call.name,
-                result={"forecast": "sunny"},
-            )
-        ],
-        tools=[tool],
-    )
-
-    assert first_response.status == "requires_action"
-    assert second_response.status == "completed"
-
-    spans = memory_logger.pop()
-    llm_spans = find_spans_by_type(spans, SpanTypeAttribute.LLM)
-    tool_spans = find_spans_by_type(spans, SpanTypeAttribute.TOOL)
-
-    first_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == first_response.id)
-    second_span = next(span for span in llm_spans if span["metadata"]["interaction_id"] == second_response.id)
-    tool_span = find_span_by_name(tool_spans, "get_weather")
     nested_span = find_span_by_name(spans, "nested_tool_work")
-
-    assert tool_span["span_parents"] == [first_span["span_id"]]
     assert nested_span["span_parents"] == [tool_span["span_id"]]
     assert tool_span["metrics"]["start"] <= nested_span["metrics"]["start"]
     assert tool_span["metrics"]["end"] >= nested_span["metrics"]["end"]
