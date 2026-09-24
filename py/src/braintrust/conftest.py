@@ -2,7 +2,12 @@ import os
 from unittest.mock import MagicMock
 
 import pytest
+from braintrust import _test_cassette_usage
 from braintrust.framework2 import ProjectIdCache
+
+
+# Record cassette reads when check-unused-cassettes.py is collecting usage.
+_test_cassette_usage.install()
 
 
 def _patch_vcr_aiohttp_stubs():

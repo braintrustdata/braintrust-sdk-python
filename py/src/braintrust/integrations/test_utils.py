@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 import vcr
-from braintrust import Attachment, logger
+from braintrust import Attachment, _test_cassette_usage, logger
 from braintrust.conftest import get_vcr_config
 from braintrust.integrations.conftest import _versioned_cassette_dir
 from braintrust.integrations.utils import (
@@ -41,6 +41,10 @@ from braintrust.test_helpers import init_test_logger
 # lets the parent process hand down the *source-tree* integrations path.
 _INTEGRATIONS_DIR = Path(os.environ.get("BRAINTRUST_INTEGRATIONS_DIR", Path(__file__).resolve().parent))
 AUTO_TEST_SCRIPTS_DIR = _INTEGRATIONS_DIR / "auto_test_scripts"
+
+# Auto-instrument scripts run in a fresh interpreter; record their cassette
+# reads too when check-unused-cassettes.py is collecting usage.
+_test_cassette_usage.install()
 
 
 @contextmanager

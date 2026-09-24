@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev test-core check-stale-cassettes sync-pytest-pin fetch-openapi-spec generate-api-client check-api-client-codegen test-api-codegen _check-git-clean bench bench-compare
+.PHONY: lint pylint test test-wheel _template-version clean fixup build verify-build verify help install-build-deps install-dev test-core check-stale-cassettes check-unused-cassettes sync-pytest-pin fetch-openapi-spec generate-api-client check-api-client-codegen test-api-codegen _check-git-clean bench bench-compare
 
 clean:
 	rm -rf build dist
@@ -32,6 +32,9 @@ test-core:
 
 check-stale-cassettes:
 	$(PYTHON) scripts/check-stale-cassettes.py
+
+check-unused-cassettes:
+	$(PYTHON) scripts/check-unused-cassettes.py run $(if $(INTEGRATIONS),$(INTEGRATIONS),--all)
 
 sync-pytest-pin:
 	$(PYTHON) scripts/sync-pytest-pin.py
@@ -92,6 +95,7 @@ help:
 	@echo "  bench-compare       - Compare two benchmark results (BENCH_BASE=... BENCH_NEW=...)"
 	@echo "  build               - Build Python package"
 	@echo "  check-stale-cassettes - Detect orphaned cassette version directories"
+	@echo "  check-unused-cassettes - Find cassette files no test loads (INTEGRATIONS=\"openai anthropic\"; default all)"
 	@echo "  fetch-openapi-spec  - Fetch the hash-verified pinned OpenAPI spec"
 	@echo "  generate-api-client - Generate the REST API client and public reference from the pinned spec"
 	@echo "  check-api-client-codegen - Check the committed REST API client and public reference for drift"
