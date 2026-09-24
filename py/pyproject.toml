@@ -152,6 +152,12 @@ test-mcp-v1 = [
     "mcp==1.28.1",
 ]
 
+# SQLAlchemy 2.1.0 ships only an sdist whose pyproject declares a duplicate
+# normalized extra (`mssql-pymssql`), which uv refuses to build.
+test-sqlalchemy-2-0 = [
+    "sqlalchemy<2.1",
+]
+
 test-pydantic-ai-otel-events = [
     "opentelemetry-api==1.39.1",
     # genai-prices 0.1 returns fields that older Pydantic AI RequestUsage models cannot accept.

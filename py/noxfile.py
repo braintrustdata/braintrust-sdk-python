@@ -605,7 +605,7 @@ def test_dspy(session, version):
         # and Python 3.14 wheels. Preinstall our portable matrix pin so DSPy's
         # dependency resolution does not select that incompatible release.
         _install_matrix_dep(session, "litellm", LATEST)
-    _install_matrix_dep(session, "dspy", version)
+    _install_matrix_dep(session, "dspy", version, "test-sqlalchemy-2-0")
     _run_tests(session, f"{INTEGRATION_DIR}/dspy/test_dspy.py", version=version, env=_LITELLM_LOCAL_COST_MAP)
 
 
@@ -632,7 +632,7 @@ GOOGLE_ADK_VERSIONS = _get_matrix_versions("google-adk")
 @nox.parametrize("version", GOOGLE_ADK_VERSIONS, ids=GOOGLE_ADK_VERSIONS)
 def test_google_adk(session, version):
     _install_test_deps(session)
-    _install_matrix_dep(session, "google-adk", version)
+    _install_matrix_dep(session, "google-adk", version, "test-sqlalchemy-2-0")
     _run_tests(session, f"{INTEGRATION_DIR}/adk/test_adk.py", version=version)
 
 
@@ -672,7 +672,7 @@ LLAMAINDEX_VERSIONS = _get_matrix_versions("llama-index-core")
 def test_llamaindex(session, version):
     _install_test_deps(session)
     _install_group_locked(session, "test-llamaindex")
-    _install_matrix_dep(session, "llama-index-core", version)
+    _install_matrix_dep(session, "llama-index-core", version, "test-sqlalchemy-2-0")
     # These packages are tightly version-coupled to llama-index-core, so we
     # install them unpinned and let pip resolve compatible versions.
     session.install("llama-index-llms-openai", "llama-index-embeddings-openai", silent=SILENT_INSTALLS)
