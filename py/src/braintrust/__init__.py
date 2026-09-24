@@ -50,6 +50,7 @@ BRAINTRUST_API_KEY=<YOUR_BRAINTRUST_API_KEY> braintrust eval eval_hello.py
 
 # Check env var at import time for auto-instrumentation
 import os
+from typing import Any as _Any
 
 
 if os.getenv("BRAINTRUST_INSTRUMENT_THREADS", "").lower() in ("true", "1", "yes"):
@@ -68,13 +69,6 @@ from .framework2 import *
 from .functions.invoke import *
 from .functions.stream import *
 from .generated_types import *
-from .integrations.ai_sdk import setup_ai_sdk as setup_ai_sdk
-from .integrations.anthropic import wrap_anthropic as wrap_anthropic
-from .integrations.instructor import wrap_instructor as wrap_instructor
-from .integrations.litellm import wrap_litellm as wrap_litellm
-from .integrations.openai import wrap_openai as wrap_openai
-from .integrations.openrouter import wrap_openrouter as wrap_openrouter
-from .integrations.pydantic_ai import setup_pydantic_ai as setup_pydantic_ai
 from .logger import *
 from .logger import (
     _internal_get_global_state,  # noqa: F401 # type: ignore[reportUnusedImport]
@@ -91,3 +85,53 @@ from .span_customizer import SpanExportData as SpanExportData
 from .span_customizer import set_span_customizers as set_span_customizers
 from .util import BT_IS_ASYNC_ATTRIBUTE as BT_IS_ASYNC_ATTRIBUTE
 from .util import MarkAsyncWrapper as MarkAsyncWrapper
+
+
+def wrap_anthropic(client: _Any) -> _Any:
+    from .integrations.anthropic import wrap_anthropic as _wrap_anthropic
+
+    return _wrap_anthropic(client)
+
+
+def wrap_instructor(client: _Any) -> _Any:
+    from .integrations.instructor import wrap_instructor as _wrap_instructor
+
+    return _wrap_instructor(client)
+
+
+def wrap_litellm(litellm: _Any) -> _Any:
+    from .integrations.litellm import wrap_litellm as _wrap_litellm
+
+    return _wrap_litellm(litellm)
+
+
+def wrap_openai(client: _Any) -> _Any:
+    from .integrations.openai import wrap_openai as _wrap_openai
+
+    return _wrap_openai(client)
+
+
+def wrap_openrouter(client: _Any) -> _Any:
+    from .integrations.openrouter import wrap_openrouter as _wrap_openrouter
+
+    return _wrap_openrouter(client)
+
+
+def setup_ai_sdk(
+    api_key: str | None = None,
+    project_id: str | None = None,
+    project_name: str | None = None,
+) -> bool:
+    from .integrations.ai_sdk import setup_ai_sdk as _setup_ai_sdk
+
+    return _setup_ai_sdk(api_key=api_key, project_id=project_id, project_name=project_name)
+
+
+def setup_pydantic_ai(
+    api_key: str | None = None,
+    project_id: str | None = None,
+    project_name: str | None = None,
+) -> bool:
+    from .integrations.pydantic_ai import setup_pydantic_ai as _setup_pydantic_ai
+
+    return _setup_pydantic_ai(api_key=api_key, project_id=project_id, project_name=project_name)
