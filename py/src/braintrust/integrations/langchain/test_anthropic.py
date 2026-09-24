@@ -56,10 +56,6 @@ def test_langchain_anthropic_integration(
     spans = memory_logger.pop()
     assert len(spans) > 0
 
-    chain_spans = [span for span in spans if "LangGraph" in span["span_attributes"].get("name", "")]
-    if not chain_spans:
-        chain_spans = [span for span in spans if span["span_attributes"].get("type") == "task"]
-
     llm_spans = [span for span in spans if span["span_attributes"].get("type") == "llm"]
     assert len(llm_spans) > 0, "Should have at least one LLM call"
 
@@ -118,4 +114,11 @@ async def test_async_langchain_invoke(
     assert "3" in result.content.lower()
 
     spans = memory_logger.pop()
-    assert len(spans) > 0
+    llm_spans = [span for span in spans if span["span_attributes"].get("type") == "llm"]
+    assert len(llm_spans) == 1
+    llm_span = llm_spans[0]
+    assert llm_span["metadata"]["model"] == MODEL
+    assert llm_span["metadata"]["provider"] == "anthropic"
+    assert "3" in str(llm_span["output"])
+    assert llm_span["metrics"]["prompt_tokens"] > 0
+    assert llm_span["metrics"]["completion_tokens"] > 0

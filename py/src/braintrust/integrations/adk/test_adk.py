@@ -69,6 +69,24 @@ async def _create_runner(agent: Agent, *, app_name: str, user_id: str, session_i
     return Runner(agent=agent, app_name=app_name, session_service=session_service)
 
 
+async def _run_final_responses(runner: Runner, *, user_id: str, session_id: str, new_message: types.Content):
+    return [
+        event
+        async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=new_message)
+        if event.is_final_response()
+    ]
+
+
+def _assert_llm_output_shape(output):
+    # Extra keys like model_version may appear in newer ADK versions, so only check the expected ones.
+    assert output["content"]["role"] == "model"
+    assert "parts" in output["content"]
+    assert "finish_reason" in output
+    assert "usage_metadata" in output
+    if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
+        assert output["avg_logprobs"] is not None
+
+
 def get_weather(location: str):
     """Get the weather for a location."""
     return {
@@ -129,11 +147,8 @@ async def test_adk_multi_turn_history_is_logged(memory_logger):
     runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
 
     async def run_message(text: str) -> str:
-        responses = []
         user_msg = types.Content(role="user", parts=[types.Part(text=text)])
-        async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
-            if event.is_final_response():
-                responses.append(event)
+        responses = await _run_final_responses(runner, user_id=user_id, session_id=session_id, new_message=user_msg)
         assert responses
         return responses[0].content.parts[0].text
 
@@ -311,17 +326,11 @@ async def test_adk_braintrust_integration(memory_logger):
     USER_ID = "test-user"
     SESSION_ID = "test-session"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
+    runner = await _create_runner(agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     user_msg = types.Content(role="user", parts=[types.Part(text="What's the weather in San Francisco?")])
 
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
     assert len(responses) > 0
     assert responses[0].content
@@ -492,16 +501,10 @@ async def test_adk_nested_subagent_tool_calls_are_traced(memory_logger):
     user_id = "test-user"
     session_id = "test-session-nested"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=app_name, user_id=user_id, session_id=session_id)
-
-    runner = Runner(agent=agent, app_name=app_name, session_service=session_service)
+    runner = await _create_runner(agent, app_name=app_name, user_id=user_id, session_id=session_id)
     user_msg = types.Content(role="user", parts=[types.Part(text="What's the weather in San Francisco?")])
 
-    responses = []
-    async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=user_id, session_id=session_id, new_message=user_msg)
 
     assert responses
     assert responses[0].content
@@ -542,17 +545,11 @@ async def test_adk_max_tokens_captures_content(memory_logger):
     USER_ID = "test-user"
     SESSION_ID = "test-session-max-tokens"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
+    runner = await _create_runner(agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     user_msg = types.Content(role="user", parts=[types.Part(text="Tell me a long story about a lighthouse.")])
 
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
     assert len(responses) > 0
     spans = memory_logger.pop()
@@ -607,10 +604,7 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
     USER_ID = "test-user"
     SESSION_ID = "test-session-image"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
+    runner = await _create_runner(agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     # Load test image from shared SDK fixtures
     image_data = (FIXTURES_DIR / "test-image.png").read_bytes()
@@ -624,10 +618,7 @@ async def test_adk_binary_data_attachment_conversion(memory_logger):
         ],
     )
 
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
     assert len(responses) > 0
 
@@ -747,17 +738,11 @@ async def test_adk_captures_metrics(memory_logger):
     USER_ID = "test-user"
     SESSION_ID = "test-session-metrics"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
+    runner = await _create_runner(agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     user_msg = types.Content(role="user", parts=[types.Part(text="Say hello in 3 words")])
 
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
     assert len(responses) > 0
 
@@ -814,80 +799,6 @@ async def test_adk_captures_metrics(memory_logger):
 # path is asserted in `test_adk_captures_metrics`.
 
 
-class CapitalOutput(BaseModel):
-    capital: str = Field(description="The capital of the country.")
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_adk_structured_output_pydantic(memory_logger):
-    """Test that structured output with Pydantic models is properly captured."""
-    from unittest.mock import ANY
-
-    assert not memory_logger.pop()
-
-    structured_capital_agent = LlmAgent(
-        name="capital_agent",
-        model=ADK_MODEL,
-        instruction="""You are a Capital Information Agent. Given a country, respond ONLY with a JSON object containing the capital. Format: {"capital": "capital_name"}""",
-        output_schema=CapitalOutput,
-        output_key="found_capital",
-    )
-
-    APP_NAME = "capital_app"
-    USER_ID = "test-user"
-    SESSION_ID = "test-session-structured"
-
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=structured_capital_agent, app_name=APP_NAME, session_service=session_service)
-
-    user_msg = types.Content(role="user", parts=[types.Part(text="What is the capital of France?")])
-
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
-
-    assert len(responses) > 0
-
-    spans = memory_logger.pop()
-
-    # Find the LLM span that has response_schema in the config
-    llm_spans_with_schema = [
-        span
-        for span in spans
-        if span["span_attributes"]["type"] == "llm"
-        and "input" in span
-        and "config" in span["input"]
-        and span["input"]["config"].get("response_schema") is not None
-    ]
-
-    assert len(llm_spans_with_schema) > 0, "Should have at least one LLM call with response_schema"
-
-    llm_span = llm_spans_with_schema[0]
-
-    # Assert the complete input structure - use ANY for values we don't care about
-    assert llm_span["input"] == {
-        "model": ANY,
-        "contents": ANY,
-        "config": {
-            "system_instruction": ANY,
-            "response_mime_type": ANY,
-            "response_schema": {
-                "properties": {
-                    "capital": {"description": "The capital of the country.", "title": "Capital", "type": "string"}
-                },
-                "required": ["capital"],
-                "title": "CapitalOutput",
-                "type": "object",
-            },
-        },
-        "live_connect_config": ANY,
-    }
-
-
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_adk_input_schema_serialization(memory_logger):
@@ -911,17 +822,11 @@ async def test_adk_input_schema_serialization(memory_logger):
     USER_ID = "test-user"
     SESSION_ID = "test-session-input-schema"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=agent, app_name=APP_NAME, session_service=session_service)
+    runner = await _create_runner(agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     user_msg = types.Content(role="user", parts=[types.Part(text='{"name":"Alice","age":30}')])
 
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
     assert len(responses) > 0
 
@@ -949,14 +854,7 @@ async def test_adk_input_schema_serialization(memory_logger):
         "live_connect_config": ANY,
     }
 
-    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
-    output = llm_span["output"]
-    assert output["content"]["role"] == "model"
-    assert "parts" in output["content"]
-    assert "finish_reason" in output
-    assert "usage_metadata" in output
-    if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
-        assert output["avg_logprobs"] is not None
+    _assert_llm_output_shape(llm_span["output"])
 
 
 @pytest.mark.vcr
@@ -989,19 +887,13 @@ async def test_adk_complex_nested_schema(memory_logger):
     USER_ID = "test-user"
     SESSION_ID = "test-session-nested"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=nested_agent, app_name=APP_NAME, session_service=session_service)
+    runner = await _create_runner(nested_agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     user_msg = types.Content(
         role="user", parts=[types.Part(text="Give me info about Alice who lives in Paris, France.")]
     )
 
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
     assert len(responses) > 0
 
@@ -1084,21 +976,14 @@ async def test_adk_complex_nested_schema(memory_logger):
         "live_connect_config": ANY,
     }
 
-    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
-    output = llm_span["output"]
-    assert output["content"]["role"] == "model"
-    assert "parts" in output["content"]
-    assert "finish_reason" in output
-    assert "usage_metadata" in output
-    if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
-        assert output["avg_logprobs"] is not None
+    _assert_llm_output_shape(llm_span["output"])
 
 
 # _capture_config's allowlisted fields are exercised through the VCR-backed
-# integration tests: response_schema (`test_adk_structured_output_pydantic`,
-# `test_adk_complex_nested_schema`), input_schema (`test_adk_input_schema_serialization`),
-# response_json_schema (`test_adk_response_json_schema_dict`), and the sampling
-# params (`test_adk_generation_config_is_logged`).
+# integration tests: response_schema (`test_adk_complex_nested_schema`),
+# input_schema (`test_adk_input_schema_serialization`), response_json_schema
+# (`test_adk_response_json_schema_dict`), and the sampling params
+# (`test_adk_max_tokens_captures_content`).
 
 
 @pytest.mark.vcr
@@ -1147,17 +1032,11 @@ async def test_adk_response_json_schema_dict(memory_logger):
     USER_ID = "test-user"
     SESSION_ID = "test-session-json-dict"
 
-    session_service = InMemorySessionService()
-    await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-
-    runner = Runner(agent=json_schema_agent, app_name=APP_NAME, session_service=session_service)
+    runner = await _create_runner(json_schema_agent, app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
 
     user_msg = types.Content(role="user", parts=[types.Part(text="Tell me about Tokyo")])
 
-    responses = []
-    async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg):
-        if event.is_final_response():
-            responses.append(event)
+    responses = await _run_final_responses(runner, user_id=USER_ID, session_id=SESSION_ID, new_message=user_msg)
 
     assert len(responses) > 0
 
@@ -1212,14 +1091,7 @@ async def test_adk_response_json_schema_dict(memory_logger):
         "live_connect_config": ANY,
     }
 
-    # Assert output contains expected keys (extra keys like model_version may appear in newer ADK versions)
-    output = llm_span["output"]
-    assert output["content"]["role"] == "model"
-    assert "parts" in output["content"]
-    assert "finish_reason" in output
-    assert "usage_metadata" in output
-    if ADK_VERSION >= (1, 15, 0) and "avg_logprobs" in output:
-        assert output["avg_logprobs"] is not None
+    _assert_llm_output_shape(llm_span["output"])
 
 
 class TestAutoInstrumentADK:
