@@ -70,6 +70,20 @@ def load_usage(usage_dir: pathlib.Path) -> set[str]:
     return used
 
 
+def prepare_usage_dir(usage_dir: pathlib.Path | None) -> pathlib.Path:
+    """Return an absolute usage directory with no logs from earlier runs.
+
+    Absolute because test processes resolve the env var from their own cwd
+    (some sessions run from a temp dir). Emptied because stale reads would mark
+    cassettes as used that the current tests no longer open.
+    """
+    usage_dir = (usage_dir or pathlib.Path(tempfile.mkdtemp(prefix="cassette-usage-"))).resolve()
+    usage_dir.mkdir(parents=True, exist_ok=True)
+    for stale in [*usage_dir.glob("usage-*.txt"), *usage_dir.glob("report-*.json")]:
+        stale.unlink()
+    return usage_dir
+
+
 def find_unused(integrations: list[str], used: set[str]) -> list[str]:
     return sorted(cassette_files(integrations) - used)
 
@@ -235,7 +249,9 @@ def main() -> None:
     run_parser = sub.add_parser("run", help="Run the relevant nox sessions, then report")
     run_parser.add_argument("integrations", nargs="*", help="Integration directory names (e.g. anthropic)")
     run_parser.add_argument("--all", action="store_true", help="Check every integration with cassettes")
-    run_parser.add_argument("--usage-dir", type=pathlib.Path, help="Keep usage logs here instead of a temp dir")
+    run_parser.add_argument(
+        "--usage-dir", type=pathlib.Path, help="Write usage logs here (cleared first) instead of a temp dir"
+    )
     run_parser.add_argument("--clean", action="store_true", help="Delete unused cassette files")
     run_parser.add_argument(
         "--reuse-venv", action="store_true", help="Reuse existing nox virtualenvs instead of recreating them"
@@ -252,8 +268,7 @@ def main() -> None:
         if not args.integrations and not args.all:
             parser.error("pass integration names or --all")
         integrations = _resolve_integrations([] if args.all else args.integrations)
-        usage_dir = args.usage_dir or pathlib.Path(tempfile.mkdtemp(prefix="cassette-usage-"))
-        usage_dir.mkdir(parents=True, exist_ok=True)
+        usage_dir = prepare_usage_dir(args.usage_dir)
         complete, incomplete = run_sessions(integrations, usage_dir, reuse_venv=args.reuse_venv)
         print()
         if incomplete:

@@ -168,3 +168,21 @@ def test_checker_maps_integrations_to_nox_sessions(checker, tmp_path):
         "alpha": {"test_alpha", "test_alpha_extra"},
         "beta": {"test_spec_beta"},
     }
+
+
+def test_checker_prepares_an_absolute_empty_usage_dir(checker, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    stale = tmp_path / "usage"
+    stale.mkdir()
+    (stale / "usage-1-a.txt").write_text("integrations/alpha/cassettes/latest/unused.yaml\n")
+    (stale / "report-0.json").write_text("{}")
+    (stale / "keep.txt").write_text("unrelated")
+
+    usage_dir = checker.prepare_usage_dir(Path("usage"))
+
+    # Test processes may run from another cwd (e.g. run_from_temp_dir), so the
+    # env var must be absolute; a fresh run must not inherit old reads.
+    assert usage_dir == stale.resolve()
+    assert checker.load_usage(usage_dir) == set()
+    assert sorted(p.name for p in usage_dir.iterdir()) == ["keep.txt"]
+    assert checker.prepare_usage_dir(None).is_absolute()
