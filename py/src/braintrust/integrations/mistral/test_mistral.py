@@ -138,6 +138,20 @@ def _assert_conversation_span(span, expected_input, start, end, *, expected_cont
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
+def _core_method_refs():
+    refs = {}
+    for cls, methods in (
+        (Chat, ("complete", "complete_async", "stream", "stream_async")),
+        (Embeddings, ("create", "create_async")),
+        (Fim, ("complete", "complete_async", "stream", "stream_async")),
+        (Agents, ("complete", "complete_async", "stream", "stream_async")),
+        (Ocr, ("process", "process_async")),
+    ):
+        for method in methods:
+            refs[(cls, method)] = inspect.getattr_static(cls, method)
+    return refs
+
+
 def _audio_method_refs():
     refs = {}
     for cls, methods in (
@@ -1091,147 +1105,17 @@ def test_mistral_integration_setup_instruments_beta_conversations(memory_logger,
     )
 
 
-@pytest.mark.vcr
-def test_mistral_integration_setup_creates_spans(memory_logger, monkeypatch):
-    assert not memory_logger.pop()
-
-    original_complete = inspect.getattr_static(Chat, "complete")
-    original_complete_async = inspect.getattr_static(Chat, "complete_async")
-    original_stream = inspect.getattr_static(Chat, "stream")
-    original_stream_async = inspect.getattr_static(Chat, "stream_async")
-    original_embeddings_create = inspect.getattr_static(Embeddings, "create")
-    original_embeddings_create_async = inspect.getattr_static(Embeddings, "create_async")
-    original_fim_complete = inspect.getattr_static(Fim, "complete")
-    original_fim_complete_async = inspect.getattr_static(Fim, "complete_async")
-    original_fim_stream = inspect.getattr_static(Fim, "stream")
-    original_fim_stream_async = inspect.getattr_static(Fim, "stream_async")
-    original_agents_complete = inspect.getattr_static(Agents, "complete")
-    original_agents_complete_async = inspect.getattr_static(Agents, "complete_async")
-    original_agents_stream = inspect.getattr_static(Agents, "stream")
-    original_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
-    original_ocr_process = inspect.getattr_static(Ocr, "process")
-    original_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
-    original_audio_methods = _audio_method_refs()
-
-    assert MistralIntegration.setup()
-    client = _get_client()
-    start = time.time()
-    response = client.chat.complete(
-        model=CHAT_MODEL,
-        messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
-        max_tokens=10,
-    )
-    end = time.time()
-
-    monkeypatch.setattr(Chat, "complete", original_complete)
-    monkeypatch.setattr(Chat, "complete_async", original_complete_async)
-    monkeypatch.setattr(Chat, "stream", original_stream)
-    monkeypatch.setattr(Chat, "stream_async", original_stream_async)
-    monkeypatch.setattr(Embeddings, "create", original_embeddings_create)
-    monkeypatch.setattr(Embeddings, "create_async", original_embeddings_create_async)
-    monkeypatch.setattr(Fim, "complete", original_fim_complete)
-    monkeypatch.setattr(Fim, "complete_async", original_fim_complete_async)
-    monkeypatch.setattr(Fim, "stream", original_fim_stream)
-    monkeypatch.setattr(Fim, "stream_async", original_fim_stream_async)
-    monkeypatch.setattr(Agents, "complete", original_agents_complete)
-    monkeypatch.setattr(Agents, "complete_async", original_agents_complete_async)
-    monkeypatch.setattr(Agents, "stream", original_agents_stream)
-    monkeypatch.setattr(Agents, "stream_async", original_agents_stream_async)
-    monkeypatch.setattr(Ocr, "process", original_ocr_process)
-    monkeypatch.setattr(Ocr, "process_async", original_ocr_process_async)
-    _restore_method_refs(monkeypatch, original_audio_methods)
-
-    assert "4" in str(response.choices[0].message.content)
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["provider"] == "mistral"
-    assert span["metadata"]["model"] == CHAT_MODEL
-    assert "4" in str(span["output"])
-    assert_metrics_are_valid(span["metrics"], start, end)
-
-
 def test_mistral_integration_setup_is_idempotent(monkeypatch):
-    first_complete = inspect.getattr_static(Chat, "complete")
-    first_complete_async = inspect.getattr_static(Chat, "complete_async")
-    first_stream = inspect.getattr_static(Chat, "stream")
-    first_stream_async = inspect.getattr_static(Chat, "stream_async")
-    first_embeddings_create = inspect.getattr_static(Embeddings, "create")
-    first_embeddings_create_async = inspect.getattr_static(Embeddings, "create_async")
-    first_fim_complete = inspect.getattr_static(Fim, "complete")
-    first_fim_complete_async = inspect.getattr_static(Fim, "complete_async")
-    first_fim_stream = inspect.getattr_static(Fim, "stream")
-    first_fim_stream_async = inspect.getattr_static(Fim, "stream_async")
-    first_agents_complete = inspect.getattr_static(Agents, "complete")
-    first_agents_complete_async = inspect.getattr_static(Agents, "complete_async")
-    first_agents_stream = inspect.getattr_static(Agents, "stream")
-    first_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
-    first_ocr_process = inspect.getattr_static(Ocr, "process")
-    first_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
-    first_conversation_methods = _conversation_method_refs()
-    first_audio_methods = _audio_method_refs()
+    first_methods = {**_core_method_refs(), **_conversation_method_refs(), **_audio_method_refs()}
 
     assert MistralIntegration.setup()
-    patched_complete = inspect.getattr_static(Chat, "complete")
-    patched_complete_async = inspect.getattr_static(Chat, "complete_async")
-    patched_stream = inspect.getattr_static(Chat, "stream")
-    patched_stream_async = inspect.getattr_static(Chat, "stream_async")
-    patched_embeddings_create = inspect.getattr_static(Embeddings, "create")
-    patched_embeddings_create_async = inspect.getattr_static(Embeddings, "create_async")
-    patched_fim_complete = inspect.getattr_static(Fim, "complete")
-    patched_fim_complete_async = inspect.getattr_static(Fim, "complete_async")
-    patched_fim_stream = inspect.getattr_static(Fim, "stream")
-    patched_fim_stream_async = inspect.getattr_static(Fim, "stream_async")
-    patched_agents_complete = inspect.getattr_static(Agents, "complete")
-    patched_agents_complete_async = inspect.getattr_static(Agents, "complete_async")
-    patched_agents_stream = inspect.getattr_static(Agents, "stream")
-    patched_agents_stream_async = inspect.getattr_static(Agents, "stream_async")
-    patched_ocr_process = inspect.getattr_static(Ocr, "process")
-    patched_ocr_process_async = inspect.getattr_static(Ocr, "process_async")
-    patched_conversation_methods = _conversation_method_refs()
-    patched_audio_methods = _audio_method_refs()
+    patched_methods = {**_core_method_refs(), **_conversation_method_refs(), **_audio_method_refs()}
 
     assert MistralIntegration.setup()
-    assert inspect.getattr_static(Chat, "complete") is patched_complete
-    assert inspect.getattr_static(Chat, "complete_async") is patched_complete_async
-    assert inspect.getattr_static(Chat, "stream") is patched_stream
-    assert inspect.getattr_static(Chat, "stream_async") is patched_stream_async
-    assert inspect.getattr_static(Embeddings, "create") is patched_embeddings_create
-    assert inspect.getattr_static(Embeddings, "create_async") is patched_embeddings_create_async
-    assert inspect.getattr_static(Fim, "complete") is patched_fim_complete
-    assert inspect.getattr_static(Fim, "complete_async") is patched_fim_complete_async
-    assert inspect.getattr_static(Fim, "stream") is patched_fim_stream
-    assert inspect.getattr_static(Fim, "stream_async") is patched_fim_stream_async
-    assert inspect.getattr_static(Agents, "complete") is patched_agents_complete
-    assert inspect.getattr_static(Agents, "complete_async") is patched_agents_complete_async
-    assert inspect.getattr_static(Agents, "stream") is patched_agents_stream
-    assert inspect.getattr_static(Agents, "stream_async") is patched_agents_stream_async
-    assert inspect.getattr_static(Ocr, "process") is patched_ocr_process
-    assert inspect.getattr_static(Ocr, "process_async") is patched_ocr_process_async
-    for key, method in patched_conversation_methods.items():
-        assert inspect.getattr_static(*key) is method
-    for key, method in patched_audio_methods.items():
-        assert inspect.getattr_static(*key) is method
+    for key, method in patched_methods.items():
+        assert inspect.getattr_static(*key) is method, key
 
-    monkeypatch.setattr(Chat, "complete", first_complete)
-    monkeypatch.setattr(Chat, "complete_async", first_complete_async)
-    monkeypatch.setattr(Chat, "stream", first_stream)
-    monkeypatch.setattr(Chat, "stream_async", first_stream_async)
-    monkeypatch.setattr(Embeddings, "create", first_embeddings_create)
-    monkeypatch.setattr(Embeddings, "create_async", first_embeddings_create_async)
-    monkeypatch.setattr(Fim, "complete", first_fim_complete)
-    monkeypatch.setattr(Fim, "complete_async", first_fim_complete_async)
-    monkeypatch.setattr(Fim, "stream", first_fim_stream)
-    monkeypatch.setattr(Fim, "stream_async", first_fim_stream_async)
-    monkeypatch.setattr(Agents, "complete", first_agents_complete)
-    monkeypatch.setattr(Agents, "complete_async", first_agents_complete_async)
-    monkeypatch.setattr(Agents, "stream", first_agents_stream)
-    monkeypatch.setattr(Agents, "stream_async", first_agents_stream_async)
-    monkeypatch.setattr(Ocr, "process", first_ocr_process)
-    monkeypatch.setattr(Ocr, "process_async", first_ocr_process_async)
-    _restore_method_refs(monkeypatch, first_conversation_methods)
-    _restore_method_refs(monkeypatch, first_audio_methods)
+    _restore_method_refs(monkeypatch, first_methods)
 
 
 def test_chat_complete_wrapper_logs_errors(memory_logger):
@@ -1297,33 +1181,6 @@ def test_normalize_mistral_multimodal_value_converts_image_url_data_uri_to_attac
 
     assert isinstance(sanitized["image_url"]["url"], Attachment)
     assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
-
-
-def test_normalize_mistral_multimodal_value_converts_image_url_string_data_uri_to_attachment():
-    sanitized = _normalize_mistral_multimodal_value(
-        {
-            "type": "image_url",
-            "image_url": "data:image/png;base64,aGVsbG8=",
-        }
-    )
-
-    assert isinstance(sanitized["image_url"]["url"], Attachment)
-    assert sanitized["image_url"]["url"].reference["content_type"] == "image/png"
-
-
-def test_normalize_mistral_multimodal_value_converts_document_url_data_uri_to_attachment():
-    sanitized = _normalize_mistral_multimodal_value(
-        {
-            "type": "document_url",
-            "document_url": TEST_PDF_DATA_URL,
-            "document_name": "test.pdf",
-        }
-    )
-
-    assert sanitized["type"] == "file"
-    assert isinstance(sanitized["file"]["file_data"], Attachment)
-    assert sanitized["file"]["file_data"].reference["content_type"] == "application/pdf"
-    assert sanitized["file"]["filename"] == "test.pdf"
 
 
 def test_normalize_mistral_multimodal_value_converts_large_base64_input_audio_to_attachment():

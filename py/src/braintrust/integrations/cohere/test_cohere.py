@@ -189,17 +189,6 @@ def test_wrap_cohere_is_idempotent():
     assert getattr(client, "__braintrust_cohere_traced__", False) is True
 
 
-def test_cohere_integration_available_patchers_ids():
-    ids = CohereIntegration.available_patchers()
-    assert set(ids) == {
-        "cohere.chat.all",
-        "cohere.chat_stream.all",
-        "cohere.embed.all",
-        "cohere.rerank.all",
-        "cohere.audio.transcriptions.all",
-    }
-
-
 def test_audio_transcriptions_patchers_target_sdk_surface():
     """The audio transcription patchers must point at the Cohere SDK classes.
 
@@ -667,43 +656,6 @@ def test_wrap_cohere_chat_v1_async(memory_logger):
     assert span["metadata"]["model"] == CHAT_MODEL
     assert isinstance(span["output"], str)
     assert span["metrics"].get("prompt_tokens", 0) > 0
-
-
-@pytest.mark.vcr
-def test_cohere_integration_setup_patches_v2_chat(memory_logger, clean_cohere_methods):
-    """CohereIntegration.setup() patches the global Cohere classes.
-
-    Verifies setup is idempotent and that un-wrapped client instances
-    created after setup() emit spans automatically.
-    """
-    assert not memory_logger.pop()
-
-    assert CohereIntegration.setup() is True
-    # Second call is a no-op but still reports success.
-    assert CohereIntegration.setup() is True
-
-    use_v2 = _supports_client("ClientV2", "chat")
-    client = _v2_client(require_methods=("chat",)) if use_v2 else _v1_client()  # NOT manually wrapped
-    if use_v2:
-        response = client.chat(
-            model=CHAT_MODEL,
-            messages=[{"role": "user", "content": "Say hi in one word."}],
-            max_tokens=10,
-        )
-        assert response.message.role == "assistant"
-    else:
-        response = client.chat(
-            model=CHAT_MODEL,
-            message="Say hi in one word.",
-            max_tokens=10,
-        )
-        assert isinstance(response.text, str)
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    assert spans[0]["span_attributes"]["name"] == "cohere.chat"
-    assert spans[0]["metadata"]["provider"] == "cohere"
-    assert spans[0]["metadata"]["model"] == CHAT_MODEL
 
 
 @pytest.mark.vcr

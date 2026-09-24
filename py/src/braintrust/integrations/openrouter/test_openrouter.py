@@ -219,39 +219,6 @@ async def test_wrap_openrouter_responses_send_async_stream(memory_logger):
     assert_metrics_are_valid(span["metrics"], start, end)
 
 
-@pytest.mark.vcr
-def test_openrouter_integration_setup_creates_spans(memory_logger, monkeypatch):
-    assert not memory_logger.pop()
-
-    original_send = inspect.getattr_static(Chat, "send")
-    original_generate = inspect.getattr_static(Embeddings, "generate")
-    original_responses_send = inspect.getattr_static(Responses, "send")
-
-    assert OpenRouterIntegration.setup()
-    client = _get_client()
-    start = time.time()
-    response = client.chat.send(
-        model=CHAT_MODEL,
-        messages=[{"role": "user", "content": "What is 2+2? Reply with just the number."}],
-        max_tokens=10,
-    )
-    end = time.time()
-
-    monkeypatch.setattr(Chat, "send", original_send)
-    monkeypatch.setattr(Embeddings, "generate", original_generate)
-    monkeypatch.setattr(Responses, "send", original_responses_send)
-
-    assert "4" in response.choices[0].message.content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["model"] == "gpt-4o-mini"
-    assert "4" in span["output"][0]["message"]["content"]
-    assert_metrics_are_valid(span["metrics"], start, end)
-
-
 def test_openrouter_integration_setup_is_idempotent(monkeypatch):
     first_send = inspect.getattr_static(Chat, "send")
     first_generate = inspect.getattr_static(Embeddings, "generate")

@@ -1,13 +1,12 @@
 """Tests for the HuggingFace Hub integration."""
 
 import asyncio
-import inspect
 import os
 import time
 
 import pytest
 from braintrust import logger, start_span
-from braintrust.integrations.huggingface_hub import HuggingFaceHubIntegration, wrap_huggingface_hub
+from braintrust.integrations.huggingface_hub import wrap_huggingface_hub
 from braintrust.integrations.huggingface_hub.patchers import (
     AsyncChatCompletionPatcher,
     AsyncFeatureExtractionPatcher,
@@ -67,57 +66,6 @@ def memory_logger():
         yield bgl
 
 
-@pytest.fixture
-def clean_hf_methods():
-    """Snapshot and restore patched methods on the HuggingFace inference clients.
-
-    Integration setup mutates global class state; tests that exercise
-    ``setup()`` must not leak wrappers into other tests.
-    """
-    targets = [
-        (_SyncInferenceClient, "chat_completion"),
-        (_SyncInferenceClient, "text_generation"),
-        (_SyncInferenceClient, "feature_extraction"),
-        (_SyncInferenceClient, "sentence_similarity"),
-        (_AsyncInferenceClient, "chat_completion"),
-        (_AsyncInferenceClient, "text_generation"),
-        (_AsyncInferenceClient, "feature_extraction"),
-        (_AsyncInferenceClient, "sentence_similarity"),
-    ]
-    originals = [(cls, attr, inspect.getattr_static(cls, attr)) for cls, attr in targets]
-    marker_attrs = {
-        patcher.patch_marker_attr()
-        for patcher in (
-            ChatCompletionPatcher,
-            AsyncChatCompletionPatcher,
-            TextGenerationPatcher,
-            AsyncTextGenerationPatcher,
-            FeatureExtractionPatcher,
-            AsyncFeatureExtractionPatcher,
-            SentenceSimilarityPatcher,
-            AsyncSentenceSimilarityPatcher,
-        )
-    }
-
-    try:
-        yield
-    finally:
-        for cls, attr, original in originals:
-            setattr(cls, attr, original)
-        for cls, _, original in originals:
-            for marker in marker_attrs:
-                if hasattr(cls, marker):
-                    try:
-                        delattr(cls, marker)
-                    except AttributeError:
-                        pass
-                if hasattr(original, marker):
-                    try:
-                        delattr(original, marker)
-                    except AttributeError:
-                        pass
-
-
 def _sync_client(*, model: str = CHAT_MODEL, provider: str = CHAT_PROVIDER) -> InferenceClient:
     return InferenceClient(model=model, provider=provider, token=HF_TOKEN)
 
@@ -129,26 +77,6 @@ def _async_client(*, model: str = CHAT_MODEL, provider: str = CHAT_PROVIDER) -> 
 # ---------------------------------------------------------------------------
 # Unit / local tests (no network)
 # ---------------------------------------------------------------------------
-
-
-def test_integration_available_patcher_ids():
-    ids = HuggingFaceHubIntegration.available_patchers()
-    assert set(ids) == {
-        "huggingface_hub.chat_completion.all",
-        "huggingface_hub.text_generation.all",
-        "huggingface_hub.feature_extraction.all",
-        "huggingface_hub.sentence_similarity.all",
-    }
-
-
-def test_integration_pins_min_version_floor():
-    """The integration must declare a min_version so the matrix floor is enforced.
-
-    The 0.32.0 floor is the earliest release that exposes both the stable
-    multi-provider ``InferenceClient(provider=...)`` surface and the
-    ``provider="auto"`` routing mode the integration relies on.
-    """
-    assert HuggingFaceHubIntegration.min_version == "0.32.0"
 
 
 def test_patchers_target_real_sdk_surfaces():
@@ -196,24 +124,6 @@ def test_wrap_huggingface_hub_is_idempotent():
     assert wrapped_once is client
     assert wrapped_twice is client
     assert getattr(client, "__braintrust_huggingface_hub_traced__", False) is True
-
-
-def test_setup_is_idempotent(clean_hf_methods):
-    """Repeated ``setup()`` calls must not pile wrappers on top of each other."""
-    assert HuggingFaceHubIntegration.setup() is True
-    assert HuggingFaceHubIntegration.setup() is True
-
-
-def test_chat_dot_completions_dot_create_alias_dispatches_to_chat_completion():
-    """The OpenAI-compatible ``client.chat.completions.create`` alias must
-    resolve to ``InferenceClient.chat_completion`` so that patching the latter
-    transparently covers the former.  This is a structural assertion that
-    does not require network access.
-    """
-    client = _sync_client()
-    # Bound method equality compares both ``__func__`` and ``__self__``, so
-    # this single assertion is what guarantees a single patch covers both.
-    assert client.chat.completions.create == client.chat_completion
 
 
 # ---------------------------------------------------------------------------

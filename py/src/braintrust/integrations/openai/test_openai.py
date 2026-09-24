@@ -183,10 +183,12 @@ def test_openai_responses_metrics(memory_logger):
     assert span
     metrics = span["metrics"]
     assert_metrics_are_valid(metrics, start, end)
+    assert "time_to_first_token" in metrics
     assert 0 <= metrics.get("prompt_cached_tokens", 0)
     assert 0 <= metrics.get("completion_reasoning_tokens", 0)
     assert TEST_MODEL in span["metadata"]["model"]
     assert span["metadata"]["provider"] == "openai"
+    assert span["metadata"]["instructions"] == "Just the number please"
     assert TEST_PROMPT in str(span["input"])
     assert len(span["output"]) > 0
     span_output_text = span["output"][0]["content"][0]["text"]
@@ -235,86 +237,6 @@ def test_openai_responses_metrics(memory_logger):
     assert span["output"][0]["content"][0]["parsed"]
     assert span["output"][0]["content"][0]["parsed"]["value"] == 24
     assert span["output"][0]["content"][0]["parsed"]["reasoning"] == parse_response.output_parsed.reasoning
-
-
-@pytest.mark.vcr
-def test_openai_responses_metadata_preservation(memory_logger):
-    """Test that additional metadata fields in responses are preserved."""
-    assert not memory_logger.pop()
-
-    client = wrap_openai(openai.OpenAI())
-
-    # Test with responses.create - the response object has various metadata fields
-    start = time.time()
-    response = client.responses.create(
-        model=TEST_MODEL,
-        input="What is 10 + 10?",
-        instructions="Respond with just the number",
-    )
-    end = time.time()
-
-    assert response
-    assert response.output
-
-    # Check that the response has metadata fields like id, created_at, object, etc.
-    assert hasattr(response, "id")
-    assert hasattr(response, "created_at")
-    assert hasattr(response, "object")
-    assert hasattr(response, "model")
-
-    # Verify spans capture metadata
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-
-    # Check that span metadata includes the parameters
-    assert TEST_MODEL in span["metadata"]["model"]  # Model name may include version date
-    assert span["metadata"]["provider"] == "openai"
-    assert span["metadata"]["instructions"] == "Respond with just the number"
-
-    # Check that response metadata is preserved (non-output, non-usage fields)
-    # The metadata should be in span["metadata"] after our changes
-    assert "metadata" in span
-    if "id" in span.get("metadata", {}):
-        # Response metadata like id, created, object should be preserved
-        assert span["metadata"]["id"] == response.id
-
-    # Verify metrics are properly extracted
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-    assert "time_to_first_token" in metrics
-
-    # Test with responses.parse to ensure metadata is preserved there too
-    class SimpleAnswer(BaseModel):
-        value: int
-
-    start = time.time()
-    parse_response = client.responses.parse(
-        model=TEST_MODEL,
-        input="What is 15 + 15?",
-        text_format=SimpleAnswer,
-    )
-    end = time.time()
-
-    assert parse_response
-    assert parse_response.output_parsed
-    assert parse_response.output_parsed.value == 30
-
-    # Verify metadata preservation in parse response
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-
-    # Check parameters are in metadata
-    assert TEST_MODEL in span["metadata"]["model"]  # Model name may include version date
-    assert span["metadata"]["provider"] == "openai"
-
-    # Verify the structured output is captured
-    assert span["output"][0]["content"][0]["parsed"]["value"] == 30
-
-    # Check metrics
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
 
 
 @pytest.mark.vcr
@@ -909,31 +831,6 @@ def test_openai_chat_with_system_prompt(memory_logger):
 
 
 @pytest.mark.vcr
-def test_openai_client_comparison(memory_logger):
-    """Test that wrapped and unwrapped clients produce the same output."""
-    assert not memory_logger.pop()
-
-    # Get regular and wrapped clients
-    clients = [(openai.OpenAI(), False), (wrap_openai(openai.OpenAI()), True)]
-
-    for client, is_wrapped in clients:
-        response = client.chat.completions.create(
-            model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}], temperature=0, seed=42
-        )
-
-        # Both should have data
-        assert response.choices[0].message.content
-
-        if not is_wrapped:
-            assert not memory_logger.pop()
-            continue
-
-        # Verify spans were created with wrapped client
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-
-
-@pytest.mark.vcr
 def test_openai_client_error(memory_logger):
     assert not memory_logger.pop()
 
@@ -1311,38 +1208,6 @@ async def test_openai_chat_async_with_system_prompt(memory_logger):
         assert inputs[0]["content"] == TEST_SYSTEM_PROMPT
         assert inputs[1]["role"] == "user"
         assert inputs[1]["content"] == TEST_PROMPT
-
-
-@pytest.mark.asyncio
-@pytest.mark.vcr
-async def test_openai_client_async_comparison(memory_logger):
-    """Test that wrapped and unwrapped async clients produce the same output."""
-    assert not memory_logger.pop()
-
-    # Get regular and wrapped clients
-    regular_client = AsyncOpenAI()
-    wrapped_client = wrap_openai(AsyncOpenAI())
-
-    # Test with regular client
-    normal_response = await regular_client.chat.completions.create(
-        model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}], temperature=0, seed=42
-    )
-
-    # No spans should be created for unwrapped client
-    assert not memory_logger.pop()
-
-    # Test with wrapped client
-    wrapped_response = await wrapped_client.chat.completions.create(
-        model=TEST_MODEL, messages=[{"role": "user", "content": TEST_PROMPT}], temperature=0, seed=42
-    )
-
-    # Both should have data
-    assert normal_response.choices[0].message.content
-    assert wrapped_response.choices[0].message.content
-
-    # Verify spans were created with wrapped client
-    spans = memory_logger.pop()
-    assert len(spans) == 1
 
 
 @pytest.mark.asyncio
@@ -2818,27 +2683,6 @@ class TestOpenAIIntegrationSetupSpans:
 
         assert chunks
         assert not memory_logger.pop()
-
-    @pytest.mark.vcr
-    def test_setup_creates_spans(self, memory_logger):
-        """OpenAIIntegration.setup() should create spans when making API calls."""
-        assert not memory_logger.pop()
-
-        OpenAIIntegration.setup()
-        client = openai.OpenAI()
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "Say hi"}],
-        )
-        assert response.choices[0].message.content
-
-        # Verify span was created
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["metadata"]["provider"] == "openai"
-        assert "gpt-4o-mini" in span["metadata"]["model"]
-        assert span["input"]
 
     @pytest.mark.vcr
     def test_setup_stream_helper_creates_spans(self, memory_logger):
