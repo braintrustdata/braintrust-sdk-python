@@ -13,13 +13,12 @@ from braintrust.test_helpers import init_test_logger
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.runnables import RunnableMap, RunnableSerializable
+from langchain_core.runnables import RunnableSerializable
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from .helpers import ANY, assert_matches_object, find_spans_by_attributes
+from .helpers import ANY, assert_matches_object, expected_prompt_chain_spans, find_spans_by_attributes
 
 
 PROJECT_NAME = "langchain-py"
@@ -57,7 +56,7 @@ def test_llm_calls(logger_memory_logger):
         n=1,
     )
     chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
-    chain.invoke({"number": "2"}, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
+    chain.invoke({"number": "2"}, config={"callbacks": [cast(BaseCallbackHandler, handler)], "tags": ["test"]})
 
     spans = memory_logger.pop()
     assert len(spans) == 3
@@ -69,92 +68,7 @@ def test_llm_calls(logger_memory_logger):
     root_span_id = spans[0]["span_id"]
     trace_root_id = spans[0]["root_span_id"]
 
-    assert_matches_object(
-        spans,
-        [
-            {
-                "span_attributes": {
-                    "name": "RunnableSequence",
-                    "type": "task",
-                },
-                "input": {"number": "2"},
-                "output": {
-                    "content": ANY,  # LLM response text
-                    "additional_kwargs": ANY,
-                    "response_metadata": ANY,
-                    "type": "ai",
-                },
-                "metadata": {"tags": []},
-                "span_id": root_span_id,
-                "root_span_id": trace_root_id,
-            },
-            {
-                "span_attributes": {"name": "ChatPromptTemplate"},
-                "input": {"number": "2"},
-                "output": {
-                    "messages": [
-                        {
-                            "content": ANY,  # Formatted prompt text
-                            "additional_kwargs": {},
-                            "response_metadata": {},
-                            "type": "human",
-                        }
-                    ]
-                },
-                "metadata": {"tags": ["seq:step:1"]},
-                "root_span_id": trace_root_id,
-                "span_parents": [root_span_id],
-            },
-            {
-                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
-                "input": [
-                    [
-                        {
-                            "content": ANY,  # Prompt message content
-                            "additional_kwargs": {},
-                            "response_metadata": {},
-                            "type": "human",
-                        }
-                    ]
-                ],
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "text": ANY,  # Generated text
-                                "generation_info": ANY,
-                                "type": "ChatGeneration",
-                                "message": {
-                                    "content": ANY,  # Message content
-                                    "additional_kwargs": ANY,
-                                    "response_metadata": ANY,
-                                    "type": "ai",
-                                },
-                            }
-                        ]
-                    ],
-                    "llm_output": {
-                        "model_name": "gpt-4o-mini-2024-07-18",
-                    },
-                    "type": "LLMResult",
-                },
-                "metrics": {
-                    "start": ANY,
-                    "total_tokens": ANY,
-                    "prompt_tokens": ANY,
-                    "completion_tokens": ANY,
-                    "end": ANY,
-                },
-                "metadata": {
-                    "tags": ["seq:step:2"],
-                    "model": "gpt-4o-mini-2024-07-18",
-                    "provider": "openai",
-                },
-                "root_span_id": trace_root_id,
-                "span_parents": [root_span_id],
-            },
-        ],
-    )
+    assert_matches_object(spans, expected_prompt_chain_spans(root_span_id, trace_root_id, tags=["test"]))
 
 
 @pytest.mark.vcr
@@ -198,116 +112,6 @@ async def test_consecutive_async_invocations_are_separate_traces(logger_memory_l
 
     nested_run = next(span for span in spans if span["span_attributes"]["name"] == "run2")
     assert nested_run["span_parents"] == [parent_span.span_id]
-
-
-@pytest.mark.vcr
-def test_chain_with_memory(logger_memory_logger):
-    test_logger, memory_logger = logger_memory_logger
-    assert not memory_logger.pop()
-
-    handler = BraintrustCallbackHandler(logger=test_logger)
-    prompt = ChatPromptTemplate.from_template("{history} User: {input}")
-    model = ChatOpenAI(model="gpt-4o-mini")
-    chain: RunnableSerializable[dict[str, str], BaseMessage] = prompt.pipe(model)
-
-    memory = {"history": "Assistant: Hello! How can I assist you today?"}
-    chain.invoke(
-        {"input": "What's your name?", **memory},
-        config={"callbacks": [cast(BaseCallbackHandler, handler)], "tags": ["test"]},
-    )
-
-    spans = memory_logger.pop()
-    assert len(spans) == 3
-
-    root_span_id = spans[0]["span_id"]
-    trace_root_id = spans[0]["root_span_id"]
-
-    assert_matches_object(
-        spans,
-        [
-            {
-                "span_attributes": {
-                    "name": "RunnableSequence",
-                    "type": "task",
-                },
-                "input": {"input": "What's your name?", "history": "Assistant: Hello! How can I assist you today?"},
-                "output": {
-                    "content": ANY,  # LLM response
-                    "additional_kwargs": ANY,
-                    "response_metadata": ANY,
-                    "type": "ai",
-                },
-                "metadata": {"tags": ["test"]},
-                "span_id": root_span_id,
-                "root_span_id": trace_root_id,
-            },
-            {
-                "span_attributes": {"name": "ChatPromptTemplate"},
-                "input": {"input": "What's your name?", "history": "Assistant: Hello! How can I assist you today?"},
-                "output": {
-                    "messages": [
-                        {
-                            "content": ANY,  # Formatted prompt with history
-                            "additional_kwargs": {},
-                            "response_metadata": {},
-                            "type": "human",
-                        }
-                    ]
-                },
-                "metadata": {"tags": ["seq:step:1", "test"]},
-                "root_span_id": trace_root_id,
-                "span_parents": [root_span_id],
-            },
-            {
-                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
-                "input": [
-                    [
-                        {
-                            "content": ANY,  # Prompt with history
-                            "additional_kwargs": {},
-                            "response_metadata": {},
-                            "type": "human",
-                        }
-                    ]
-                ],
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "text": ANY,  # Generated response
-                                "generation_info": ANY,
-                                "type": "ChatGeneration",
-                                "message": {
-                                    "content": ANY,
-                                    "additional_kwargs": ANY,
-                                    "response_metadata": ANY,
-                                    "type": "ai",
-                                },
-                            }
-                        ]
-                    ],
-                    "llm_output": {
-                        "model_name": "gpt-4o-mini-2024-07-18",
-                    },
-                    "type": "LLMResult",
-                },
-                "metrics": {
-                    "start": ANY,
-                    "total_tokens": ANY,
-                    "prompt_tokens": ANY,
-                    "completion_tokens": ANY,
-                    "end": ANY,
-                },
-                "metadata": {
-                    "tags": ["seq:step:2", "test"],
-                    "model": "gpt-4o-mini-2024-07-18",
-                    "provider": "openai",
-                },
-                "root_span_id": trace_root_id,
-                "span_parents": [root_span_id],
-            },
-        ],
-    )
 
 
 @pytest.mark.vcr
@@ -419,96 +223,6 @@ def test_tool_usage(logger_memory_logger):
             }
         ],
     )
-
-
-@pytest.mark.vcr
-@pytest.mark.skip(reason="Not yet working with VCR.")
-def test_parallel_execution(logger_memory_logger):
-    test_logger, memory_logger = logger_memory_logger
-    assert not memory_logger.pop()
-
-    handler = BraintrustCallbackHandler(logger=test_logger)
-
-    model = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=1,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0,
-        n=1,
-    )
-
-    joke_chain = PromptTemplate.from_template("Tell me a joke about {topic}").pipe(model)
-    poem_chain = PromptTemplate.from_template("write a 2-line poem about {topic}").pipe(model)
-
-    map_chain = RunnableMap(
-        {
-            "joke": joke_chain,
-            "poem": poem_chain,
-        }
-    )
-
-    map_chain.invoke({"topic": "bear"}, config={"callbacks": [cast(BaseCallbackHandler, handler)]})
-
-    spans = cast(list, memory_logger.pop())
-
-    # Find the LLM spans
-    llm_spans = find_spans_by_attributes(spans, name="ChatOpenAI")
-    assert len(llm_spans) == 2
-
-    # Verify both LLM spans have expected structure
-    for span in llm_spans:
-        assert_matches_object(
-            span,
-            {
-                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
-                "metadata": {
-                    "tags": ["seq:step:2"],
-                    "model": "gpt-4o-mini-2024-07-18",
-                },
-                "input": [
-                    [
-                        {
-                            "content": ANY,  # Prompt about bears
-                            "additional_kwargs": {},
-                            "response_metadata": {},
-                            "type": "human",
-                        }
-                    ]
-                ],
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "text": ANY,  # Generated joke or poem
-                                "generation_info": ANY,
-                                "type": "ChatGeneration",
-                                "message": {
-                                    "content": ANY,
-                                    "type": "ai",
-                                },
-                            }
-                        ]
-                    ],
-                    "llm_output": {
-                        "token_usage": {
-                            "completion_tokens": ANY,
-                            "prompt_tokens": ANY,
-                            "total_tokens": ANY,
-                        },
-                        "model_name": "gpt-4o-mini-2024-07-18",
-                    },
-                    "type": "LLMResult",
-                },
-                "metrics": {
-                    "start": ANY,
-                    "total_tokens": ANY,
-                    "prompt_tokens": ANY,
-                    "completion_tokens": ANY,
-                    "end": ANY,
-                },
-            },
-        )
 
 
 @pytest.mark.vcr

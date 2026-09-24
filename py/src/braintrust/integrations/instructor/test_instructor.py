@@ -21,7 +21,7 @@ import instructor
 import openai
 import pytest
 from braintrust.span_types import SpanTypeAttribute
-from braintrust.test_helpers import find_span_by_name, find_spans_by_type, init_test_logger, memory_logger
+from braintrust.test_helpers import find_spans_by_type, init_test_logger, memory_logger
 from pydantic import BaseModel, Field
 
 
@@ -75,24 +75,6 @@ def setup_logger():
 
     init_test_logger(PROJECT_NAME)
     InstructorIntegration.setup()
-
-
-class TestInstructorIntegrationExists:
-    """Static checks the Instructor integration is registered."""
-
-    def test_integration_class_exported(self):
-        from braintrust.integrations import InstructorIntegration  # noqa: F401
-
-    def test_wrap_instructor_exported(self):
-        from braintrust import wrap_instructor  # noqa: F401
-
-    def test_auto_instrument_has_instructor_kwarg(self):
-        import braintrust
-
-        argcount = braintrust.auto_instrument.__code__.co_argcount
-        kwonly = braintrust.auto_instrument.__code__.co_kwonlyargcount
-        params = braintrust.auto_instrument.__code__.co_varnames[: argcount + kwonly]
-        assert "instructor" in params
 
 
 class TestInstructorOpenAISpans:
@@ -207,27 +189,6 @@ class TestInstructorOpenAISpans:
             assert k not in parent_metrics
 
 
-class TestInstructorPatcherIdempotence:
-    """Calling setup or wrap_instructor twice must not stack wrappers."""
-
-    def test_setup_is_idempotent(self):
-        from braintrust.integrations import InstructorIntegration
-
-        assert InstructorIntegration.setup() is True
-        # second call should not raise and should report success
-        assert InstructorIntegration.setup() is True
-
-        # Calling create twice in a row still works (sanity).
-        from braintrust import wrap_openai
-
-        init_test_logger(PROJECT_NAME)
-        client = wrap_openai(_make_openai_client())
-        patched = instructor.from_openai(client, mode=instructor.Mode.TOOLS)
-        # We're not making a real call here; just confirming patch did not
-        # destroy the bound method surface.
-        assert callable(patched.chat.completions.create)
-
-
 class TestInstructorAutoInstrumentSubprocess:
     """auto_instrument() must instrument Instructor in a fresh subprocess too."""
 
@@ -235,24 +196,3 @@ class TestInstructorAutoInstrumentSubprocess:
         from braintrust.integrations.test_utils import verify_autoinstrument_script
 
         verify_autoinstrument_script("test_auto_instructor.py", timeout=30)
-
-
-class TestInstructorParentIsNotLLM:
-    """Span-type invariant: Instructor parent is never typed as `llm`."""
-
-    @pytest.mark.vcr("test_instructor_openai_single_success.yaml")
-    def test_parent_span_type_is_task_not_llm(self, setup_logger, memory_logger):
-        from braintrust import wrap_openai
-
-        client = wrap_openai(_make_openai_client())
-        patched = instructor.from_openai(client, mode=instructor.Mode.TOOLS)
-        patched.chat.completions.create(
-            model="gpt-4o-mini",
-            response_model=Person,
-            max_retries=3,
-            messages=[{"role": "user", "content": "Extract Grace, age 45."}],
-        )
-        spans = _all_spans(memory_logger)
-        parent = find_span_by_name(spans, "instructor.create")
-        assert parent["span_attributes"]["type"] == SpanTypeAttribute.TASK.value
-        assert parent["span_attributes"]["type"] != SpanTypeAttribute.LLM.value

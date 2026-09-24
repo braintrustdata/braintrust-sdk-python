@@ -244,6 +244,17 @@ Stale cassette detection:
 - To auto-delete stale dirs: `cd py && python scripts/check-stale-cassettes.py --clean`
 - When adding a new integration with versioned cassettes, add an entry to `[tool.braintrust.cassette-dirs]`.
 
+Unused cassette detection:
+
+- `check-stale-cassettes.py` only checks whole version directories. Individual files inside a valid directory go stale when a test is deleted or renamed, or when a test always skips at that version.
+- `py/scripts/check-unused-cassettes.py` finds those files. It runs every nox session that reads an integration's cassettes, across all matrix versions in replay-only mode, and reports files no test opened.
+- Reads are recorded by an audit hook in `py/src/braintrust/_test_cassette_usage.py`, active only when `BRAINTRUST_CASSETTE_USAGE_DIR` is set. It covers every loader (pytest-recording, Claude Agent SDK transport, gRPC recordings, btx specs) and auto-instrument subprocesses.
+- Check specific integrations: `cd py && make check-unused-cassettes INTEGRATIONS="openai anthropic"` (omit `INTEGRATIONS` to check all; it is slow).
+- Add `--clean` to delete what it finds: `cd py && python scripts/check-unused-cassettes.py run openai --clean`.
+- An integration is skipped, not reported, if any of its sessions fails or is skipped (e.g. sessions that skip on the current Python version), since its reads would be incomplete.
+- Unread files in a cassette version directory whose session skipped any test (e.g. platform-only tests) are listed with the skip reasons for manual review and never deleted by `--clean`, since the skipped test may read them elsewhere.
+- After deleting or renaming a cassette-backed test, run it for that integration.
+
 ## Benchmarks
 
 If you touch a hot path such as serialization, deep-copy, span creation, or logging, consider benchmarks.

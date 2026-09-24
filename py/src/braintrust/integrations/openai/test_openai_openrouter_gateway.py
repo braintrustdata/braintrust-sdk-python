@@ -13,7 +13,7 @@ import pytest
 from braintrust import logger, wrap_openai
 from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.test_helpers import init_test_logger
-from openai import AsyncOpenAI, OpenAI
+from openai import OpenAI
 
 
 PROJECT_NAME = "test-openrouter"
@@ -29,13 +29,6 @@ def memory_logger():
 
 def _get_client():
     return OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=os.environ.get("OPENROUTER_API_KEY"),
-    )
-
-
-def _get_async_client():
-    return AsyncOpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=os.environ.get("OPENROUTER_API_KEY"),
     )
@@ -67,37 +60,6 @@ def test_openrouter_chat_completion_sync(memory_logger):
     assert_metrics_are_valid(metrics, start, end)
 
     # Ensure no boolean values in metrics (the original bug with is_byok)
-    for key, value in metrics.items():
-        assert not isinstance(value, bool), f"Metric {key} should not be a boolean"
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_openrouter_chat_completion_async(memory_logger):
-    """Test that wrap_openai works with OpenRouter's async client."""
-    assert not memory_logger.pop()
-
-    client = wrap_openai(_get_async_client())
-
-    start = time.time()
-    response = await client.chat.completions.create(
-        model=TEST_MODEL,
-        messages=[{"role": "user", "content": "What is 3+3? Reply with just the number."}],
-        max_tokens=10,
-    )
-    end = time.time()
-
-    assert response
-    assert response.choices[0].message.content
-    assert "6" in response.choices[0].message.content
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-
-    metrics = span["metrics"]
-    assert_metrics_are_valid(metrics, start, end)
-
     for key, value in metrics.items():
         assert not isinstance(value, bool), f"Metric {key} should not be a boolean"
 

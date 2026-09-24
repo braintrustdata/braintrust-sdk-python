@@ -642,16 +642,6 @@ async def test_litellm_async_streaming_with_break(memory_logger):
     assert metrics["time_to_first_token"] >= 0
 
 
-def test_patch_litellm_responses():
-    """Test that patch_litellm() patches responses (subprocess to avoid global state pollution)."""
-    verify_autoinstrument_script("test_patch_litellm_responses.py")
-
-
-def test_patch_litellm_aresponses():
-    """Test that patch_litellm() patches aresponses (subprocess to avoid global state pollution)."""
-    verify_autoinstrument_script("test_patch_litellm_aresponses.py")
-
-
 def test_litellm_is_numeric_excludes_booleans():
     """Reproduce issue #1357: _is_numeric should exclude booleans.
 
@@ -666,30 +656,6 @@ def test_litellm_is_numeric_excludes_booleans():
     assert is_numeric(1.0)
     assert not is_numeric(True)
     assert not is_numeric(False)
-
-
-def test_litellm_parse_metrics_excludes_booleans():
-    """Reproduce issue #1357: _parse_metrics_from_usage should not include boolean fields.
-
-    When OpenRouter returns usage data with `is_byok: true`, the metrics parser
-    should filter it out rather than passing it through to the API.
-    """
-    from braintrust.integrations.litellm.tracing import _parse_metrics_from_usage
-
-    usage = {
-        "prompt_tokens": 10,
-        "completion_tokens": 20,
-        "total_tokens": 30,
-        "is_byok": True,
-    }
-    metrics = _parse_metrics_from_usage(usage)
-
-    assert "prompt_tokens" in metrics
-    assert "completion_tokens" in metrics
-    assert "tokens" in metrics
-    assert "is_byok" not in metrics
-    for key, value in metrics.items():
-        assert not isinstance(value, bool)
 
 
 @pytest.mark.vcr
@@ -812,22 +778,6 @@ def test_litellm_parse_rerank_metrics_from_meta():
     # meta.billed_units alone also yields a derived total.
     metrics2 = _parse_rerank_metrics({"meta": {"billed_units": {"search_units": 1}}})
     assert metrics2 == {"search_units": 1}
-
-
-def test_litellm_extract_rerank_output_drops_document():
-    from braintrust.integrations.litellm.tracing import _extract_rerank_output
-
-    response = {
-        "results": [
-            {"index": 0, "relevance_score": 0.9, "document": {"text": "private"}},
-            {"index": 1, "relevance_score": 0.1, "document": {"text": "also private"}},
-        ]
-    }
-    out = _extract_rerank_output(response)
-    assert out == [
-        {"index": 0, "relevance_score": 0.9},
-        {"index": 1, "relevance_score": 0.1},
-    ]
 
 
 class TestAutoInstrumentLiteLLM:

@@ -2,7 +2,34 @@ import os
 from unittest.mock import MagicMock
 
 import pytest
+from braintrust import _test_cassette_usage
 from braintrust.framework2 import ProjectIdCache
+
+
+# Record cassette reads when check-unused-cassettes.py is collecting usage.
+_test_cassette_usage.install()
+
+
+def _skip_reason(report) -> str:
+    longrepr = report.longrepr
+    return longrepr[2] if isinstance(longrepr, tuple) and len(longrepr) == 3 else str(longrepr)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if report.skipped and not hasattr(report, "wasxfail"):
+        _test_cassette_usage.record_skip(item.path, item.nodeid, _skip_reason(report))
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_make_collect_report(collector):
+    # Whole modules skipped at collection (e.g. importorskip) never reach makereport.
+    outcome = yield
+    report = outcome.get_result()
+    if report.skipped:
+        _test_cassette_usage.record_skip(collector.path, report.nodeid, _skip_reason(report))
 
 
 def _patch_vcr_aiohttp_stubs():

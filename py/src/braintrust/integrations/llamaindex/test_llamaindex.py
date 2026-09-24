@@ -36,14 +36,6 @@ def setup_and_cleanup():
     dispatcher.span_handlers = [h for h in dispatcher.span_handlers if not isinstance(h, BraintrustSpanHandler)]
 
 
-def test_integration_setup():
-    from llama_index.core.instrumentation import get_dispatcher
-
-    dispatcher = get_dispatcher()
-    handler_types = [type(h).__name__ for h in dispatcher.span_handlers]
-    assert "BraintrustSpanHandler" in handler_types
-
-
 def test_integration_idempotent():
     from llama_index.core.instrumentation import get_dispatcher
 
@@ -179,6 +171,10 @@ def test_document_processing(logger_memory_logger):
     assert len(func_spans) >= 1
     assert "SentenceSplitter" in func_spans[0]["span_attributes"]["name"]
 
+    root_span_id = spans[0]["root_span_id"]
+    for span in spans:
+        assert span["root_span_id"] == root_span_id
+
 
 @pytest.mark.vcr
 def test_embedding(logger_memory_logger):
@@ -227,27 +223,6 @@ def test_query_engine(logger_memory_logger):
 
     span_types = {s.get("span_attributes", {}).get("type") for s in spans}
     assert "task" in span_types
-
-
-def test_span_hierarchy(logger_memory_logger):
-    test_logger, memory_logger = logger_memory_logger
-    assert not memory_logger.pop()
-
-    from llama_index.core import Document
-    from llama_index.core.node_parser import SentenceSplitter
-
-    docs = [Document(text="Hello world. This is a test document with some content.")]
-    splitter = SentenceSplitter(chunk_size=256, chunk_overlap=10)
-
-    with test_logger.start_span(name="test-hierarchy"):
-        splitter.get_nodes_from_documents(docs)
-
-    spans = memory_logger.pop()
-    assert len(spans) >= 2
-
-    root_span_id = spans[0]["root_span_id"]
-    for span in spans:
-        assert span["root_span_id"] == root_span_id
 
 
 @pytest.mark.vcr

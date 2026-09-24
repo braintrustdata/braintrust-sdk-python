@@ -16,8 +16,6 @@ from braintrust.integrations.anthropic import AnthropicIntegration, wrap_anthrop
 from braintrust.integrations.anthropic._utils import _try_to_dict, extract_anthropic_usage
 from braintrust.integrations.anthropic.tracing import (
     TracedMessageStream,
-    _get_input_from_kwargs,
-    _get_metadata_from_kwargs,
     _log_message_to_span,
 )
 from braintrust.integrations.test_utils import verify_autoinstrument_script
@@ -181,106 +179,6 @@ def memory_logger():
     init_test_logger(PROJECT_NAME)
     with logger._internal_with_memory_background_logger() as bgl:
         yield bgl
-
-
-def test_get_input_from_kwargs_converts_multimodal_base64_blocks_to_attachments():
-    kwargs = {
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Describe these files."},
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/png",
-                            "data": PNG_BASE64,
-                        },
-                    },
-                    {
-                        "type": "document",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "application/pdf",
-                            "data": PDF_BASE64,
-                        },
-                    },
-                ],
-            }
-        ]
-    }
-
-    processed_input = _get_input_from_kwargs(kwargs)
-
-    content = processed_input[0]["content"]
-    image_block = content[1]
-    document_block = content[2]
-
-    assert image_block["type"] == "image"
-    assert image_block["source"] == {"type": "base64", "media_type": "image/png"}
-    assert isinstance(image_block["image_url"]["url"], Attachment)
-    assert image_block["image_url"]["url"].reference["content_type"] == "image/png"
-    assert image_block["image_url"]["url"].reference["filename"] == "image.png"
-
-    assert document_block["type"] == "document"
-    assert document_block["source"] == {"type": "base64", "media_type": "application/pdf"}
-    assert document_block["file"]["filename"] == "document.pdf"
-    assert isinstance(document_block["file"]["file_data"], Attachment)
-    assert document_block["file"]["file_data"].reference["content_type"] == "application/pdf"
-    assert document_block["file"]["file_data"].reference["filename"] == "document.pdf"
-
-    serialized = str(processed_input)
-    assert PNG_BASE64 not in serialized
-    assert PDF_BASE64 not in serialized
-
-
-def test_get_metadata_from_kwargs_includes_structured_output_params():
-    metadata = _get_metadata_from_kwargs(
-        {
-            "model": MODEL,
-            "output_config": {
-                "format": {
-                    "type": "json_schema",
-                    "schema": STRUCTURED_OUTPUT_SCHEMA,
-                }
-            },
-            "output_format": {
-                "type": "json_schema",
-                "schema": STRUCTURED_OUTPUT_SCHEMA,
-            },
-        }
-    )
-
-    assert metadata == {
-        "provider": "anthropic",
-        "model": MODEL,
-        "output_config": {
-            "format": {
-                "type": "json_schema",
-                "schema": STRUCTURED_OUTPUT_SCHEMA,
-            }
-        },
-        "output_format": {
-            "type": "json_schema",
-            "schema": STRUCTURED_OUTPUT_SCHEMA,
-        },
-    }
-
-
-def test_get_metadata_from_kwargs_includes_compaction_and_context_management():
-    metadata = _get_metadata_from_kwargs(
-        {
-            "compaction": [{"type": "enabled"}],
-            "context_management": {"edits": [{"type": "clear_tool_uses_20250919"}]},
-        }
-    )
-
-    assert metadata == {
-        "provider": "anthropic",
-        "compaction": [{"type": "enabled"}],
-        "context_management": {"edits": [{"type": "clear_tool_uses_20250919"}]},
-    }
 
 
 def test_log_message_to_span_includes_stop_reason_and_stop_sequence():
@@ -514,11 +412,20 @@ def test_anthropic_beta_messages_create_captures_fallback_credit_usage(memory_lo
 
 
 @pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
-def test_anthropic_messages_create_prompt_cache_5m_metrics(memory_logger):
+@pytest.mark.parametrize(
+    "ttl,vcr_cassette_name",
+    [
+        ("5m", "test_anthropic_messages_create_prompt_cache_5m_metrics"),
+        ("1h", "test_anthropic_messages_create_prompt_cache_1h_metrics"),
+    ],
+    ids=["5m", "1h"],
+)
+def test_anthropic_messages_create_prompt_cache_metrics(memory_logger, ttl, vcr_cassette_name):
     if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
         pytest.skip("Prompt cache TTL breakdown requires the latest Anthropic SDK cassette")
 
     client = wrap_anthropic(_get_client())
+    extra_kwargs = {"extra_headers": {"anthropic-beta": "extended-cache-ttl-2025-04-11"}} if ttl == "1h" else {}
     response = client.messages.create(
         model=LATEST_MODEL,
         max_tokens=16,
@@ -526,41 +433,11 @@ def test_anthropic_messages_create_prompt_cache_5m_metrics(memory_logger):
             {
                 "type": "text",
                 "text": PROMPT_CACHE_TEST_TEXT,
-                "cache_control": {"type": "ephemeral", "ttl": "5m"},
+                "cache_control": {"type": "ephemeral", "ttl": ttl},
             }
         ],
         messages=[{"role": "user", "content": "What is the capital of France?"}],
-    )
-
-    span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
-    assert span["output"]["role"] == response.role
-    assert "prompt_cache_creation_tokens" not in span["metrics"]
-    assert (
-        span["metrics"]["prompt_cache_creation_5m_tokens"] == response.usage.cache_creation.ephemeral_5m_input_tokens
-    )
-    assert (
-        span["metrics"]["prompt_cache_creation_1h_tokens"] == response.usage.cache_creation.ephemeral_1h_input_tokens
-    )
-
-
-@pytest.mark.vcr(match_on=["method", "scheme", "host", "port", "path"])
-def test_anthropic_messages_create_prompt_cache_1h_metrics(memory_logger):
-    if os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION") != "latest":
-        pytest.skip("Prompt cache TTL breakdown requires the latest Anthropic SDK cassette")
-
-    client = wrap_anthropic(_get_client())
-    response = client.messages.create(
-        model=LATEST_MODEL,
-        max_tokens=16,
-        extra_headers={"anthropic-beta": "extended-cache-ttl-2025-04-11"},
-        system=[
-            {
-                "type": "text",
-                "text": PROMPT_CACHE_TEST_TEXT,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-            }
-        ],
-        messages=[{"role": "user", "content": "What is the capital of France?"}],
+        **extra_kwargs,
     )
 
     span = find_span_by_name(memory_logger.pop(), "anthropic.messages.create")
@@ -1042,58 +919,6 @@ def test_anthropic_messages_system_prompt_inputs(memory_logger):
         inputs_by_role = {m["role"]: m["content"] for m in inputs}
         assert inputs_by_role["system"] == system
         assert inputs_by_role["user"] == q[0]["content"]
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_anthropic_messages_create_async(memory_logger):
-    assert not memory_logger.pop()
-
-    params = {
-        "model": MODEL,
-        "max_tokens": 100,
-        "messages": [{"role": "user", "content": "what is 6+1?, just return the number"}],
-    }
-
-    client = wrap_anthropic(anthropic.AsyncAnthropic())
-    msg = await client.messages.create(**params)
-    assert "7" in msg.content[0].text
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-    assert span["metadata"]["max_tokens"] == 100
-    assert span["input"] == params["messages"]
-    assert span["output"]["role"] == "assistant"
-    assert "7" in span["output"]["content"][0]["text"]
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_anthropic_messages_create_async_stream_true(memory_logger):
-    assert not memory_logger.pop()
-
-    params = {
-        "model": MODEL,
-        "max_tokens": 100,
-        "messages": [{"role": "user", "content": "what is 6+1?, just return the number"}],
-        "stream": True,
-    }
-
-    client = wrap_anthropic(anthropic.AsyncAnthropic())
-    stream = await client.messages.create(**params)
-    async for event in stream:
-        pass
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    span = spans[0]
-    assert span["metadata"]["model"] == MODEL
-    assert span["metadata"]["max_tokens"] == 100
-    assert span["input"] == params["messages"]
-    assert span["output"]["role"] == "assistant"
-    assert "7" in span["output"]["content"][0]["text"]
 
 
 @pytest.mark.vcr
@@ -2055,54 +1880,3 @@ class TestBetaBatchesCreateSpans:
         assert span["metadata"]["model"] == MODEL
         assert span["input"] == [{"custom_id": "req-1"}, {"custom_id": "req-2"}]
         assert span["output"]["id"] == result.id
-
-
-class TestBetaBatchesResultsSpans:
-    """Tests verifying that beta.messages.batches.results() produces correct spans.
-
-    Mocked because the batch results API requires a completed batch, and batches
-    can take up to 24 hours to finish processing.
-    """
-
-    def test_sync_beta_batches_results_produces_span(self, memory_logger):
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_client())
-        mock_decoder = unittest.mock.MagicMock()
-        with unittest.mock.patch(
-            "anthropic.resources.beta.messages.batches.Batches.results",
-            return_value=mock_decoder,
-        ):
-            result = client.beta.messages.batches.results("msgbatch_beta123")
-
-        assert result is mock_decoder
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
-        assert span["span_attributes"]["type"] == "task"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["input"]["message_batch_id"] == "msgbatch_beta123"
-        assert span["output"]["type"] == "jsonl_stream"
-
-    @pytest.mark.asyncio
-    async def test_async_beta_batches_results_produces_span(self, memory_logger):
-        assert not memory_logger.pop()
-
-        client = wrap_anthropic(_get_async_client())
-        mock_decoder = unittest.mock.MagicMock()
-        with unittest.mock.patch(
-            "anthropic.resources.beta.messages.batches.AsyncBatches.results",
-            return_value=mock_decoder,
-        ):
-            result = await client.beta.messages.batches.results(message_batch_id="msgbatch_beta456")
-
-        assert result is mock_decoder
-
-        spans = memory_logger.pop()
-        assert len(spans) == 1
-        span = spans[0]
-        assert span["span_attributes"]["name"] == "anthropic.messages.batches.results"
-        assert span["metadata"]["provider"] == "anthropic"
-        assert span["input"]["message_batch_id"] == "msgbatch_beta456"

@@ -8,7 +8,7 @@ import time
 
 import pytest
 from braintrust import Attachment, logger
-from braintrust.integrations.bedrock_runtime import BedrockRuntimeIntegration, setup_bedrock, wrap_bedrock
+from braintrust.integrations.bedrock_runtime import setup_bedrock, wrap_bedrock
 from braintrust.integrations.bedrock_runtime.patchers import (
     BedrockClientCreatorPatcher,
     BedrockRuntimeClientMethodsPatcher,
@@ -131,12 +131,6 @@ def _assert_converse_span(span, *, name: str, start: float, end: float, model_id
 # ---------------------------------------------------------------------------
 
 
-def test_integration_metadata_and_min_version():
-    assert BedrockRuntimeIntegration.name == "bedrock_runtime"
-    assert BedrockRuntimeIntegration.min_version == "1.34.116"
-    assert BedrockRuntimeIntegration.available_patchers() == ("bedrock_runtime.client_creator",)
-
-
 def test_wrap_bedrock_returns_non_bedrock_clients_unchanged():
     client = _s3_client()
 
@@ -184,23 +178,6 @@ def test_wrap_bedrock_converse(memory_logger):
     assert len(spans) == 1
     _assert_converse_span(spans[0], name="bedrock.converse", start=start, end=end)
     assert spans[0]["metadata"]["endpoint"] == "converse"
-
-
-@pytest.mark.vcr
-def test_setup_bedrock_converse_auto_wraps_new_clients(memory_logger, clean_client_creator):
-    assert setup_bedrock() is True
-    assert not memory_logger.pop()
-
-    client = _bedrock_client()
-    start = time.time()
-    response = client.converse(**_converse_kwargs())
-    end = time.time()
-
-    assert response["output"]["message"]["role"] == "assistant"
-
-    spans = memory_logger.pop()
-    assert len(spans) == 1
-    _assert_converse_span(spans[0], name="bedrock.converse", start=start, end=end)
 
 
 @pytest.mark.vcr

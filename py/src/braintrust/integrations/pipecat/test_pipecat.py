@@ -190,8 +190,15 @@ async def test_pipecat_observer_capture_audio_attachments_adds_tts_and_user_audi
     assert auto_started_user_span["input"]["num_frames"] == 60
 
 
+@pytest.mark.parametrize(
+    ("capture_user", "capture_agent"),
+    [(True, False), (False, True)],
+    ids=["user-only", "agent-only"],
+)
 @pytest.mark.asyncio
-async def test_pipecat_observer_audio_capture_env_vars_are_independent(monkeypatch, memory_logger):
+async def test_pipecat_observer_audio_capture_env_vars_are_independent(
+    monkeypatch, memory_logger, capture_user, capture_agent
+):
     TTSStartedFrame = _import("pipecat.frames.frames.TTSStartedFrame")
     TTSAudioRawFrame = _import("pipecat.frames.frames.TTSAudioRawFrame")
     TTSStoppedFrame = _import("pipecat.frames.frames.TTSStoppedFrame")
@@ -200,11 +207,11 @@ async def test_pipecat_observer_audio_capture_env_vars_are_independent(monkeypat
     UserStoppedSpeakingFrame = _import("pipecat.frames.frames.UserStoppedSpeakingFrame")
     audio = b"\x00\x00\x01\x00" * 20
 
-    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", "true")
-    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "false")
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", str(capture_user).lower())
+    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", str(capture_agent).lower())
     observer = BraintrustPipecatObserver()
-    assert observer.capture_user_audio_attachments is True
-    assert observer.capture_agent_audio_attachments is False
+    assert observer.capture_user_audio_attachments is capture_user
+    assert observer.capture_agent_audio_attachments is capture_agent
 
     await observer.on_pipeline_started()
     await observer._handle_frame(TTSStartedFrame(context_id="ctx"))
@@ -216,27 +223,15 @@ async def test_pipecat_observer_audio_capture_env_vars_are_independent(monkeypat
     await observer.cleanup()
 
     logs = memory_logger.pop()
-    assert "audio" not in _single_span(logs, "tts_response").get("output", {})
-    assert isinstance(_single_span(logs, "user_speaking")["input"]["audio"], Attachment)
-
-    monkeypatch.setenv("BRAINTRUST_CAPTURE_USER_AUDIO_ATTACHMENTS", "false")
-    monkeypatch.setenv("BRAINTRUST_CAPTURE_AGENT_AUDIO_ATTACHMENTS", "true")
-    observer = BraintrustPipecatObserver()
-    assert observer.capture_user_audio_attachments is False
-    assert observer.capture_agent_audio_attachments is True
-
-    await observer.on_pipeline_started()
-    await observer._handle_frame(TTSStartedFrame(context_id="ctx"))
-    await observer._handle_frame(TTSAudioRawFrame(audio, sample_rate=16000, num_channels=1, context_id="ctx"))
-    await observer._handle_frame(TTSStoppedFrame(context_id="ctx"))
-    await observer._handle_frame(UserStartedSpeakingFrame())
-    await observer._handle_frame(UserAudioRawFrame(audio, sample_rate=16000, num_channels=1, user_id="user-1"))
-    await observer._handle_frame(UserStoppedSpeakingFrame())
-    await observer.cleanup()
-
-    logs = memory_logger.pop()
-    assert isinstance(_single_span(logs, "tts_response")["output"]["audio"], Attachment)
-    assert not _spans_named(logs, "user_speaking")
+    tts_output = _single_span(logs, "tts_response").get("output", {})
+    if capture_agent:
+        assert isinstance(tts_output["audio"], Attachment)
+    else:
+        assert "audio" not in tts_output
+    if capture_user:
+        assert isinstance(_single_span(logs, "user_speaking")["input"]["audio"], Attachment)
+    else:
+        assert not _spans_named(logs, "user_speaking")
 
 
 @pytest.mark.vcr

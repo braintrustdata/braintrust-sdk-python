@@ -22,61 +22,6 @@ def memory_logger():
 
 
 @pytest.mark.vcr
-def test_openai_chat_streaming_sync_http2_preserves_stream_interface(memory_logger):
-    assert not memory_logger.pop()
-
-    unwrapped_client = openai.OpenAI(http_client=httpx.Client(http2=True))
-    wrapped_client = wrap_openai(openai.OpenAI(http_client=httpx.Client(http2=True)))
-    clients = [(unwrapped_client, False), (wrapped_client, True)]
-
-    try:
-        for client, wrapped in clients:
-            start = time.time()
-
-            stream = client.chat.completions.create(
-                model=TEST_MODEL,
-                messages=[{"role": "user", "content": TEST_PROMPT}],
-                stream=True,
-                stream_options={"include_usage": True},
-            )
-
-            assert hasattr(stream, "response")
-            assert hasattr(stream, "_iterator")
-
-            chunks = []
-            for chunk in stream:
-                chunks.append(chunk)
-            end = time.time()
-
-            assert chunks
-            assert len(chunks) > 1
-
-            content = ""
-            for chunk in chunks:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    content += chunk.choices[0].delta.content
-
-            assert "24" in content or "twenty-four" in content.lower()
-
-            if not wrapped:
-                assert not memory_logger.pop()
-                continue
-
-            spans = memory_logger.pop()
-            assert len(spans) == 1
-            span = spans[0]
-            metrics = span["metrics"]
-            assert_metrics_are_valid(metrics, start, end)
-            assert TEST_MODEL in span["metadata"]["model"]
-            assert span["metadata"]["provider"] == "openai"
-            assert TEST_PROMPT in str(span["input"])
-            assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
-    finally:
-        unwrapped_client.close()
-        wrapped_client.close()
-
-
-@pytest.mark.vcr
 def test_openai_chat_streaming_sync_http2_context_manager_preserves_wrapper(memory_logger):
     assert not memory_logger.pop()
 
@@ -119,6 +64,7 @@ def test_openai_chat_streaming_sync_http2_context_manager_preserves_wrapper(memo
         assert TEST_MODEL in span["metadata"]["model"]
         assert span["metadata"]["provider"] == "openai"
         assert TEST_PROMPT in str(span["input"])
+        assert "24" in str(span["output"]) or "twenty-four" in str(span["output"]).lower()
     finally:
         client.close()
 

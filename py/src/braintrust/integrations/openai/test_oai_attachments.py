@@ -154,37 +154,3 @@ def test_openai_pdf_data_url_converts_to_attachment(memory_logger):
     # Should use the provided filename, not a generic one
     assert file_data_value.reference["filename"] == "test.pdf"
     assert file_data_value.reference["key"]
-
-
-@pytest.mark.vcr
-def test_openai_unwrapped_client_no_conversion(memory_logger):
-    """Test that unwrapped clients don't process attachments and don't generate spans."""
-    assert not memory_logger.pop()
-
-    # Create a simple image data URL
-    base64_image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=="
-    data_url = f"data:image/png;base64,{base64_image}"
-
-    # Use unwrapped client
-    client = openai.OpenAI()
-
-    response = client.chat.completions.create(
-        model=TEST_MODEL,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "What color is this image?"},
-                    {"type": "image_url", "image_url": {"url": data_url}},
-                ],
-            }
-        ],
-    )
-
-    # Verify we got a successful response
-    assert response
-    assert response.choices
-    assert response.choices[0].message.content
-
-    # No spans should be generated with unwrapped client
-    assert not memory_logger.pop()

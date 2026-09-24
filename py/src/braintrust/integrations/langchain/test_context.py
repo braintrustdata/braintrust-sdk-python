@@ -1,5 +1,4 @@
 # pyright: reportTypedDictNotRequiredAccess=none
-from unittest.mock import ANY
 
 import pytest
 from braintrust import logger
@@ -12,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableSerializable
 from langchain_openai import ChatOpenAI
 
-from .helpers import assert_matches_object
+from .helpers import assert_matches_object, expected_prompt_chain_spans
 
 
 PROJECT_NAME = "langchain-py"
@@ -69,91 +68,7 @@ def test_global_handler(logger_memory_logger):
     trace_root_id = spans[0]["root_span_id"]
 
     # Spans would be empty if the handler was not registered, let's make sure it logged what we expect
-    assert_matches_object(
-        spans,
-        [
-            {
-                "span_attributes": {
-                    "name": "RunnableSequence",
-                    "type": "task",
-                },
-                "input": {"number": "2"},
-                "output": {
-                    "content": ANY,  # LLM response text
-                    "additional_kwargs": ANY,
-                    "response_metadata": ANY,
-                    "type": "ai",
-                },
-                "metadata": {"tags": []},
-                "span_id": root_span_id,
-                "root_span_id": trace_root_id,
-            },
-            {
-                "span_attributes": {"name": "ChatPromptTemplate"},
-                "input": {"number": "2"},
-                "output": {
-                    "messages": [
-                        {
-                            "content": ANY,  # Formatted prompt text
-                            "additional_kwargs": {},
-                            "response_metadata": {},
-                            "type": "human",
-                        }
-                    ]
-                },
-                "metadata": {"tags": ["seq:step:1"]},
-                "root_span_id": trace_root_id,
-                "span_parents": [root_span_id],
-            },
-            {
-                "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
-                "input": [
-                    [
-                        {
-                            "content": ANY,  # Prompt message content
-                            "additional_kwargs": {},
-                            "response_metadata": {},
-                            "type": "human",
-                        }
-                    ]
-                ],
-                "output": {
-                    "generations": [
-                        [
-                            {
-                                "text": ANY,  # Generated text
-                                "generation_info": ANY,
-                                "type": "ChatGeneration",
-                                "message": {
-                                    "content": ANY,  # Message content
-                                    "additional_kwargs": ANY,
-                                    "response_metadata": ANY,
-                                    "type": "ai",
-                                },
-                            }
-                        ]
-                    ],
-                    "llm_output": {
-                        "model_name": "gpt-4o-mini-2024-07-18",
-                    },
-                    "type": "LLMResult",
-                },
-                "metrics": {
-                    "start": ANY,
-                    "total_tokens": ANY,
-                    "prompt_tokens": ANY,
-                    "completion_tokens": ANY,
-                    "end": ANY,
-                },
-                "metadata": {
-                    "tags": ["seq:step:2"],
-                    "model": "gpt-4o-mini-2024-07-18",
-                },
-                "root_span_id": trace_root_id,
-                "span_parents": [root_span_id],
-            },
-        ],
-    )
+    assert_matches_object(spans, expected_prompt_chain_spans(root_span_id, trace_root_id))
 
     assert message.content == "1 + 2 equals 3."
 

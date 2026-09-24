@@ -1,5 +1,4 @@
 import time
-from typing import Any
 
 import pytest
 from openai import AsyncOpenAI
@@ -17,6 +16,7 @@ except ImportError:
 
     OpenAIModelClass = OpenAIModel
 from braintrust import logger, wrap_openai
+from braintrust.integrations.test_utils import assert_metrics_are_valid
 from braintrust.span_types import SpanTypeAttribute
 from braintrust.test_helpers import init_test_logger
 from pydantic_ai.providers.openai import OpenAIProvider  # pylint: disable=import-error
@@ -61,11 +61,18 @@ def memory_logger():
         yield bgl
 
 
-def _assert_metrics_are_valid(metrics: dict[str, Any]):
-    assert metrics["tokens"] > 0
-    assert metrics["prompt_tokens"] > 0
-    assert metrics["completion_tokens"] > 0
-    assert "time_to_first_token" in metrics
+def _assert_wrapped_span(span, start, end):
+    assert span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    assert "name" in span["span_attributes"]
+    assert MODEL in str(span["metadata"])
+    assert TEST_PROMPT in str(span["input"])
+    assert "Rome" in str(span["output"])
+
+    assert_metrics_are_valid(span["metrics"], start, end)
+    assert "time_to_first_token" in span["metrics"]
+
+    assert span["span_id"]
+    assert span["root_span_id"]
 
 
 @pytest.mark.vcr
@@ -94,21 +101,7 @@ async def test_pydantic_wrapped_stream(memory_logger):
 
     assert len(spans) == 1
 
-    span = spans[0]
-    assert span["span_attributes"]["type"] == SpanTypeAttribute.LLM
-    assert "name" in span["span_attributes"]
-    assert MODEL in str(span["metadata"])
-    assert TEST_PROMPT in str(span["input"])
-    assert "Rome" in str(span["output"])
-
-    # Verify timing
-    metrics = span["metrics"]
-    _assert_metrics_are_valid(metrics)
-    assert start <= metrics["start"] <= metrics["end"] <= end
-
-    # Verify span relationships
-    assert span["span_id"]
-    assert span["root_span_id"]
+    _assert_wrapped_span(spans[0], start, end)
 
 
 @pytest.mark.vcr
@@ -139,15 +132,4 @@ async def test_pydantic_wrapped_completion(memory_logger):
 
     assert len(spans) == 1
 
-    span = spans[0]
-    assert span["span_attributes"]["type"] == SpanTypeAttribute.LLM
-    assert "name" in span["span_attributes"]
-    assert MODEL in str(span["metadata"])
-    assert TEST_PROMPT in str(span["input"])
-    assert "Rome" in str(span["output"])
-    metrics = span["metrics"]
-    _assert_metrics_are_valid(metrics)
-    assert start <= metrics["start"] <= metrics["end"] <= end
-
-    assert span["span_id"]
-    assert span["root_span_id"]
+    _assert_wrapped_span(spans[0], start, end)

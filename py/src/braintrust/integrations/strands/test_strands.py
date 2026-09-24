@@ -25,6 +25,8 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     from strands.models.openai import OpenAIModel
 
     assert StrandsIntegration.setup()
+    # A repeated setup() must not double-patch: the span counts below would duplicate.
+    assert StrandsIntegration.setup()
 
     model = OpenAIModel(model_id="gpt-4o-mini", params={"temperature": 0, "max_tokens": 16})
     agent = Agent(model=model, name="bt-test-agent", system_prompt="Answer with one short sentence.")
@@ -59,8 +61,3 @@ async def test_strands_openai_agent_traces_native_otel_lifecycle(memory_logger):
     assert "tokens" not in llm_span.get("metrics", {})
     for span in spans:
         assert span["context"]["span_origin"]["instrumentation"]["name"] == "strands-auto"
-
-
-def test_strands_setup_is_idempotent():
-    assert StrandsIntegration.setup()
-    assert StrandsIntegration.setup()

@@ -86,3 +86,91 @@ def find_spans_by_attributes(spans: list[Any], **attributes: Any) -> list[Any]:
         if matches:
             matching_spans.append(span)
     return matching_spans
+
+
+def expected_prompt_chain_spans(root_span_id: str, trace_root_id: str, *, tags: Sequence[str] = ()) -> list[Any]:
+    """Expected spans for ``ChatPromptTemplate("What is 1 + {number}?") | ChatOpenAI(gpt-4o-mini)`` invoked with ``{"number": "2"}``."""
+    tags = list(tags)
+    return [
+        {
+            "span_attributes": {
+                "name": "RunnableSequence",
+                "type": "task",
+            },
+            "input": {"number": "2"},
+            "output": {
+                "content": ANY,  # LLM response text
+                "additional_kwargs": ANY,
+                "response_metadata": ANY,
+                "type": "ai",
+            },
+            "metadata": {"tags": tags},
+            "span_id": root_span_id,
+            "root_span_id": trace_root_id,
+        },
+        {
+            "span_attributes": {"name": "ChatPromptTemplate"},
+            "input": {"number": "2"},
+            "output": {
+                "messages": [
+                    {
+                        "content": ANY,  # Formatted prompt text
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                    }
+                ]
+            },
+            "metadata": {"tags": ["seq:step:1", *tags]},
+            "root_span_id": trace_root_id,
+            "span_parents": [root_span_id],
+        },
+        {
+            "span_attributes": {"name": "ChatOpenAI", "type": "llm"},
+            "input": [
+                [
+                    {
+                        "content": ANY,  # Prompt message content
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                    }
+                ]
+            ],
+            "output": {
+                "generations": [
+                    [
+                        {
+                            "text": ANY,  # Generated text
+                            "generation_info": ANY,
+                            "type": "ChatGeneration",
+                            "message": {
+                                "content": ANY,  # Message content
+                                "additional_kwargs": ANY,
+                                "response_metadata": ANY,
+                                "type": "ai",
+                            },
+                        }
+                    ]
+                ],
+                "llm_output": {
+                    "model_name": "gpt-4o-mini-2024-07-18",
+                },
+                "type": "LLMResult",
+            },
+            "metrics": {
+                "start": ANY,
+                "total_tokens": ANY,
+                "prompt_tokens": ANY,
+                "completion_tokens": ANY,
+                "end": ANY,
+            },
+            "metadata": {
+                "tags": ["seq:step:2", *tags],
+                "model": "gpt-4o-mini-2024-07-18",
+                "provider": "openai",
+            },
+            "root_span_id": trace_root_id,
+            "span_parents": [root_span_id],
+        },
+    ]

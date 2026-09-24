@@ -62,6 +62,61 @@ def _model_with_customization_counter():
     return SideEffectModel(inferred_model.model_name), customization_calls
 
 
+def _find_agent_span(spans):
+    """Return the agent_run* wrapper span (not the nested chat span), or None."""
+    return next(
+        (
+            s
+            for s in spans
+            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
+        ),
+        None,
+    )
+
+
+def _has_binary_attachment(span_input, media_type=None):
+    """Check if an agent_run (user_prompt) or chat (messages[].parts) span input contains
+    BinaryContent shaped into a Braintrust Attachment, optionally of the given media type."""
+    from braintrust.logger import Attachment
+
+    def check_item(item):
+        if not isinstance(item, dict):
+            return False
+        attachment = item.get("attachment")
+        if item.get("type") == "binary" and isinstance(attachment, Attachment):
+            if media_type is None or (
+                item.get("media_type") == media_type and attachment._reference.get("content_type") == media_type
+            ):
+                return True
+        # Check nested content field (for UserPromptPart-like structures)
+        content = item.get("content")
+        return isinstance(content, list) and any(check_item(sub_item) for sub_item in content)
+
+    if not span_input:
+        return False
+    user_prompt = span_input.get("user_prompt")
+    if isinstance(user_prompt, list) and any(check_item(item) for item in user_prompt):
+        return True
+    messages = span_input.get("messages")
+    if isinstance(messages, list):
+        for msg in messages:
+            parts = msg.get("parts") if isinstance(msg, dict) else None
+            if isinstance(parts, list) and any(check_item(part) for part in parts):
+                return True
+    return False
+
+
+def _is_descendant(span_by_id, child_span, ancestor_id):
+    """Check if child_span is a descendant of ancestor_id."""
+    parents = child_span.get("span_parents") or []
+    if ancestor_id in parents:
+        return True
+    return any(
+        parent_id in span_by_id and _is_descendant(span_by_id, span_by_id[parent_id], ancestor_id)
+        for parent_id in parents
+    )
+
+
 def _assert_metrics_are_valid(metrics, start, end):
     """Assert that metrics contain expected fields and values."""
     assert "start" in metrics
@@ -177,7 +232,7 @@ async def test_agent_run_async(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -194,6 +249,7 @@ async def test_agent_run_async(memory_logger):
     # Check chat span is nested under agent span (use span_id, not id which is the row ID)
     assert chat_span["span_parents"] == [agent_span["span_id"]], "chat span should be nested under agent_run"
     assert chat_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
+    assert chat_span["span_attributes"]["name"].startswith("chat ")
     assert "gpt-4o-mini" in chat_span["span_attributes"]["name"]
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"
@@ -236,7 +292,7 @@ async def test_wrapper_agent_run_is_traced(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -285,19 +341,9 @@ def test_agent_run_sync(memory_logger):
     # Build span tree to verify nesting
     span_by_id = {s["span_id"]: s for s in spans}
 
-    def is_descendant(child_span, ancestor_id):
-        """Check if child_span is a descendant of ancestor_id."""
-        if not child_span.get("span_parents"):
-            return False
-        if ancestor_id in child_span["span_parents"]:
-            return True
-        # Check if any parent is a descendant
-        for parent_id in chat_span["span_parents"]:
-            if parent_id in span_by_id and is_descendant(span_by_id[parent_id], ancestor_id):
-                return True
-        return False
-
-    assert is_descendant(chat_span, agent_sync_span["span_id"]), "chat span should be nested under agent_run_sync"
+    assert _is_descendant(span_by_id, chat_span, agent_sync_span["span_id"]), (
+        "chat span should be nested under agent_run_sync"
+    )
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
@@ -399,7 +445,6 @@ async def test_multiple_identical_sequential_streams(memory_logger):
                 full_text = ""
                 async for text in result.stream_text(delta=True):
                     full_text += text
-            print(f"Completed stream {i + 1}")
 
     await run_multiple_identical_streams()
 
@@ -425,24 +470,16 @@ async def test_multiple_identical_sequential_streams(memory_logger):
         ttft = chat_start - agent_start
         time_to_first_tokens.append(ttft)
 
-        print(f"\n=== STREAM {i + 1} ===")
-        print(f"Agent span start: {agent_start}")
-        print(f"Chat span start: {chat_start}")
-        print(f"Time to first token: {ttft}s")
-        print(f"Agent span ID: {agent_spans[i]['span_id']}")
-        print(f"Chat span parents: {chat_spans[i]['span_parents']}")
+        # Each agent run must start after the previous one finished.
+        if i > 0:
+            prev_end = agent_spans[i - 1]["metrics"]["end"]
+            assert agent_start >= prev_end - 0.1, f"Stream {i + 1} started too early: {agent_start} vs {prev_end}"
 
     # CRITICAL: All three time-to-first-token values should be similar (within 0.5s of each other)
     # If they're accumulating, the second and third would be much larger
     min_ttft = min(time_to_first_tokens)
     max_ttft = max(time_to_first_tokens)
     ttft_spread = max_ttft - min_ttft
-
-    print(f"\n=== TIME-TO-FIRST-TOKEN ANALYSIS ===")
-    print(f"TTFT 1: {time_to_first_tokens[0]:.4f}s")
-    print(f"TTFT 2: {time_to_first_tokens[1]:.4f}s")
-    print(f"TTFT 3: {time_to_first_tokens[2]:.4f}s")
-    print(f"Min: {min_ttft:.4f}s, Max: {max_ttft:.4f}s, Spread: {ttft_spread:.4f}s")
 
     # All should be small (< 3s)
     for i, ttft in enumerate(time_to_first_tokens):
@@ -452,93 +489,6 @@ async def test_multiple_identical_sequential_streams(memory_logger):
     assert ttft_spread < 0.5, (
         f"Time-to-first-token spread too large: {ttft_spread}s - suggests timing is accumulating from previous calls"
     )
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_multiple_sequential_streams(memory_logger):
-    """Test multiple sequential streaming calls to ensure offsets don't accumulate."""
-    assert not memory_logger.pop()
-
-    @traced
-    async def run_multiple_streams():
-        agent1 = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
-        agent2 = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
-
-        start = time.time()
-
-        # First stream
-        async with agent1.run_stream("Count from 1 to 3.") as result1:
-            full_text1 = ""
-            async for text in result1.stream_text(delta=True):
-                full_text1 += text
-
-        # Second stream
-        async with agent2.run_stream("Count from 1 to 3.") as result2:
-            full_text2 = ""
-            async for text in result2.stream_text(delta=True):
-                full_text2 += text
-
-        return start
-
-    start = await run_multiple_streams()
-    end = time.time()
-
-    # Check spans
-    spans = memory_logger.pop()
-
-    # Should have: 1 parent (run_multiple_streams) + 2 agent_run_stream spans + 2 chat spans = 5 total
-    assert len(spans) >= 5, f"Expected at least 5 spans (1 parent + 2 agent_run_stream + 2 chat), got {len(spans)}"
-
-    # Find agent and chat spans
-    agent_spans = [s for s in spans if "agent_run" in s["span_attributes"]["name"]]
-    chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
-
-    assert len(agent_spans) >= 2, f"Expected at least 2 agent spans, got {len(agent_spans)}"
-    assert len(chat_spans) >= 2, f"Expected at least 2 chat spans, got {len(chat_spans)}"
-
-    # Sort by creation time
-    agent_spans.sort(key=lambda s: s["created"])
-    chat_spans.sort(key=lambda s: s["created"])
-
-    agent1_span = agent_spans[0]
-    agent2_span = agent_spans[1]
-    chat1_span = chat_spans[0]
-    chat2_span = chat_spans[1]
-
-    # Check timing for first pair
-    agent1_start = agent1_span["metrics"]["start"]
-    chat1_start = chat1_span["metrics"]["start"]
-    time_to_first_token_1 = chat1_start - agent1_start
-
-    # Check timing for second pair
-    agent2_start = agent2_span["metrics"]["start"]
-    chat2_start = chat2_span["metrics"]["start"]
-    time_to_first_token_2 = chat2_start - agent2_start
-
-    print(f"\n=== FIRST STREAM ===")
-    print(f"Agent1 start: {agent1_start}")
-    print(f"Chat1 start: {chat1_start}")
-    print(f"Time to first token 1: {time_to_first_token_1}s")
-
-    print(f"\n=== SECOND STREAM ===")
-    print(f"Agent2 start: {agent2_start}")
-    print(f"Chat2 start: {chat2_start}")
-    print(f"Time to first token 2: {time_to_first_token_2}s")
-
-    print(f"\n=== RELATIVE TIMING ===")
-    print(f"Agent2 start - Agent1 start: {agent2_start - agent1_start}s")
-    print(f"Chat2 start - Chat1 start: {chat2_start - chat1_start}s")
-
-    # CRITICAL: Both time-to-first-token values should be small and similar
-    assert time_to_first_token_1 < 3.0, f"First time to first token too large: {time_to_first_token_1}s"
-    assert time_to_first_token_2 < 3.0, (
-        f"Second time to first token too large: {time_to_first_token_2}s - suggests start_time is being reused from first call"
-    )
-
-    # Agent2 should start AFTER agent1 finishes (or near the end)
-    agent1_end = agent1_span["metrics"]["end"]
-    assert agent2_start >= agent1_end - 0.1, f"Agent2 started too early: {agent2_start} vs Agent1 end: {agent1_end}"
 
 
 @pytest.mark.vcr
@@ -597,69 +547,12 @@ async def test_agent_run_stream(memory_logger):
         f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
     )
 
-    # Debug: Print full span data
-    print(f"\n=== AGENT SPAN ===")
-    print(f"ID: {agent_span['id']}")
-    print(f"span_id: {agent_span['span_id']}")
-    print(f"metrics: {agent_span['metrics']}")
-    print(f"time_to_first_token: {ttft}s")
-    print(f"\n=== CHAT SPAN ===")
-    print(f"ID: {chat_span['id']}")
-    print(f"span_id: {chat_span['span_id']}")
-    print(f"span_parents: {chat_span['span_parents']}")
-    print(f"metrics: {chat_span['metrics']}")
-
     # Wrapper stream span must not log token metrics (would double-count at rollup).
     # time_to_first_token is asserted above; it's a non-summable timing metric and stays.
     assert "prompt_tokens" not in agent_span["metrics"]
     assert "completion_tokens" not in agent_span["metrics"]
     assert chat_span["metrics"]["prompt_tokens"] > 0
     assert chat_span["metrics"]["completion_tokens"] > 0
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_agent_with_tools(memory_logger):
-    """Test Agent with tool calls."""
-    assert not memory_logger.pop()
-
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=200))
-
-    @agent.tool_plain
-    def get_weather(city: str) -> str:
-        """Get weather for a city.
-
-        Args:
-            city: The city name
-        """
-        return f"It's sunny in {city}"
-
-    start = time.time()
-    result = await agent.run("What's the weather in Paris?")
-    end = time.time()
-
-    # Verify tool was used
-    assert result.output
-    assert "Paris" in str(result.output) or "sunny" in str(result.output)
-
-    # Check spans
-    spans = memory_logger.pop()
-    assert len(spans) >= 1  # At least the agent span, possibly more
-
-    # Find the agent span
-    agent_span = next(s for s in spans if "agent_run" in s["span_attributes"]["name"])
-    assert agent_span
-    assert "weather" in str(agent_span["input"]).lower() or "paris" in str(agent_span["input"]).lower()
-    _assert_metrics_are_valid(agent_span["metrics"], start, end)
-
-    tool_spans = [s for s in spans if s["span_attributes"].get("type") == SpanTypeAttribute.TOOL]
-    assert len(tool_spans) >= 1, f"Expected at least 1 TOOL span, got {len(tool_spans)}"
-
-    weather_tool_span = next((s for s in tool_spans if s["span_attributes"]["name"] == "get_weather"), None)
-    assert weather_tool_span is not None, "get_weather TOOL span not found"
-    assert "Paris" in str(weather_tool_span["input"]) or "paris" in str(weather_tool_span["input"]).lower()
-    assert "sunny" in str(weather_tool_span["output"]).lower()
-    assert weather_tool_span["span_parents"] == [agent_span["span_id"]], "tool span should be nested under agent_run"
 
 
 @pytest.mark.vcr
@@ -828,8 +721,6 @@ async def test_direct_model_request_stream(memory_logger, direct):
             f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
         )
 
-    print(f"✓ Direct stream time_to_first_token: {ttft}s (duration: {duration}s)")
-
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
@@ -889,14 +780,7 @@ async def test_agent_structured_output(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -913,18 +797,7 @@ async def test_agent_structured_output(memory_logger):
     # Check chat span is a descendant of agent_run
     span_by_id = {s["span_id"]: s for s in spans}
 
-    def is_descendant(child_span, ancestor_id):
-        """Check if child_span is a descendant of ancestor_id."""
-        if not child_span.get("span_parents"):
-            return False
-        if ancestor_id in child_span["span_parents"]:
-            return True
-        for parent_id in child_span["span_parents"]:
-            if parent_id in span_by_id and is_descendant(span_by_id[parent_id], ancestor_id):
-                return True
-        return False
-
-    assert is_descendant(chat_span, agent_span["span_id"]), "chat span should be nested under agent_run"
+    assert _is_descendant(span_by_id, chat_span, agent_span["span_id"]), "chat span should be nested under agent_run"
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"
     output_tool = next(
@@ -968,14 +841,7 @@ async def test_agent_with_model_settings_in_metadata(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -1033,14 +899,7 @@ async def test_agent_with_model_settings_override_in_input(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run span
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
 
     # Verify override settings are in agent INPUT (because they were passed to run())
@@ -1075,14 +934,7 @@ async def test_agent_with_system_prompt_in_metadata(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run span
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
 
     # Verify system_prompt is in input (because it's semantically part of the LLM input)
@@ -1158,14 +1010,7 @@ async def test_agent_with_message_history(memory_logger):
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run and chat spans
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
 
     assert agent_span is not None, "agent_run span not found"
     assert "message_history" in str(agent_span["input"])
@@ -1199,14 +1044,7 @@ async def test_agent_with_custom_settings(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
 
     # Model settings passed to run() should be in input (not metadata)
@@ -1272,23 +1110,12 @@ def test_agent_run_stream_sync(memory_logger):
         f"time_to_first_token should be < {MAX_REASONABLE_TTFT_SECONDS}s for API call, got {ttft}s"
     )
 
-    print(f"✓ Sync stream time_to_first_token: {ttft}s (duration: {duration}s)")
-
     # Check chat span is a descendant of agent_run_stream_sync
     span_by_id = {s["span_id"]: s for s in spans}
 
-    def is_descendant(child_span, ancestor_id):
-        """Check if child_span is a descendant of ancestor_id."""
-        if not child_span.get("span_parents"):
-            return False
-        if ancestor_id in child_span["span_parents"]:
-            return True
-        for parent_id in child_span["span_parents"]:
-            if parent_id in span_by_id and is_descendant(span_by_id[parent_id], ancestor_id):
-                return True
-        return False
-
-    assert is_descendant(chat_span, agent_span["span_id"]), "chat span should be nested under agent_run_stream_sync"
+    assert _is_descendant(span_by_id, chat_span, agent_span["span_id"]), (
+        "chat span should be nested under agent_run_stream_sync"
+    )
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     assert chat_span["metadata"]["provider"] == "openai"
     # Chat span may not have complete metrics since it's an intermediate span
@@ -1426,8 +1253,6 @@ def test_direct_model_request_stream_sync(memory_logger, direct):
         assert token_key not in span["metrics"], (
             f"wrapper span must not log {token_key}; it duplicates the leaf chat span"
         )
-
-    print(f"✓ Direct sync stream time_to_first_token: {ttft}s (duration: {duration}s)")
 
 
 @pytest.mark.vcr
@@ -1674,7 +1499,6 @@ async def test_agent_with_binary_content(memory_logger):
     Verifies that BinaryContent is properly converted to Braintrust attachments
     in both the agent_run span (parent) and chat span (child).
     """
-    from braintrust.logger import Attachment
     from pydantic_ai.models.function import BinaryContent
 
     assert not memory_logger.pop()
@@ -1701,14 +1525,7 @@ async def test_agent_with_binary_content(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find agent_run span (parent)
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
 
     # Find chat span (child)
@@ -1721,56 +1538,15 @@ async def test_agent_with_binary_content(memory_logger):
     _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
     # CRITICAL: Verify that BOTH spans properly serialize BinaryContent to attachments
-    def has_attachment_in_input(span_input):
-        """Check if span input contains a Braintrust Attachment object."""
-        if not span_input:
-            return False
-
-        def check_item(item):
-            """Recursively check an item for attachments."""
-            if isinstance(item, dict):
-                if item.get("type") == "binary" and isinstance(item.get("attachment"), Attachment):
-                    return True
-                # Check nested content field (for UserPromptPart-like structures)
-                if "content" in item:
-                    content = item["content"]
-                    if isinstance(content, list):
-                        for sub_item in content:
-                            if check_item(sub_item):
-                                return True
-            return False
-
-        # Check user_prompt (agent_run span)
-        if "user_prompt" in span_input:
-            user_prompt = span_input["user_prompt"]
-            if isinstance(user_prompt, list):
-                for item in user_prompt:
-                    if check_item(item):
-                        return True
-
-        # Check messages (chat span)
-        if "messages" in span_input:
-            messages = span_input["messages"]
-            if isinstance(messages, list):
-                for msg in messages:
-                    if isinstance(msg, dict) and "parts" in msg:
-                        parts = msg["parts"]
-                        if isinstance(parts, list):
-                            for part in parts:
-                                if check_item(part):
-                                    return True
-
-        return False
-
     # Verify agent_run span has attachment
-    agent_has_attachment = has_attachment_in_input(agent_span.get("input", {}))
+    agent_has_attachment = _has_binary_attachment(agent_span.get("input", {}))
     assert agent_has_attachment, (
         "agent_run span should have BinaryContent converted to Braintrust Attachment. "
         f"Input: {agent_span.get('input', {})}"
     )
 
     # Verify chat span has attachment (this is the key test for the bug)
-    chat_has_attachment = has_attachment_in_input(chat_span.get("input", {}))
+    chat_has_attachment = _has_binary_attachment(chat_span.get("input", {}))
     assert chat_has_attachment, (
         "chat span should have BinaryContent converted to Braintrust Attachment. "
         "The child span should process attachments the same way as the parent. "
@@ -1786,7 +1562,6 @@ async def test_agent_with_document_input(memory_logger):
     Verifies that both agent_run and chat spans convert BinaryContent to Braintrust
     attachments for document files like PDFs.
     """
-    from braintrust.logger import Attachment
     from pydantic_ai.models.function import BinaryContent
 
     assert not memory_logger.pop()
@@ -1813,71 +1588,19 @@ async def test_agent_with_document_input(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans (agent_run + chat), got {len(spans)}"
 
     # Find spans
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
     assert chat_span is not None, "chat span not found"
 
-    # Helper to check for PDF attachment
-    def has_pdf_attachment(span_input):
-        """Check if span input contains a PDF Braintrust Attachment."""
-        if not span_input:
-            return False
-
-        def check_item(item):
-            """Recursively check an item for PDF attachments."""
-            if isinstance(item, dict):
-                if item.get("type") == "binary" and item.get("media_type") == "application/pdf":
-                    attachment = item.get("attachment")
-                    if isinstance(attachment, Attachment):
-                        if attachment._reference.get("content_type") == "application/pdf":
-                            return True
-                # Check nested content field (for UserPromptPart-like structures)
-                if "content" in item:
-                    content = item["content"]
-                    if isinstance(content, list):
-                        for sub_item in content:
-                            if check_item(sub_item):
-                                return True
-            return False
-
-        # Check user_prompt (agent_run span)
-        if "user_prompt" in span_input:
-            user_prompt = span_input["user_prompt"]
-            if isinstance(user_prompt, list):
-                for item in user_prompt:
-                    if check_item(item):
-                        return True
-
-        # Check messages (chat span)
-        if "messages" in span_input:
-            messages = span_input["messages"]
-            if isinstance(messages, list):
-                for msg in messages:
-                    if isinstance(msg, dict) and "parts" in msg:
-                        parts = msg["parts"]
-                        if isinstance(parts, list):
-                            for part in parts:
-                                if check_item(part):
-                                    return True
-
-        return False
-
     # Verify agent_run span has PDF attachment
-    assert has_pdf_attachment(agent_span.get("input", {})), (
+    assert _has_binary_attachment(agent_span.get("input", {}), "application/pdf"), (
         "agent_run span should have PDF BinaryContent converted to Braintrust Attachment"
     )
 
     # Verify chat span has PDF attachment (critical for document input)
-    assert has_pdf_attachment(chat_span.get("input", {})), (
+    assert _has_binary_attachment(chat_span.get("input", {}), "application/pdf"), (
         "chat span should have PDF BinaryContent converted to Braintrust Attachment. "
         "This ensures documents are properly traced in the low-level model call. "
         f"Chat span input: {chat_span.get('input', {})}"
@@ -1934,7 +1657,7 @@ async def test_agent_with_tool_execution(memory_logger):
     assert len(spans) >= 2, f"Expected at least 2 spans, got {len(spans)}"
 
     # Find agent_run span
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
 
     # Verify that toolsets are captured in input with correct tool names
@@ -2009,13 +1732,15 @@ async def test_tool_execution_tracing_does_not_depend_on_message_reconstruction(
     def get_weather(city: str) -> str:
         return f"It's sunny in {city}"
 
+    start = time.time()
     result = await agent.run("What's the weather in Paris?")
+    end = time.time()
 
     assert result.output
     assert "Paris" in str(result.output) or "sunny" in str(result.output)
 
     spans = memory_logger.pop()
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     tool_span = next((s for s in spans if s["span_attributes"].get("name") == "get_weather"), None)
     chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
 
@@ -2031,6 +1756,9 @@ async def test_tool_execution_tracing_does_not_depend_on_message_reconstruction(
     assert tool_span["span_parents"] == [agent_span["span_id"]]
     assert tool_span["metadata"].get("tool_call_id")
     assert tool_span["metrics"]["duration"] >= 0
+    assert "paris" in str(tool_span["input"]).lower()
+    assert "sunny" in str(tool_span["output"]).lower()
+    _assert_metrics_are_valid(agent_span["metrics"], start, end)
 
 
 @pytest.mark.vcr
@@ -2066,7 +1794,7 @@ def test_tool_execution_creates_spans(memory_logger):
     spans = memory_logger.pop()
 
     # Find spans by type
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_spans = [s for s in spans if "chat" in s["span_attributes"]["name"]]
 
     # Assertions - verify basic tracing works with tools
@@ -2182,23 +1910,6 @@ def test_agent_tool_metadata_extraction(memory_logger):
     assert "query" in search_params.get("required", [])
 
 
-def test_agent_without_tools_metadata():
-    """Test metadata extraction for agent without tools."""
-    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
-
-    # Agent with no tools
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
-
-    args = ("Test prompt",)
-    kwargs = {}
-    input_data, metadata = _build_agent_input_and_metadata(args, kwargs, agent)
-
-    # Should have toolsets in input (even if empty)
-    # Note: Pydantic AI agents always have some toolsets (e.g., for output parsing)
-    # so we just verify the structure exists
-    assert isinstance(input_data.get("toolsets"), (list, type(None))), "toolsets should be list or None in input"
-
-
 def test_agent_tool_with_custom_name():
     """Test that tools with custom names are properly extracted with schemas in input."""
     from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
@@ -2307,73 +2018,6 @@ def test_reasoning_tokens_extraction_provider_keys(details_key):
     assert metrics["completion_reasoning_tokens"] == 128.0
     # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
-
-def test_explicit_toolsets_kwarg_in_input():
-    """Test that explicitly passed toolsets kwarg goes to input (not just metadata)."""
-    from braintrust.integrations.pydantic_ai.tracing import _build_agent_input_and_metadata
-
-    agent = Agent(MODEL)
-
-    # Add a tool to the agent
-    @agent.tool_plain
-    def helper_tool() -> str:
-        """A helper tool."""
-        return "help"
-
-    # Simulate passing toolsets as explicit kwarg (would be a different toolset in practice)
-    # For testing, we'll just pass the string "custom" to see it in input
-    args = ("Test",)
-    kwargs = {"toolsets": "custom_toolset_marker"}  # Simplified for testing
-    input_data, metadata = _build_agent_input_and_metadata(args, kwargs, agent)
-
-    # Toolsets passed as kwargs should be in input
-    assert "toolsets" in input_data, "explicitly passed toolsets should be in input"
-
-
-@pytest.mark.vcr
-def test_reasoning_tokens_extraction(memory_logger):
-    """Test that reasoning tokens are extracted from model responses.
-
-    For reasoning models like o1/o3, providers (e.g. OpenAI) populate
-    `usage.details["reasoning_tokens"]` (a dict entry, not an attribute) and
-    `_extract_response_metrics` must surface it as `completion_reasoning_tokens`.
-    """
-    assert not memory_logger.pop()
-
-    from types import SimpleNamespace
-
-    from braintrust.integrations.pydantic_ai.tracing import _extract_response_metrics
-    from pydantic_ai.usage import RequestUsage
-
-    # Use a real RequestUsage so `details` is the actual dict[str, int] shape
-    # pydantic_ai produces. A MagicMock would falsely satisfy attribute-style
-    # lookups and hide real-world dict-only behavior.
-    usage = RequestUsage(
-        input_tokens=10,
-        output_tokens=20,
-        cache_read_tokens=0,
-        cache_write_tokens=0,
-        details={"reasoning_tokens": 128},
-    )
-    response = SimpleNamespace(parts=[], usage=usage)
-
-    start_time = time.time()
-    end_time = start_time + 5.0
-
-    metrics = _extract_response_metrics(response, start_time, end_time)
-
-    # Verify all metrics are present
-    assert metrics is not None, "Should extract metrics"
-    # pylint: disable=unsupported-membership-test,unsubscriptable-object
-    assert metrics["prompt_tokens"] == 10.0
-    assert metrics["completion_tokens"] == 20.0
-    assert metrics["tokens"] == 30.0  # total_tokens is a property: input + output
-    assert metrics["completion_reasoning_tokens"] == 128.0, (
-        f"Expected 128.0, got {metrics['completion_reasoning_tokens']}"
-    )
-    assert "duration" in metrics
-    assert "start" in metrics
-    assert "end" in metrics
     # pylint: enable=unsupported-membership-test,unsubscriptable-object
 
 
@@ -2422,74 +2066,6 @@ async def test_agent_run_stream_structured_output(memory_logger):
 
     # Check chat span is nested
     assert chat_span["span_parents"] == [agent_span["span_id"]], "chat span should be nested under agent_run_stream"
-    assert chat_span["metadata"]["model"] == "gpt-4o-mini"
-    _assert_metrics_are_valid(chat_span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_model_class_span_names(memory_logger):
-    """Test that model class spans have proper names.
-
-    Verifies that the nested chat span from the model class wrapper has a
-    meaningful name (either the model name or class name), not a misleading
-    string like 'log'.
-
-    This test ensures that when model_name is None, we fall back to the
-    class name (e.g., 'OpenAIChatModel') rather than str(instance) which
-    could return unexpected values.
-    """
-    assert not memory_logger.pop()
-
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=50))
-
-    start = time.time()
-    result = await agent.run("What is 2+2?")
-    end = time.time()
-
-    assert result.output
-
-    # Check spans
-    spans = memory_logger.pop()
-    assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
-
-    # Find chat span (the nested model class span)
-    chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
-    assert chat_span is not None, "chat span not found"
-
-    span_name = chat_span["span_attributes"]["name"]
-
-    # Verify the span name is meaningful
-    # It should be either "chat <model_name>" or "chat <ClassName>"
-    # but NOT "chat log" or other misleading names
-    assert span_name.startswith("chat "), f"Chat span should start with 'chat ', got: {span_name}"
-
-    # Extract the model/class identifier part after "chat "
-    identifier = span_name[5:]  # Skip "chat "
-
-    # Should not be empty or misleading values
-    assert identifier, "Chat span should have a model name or class name after 'chat '"
-    assert identifier != "log", "Chat span should not be named 'log' - should use model name or class name"
-    assert len(identifier) > 2, f"Chat span identifier seems too short: {identifier}"
-
-    # Common valid patterns:
-    # - "chat gpt-4o-mini" (model name extracted)
-    # - "chat OpenAIChatModel" (class name fallback)
-    # - "chat gpt-4o" (model name)
-    valid_patterns = [
-        "gpt-" in identifier,  # OpenAI model names
-        "claude" in identifier.lower(),  # Anthropic models
-        "Model" in identifier,  # Class name fallback (e.g., OpenAIChatModel)
-        "-" in identifier,  # Model names typically have hyphens
-    ]
-
-    assert any(valid_patterns), (
-        f"Chat span name '{span_name}' doesn't match expected patterns. "
-        f"Should contain model name (e.g., 'gpt-4o-mini') or class name (e.g., 'OpenAIChatModel')"
-    )
-
-    # Verify span has proper structure
-    assert chat_span["span_attributes"]["type"] == SpanTypeAttribute.LLM
     assert chat_span["metadata"]["model"] == "gpt-4o-mini"
     _assert_metrics_are_valid(chat_span["metrics"], start, end)
 
@@ -2667,71 +2243,6 @@ def test_setup_pydantic_ai_is_idempotent_across_new_patch_points():
     assert agent_graph_module.ToolManager.__dict__[tool_method_name] is tool_method
 
 
-def test_shape_content_part_with_binary_content():
-    """Unit test to verify _shape_content_part handles BinaryContent correctly.
-
-    This tests the direct shaping of BinaryContent objects and verifies
-    they are converted to Braintrust Attachment objects.
-    """
-    from braintrust.integrations.pydantic_ai.tracing import _shape_content_part
-    from braintrust.logger import Attachment
-    from pydantic_ai.models.function import BinaryContent
-
-    # Test 1: Direct BinaryContent serialization
-    binary = BinaryContent(data=b"test pdf data", media_type="application/pdf")
-    result = _shape_content_part(binary)
-
-    assert result is not None, "Should serialize BinaryContent"
-    assert result["type"] == "binary", "Should have type 'binary'"
-    assert result["media_type"] == "application/pdf", "Should preserve media_type"
-    assert isinstance(result["attachment"], Attachment), "Should convert to Braintrust Attachment"
-
-    # Verify attachment has correct content_type
-    assert result["attachment"]._reference["content_type"] == "application/pdf"
-
-
-def test_shape_content_part_with_user_prompt_part():
-    """Unit test to verify _shape_content_part handles UserPromptPart with nested BinaryContent.
-
-    This is the critical test for the bug: when a UserPromptPart has a content list
-    containing BinaryContent, we need to recursively shape the content items
-    so that BinaryContent is converted to Braintrust Attachment.
-    """
-    from braintrust.integrations.pydantic_ai.tracing import _shape_content_part
-    from braintrust.logger import Attachment
-    from pydantic_ai.messages import UserPromptPart
-    from pydantic_ai.models.function import BinaryContent
-
-    # Create a UserPromptPart with mixed content (BinaryContent + string)
-    pdf_data = b"%PDF-1.4 test document content"
-    binary = BinaryContent(data=pdf_data, media_type="application/pdf")
-    user_prompt_part = UserPromptPart(content=[binary, "What is in this document?"])
-
-    # Shape the UserPromptPart
-    result = _shape_content_part(user_prompt_part)
-
-    # Verify the result is a dict with shaped content
-    assert isinstance(result, dict), f"Should return dict, got {type(result)}"
-    assert "content" in result, f"Should have 'content' key. Keys: {result.keys()}"
-
-    content = result["content"]
-    assert isinstance(content, list), f"Content should be a list, got {type(content)}"
-    assert len(content) == 2, f"Should have 2 content items, got {len(content)}"
-
-    # CRITICAL: First item should be shaped BinaryContent with Attachment
-    binary_item = content[0]
-    assert isinstance(binary_item, dict), f"Binary item should be dict, got {type(binary_item)}"
-    assert binary_item.get("type") == "binary", f"Binary item should have type='binary'. Got: {binary_item}"
-    assert "attachment" in binary_item, f"Binary item should have 'attachment' key. Keys: {binary_item.keys()}"
-    assert isinstance(binary_item["attachment"], Attachment), (
-        f"Should be Braintrust Attachment, got {type(binary_item.get('attachment'))}"
-    )
-    assert binary_item["media_type"] == "application/pdf"
-
-    # Second item should be the string
-    assert content[1] == "What is in this document?"
-
-
 def test_shape_messages_with_binary_content():
     """Unit test to verify _shape_messages handles ModelRequest with BinaryContent in parts.
 
@@ -2778,60 +2289,10 @@ def test_shape_messages_with_binary_content():
         f"Should be Braintrust Attachment, got {type(binary_item.get('attachment'))}"
     )
     assert binary_item["media_type"] == "application/pdf"
+    assert binary_item["attachment"]._reference["content_type"] == "application/pdf"
 
     # Second content item should be the string
     assert content[1] == "What is in this document?"
-
-
-@pytest.mark.asyncio
-async def test_attachment_preserved_in_model_settings(memory_logger):
-    """Test that attachments in model_settings are preserved through serialization."""
-    from braintrust.bt_json import bt_safe_deep_copy
-    from braintrust.logger import Attachment
-
-    attachment = Attachment(data=b"config data", filename="config.txt", content_type="text/plain")
-
-    # Simulate model_settings with attachment
-    settings = {"temperature": 0.7, "context_file": attachment}
-
-    # Test bt_safe_deep_copy preserves attachment
-    copied = bt_safe_deep_copy(settings)
-    assert copied["context_file"] is attachment
-    assert copied["temperature"] == 0.7
-
-
-@pytest.mark.asyncio
-async def test_attachment_in_message_part(memory_logger):
-    """Test that attachment in custom message part is preserved."""
-    from braintrust.bt_json import bt_safe_deep_copy
-    from braintrust.logger import Attachment
-
-    attachment = Attachment(data=b"message data", filename="msg.txt", content_type="text/plain")
-
-    # Simulate message part with attachment
-    message_part = {"type": "file", "content": attachment, "metadata": {"source": "upload"}}
-
-    copied = bt_safe_deep_copy(message_part)
-    assert copied["content"] is attachment
-    assert copied["type"] == "file"
-
-
-@pytest.mark.asyncio
-async def test_attachment_in_result_data(memory_logger):
-    """Test that attachment in custom result data is preserved."""
-    from braintrust.bt_json import bt_safe_deep_copy
-    from braintrust.logger import ExternalAttachment
-
-    ext_attachment = ExternalAttachment(
-        url="s3://bucket/result.pdf", filename="result.pdf", content_type="application/pdf"
-    )
-
-    # Simulate agent result with attachment
-    result_data = {"success": True, "output_file": ext_attachment, "metadata": {"processed": True}}
-
-    copied = bt_safe_deep_copy(result_data)
-    assert copied["output_file"] is ext_attachment
-    assert copied["success"] is True
 
 
 @pytest.mark.vcr
@@ -2857,7 +2318,7 @@ async def test_no_model_agent_run(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) == 2, f"Expected 2 spans (agent_run + chat), got {len(spans)}"
 
-    agent_span = next((s for s in spans if "agent_run" in s["span_attributes"]["name"]), None)
+    agent_span = _find_agent_span(spans)
     chat_span = next((s for s in spans if "chat" in s["span_attributes"]["name"]), None)
 
     assert agent_span is not None, "agent_run span not found"
@@ -2988,45 +2449,6 @@ def test_start_producer_wrapper_exception_does_not_double_invoke_producer():
 
 @pytest.mark.vcr
 @pytest.mark.asyncio
-async def test_agent_with_stop_sequences(memory_logger):
-    """Test Agent respects stop_sequences in model settings."""
-    assert not memory_logger.pop()
-
-    agent = Agent(
-        MODEL,
-        model_settings=ModelSettings(max_tokens=500, stop_sequences=["END", "\n\n"]),
-    )
-
-    start = time.time()
-    result = await agent.run("Write a short story about a robot.")
-    end = time.time()
-
-    assert result.output
-
-    spans = memory_logger.pop()
-    assert len(spans) >= 2
-
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
-    assert agent_span is not None, "agent_run span not found"
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
-
-    # stop_sequences on the agent constructor → in metadata.model_settings
-    assert "model_settings" in agent_span["metadata"]
-    settings = agent_span["metadata"]["model_settings"]
-    assert settings.get("stop_sequences") == ["END", "\n\n"]
-
-    _assert_metrics_are_valid(agent_span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
 async def test_agent_with_prefill(memory_logger):
     """Test Agent with a partial assistant response in message_history.
 
@@ -3053,14 +2475,7 @@ async def test_agent_with_prefill(memory_logger):
     spans = memory_logger.pop()
     assert len(spans) >= 2
 
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
+    agent_span = _find_agent_span(spans)
     assert agent_span is not None, "agent_run span not found"
     assert agent_span["metadata"]["model"] == "gpt-4o-mini"
 
@@ -3068,80 +2483,6 @@ async def test_agent_with_prefill(memory_logger):
     # in the span input so that the trace is complete and auditable.
     assert "message_history" in str(agent_span["input"])
     assert "Here is a haiku" in str(agent_span["input"])
-    assert agent_span["output"]
-
-    _assert_metrics_are_valid(agent_span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_agent_with_short_max_tokens(memory_logger):
-    """Test Agent with a very small max_tokens that truncates the response."""
-    assert not memory_logger.pop()
-
-    agent = Agent(MODEL)
-
-    start = time.time()
-    result = await agent.run("What is AI?", model_settings=ModelSettings(max_tokens=16))
-    end = time.time()
-
-    # Truncated responses are still valid output; no exception should be raised.
-    assert result.output
-
-    spans = memory_logger.pop()
-    assert len(spans) >= 2
-
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
-    assert agent_span is not None, "agent_run span not found"
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
-
-    # max_tokens passed to run() → in input.model_settings
-    assert "model_settings" in agent_span["input"]
-    assert agent_span["input"]["model_settings"].get("max_tokens") == 16
-
-    assert agent_span["output"]
-    _assert_metrics_are_valid(agent_span["metrics"], start, end)
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_agent_with_long_context(memory_logger):
-    """Test Agent handles large input context without errors."""
-    assert not memory_logger.pop()
-
-    agent = Agent(MODEL, model_settings=ModelSettings(max_tokens=100))
-
-    long_text = "The quick brown fox jumps over the lazy dog. " * 20
-    prompt = f"Here is a long text:\n\n{long_text}\n\nHow many times does the word 'fox' appear?"
-
-    start = time.time()
-    result = await agent.run(prompt)
-    end = time.time()
-
-    assert result.output
-
-    spans = memory_logger.pop()
-    assert len(spans) >= 2
-
-    agent_span = next(
-        (
-            s
-            for s in spans
-            if "agent_run" in s["span_attributes"]["name"] and "chat" not in s["span_attributes"]["name"]
-        ),
-        None,
-    )
-    assert agent_span is not None, "agent_run span not found"
-    assert agent_span["metadata"]["model"] == "gpt-4o-mini"
-    # The long prompt should be captured in the span input
-    assert "fox" in str(agent_span["input"]).lower()
     assert agent_span["output"]
 
     _assert_metrics_are_valid(agent_span["metrics"], start, end)

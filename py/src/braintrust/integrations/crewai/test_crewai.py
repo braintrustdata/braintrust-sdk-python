@@ -31,7 +31,7 @@ from braintrust.integrations.crewai import (
     setup_crewai,
 )
 from braintrust.integrations.crewai.patchers import _get_registered_listener, _reset_for_testing
-from braintrust.integrations.test_utils import run_in_subprocess, verify_autoinstrument_script
+from braintrust.integrations.test_utils import verify_autoinstrument_script
 from braintrust.logger import Attachment, start_span
 from braintrust.test_helpers import init_test_logger
 from braintrust.util import LazyValue
@@ -555,7 +555,7 @@ def test_integration_setup_is_idempotent():
 
     assert CrewAIIntegration.setup() is True
     listener1 = _get_registered_listener()
-    assert listener1 is not None
+    assert isinstance(listener1, BraintrustCrewAIListener)
 
     before = len(crewai_event_bus._sync_handlers.get(CrewKickoffStartedEvent, frozenset()))
     assert CrewAIIntegration.setup() is True
@@ -563,12 +563,6 @@ def test_integration_setup_is_idempotent():
     assert listener2 is listener1
     after = len(crewai_event_bus._sync_handlers.get(CrewKickoffStartedEvent, frozenset()))
     assert before == after, "Repeated setup() should not register additional handlers"
-
-
-def test_listener_is_braintrust_listener_instance():
-    """The registered listener must satisfy ``isinstance(BraintrustCrewAIListener)``."""
-    assert CrewAIIntegration.setup() is True
-    assert isinstance(_get_registered_listener(), BraintrustCrewAIListener)
 
 
 def test_setup_crewai_returns_true_under_active_logger():
@@ -586,17 +580,3 @@ def test_setup_crewai_returns_true_under_active_logger():
 class TestAutoInstrumentCrewAI:
     def test_auto_instrument_crewai(self):
         verify_autoinstrument_script("test_auto_crewai.py")
-
-    def test_patch_crewai_subprocess(self):
-        result = run_in_subprocess(
-            """
-            from braintrust.integrations.crewai import patch_crewai
-            from braintrust.integrations.crewai.patchers import _get_registered_listener
-            assert patch_crewai()
-            assert _get_registered_listener() is not None
-            assert patch_crewai()  # idempotent
-            print("SUCCESS")
-            """
-        )
-        assert result.returncode == 0, f"Failed: {result.stderr}"
-        assert "SUCCESS" in result.stdout
