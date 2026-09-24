@@ -252,6 +252,7 @@ Unused cassette detection:
 - Check specific integrations: `cd py && make check-unused-cassettes INTEGRATIONS="openai anthropic"` (omit `INTEGRATIONS` to check all; it is slow).
 - Add `--clean` to delete what it finds: `cd py && python scripts/check-unused-cassettes.py run openai --clean`.
 - An integration is skipped, not reported, if any of its sessions fails or is skipped (e.g. sessions that skip on the current Python version), since its reads would be incomplete.
+- Unread files in a cassette version directory whose session skipped any test (e.g. platform-only tests) are listed with the skip reasons for manual review and never deleted by `--clean`, since the skipped test may read them elsewhere.
 - After deleting or renaming a cassette-backed test, run it for that integration.
 
 ## Benchmarks

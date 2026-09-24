@@ -12,6 +12,11 @@ record every cassette they read when ``BRAINTRUST_CASSETTE_USAGE_DIR`` is set
 (see ``src/braintrust/_test_cassette_usage.py``), and this script compares
 those reads with the files on disk.
 
+Tests also log when they skip. A skipped test may be the only reader of a
+cassette on another platform or Python version, so unused files in a cassette
+version directory whose sessions skipped anything are listed for review with
+the skip reasons, but never deleted by ``--clean``.
+
 Usage:
     # Run every nox session that reads the given integrations' cassettes
     # (all matrix versions, replay-only) and report unused files.
@@ -65,9 +70,37 @@ def cassette_files(integrations: list[str]) -> set[str]:
 
 def load_usage(usage_dir: pathlib.Path) -> set[str]:
     used = set()
-    for log in usage_dir.glob("usage-*.txt"):
+    for log in usage_dir.rglob("usage-*.txt"):
         used.update(line.strip() for line in log.read_text(encoding="utf-8").splitlines() if line.strip())
     return used
+
+
+def load_skips(usage_dir: pathlib.Path) -> list[dict]:
+    return [
+        json.loads(line)
+        for log in usage_dir.rglob("skips-*.jsonl")
+        for line in log.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def _version_prefix(integration: str, version: str | None) -> str:
+    return f"integrations/{integration}/cassettes/" + (f"{version}/" if version else "")
+
+
+def skipped_prefixes(skips: list[dict], integrations: list[str]) -> dict[str, set[str]]:
+    """Map cassette directory prefix -> skip reasons, attributing each skip by its test path.
+
+    Skips from tests outside ``integrations/<name>/`` (e.g. btx specs) can't be
+    attributed, so they mark that version's directory in every integration.
+    """
+    prefixes: dict[str, set[str]] = defaultdict(set)
+    for skip in skips:
+        parts = skip["path"].split("/")
+        owners = [parts[1]] if parts[0] == "integrations" and len(parts) > 2 else integrations
+        for name in owners:
+            prefixes[_version_prefix(name, skip["version"])].add(skip["reason"])
+    return dict(prefixes)
 
 
 def prepare_usage_dir(usage_dir: pathlib.Path | None) -> pathlib.Path:
@@ -79,13 +112,28 @@ def prepare_usage_dir(usage_dir: pathlib.Path | None) -> pathlib.Path:
     """
     usage_dir = (usage_dir or pathlib.Path(tempfile.mkdtemp(prefix="cassette-usage-"))).resolve()
     usage_dir.mkdir(parents=True, exist_ok=True)
-    for stale in [*usage_dir.glob("usage-*.txt"), *usage_dir.glob("report-*.json")]:
+    for stale in usage_dir.glob("session-*"):
+        shutil.rmtree(stale)
+    for stale in [*usage_dir.glob("usage-*.txt"), *usage_dir.glob("skips-*.jsonl")]:
         stale.unlink()
     return usage_dir
 
 
 def find_unused(integrations: list[str], used: set[str]) -> list[str]:
     return sorted(cassette_files(integrations) - used)
+
+
+def split_skipped(unused: list[str], skipped: dict[str, set[str]]) -> tuple[list[str], dict[str, list[str]]]:
+    """Split unused files into (safe to delete, {skipped dir prefix: files kept for review})."""
+    deletable = []
+    kept: dict[str, list[str]] = defaultdict(list)
+    for path in unused:
+        prefix = next((p for p in sorted(skipped, key=len, reverse=True) if path.startswith(p)), None)
+        if prefix is None:
+            deletable.append(path)
+        else:
+            kept[prefix].append(path)
+    return deletable, dict(kept)
 
 
 def _render_test_path(node: ast.expr) -> str | None:
@@ -145,10 +193,11 @@ def _nox_command() -> list[str]:
 
 def run_sessions(
     integrations: list[str], usage_dir: pathlib.Path, reuse_venv: bool = False
-) -> tuple[list[str], dict[str, list[str]]]:
+) -> tuple[list[str], dict[str, list[str]], dict[str, set[str]]]:
     """Run every session that reads these integrations' cassettes.
 
-    Returns (integrations that ran completely, {integration: [problem sessions]}).
+    Returns (integrations that ran completely, {integration: [problem sessions]},
+    {cassette dir prefix: skip reasons} for sessions that skipped tests).
     """
     mapping = sessions_by_integration()
     listing = json.loads(
@@ -157,8 +206,10 @@ def run_sessions(
         ).stdout
     )
     concrete: dict[str, list[str]] = defaultdict(list)
+    versions: dict[str, str | None] = {}
     for entry in listing:
         concrete[entry["name"]].append(entry["session"])
+        versions[entry["session"]] = entry.get("call_spec", {}).get("version")
 
     to_run: dict[str, list[str]] = {}
     incomplete: dict[str, list[str]] = {}
@@ -170,12 +221,15 @@ def run_sessions(
         to_run[name] = [s for func in funcs for s in concrete.get(func, [])]
 
     sessions = sorted({s for group in to_run.values() for s in group})
-    env = {**os.environ, USAGE_DIR_ENV: str(usage_dir), "CI": "1"}
     results: dict[str, str] = {}
+    skipped: dict[str, set[str]] = defaultdict(set)
     for session in sessions:
         print(f"==> nox -s {session}", flush=True)
-        # load_usage only reads usage-*.txt, so reports can live alongside the logs.
-        report_path = usage_dir / f"report-{len(results)}.json"
+        # One directory per session so skips can be attributed to its cassette dirs.
+        session_dir = usage_dir / f"session-{len(results):03d}"
+        session_dir.mkdir()
+        report_path = session_dir / "report.json"
+        env = {**os.environ, USAGE_DIR_ENV: str(session_dir), "CI": "1"}
         proc = subprocess.run(
             [
                 *_nox_command(),
@@ -199,6 +253,10 @@ def run_sessions(
         print(f"    {outcome}", flush=True)
         if outcome == "failed":
             print("\n".join(f"    | {line}" for line in proc.stdout.splitlines()[-15:]), flush=True)
+        reasons = {skip["reason"] for skip in load_skips(session_dir)}
+        for name, group in to_run.items():
+            if reasons and session in group:
+                skipped[_version_prefix(name, versions.get(session))] |= reasons
 
     complete = []
     for name, group in to_run.items():
@@ -207,28 +265,46 @@ def run_sessions(
             incomplete[name] = problems
         else:
             complete.append(name)
-    return complete, incomplete
+    return complete, incomplete, dict(skipped)
 
 
-def print_report(unused: list[str], clean: bool) -> None:
-    if not unused:
-        print("No unused cassette files found.")
-        return
+def _print_files(paths: list[str]) -> None:
     by_dir: dict[str, list[str]] = defaultdict(list)
-    for path in unused:
+    for path in paths:
         parent, _, filename = path.rpartition("/")
         by_dir[parent].append(filename)
-    action = "Deleted" if clean else "Found"
-    print(f"{action} {len(unused)} unused cassette file{'' if len(unused) == 1 else 's'}:")
     for parent in sorted(by_dir):
         print(f"  src/braintrust/{parent}/")
         for filename in by_dir[parent]:
             print(f"    {filename}")
+
+
+def print_report(unused: list[str], skipped: dict[str, set[str]], clean: bool) -> bool:
+    """Print (and with ``clean``, delete) unused files. Returns True if any are deletable."""
+    deletable, kept = split_skipped(unused, skipped)
+    if kept:
+        count = sum(len(files) for files in kept.values())
+        print(f"Kept {count} unread cassette file{'' if count == 1 else 's'} next to skipped tests (review by hand):")
+        for prefix in sorted(kept):
+            reasons = sorted(skipped[prefix])
+            print(
+                f"  src/braintrust/{prefix}  (skipped: {'; '.join(reasons[:3])}{'; ...' if len(reasons) > 3 else ''})"
+            )
+            for path in kept[prefix]:
+                print(f"    {path[len(prefix) :]}")
+        print()
+    if not deletable:
+        print("No unused cassette files found.")
+        return False
+    action = "Deleted" if clean else "Found"
+    print(f"{action} {len(deletable)} unused cassette file{'' if len(deletable) == 1 else 's'}:")
+    _print_files(deletable)
     if clean:
-        for path in unused:
+        for path in deletable:
             (_PACKAGE_DIR / path).unlink()
     else:
         print("\nRun with --clean to delete them.")
+    return True
 
 
 def _resolve_integrations(names: list[str]) -> list[str]:
@@ -269,24 +345,23 @@ def main() -> None:
             parser.error("pass integration names or --all")
         integrations = _resolve_integrations([] if args.all else args.integrations)
         usage_dir = prepare_usage_dir(args.usage_dir)
-        complete, incomplete = run_sessions(integrations, usage_dir, reuse_venv=args.reuse_venv)
+        complete, incomplete, skipped = run_sessions(integrations, usage_dir, reuse_venv=args.reuse_venv)
         print()
         if incomplete:
             print("Skipped these integrations because not every session that reads their cassettes succeeded:")
             for name, problems in sorted(incomplete.items()):
                 print(f"  {name}: {', '.join(problems)}")
             print()
-        unused = find_unused(complete, load_usage(usage_dir))
-        print_report(unused, args.clean)
-        sys.exit(1 if unused or incomplete else 0)
+        found = print_report(find_unused(complete, load_usage(usage_dir)), skipped, args.clean)
+        sys.exit(1 if found or incomplete else 0)
 
     integrations = _resolve_integrations(args.integrations)
     used = load_usage(args.usage_dir)
     if not used:
         sys.exit(f"No usage recorded in {args.usage_dir}. Run tests with {USAGE_DIR_ENV}={args.usage_dir} first.")
-    unused = find_unused(integrations, used)
-    print_report(unused, args.clean)
-    sys.exit(1 if unused else 0)
+    skipped = skipped_prefixes(load_skips(args.usage_dir), integrations)
+    found = print_report(find_unused(integrations, used), skipped, args.clean)
+    sys.exit(1 if found else 0)
 
 
 if __name__ == "__main__":

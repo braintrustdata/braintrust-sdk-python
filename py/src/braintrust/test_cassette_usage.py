@@ -1,6 +1,7 @@
 """Tests for cassette usage recording and scripts/check-unused-cassettes.py."""
 
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -175,7 +176,9 @@ def test_checker_prepares_an_absolute_empty_usage_dir(checker, tmp_path, monkeyp
     stale = tmp_path / "usage"
     stale.mkdir()
     (stale / "usage-1-a.txt").write_text("integrations/alpha/cassettes/latest/unused.yaml\n")
-    (stale / "report-0.json").write_text("{}")
+    (stale / "skips-1.jsonl").write_text("{}\n")
+    (stale / "session-000").mkdir()
+    (stale / "session-000" / "usage-2-b.txt").write_text("integrations/alpha/cassettes/latest/used.yaml\n")
     (stale / "keep.txt").write_text("unrelated")
 
     usage_dir = checker.prepare_usage_dir(Path("usage"))
@@ -186,3 +189,53 @@ def test_checker_prepares_an_absolute_empty_usage_dir(checker, tmp_path, monkeyp
     assert checker.load_usage(usage_dir) == set()
     assert sorted(p.name for p in usage_dir.iterdir()) == ["keep.txt"]
     assert checker.prepare_usage_dir(None).is_absolute()
+
+
+def test_record_skip_logs_package_relative_path_and_version(tmp_path, monkeypatch):
+    pkg = _make_tree(tmp_path)
+    usage_dir = tmp_path / "usage"
+    monkeypatch.setattr(_test_cassette_usage, "_PACKAGE_DIR", str(pkg))
+    monkeypatch.setenv("BRAINTRUST_TEST_PACKAGE_VERSION", "1.0.0")
+
+    monkeypatch.delenv(_test_cassette_usage.USAGE_DIR_ENV, raising=False)
+    _test_cassette_usage.record_skip(pkg / "integrations/alpha/test_alpha.py", "test_off", "not recorded")
+    assert not usage_dir.exists()
+
+    monkeypatch.setenv(_test_cassette_usage.USAGE_DIR_ENV, str(usage_dir))
+    _test_cassette_usage.record_skip(pkg / "integrations/alpha/test_alpha.py", "test_sync", "no sync bridge")
+    _test_cassette_usage.record_skip(tmp_path / "elsewhere/test_x.py", "test_x", "other")
+
+    skips = [json.loads(line) for log in usage_dir.glob("skips-*.jsonl") for line in log.read_text().splitlines()]
+    assert skips == [
+        {
+            "path": "integrations/alpha/test_alpha.py",
+            "test": "test_sync",
+            "version": "1.0.0",
+            "reason": "no sync bridge",
+        },
+        {"path": str(tmp_path / "elsewhere/test_x.py"), "test": "test_x", "version": "1.0.0", "reason": "other"},
+    ]
+
+
+def test_checker_keeps_unread_files_next_to_skipped_tests(checker):
+    unused = [
+        "integrations/alpha/cassettes/1.0.0/btx/spec.yaml",
+        "integrations/alpha/cassettes/latest/unused.yaml",
+        "integrations/beta/cassettes/latest/transport.json",
+    ]
+    skips = [
+        # A platform skip in alpha's latest session: its unread files may still be needed elsewhere.
+        {"path": "integrations/alpha/test_alpha.py", "test": "t", "version": "latest", "reason": "no sync bridge"},
+        # Unattributable (e.g. btx specs): marks that version in every integration.
+        {"path": "btx/test_btx.py", "test": "t", "version": "1.0.0", "reason": "spec not supported"},
+    ]
+
+    skipped = checker.skipped_prefixes(skips, ["alpha", "beta"])
+    deletable, kept = checker.split_skipped(unused, skipped)
+
+    assert deletable == ["integrations/beta/cassettes/latest/transport.json"]
+    assert kept == {
+        "integrations/alpha/cassettes/1.0.0/": ["integrations/alpha/cassettes/1.0.0/btx/spec.yaml"],
+        "integrations/alpha/cassettes/latest/": ["integrations/alpha/cassettes/latest/unused.yaml"],
+    }
+    assert skipped["integrations/alpha/cassettes/latest/"] == {"no sync bridge"}

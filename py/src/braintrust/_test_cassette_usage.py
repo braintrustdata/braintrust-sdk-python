@@ -10,11 +10,16 @@ through ``open()``.
 Each process writes its own ``usage-<pid>-<random>.txt`` file in that directory,
 one path per line, relative to the ``braintrust`` package directory and
 POSIX-style so logs from different runners (including Windows) can be merged.
+Skipped tests are logged too (``skips-*.jsonl``, via :func:`record_skip`): a
+skipped test may be the only reader of a cassette on another platform or
+Python version, so the checker never deletes cassettes next to a skip.
+
 :mod:`braintrust.conftest` calls :func:`install` at import, which also covers
 auto-instrument subprocesses: they inherit the env var and import it through
 :mod:`braintrust.integrations.test_utils`.
 """
 
+import json
 import os
 import sys
 import uuid
@@ -81,3 +86,22 @@ def install() -> bool:
     sys.addaudithook(hook)
     _installed = True
     return True
+
+
+def record_skip(path, test: str, reason: str) -> None:
+    """Log a skipped test (or skipped test module) when usage recording is on."""
+    usage_dir = os.environ.get(USAGE_DIR_ENV)
+    if not usage_dir:
+        return
+    path = os.path.abspath(os.fspath(path))
+    if path.startswith(_PACKAGE_DIR + os.sep):
+        path = os.path.relpath(path, _PACKAGE_DIR).replace(os.sep, "/")
+    entry = {
+        "path": path,
+        "test": test,
+        "version": os.environ.get("BRAINTRUST_TEST_PACKAGE_VERSION"),
+        "reason": reason,
+    }
+    os.makedirs(usage_dir, exist_ok=True)
+    with open(os.path.join(usage_dir, f"skips-{os.getpid()}.jsonl"), "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
