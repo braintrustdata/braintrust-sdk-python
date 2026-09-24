@@ -379,7 +379,7 @@ def test_masking_remains_logger_local_and_runs_on_merged_manual_records(monkeypa
 
 def test_auto_instrument_registration_and_disable(monkeypatch, with_memory_logger, test_logger):
     # Registration should work without importing optional provider libraries.
-    monkeypatch.setattr("braintrust.auto._instrument_integration", lambda _: False)
+    monkeypatch.setattr("braintrust.auto._instrument_integration", lambda _module, _class: False)
 
     class Redact(SpanCustomizer):
         def on_span_export(self, data):
