@@ -118,6 +118,10 @@ class AnyModelParamsFunctionCall(TypedDict):
     name: str
 
 
+class AnyModelParamsChatTemplateKwargs(TypedDict):
+    enable_thinking: NotRequired[bool | None]
+
+
 class ApiKey(TypedDict):
     id: str
     """
@@ -1483,6 +1487,10 @@ class ModelParamsModelParamsToolChoice(TypedDict):
 
 class ModelParamsModelParamsFunctionCall(TypedDict):
     name: str
+
+
+class ModelParamsModelParamsChatTemplateKwargs(TypedDict):
+    enable_thinking: NotRequired[bool | None]
 
 
 class ModelParamsModelParams1(TypedDict):
@@ -3294,6 +3302,7 @@ class AnyModelParams(TypedDict):
     n: NotRequired[float | None]
     stop: NotRequired[Sequence[str] | None]
     reasoning_effort: NotRequired[Literal['none', 'minimal', 'low', 'medium', 'high'] | None]
+    chat_template_kwargs: NotRequired[AnyModelParamsChatTemplateKwargs | None]
     verbosity: NotRequired[Literal['low', 'medium', 'high'] | None]
     top_k: NotRequired[float | None]
     stop_sequences: NotRequired[Sequence[str] | None]
@@ -3697,6 +3706,7 @@ class ModelParamsModelParams(TypedDict):
     n: NotRequired[float | None]
     stop: NotRequired[Sequence[str] | None]
     reasoning_effort: NotRequired[Literal['none', 'minimal', 'low', 'medium', 'high'] | None]
+    chat_template_kwargs: NotRequired[ModelParamsModelParamsChatTemplateKwargs | None]
     verbosity: NotRequired[Literal['low', 'medium', 'high'] | None]
 
 
