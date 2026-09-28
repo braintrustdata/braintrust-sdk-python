@@ -310,7 +310,7 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger):
 
     @worker.event_handler("on_pipeline_started")
     async def on_pipeline_started(_worker, _frame):
-        await worker.queue_frames([LLMContextFrame(context), EndFrame()])
+        await worker.queue_frames([LLMContextFrame(context), EndFrame(reason="pipeline complete")])
 
     runner = WorkerRunner(**_worker_runner_kwargs())
     await runner.add_workers(worker)
@@ -320,6 +320,8 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger):
     pipeline_span = _single_span(logs, "pipecat_pipeline")
     assert _span_type(pipeline_span) == "task"
     assert pipeline_span.get("metrics", {}).get("end") is not None
+    assert pipeline_span["metadata"]["terminal_frame"] == "EndFrame"
+    assert pipeline_span["metadata"]["reason"] == "pipeline complete"
 
     llm_span = _single_span(logs, "pipecat_llm_response")
     assert _span_type(llm_span) == "task"

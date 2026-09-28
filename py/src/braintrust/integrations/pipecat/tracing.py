@@ -121,9 +121,12 @@ class BraintrustPipecatObserver(BaseObserver):
         self._ensure_pipeline_span()
 
     async def on_process_frame(self, data: Any) -> None:
-        if self._uses_native_frame_deduplication:
+        frame = getattr(data, "frame", None)
+        processor = getattr(data, "processor", None)
+        is_terminal_at_sink = type(frame).__name__ in _TERMINAL_FRAME_TYPES and _is_pipeline_sink_processor(processor)
+        if self._uses_native_frame_deduplication and not is_terminal_at_sink:
             return
-        await self._handle_frame(getattr(data, "frame", None), processor=getattr(data, "processor", None))
+        await self._handle_frame(frame, processor=processor)
 
     async def on_push_frame(self, data: Any) -> None:
         await self._handle_frame(getattr(data, "frame", None), processor=getattr(data, "source", None))
