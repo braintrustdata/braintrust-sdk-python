@@ -901,11 +901,17 @@ class ContextTracker:
             if v is not None
         }
         result_metrics: dict[str, float] = {}
-        if not self._include_partial_messages:
-            raw_usage = getattr(message, "usage", None)
-            _, usage_metadata = extract_anthropic_usage(raw_usage)
-            result_metadata.update(usage_metadata)
-            aggregate_usage = _aggregate_model_usage(getattr(message, "model_usage", None))
+        raw_usage = getattr(message, "usage", None)
+        _, usage_metadata = extract_anthropic_usage(raw_usage)
+        result_metadata.update(usage_metadata)
+        aggregate_usage = _aggregate_model_usage(getattr(message, "model_usage", None))
+        if self._include_partial_messages:
+            # Keep the complete turn-level total visible without adding it as
+            # another token metric alongside the per-call LLM span metrics.
+            complete_usage = aggregate_usage or _copy_usage(raw_usage)
+            if complete_usage:
+                result_metadata["model_usage"] = complete_usage
+        else:
             usage = aggregate_usage or _copy_usage(raw_usage)
             result_metrics, _ = extract_anthropic_usage(usage)
         if result_metadata or result_metrics:
@@ -1045,6 +1051,8 @@ class ContextTracker:
         has_final_output = message_id in self._final_output_usage_message_ids if message_id else False
         metrics, _ = extract_anthropic_usage(usage, include_output=has_final_output)
         _, metadata = extract_anthropic_usage(raw_message_usage, include_output=False)
+        if not has_final_output and "prompt_tokens" in metrics:
+            metadata["usage_output_tokens_unknown"] = True
         ctx.llm_span.log(metrics=metrics or None, metadata=metadata or None)
 
     def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:

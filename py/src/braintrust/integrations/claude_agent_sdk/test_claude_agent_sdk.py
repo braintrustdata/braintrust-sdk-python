@@ -1036,6 +1036,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             cwd=REPO_ROOT,
             permission_mode="bypassPermissions",
             max_turns=8,
+            include_partial_messages=True,
         )
         transport = make_cassette_transport(
             cassette_name="test_bundled_subagent_creates_task_span",
@@ -1043,6 +1044,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             options=options,
         )
 
+        result_message = None
         async with claude_agent_sdk.ClaudeSDKClient(options=options, transport=transport) as client:
             await client.query(
                 "You must delegate this task to the bundled general-purpose agent. "
@@ -1051,6 +1053,7 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             )
             async for message in client.receive_response():
                 if type(message).__name__ == "ResultMessage":
+                    result_message = message
                     break
 
     spans = memory_logger.pop()
@@ -1079,6 +1082,9 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
             assert root_task_span["span_id"] in parents
 
     assert root_task_span.get("metadata", {}).get("task_events"), "Expected task events on root task span"
+    assert result_message is not None
+    assert root_task_span.get("metadata", {}).get("model_usage") == _aggregate_model_usage(result_message.model_usage)
+    assert not {"prompt_tokens", "completion_tokens", "tokens"}.intersection(root_task_span.get("metrics", {}))
 
     llm_spans = [s for s in spans if s["span_attributes"]["type"] == SpanTypeAttribute.LLM]
     _assert_llm_spans_have_time_to_first_token(llm_spans)
@@ -1094,6 +1100,11 @@ async def test_bundled_subagent_creates_task_span(memory_logger):
         if any(subagent_span["span_id"] in llm_span["span_parents"] for subagent_span in subagent_spans)
     ]
     assert delegated_llm_spans, "Expected at least one delegated LLM span nested under a subagent task span"
+    for llm_span in delegated_llm_spans:
+        assert llm_span["metrics"].get("prompt_tokens", 0) > 0
+        assert "completion_tokens" not in llm_span["metrics"]
+        assert "tokens" not in llm_span["metrics"]
+        assert llm_span.get("metadata", {}).get("usage_output_tokens_unknown") is True
 
     assert any(
         any(llm_span["span_id"] in tool_span["span_parents"] for llm_span in delegated_llm_spans)
