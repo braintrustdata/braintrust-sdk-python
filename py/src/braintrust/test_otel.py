@@ -1,8 +1,10 @@
 # pylint: disable=not-context-manager
 import json
 import sys
+from collections.abc import Iterator
 
 import pytest
+from braintrust.api._test_server import scripted_server
 
 
 def _check_otel_installed():
@@ -18,6 +20,38 @@ def _check_otel_installed():
 
 
 OTEL_INSTALLED = _check_otel_installed()
+
+
+_collector_requests: list[tuple[str, dict[str, str]]] = []
+
+
+def _record_otlp_request(method, path, body, headers):
+    _collector_requests.append((path, {key.lower(): value for key, value in headers.items()}))
+    return 200, {}, b""
+
+
+@pytest.fixture
+def otlp_collector() -> Iterator[str]:
+    """Local OTLP/HTTP endpoint that records the path and headers of each export request."""
+    with scripted_server(_record_otlp_request) as (url, _):
+        yield url
+
+
+def _export_span(exporter) -> list[tuple[str, dict[str, str]]]:
+    """Export a single span through *exporter* and return the (path, lowercased headers) the collector received."""
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+    _collector_requests.clear()
+    provider = TracerProvider(shutdown_on_exit=False)
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    provider.get_tracer(__name__).start_span("test-span").end()
+    return list(_collector_requests)
+
+
+def _export_span_and_get_request(exporter) -> tuple[str, dict[str, str]]:
+    [request] = _export_span(exporter)
+    return request
 
 
 @pytest.fixture
@@ -71,14 +105,14 @@ def test_otel_exporter_creation(tmp_path):
             OtelExporter(api_key="fake-key")
 
 
-def test_otel_exporter_with_explicit_params():
+def test_otel_exporter_with_explicit_params(otlp_collector):
     if not _check_otel_installed():
         pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
 
     from braintrust.otel import OtelExporter
 
     exporter = OtelExporter(
-        url="https://custom.example.com/otel/v1/traces",
+        url=f"{otlp_collector}/custom/v1/traces",
         api_key="explicit-api-key",
         parent="project_name:explicit-test",
         headers={"custom-header": "custom-value"},
@@ -86,17 +120,14 @@ def test_otel_exporter_with_explicit_params():
 
     assert exporter.parent == "project_name:explicit-test"
 
-    # Check endpoint and headers
-    assert exporter._endpoint == "https://custom.example.com/otel/v1/traces"
-    expected_headers = {
-        "Authorization": "Bearer explicit-api-key",
-        "x-bt-parent": "project_name:explicit-test",
-        "custom-header": "custom-value",
-    }
-    assert exporter._headers == expected_headers
+    path, headers = _export_span_and_get_request(exporter)
+    assert path == "/custom/v1/traces"
+    assert headers["authorization"] == "Bearer explicit-api-key"
+    assert headers["x-bt-parent"] == "project_name:explicit-test"
+    assert headers["custom-header"] == "custom-value"
 
 
-def test_otel_exporter_uses_env_braintrust_api_key(tmp_path):
+def test_otel_exporter_uses_env_braintrust_api_key(tmp_path, otlp_collector):
     if not _check_otel_installed():
         pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
 
@@ -107,10 +138,101 @@ def test_otel_exporter_uses_env_braintrust_api_key(tmp_path):
         m.chdir(tmp_path)
         (tmp_path / ".env.braintrust").write_text("BRAINTRUST_API_KEY=file-api-key\n")
 
-        exporter = OtelExporter(parent="project_name:test")
-        exporter.force_flush()
+        exporter = OtelExporter(url=f"{otlp_collector}/otel/v1/traces", parent="project_name:test")
 
-        assert exporter._headers["Authorization"] == "Bearer file-api-key"
+        _, headers = _export_span_and_get_request(exporter)
+        assert headers["authorization"] == "Bearer file-api-key"
+        assert headers["x-bt-parent"] == "project_name:test"
+
+
+def test_otel_exporter_sends_api_key_resolved_after_construction(otlp_collector):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import OtelExporter
+
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        exporter = OtelExporter(url=f"{otlp_collector}/otel/v1/traces", parent="project_name:test")
+
+        m.setenv("BRAINTRUST_API_KEY", "late-api-key")
+        _, headers = _export_span_and_get_request(exporter)
+        assert headers["authorization"] == "Bearer late-api-key"
+
+        # Subsequent exports keep sending the resolved key.
+        _, headers = _export_span_and_get_request(exporter)
+        assert headers["authorization"] == "Bearer late-api-key"
+
+
+def test_otel_exporter_resolving_api_key_does_not_revive_shutdown_exporter(otlp_collector):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import OtelExporter
+
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        exporter = OtelExporter(url=f"{otlp_collector}/otel/v1/traces", parent="project_name:test")
+        exporter.shutdown()
+
+        m.setenv("BRAINTRUST_API_KEY", "late-api-key")
+        assert _export_span(exporter) == []
+
+
+def test_otel_exporter_shutdown_racing_lazy_api_key_reinit_stays_shutdown(otlp_collector):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    import threading
+
+    from braintrust.otel import OtelExporter
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+    upstream_init = OTLPSpanExporter.__init__
+
+    def init_with_concurrent_shutdown(self, *args, **kwargs):
+        # Run shutdown() on another thread while the lazy-key re-init is in progress.
+        # Give it a bounded chance to finish first, so the test also terminates when
+        # shutdown correctly waits for the re-init.
+        shutdown_thread = threading.Thread(target=self.shutdown)
+        shutdown_thread.start()
+        shutdown_thread.join(timeout=0.5)
+        upstream_init(self, *args, **kwargs)
+        shutdown_threads.append(shutdown_thread)
+
+    shutdown_threads = []
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        exporter = OtelExporter(url=f"{otlp_collector}/otel/v1/traces", parent="project_name:test")
+
+        m.setenv("BRAINTRUST_API_KEY", "late-api-key")
+        m.setattr(OTLPSpanExporter, "__init__", init_with_concurrent_shutdown)
+        _export_span(exporter)
+        for shutdown_thread in shutdown_threads:
+            shutdown_thread.join(timeout=5)
+            assert not shutdown_thread.is_alive()
+
+        assert shutdown_threads
+        assert _export_span(exporter) == []
+
+
+def test_otel_exporter_lazy_api_key_does_not_override_explicit_authorization_header(otlp_collector):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import OtelExporter
+
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        exporter = OtelExporter(
+            url=f"{otlp_collector}/otel/v1/traces",
+            parent="project_name:test",
+            headers={"Authorization": "Bearer custom-auth"},
+        )
+
+        m.setenv("BRAINTRUST_API_KEY", "late-api-key")
+        _, headers = _export_span_and_get_request(exporter)
+        assert headers["authorization"] == "Bearer custom-auth"
 
 
 def test_braintrust_span_processor_merges_span_origin_with_context_json_set_after_start():
@@ -360,8 +482,6 @@ def test_braintrust_api_url_env_var():
         exporter = OtelExporter()
 
         assert exporter._endpoint == "https://api.braintrust.dev/otel/v1/traces"
-        expected_headers = {"Authorization": "Bearer test-api-key", "x-bt-parent": "project_name:test"}
-        assert exporter._headers == expected_headers
 
     # Test custom API URL
     with pytest.MonkeyPatch.context() as m:
@@ -372,8 +492,6 @@ def test_braintrust_api_url_env_var():
         exporter = OtelExporter()
 
         assert exporter._endpoint == "https://custom.braintrust.dev/otel/v1/traces"
-        expected_headers = {"Authorization": "Bearer custom-key", "x-bt-parent": "project_name:default-otel-project"}
-        assert exporter._headers == expected_headers
 
     # Test custom API URL with trailing slash
     with pytest.MonkeyPatch.context() as m:
@@ -384,6 +502,25 @@ def test_braintrust_api_url_env_var():
         exporter = OtelExporter()
 
         assert exporter._endpoint == "https://custom.example.com/otel/v1/traces"
+
+
+def test_otel_exporter_sends_env_api_key_and_default_parent(otlp_collector):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    from braintrust.otel import OtelExporter
+
+    with pytest.MonkeyPatch.context() as m:
+        m.setenv("BRAINTRUST_API_KEY", "env-api-key")
+        m.setenv("BRAINTRUST_API_URL", otlp_collector)
+        m.delenv("BRAINTRUST_PARENT", raising=False)
+
+        exporter = OtelExporter()
+
+        path, headers = _export_span_and_get_request(exporter)
+        assert path == "/otel/v1/traces"
+        assert headers["authorization"] == "Bearer env-api-key"
+        assert headers["x-bt-parent"] == "project_name:default-otel-project"
 
 
 def test_braintrust_otel_filter_ai_spans_environment_variable():
@@ -434,7 +571,7 @@ def test_braintrust_otel_filter_ai_spans_environment_variable():
             os.environ.pop("BRAINTRUST_OTEL_FILTER_AI_SPANS", None)
 
 
-def test_braintrust_span_processor_class():
+def test_braintrust_span_processor_class(otlp_collector):
     if not _check_otel_installed():
         pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
 
@@ -483,7 +620,7 @@ def test_braintrust_span_processor_class():
         processor_custom = BraintrustSpanProcessor(
             api_key="explicit-key",
             parent="project:test",
-            api_url="https://custom.example.com",
+            api_url=otlp_collector,
             filter_ai_spans=True,
             custom_filter=custom_filter,
             headers={"X-Test-Header": "test"},
@@ -498,8 +635,11 @@ def test_braintrust_span_processor_class():
         # Check that the exporter was created with the right parameters
         exporter = processor_custom.exporter
         assert exporter.parent == "project:test"
-        assert exporter._endpoint == "https://custom.example.com/otel/v1/traces"
-        assert exporter._headers["Authorization"] == "Bearer explicit-key"
+        path, headers = _export_span_and_get_request(exporter)
+        assert path == "/otel/v1/traces"
+        assert headers["authorization"] == "Bearer explicit-key"
+        assert headers["x-bt-parent"] == "project:test"
+        assert headers["x-test-header"] == "test"
 
 
 class TestSpanFiltering:
