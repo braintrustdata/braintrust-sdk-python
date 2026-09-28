@@ -822,12 +822,20 @@ def test_cli(session):
     _run_tests(session, DEVSERVER_DIR)
 
 
+OTEL_VERSIONS = _get_matrix_versions("opentelemetry-sdk")
+
+
 @nox.session()
-def test_otel(session):
+@nox.parametrize("version", OTEL_VERSIONS, ids=OTEL_VERSIONS)
+def test_otel(session, version):
     """Test OtelExporter with OpenTelemetry installed."""
+    if version != LATEST and Version(version) < Version("1.28.0") and sys.version_info >= (3, 14):
+        session.skip("OpenTelemetry <1.28 requires protobuf<5, which does not support Python 3.14")
     _install_test_deps(session)
-    session.install(".[otel]")
-    _run_tests(session, "braintrust/test_otel.py")
+    _install_matrix_dep(session, "opentelemetry-api", version)
+    _install_matrix_dep(session, "opentelemetry-sdk", version)
+    _install_matrix_dep(session, "opentelemetry-exporter-otlp-proto-http", version)
+    _run_tests(session, "braintrust/test_otel.py", version=version)
 
 
 @nox.session()
