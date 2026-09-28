@@ -2,6 +2,8 @@
 Tests for DSPy integration with Braintrust.
 """
 
+import inspect
+
 import dspy
 import pytest
 from braintrust import logger
@@ -12,6 +14,10 @@ from braintrust.test_helpers import init_test_logger
 
 PROJECT_NAME = "test-dspy-app"
 MODEL = "openai/gpt-4o-mini"
+# DSPy >= 3.4 defaults to engine="auto", which routes OpenAI calls through the
+# vendored lm15 raw-socket transport that VCR cannot intercept. Pin LiteLLM so
+# the request is recorded.
+LM_KWARGS = {"engine": "litellm"} if "engine" in inspect.signature(dspy.LM.__init__).parameters else {}
 
 
 @pytest.fixture
@@ -27,7 +33,7 @@ def test_dspy_callback(memory_logger):
     assert not memory_logger.pop()
 
     # Configure DSPy with Braintrust callback
-    lm = dspy.LM(MODEL)
+    lm = dspy.LM(MODEL, **LM_KWARGS)
     dspy.configure(lm=lm, callbacks=[BraintrustDSpyCallback()])
 
     # Use ChainOfThought for a more interesting test
