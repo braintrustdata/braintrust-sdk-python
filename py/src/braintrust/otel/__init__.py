@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 import warnings
 from urllib.parse import urljoin
 
@@ -37,6 +38,9 @@ except ImportError:
             raise ImportError(INSTALL_ERR_MSG)
 
         def force_flush(self, *args, **kwargs):
+            raise ImportError(INSTALL_ERR_MSG)
+
+        def shutdown(self, *args, **kwargs):
             raise ImportError(INSTALL_ERR_MSG)
 
     class BatchSpanProcessor:
@@ -248,7 +252,6 @@ class OtelExporter(OTLPSpanExporter):
             )
 
         self._braintrust_api_key_arg = api_key_arg
-        self._braintrust_headers_override_authorization = "Authorization" in headers
         self._braintrust_has_api_key = bool(api_key and api_key.strip())
 
         exporter_headers = {}
@@ -261,21 +264,23 @@ class OtelExporter(OTLPSpanExporter):
 
         self.parent = parent
 
-        super().__init__(endpoint=endpoint, headers=exporter_headers, **kwargs)
+        self._braintrust_exporter_kwargs = {"endpoint": endpoint, "headers": exporter_headers, **kwargs}
+        self._braintrust_shutdown = False
+        # Guards lazy re-init against a concurrent shutdown(), which re-init would undo.
+        self._braintrust_lifecycle_lock = threading.Lock()
+        super().__init__(**self._braintrust_exporter_kwargs)
 
     def _set_api_key_header(self, api_key: str) -> None:
-        if not self._braintrust_headers_override_authorization:
-            authorization = {"Authorization": f"Bearer {api_key}"}
-            exporter_headers = getattr(self, "_headers", None)
-            if isinstance(exporter_headers, dict):
-                exporter_headers.update(authorization)
-            else:
-                self._headers = {**dict(exporter_headers or {}), **authorization}
-
-            session = getattr(self, "_session", None)
-            if session is not None:
-                session.headers.update(authorization)
-        self._braintrust_has_api_key = True
+        with self._braintrust_lifecycle_lock:
+            if self._braintrust_has_api_key:
+                return
+            exporter_kwargs = self._braintrust_exporter_kwargs
+            if "Authorization" not in exporter_kwargs["headers"] and not self._braintrust_shutdown:
+                # Re-run the upstream constructor instead of patching its private header
+                # storage, which moved in opentelemetry-exporter-otlp-proto-http 1.45.
+                headers = {"Authorization": f"Bearer {api_key}", **exporter_kwargs["headers"]}
+                super().__init__(**{**exporter_kwargs, "headers": headers})
+            self._braintrust_has_api_key = True
 
     def _ensure_api_key(self) -> None:
         if self._braintrust_has_api_key:
@@ -297,6 +302,11 @@ class OtelExporter(OTLPSpanExporter):
     def force_flush(self, timeout_millis=30000):
         self._ensure_api_key()
         return super().force_flush(timeout_millis)
+
+    def shutdown(self):
+        with self._braintrust_lifecycle_lock:
+            self._braintrust_shutdown = True
+            return super().shutdown()
 
 
 def add_braintrust_span_processor(
