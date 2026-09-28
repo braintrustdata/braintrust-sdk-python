@@ -383,6 +383,15 @@
               "high"
             ]
           },
+          "chat_template_kwargs": {
+            "type": "object",
+            "properties": {
+              "enable_thinking": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {}
+          },
           "verbosity": {
             "type": "string",
             "enum": [
@@ -4963,6 +4972,15 @@
                   "high"
                 ]
               },
+              "chat_template_kwargs": {
+                "type": "object",
+                "properties": {
+                  "enable_thinking": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": {}
+              },
               "verbosity": {
                 "type": "string",
                 "enum": [
@@ -5332,6 +5350,10 @@
               }
             ],
             "description": "The scope at which to run the functions. Defaults to span-level execution."
+          },
+          "run_once": {
+            "type": "boolean",
+            "description": "Skip rerunning a completed scorer while its definition is unchanged. Failed scorers still retry. When omitted, behavior is unchanged."
           }
         },
         "required": [
@@ -9738,6 +9760,7 @@
                 "enum": [
                   "traces",
                   "spans",
+                  "logs",
                   "topics"
                 ]
               },
