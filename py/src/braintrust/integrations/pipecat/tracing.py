@@ -9,6 +9,7 @@ from braintrust.integrations.utils import (
     _pcm_to_wav,
     _resolve_audio_attachment_options,
 )
+from braintrust.integrations.versioning import detect_module_version, version_satisfies
 from braintrust.logger import NOOP_SPAN, Attachment, SpanTypeAttribute, current_span
 from braintrust.logger import start_span as _bt_start_span
 
@@ -24,8 +25,10 @@ def start_span(*args, **kwargs):
 
 
 try:
+    import pipecat
     from pipecat.observers.base_observer import BaseObserver
 except ImportError:  # pragma: no cover - exercised when Pipecat is not installed.
+    _USES_NATIVE_FRAME_DEDUPLICATION = False
 
     class BaseObserver:  # type: ignore[no-redef]
         """Fallback base so this module is importable without Pipecat."""
@@ -35,6 +38,9 @@ except ImportError:  # pragma: no cover - exercised when Pipecat is not installe
 
         async def cleanup(self) -> None:
             pass
+else:
+    _pipecat_version = detect_module_version(pipecat, ("pipecat",))
+    _USES_NATIVE_FRAME_DEDUPLICATION = version_satisfies(_pipecat_version, ">=1.12.0")
 
 
 _TERMINAL_FRAME_TYPES = {"EndFrame", "StopFrame", "CancelFrame"}
@@ -74,6 +80,9 @@ class BraintrustPipecatObserver(BaseObserver):
         trace_turns: bool = True,
         **kwargs: Any,
     ) -> None:
+        self._uses_native_frame_deduplication = _USES_NATIVE_FRAME_DEDUPLICATION
+        if self._uses_native_frame_deduplication:
+            kwargs["observe_every_push"] = False
         super().__init__(**kwargs)
         (
             self.capture_user_audio_attachments,
@@ -88,7 +97,8 @@ class BraintrustPipecatObserver(BaseObserver):
         self._parent = _current_parent_export()
         self._pipeline_span: Any | None = None
         self._pipeline_parent: str | None = None
-        self._seen_frame_ids: set[int] = set()
+        if not self._uses_native_frame_deduplication:
+            self._seen_frame_ids: set[int] = set()
         self._latest_llm_input: Any = None
         self._latest_llm_metadata: dict[str, Any] = {}
         self._llm_span: Any | None = None
@@ -111,6 +121,8 @@ class BraintrustPipecatObserver(BaseObserver):
         self._ensure_pipeline_span()
 
     async def on_process_frame(self, data: Any) -> None:
+        if self._uses_native_frame_deduplication:
+            return
         await self._handle_frame(getattr(data, "frame", None), processor=getattr(data, "processor", None))
 
     async def on_push_frame(self, data: Any) -> None:
@@ -128,7 +140,7 @@ class BraintrustPipecatObserver(BaseObserver):
             return
 
         frame_id = getattr(frame, "id", None)
-        if isinstance(frame_id, int):
+        if isinstance(frame_id, int) and not self._uses_native_frame_deduplication:
             if frame_id in self._seen_frame_ids:
                 return
             self._seen_frame_ids.add(frame_id)
