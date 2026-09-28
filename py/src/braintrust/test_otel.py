@@ -179,6 +179,43 @@ def test_otel_exporter_resolving_api_key_does_not_revive_shutdown_exporter(otlp_
         assert _export_span(exporter) == []
 
 
+def test_otel_exporter_shutdown_racing_lazy_api_key_reinit_stays_shutdown(otlp_collector):
+    if not _check_otel_installed():
+        pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
+
+    import threading
+
+    from braintrust.otel import OtelExporter
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+    upstream_init = OTLPSpanExporter.__init__
+
+    def init_with_concurrent_shutdown(self, *args, **kwargs):
+        # Run shutdown() on another thread while the lazy-key re-init is in progress.
+        # Give it a bounded chance to finish first, so the test also terminates when
+        # shutdown correctly waits for the re-init.
+        shutdown_thread = threading.Thread(target=self.shutdown)
+        shutdown_thread.start()
+        shutdown_thread.join(timeout=0.5)
+        upstream_init(self, *args, **kwargs)
+        shutdown_threads.append(shutdown_thread)
+
+    shutdown_threads = []
+    with pytest.MonkeyPatch.context() as m:
+        m.delenv("BRAINTRUST_API_KEY", raising=False)
+        exporter = OtelExporter(url=f"{otlp_collector}/otel/v1/traces", parent="project_name:test")
+
+        m.setenv("BRAINTRUST_API_KEY", "late-api-key")
+        m.setattr(OTLPSpanExporter, "__init__", init_with_concurrent_shutdown)
+        _export_span(exporter)
+        for shutdown_thread in shutdown_threads:
+            shutdown_thread.join(timeout=5)
+            assert not shutdown_thread.is_alive()
+
+        assert shutdown_threads
+        assert _export_span(exporter) == []
+
+
 def test_otel_exporter_lazy_api_key_does_not_override_explicit_authorization_header(otlp_collector):
     if not _check_otel_installed():
         pytest.skip("OpenTelemetry SDK not fully installed, skipping test")
