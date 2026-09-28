@@ -263,6 +263,10 @@ async def test_calculator_with_multiple_operations(memory_logger):
         assert len(ordered_llm_spans) == len(expected_partial_usage)
         for llm_span, usage in zip(ordered_llm_spans, expected_partial_usage, strict=True):
             assert llm_span["metrics"] | _metrics_from_exact_anthropic_usage(usage) == llm_span["metrics"]
+        llm_spans_with_output = [span for span in llm_spans if "completion_tokens" in span["metrics"]]
+        assert llm_spans_with_output
+        for llm_span in llm_spans_with_output:
+            assert "usage_output_tokens_unknown" not in llm_span.get("metadata", {})
     elif _sdk_version_at_least("0.1.11"):
         expected_usage_by_message_id: dict[str, dict[str, Any]] = {}
         for message in received_messages:

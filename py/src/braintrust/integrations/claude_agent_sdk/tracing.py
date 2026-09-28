@@ -744,6 +744,7 @@ class ContextTracker:
         """End all open LLM spans, TASK spans, and TOOL spans; clear thread-local."""
         for ctx in self._contexts.values():
             if ctx.llm_span:
+                self._mark_output_usage_unknown(ctx)
                 ctx.llm_span.end()
                 ctx.llm_span = None
             if ctx.task_span:
@@ -884,6 +885,8 @@ class ContextTracker:
 
     def _handle_result(self, message: Any) -> None:
         self._active_key = None
+        for ctx in self._contexts.values():
+            self._mark_output_usage_unknown(ctx)
         result_value = getattr(message, "result", None)
         if result_value is not None:
             self._result_output = result_value
@@ -1014,6 +1017,7 @@ class ContextTracker:
         first_token_time = time.time()
 
         if ctx.llm_span:
+            self._mark_output_usage_unknown(ctx)
             ctx.llm_span.end(end_time=resolved_start)
 
         final_content, span = _create_llm_span_for_messages(
@@ -1051,9 +1055,13 @@ class ContextTracker:
         has_final_output = message_id in self._final_output_usage_message_ids if message_id else False
         metrics, _ = extract_anthropic_usage(usage, include_output=has_final_output)
         _, metadata = extract_anthropic_usage(raw_message_usage, include_output=False)
-        if not has_final_output and "prompt_tokens" in metrics:
-            metadata["usage_output_tokens_unknown"] = True
         ctx.llm_span.log(metrics=metrics or None, metadata=metadata or None)
+
+    def _mark_output_usage_unknown(self, ctx: _AgentContext) -> None:
+        """Mark missing output only once an LLM span is finalized."""
+        if ctx.llm_span is None or ctx.llm_message_id in self._final_output_usage_message_ids:
+            return
+        ctx.llm_span.log(metadata={"usage_output_tokens_unknown": True})
 
     def _process_task_event(self, message: Any, agent_span_export: str | None) -> None:
         """Handle TaskStarted / TaskProgress / TaskNotification system messages."""
