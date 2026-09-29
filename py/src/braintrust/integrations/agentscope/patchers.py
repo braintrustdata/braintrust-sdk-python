@@ -50,12 +50,12 @@ class FanoutPipelinePatcher(FunctionWrapperPatcher):
 
 
 class TeamPipelineReplyStreamPatcher(FunctionWrapperPatcher):
-    """Patch AgentScope 2.x team pipeline streaming replies."""
+    """Patch AgentScope team pipeline streaming replies (``TeamPipeline`` was added in 2.0.9)."""
 
     name = "agentscope.pipeline.team_reply_stream"
     target_module = "agentscope.pipeline"
     target_path = "TeamPipeline.reply_stream"
-    version_spec = ">=2"
+    version_spec = ">=2.0.9"
     wrapper = _team_pipeline_reply_stream_wrapper
 
 
