@@ -381,6 +381,34 @@ async def test_agentscope_team_pipeline_reply_stream_creates_parent_span(memory_
     assert after_event_span["span_parents"] == [caller_span.span_id]
 
 
+@pytest.mark.asyncio
+async def test_team_pipeline_reply_stream_shares_context_across_events(memory_logger):
+    """Context set by the wrapped stream in one step must be visible in the next."""
+    from braintrust.integrations.agentscope.tracing import _team_pipeline_reply_stream_wrapper
+
+    async def reply_stream():
+        with logger.start_span(name="inner"):
+            yield "first"
+            with logger.start_span(name="inner-child"):
+                pass
+            yield "second"
+
+    with logger.start_span(name="caller") as caller_span:
+        stream = _team_pipeline_reply_stream_wrapper(lambda *args, **kwargs: reply_stream(), None, (), {})
+        events = []
+        async for event in stream:
+            assert logger.current_span() is caller_span
+            events.append(event)
+        assert logger.current_span() is caller_span
+
+    assert events == ["first", "second"]
+
+    spans = {span["span_attributes"]["name"]: span for span in memory_logger.pop()}
+    assert spans["TeamPipeline.reply_stream"]["span_parents"] == [caller_span.span_id]
+    assert spans["inner"]["span_parents"] == [spans["TeamPipeline.reply_stream"]["span_id"]]
+    assert spans["inner-child"]["span_parents"] == [spans["inner"]["span_id"]]
+
+
 def test_setup_agentscope_is_idempotent():
     """Repeat setup calls must not double-wrap patched targets."""
     from agentscope.model import OpenAIChatModel

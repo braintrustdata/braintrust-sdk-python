@@ -1,11 +1,10 @@
 """AgentScope-specific span creation and stream aggregation."""
 
-import asyncio
 import contextlib
 import inspect
 import time
 from contextlib import aclosing
-from contextvars import ContextVar, copy_context
+from contextvars import Context, ContextVar, copy_context
 from typing import Any
 
 from braintrust.integrations.utils import (
@@ -292,10 +291,44 @@ def _deferred_stream_trace(
     return _trace()
 
 
+class _AwaitInContext:
+    """Await ``coro`` with every step run inside ``context``.
+
+    Like ``asyncio.create_task(coro, context=context)`` (Python 3.11+), but runs on
+    any Python version and without scheduling a separate task.
+    """
+
+    __slots__ = ("_context", "_coro")
+
+    def __init__(self, coro: Any, context: Context):
+        self._coro = coro
+        self._context = context
+
+    def __await__(self) -> Any:
+        coro, context = self._coro, self._context
+        step, value = coro.send, None
+        while True:
+            try:
+                yielded = context.run(step, value)
+            except StopIteration as exc:
+                return exc.value
+            try:
+                value = yield yielded
+                step = coro.send
+            except GeneratorExit:
+                context.run(coro.close)
+                raise
+            except BaseException as exc:
+                step, value = coro.throw, exc
+
+
 def _team_pipeline_reply_stream_wrapper(wrapped: Any, instance: Any, args: Any, kwargs: dict[str, Any]) -> Any:
     """Trace a TeamPipeline reply for the lifetime of its event stream."""
 
     async def _trace():
+        # The wrapped stream runs entirely in its own context, with the pipeline span
+        # current. Context changes it makes persist across events without leaking into
+        # the caller's context between them.
         stream_context = copy_context()
         span = stream_context.run(
             lambda: start_span(
@@ -305,18 +338,16 @@ def _team_pipeline_reply_stream_wrapper(wrapped: Any, instance: Any, args: Any, 
                 metadata=_team_pipeline_metadata(instance),
             )
         )
+        stream_context.run(span.set_current)
         stream = None
         try:
             last_event = None
-            stream = wrapped(*args, **kwargs)
+            stream = stream_context.run(wrapped, *args, **kwargs)
             while True:
-                stream_context.run(span.set_current)
                 try:
-                    event = await asyncio.create_task(stream.__anext__(), context=stream_context)
+                    event = await _AwaitInContext(stream.__anext__(), stream_context)
                 except StopAsyncIteration:
                     break
-                finally:
-                    stream_context.run(span.unset_current)
                 last_event = event
                 yield event
             if last_event is not None:
@@ -327,11 +358,7 @@ def _team_pipeline_reply_stream_wrapper(wrapped: Any, instance: Any, args: Any, 
         finally:
             try:
                 if stream is not None:
-                    stream_context.run(span.set_current)
-                    try:
-                        await asyncio.create_task(stream.aclose(), context=stream_context)
-                    finally:
-                        stream_context.run(span.unset_current)
+                    await _AwaitInContext(stream.aclose(), stream_context)
             finally:
                 span.end()
 
