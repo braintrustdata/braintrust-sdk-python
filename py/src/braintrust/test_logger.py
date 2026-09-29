@@ -2,6 +2,7 @@
 # pyright: reportPrivateUsage=false
 import asyncio
 import builtins
+import copy
 import importlib
 import inspect
 import json
@@ -170,41 +171,6 @@ class TestInit(TestCase):
         assert metadata.project.id == "test-project-id"
         assert metadata.experiment.name == "test-exp"
 
-    def test_init_enable_atexit_flush(self):
-        from braintrust.logger import _HTTPBackgroundLogger
-
-        api_con_response = lambda: {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
-
-        with patch("atexit.register") as mock_register:
-            _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-            mock_register.assert_called()
-
-    def test_init_disable_atexit_flush(self):
-        from braintrust.logger import _HTTPBackgroundLogger
-
-        api_con_response = lambda: {
-            "project": {"id": "test-project-id", "name": "test-project"},
-            "experiment": {"id": "test-exp-id", "name": "test-exp"},
-        }
-
-        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "True"}):
-            with patch("atexit.register") as mock_register:
-                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-                mock_register.assert_not_called()
-
-        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "1"}):
-            with patch("atexit.register") as mock_register:
-                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-                mock_register.assert_not_called()
-
-        with patch.dict(os.environ, {"BRAINTRUST_DISABLE_ATEXIT_FLUSH": "yes"}):
-            with patch("atexit.register") as mock_register:
-                _HTTPBackgroundLogger(LazyValue(api_con_response, use_mutex=False))  # type: ignore
-                mock_register.assert_not_called()
-
     def test_init_without_git_metadata_override_uses_org_policy(self):
         for org_settings in (
             GitMetadataSettings(collect="all"),
@@ -275,6 +241,30 @@ class TestInit(TestCase):
         payload = api_client.experiments.post_experiment.call_args.kwargs["body"]
         assert payload["parameters_id"] == "params-123"
         assert payload["parameters_version"] == "v1"
+
+
+@pytest.mark.parametrize(
+    ("disable_atexit_flush", "registers"),
+    [
+        pytest.param(None, True, id="unset"),
+        pytest.param("false", True, id="false"),
+        pytest.param("True", False, id="True"),
+        pytest.param("1", False, id="1"),
+        pytest.param("yes", False, id="yes"),
+    ],
+)
+def test_http_background_logger_atexit_flush(monkeypatch, disable_atexit_flush, registers):
+    from braintrust.logger import _HTTPBackgroundLogger
+
+    if disable_atexit_flush is None:
+        monkeypatch.delenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", raising=False)
+    else:
+        monkeypatch.setenv("BRAINTRUST_DISABLE_ATEXIT_FLUSH", disable_atexit_flush)
+
+    with patch("atexit.register") as mock_register:
+        _HTTPBackgroundLogger(LazyValue(MagicMock, use_mutex=False))
+
+    assert mock_register.called is registers
 
 
 class TestHTTPBackgroundLoggerLogs3(TestCase):
@@ -1475,28 +1465,20 @@ def test_span_link_logged_out_org_name(with_memory_logger):
     )
 
 
-def test_span_link_logged_out_org_name_env_vars(with_memory_logger):
+def test_span_link_logged_out_org_name_env_vars(with_memory_logger, monkeypatch):
     simulate_logout()
     assert_logged_out()
-    keys = ["BRAINTRUST_APP_URL", "BRAINTRUST_ORG_NAME"]
-    originals = {k: os.environ.get(k) for k in keys}
-    try:
-        os.environ["BRAINTRUST_APP_URL"] = "https://my-own-thing.ca/foo/bar"
-        os.environ["BRAINTRUST_ORG_NAME"] = "my-own-thing"
+    monkeypatch.setenv("BRAINTRUST_APP_URL", "https://my-own-thing.ca/foo/bar")
+    monkeypatch.setenv("BRAINTRUST_ORG_NAME", "my-own-thing")
 
-        logger = init_logger(project_id="test-project-id")
-        span = logger.start_span(name="test-span")
-        span.end()
-        link = span.link()
-        assert (
-            link
-            == f"https://my-own-thing.ca/foo/bar/app/my-own-thing/object?object_type=project_logs&object_id=test-project-id&id={span._id}"
-        )
-    finally:
-        for k, v in originals.items():
-            os.environ.pop(k, None)
-            if v:
-                os.environ[k] = v
+    logger = init_logger(project_id="test-project-id")
+    span = logger.start_span(name="test-span")
+    span.end()
+    link = span.link()
+    assert (
+        link
+        == f"https://my-own-thing.ca/foo/bar/app/my-own-thing/object?object_type=project_logs&object_id=test-project-id&id={span._id}"
+    )
 
 
 def test_span_project_id_logged_in(with_memory_logger, with_simulate_login):
@@ -1568,38 +1550,27 @@ def test_span_link_with_unresolved_experiment(with_simulate_login, with_memory_l
     assert link == "https://www.braintrust.dev/error-generating-link?msg=resolve-experiment-id"
 
 
-def test_experiment_span_link_uses_env_vars_when_logged_out(with_memory_logger):
+def test_experiment_span_link_uses_env_vars_when_logged_out(with_memory_logger, monkeypatch):
     """Verify EXPERIMENT spans use BRAINTRUST_ORG_NAME env var when not logged in."""
     simulate_logout()
     assert_logged_out()
+    monkeypatch.setenv("BRAINTRUST_APP_URL", "https://test-app.example.com")
+    monkeypatch.setenv("BRAINTRUST_ORG_NAME", "env-org-name")
 
-    keys = ["BRAINTRUST_APP_URL", "BRAINTRUST_ORG_NAME"]
-    originals = {k: os.environ.get(k) for k in keys}
-    try:
-        os.environ["BRAINTRUST_APP_URL"] = "https://test-app.example.com"
-        os.environ["BRAINTRUST_ORG_NAME"] = "env-org-name"
+    experiment = braintrust.init(
+        project="test-project",
+        experiment="test-experiment",
+    )
 
-        experiment = braintrust.init(
-            project="test-project",
-            experiment="test-experiment",
-        )
+    # Create span with resolved experiment ID
+    span = experiment.start_span(name="test-span")
+    span.parent_object_id = LazyValue(lambda: "test-exp-id", use_mutex=False)
+    span.end()
 
-        # Create span with resolved experiment ID
-        span = experiment.start_span(name="test-span")
-        span.parent_object_id = LazyValue(lambda: "test-exp-id", use_mutex=False)
-        span.end()
-
-        link = span.link()
-
-        # Should use env var org name and app url
-        assert "env-org-name" in link
-        assert "test-app.example.com" in link
-        assert "test-exp-id" in link
-    finally:
-        for k, v in originals.items():
-            os.environ.pop(k, None)
-            if v:
-                os.environ[k] = v
+    assert (
+        span.link()
+        == f"https://test-app.example.com/app/env-org-name/object?object_type=experiment&object_id=test-exp-id&id={span._id}"
+    )
 
 
 def test_permalink_with_valid_span_logged_in(with_simulate_login, with_memory_logger):
@@ -3076,115 +3047,70 @@ class TestDatasetGeneratedAPI(TestCase):
         mock_state.api_conn.assert_not_called()
 
 
+_SYNTHETIC_FILTER = {"op": "eq", "left": "metadata.kind", "right": "synthetic"}
+
+
+@pytest.mark.parametrize(
+    ("runtime_btql", "internal_btql", "expected"),
+    [
+        pytest.param({"sample": 5}, None, {"sample": 5}, id="runtime-only"),
+        pytest.param(
+            {"sample": 5, "limit": 10},
+            {"where": _SYNTHETIC_FILTER},
+            {"where": _SYNTHETIC_FILTER, "sample": 5, "limit": 10},
+            id="merged-with-explicit",
+        ),
+        pytest.param(
+            {"sample": 5, "limit": 10},
+            {"filter": "metadata.kind = 'synthetic'", "sample": 2},
+            {"filter": "metadata.kind = 'synthetic'", "sample": 2, "limit": 10},
+            id="explicit-keys-win",
+        ),
+        pytest.param(None, None, None, id="no-runtime-value"),
+    ],
+)
+def test_init_dataset_merges_bt_eval_internal_btql(monkeypatch, runtime_btql, internal_btql, expected):
+    """bt eval's runtime BTQL is merged into _internal_btql; explicit keys take precedence."""
+    from braintrust.logger import init_dataset
+
+    if runtime_btql is None:
+        monkeypatch.delattr(builtins, "__bt_eval_internal_btql", raising=False)
+    else:
+        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", runtime_btql, raising=False)
+    original_internal_btql = copy.deepcopy(internal_btql)
+
+    dataset = init_dataset(
+        project="test-project",
+        name="test-dataset",
+        use_output=False,
+        _internal_btql=internal_btql,
+        state=MagicMock(),
+    )
+
+    assert dataset._internal_btql == expected
+    # The caller's dict is not mutated by the merge.
+    assert internal_btql == original_internal_btql
+
+
+def test_init_dataset_forwards_bt_eval_internal_btql_runtime_value_to_fetch(monkeypatch):
+    """Test that bt eval runtime BTQL is included in fetched dataset BTQL."""
+    from braintrust.logger import init_dataset
+
+    monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
+    mock_state = MagicMock()
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"data": [], "cursor": None}
+    mock_state.api_conn.return_value.post.return_value = mock_response
+
+    dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=mock_state)
+    list(dataset.fetch())
+
+    query_json = mock_state.api_conn.return_value.post.call_args[1]["json"]["query"]
+    assert query_json["sample"] == 5
+
+
 class TestDatasetInternalBtql(TestCase):
     """Test that _internal_btql parameters (especially limit) are properly passed through to BTQL queries."""
-
-    def test_init_dataset_applies_bt_eval_internal_btql_runtime_value(self):
-        """Test that bt eval runtime BTQL is injected into dataset BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
-        try:
-            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
-
-            self.assertEqual(dataset._internal_btql, {"sample": 5})
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_merges_bt_eval_internal_btql_with_internal_btql(self):
-        """Test that bt eval runtime BTQL is added to existing BTQL filters."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5, "limit": 10}, raising=False)
-        try:
-            internal_btql = {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}}
-            dataset = init_dataset(
-                project="test-project",
-                name="test-dataset",
-                use_output=False,
-                _internal_btql=internal_btql,
-                state=MagicMock(),
-            )
-
-            self.assertEqual(
-                dataset._internal_btql,
-                {
-                    "where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"},
-                    "sample": 5,
-                    "limit": 10,
-                },
-            )
-            self.assertEqual(internal_btql, {"where": {"op": "eq", "left": "metadata.kind", "right": "synthetic"}})
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_merges_bt_eval_internal_btql_without_overriding_explicit_keys(self):
-        """Test that explicit BTQL keys override bt eval runtime BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5, "limit": 10}, raising=False)
-        try:
-            dataset = init_dataset(
-                project="test-project",
-                name="test-dataset",
-                use_output=False,
-                _internal_btql={"filter": "metadata.kind = 'synthetic'", "sample": 2},
-                state=MagicMock(),
-            )
-
-            self.assertEqual(
-                dataset._internal_btql,
-                {"filter": "metadata.kind = 'synthetic'", "sample": 2, "limit": 10},
-            )
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_keeps_btql_unchanged_without_eval_internal_btql_runtime_value(self):
-        """Test that ordinary init_dataset calls are unchanged without runtime BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.delattr(builtins, "__bt_eval_internal_btql", raising=False)
-        try:
-            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=MagicMock())
-
-            self.assertIsNone(dataset._internal_btql)
-        finally:
-            monkeypatch.undo()
-
-    def test_init_dataset_forwards_bt_eval_internal_btql_runtime_value_to_fetch(self):
-        """Test that bt eval runtime BTQL is included in fetched dataset BTQL."""
-        from braintrust.logger import init_dataset
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", {"sample": 5}, raising=False)
-        try:
-            mock_state = MagicMock()
-            mock_state.org_id = "test-org"
-
-            mock_app_conn = MagicMock()
-            mock_app_conn.post_json.return_value = {
-                "project": {"id": "test-project-id", "name": "test-project"},
-                "dataset": {"id": "test-dataset-id", "name": "test-dataset"},
-            }
-            mock_state.app_conn.return_value = mock_app_conn
-
-            mock_api_conn = MagicMock()
-            mock_response = MagicMock()
-            mock_response.json.return_value = {"data": [], "cursor": None}
-            mock_api_conn.post.return_value = mock_response
-            mock_state.api_conn.return_value = mock_api_conn
-
-            dataset = init_dataset(project="test-project", name="test-dataset", use_output=False, state=mock_state)
-            list(dataset.fetch())
-
-            query_json = mock_api_conn.post.call_args[1]["json"]["query"]
-            self.assertEqual(query_json["sample"], 5)
-        finally:
-            monkeypatch.undo()
 
     @patch("braintrust.logger.BraintrustState")
     def test_dataset_internal_btql_limit_not_overwritten(self, mock_state_class):
@@ -3585,18 +3511,19 @@ def test_check_org_info_with_git_metadata_uses_server_settings():
     assert set(state.git_metadata_settings.fields) == {"commit", "branch"}
 
 
-def test_proxy_conn_strips_v1_proxy_suffix():
-    """EU/self-hosted proxy_url ends in /v1/proxy; proxy_conn must target the API host root."""
+@pytest.mark.parametrize(
+    ("proxy_url", "expected_base_url"),
+    [
+        # EU/self-hosted proxy_url ends in /v1/proxy; proxy_conn must target the API host root.
+        pytest.param("https://api-eu.braintrust.dev/v1/proxy", "https://api-eu.braintrust.dev", id="v1-proxy-suffix"),
+        # A bare proxy host (US default) is used as-is.
+        pytest.param("https://api.braintrust.dev", "https://api.braintrust.dev", id="bare-host"),
+    ],
+)
+def test_proxy_conn_base_url(proxy_url, expected_base_url):
     state = BraintrustState()
-    state.proxy_url = "https://api-eu.braintrust.dev/v1/proxy"
-    assert state.proxy_conn().base_url == "https://api-eu.braintrust.dev"
-
-
-def test_proxy_conn_leaves_bare_host_unchanged():
-    """A bare proxy host (US default) is used as-is."""
-    state = BraintrustState()
-    state.proxy_url = "https://api.braintrust.dev"
-    assert state.proxy_conn().base_url == "https://api.braintrust.dev"
+    state.proxy_url = proxy_url
+    assert state.proxy_conn().base_url == expected_base_url
 
 
 def test_get_repo_info_without_settings_returns_none():
