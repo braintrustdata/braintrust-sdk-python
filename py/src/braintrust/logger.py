@@ -999,9 +999,12 @@ def utf8_byte_length(value: str) -> int:
     return len(value.encode("utf-8"))
 
 
+_LazyLogRecord = LazyValue[dict[str, Any]] | LazyValue[dict[str, Any] | None]
+
+
 class _BackgroundLogger(ABC):
     @abstractmethod
-    def log(self, *args: LazyValue[dict[str, Any]]) -> None:
+    def log(self, *args: _LazyLogRecord) -> None:
         pass
 
     @abstractmethod
@@ -1019,7 +1022,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
     def enforce_queue_size_limit(self, enforce: bool) -> None:
         pass
 
-    def log(self, *args: LazyValue[dict[str, Any]]) -> None:
+    def log(self, *args: _LazyLogRecord) -> None:
         with self.lock:
             self.logs.extend(args)
 
@@ -1033,8 +1036,8 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             if not self.logs:
                 return
 
-            # Unwrap lazy values and extract attachments
-            logs = [l.get() for l in self.logs]
+            # Filter dropped records before touching attachments.
+            logs = [record for item in self.logs if (record := item.get()) is not None]
 
             # Extract attachments from all logs
             attachments: list[BaseAttachment] = []
@@ -1046,7 +1049,7 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
 
     def pop(self):
         with self.lock:
-            logs = [l.get() for l in self.logs]  # unwrap the LazyValues
+            logs = [record for item in self.logs if (record := item.get()) is not None]
             self.logs = []
 
             if not logs:
@@ -1057,7 +1060,11 @@ class _MemoryBackgroundLogger(_BackgroundLogger):
             batch = merge_row_batch(logs)
 
             if self._export_customizers:
-                batch = [_customize_span_export(item, self._export_customizers) for item in batch]
+                batch = [
+                    record
+                    for item in batch
+                    if (record := _customize_span_export(item, self._export_customizers)) is not None
+                ]
 
             return batch
 
@@ -1098,7 +1105,7 @@ class _HTTPBackgroundLogger:
         self.started = False
 
         self.logger = logging.getLogger("braintrust")
-        self.queue: "LogQueue[LazyValue[dict[str, Any]]]" = LogQueue(maxsize=self.queue_maxsize)
+        self.queue: "LogQueue[_LazyLogRecord]" = LogQueue(maxsize=self.queue_maxsize)
 
         # Counter for tracking overflow uploads (useful for testing)
         self._overflow_upload_count = 0
@@ -1113,7 +1120,7 @@ class _HTTPBackgroundLogger:
         """
         self.queue.enforce_queue_size_limit(enforce)
 
-    def log(self, *args: LazyValue[dict[str, Any]]) -> None:
+    def log(self, *args: _LazyLogRecord) -> None:
         self._start()
         dropped_items = []
         for event in args:
@@ -1254,16 +1261,20 @@ class _HTTPBackgroundLogger:
                 )
 
     def _unwrap_lazy_values(
-        self, wrapped_items: Sequence[LazyValue[dict[str, Any]]]
+        self, wrapped_items: Sequence[_LazyLogRecord]
     ) -> tuple[list[dict[str, Any]], list["BaseAttachment"]]:
         for i in range(self.num_tries):
             try:
-                unwrapped_items = [item.get() for item in wrapped_items]
+                unwrapped_items = [record for item in wrapped_items if (record := item.get()) is not None]
                 merged_items = merge_row_batch(unwrapped_items)
 
-                # Logger-local hooks run after instrumentation hooks and merging.
+                # Logger-local hooks run after span hooks and merging.
                 if self._export_customizers:
-                    merged_items = [_customize_span_export(item, self._export_customizers) for item in merged_items]
+                    merged_items = [
+                        record
+                        for item in merged_items
+                        if (record := _customize_span_export(item, self._export_customizers)) is not None
+                    ]
 
                 attachments: list["BaseAttachment"] = []
                 for item in merged_items:
@@ -2489,8 +2500,8 @@ def set_masking_function(masking_function: Callable[[Any], Any] | None) -> None:
     """
     Set a global masking function that will be applied to all logged data before sending to Braintrust.
     The masking function will be applied after records are merged but before they are sent to the backend.
-    Internally, masking is a logger-local export customizer that runs after instrumentation
-    customizers and also covers manually logged records.
+    Internally, masking is a logger-local export customizer that runs after span
+    customizers and also covers non-span records such as datasets and feedback.
 
     :param masking_function: A function that takes a JSON-serializable object and returns a masked version.
                            Set to None to disable masking.
@@ -3983,6 +3994,7 @@ def _update_span_impl(
     )
 
     update_event = bt_safe_deep_copy(update_event)
+    customizers = _get_span_customizers()
 
     def parent_ids():
         exporter = _get_exporter()
@@ -3991,8 +4003,8 @@ def _update_span_impl(
             object_id=parent_object_id.get(),
         ).object_id_fields()
 
-    def compute_record():
-        return dict(
+    def compute_record() -> dict[str, Any] | None:
+        record = dict(
             id=id,
             **update_event,
             **parent_ids(),
@@ -4000,6 +4012,7 @@ def _update_span_impl(
                 IS_MERGE_FIELD: True,
             },
         )
+        return _customize_span_export(record, customizers) if customizers else record
 
     _state.global_bg_logger().log(LazyValue(compute_record, use_mutex=False))
 
@@ -4815,6 +4828,7 @@ class SpanImpl(Span):
             created=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         )
         internal = internal or {}
+        # Integration consumers use this provenance independently of export hooks.
         self._instrumentation = internal.get("instrumentation") or "braintrust-python-logger"
         internal_data["context"] = merge_span_origin_context(
             caller_location or {},
@@ -4903,7 +4917,7 @@ class SpanImpl(Span):
 
         # Snapshot at log time so the span cache and the export agree on whether
         # (and how) this record is customized.
-        customizers = _get_span_customizers() if self._instrumentation != "braintrust-python-logger" else ()
+        customizers = _get_span_customizers()
         pending_cache_key = (
             object()
             if customizers
@@ -4933,11 +4947,11 @@ class SpanImpl(Span):
             self.state.span_cache.queue_write(self.root_span_id, self.span_id, cached_span)
 
         # Customized records are cached after export customization instead, so
-        # local scorers never see content that a customizer redacted.
+        # local scorers never see content that a customizer redacted or dropped.
         if not customizers:
             write_span_cache(serializable_partial_record)
 
-        def compute_record() -> dict[str, Any]:
+        def compute_record() -> dict[str, Any] | None:
             exporter = _get_exporter()
             record = dict(
                 **serializable_partial_record,
@@ -4948,13 +4962,15 @@ class SpanImpl(Span):
                 ).object_id_fields(),
             )
             # Resolve and customize inside the cached LazyValue: every incremental
-            # instrumentation record is transformed once, before the background
+            # span record is transformed once, before the background
             # logger merges, masks, extracts attachments, or retries delivery.
             if customizers:
-                record = _customize_span_export(record, customizers)
-                write_span_cache(record)
+                customized_record = _customize_span_export(record, customizers)
+                if customized_record is not None:
+                    write_span_cache(customized_record)
                 if pending_cache_key is not None:
                     self.state.span_cache._forget_pending_record(self.root_span_id, pending_cache_key)
+                return customized_record
             return record
 
         # Cache readers and the publisher share resolution, including the cache

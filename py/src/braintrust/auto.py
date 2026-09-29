@@ -103,9 +103,12 @@ def auto_instrument(
         livekit_agents: Enable LiveKit Agents instrumentation (default: True)
         pipecat: Enable Pipecat AI instrumentation (default: True)
         typesafe: Enable TypeSafe instrumentation (default: True)
-        span_customizers: Ordered synchronous export customizers for instrumentation
-            spans. Copies and replaces the global list when provided; None leaves
-            existing configuration unchanged. Pass [] to disable.
+        span_customizers: Ordered synchronous export customizers for all native SDK
+            spans, including manual spans; dataset rows and feedback are excluded.
+            Copies and replaces the global list when provided; None leaves existing
+            configuration unchanged. Pass [] to disable.
+            With BRAINTRUST_OTEL_COMPAT enabled, non-empty customizers log an error
+            and leave the existing configuration unchanged; instrumentation continues.
 
     Returns:
         Dict mapping integration name to whether it was successfully instrumented.

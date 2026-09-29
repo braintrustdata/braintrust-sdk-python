@@ -315,23 +315,27 @@ def test_merge_span_origin_context_uses_passed_instrumentation_name():
     assert merged["span_origin"]["instrumentation"] == {"name": "openai-auto"}
 
 
-def test_span_impl_records_internal_instrumentation(monkeypatch):
-    monkeypatch.setenv("BRAINTRUST_API_KEY", "test-key")
-    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_TYPE", raising=False)
-    monkeypatch.delenv("BRAINTRUST_ENVIRONMENT_NAME", raising=False)
+def test_span_impl_records_internal_instrumentation():
+    from braintrust.logger import (
+        Logger,
+        ObjectMetadata,
+        OrgProjectMetadata,
+        _internal_with_memory_background_logger,
+    )
+    from braintrust.util import LazyValue
 
-    from braintrust.logger import init_logger, start_span
+    metadata = OrgProjectMetadata(org_id="org", project=ObjectMetadata(id="project", name="project", full_info={}))
+    test_logger = Logger(LazyValue(lambda: metadata, use_mutex=False))
+    with _internal_with_memory_background_logger() as memory_logger:
+        with test_logger.start_span(name="parent", internal={"instrumentation": "openai-auto"}) as parent:
+            with parent.start_span(name="child") as child:
+                pass
+        rows = {row["id"]: row for row in memory_logger.pop()}
 
-    init_logger(project="test_instrumentation_kwarg")
-
-    with start_span(name="parent", internal={"instrumentation": "openai-auto"}) as parent:
-        with start_span(name="child") as child:
-            pass
-
-    assert parent._instrumentation == "openai-auto"
+    assert rows[parent.id]["context"]["span_origin"]["instrumentation"]["name"] == "openai-auto"
     # Child spans do NOT inherit the parent's instrumentation name;
     # they fall back to the channel default.
-    assert child._instrumentation == "braintrust-python-logger"
+    assert rows[child.id]["context"]["span_origin"]["instrumentation"]["name"] == "braintrust-python-logger"
 
 
 def test_detect_environment_classifies_aws_ecs_before_lambda(monkeypatch):
