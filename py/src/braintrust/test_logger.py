@@ -52,7 +52,6 @@ from braintrust.test_helpers import (
     assert_logged_out,
     init_test_exp,
     init_test_logger,
-    preserve_env_vars,
     simulate_login,  # noqa: F401 # type: ignore[reportUnusedImport]
     simulate_logout,
     with_memory_logger,  # noqa: F401 # type: ignore[reportUnusedImport]
@@ -2890,84 +2889,57 @@ def test_parent_precedence_explicit_parent_overrides(with_memory_logger, with_si
 
 
 @pytest.fixture
-def reset_id_generator_state():
-    """Reset ID generator state and environment variables before each test"""
+def reset_id_generator_state(monkeypatch):
+    """Clear ID-format env vars and reset the cached ID generator and context manager."""
+    monkeypatch.delenv("BRAINTRUST_OTEL_COMPAT", raising=False)
+    monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
     logger._state._reset_id_generator()
     logger._state._reset_context_manager()
-    original_otel = os.getenv("BRAINTRUST_OTEL_COMPAT")
-    original_legacy = os.getenv("BRAINTRUST_LEGACY_IDS")
-    try:
-        yield
-    finally:
-        logger._state._reset_id_generator()
-        logger._state._reset_context_manager()
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        if original_otel:
-            os.environ["BRAINTRUST_OTEL_COMPAT"] = original_otel
-        if original_legacy:
-            os.environ["BRAINTRUST_LEGACY_IDS"] = original_legacy
+    yield
+    logger._state._reset_id_generator()
+    logger._state._reset_context_manager()
 
 
-def test_span_with_otel_ids_export_import(reset_id_generator_state):
+def _is_hex(s: str) -> bool:
+    return all(c in "0123456789abcdef" for c in s)
+
+
+def test_span_with_otel_ids_export_import(reset_id_generator_state, monkeypatch):
     """Test that actual Span objects with OTEL IDs can export and be used as parent context."""
     init_test_logger(__name__)
-    os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
+    monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
 
-    # Test that OTEL generator should not share root_span_id
-    generator = get_id_generator()
-    assert generator.share_root_span_id() == False
+    assert get_id_generator().share_root_span_id() is False
 
     with logger.start_span(name="test") as span:
-        # Debug what we actually got
-        print(f"span_id: {span.span_id} (len={len(span.span_id)})")
-        print(f"root_span_id: {span.root_span_id} (len={len(span.root_span_id)})")
-
-        # Test that OTEL spans should not share span_id and root_span_id
+        # OTEL spans do not share span_id and root_span_id
         assert span.span_id != span.root_span_id
-
-        # Verify the span has OTEL-compatible IDs
         assert len(span.span_id) == 16  # 8-byte hex
         assert len(span.root_span_id) == 32  # 16-byte hex
-        assert all(c in "0123456789abcdef" for c in span.span_id)
-        assert all(c in "0123456789abcdef" for c in span.root_span_id)
+        assert _is_hex(span.span_id)
+        assert _is_hex(span.root_span_id)
 
-        # Export the span
-        exported = span.export()
-
-        # Parse it back
         from braintrust.span_identifier_v4 import SpanComponentsV4
 
-        imported = SpanComponentsV4.from_str(exported)
-
-        # Verify IDs are preserved exactly
+        imported = SpanComponentsV4.from_str(span.export())
         assert imported.span_id == span.span_id
         assert imported.root_span_id == span.root_span_id
 
 
-def test_span_with_uuid_ids_share_root_span_id(reset_id_generator_state):
+def test_span_with_uuid_ids_share_root_span_id(reset_id_generator_state, monkeypatch):
     """Test that legacy UUID generators share span_id as root_span_id for backwards compatibility."""
-    import os
-
-    # Opt into legacy UUID IDs (hex IDs are the default).
-    os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-    os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-    logger._state._reset_id_generator()
-
+    monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", "true")
     init_test_logger(__name__)
 
-    # Test that the legacy UUID generator shares root_span_id
-    generator = get_id_generator()
-    assert generator.share_root_span_id() == True
+    assert get_id_generator().share_root_span_id() is True
 
     with logger.start_span(name="test") as span:
-        # Test that UUID spans share span_id and root_span_id for backwards compatibility
         assert span.span_id == span.root_span_id
 
 
-def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_state):
+def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_state, monkeypatch):
     """Test that parent_context works correctly with OTEL-compatible IDs."""
-    os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
+    monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
     init_test_logger(__name__)
 
     # Create a span and export it
@@ -2976,11 +2948,8 @@ def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_sta
         original_span_id = parent_span.span_id
         original_root_span_id = parent_span.root_span_id
 
-    def is_hex(s):
-        return all(c in "0123456789abcdef" for c in s.lower())
-
-    assert is_hex(original_span_id)
-    assert is_hex(original_root_span_id)
+    assert _is_hex(original_span_id)
+    assert _is_hex(original_root_span_id)
 
     # Use the exported span as parent context
     with parent_context(parent_export):
@@ -3113,162 +3082,50 @@ def test_update_span_includes_span_id_and_root_span_id_from_export(with_memory_l
     assert updated_log["metadata"] == {"foo": "bar"}
 
 
-def test_get_exporter_returns_v4_by_default():
-    """Test that _get_exporter() returns SpanComponentsV4 by default (no env vars)."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        from braintrust.logger import _get_exporter
-        from braintrust.span_identifier_v4 import SpanComponentsV4
+@pytest.mark.parametrize(
+    ("env", "expected_version"),
+    [
+        pytest.param({}, 4, id="default"),
+        pytest.param({"BRAINTRUST_LEGACY_IDS": "true"}, 3, id="legacy-ids"),
+        pytest.param({"BRAINTRUST_OTEL_COMPAT": "true"}, 4, id="otel-compat"),
+        pytest.param({"BRAINTRUST_OTEL_COMPAT": "true", "BRAINTRUST_LEGACY_IDS": "true"}, 4, id="otel-compat-wins"),
+    ],
+)
+def test_export_format_follows_id_mode(monkeypatch, env, expected_version):
+    """_get_exporter(), Experiment.export(), and Logger.export() use V3 only in legacy UUID mode."""
+    from braintrust.logger import _get_exporter
+    from braintrust.span_identifier_v3 import SpanComponentsV3
+    from braintrust.span_identifier_v4 import SpanComponentsV4
 
-        exporter = _get_exporter()
-        assert exporter == SpanComponentsV4, "Should return V4 by default"
+    monkeypatch.delenv("BRAINTRUST_OTEL_COMPAT", raising=False)
+    monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
 
-
-def test_get_exporter_returns_v3_when_legacy_uuid():
-    """Test that _get_exporter() returns SpanComponentsV3 in legacy UUID mode."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-        from braintrust.logger import _get_exporter
-        from braintrust.span_identifier_v3 import SpanComponentsV3
-
-        exporter = _get_exporter()
-        assert exporter == SpanComponentsV3, "Should return V3 in legacy UUID mode"
-
-
-def test_get_exporter_returns_v4_when_otel_enabled():
-    """Test that _get_exporter() returns SpanComponentsV4 when OTEL_COMPAT is true."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
-        os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
-        from braintrust.logger import _get_exporter
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        exporter = _get_exporter()
-        assert exporter == SpanComponentsV4, "Should return V4 when OTEL_COMPAT=true"
-
-
-def test_experiment_export_uses_v4_by_default():
-    """Test that Experiment.export() uses V4 by default."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        experiment = init_test_exp("test-exp")
-        exported = experiment.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
-
-
-def test_experiment_export_uses_v3_in_legacy_mode():
-    """Test that Experiment.export() uses V3 in legacy UUID mode."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-        experiment = init_test_exp("test-exp")
-        exported = experiment.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 3, f"Expected V3 encoding (version=3), got version={version}"
-
-
-def test_experiment_export_respects_otel_compat_enabled():
-    """Test that Experiment.export() uses V4 when OTEL_COMPAT is true."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
-        os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
-        experiment = init_test_exp("test-exp")
-        exported = experiment.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
-
-
-def test_logger_export_uses_v4_by_default():
-    """Test that Logger.export() uses V4 by default."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ.pop("BRAINTRUST_LEGACY_IDS", None)
-        test_logger = init_test_logger(__name__)
-        exported = test_logger.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
-
-
-def test_logger_export_uses_v3_in_legacy_mode():
-    """Test that Logger.export() uses V3 in legacy UUID mode."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT", "BRAINTRUST_LEGACY_IDS"):
-        os.environ.pop("BRAINTRUST_OTEL_COMPAT", None)
-        os.environ["BRAINTRUST_LEGACY_IDS"] = "true"
-        test_logger = init_test_logger(__name__)
-        exported = test_logger.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 3, f"Expected V3 encoding (version=3), got version={version}"
-
-
-def test_logger_export_respects_otel_compat_enabled():
-    """Test that Logger.export() uses V4 when OTEL_COMPAT is true."""
-    with preserve_env_vars("BRAINTRUST_OTEL_COMPAT"):
-        os.environ["BRAINTRUST_OTEL_COMPAT"] = "true"
-        test_logger = init_test_logger(__name__)
-        exported = test_logger.export()
-
-        from braintrust.span_identifier_v4 import SpanComponentsV4
-
-        version = SpanComponentsV4.get_version(exported)
-        assert version == 4, f"Expected V4 encoding (version=4), got version={version}"
+    assert _get_exporter() is (SpanComponentsV3 if expected_version == 3 else SpanComponentsV4)
+    assert SpanComponentsV4.get_version(init_test_exp("test-exp").export()) == expected_version
+    assert SpanComponentsV4.get_version(init_test_logger(__name__).export()) == expected_version
 
 
 def test_register_otel_flush_callback():
-    """Test that register_otel_flush registers a callback correctly."""
-    import asyncio
-
+    """flush_otel() is a no-op until a callback is registered, then invokes it."""
     from braintrust import register_otel_flush
     from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
 
     init_test_logger(__name__)
     state = _internal_get_global_state()
+    asyncio.run(state.flush_otel())
 
-    # Track if callback was invoked
     callback_invoked = False
 
     async def mock_flush():
         nonlocal callback_invoked
         callback_invoked = True
 
-    # Register the callback
     register_otel_flush(mock_flush)
-
-    # Calling flush_otel should invoke the registered callback
     asyncio.run(state.flush_otel())
 
     assert callback_invoked is True
-
-
-def test_flush_otel_noop_when_no_callback():
-    """Test that flush_otel is a no-op when no callback is registered."""
-    import asyncio
-
-    from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
-
-    init_test_logger(__name__)
-    state = _internal_get_global_state()
-
-    # Should not throw even with no callback registered
-    asyncio.run(state.flush_otel())
 
 
 def test_register_otel_flush_permanently_disables_cache():
