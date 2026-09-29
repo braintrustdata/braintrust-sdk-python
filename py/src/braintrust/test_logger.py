@@ -1257,32 +1257,6 @@ def test_noop_permalink_issue_1837():
     assert span.link() == "https://www.braintrust.dev/noop-span"
 
 
-def test_span_log_with_simple_circular_reference(with_memory_logger):
-    """Test that span.log() with simple circular reference works gracefully."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Create simple circular reference
-        data = {"key": "value"}
-        data["self"] = data
-
-        # Should handle circular reference gracefully
-        span.log(
-            input={"test": "simple circular ref"},
-            output=data,
-        )
-
-    # Verify the log was recorded with circular reference replaced by placeholder
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert logged_output["key"] == "value"
-    # Circular reference should be replaced with a placeholder string
-    assert isinstance(logged_output["self"], str)
-    assert "circular" in logged_output["self"].lower()
-
-
 def test_span_log_accepts_pydantic_model_metadata(with_memory_logger):
     try:
         from pydantic import BaseModel
@@ -1321,25 +1295,57 @@ def _init_test_dataset():
     return Dataset(lazy_metadata=LazyValue(lambda: metadata, use_mutex=False))
 
 
-def test_span_log_accepts_model_dump_metadata(with_memory_logger):
-    logger = init_test_logger(__name__)
+def _span_log_metadata(metadata):
+    with init_test_logger(__name__).start_span(name="test_span") as span:
+        span.log(metadata=metadata)
 
-    with logger.start_span(name="test_span") as span:
-        span.log(metadata=_ModelDumpMetadata(foo="bar"))
+
+@pytest.mark.parametrize(
+    ("log_with_metadata", "metadata_field"),
+    [
+        pytest.param(_span_log_metadata, "metadata", id="span.log"),
+        pytest.param(
+            lambda m: init_test_logger(__name__).log(input="input", output="output", metadata=m),
+            "metadata",
+            id="logger.log",
+        ),
+        pytest.param(
+            lambda m: init_test_exp("test-experiment", "test-project").log(
+                input="input", output="output", scores={"score": 1}, metadata=m
+            ),
+            "metadata",
+            id="experiment.log",
+        ),
+        pytest.param(
+            lambda m: init_test_logger(__name__).log_feedback(id="event-id", scores={"score": 1}, metadata=m),
+            AUDIT_METADATA_FIELD,
+            id="logger.log_feedback",
+        ),
+        pytest.param(
+            lambda m: init_test_exp("test-experiment", "test-project").log_feedback(
+                id="event-id", scores={"score": 1}, metadata=m
+            ),
+            AUDIT_METADATA_FIELD,
+            id="experiment.log_feedback",
+        ),
+        pytest.param(
+            lambda m: _init_test_dataset().insert(input="input", expected="expected", metadata=m),
+            "metadata",
+            id="dataset.insert",
+        ),
+        pytest.param(
+            lambda m: _init_test_dataset().update(id="record-id", metadata=m),
+            "metadata",
+            id="dataset.update",
+        ),
+    ],
+)
+def test_logging_apis_accept_model_dump_metadata(with_memory_logger, log_with_metadata, metadata_field):
+    log_with_metadata(_ModelDumpMetadata(foo="bar"))
 
     logs = with_memory_logger.pop()
     assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
-
-
-def test_logger_log_accepts_model_dump_metadata(with_memory_logger):
-    logger = init_test_logger(__name__)
-
-    logger.log(input="input", output="output", metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
+    assert logs[0][metadata_field] == {"foo": "bar"}
 
 
 def test_logger_emit_log_without_active_span(with_memory_logger):
@@ -1560,56 +1566,6 @@ def test_logger_emit_log_rejects_invalid_level(with_memory_logger):
     assert with_memory_logger.pop() == []
 
 
-def test_experiment_log_accepts_model_dump_metadata(with_memory_logger):
-    experiment = init_test_exp("test-experiment", "test-project")
-
-    experiment.log(input="input", output="output", scores={"score": 1}, metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
-
-
-def test_logger_log_feedback_accepts_model_dump_metadata(with_memory_logger):
-    logger = init_test_logger(__name__)
-
-    logger.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
-
-
-def test_experiment_log_feedback_accepts_model_dump_metadata(with_memory_logger):
-    experiment = init_test_exp("test-experiment", "test-project")
-
-    experiment.log_feedback(id="event-id", scores={"score": 1}, metadata=_ModelDumpMetadata(user_id="user-1"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0][AUDIT_METADATA_FIELD] == {"user_id": "user-1"}
-
-
-def test_dataset_insert_accepts_model_dump_metadata(with_memory_logger):
-    dataset = _init_test_dataset()
-
-    dataset.insert(input="input", expected="expected", metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
-
-
-def test_dataset_update_accepts_model_dump_metadata(with_memory_logger):
-    dataset = _init_test_dataset()
-
-    dataset.update(id="record-id", metadata=_ModelDumpMetadata(foo="bar"))
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["metadata"] == {"foo": "bar"}
-
-
 def test_span_log_rejects_metadata_with_non_string_keys(with_memory_logger):
     logger = init_test_logger(__name__)
 
@@ -1631,33 +1587,39 @@ def test_span_log_rejects_metadata_that_serializes_to_non_dict(with_memory_logge
             span.log(metadata=BadMetadata())
 
 
-def test_span_log_with_nested_circular_reference(with_memory_logger):
-    """Test that span.log() with nested circular reference works gracefully."""
+def test_span_log_replaces_circular_references(with_memory_logger):
+    """Self- and nested circular references are replaced with a placeholder instead of raising."""
+    logger = init_test_logger(__name__)
+
+    self_ref = {"key": "value"}
+    self_ref["self"] = self_ref
+    page = {"page_number": 1, "content": "text"}
+    document = {"pages": [page]}
+    page["document"] = document
+
+    with logger.start_span(name="test_span") as span:
+        span.log(input=self_ref, output=document)
+
+    logs = with_memory_logger.pop()
+    assert len(logs) == 1
+    assert logs[0]["input"]["key"] == "value"
+    assert "circular" in logs[0]["input"]["self"].lower()
+    logged_page = logs[0]["output"]["pages"][0]
+    assert logged_page["page_number"] == 1
+    assert logged_page["content"] == "text"
+    assert "circular" in logged_page["document"].lower()
+
+
+def test_span_log_converts_non_finite_floats_to_strings(with_memory_logger):
+    """NaN and +/-Infinity are logged as strings for JSON compatibility."""
     logger = init_test_logger(__name__)
 
     with logger.start_span(name="test_span") as span:
-        # Create nested structure with circular reference
-        page = {"page_number": 1, "content": "text"}
-        document = {"pages": [page]}
-        page["document"] = document
+        span.log(output={"nan": float("nan"), "inf": float("inf"), "neg_inf": float("-inf")})
 
-        # Should handle circular reference gracefully
-        span.log(
-            input={"file": "test.pdf"},
-            output=document,
-        )
-
-    # Verify the log was recorded with nested circular reference handled
     logs = with_memory_logger.pop()
     assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert len(logged_output["pages"]) == 1
-    assert logged_output["pages"][0]["page_number"] == 1
-    assert logged_output["pages"][0]["content"] == "text"
-    # Circular reference should be replaced with a placeholder
-    assert isinstance(logged_output["pages"][0]["document"], str)
-    assert "circular" in logged_output["pages"][0]["document"].lower()
+    assert logs[0]["output"] == {"nan": "NaN", "inf": "Infinity", "neg_inf": "-Infinity"}
 
 
 def test_span_log_with_extremely_deep_nesting(with_memory_logger):
@@ -1692,51 +1654,8 @@ def test_span_log_with_extremely_deep_nesting(with_memory_logger):
     assert "nested" in logged_output
 
 
-def test_span_log_handles_nan_gracefully(with_memory_logger):
-    """Test that span.log() handles NaN values by converting them to "NaN" string."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Should NOT raise - should handle NaN gracefully
-        span.log(
-            input={"test": "input"},
-            output={"value": float("nan")},
-        )
-
-    # Verify the log was recorded with NaN handled appropriately
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["input"]["test"] == "input"
-    # NaN should be converted to "NaN" string for JSON compatibility
-    output_value = logs[0]["output"]["value"]
-    assert output_value == "NaN"
-
-
-def test_span_log_handles_infinity_gracefully(with_memory_logger):
-    """Test that span.log() handles Infinity values by converting them to "Infinity"/"-Infinity" strings."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Should NOT raise - should handle Infinity gracefully
-        span.log(
-            input={"test": "input"},
-            output={"value": float("inf"), "neg": float("-inf")},
-        )
-
-    # Verify the log was recorded with Infinity handled appropriately
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["input"]["test"] == "input"
-    # Infinity should be converted to string representations for JSON compatibility
-    assert logs[0]["output"]["value"] == "Infinity"
-    assert logs[0]["output"]["neg"] == "-Infinity"
-
-
 def test_span_log_handles_unstringifiable_object_gracefully(with_memory_logger):
-    """Test that span.log() should handle objects with bad __str__ gracefully without raising.
-
-    This test currently FAILS - it demonstrates the desired behavior after the fix.
-    """
+    """Test that span.log() handles objects whose __str__ and __repr__ raise without raising itself."""
     logger = init_test_logger(__name__)
 
     class BadStrObject:
@@ -2532,238 +2451,79 @@ def test_state_ignores_invalid_cache_size_env(monkeypatch, name, value):
     logger.BraintrustState()
 
 
-def test_masking_function_logger(with_memory_logger, with_simulate_login):
-    """Test that masking function is applied to logged data in Logger."""
-
-    def masking_function(data):
-        """Replace any occurrence of 'sensitive' with 'REDACTED'"""
-        if isinstance(data, str):
-            return data.replace("sensitive", "REDACTED")
-        elif isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if isinstance(v, str) and "sensitive" in v:
-                    masked[k] = v.replace("sensitive", "REDACTED")
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
-
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test logger
-    test_logger = init_test_logger("test_project")
-
-    # Log some data with sensitive information
-    test_logger.log(
-        input="This is a sensitive input",
-        output={"message": "This contains sensitive data", "count": 42},
-        metadata={"user": "sensitive_user", "safe": "normal_data"},
-    )
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-
-    # Verify masking was applied
-    assert log["input"] == "This is a REDACTED input"
-    assert log["output"]["message"] == "This contains REDACTED data"
-    assert log["output"]["count"] == 42
-    assert log["metadata"]["user"] == "REDACTED_user"
-    assert log["metadata"]["safe"] == "normal_data"
-
-    # Clean up
-    braintrust.set_masking_function(None)
+def _redact_secrets(data):
+    """Test masking function: redacts "secret" substrings and every "api_key" value."""
+    if isinstance(data, str):
+        return data.replace("secret", "REDACTED")
+    if isinstance(data, dict):
+        return {k: "REDACTED" if k == "api_key" else _redact_secrets(v) for k, v in data.items()}
+    if isinstance(data, list):
+        return [_redact_secrets(item) for item in data]
+    return data
 
 
-def test_masking_function_experiment(with_memory_logger, with_simulate_login):
-    """Test that masking function is applied to logged data in Experiment."""
-
-    def masking_function(data):
-        """Replace any occurrence of 'password' with 'XXX'"""
-        if isinstance(data, str):
-            return data.replace("password", "XXX")
-        elif isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if k == "password":
-                    # Mask the value when the key is "password"
-                    masked[k] = "XXX"
-                elif isinstance(v, str) and "password" in v:
-                    masked[k] = v.replace("password", "XXX")
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
-
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test experiment
-    from braintrust.logger import Experiment, ObjectMetadata, ProjectExperimentMetadata
-
-    project_metadata = ObjectMetadata(id="test_project", name="test_project", full_info=dict())
-    experiment_metadata = ObjectMetadata(id="test_experiment", name="test_experiment", full_info=dict())
-    metadata = ProjectExperimentMetadata(project=project_metadata, experiment=experiment_metadata)
-    lazy_metadata = LazyValue(lambda: metadata, use_mutex=False)
-    experiment = Experiment(lazy_metadata=lazy_metadata)
-
-    # Log some data with passwords
-    experiment.log(
-        input={"command": "login", "password": "secret123"},
-        output="Login successful with password validation",
-        scores={"accuracy": 0.95},
-    )
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-    assert len(logs) > 0  # Should have at least one log entry
-
-    # Debug: Print all logs to see what's there
-    print(f"Number of logs: {len(logs)}")
-    for i, log in enumerate(logs):
-        print(f"Log {i}: {log}")
-
-    # Find the main log entry (not the end span)
-    main_log = None
-    for log in logs:
-        if log.get("input") is not None:
-            main_log = log
-            break
-
-    assert main_log is not None, "Could not find main log entry"
-
-    # Verify masking was applied
-    assert main_log["input"]["command"] == "login"
-    assert main_log["input"]["password"] == "XXX"
-    assert main_log["output"] == "Login successful with XXX validation"
-    assert main_log["scores"]["accuracy"] == 0.95
-
-    # Clean up
-    braintrust.set_masking_function(None)
+_SENSITIVE_INPUT = {"api_key": "sk-12345", "query": "a secret query"}
+_SENSITIVE_OUTPUT = {"response": "secret data", "api_key": "sk-67890", "items": ["secret", 42]}
 
 
-def test_masking_function_propagates_to_spans(with_memory_logger, with_simulate_login):
-    """Test that masking function propagates from parent to child spans."""
-
-    def masking_function(data):
-        """Replace any 'api_key' field with 'HIDDEN'"""
-        if isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if k == "api_key":
-                    masked[k] = "HIDDEN"
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
-
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test logger
-    test_logger = init_test_logger("test_project")
-
-    # Create parent span
-    with test_logger.start_span(name="parent_span") as parent:
-        parent.log(input={"api_key": "sk-12345", "query": "test"})
-
-        # Create child span
+def _log_sensitive_data_to_child_span():
+    with init_test_logger("test_project").start_span(name="parent_span") as parent:
+        parent.log(input=_SENSITIVE_INPUT)
         with parent.start_span(name="child_span") as child:
-            child.log(output={"response": "data", "api_key": "sk-67890"})
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-
-    # Find parent and child logs
-    parent_log = next((log for log in logs if log.get("span_attributes", {}).get("name") == "parent_span"), None)
-    child_log = next((log for log in logs if log.get("span_attributes", {}).get("name") == "child_span"), None)
-
-    assert parent_log is not None
-    assert child_log is not None
-
-    # Verify masking was applied to both spans
-    assert parent_log["input"]["api_key"] == "HIDDEN"
-    assert parent_log["input"]["query"] == "test"
-    assert child_log["output"]["api_key"] == "HIDDEN"
-    assert child_log["output"]["response"] == "data"
+            child.log(output=_SENSITIVE_OUTPUT)
 
 
-def test_masking_function_dataset(with_memory_logger, with_simulate_login):
-    """Test that masking function is applied to dataset operations."""
+@pytest.mark.parametrize(
+    ("log_sensitive_data", "output_field", "unmasked"),
+    [
+        pytest.param(
+            lambda: init_test_logger("test_project").log(
+                input=_SENSITIVE_INPUT, output=_SENSITIVE_OUTPUT, metadata={"user": "secret_user", "safe": "normal"}
+            ),
+            "output",
+            {"metadata": {"user": "REDACTED_user", "safe": "normal"}},
+            id="logger",
+        ),
+        pytest.param(
+            lambda: init_test_exp("test_experiment", "test_project").log(
+                input=_SENSITIVE_INPUT, output=_SENSITIVE_OUTPUT, scores={"accuracy": 0.95}
+            ),
+            "output",
+            {"scores": {"accuracy": 0.95}},
+            id="experiment",
+        ),
+        pytest.param(_log_sensitive_data_to_child_span, "output", {}, id="child-span"),
+        pytest.param(
+            lambda: _init_test_dataset().insert(
+                input=_SENSITIVE_INPUT, expected=_SENSITIVE_OUTPUT, metadata={"admin": "secret"}
+            ),
+            "expected",
+            {"metadata": {"admin": "REDACTED"}},
+            id="dataset",
+        ),
+    ],
+)
+def test_masking_function_applies_to_logged_data(
+    with_memory_logger, with_simulate_login, log_sensitive_data, output_field, unmasked
+):
+    """The global masking function is applied to every logged field, including in child spans."""
+    braintrust.set_masking_function(_redact_secrets)
 
-    def masking_function(data):
-        """Replace email addresses with 'EMAIL_REDACTED'"""
-        if isinstance(data, dict):
-            masked = {}
-            for k, v in data.items():
-                if isinstance(v, str) and "@" in v and "." in v:
-                    # Simple email detection
-                    masked[k] = "EMAIL_REDACTED"
-                elif isinstance(v, dict):
-                    masked[k] = masking_function(v)
-                elif isinstance(v, list):
-                    masked[k] = [masking_function(item) if isinstance(item, (dict, list)) else item for item in v]
-                else:
-                    masked[k] = v
-            return masked
-        elif isinstance(data, list):
-            return [masking_function(item) if isinstance(item, (dict, list)) else item for item in data]
-        return data
+    log_sensitive_data()
 
-    # Set masking function globally
-    braintrust.set_masking_function(masking_function)
-
-    # Create test dataset
-    from braintrust.logger import Dataset, ObjectMetadata, ProjectDatasetMetadata
-
-    project_metadata = ObjectMetadata(id="test_project", name="test_project", full_info=dict())
-    dataset_metadata = ObjectMetadata(id="test_dataset", name="test_dataset", full_info=dict())
-    metadata = ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata)
-    lazy_metadata = LazyValue(lambda: metadata, use_mutex=False)
-    dataset = Dataset(lazy_metadata=lazy_metadata)
-
-    # Insert data with email addresses
-    dataset.insert(
-        input={"user": "john@example.com", "action": "login"},
-        expected={"status": "success", "email": "john@example.com"},
-        metadata={"admin_email": "admin@example.com"},
-    )
-
-    # Check the logged data
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    log = logs[0]
-
-    # Verify masking was applied
-    assert log["input"]["user"] == "EMAIL_REDACTED"
-    assert log["input"]["action"] == "login"
-    assert log["expected"]["status"] == "success"
-    assert log["expected"]["email"] == "EMAIL_REDACTED"
-    assert log["metadata"]["admin_email"] == "EMAIL_REDACTED"
-
-    # Clean up
-    braintrust.set_masking_function(None)
+    rows = with_memory_logger.pop()
+    input_row = next(row for row in rows if row.get("input"))
+    assert input_row["input"] == {"api_key": "REDACTED", "query": "a REDACTED query"}
+    assert next(row[output_field] for row in rows if row.get(output_field)) == {
+        "response": "REDACTED data",
+        "api_key": "REDACTED",
+        "items": ["REDACTED", 42],
+    }
+    for field, expected in unmasked.items():
+        assert input_row[field] == expected
+    serialized = json.dumps(rows)
+    assert "secret" not in serialized
+    assert "sk-" not in serialized
 
 
 def test_masking_function_with_error(with_memory_logger, with_simulate_login):
