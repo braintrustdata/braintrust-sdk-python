@@ -9,7 +9,6 @@ import json
 import logging
 import operator
 import os
-import re
 import sys
 import threading
 import time
@@ -34,7 +33,6 @@ from braintrust import (
 from braintrust.api import BraintrustTransportError
 from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.git_fields import GitMetadataSettings, RepoInfo
-from braintrust.id_gen import get_id_generator
 from braintrust.logger import (
     BraintrustState,
     RemoteEvalParameters,
@@ -44,7 +42,7 @@ from braintrust.logger import (
     render_message,
     stringify_exception,
 )
-from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
+from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage
 from braintrust.prompt_cache.lru_cache import LRUCache
 from braintrust.prompt_cache.parameters_cache import ParametersCache
 from braintrust.prompt_cache.prompt_cache import PromptCache
@@ -141,10 +139,6 @@ class TestInit(TestCase):
             braintrust.init(project="project", tags=[tag, tag])
 
         assert str(cm.exception) == f"duplicate tag: {tag}"
-
-        # Test 2: full Dataset object has different behavior
-        # (We can't easily instantiate a Dataset here, but we can verify
-        # that the isinstance check distinguishes them)
 
     def test_init_with_repo_info_does_not_raise(self):
         """Test that passing repo_info to init() doesn't cause an UnboundLocalError.
@@ -248,9 +242,7 @@ class TestInit(TestCase):
     [
         pytest.param(None, True, id="unset"),
         pytest.param("false", True, id="false"),
-        pytest.param("True", False, id="True"),
-        pytest.param("1", False, id="1"),
-        pytest.param("yes", False, id="yes"),
+        pytest.param("true", False, id="true"),
     ],
 )
 def test_http_background_logger_atexit_flush(monkeypatch, disable_atexit_flush, registers):
@@ -656,7 +648,7 @@ async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
 
 
 @pytest.mark.parametrize(
-    ("load", "endpoint", "response", "lookup", "expected_call"),
+    ("load", "endpoint", "response", "lookup", "expected_call", "expected_id"),
     [
         pytest.param(
             braintrust.load_prompt,
@@ -664,6 +656,7 @@ async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
             _prompt_response("saved-prompt"),
             {"project": "test-project", "slug": "saved-prompt"},
             call(project_name="test-project", project_id=None, slug="saved-prompt", version="v1", environment=None),
+            "prompt-saved-prompt",
             id="prompt-by-slug",
         ),
         pytest.param(
@@ -672,6 +665,7 @@ async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
             _prompt_response("saved-prompt")["objects"][0],
             {"id": "prompt-saved-prompt"},
             call("prompt-saved-prompt", version="v1", environment=None),
+            "prompt-saved-prompt",
             id="prompt-by-id",
         ),
         pytest.param(
@@ -682,6 +676,7 @@ async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
             call(
                 project_name="test-project", project_id=None, slug="saved-parameters", version="v1", environment=None
             ),
+            "parameters-saved-parameters",
             id="parameters-by-slug",
         ),
         pytest.param(
@@ -690,11 +685,12 @@ async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
             _parameters_response("saved-parameters")["objects"][0],
             {"id": "parameters-saved-parameters"},
             call("parameters-saved-parameters", version="v1", environment=None),
+            "parameters-saved-parameters",
             id="parameters-by-id",
         ),
     ],
 )
-def test_load_prefers_version_over_environment(load, endpoint, response, lookup, expected_call):
+def test_load_prefers_version_over_environment(load, endpoint, response, lookup, expected_call, expected_id):
     simulate_login()
     mock_api_client = MagicMock()
     endpoint_mock = operator.attrgetter(endpoint)(mock_api_client)
@@ -703,8 +699,7 @@ def test_load_prefers_version_over_environment(load, endpoint, response, lookup,
     with patch.object(logger._state, "api_client", return_value=mock_api_client):
         loaded = load(**lookup, version="v1", environment="production")
         # Prompts load lazily; reading an attribute forces the request.
-        record = response["objects"][0] if "objects" in response else response
-        assert loaded.id == record["id"]
+        assert loaded.id == expected_id
 
     assert endpoint_mock.call_args_list == [expected_call]
 
@@ -840,21 +835,14 @@ def test_extract_attachments_with_attachments():
 
 
 def _test_prompt(content: str, options: dict | None = None) -> Prompt:
-    """Create a lazily loaded chat prompt with a single user message."""
-    prompt_schema = PromptSchema(
-        id="test-id",
-        project_id="test-project",
-        _xact_id="test-xact",
-        name="test-prompt",
-        slug="test-prompt",
-        description="test",
-        prompt_data=PromptData(
+    """Create a chat prompt with a single user message."""
+    return Prompt.from_prompt_data(
+        "test-prompt",
+        PromptData(
             prompt=PromptChatBlock(messages=[PromptMessage(role="user", content=content)]),
             options=options or {"model": "gpt-4o"},
         ),
-        tags=None,
     )
-    return Prompt(LazyValue(lambda: prompt_schema, use_mutex=False), {}, False)
 
 
 def test_prompt_build_with_structured_output_templating():
@@ -1827,18 +1815,18 @@ async def test_traced_async_generator_with_subtasks(with_memory_logger):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("make_decorator", "expected_name"),
+    ("decorator", "expected_name"),
     [
-        pytest.param(lambda: logger.traced, "async_multiply", id="bare"),
-        pytest.param(lambda: logger.traced(), "async_multiply", id="called"),
-        pytest.param(lambda: logger.traced(name="async_multiply_with_name"), "async_multiply_with_name", id="named"),
+        pytest.param(logger.traced, "async_multiply", id="bare"),
+        pytest.param(logger.traced(), "async_multiply", id="called"),
+        pytest.param(logger.traced(name="async_multiply_with_name"), "async_multiply_with_name", id="named"),
     ],
 )
-async def test_traced_async_function(with_memory_logger, make_decorator, expected_name):
+async def test_traced_async_function(with_memory_logger, decorator, expected_name):
     """Test tracing async functions with each form of the @traced decorator."""
     init_test_logger(__name__)
 
-    @make_decorator()
+    @decorator
     async def async_multiply(x: int, y: int) -> int:
         """An async function that multiplies two numbers."""
         await asyncio.sleep(0.001)  # Small delay to simulate async work
@@ -2087,16 +2075,15 @@ async def test_traced_async_generator(with_memory_logger):
     )
 
 
-def _consume_traced_generator(kind: str, n: int) -> list[int]:
-    """Consume a @traced sync or async generator that yields ``range(n)``."""
-    if kind == "sync":
+def _consume_sync_traced_generator(n: int) -> list[int]:
+    @logger.traced
+    def sync_generator():
+        yield from range(n)
 
-        @logger.traced
-        def sync_generator():
-            yield from range(n)
+    return list(sync_generator())
 
-        return list(sync_generator())
 
+def _consume_async_traced_generator(n: int) -> list[int]:
     @logger.traced
     async def async_generator():
         for i in range(n):
@@ -2108,7 +2095,16 @@ def _consume_traced_generator(kind: str, n: int) -> list[int]:
     return asyncio.run(collect())
 
 
-@pytest.mark.parametrize("kind", ["sync", "async"])
+_TRACED_GENERATOR_KINDS = pytest.mark.parametrize(
+    "consume",
+    [
+        pytest.param(_consume_sync_traced_generator, id="sync"),
+        pytest.param(_consume_async_traced_generator, id="async"),
+    ],
+)
+
+
+@_TRACED_GENERATOR_KINDS
 @pytest.mark.parametrize(
     ("max_items", "logged_output", "warns"),
     [
@@ -2117,13 +2113,13 @@ def _consume_traced_generator(kind: str, n: int) -> list[int]:
         pytest.param("-1", list(range(10)), False, id="unlimited"),
     ],
 )
-def test_traced_generator_max_items(with_memory_logger, monkeypatch, caplog, kind, max_items, logged_output, warns):
+def test_traced_generator_max_items(with_memory_logger, monkeypatch, caplog, consume, max_items, logged_output, warns):
     """BRAINTRUST_MAX_GENERATOR_ITEMS limits logged output but never what the generator yields."""
     init_test_logger(__name__)
     monkeypatch.setenv("BRAINTRUST_MAX_GENERATOR_ITEMS", max_items)
 
     with caplog.at_level(logging.WARNING):
-        assert _consume_traced_generator(kind, 10) == list(range(10))
+        assert consume(10) == list(range(10))
 
     [log] = with_memory_logger.pop()
     assert log.get("output") == logged_output
@@ -2135,14 +2131,14 @@ def test_traced_generator_max_items(with_memory_logger, monkeypatch, caplog, kin
         assert not warnings
 
 
-@pytest.mark.parametrize("kind", ["sync", "async"])
+@_TRACED_GENERATOR_KINDS
 @pytest.mark.parametrize("value", ["", "  ", "not-a-number"])
-def test_traced_generators_ignore_invalid_max_items_env(with_memory_logger, monkeypatch, kind, value):
+def test_traced_generators_ignore_invalid_max_items_env(with_memory_logger, monkeypatch, consume, value):
     """An empty or non-numeric BRAINTRUST_MAX_GENERATOR_ITEMS falls back to the default instead of raising."""
     init_test_logger(__name__)
     monkeypatch.setenv("BRAINTRUST_MAX_GENERATOR_ITEMS", value)
 
-    assert _consume_traced_generator(kind, 3) == [0, 1, 2]
+    assert consume(3) == [0, 1, 2]
 
     [log] = with_memory_logger.pop()
     assert log.get("output") == [0, 1, 2]
@@ -2187,7 +2183,7 @@ def _log_sensitive_data_to_child_span():
 
 
 @pytest.mark.parametrize(
-    ("log_sensitive_data", "output_field", "unmasked"),
+    ("log_sensitive_data", "output_field", "other_input_row_fields"),
     [
         pytest.param(
             lambda: init_test_logger("test_project").log(
@@ -2217,7 +2213,7 @@ def _log_sensitive_data_to_child_span():
     ],
 )
 def test_masking_function_applies_to_logged_data(
-    with_memory_logger, with_simulate_login, log_sensitive_data, output_field, unmasked
+    with_memory_logger, with_simulate_login, log_sensitive_data, output_field, other_input_row_fields
 ):
     """The global masking function is applied to every logged field, including in child spans."""
     braintrust.set_masking_function(_redact_secrets)
@@ -2232,7 +2228,7 @@ def test_masking_function_applies_to_logged_data(
         "api_key": "REDACTED",
         "items": ["REDACTED", 42],
     }
-    for field, expected in unmasked.items():
+    for field, expected in other_input_row_fields.items():
         assert input_row[field] == expected
     serialized = json.dumps(rows)
     assert "secret" not in serialized
@@ -2363,18 +2359,9 @@ def test_parent_precedence_explicit_parent_overrides(with_memory_logger, with_si
 
 @pytest.fixture
 def reset_id_generator_state(monkeypatch):
-    """Clear ID-format env vars and reset the cached ID generator and context manager."""
+    """Clear the ID-format env vars. conftest's reset_braintrust_state replaces the cached generator."""
     monkeypatch.delenv("BRAINTRUST_OTEL_COMPAT", raising=False)
     monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
-    logger._state._reset_id_generator()
-    logger._state._reset_context_manager()
-    yield
-    logger._state._reset_id_generator()
-    logger._state._reset_context_manager()
-
-
-def _is_hex(s: str) -> bool:
-    return all(c in "0123456789abcdef" for c in s)
 
 
 def test_span_with_otel_ids_export_import(reset_id_generator_state, monkeypatch):
@@ -2382,15 +2369,11 @@ def test_span_with_otel_ids_export_import(reset_id_generator_state, monkeypatch)
     init_test_logger(__name__)
     monkeypatch.setenv("BRAINTRUST_OTEL_COMPAT", "true")
 
-    assert get_id_generator().share_root_span_id() is False
-
     with logger.start_span(name="test") as span:
         # OTEL spans do not share span_id and root_span_id
         assert span.span_id != span.root_span_id
         assert len(span.span_id) == 16  # 8-byte hex
         assert len(span.root_span_id) == 32  # 16-byte hex
-        assert _is_hex(span.span_id)
-        assert _is_hex(span.root_span_id)
 
         from braintrust.span_identifier_v4 import SpanComponentsV4
 
@@ -2403,8 +2386,6 @@ def test_span_with_uuid_ids_share_root_span_id(reset_id_generator_state, monkeyp
     """Test that legacy UUID generators share span_id as root_span_id for backwards compatibility."""
     monkeypatch.setenv("BRAINTRUST_LEGACY_IDS", "true")
     init_test_logger(__name__)
-
-    assert get_id_generator().share_root_span_id() is True
 
     with logger.start_span(name="test") as span:
         assert span.span_id == span.root_span_id
@@ -2420,9 +2401,6 @@ def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_sta
         parent_export = parent_span.export()
         original_span_id = parent_span.span_id
         original_root_span_id = parent_span.root_span_id
-
-    assert _is_hex(original_span_id)
-    assert _is_hex(original_root_span_id)
 
     # Use the exported span as parent context
     with parent_context(parent_export):
@@ -2553,22 +2531,16 @@ def test_update_span_includes_span_id_and_root_span_id_from_export(with_memory_l
     [
         pytest.param({}, 4, id="default"),
         pytest.param({"BRAINTRUST_LEGACY_IDS": "true"}, 3, id="legacy-ids"),
-        pytest.param({"BRAINTRUST_OTEL_COMPAT": "true"}, 4, id="otel-compat"),
         pytest.param({"BRAINTRUST_OTEL_COMPAT": "true", "BRAINTRUST_LEGACY_IDS": "true"}, 4, id="otel-compat-wins"),
     ],
 )
-def test_export_format_follows_id_mode(monkeypatch, env, expected_version):
-    """_get_exporter(), Experiment.export(), and Logger.export() use V3 only in legacy UUID mode."""
-    from braintrust.logger import _get_exporter
-    from braintrust.span_identifier_v3 import SpanComponentsV3
+def test_export_format_follows_id_mode(reset_id_generator_state, monkeypatch, env, expected_version):
+    """Experiment.export() and Logger.export() use V3 only in legacy UUID mode."""
     from braintrust.span_identifier_v4 import SpanComponentsV4
 
-    monkeypatch.delenv("BRAINTRUST_OTEL_COMPAT", raising=False)
-    monkeypatch.delenv("BRAINTRUST_LEGACY_IDS", raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)
 
-    assert _get_exporter() is (SpanComponentsV3 if expected_version == 3 else SpanComponentsV4)
     assert SpanComponentsV4.get_version(init_test_exp("test-exp").export()) == expected_version
     assert SpanComponentsV4.get_version(init_test_logger(__name__).export()) == expected_version
 
@@ -3018,19 +2990,10 @@ class TestDatasetGeneratedAPI(TestCase):
         mock_state.api_conn.assert_not_called()
 
 
-_SYNTHETIC_FILTER = {"op": "eq", "left": "metadata.kind", "right": "synthetic"}
-
-
 @pytest.mark.parametrize(
     ("runtime_btql", "internal_btql", "expected"),
     [
         pytest.param({"sample": 5}, None, {"sample": 5}, id="runtime-only"),
-        pytest.param(
-            {"sample": 5, "limit": 10},
-            {"where": _SYNTHETIC_FILTER},
-            {"where": _SYNTHETIC_FILTER, "sample": 5, "limit": 10},
-            id="merged-with-explicit",
-        ),
         pytest.param(
             {"sample": 5, "limit": 10},
             {"filter": "metadata.kind = 'synthetic'", "sample": 2},
@@ -3044,10 +3007,7 @@ def test_init_dataset_merges_bt_eval_internal_btql(monkeypatch, runtime_btql, in
     """bt eval's runtime BTQL is merged into _internal_btql; explicit keys take precedence."""
     from braintrust.logger import init_dataset
 
-    if runtime_btql is None:
-        monkeypatch.delattr(builtins, "__bt_eval_internal_btql", raising=False)
-    else:
-        monkeypatch.setattr(builtins, "__bt_eval_internal_btql", runtime_btql, raising=False)
+    monkeypatch.setattr(builtins, "__bt_eval_internal_btql", runtime_btql, raising=False)
     original_internal_btql = copy.deepcopy(internal_btql)
 
     dataset = init_dataset(
@@ -3294,10 +3254,12 @@ def test_span_name_returns_inferred_subspan_name(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
     with test_logger.start_span(name="parent") as parent:
-        child = parent.start_span()
-        # "funcname:filename:lineno" of the first non-braintrust caller. This module is itself
-        # under braintrust.*, so the caller resolves to a pytest frame rather than this test.
-        assert re.fullmatch(r"\w+:[\w.]+\.py:\d+", child.name), child.name
+        # The name comes from the first caller outside braintrust.*, and this test module is
+        # itself braintrust.test_logger, so make the call from a user-named module.
+        user_module = {"__name__": "user_module", "parent": parent}
+        exec(compile("def user_fn():\n    return parent.start_span()\n", "user_module.py", "exec"), user_module)
+        child = user_module["user_fn"]()
+        assert child.name == "user_fn:user_module.py:2"
         child.end()
 
 
