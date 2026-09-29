@@ -6,6 +6,7 @@ import importlib
 import inspect
 import json
 import logging
+import operator
 import os
 import sys
 import threading
@@ -40,7 +41,6 @@ from braintrust.logger import (
     _extract_attachments,
     parent_context,
     render_message,
-    render_mustache,
     stringify_exception,
 )
 from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
@@ -544,17 +544,28 @@ def test_load_prompt_does_not_fall_back_to_cache_for_non_transient_errors(server
             _ = second_prompt.slug
 
 
-def test_load_prompt_falls_back_to_cache_for_transient_wrapped_transport_errors():
-    simulate_login()
-    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    request_client = MagicMock()
-    server_error = BraintrustTransportError(
+def _wrapped_transport_error() -> BraintrustTransportError:
+    error = BraintrustTransportError(
         method="GET",
         url="https://api.example.com/v1/prompt",
         attempts=1,
         retryable=False,
     )
-    server_error.__cause__ = ConnectionError("custom adapter exhausted its retries")
+    error.__cause__ = ConnectionError("custom adapter exhausted its retries")
+    return error
+
+
+@pytest.mark.parametrize(
+    "server_error",
+    [
+        pytest.param(_http_error(500), id="http-500"),
+        pytest.param(_wrapped_transport_error(), id="wrapped-connection-error"),
+    ],
+)
+def test_load_prompt_falls_back_to_same_api_keys_cache_for_transient_errors(server_error):
+    simulate_login()
+    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
+    request_client = MagicMock()
     request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), server_error]
 
     with (
@@ -575,30 +586,7 @@ def test_load_prompt_falls_back_to_cache_for_transient_wrapped_transport_errors(
         )
         assert cached_prompt.slug == "saved-prompt"
 
-
-def test_load_prompt_uses_same_api_keys_cache_for_transient_errors():
-    simulate_login()
-    prompt_cache = PromptCache(memory_cache=LRUCache(max_size=10))
-    request_client = MagicMock()
-    request_client.openapi.prompts.get_prompt.side_effect = [_prompt_response("saved-prompt"), _http_error(500)]
-
-    with (
-        patch.object(logger._state, "_prompt_cache", prompt_cache),
-        patch.object(logger, "_login_loader_client", return_value=request_client),
-    ):
-        first_prompt = braintrust.load_prompt(
-            project="test-project",
-            slug="saved-prompt",
-            api_key="prompt-api-key",
-        )
-        assert first_prompt.slug == "saved-prompt"
-
-        cached_prompt = braintrust.load_prompt(
-            project="test-project",
-            slug="saved-prompt",
-            api_key="prompt-api-key",
-        )
-        assert cached_prompt.slug == "saved-prompt"
+    assert request_client.openapi.prompts.get_prompt.call_count == 2
 
 
 def test_load_prompt_does_not_use_another_api_keys_transient_fallback_cache():
@@ -677,573 +665,348 @@ async def test_load_prompt_async_loads_prompts_in_parallel(with_simulate_login):
     assert mock_api_client.prompts.get_prompt.call_count == 2
 
 
-class TestLogger(TestCase):
-    def test_load_prompt_prefers_version_over_environment_for_project_slug(self):
-        mock_api_client = MagicMock()
-        mock_api_client.prompts.get_prompt.return_value = {
-            "objects": [
-                {
-                    "id": "prompt-123",
-                    "project_id": "project-123",
-                    "name": "Saved prompt",
-                    "slug": "saved-prompt",
-                    "_xact_id": "v1",
-                    "description": None,
-                    "tags": None,
-                    "prompt_data": {
-                        "prompt": {
-                            "type": "chat",
-                            "messages": [{"role": "user", "content": "Hello"}],
-                        },
-                        "options": {"model": "gpt-5-mini"},
-                    },
-                }
-            ]
-        }
+@pytest.mark.parametrize(
+    ("load", "endpoint", "response", "lookup", "expected_call"),
+    [
+        pytest.param(
+            braintrust.load_prompt,
+            "prompts.get_prompt",
+            _prompt_response("saved-prompt"),
+            {"project": "test-project", "slug": "saved-prompt"},
+            call(project_name="test-project", project_id=None, slug="saved-prompt", version="v1", environment=None),
+            id="prompt-by-slug",
+        ),
+        pytest.param(
+            braintrust.load_prompt,
+            "prompts.get_prompt_id",
+            _prompt_response("saved-prompt")["objects"][0],
+            {"id": "prompt-saved-prompt"},
+            call("prompt-saved-prompt", version="v1", environment=None),
+            id="prompt-by-id",
+        ),
+        pytest.param(
+            braintrust.load_parameters,
+            "functions.get_function",
+            _parameters_response("saved-parameters"),
+            {"project": "test-project", "slug": "saved-parameters"},
+            call(
+                project_name="test-project", project_id=None, slug="saved-parameters", version="v1", environment=None
+            ),
+            id="parameters-by-slug",
+        ),
+        pytest.param(
+            braintrust.load_parameters,
+            "functions.get_function_id",
+            _parameters_response("saved-parameters")["objects"][0],
+            {"id": "parameters-saved-parameters"},
+            call("parameters-saved-parameters", version="v1", environment=None),
+            id="parameters-by-id",
+        ),
+    ],
+)
+def test_load_prefers_version_over_environment(load, endpoint, response, lookup, expected_call):
+    simulate_login()
+    mock_api_client = MagicMock()
+    endpoint_mock = operator.attrgetter(endpoint)(mock_api_client)
+    endpoint_mock.return_value = response
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            prompt = braintrust.load_prompt(
-                project="test-project",
-                slug="saved-prompt",
-                version="v1",
-                environment="production",
-            )
-            assert prompt.slug == "saved-prompt"
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
+        loaded = load(**lookup, version="v1", environment="production")
+        # Prompts load lazily; reading an attribute forces the request.
+        record = response["objects"][0] if "objects" in response else response
+        assert loaded.id == record["id"]
 
-        mock_api_client.prompts.get_prompt.assert_called_once_with(
-            project_name="test-project",
-            project_id=None,
-            slug="saved-prompt",
-            version="v1",
-            environment=None,
-        )
+    assert endpoint_mock.call_args_list == [expected_call]
 
-    def test_load_prompt_prefers_version_over_environment_for_id(self):
-        mock_api_client = MagicMock()
-        mock_api_client.prompts.get_prompt_id.return_value = {
-            "id": "prompt-123",
-            "project_id": "project-123",
-            "name": "Saved prompt",
-            "slug": "saved-prompt",
-            "_xact_id": "v1",
-            "description": None,
-            "tags": None,
-            "prompt_data": {
-                "prompt": {
-                    "type": "chat",
-                    "messages": [{"role": "user", "content": "Hello"}],
-                },
-                "options": {"model": "gpt-5-mini"},
-            },
-        }
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            prompt = braintrust.load_prompt(
-                id="prompt-123",
-                version="v1",
-                environment="production",
-            )
-            assert prompt.id == "prompt-123"
+def test_load_parameters_returns_remote_object():
+    simulate_login()
+    mock_api_client = MagicMock()
+    mock_api_client.functions.get_function.return_value = _parameters_response("saved-parameters")
 
-        mock_api_client.prompts.get_prompt_id.assert_called_once_with(
-            "prompt-123",
-            version="v1",
-            environment=None,
-        )
+    with patch.object(logger._state, "api_client", return_value=mock_api_client):
+        parameters = braintrust.load_parameters(project="test-project", slug="saved-parameters")
 
-    def test_load_parameters_returns_remote_object(self):
-        mock_api_client = MagicMock()
-        mock_api_client.functions.get_function.return_value = {
-            "objects": [
-                {
-                    "id": "params-123",
-                    "project_id": "project-123",
-                    "name": "Saved parameters",
-                    "slug": "saved-parameters",
-                    "_xact_id": "v1",
-                    "function_data": {
-                        "type": "parameters",
-                        "data": {"prefix": "hello"},
-                        "__schema": {
-                            "type": "object",
-                            "properties": {
-                                "prefix": {"type": "string", "default": "hello"},
-                            },
-                            "additionalProperties": True,
-                        },
-                    },
-                }
-            ]
-        }
+    assert isinstance(parameters, RemoteEvalParameters)
+    assert parameters.id == "parameters-saved-parameters"
+    assert parameters.version == "v1"
+    assert parameters.data == {"prefix": "saved-parameters"}
+    cache_namespace = logger._resolve_loader_login_options(
+        app_url=None,
+        api_key=None,
+        org_name=None,
+    ).cache_namespace
+    cached = logger._state._parameters_cache.get(
+        slug="saved-parameters",
+        version="latest",
+        project_name="test-project",
+        cache_namespace=cache_namespace,
+    )
+    assert cached.id == "parameters-saved-parameters"
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            parameters = braintrust.load_parameters(project="test-project", slug="saved-parameters")
 
-        assert isinstance(parameters, RemoteEvalParameters)
-        assert parameters.id == "params-123"
-        assert parameters.version == "v1"
-        assert parameters.data == {"prefix": "hello"}
-        cache_namespace = logger._resolve_loader_login_options(
-            app_url=None,
-            api_key=None,
-            org_name=None,
-        ).cache_namespace
-        assert (
-            logger._state._parameters_cache.get(
-                slug="saved-parameters",
-                version="latest",
-                project_name="test-project",
-                cache_namespace=cache_namespace,
-            ).id
-            == "params-123"
-        )
+def test_extract_attachments_no_op():
+    attachments: list[BaseAttachment] = []
 
-    def test_load_parameters_prefers_version_over_environment_for_project_slug(self):
-        mock_api_client = MagicMock()
-        mock_api_client.functions.get_function.return_value = {
-            "objects": [
-                {
-                    "id": "params-123",
-                    "project_id": "project-123",
-                    "name": "Saved parameters",
-                    "slug": "saved-parameters",
-                    "_xact_id": "v1",
-                    "function_data": {
-                        "type": "parameters",
-                        "data": {"prefix": "hello"},
-                        "__schema": {
-                            "type": "object",
-                            "properties": {
-                                "prefix": {"type": "string", "default": "hello"},
-                            },
-                            "additionalProperties": True,
-                        },
-                    },
-                }
-            ]
-        }
+    _extract_attachments({}, attachments)
+    assert len(attachments) == 0
 
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            parameters = braintrust.load_parameters(
-                project="test-project",
-                slug="saved-parameters",
-                version="v1",
-                environment="production",
-            )
+    event = {"foo": "foo", "bar": None, "baz": [1, 2, 3]}
+    baz = event["baz"]
+    _extract_attachments(event, attachments)
+    assert len(attachments) == 0
+    assert event["baz"] is baz
+    assert event == {"foo": "foo", "bar": None, "baz": [1, 2, 3]}
 
-        assert parameters.version == "v1"
-        mock_api_client.functions.get_function.assert_called_once_with(
-            project_name="test-project",
-            project_id=None,
-            slug="saved-parameters",
-            version="v1",
-            environment=None,
-        )
 
-    def test_load_parameters_prefers_version_over_environment_for_id(self):
-        mock_api_client = MagicMock()
-        mock_api_client.functions.get_function_id.return_value = {
-            "id": "params-123",
-            "project_id": "project-123",
-            "name": "Saved parameters",
-            "slug": "saved-parameters",
-            "_xact_id": "v1",
-            "function_data": {
-                "type": "parameters",
-                "data": {"prefix": "hello"},
-                "__schema": {
-                    "type": "object",
-                    "properties": {
-                        "prefix": {"type": "string", "default": "hello"},
-                    },
-                    "additionalProperties": True,
-                },
-            },
-        }
-
-        simulate_login()
-        with patch.object(logger._state, "api_client", return_value=mock_api_client):
-            parameters = braintrust.load_parameters(
-                id="params-123",
-                version="v1",
-                environment="production",
-            )
-
-        assert parameters.id == "params-123"
-        mock_api_client.functions.get_function_id.assert_called_once_with(
-            "params-123",
-            version="v1",
-            environment=None,
-        )
-
-    def test_extract_attachments_no_op(self):
-        attachments: list[BaseAttachment] = []
-
-        _extract_attachments({}, attachments)
-        self.assertEqual(len(attachments), 0)
-
-        event = {"foo": "foo", "bar": None, "baz": [1, 2, 3]}
-        _extract_attachments(event, attachments)
-        self.assertEqual(len(attachments), 0)
-        # Same instance
-        self.assertIs(event["baz"], event["baz"])
-        # Same content
-        self.assertEqual(event, {"foo": "foo", "bar": None, "baz": [1, 2, 3]})
-
-    def test_extract_attachments_with_attachments(self):
-        attachment1 = Attachment(
-            data=b"data",
-            filename="filename",
-            content_type="text/plain",
-        )
-        attachment2 = Attachment(
-            data=b"data2",
-            filename="filename2",
-            content_type="text/plain",
-        )
-        attachment3 = ExternalAttachment(
-            url="s3://bucket/path/to/key.pdf",
-            filename="filename3",
-            content_type="application/pdf",
-        )
-        date = "2024-10-23T05:02:48.796Z"
-        event = {
-            "foo": "bar",
-            "baz": [1, 2],
-            "attachment1": attachment1,
+def test_extract_attachments_with_attachments():
+    attachment1 = Attachment(
+        data=b"data",
+        filename="filename",
+        content_type="text/plain",
+    )
+    attachment2 = Attachment(
+        data=b"data2",
+        filename="filename2",
+        content_type="text/plain",
+    )
+    attachment3 = ExternalAttachment(
+        url="s3://bucket/path/to/key.pdf",
+        filename="filename3",
+        content_type="application/pdf",
+    )
+    date = "2024-10-23T05:02:48.796Z"
+    event = {
+        "foo": "bar",
+        "baz": [1, 2],
+        "attachment1": attachment1,
+        "attachment3": attachment3,
+        "nested": {
+            "attachment2": attachment2,
             "attachment3": attachment3,
-            "nested": {
-                "attachment2": attachment2,
-                "attachment3": attachment3,
-                "info": "another string",
-                "anArray": [
-                    attachment1,
-                    None,
-                    "string",
-                    attachment2,
-                    attachment1,
-                    attachment3,
-                    attachment3,
-                ],
-            },
-            "null": None,
-            "undefined": None,
-            "date": date,
-            "f": "Math.max",
-            "empty": {},
-        }
-        saved_nested = event["nested"]
-
-        attachments: list[BaseAttachment] = []
-        _extract_attachments(event, attachments)
-
-        self.assertEqual(
-            attachments,
-            [
+            "info": "another string",
+            "anArray": [
                 attachment1,
-                attachment3,
-                attachment2,
-                attachment3,
-                attachment1,
+                None,
+                "string",
                 attachment2,
                 attachment1,
                 attachment3,
                 attachment3,
             ],
-        )
-        self.assertIs(attachments[0], attachment1)
-        self.assertIs(attachments[1], attachment3)
-        self.assertIs(attachments[2], attachment2)
-        self.assertIs(attachments[3], attachment3)
-        self.assertIs(attachments[4], attachment1)
-        self.assertIs(attachments[5], attachment2)
-        self.assertIs(attachments[6], attachment1)
-        self.assertIs(attachments[7], attachment3)
-        self.assertIs(attachments[8], attachment3)
+        },
+        "null": None,
+        "undefined": None,
+        "date": date,
+        "f": "Math.max",
+        "empty": {},
+    }
+    saved_nested = event["nested"]
 
-        self.assertIs(event["nested"], saved_nested)
+    attachments: list[BaseAttachment] = []
+    _extract_attachments(event, attachments)
 
-        self.assertEqual(
-            event,
-            {
-                "foo": "bar",
-                "baz": [1, 2],
-                "attachment1": attachment1.reference,
-                "attachment3": attachment3.reference,
-                "nested": {
-                    "attachment2": attachment2.reference,
-                    "attachment3": attachment3.reference,
-                    "info": "another string",
-                    "anArray": [
-                        attachment1.reference,
-                        None,
-                        "string",
-                        attachment2.reference,
-                        attachment1.reference,
-                        attachment3.reference,
-                        attachment3.reference,
-                    ],
-                },
-                "null": None,
-                "undefined": None,
-                "date": date,
-                "f": "Math.max",
-                "empty": {},
-            },
-        )
+    expected = [
+        attachment1,
+        attachment3,
+        attachment2,
+        attachment3,
+        attachment1,
+        attachment2,
+        attachment1,
+        attachment3,
+        attachment3,
+    ]
+    assert len(attachments) == len(expected)
+    assert all(actual is want for actual, want in zip(attachments, expected))
 
-    def test_prompt_build_with_structured_output_templating(self):
-        self.maxDiff = None
-        prompt = Prompt(
-            LazyValue(
-                lambda: PromptSchema(
-                    id="id",
-                    project_id="project_id",
-                    _xact_id="_xact_id",
-                    name="name",
-                    slug="slug",
-                    description="description",
-                    prompt_data=PromptData(
-                        prompt=PromptChatBlock(
-                            messages=[
-                                PromptMessage(
-                                    role="system",
-                                    content="Please compute {{input.expression}} and return the result in JSON.",
-                                ),
-                            ],
-                        ),
-                        options={
-                            "model": "gpt-4o",
-                            "params": {
-                                "response_format": {
-                                    "type": "json_schema",
-                                    "json_schema": {
-                                        "name": "schema",
-                                        "schema": "{{input.schema}}",
-                                        "strict": True,
-                                    },
-                                },
-                            },
-                        },
-                    ),
-                    tags=None,
-                ),
-                use_mutex=True,
-            ),
-            {},
-            False,
-        )
+    assert event["nested"] is saved_nested
 
-        result = prompt.build(
-            **{
-                "input": {
-                    "expression": "2 + 3",
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "final_answer": {
-                                "type": "string",
-                            },
-                        },
-                        "required": ["final_answer"],
-                        "additionalProperties": False,
-                    },
-                },
-            }
-        )
-
-        self.assertEqual(
-            result["response_format"],
-            {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "schema",
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "final_answer": {"type": "string"},
-                        },
-                        "required": ["final_answer"],
-                        "additionalProperties": False,
-                    },
-                    "strict": True,
-                },
-            },
-        )
-
-    def test_lint_template_valid_variables(self):
-        """Test lint_template passes with all variables present."""
-
-        template = "Hello {{name}}, you are {{age}} years old"
-        args = {"name": "John", "age": 30}
-
-        # Should not raise any exception
-        try:
-            render_mustache(template, args, strict=True)
-        except ValueError:
-            self.fail("lint_template raised ValueError unexpectedly")
-
-    def test_lint_template_missing_variable(self):
-        template = "Hello {{name}}, you are {{age}} years old"
-        args = {"name": "John"}  # Missing 'age'
-
-        with self.assertRaises(ValueError) as context:
-            render_mustache(template, args, strict=True)
-
-        self.assertIn("Template rendering failed: Could not find key 'age'", str(context.exception))
-
-    def test_prompt_build_strict_mode_enabled(self):
-        """Test Prompt.build with strict mode enabled validates variables."""
-        from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
-
-        # Create prompt using the proper structure
-        prompt_schema = PromptSchema(
-            id="test-id",
-            project_id="test-project",
-            _xact_id="test-xact",
-            name="test-prompt",
-            slug="test-prompt",
-            description="test",
-            prompt_data=PromptData(
-                prompt=PromptChatBlock(
-                    messages=[PromptMessage(role="user", content="Hello {{name}}, please help with {{task}}")]
-                ),
-                options={"model": "gpt-4o"},
-            ),
-            tags=None,
-        )
-        lazy_prompt = LazyValue(lambda: prompt_schema, use_mutex=False)
-        prompt = Prompt(lazy_prompt, {}, False)
-
-        # Valid build with all variables
-        result = prompt.build(name="John", task="coding", strict=True)
-        self.assertEqual(result["messages"][0]["content"], "Hello John, please help with coding")
-
-        # Invalid build missing variables should raise ValueError
-        with self.assertRaises(ValueError) as context:
-            prompt.build(name="John", strict=True)  # Missing 'task'
-
-        self.assertIn("Template rendering failed: Could not find key 'task'", str(context.exception))
-
-    def test_prompt_build_strict_mode_disabled(self):
-        """Test Prompt.build with strict mode disabled allows missing variables."""
-        from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
-
-        prompt_schema = PromptSchema(
-            id="test-id",
-            project_id="test-project",
-            _xact_id="test-xact",
-            name="test-prompt",
-            slug="test-prompt",
-            description="test",
-            prompt_data=PromptData(
-                prompt=PromptChatBlock(
-                    messages=[PromptMessage(role="user", content="Hello {{name}}, please help with {{task}}")]
-                ),
-                options={"model": "gpt-4o"},
-            ),
-            tags=None,
-        )
-        lazy_prompt = LazyValue(lambda: prompt_schema, use_mutex=False)
-        prompt = Prompt(lazy_prompt, {}, False)
-
-        # Should work even with missing variables when strict=False (default)
-        result = prompt.build(name="John")
-        # Missing variables render as empty strings in chevron
-        self.assertEqual(result["messages"][0]["content"], "Hello John, please help with ")
-
-    def _create_test_prompt(self, content: str):
-        """Helper to create a test prompt with the proper structure."""
-        from braintrust.prompt import PromptChatBlock, PromptData, PromptMessage, PromptSchema
-
-        prompt_schema = PromptSchema(
-            id="test-id",
-            project_id="test-project",
-            _xact_id="test-xact",
-            name="test-prompt",
-            slug="test-prompt",
-            description="test",
-            prompt_data=PromptData(
-                prompt=PromptChatBlock(messages=[PromptMessage(role="user", content=content)]),
-                options={"model": "gpt-4o"},
-            ),
-            tags=None,
-        )
-        lazy_prompt = LazyValue(lambda: prompt_schema, use_mutex=False)
-        return Prompt(lazy_prompt, {}, False)
-
-    def test_prompt_build_nested_variables_strict(self):
-        """Test Prompt.build with nested object variables in strict mode."""
-        prompt = self._create_test_prompt("User {{user.name}} with email {{user.profile.email}}")
-
-        # Valid nested data
-        user_data = {"user": {"name": "John", "profile": {"email": "john@example.com"}}}
-        result = prompt.build(strict=True, **user_data)
-        expected = "User John with email john@example.com"
-        self.assertEqual(result["messages"][0]["content"], expected)
-
-        # Missing nested property should fail in strict mode
-        invalid_data = {"user": {"name": "John"}}  # Missing profile.email
-        with self.assertRaises(ValueError):
-            prompt.build(strict=True, **invalid_data)
-
-    def test_prompt_build_array_variables_strict(self):
-        """Test Prompt.build with array variables in strict mode."""
-        prompt = self._create_test_prompt("Items: {{items.0}}, {{items.1}}")
-
-        # Valid array with enough items
-        result = prompt.build(items=["first", "second", "third"], strict=True)
-        self.assertEqual(result["messages"][0]["content"], "Items: first, second")
-
-        # Array too short should fail in strict mode
-        with self.assertRaises(ValueError):
-            prompt.build(items=["only_one"], strict=True)
-
-    def test_render_message_with_file_content_parts(self):
-        """Test render_message with mixed text, image, and file content parts including all file fields."""
-        message = PromptMessage(
-            role="user",
-            content=[
-                {"type": "text", "text": "Here is a {{item}}:"},
-                {"type": "image_url", "image_url": {"url": "{{image_url}}"}},
-                {
-                    "type": "file",
-                    "file": {
-                        "file_data": "{{file_data}}",
-                        "file_id": "{{file_id}}",
-                        "filename": "{{filename}}",
-                    },
-                },
+    assert event == {
+        "foo": "bar",
+        "baz": [1, 2],
+        "attachment1": attachment1.reference,
+        "attachment3": attachment3.reference,
+        "nested": {
+            "attachment2": attachment2.reference,
+            "attachment3": attachment3.reference,
+            "info": "another string",
+            "anArray": [
+                attachment1.reference,
+                None,
+                "string",
+                attachment2.reference,
+                attachment1.reference,
+                attachment3.reference,
+                attachment3.reference,
             ],
-        )
+        },
+        "null": None,
+        "undefined": None,
+        "date": date,
+        "f": "Math.max",
+        "empty": {},
+    }
 
-        rendered = render_message(
-            lambda template: (
-                template.replace("{{item}}", "document")
-                .replace("{{image_url}}", "https://example.com/image.png")
-                .replace("{{file_data}}", "base64data")
-                .replace("{{file_id}}", "file-456")
-                .replace("{{filename}}", "report.pdf")
-            ),
-            message,
-        )
 
-        assert rendered["content"] == [
-            {"type": "text", "text": "Here is a document:"},
-            {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}},
+def _test_prompt(content: str, options: dict | None = None) -> Prompt:
+    """Create a lazily loaded chat prompt with a single user message."""
+    prompt_schema = PromptSchema(
+        id="test-id",
+        project_id="test-project",
+        _xact_id="test-xact",
+        name="test-prompt",
+        slug="test-prompt",
+        description="test",
+        prompt_data=PromptData(
+            prompt=PromptChatBlock(messages=[PromptMessage(role="user", content=content)]),
+            options=options or {"model": "gpt-4o"},
+        ),
+        tags=None,
+    )
+    return Prompt(LazyValue(lambda: prompt_schema, use_mutex=False), {}, False)
+
+
+def test_prompt_build_with_structured_output_templating():
+    prompt = _test_prompt(
+        "Please compute {{input.expression}} and return the result in JSON.",
+        options={
+            "model": "gpt-4o",
+            "params": {
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "schema",
+                        "schema": "{{input.schema}}",
+                        "strict": True,
+                    },
+                },
+            },
+        },
+    )
+    schema = {
+        "type": "object",
+        "properties": {
+            "final_answer": {"type": "string"},
+        },
+        "required": ["final_answer"],
+        "additionalProperties": False,
+    }
+
+    result = prompt.build(input={"expression": "2 + 3", "schema": schema})
+
+    assert result["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "schema",
+            "schema": schema,
+            "strict": True,
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    ("template", "args", "expected"),
+    [
+        pytest.param(
+            "Hello {{name}}, please help with {{task}}",
+            {"name": "John", "task": "coding"},
+            "Hello John, please help with coding",
+            id="flat",
+        ),
+        pytest.param(
+            "User {{user.name}} with email {{user.profile.email}}",
+            {"user": {"name": "John", "profile": {"email": "john@example.com"}}},
+            "User John with email john@example.com",
+            id="nested",
+        ),
+        pytest.param(
+            "Items: {{items.0}}, {{items.1}}",
+            {"items": ["first", "second", "third"]},
+            "Items: first, second",
+            id="array",
+        ),
+    ],
+)
+def test_prompt_build_strict_renders_present_variables(template, args, expected):
+    result = _test_prompt(template).build(strict=True, **args)
+    assert result["messages"][0]["content"] == expected
+
+
+@pytest.mark.parametrize(
+    ("template", "args", "error"),
+    [
+        pytest.param(
+            "Hello {{name}}, please help with {{task}}",
+            {"name": "John"},
+            "Template rendering failed: Could not find key 'task'",
+            id="flat",
+        ),
+        pytest.param(
+            "User {{user.name}} with email {{user.profile.email}}",
+            {"user": {"name": "John"}},
+            "Template rendering failed",
+            id="nested",
+        ),
+        pytest.param(
+            "Items: {{items.0}}, {{items.1}}",
+            {"items": ["only_one"]},
+            "Template rendering failed",
+            id="array",
+        ),
+    ],
+)
+def test_prompt_build_strict_rejects_missing_variables(template, args, error):
+    with pytest.raises(ValueError, match=error):
+        _test_prompt(template).build(strict=True, **args)
+
+
+def test_prompt_build_non_strict_renders_missing_variables_as_empty():
+    result = _test_prompt("Hello {{name}}, please help with {{task}}").build(name="John")
+    assert result["messages"][0]["content"] == "Hello John, please help with "
+
+
+def test_render_message_with_file_content_parts():
+    """Test render_message with mixed text, image, and file content parts including all file fields."""
+    message = PromptMessage(
+        role="user",
+        content=[
+            {"type": "text", "text": "Here is a {{item}}:"},
+            {"type": "image_url", "image_url": {"url": "{{image_url}}"}},
             {
                 "type": "file",
                 "file": {
-                    "file_data": "base64data",
-                    "file_id": "file-456",
-                    "filename": "report.pdf",
+                    "file_data": "{{file_data}}",
+                    "file_id": "{{file_id}}",
+                    "filename": "{{filename}}",
                 },
             },
-        ]
+        ],
+    )
+
+    rendered = render_message(
+        lambda template: (
+            template.replace("{{item}}", "document")
+            .replace("{{image_url}}", "https://example.com/image.png")
+            .replace("{{file_data}}", "base64data")
+            .replace("{{file_id}}", "file-456")
+            .replace("{{filename}}", "report.pdf")
+        ),
+        message,
+    )
+
+    assert rendered["content"] == [
+        {"type": "text", "text": "Here is a document:"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.png"}},
+        {
+            "type": "file",
+            "file": {
+                "file_data": "base64data",
+                "file_id": "file-456",
+                "filename": "report.pdf",
+            },
+        },
+    ]
 
 
 def test_noop_permalink_issue_1837():
