@@ -87,18 +87,6 @@ def test_pipecat_observer_filters_metrics_from_other_processors():
     assert observer._llm_metrics == {"prompt_tokens": 10, "completion_tokens": 5, "tokens": 15}
 
 
-def test_observer_bounds_frame_id_tracking_by_pipecat_version():
-    pipecat = importlib.import_module("pipecat")
-    version = detect_module_version(pipecat, ("pipecat",))
-    observer = BraintrustPipecatObserver()
-
-    if version_satisfies(version, ">=1.12.0"):
-        assert observer.observe_every_push is False
-        assert not hasattr(observer, "_seen_frame_ids")
-    else:
-        assert observer._seen_frame_ids == set()
-
-
 @pytest.mark.asyncio
 async def test_span_customizer_redacts_incremental_tts_input(memory_logger):
     TTSStartedFrame = _import("pipecat.frames.frames.TTSStartedFrame")
@@ -315,6 +303,13 @@ async def test_setup_pipecat_traces_real_pipeline_frames(memory_logger):
     runner = WorkerRunner(**_worker_runner_kwargs())
     await runner.add_workers(worker)
     await asyncio.wait_for(runner.run(), timeout=20)
+
+    observer = next(o for o in getattr(worker, "_observer")._observers if isinstance(o, BraintrustPipecatObserver))
+    if version_satisfies(detect_module_version(importlib.import_module("pipecat"), ("pipecat",)), ">=1.12.0"):
+        assert observer.observe_every_push is False
+        assert not hasattr(observer, "_seen_frame_ids")
+    else:
+        assert observer._seen_frame_ids
 
     logs = memory_logger.pop()
     pipeline_span = _single_span(logs, "pipecat_pipeline")
