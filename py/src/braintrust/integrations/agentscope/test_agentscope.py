@@ -311,6 +311,26 @@ async def test_agentscope_v2_toolkit_call_tool_creates_tool_span(memory_logger):
     assert tool_span["input"]["tool_name"] == "answer"
 
 
+TEAM_PIPELINE_PROMPT = "Ask the researcher to explain why recorded tests are useful."
+
+
+def _make_team_pipeline():
+    from agentscope.pipeline import TeamMember, TeamPipeline
+
+    return TeamPipeline(
+        leader=_make_agent(
+            "Leader",
+            "Delegate the task to the most suitable team member, then summarize their reply.",
+        ),
+        members=[
+            TeamMember(
+                agent=_make_agent("Researcher", "Answer factual questions concisely."),
+                description="Answers factual questions.",
+            ),
+        ],
+    )
+
+
 @pytest.mark.skipif(not IS_AGENTSCOPE_V2, reason="AgentScope 2.x TeamPipeline API")
 @pytest.mark.asyncio
 async def test_agentscope_unstarted_team_pipeline_reply_stream_does_not_open_span(memory_logger):
@@ -332,24 +352,11 @@ async def test_agentscope_unstarted_team_pipeline_reply_stream_does_not_open_spa
 @pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_agentscope_team_pipeline_reply_stream_creates_parent_span(memory_logger):
-    from agentscope.pipeline import TeamMember, TeamPipeline
-
     assert not memory_logger.pop()
 
-    pipeline = TeamPipeline(
-        leader=_make_agent(
-            "Leader",
-            "Delegate the task to the most suitable team member, then summarize their reply.",
-        ),
-        members=[
-            TeamMember(
-                agent=_make_agent("Researcher", "Answer factual questions concisely."),
-                description="Answers factual questions.",
-            ),
-        ],
-    )
+    pipeline = _make_team_pipeline()
     with logger.start_span(name="caller") as caller_span:
-        stream = pipeline.reply_stream(_make_user_msg("Ask the researcher to explain why recorded tests are useful."))
+        stream = pipeline.reply_stream(_make_user_msg(TEAM_PIPELINE_PROMPT))
         first_event = await stream.__anext__()
         assert logger.current_span() is caller_span
         with logger.start_span(name="after-first-event"):
@@ -379,6 +386,30 @@ async def test_agentscope_team_pipeline_reply_stream_creates_parent_span(memory_
     ]
     after_event_span = next(span for span in spans if span["span_attributes"]["name"] == "after-first-event")
     assert after_event_span["span_parents"] == [caller_span.span_id]
+
+
+@pytest.mark.skipif(not IS_AGENTSCOPE_V2, reason="AgentScope 2.x TeamPipeline API")
+@pytest.mark.vcr
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "vcr_cassette_name", ["test_agentscope_team_pipeline_reply_stream_creates_parent_span"], ids=["shared"]
+)
+async def test_agentscope_team_pipeline_reply_stream_closed_early_logs_output(memory_logger, vcr_cassette_name):
+    pipeline = _make_team_pipeline()
+    with logger.start_span(name="caller") as caller_span:
+        stream = pipeline.reply_stream(_make_user_msg(TEAM_PIPELINE_PROMPT))
+        first_event = await stream.__anext__()
+        await stream.aclose()
+        assert logger.current_span() is caller_span
+
+    assert first_event is not None
+
+    spans = memory_logger.pop()
+    pipeline_span = next(span for span in spans if span["span_attributes"]["name"] == "TeamPipeline.reply_stream")
+    assert pipeline_span["span_parents"] == [caller_span.span_id]
+    assert "end" in pipeline_span["metrics"]
+    assert pipeline_span["output"]
+    assert "error" not in pipeline_span
 
 
 @pytest.mark.asyncio

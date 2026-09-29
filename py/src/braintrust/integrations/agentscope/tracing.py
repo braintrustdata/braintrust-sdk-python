@@ -340,8 +340,8 @@ def _team_pipeline_reply_stream_wrapper(wrapped: Any, instance: Any, args: Any, 
         )
         stream_context.run(span.set_current)
         stream = None
+        last_event = None
         try:
-            last_event = None
             stream = stream_context.run(wrapped, *args, **kwargs)
             while True:
                 try:
@@ -350,8 +350,6 @@ def _team_pipeline_reply_stream_wrapper(wrapped: Any, instance: Any, args: Any, 
                     break
                 last_event = event
                 yield event
-            if last_event is not None:
-                span.log(output=last_event)
         except Exception as exc:
             span.log(error=exc)
             raise
@@ -360,6 +358,9 @@ def _team_pipeline_reply_stream_wrapper(wrapped: Any, instance: Any, args: Any, 
                 if stream is not None:
                     await _AwaitInContext(stream.aclose(), stream_context)
             finally:
+                # Also runs when the caller closes the stream early.
+                if last_event is not None:
+                    span.log(output=last_event)
                 span.end()
 
     return _trace()
