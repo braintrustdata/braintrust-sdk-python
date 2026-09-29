@@ -1111,9 +1111,12 @@ def test_logger_emit_log_without_active_span(with_memory_logger):
     )
     second_id = test_logger.emit_log(body="Retrying payment", level="info")
 
+    # Each call enqueues exactly one complete row, not a start row plus a merge.
+    assert len(with_memory_logger.logs) == 2
     logs = with_memory_logger.pop()
     assert len(logs) == 2
     first, second = logs
+    assert first["_is_merge"] is False
     assert first_id == first["id"]
     assert second_id == second["id"]
     assert first["id"] != second["id"]
@@ -1131,17 +1134,6 @@ def test_logger_emit_log_without_active_span(with_memory_logger):
     assert "error" not in second
     assert not second.get("metadata")
     assert second["span_attributes"]["log_level"] == "info"
-
-
-def test_logger_emit_log_enqueues_single_row(with_memory_logger):
-    test_logger = init_test_logger(__name__)
-
-    test_logger.info("Payment completed", metadata={"payment_id": "pay_123"})
-
-    assert len(with_memory_logger.logs) == 1
-    [row] = with_memory_logger.pop()
-    assert row["metrics"]["start"] == row["metrics"]["end"]
-    assert row["_is_merge"] is False
 
 
 def test_logger_emit_log_uses_distinct_baseline_trace_per_logger(with_memory_logger):
@@ -1190,117 +1182,114 @@ def test_logger_log_level_helpers(with_memory_logger, level):
         assert row["span_attributes"]["log_level"] == level
 
 
-def test_logger_log_helpers_render_template_parameters(with_memory_logger):
+_requires_t_strings = pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
+
+
+def _t_string(*parts):
+    """Build a string.templatelib.Template; tuple parts become Interpolation(*part)."""
+    templatelib = importlib.import_module("string.templatelib")
+    return templatelib.Template(*(templatelib.Interpolation(*p) if isinstance(p, tuple) else p for p in parts))
+
+
+@pytest.mark.parametrize(
+    ("level", "make_message", "kwargs", "expected_output", "expected_metadata"),
+    [
+        pytest.param(
+            "info",
+            lambda: "User {user_id} paid {amount:.2f} with {method}",
+            {"metadata": {"source": "checkout"}, "user_id": "user-123", "amount": 12.5},
+            "User user-123 paid 12.50 with {method}",
+            {
+                "source": "checkout",
+                "braintrust.template.parameter.user_id": "user-123",
+                "braintrust.template.parameter.amount": 12.5,
+                "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
+            },
+            id="format-parameters",
+        ),
+        pytest.param(
+            "error",
+            lambda: "Payment {payment_id} failed",
+            {"payment_id": "pay-123"},
+            "Payment pay-123 failed",
+            {
+                "braintrust.template.parameter.payment_id": "pay-123",
+                "braintrust.template": "Payment {payment_id} failed",
+            },
+            id="error-level",
+        ),
+        pytest.param(
+            "info",
+            lambda: '{"key": "{value}"}',
+            {},
+            '{"key": "{value}"}',
+            None,
+            id="no-parameters-not-formatted",
+        ),
+        pytest.param(
+            "warn",
+            lambda: "Request failed: {error}",
+            {"error": ValueError("bad request")},
+            "Request failed: bad request",
+            {
+                "braintrust.template.parameter.error": "bad request",
+                "braintrust.template": "Request failed: {error}",
+            },
+            id="parameters-safely-serialized",
+        ),
+        pytest.param(
+            "info",
+            lambda: _t_string("User ", ("user-123", "user_id"), " paid ", (12.5, "amount", "r", ">8"), " with {card}"),
+            {"metadata": {"source": "checkout"}},
+            "User user-123 paid     12.5 with {card}",
+            {
+                "source": "checkout",
+                "braintrust.template.parameter.user_id": "user-123",
+                "braintrust.template.parameter.amount": 12.5,
+                "braintrust.template": "User {user_id} paid {amount!r:>8} with {{card}}",
+            },
+            id="t-string",
+            marks=_requires_t_strings,
+        ),
+        pytest.param(
+            "info",
+            lambda: _t_string((1, "next(it)"), " ", (2, "next(it)")),
+            {},
+            "1 2",
+            {
+                "braintrust.template": "{next(it)} {next(it)}",
+                "braintrust.template.parameter.next(it).0": 1,
+                "braintrust.template.parameter.next(it).1": 2,
+            },
+            id="t-string-repeated-expression",
+            marks=_requires_t_strings,
+        ),
+    ],
+)
+def test_logger_log_helpers_render_templates(
+    with_memory_logger, level, make_message, kwargs, expected_output, expected_metadata
+):
     test_logger = init_test_logger(__name__)
 
-    log_id = test_logger.info(
-        "User {user_id} paid {amount:.2f} with {method}",
-        metadata={"source": "checkout"},
-        user_id="user-123",
-        amount=12.5,
-    )
+    log_id = getattr(test_logger, level)(make_message(), **kwargs)
 
     [row] = with_memory_logger.pop()
     assert row["id"] == log_id
-    assert row["output"] == "User user-123 paid 12.50 with {method}"
-    assert row["metadata"] == {
-        "source": "checkout",
-        "braintrust.template.parameter.user_id": "user-123",
-        "braintrust.template.parameter.amount": 12.5,
-        "braintrust.template": "User {user_id} paid {amount:.2f} with {method}",
-    }
-    assert row["span_attributes"]["log_level"] == "info"
-
-
-@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
-def test_logger_log_helpers_render_t_string(with_memory_logger):
-    templatelib = importlib.import_module("string.templatelib")
-    template = templatelib.Template(
-        "User ",
-        templatelib.Interpolation("user-123", "user_id"),
-        " paid ",
-        templatelib.Interpolation(12.5, "amount", "r", ">8"),
-        " with {card}",
-    )
-    test_logger = init_test_logger(__name__)
-
-    log_id = test_logger.info(template, metadata={"source": "checkout"})
-
-    [row] = with_memory_logger.pop()
-    assert row["id"] == log_id
-    assert row["output"] == "User user-123 paid     12.5 with {card}"
-    assert row["metadata"] == {
-        "source": "checkout",
-        "braintrust.template.parameter.user_id": "user-123",
-        "braintrust.template.parameter.amount": 12.5,
-        "braintrust.template": "User {user_id} paid {amount!r:>8} with {{card}}",
-    }
-    assert row["span_attributes"]["log_level"] == "info"
-
-
-@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
-def test_logger_t_string_retains_repeated_expression_values(with_memory_logger):
-    templatelib = importlib.import_module("string.templatelib")
-    template = templatelib.Template(
-        templatelib.Interpolation(1, "next(it)"),
-        " ",
-        templatelib.Interpolation(2, "next(it)"),
-    )
-    test_logger = init_test_logger(__name__)
-
-    test_logger.info(template)
-
-    [row] = with_memory_logger.pop()
-    assert row["output"] == "1 2"
-    assert row["metadata"] == {
-        "braintrust.template": "{next(it)} {next(it)}",
-        "braintrust.template.parameter.next(it).0": 1,
-        "braintrust.template.parameter.next(it).1": 2,
-    }
-
-
-@pytest.mark.skipif(sys.version_info < (3, 14), reason="t-strings require Python 3.14+")
-def test_logger_t_string_rejects_keyword_template_parameters(with_memory_logger):
-    templatelib = importlib.import_module("string.templatelib")
-    template = templatelib.Template("User ", templatelib.Interpolation("user-123", "user_id"))
-    test_logger = init_test_logger(__name__)
-
-    with pytest.raises(TypeError, match="already contain their interpolation values"):
-        test_logger.info(template, user_id="other-user")
-
-    assert with_memory_logger.pop() == []
-
-
-def test_logger_error_renders_template_without_error_field(with_memory_logger):
-    test_logger = init_test_logger(__name__)
-
-    test_logger.error("Payment {payment_id} failed", payment_id="pay-123")
-
-    [row] = with_memory_logger.pop()
-    assert row["output"] == "Payment pay-123 failed"
+    assert row["output"] == expected_output
+    assert row.get("metadata") == expected_metadata
+    assert row["span_attributes"]["log_level"] == level
+    # Log levels never populate the span error field, even for error().
     assert "error" not in row
 
 
-def test_logger_log_helpers_do_not_format_without_parameters(with_memory_logger):
+@_requires_t_strings
+def test_logger_t_string_rejects_keyword_template_parameters(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
-    test_logger.info('{"key": "{value}"}')
+    with pytest.raises(TypeError, match="already contain their interpolation values"):
+        test_logger.info(_t_string("User ", ("user-123", "user_id")), user_id="other-user")
 
-    [row] = with_memory_logger.pop()
-    assert row["output"] == '{"key": "{value}"}'
-    assert not row.get("metadata")
-    assert row["span_attributes"]["log_level"] == "info"
-
-
-def test_logger_log_template_parameters_are_safely_serialized(with_memory_logger):
-    test_logger = init_test_logger(__name__)
-
-    test_logger.warn("Request failed: {error}", error=ValueError("bad request"))
-
-    [row] = with_memory_logger.pop()
-    assert row["output"] == "Request failed: bad request"
-    assert row["metadata"]["braintrust.template.parameter.error"] == "bad request"
-    assert row["span_attributes"]["log_level"] == "warn"
+    assert with_memory_logger.pop() == []
 
 
 def test_logger_emit_log_rejects_invalid_level(with_memory_logger):
