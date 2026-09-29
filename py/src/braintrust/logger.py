@@ -68,7 +68,7 @@ from .db_fields import (
     VALID_SOURCES,
 )
 from .env import DEFAULT_APP_URL as _DEFAULT_APP_URL
-from .env import BraintrustEnv, resolve_app_url, resolve_org_name
+from .env import BraintrustEnv, resolve_app_url, resolve_org_name, resolve_project_mapping
 from .generated_types import (
     AttachmentReference,
     AttachmentStatus,
@@ -1933,6 +1933,7 @@ def init_logger(
 
     state = state or _state
     state.span_origin_environment = detect_environment(environment)
+    project, project_id = resolve_project_mapping(project, project_id)
     compute_metadata_args = dict(project_name=project, project_id=project_id)
 
     link_args = {

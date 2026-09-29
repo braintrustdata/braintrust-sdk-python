@@ -1,4 +1,5 @@
 import io
+import json
 import logging
 import math
 import os
@@ -34,6 +35,33 @@ def resolve_org_name(org_name: str | None = None) -> str | None:
     if org_name:
         return org_name
     return os.getenv("BRAINTRUST_ORG_NAME")
+
+
+def resolve_project_mapping(project_name: str | None, project_id: str | None) -> tuple[str | None, str | None]:
+    """Fill a missing project name or ID from BRAINTRUST_PROJECT_ID_TO_NAME."""
+
+    raw_mappings = os.getenv("BRAINTRUST_PROJECT_ID_TO_NAME")
+    if not raw_mappings or (project_name is None and project_id is None):
+        return project_name, project_id
+
+    try:
+        mappings = json.loads(raw_mappings)
+    except (TypeError, ValueError):
+        _logger.warning("Ignoring invalid BRAINTRUST_PROJECT_ID_TO_NAME: expected a JSON object of project IDs to names")
+        return project_name, project_id
+
+    if not isinstance(mappings, dict) or not all(
+        isinstance(key, str) and isinstance(value, str) for key, value in mappings.items()
+    ):
+        _logger.warning("Ignoring invalid BRAINTRUST_PROJECT_ID_TO_NAME: expected a JSON object of project IDs to names")
+        return project_name, project_id
+
+    if project_id is not None and project_name is None:
+        project_name = mappings.get(project_id)
+    elif project_name is not None and project_id is None:
+        project_id = next((mapped_id for mapped_id, name in mappings.items() if name == project_name), None)
+
+    return project_name, project_id
 
 
 def parse_float(value: str) -> float | None:

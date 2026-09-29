@@ -1451,6 +1451,39 @@ def test_span_link_logged_out_org_name_env_vars(with_memory_logger, monkeypatch)
     )
 
 
+def test_init_logger_resolves_project_from_env_mapping(with_memory_logger, monkeypatch):
+    monkeypatch.setenv(
+        "BRAINTRUST_PROJECT_ID_TO_NAME",
+        '{"project-id":"project-name"}',
+    )
+
+    logger = init_logger(project_id="project-id")
+
+    assert logger._compute_metadata_args == {"project_name": "project-name", "project_id": "project-id"}
+
+
+def test_init_logger_resolves_project_id_from_env_mapping(with_memory_logger, monkeypatch):
+    monkeypatch.setenv(
+        "BRAINTRUST_PROJECT_ID_TO_NAME",
+        '{"project-id":"project-name"}',
+    )
+
+    logger = init_logger(project="project-name")
+
+    assert logger._compute_metadata_args == {"project_name": "project-name", "project_id": "project-id"}
+
+
+def test_init_logger_explicit_project_values_override_env_mapping(with_memory_logger, monkeypatch):
+    monkeypatch.setenv(
+        "BRAINTRUST_PROJECT_ID_TO_NAME",
+        '{"project-id":"project-name"}',
+    )
+
+    logger = init_logger(project="explicit-name", project_id="explicit-id")
+
+    assert logger._compute_metadata_args == {"project_name": "explicit-name", "project_id": "explicit-id"}
+
+
 def test_span_project_id_logged_in(with_memory_logger, with_simulate_login):
     logger = init_logger(
         project="test-project",
