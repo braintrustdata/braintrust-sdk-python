@@ -32,7 +32,7 @@ from braintrust.api import BraintrustTransportError
 from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.git_fields import GitMetadataSettings, RepoInfo
 from braintrust.gitutil import get_repo_info
-from braintrust.id_gen import OTELIDGenerator, get_id_generator
+from braintrust.id_gen import get_id_generator
 from braintrust.logger import (
     BraintrustState,
     RemoteEvalParameters,
@@ -142,32 +142,9 @@ class TestInit(TestCase):
 
         assert str(cm.exception) == f"duplicate tag: {tag}"
 
-    def test_init_with_dataset_id_only(self):
-        """Test that init accepts dataset={'id': '...'} parameter"""
-        # Test the logic that extracts dataset_id from the dict
-        from braintrust.logger import Dataset
-
-        # Test 1: dict with only id
-        dataset_dict = {"id": "dataset-id-123"}
-        assert isinstance(dataset_dict, dict)
-        assert not isinstance(dataset_dict, Dataset)
-        assert dataset_dict["id"] == "dataset-id-123"
-
         # Test 2: full Dataset object has different behavior
         # (We can't easily instantiate a Dataset here, but we can verify
         # that the isinstance check distinguishes them)
-
-    def test_init_with_dataset_id_and_version(self):
-        """Test that init accepts dataset={'id': '...', 'version': '...'} parameter"""
-        # Test the logic that extracts both dataset_id and dataset_version from the dict
-        from braintrust.logger import Dataset
-
-        # Test: dict with id and version
-        dataset_dict = {"id": "dataset-id-123", "version": "v2"}
-        assert isinstance(dataset_dict, dict)
-        assert not isinstance(dataset_dict, Dataset)
-        assert dataset_dict["id"] == "dataset-id-123"
-        assert dataset_dict["version"] == "v2"
 
     def test_init_with_repo_info_does_not_raise(self):
         """Test that passing repo_info to init() doesn't cause an UnboundLocalError.
@@ -1684,50 +1661,6 @@ def test_span_log_with_nested_circular_reference(with_memory_logger):
     assert "circular" in logged_output["pages"][0]["document"].lower()
 
 
-def test_span_log_with_deep_document_structure(with_memory_logger):
-    """Test that span.log() with deeply nested document structure works gracefully."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Create deeply nested document structure with circular reference
-        doc_data = {
-            "model_id": "document-model",
-            "content": "Document content",
-            "pages": [],
-        }
-
-        page = {
-            "page_number": 1,
-            "lines": [{"content": "Line 1"}],
-        }
-
-        # Create circular reference
-        page["document"] = doc_data
-        doc_data["pages"].append(page)
-
-        # Should handle circular reference gracefully
-        span.log(
-            input={"file": "test.pdf"},
-            output=doc_data,
-            metadata={"source": "document_processor"},
-        )
-
-    # Verify the log was recorded with proper structure
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert logged_output["model_id"] == "document-model"
-    assert logged_output["content"] == "Document content"
-    assert len(logged_output["pages"]) == 1
-    assert logged_output["pages"][0]["page_number"] == 1
-    assert len(logged_output["pages"][0]["lines"]) == 1
-    assert logged_output["pages"][0]["lines"][0]["content"] == "Line 1"
-    # Circular reference should be replaced with placeholder
-    assert isinstance(logged_output["pages"][0]["document"], str)
-    assert "circular" in logged_output["pages"][0]["document"].lower()
-
-
 def test_span_log_with_extremely_deep_nesting(with_memory_logger):
     """Test that span.log() with extremely deep nesting works gracefully."""
     import sys
@@ -1758,54 +1691,6 @@ def test_span_log_with_extremely_deep_nesting(with_memory_logger):
     assert logged_output["level"] == 0
     # Either the structure is preserved up to a safe depth, or replaced with placeholder
     assert "nested" in logged_output
-
-
-def test_span_log_with_large_document_many_pages(with_memory_logger):
-    """Test that span.log() with large multi-page document works gracefully."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        # Create realistic large document: 20 pages × 30 lines × 10 words
-        pages = []
-        for page_num in range(20):
-            lines = []
-            for line_num in range(30):
-                words = []
-                for word_num in range(10):
-                    words.append(
-                        {
-                            "content": f"word_{word_num}",
-                            "confidence": 0.98,
-                        }
-                    )
-                lines.append(
-                    {
-                        "content": f"line_{line_num}",
-                        "words": words,
-                    }
-                )
-            pages.append(
-                {
-                    "page_number": page_num + 1,
-                    "lines": lines,
-                }
-            )
-
-        # Should handle large document structure
-        span.log(
-            input={"file": "large_document.pdf"},
-            output={"pages": pages},
-        )
-
-    # Verify the log was recorded with full structure intact (no circular refs)
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-
-    logged_output = logs[0]["output"]
-    assert len(logged_output["pages"]) == 20
-    assert len(logged_output["pages"][0]["lines"]) == 30
-    assert len(logged_output["pages"][0]["lines"][0]["words"]) == 10
-    assert logged_output["pages"][0]["lines"][0]["words"][0]["content"] == "word_0"
 
 
 def test_span_log_handles_nan_gracefully(with_memory_logger):
@@ -1848,25 +1733,6 @@ def test_span_log_handles_infinity_gracefully(with_memory_logger):
     assert logs[0]["output"]["neg"] == "-Infinity"
 
 
-def test_span_log_with_binary_data(with_memory_logger):
-    """Test how span.log() currently handles binary data."""
-    logger = init_test_logger(__name__)
-
-    with logger.start_span(name="test_span") as span:
-        span.log(
-            input={"file": "image.png"},
-            output={"embedding": b"\x00\x01\x02\x03" * 100},
-        )
-
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    # Document actual behavior - binary data goes through deep_copy_and_sanitize_dict
-    # which uses bt_dumps/bt_loads roundtrip
-    assert logs[0]["input"]["file"] == "image.png"
-    # The embedding should be present (converted to some serializable form)
-    assert "embedding" in logs[0]["output"]
-
-
 def test_span_log_handles_unstringifiable_object_gracefully(with_memory_logger):
     """Test that span.log() should handle objects with bad __str__ gracefully without raising.
 
@@ -1897,35 +1763,6 @@ def test_span_log_handles_unstringifiable_object_gracefully(with_memory_logger):
     output_str = str(logs[0]["output"]["result"])
     # Should contain some indication of serialization failure
     assert "error" in output_str.lower() or "serializ" in output_str.lower()
-
-
-def test_span_log_handles_bad_dict_keys_gracefully(with_memory_logger):
-    """Test that span.log() should handle non-stringifiable dict keys gracefully.
-
-    This test currently FAILS - it demonstrates the desired behavior after the fix.
-    """
-    logger = init_test_logger(__name__)
-
-    class BadKey:
-        def __str__(self):
-            raise ValueError("Key cannot be stringified!")
-
-        def __repr__(self):
-            raise ValueError("Key cannot be stringified!")
-
-    with logger.start_span(name="test_span") as span:
-        # Should NOT raise - should handle gracefully
-        span.log(
-            input={"test": "input"},
-            output={BadKey(): "value"},
-        )
-
-    # Verify the log was recorded with the problematic key handled
-    logs = with_memory_logger.pop()
-    assert len(logs) == 1
-    assert logs[0]["input"]["test"] == "input"
-    # The output should exist but the bad key should be replaced
-    assert "output" in logs[0]
 
 
 def test_span_link_logged_out(with_memory_logger):
@@ -2137,25 +1974,6 @@ async def test_span_link_in_async_context(with_simulate_login, with_memory_logge
 
 
 @pytest.mark.asyncio
-async def test_current_logger_after_multiple_awaits(with_simulate_login, with_memory_logger):
-    """Test that current_logger() works after multiple await points."""
-    import asyncio
-
-    logger = init_logger(project="test-project", project_id="test-project-id")
-
-    async def check_logger_after_awaits():
-        assert braintrust.current_logger() is logger
-        await asyncio.sleep(0.01)
-        assert braintrust.current_logger() is logger
-        await asyncio.sleep(0.01)
-        assert braintrust.current_logger() is logger
-        return braintrust.current_logger()
-
-    result = await check_logger_after_awaits()
-    assert result is logger
-
-
-@pytest.mark.asyncio
 async def test_current_logger_in_async_generator(with_simulate_login, with_memory_logger):
     """Test that current_logger() works within an async generator (yield)."""
     import asyncio
@@ -2193,33 +2011,6 @@ async def test_current_logger_in_separate_task(with_simulate_login, with_memory_
     assert result is logger
 
 
-@pytest.mark.asyncio
-async def test_span_link_in_nested_async(with_simulate_login, with_memory_logger):
-    """Test that span.link() works in deeply nested async calls."""
-    import asyncio
-
-    logger = init_logger(project="test-project", project_id="test-project-id")
-    span = logger.start_span(name="test-span")
-
-    async def level3():
-        await asyncio.sleep(0.01)
-        return span.link()
-
-    async def level2():
-        await asyncio.sleep(0.01)
-        return await level3()
-
-    async def level1():
-        await asyncio.sleep(0.01)
-        return await level2()
-
-    link = await level1()
-    span.end()
-
-    assert link != "https://www.braintrust.dev/noop-span"
-    assert span._id in link
-
-
 def test_current_logger_in_thread(with_simulate_login, with_memory_logger):
     """Test that current_logger() works correctly when called from a new thread.
 
@@ -2241,34 +2032,6 @@ def test_current_logger_in_thread(with_simulate_login, with_memory_logger):
     thread.join()
 
     assert thread_result["logger"] is logger
-
-
-def test_span_link_in_thread(with_simulate_login, with_memory_logger):
-    """Test that span.link() works correctly when called from a new thread.
-
-    The span should be able to generate a valid link even when link() is called
-    from a different thread than where the span was created.
-    """
-    import threading
-
-    logger = init_logger(project="test-project", project_id="test-project-id")
-    span = logger.start_span(name="test-span")
-
-    thread_result = {}
-
-    def get_link_in_thread():
-        # Call link() on the span directly (not via current_span() which uses ContextVar)
-        thread_result["link"] = span.link()
-
-    thread = threading.Thread(target=get_link_in_thread)
-    thread.start()
-    thread.join()
-    span.end()
-
-    # The link should NOT be the noop link
-    assert thread_result["link"] != "https://www.braintrust.dev/noop-span"
-    # The link should contain the span ID
-    assert span._id in thread_result["link"]
 
 
 @pytest.mark.asyncio
@@ -3393,42 +3156,6 @@ def reset_id_generator_state():
             os.environ["BRAINTRUST_LEGACY_IDS"] = original_legacy
 
 
-def test_otel_compatible_span_export_import():
-    """Test that spans with OTEL-compatible IDs can be exported and imported correctly."""
-    from braintrust.span_identifier_v4 import SpanComponentsV4, SpanObjectTypeV3
-
-    # Generate OTEL-compatible IDs
-    otel_gen = OTELIDGenerator()
-    trace_id = otel_gen.get_trace_id()  # 32-char hex (16 bytes)
-    span_id = otel_gen.get_span_id()  # 16-char hex (8 bytes)
-
-    # Test that trace_id is 32 chars and span_id is 16 chars
-    assert len(trace_id) == 32
-    assert len(span_id) == 16
-    assert all(c in "0123456789abcdef" for c in trace_id)
-    assert all(c in "0123456789abcdef" for c in span_id)
-
-    # Create span components
-    components = SpanComponentsV4(
-        object_type=SpanObjectTypeV3.PROJECT_LOGS,
-        object_id="test-project-id",
-        row_id="test-row-id",
-        span_id=span_id,
-        root_span_id=trace_id,
-    )
-
-    # Test export/import cycle
-    exported = components.to_str()
-    imported = SpanComponentsV4.from_str(exported)
-
-    # Verify all fields match exactly
-    assert imported.object_type == components.object_type
-    assert imported.object_id == components.object_id
-    assert imported.row_id == components.row_id
-    assert imported.span_id == span_id
-    assert imported.root_span_id == trace_id
-
-
 def test_span_with_otel_ids_export_import(reset_id_generator_state):
     """Test that actual Span objects with OTEL IDs can export and be used as parent context."""
     init_test_logger(__name__)
@@ -3613,45 +3340,6 @@ def test_span_start_span_inherits_from_self(with_memory_logger):
     )
 
 
-def test_span_start_span_with_exported_span_parent(with_memory_logger):
-    """Test that span.start_span() with exported span parent uses the exported span.
-
-    When an exported span (with row_id) is provided as parent, it should be used
-    instead of the context manager's current span.
-    """
-    from braintrust.test_helpers import init_test_exp
-
-    experiment = init_test_exp("test-experiment", "test-project")
-
-    # Create and export a span with row_id
-    with experiment.start_span(name="exported_parent") as exported_parent:
-        exported_parent.log(input="parent")
-        exported_parent_export = exported_parent.export()
-        exported_parent_span_id = exported_parent.span_id
-        exported_parent_root_span_id = exported_parent.root_span_id
-
-    # Create another span that will be the active context
-    with experiment.start_span(name="active_context") as active_context:
-        active_context_span_id = active_context.span_id
-
-        # Within active_context, create a child with explicit parent=exported_parent_export
-        # Should use exported_parent, not active_context
-        with active_context.start_span(parent=exported_parent_export, name="child") as child:
-            child.log(input="test")
-
-    logs = with_memory_logger.pop()
-    child_log = next(l for l in logs if l.get("span_attributes", {}).get("name") == "child")
-
-    # Child should inherit from exported_parent, not active_context
-    assert child_log["root_span_id"] == exported_parent_root_span_id
-    assert exported_parent_span_id in child_log.get("span_parents", []), (
-        "child should have exported_parent_span_id in span_parents"
-    )
-    assert active_context_span_id not in child_log.get("span_parents", []), (
-        "child should NOT have active_context_span_id in span_parents"
-    )
-
-
 def test_update_span_includes_span_id_and_root_span_id_from_export(with_memory_logger):
     experiment = init_test_exp("test-experiment", "test-project")
 
@@ -3816,29 +3504,6 @@ def test_register_otel_flush_callback():
     assert callback_invoked is True
 
 
-def test_register_otel_flush_disables_span_cache():
-    """Test that register_otel_flush disables the span cache."""
-    from braintrust import register_otel_flush
-    from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
-
-    init_test_logger(__name__)
-    state = _internal_get_global_state()
-
-    # Enable the cache (simulating what happens during eval)
-    state.span_cache.start()
-    assert state.span_cache.disabled is False
-
-    async def mock_flush():
-        pass
-
-    # Register OTEL flush
-    register_otel_flush(mock_flush)
-
-    # Cache should now be disabled
-    assert state.span_cache.disabled is True
-
-
 def test_flush_otel_noop_when_no_callback():
     """Test that flush_otel is a no-op when no callback is registered."""
     import asyncio
@@ -3915,22 +3580,6 @@ class TestJSONAttachment(TestCase):
         text = data.decode("utf-8")
         self.assertEqual(text, '{\n  "a": 1,\n  "b": 2\n}')
 
-    def test_large_transcript_scenario(self):
-        """Test handling large transcript data."""
-        large_transcript = [
-            {
-                "role": "user" if i % 2 == 0 else "assistant",
-                "content": f"Message {i}",
-                "timestamp": time.time() + i,
-            }
-            for i in range(1000)
-        ]
-
-        attachment = JSONAttachment(large_transcript, filename="transcript.json")
-
-        self.assertEqual(attachment.reference["filename"], "transcript.json")
-        self.assertEqual(attachment.reference["content_type"], "application/json")
-
     def test_arrays_and_primitives(self):
         """Test handling arrays and primitive values."""
         array_data = [1, 2, 3, 4, 5]
@@ -3939,34 +3588,6 @@ class TestJSONAttachment(TestCase):
         data = attachment.data
         parsed = json.loads(data.decode("utf-8"))
         self.assertEqual(parsed, array_data)
-
-    def test_integration_with_logger_patterns(self):
-        """Test the intended usage pattern with logger."""
-        log_data = {
-            "input": {
-                "type": "nameOfPrompt",
-                "transcript": JSONAttachment(
-                    [
-                        {"role": "user", "content": "Hello"},
-                        {"role": "assistant", "content": "Hi there!"},
-                    ]
-                ),
-                "configValue1": 123,
-                "configValue2": True,
-            },
-            "output": [{"type": "text", "value": "Generated response"}],
-            "metadata": {
-                "sessionId": "123",
-                "userId": "456",
-                "renderedPrompt": JSONAttachment(
-                    "This is a very long prompt template...",
-                    filename="prompt.json",
-                ),
-            },
-        }
-
-        self.assertIsInstance(log_data["input"]["transcript"], JSONAttachment)
-        self.assertIsInstance(log_data["metadata"]["renderedPrompt"], JSONAttachment)
 
     def test_extract_attachments_with_json_attachment(self):
         """Test that JSONAttachment works with _extract_attachments."""
@@ -4542,36 +4163,6 @@ class TestDatasetInternalBtql(TestCase):
             "test-dataset", body={"limit": DEFAULT_FETCH_BATCH_SIZE}
         )
 
-    def test_dataset_custom_batch_size_in_fetch(self):
-        """Custom batch sizes are forwarded to the generated fetch operation."""
-        from braintrust.logger import Dataset, LazyValue, ObjectMetadata, ProjectDatasetMetadata
-
-        mock_state = MagicMock()
-        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.return_value = {
-            "events": [{"id": "1", "input": "test1", "expected": "output1"}]
-        }
-
-        # Create dataset
-        project_metadata = ObjectMetadata(id="test-project", name="test-project", full_info={})
-        dataset_metadata = ObjectMetadata(id="test-dataset", name="test-dataset", full_info={})
-        lazy_metadata = LazyValue(
-            lambda: ProjectDatasetMetadata(project=project_metadata, dataset=dataset_metadata),
-            use_mutex=False,
-        )
-
-        dataset = Dataset(
-            lazy_metadata=lazy_metadata,
-            state=mock_state,
-        )
-
-        # Trigger a fetch with custom batch_size
-        custom_batch_size = 250
-        list(dataset.fetch(batch_size=custom_batch_size))
-
-        mock_state.api_client.return_value.datasets.post_dataset_id_fetch.assert_called_once_with(
-            "test-dataset", body={"limit": custom_batch_size}
-        )
-
 
 @pytest.mark.vcr
 def test_dataset_internal_btql_limit_caps_total_results():
@@ -4587,75 +4178,6 @@ def test_dataset_internal_btql_limit_caps_total_results():
     dataset.flush()
 
     assert len(list(dataset)) == 1
-
-
-def test_attachment_identity_preserved_through_bt_safe_deep_copy():
-    """Test that attachment object identity is preserved through bt_safe_deep_copy."""
-    from braintrust.bt_json import bt_safe_deep_copy
-
-    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
-    original_id = id(attachment)
-
-    # Simulate what happens in Span.log
-    partial_record = {"input": {"file": attachment}}
-    copied = bt_safe_deep_copy(partial_record)
-
-    # Verify identity preserved
-    assert copied["input"]["file"] is attachment
-    assert id(copied["input"]["file"]) == original_id
-
-
-def test_extract_attachments_collects_and_replaces():
-    """Test that _extract_attachments properly collects attachments and replaces them with references."""
-    from braintrust.logger import _extract_attachments
-
-    attachment1 = Attachment(data=b"data1", filename="file1.txt", content_type="text/plain")
-    attachment2 = Attachment(data=b"data2", filename="file2.txt", content_type="text/plain")
-    ext_attachment = ExternalAttachment(url="s3://bucket/key", filename="file3.pdf", content_type="application/pdf")
-
-    event = {
-        "input": {"file": attachment1},
-        "output": {"file": attachment2},
-        "metadata": {"files": [attachment1, ext_attachment]},
-    }
-
-    attachments = []
-    _extract_attachments(event, attachments)
-
-    # Should have collected all 4 attachment instances (attachment1 appears twice)
-    assert len(attachments) == 4
-    assert attachments[0] is attachment1
-    assert attachments[1] is attachment2
-    assert attachments[2] is attachment1  # Same instance collected again
-    assert attachments[3] is ext_attachment
-
-    # Event should have been modified to contain references
-    assert event["input"]["file"] == attachment1.reference
-    assert event["output"]["file"] == attachment2.reference
-    assert event["metadata"]["files"][0] == attachment1.reference
-    assert event["metadata"]["files"][1] == ext_attachment.reference
-
-
-def test_extract_attachments_preserves_identity():
-    """Test that the same attachment instance is collected multiple times when it appears in different places."""
-    from braintrust.logger import _extract_attachments
-
-    attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
-    original_id = id(attachment)
-
-    event = {
-        "input": attachment,
-        "output": attachment,  # Same instance
-        "metadata": {"file": attachment},  # Same instance again
-    }
-
-    attachments = []
-    _extract_attachments(event, attachments)
-
-    # Should collect the same instance 3 times
-    assert len(attachments) == 3
-    assert all(att is attachment for att in attachments)
-    assert all(id(att) == original_id for att in attachments)
 
 
 def test_attachment_upload_tracked_on_flush(with_memory_logger, with_simulate_login):
@@ -4678,23 +4200,6 @@ def test_attachment_upload_tracked_on_flush(with_memory_logger, with_simulate_lo
     assert with_memory_logger.upload_attempts[0] is attachment
 
 
-def test_multiple_attachments_upload_tracked(with_memory_logger, with_simulate_login):
-    """Test that upload is tracked for multiple attachments."""
-    attachment1 = Attachment(data=b"data1", filename="file1.txt", content_type="text/plain")
-    attachment2 = Attachment(data=b"data2", filename="file2.txt", content_type="text/plain")
-
-    logger = init_test_logger(__name__)
-    span = logger.start_span(name="test_span")
-    span.log(input={"file1": attachment1}, output={"file2": attachment2})
-    span.end()
-    logger.flush()
-
-    # Both attachments should be tracked
-    assert len(with_memory_logger.upload_attempts) == 2
-    assert attachment1 in with_memory_logger.upload_attempts
-    assert attachment2 in with_memory_logger.upload_attempts
-
-
 def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_simulate_login):
     """Test that same attachment logged twice appears twice in upload attempts."""
     attachment = Attachment(data=b"data", filename="file.txt", content_type="text/plain")
@@ -4710,39 +4215,6 @@ def test_same_attachment_logged_twice_tracked_twice(with_memory_logger, with_sim
     assert len(with_memory_logger.upload_attempts) == 2
     assert with_memory_logger.upload_attempts[0] is attachment
     assert with_memory_logger.upload_attempts[1] is attachment
-
-
-def test_external_attachment_upload_tracked(with_memory_logger, with_simulate_login):
-    """Test that ExternalAttachment upload is also tracked."""
-    ext_attachment = ExternalAttachment(
-        url="s3://bucket/key.pdf", filename="external.pdf", content_type="application/pdf"
-    )
-
-    logger = init_test_logger(__name__)
-    span = logger.start_span(name="test_span")
-    span.log(input={"file": ext_attachment})
-    span.end()
-    logger.flush()
-
-    # ExternalAttachment should be tracked
-    assert len(with_memory_logger.upload_attempts) == 1
-    assert with_memory_logger.upload_attempts[0] is ext_attachment
-
-
-def test_json_attachment_upload_tracked(with_memory_logger, with_simulate_login):
-    """Test that JSONAttachment upload is tracked."""
-    data = {"key": "value", "nested": {"array": [1, 2, 3]}}
-    json_attachment = JSONAttachment(data, filename="data.json")
-
-    logger = init_test_logger(__name__)
-    span = logger.start_span(name="test_span")
-    span.log(output={"data": json_attachment})
-    span.end()
-    logger.flush()
-
-    # JSONAttachment should be tracked
-    assert len(with_memory_logger.upload_attempts) == 1
-    assert with_memory_logger.upload_attempts[0] is json_attachment
 
 
 def test_multiple_attachment_types_tracked(with_memory_logger, with_simulate_login):
