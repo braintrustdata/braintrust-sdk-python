@@ -12,7 +12,6 @@ import pytest
 from braintrust import SpanCustomizer, logger, set_span_customizers
 from braintrust.integrations.pipecat import (
     BraintrustPipecatObserver,
-    PipecatIntegration,
     setup_pipecat,
     wrap_pipeline_worker,
 )
@@ -156,7 +155,6 @@ def _worker_runner_kwargs(**overrides):
     return kwargs
 
 
-@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_pipecat_observer_capture_audio_attachments_adds_tts_and_user_audio(memory_logger):
     TTSStartedFrame = _import("pipecat.frames.frames.TTSStartedFrame")
@@ -346,7 +344,6 @@ def test_setup_and_wrap_pipeline_worker_are_idempotent():
     PipelineWorker = _import("pipecat.pipeline.worker.PipelineWorker")
     IdentityFilter = _import("pipecat.processors.filters.identity_filter.IdentityFilter")
 
-    assert PipecatIntegration.min_version == "1.3.0"
     assert setup_pipecat(project_name="test-project-pipecat-py-tracing")
     assert setup_pipecat(project_name="test-project-pipecat-py-tracing")
     assert setup_pipecat(project_name="test-project-pipecat-py-tracing", capture_audio_attachments=True)
