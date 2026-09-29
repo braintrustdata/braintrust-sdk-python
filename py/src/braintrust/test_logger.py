@@ -9,6 +9,7 @@ import json
 import logging
 import operator
 import os
+import re
 import sys
 import threading
 import time
@@ -33,7 +34,6 @@ from braintrust import (
 from braintrust.api import BraintrustTransportError
 from braintrust.db_fields import AUDIT_METADATA_FIELD
 from braintrust.git_fields import GitMetadataSettings, RepoInfo
-from braintrust.gitutil import get_repo_info
 from braintrust.id_gen import get_id_generator
 from braintrust.logger import (
     BraintrustState,
@@ -1158,7 +1158,7 @@ def test_logger_emit_log_uses_distinct_baseline_trace_per_logger(with_memory_log
 def test_logger_emit_log_uses_active_span(with_memory_logger):
     test_logger = init_test_logger(__name__)
 
-    with test_logger.start_span(name="owner") as owner:
+    with test_logger.start_span(name="owner"):
         log_id = test_logger.emit_log(body="Inside span", level="debug", metadata={"attempt": 1})
 
     rows = with_memory_logger.pop()
@@ -1174,27 +1174,20 @@ def test_logger_emit_log_uses_active_span(with_memory_logger):
 
 
 @pytest.mark.parametrize("level", ["trace", "debug", "info", "warn", "error", "fatal"])
-def test_logger_emit_log_adds_log_level_span_attribute(with_memory_logger, level):
+def test_logger_log_level_helpers(with_memory_logger, level):
+    """emit_log(level=...) and the matching level helper both record the log level."""
     test_logger = init_test_logger(__name__)
 
-    test_logger.emit_log(body="message", level=level)
+    emitted_id = test_logger.emit_log(body="message", level=level)
+    helper_id = getattr(test_logger, level)("message", metadata={"source": level})
 
-    [row] = with_memory_logger.pop()
-    assert not row.get("metadata")
-    assert row["span_attributes"]["log_level"] == level
-
-
-@pytest.mark.parametrize("method_name", ["trace", "debug", "info", "warn", "error", "fatal"])
-def test_logger_log_level_helpers(with_memory_logger, method_name):
-    test_logger = init_test_logger(__name__)
-
-    log_id = getattr(test_logger, method_name)("message", metadata={"source": method_name})
-
-    [row] = with_memory_logger.pop()
-    assert row["id"] == log_id
-    assert row["output"] == "message"
-    assert row["metadata"] == {"source": method_name}
-    assert row["span_attributes"]["log_level"] == method_name
+    rows = {row["id"]: row for row in with_memory_logger.pop()}
+    assert set(rows) == {emitted_id, helper_id}
+    assert not rows[emitted_id].get("metadata")
+    assert rows[helper_id]["metadata"] == {"source": level}
+    for row in rows.values():
+        assert row["output"] == "message"
+        assert row["span_attributes"]["log_level"] == level
 
 
 def test_logger_log_helpers_render_template_parameters(with_memory_logger):
@@ -1633,7 +1626,7 @@ async def test_current_logger_in_async_generator(with_simulate_login, with_memor
     logger = init_logger(project="test-project", project_id="test-project-id")
 
     async def logger_generator():
-        for i in range(3):
+        for _ in range(3):
             await asyncio.sleep(0.01)
             yield braintrust.current_logger()
 
@@ -1722,9 +1715,6 @@ async def test_current_logger_async_context_isolation(with_simulate_login, with_
 def test_span_set_current(with_memory_logger):
     """Test that span.set_current() makes the span accessible via current_span()."""
     init_test_logger(__name__)
-
-    # Store initial current span
-    initial_current = braintrust.current_span()
 
     # Start a span that can be set as current (default behavior)
     span1 = logger.start_span(name="test-span-1")
@@ -2463,16 +2453,13 @@ def test_parent_context_with_otel_ids(with_memory_logger, reset_id_generator_sta
     assert parent_log["span_id"] in child_log.get("span_parents", [])
 
 
-def test_nested_spans_with_export(with_memory_logger):
+def test_login_during_active_span_preserves_context_manager(with_memory_logger):
     """Test nested spans with login triggered during span execution.
 
     This reproduces a bug where calling state.login() during an active span
     calls copy_state(), which would overwrite _context_manager with None,
     causing a ContextVar token mismatch error when the span exits.
     """
-    from braintrust import logger
-    from braintrust.test_helpers import init_test_exp
-
     experiment = init_test_exp("test-experiment", "test-project")
 
     # Start a span, then trigger login which calls copy_state()
@@ -2492,8 +2479,6 @@ def test_span_start_span_with_explicit_parent(with_memory_logger):
     This verifies the fix where span.start_span(parent=exported) should use the
     exported parent, not the current span from the context manager.
     """
-    from braintrust.test_helpers import init_test_exp
-
     experiment = init_test_exp("test-experiment", "test-project")
 
     # Create a root span, log to it (creates row_id), and export it
@@ -2533,8 +2518,6 @@ def test_span_start_span_inherits_from_self(with_memory_logger):
 
     When no explicit parent is provided, the child should inherit from the current span.
     """
-    from braintrust.test_helpers import init_test_exp
-
     experiment = init_test_exp("test-experiment", "test-project")
 
     # Create a parent span
@@ -2626,7 +2609,6 @@ def test_register_otel_flush_permanently_disables_cache():
     """Test that register_otel_flush permanently disables the cache."""
     from braintrust import register_otel_flush
     from braintrust.logger import _internal_get_global_state
-    from braintrust.test_helpers import init_test_logger
 
     init_test_logger(__name__)
     state = _internal_get_global_state()
@@ -3299,11 +3281,14 @@ def test_multiple_attachment_types_tracked(with_memory_logger, with_simulate_log
 
 
 def test_span_name_returns_explicit_name(with_memory_logger):
-    """Test that span.name returns the name passed to start_span()."""
+    """Test that span.name returns the name passed to start_span() and matches what is logged."""
     test_logger = init_test_logger(__name__)
 
     with test_logger.start_span(name="my-span") as span:
         assert span.name == "my-span"
+
+    logs = with_memory_logger.pop()
+    assert logs[0]["span_attributes"]["name"] == "my-span"
 
 
 def test_span_name_returns_inferred_root_name(with_memory_logger):
@@ -3321,9 +3306,9 @@ def test_span_name_returns_inferred_subspan_name(with_memory_logger):
 
     with test_logger.start_span(name="parent") as parent:
         child = parent.start_span()
-        # The inferred name is based on caller location: "funcname:filename:lineno"
-        assert child.name is not None
-        assert len(child.name) > 0
+        # "funcname:filename:lineno" of the first non-braintrust caller. This module is itself
+        # under braintrust.*, so the caller resolves to a pytest frame rather than this test.
+        assert re.fullmatch(r"\w+:[\w.]+\.py:\d+", child.name), child.name
         child.end()
 
 
@@ -3337,39 +3322,13 @@ def test_span_name_updated_by_set_attributes(with_memory_logger):
         assert span.name == "renamed"
 
 
-def test_span_name_consistent_with_logged_data(with_memory_logger):
-    """Test that span.name matches the name in the logged span_attributes."""
-    test_logger = init_test_logger(__name__)
-
-    with test_logger.start_span(name="logged-name") as span:
-        assert span.name == "logged-name"
-
-    logs = with_memory_logger.pop()
-    logged_name = logs[0].get("span_attributes", {}).get("name")
-    assert logged_name == "logged-name"
-
-
-def test_noop_span_name_returns_none():
-    """Test that the noop span's name property returns None."""
-    span = braintrust.NOOP_SPAN
-    assert span.name == ""
-
-
-def test_current_span_name_accessible(with_memory_logger):
-    """Test that current_span().name works inside a traced context."""
-    test_logger = init_test_logger(__name__)
-
-    captured_name = None
-    with test_logger.start_span(name="active-span") as span:
-        span.set_current()
-        captured_name = braintrust.current_span().name
-
-    assert captured_name == "active-span"
+def test_noop_span_name_is_empty():
+    assert braintrust.NOOP_SPAN.name == ""
 
 
 def test_traced_decorator_span_name(with_memory_logger):
     """Test that @traced sets span name to the function name by default."""
-    test_logger = init_test_logger(__name__)
+    init_test_logger(__name__)
 
     captured_name = None
 
@@ -3524,8 +3483,3 @@ def test_proxy_conn_base_url(proxy_url, expected_base_url):
     state = BraintrustState()
     state.proxy_url = proxy_url
     assert state.proxy_conn().base_url == expected_base_url
-
-
-def test_get_repo_info_without_settings_returns_none():
-    """Direct call to get_repo_info with settings=None should return None."""
-    assert get_repo_info(None) is None

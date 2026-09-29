@@ -63,3 +63,8 @@ def test_repo_info_returns_none_when_git_cannot_be_resolved(monkeypatch: pytest.
     assert gitutil._current_repo() is None
     assert gitutil.repo_info() is None
     assert list(gitutil.get_past_n_ancestors()) == []
+
+
+def test_get_repo_info_without_settings_returns_none():
+    """Direct call to get_repo_info with settings=None should return None."""
+    assert gitutil.get_repo_info(None) is None
