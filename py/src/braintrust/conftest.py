@@ -56,6 +56,10 @@ def _patch_vcr_aiohttp_stubs():
        is empty. Fix: after reading the body for recording, reset the response's
        content stream so it can be read again by the caller.
 
+    VCR.py releases with kevin1024/vcrpy#1055 fix 1, 3 and 4 themselves, so the
+    patches for those (including gzip decoding of the content stream) only apply
+    to older releases. Delete them once uv.lock has such a release.
+
     See: https://github.com/kevin1024/vcrpy/issues/927
     """
     try:
@@ -110,8 +114,6 @@ def _patch_vcr_aiohttp_stubs():
 
         aiohttp_stubs.MockClientResponse.__init__ = patched_response_init
 
-    aiohttp_stubs.MockStream.set_exception = lambda self, exc: None
-
     if not hasattr(aiohttp_stubs.MockStream, "iter_chunked"):
         # Older aiohttp exposed iter_chunked via AsyncStreamReaderMixin. Since
         # that mixin is gone, VCR.py's MockStream needs the method directly for
@@ -134,18 +136,25 @@ def _patch_vcr_aiohttp_stubs():
         return _decompress_body(self._body)
 
     aiohttp_stubs.MockClientResponse.read = patched_read
+    aiohttp_stubs.MockClientResponse._bt_patched = True
+
+    if issubclass(aiohttp_stubs.MockStream, streams.StreamReader):
+        # VCR.py with kevin1024/vcrpy#1055 (MockStream is then aiohttp's StreamReader)
+        # fixes 1, 3 and 4 itself, and MockStream() without the body raises there.
+        return
+
+    aiohttp_stubs.MockStream.set_exception = lambda self, exc: None
 
     @property
     def cached_content(self):
         if not hasattr(self, "_cached_content"):
-            stream = aiohttp_stubs.MockStream()
+            stream = aiohttp_stubs.MockStream()  # pylint: disable=no-value-for-parameter
             stream.feed_data(_decompress_body(self._body))
             stream.feed_eof()
             self._cached_content = stream
         return self._cached_content
 
     aiohttp_stubs.MockClientResponse.content = cached_content
-    aiohttp_stubs.MockClientResponse._bt_patched = True
 
     # Patch record_response to not consume the response body. VCR's original
     # implementation calls `await response.read()` which exhausts the body,
